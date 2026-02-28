@@ -33,12 +33,39 @@
         "hash": "c98e99a6d705f8cbde1dbf7adeb84dd26878387d",
         "message": "⚙️ T-001 Add parallel orchestration, waves, and approval gates"
       }
+    },
+    {
+      "id": "T-002",
+      "title": "Validate independent wave scheduling",
+      "description": "Verify three independent tasks can be scheduled into a single wave with three lanes when parallel_paths do not conflict.",
+      "status": "TODO",
+      "priority": "high",
+      "owner": "CODER",
+      "tags": [
+        "orchestration",
+        "e2e",
+        "wave"
+      ],
+      "verify": [
+        "python3 -m unittest discover -s tests -p 'test_wave_independent.py'",
+        "python3 scripts/agentctl.py task lint"
+      ],
+      "parallel_paths": [
+        "tests/e2e/wave_independent",
+        "docs/workflow/T-002.md"
+      ],
+      "comments": [
+        {
+          "author": "PLANNER",
+          "body": "Plan: Cover independent 3-lane wave scheduling with executable tests and workflow notes."
+        }
+      ]
     }
   ],
   "meta": {
     "schema_version": 1,
     "managed_by": "agentctl",
     "checksum_algo": "sha256",
-    "checksum": "adc10715813dd012274236495b2f076c5d5f035d9190fa66b3975f34ea42e263"
+    "checksum": "b0fb94f8a3b4c88a5ae65e830558f13e1d306d3de97ff3bb80722c510d5eeec1"
   }
 }
