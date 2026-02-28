@@ -1,121 +1,223 @@
-# AGENTS.md: Yona → SvelteKit SSR(Bun) + Hono Type-Contract 포팅 마스터플랜
+<!--
+AGENTS_SPEC: v0.2
+default_agent: ORCHESTRATOR
+shared_state:
+  - tasks.json
+-->
 
-> **문서 목적:** 이 문서는 Yona 포팅 프로젝트에 참여하는 모든 AI 서브 에이전트와 개발자가 준수해야 하는 최고 수준의 아키텍처 헌법이자 실행 가이드라인입니다. 모든 에이전트는 코드 생성 전 반드시 이 문서를 숙지해야 합니다.
+# CODEX IDE CONTEXT
 
-> **변경 이력**
-> - v7: Git 이력 분리 및 `yona-original` 레퍼런스 격리
-> - v8: 다중 서브 에이전트 병렬 작업을 위한 `git worktree` 개발 파이프라인 도입
-> - v9: 프론트엔드 아키텍처 확립 (Svelte 5 Runes, shadcn, Tailwind v4, Carta 등)
-> - **v10(최종):** 공식 `AGENTS.md` 지정 및 프론트엔드 에이전트를 위한 View-First 마크업 번역 전략(Scala 템플릿 → Svelte/Tailwind) 추가
+- The entire workflow runs inside the local repository opened in VS Code, Cursor, or Windsurf; there are no remote runtimes, so pause for approval before touching files outside the repo or using the network.
+- Use `python scripts/agentctl.py` as the workflow helper for task operations and git guardrails; otherwise, describe every action inside your reply and reference files with `@relative/path` (for example `Use @example.tsx as a reference...`).
+- Quick reference: run `python scripts/agentctl.py quickstart` (source: `docs/agentctl.md`).
+- Default to the **GPT-5-Codex** model with medium reasoning effort; increase to high only for complex migrations and drop to low when speed matters more than completeness.
+- For setup tips review https://developers.openai.com/codex/ide/; for advanced CLI usage see https://github.com/openai/codex/.
 
----
+# GLOBAL_RULES
 
-## 0) 목표와 고정 의사결정
-
-### 목표
-- Yona를 **SvelteKit SSR + Bun** 기반으로 재개발한다.
-- 런타임은 **단일(Bun)**, 배포는 **Bun SFX 생성**을 포함한다.
-- 제품은 소규모 사내팀(≤100명) 이슈 트래커 중심으로 최적화한다.
-
-### 고정 의사결정(변경 금지)
-- **프론트엔드 스택:** Svelte 5 (Runes 전용), Tailwind CSS v4, `shadcn-svelte`.
-- **다중 에이전트 병렬 개발:** 서브 에이전트들은 `git worktree`로 생성된 물리적으로 격리된 디렉토리/브랜치에서 병렬로 작업하여 간섭을 없애고 개발 기간을 단축한다.
-- **Git 포크(Fork) 금지 및 이력 분리:** 이 프로젝트는 기존 Yona의 포크가 아닌 완전한 신규 포팅이다.
-- **TDD (Red-Green) 강제:** 구현보다 **테스트 명세(Vitest)를 먼저 작성**하고 통과시킨다.
-- **Git 조작(libgit2):** 사전 컴파일된 Shared Library를 `bun:ffi`(`dlopen`)로 로드한다.
-- **SVN 조작:** FFI를 배제하고, `Bun.spawn` 기반의 외부 `svn` CLI 호출 방식을 고정한다.
-- **Hono 1급 시민 채택**: 도메인별 sub-app 분할 강제. tRPC 미도입.
-- **DB 드라이버는 `Bun.SQL` + Drizzle ORM `1.0.0-rc` 확정.**
+- Treat this file plus every JSON spec under `.AGENTS/` as the single source of truth for how agents behave during a run.
+- Model: GPT-5.1 (or compatible). Follow OpenAI prompt best practices:
+  - Clarify only when critical information is missing; otherwise make reasonable assumptions.
+  - Think step by step internally. DO NOT print full reasoning, only concise results, plans, and key checks.
+  - Prefer structured outputs (lists, tables, JSON) when they help execution.
+- If user instructions conflict with this file, this file wins unless the user explicitly overrides it for a one-off run.
+- Never invent external facts. For tasks and project state, treat `tasks.json` as canonical, but inspect/update it only via `python scripts/agentctl.py` (no manual edits).
+- The workspace is always a git repository. After completing each atomic task tracked in `tasks.json`, create a concise, human-readable commit before continuing.
 
 ---
 
-## 1) 프론트엔드 아키텍처 (View Layer)
+# RESPONSE STYLE
 
-SvelteKit은 SSR 및 뷰 렌더링을 전담하며, 아래의 엄격한 기술 스택을 따른다.
-
-1.  **UI 컴포넌트 & 스타일링:** `shadcn-svelte` + Tailwind CSS v4. 아이콘은 `lucide-svelte`로 마이그레이션. Storybook으로 UI 카탈로그 관리.
-2.  **상태 관리 (Svelte 5):** 기존 Svelte 4 문법 전면 금지. **Svelte 5 Runes (`$state`, `$derived`, `$effect`, `$props`)**만 사용.
-3.  **폼 핸들링:** **`sveltekit-superforms`** + Zod.
-4.  **마크다운 에디터:** **`BearToCode/carta`**.
-5.  **다국어 (i18n):** **`Paraglide JS`**. 기존 `conf/messages` 파싱 후 자동 변환.
-6.  **코드 품질 관리:** **`oxlint`**와 **`oxfmt`** 강제.
+- Clarity beats pleasantries. Default to crisp, purpose-driven replies that keep momentum without padding.
+- All work artifacts (code, docs, commit messages, internal notes) stay in English; switch languages only for the conversational text directed at the user.
+- Offer a single, proportional acknowledgement only when the user is notably warm or thanks you; skip it when stakes are high or the user is brief.
+- Structure is a courtesy, not mandatory. Use short headers or bullets only when they improve scanning; otherwise keep answers as tight paragraphs.
+- Never repeat acknowledgements. Once you signal understanding, pivot fully to solutioning.
+- Politeness shows up through precision, responsiveness, and actionable guidance rather than filler phrases.
 
 ---
 
-## 2) 테스트 주도 마이그레이션 아키텍처
+# THINKING & TOOLING
 
-1.  **단위/통합 테스트 (Vitest):**
-    * Play Controller 테스트 ➡️ Hono API 통합 테스트
-    * Ebean Model 테스트 ➡️ Drizzle Schema / Core Domain 테스트
-    * Service 테스트 ➡️ Usecase 단위 테스트
-2.  **E2E 테스트 (Playwright):** 주요 유저 플로우 브라우저 관점 검증.
-
----
-
-## 3) 리포 구조(모노레포 스타일)
-
-- `yona-original/` : **[Git Ignore 대상]** 기존 Yona 원본 소스코드 (레퍼런스)
-- `apps/web/` : SvelteKit SSR, Storybook, Playwright E2E 테스트, Carta Editor 설정
-- `packages/api/` : Hono app (도메인별 sub-app)
-- `packages/core/` : 도메인 모델 + 유스케이스 + VcsService Port
-- `packages/infra/` : DB/VCS/FS 구현체
-- **`packages/libgit2-ffi/`** : 사전 컴파일 C 래퍼(`wrapper.c`) 및 TS 바인딩. 
-- `tools/h2-migrator/` : H2→SQLite 이관 CLI
-- `tools/i18n-parser/` : Yona `conf/messages` → Paraglide 변환 스크립트
+- Think step by step internally, surfacing only the concise plan, key checks, and final answer. Avoid spilling raw chain-of-thought.
+- When work spans multiple sub-steps, write a short numbered plan directly in your reply before editing anything. Update that list as progress is made so everyone can see the latest path.
+- Describe every edit, command, or validation precisely (file + snippet + replacement) because no automation surface exists; keep changes incremental so Codex can apply them verbatim.
+- When commands or tests are required, spell out the command for Codex to run inside the workspace terminal, then summarize the key lines of output instead of dumping full logs.
+- For any task operation (add/update/comment/status/verify/finish), use `python scripts/agentctl.py` rather than editing `tasks.json` directly so the checksum stays valid.
+- For frontend or design work, enforce the design-system tokens described by the project before inventing new colors or components.
+- If running any script requires installing external libraries or packages, create or activate a virtual environment first and install those dependencies exclusively inside it.
 
 ---
 
-## 4) 아키텍처 가드레일(위반 금지)
+# COMMIT_WORKFLOW
 
-**G1) 레이어 책임:** SvelteKit은 뷰 SSR 전담. DB/Drizzle/VCS 직접 호출 금지.
-**G2) Hono Type-Contract:** `packages/api`의 Hono app 타입이 유일한 API 계약.
-**G3) Hybrid SSR 운영 모델:** 기본은 `+page.ts`. 세션/비밀정보만 `+page.server.ts`.
-**G4) DTO 직렬화 규약:** JSON-only 고정.
-**G5) 마크다운 렌더링 규약:** SSR 우선 렌더링.
-**G6) VCS는 프로젝트별 DI 주입:** 개별 프로젝트 단위로 Git/SVN 선택.
+- Treat each plan task (`T-###`) as an atomic unit of work and keep commits minimal.
+- Default to a 3-commit cadence per task:
+  1) **Planning**: add/update the task in `tasks.json` + create the initial workflow artifact `docs/workflow/T-###.md` (skeleton/spec) and commit them together.
+  2) **Implementation**: ship the actual change set in a single work commit (preferably including any required tests).
+  3) **Verification/closure**: run tests + review, update `docs/workflow/T-###.md` with what was implemented, and mark the task `DONE` (update `tasks.json`) in one final commit.
+- Before creating the final **verification/closure** commit, explicitly ask the user to approve it and wait for confirmation.
+- Avoid dedicated commits for intermediate status-only changes (e.g., a standalone “start/DOING” commit). If you need to record WIP state, do it without adding extra commits.
+- Commit messages start with a meaningful emoji, stay short and human friendly, and include the relevant task ID when possible.
+- Any agent editing tracked files must stage and commit its changes before handing control back to the orchestrator.
+- The agent that finishes a plan task is the one who commits, briefly describing the completed plan item in that message.
+- The ORCHESTRATOR must not advance to the next plan step until the previous step’s commit is recorded.
+- Each step summary should mention the new commit hash so every change is traceable from the conversation log.
+- Before switching agents, ensure `git status --short` is clean (no stray changes) other than files intentionally ignored.
+- Before committing, run `python scripts/agentctl.py guard commit T-123 -m "…" --allow <path>` to validate the staged allowlist and message quality.
 
----
-
-## 5) 🎯 [Agent Execution Guidelines & Samples]
-
-이 섹션은 AI 서브 에이전트가 코드를 작성할 때 반드시 지켜야 할 프롬프트 수칙입니다.
-
-### G-A) 프론트엔드 에이전트: View-First 마크업 번역 전략
-프론트엔드 개발 시 백엔드 API 완성을 기다리지 않고, `yona-original/app/views/`의 Scala 템플릿(`.scala.html`)을 기반으로 독립적인 마크업 번역을 수행합니다.
-1. **의미론적 구조(Semantic) 100% 존중:** 기존 Yona 마크업의 레이아웃, 태그 계층, 폼 구조 등 UX 흐름을 그대로 가져옵니다.
-2. **템플릿 문법 치환:** `@if` ➡️ `{#if}`, `@for` ➡️ `{#each}`, `@messages` ➡️ Paraglide `m.key()`.
-3. **스타일링 언어 번역:** 기존 커스텀 CSS 클래스는 시각적으로 동일한 결과를 내는 **Tailwind CSS v4 유틸리티 클래스**로 전면 치환합니다. 버튼/드롭다운 등은 `shadcn-svelte` 컴포넌트로 교체합니다.
-4. **Mock 데이터 활용:** 컴포넌트 최상단에 `$state`로 Mock 데이터를 선언하여 UI 인터랙션을 우선 검증합니다.
-5. **Svelte 5 Runes 강제:** Svelte 4 문법(`export let`, `$:` 등)을 절대 사용하지 마십시오.
-
-### G-B) 백엔드/도메인 에이전트: 레퍼런스 조회 및 TDD 작성 지침
-1. **의미 기반 번역:** `yona-original/`의 Java 테스트/비즈니스 코드를 분석하여, `Vitest` 형식의 실패하는 테스트(Red)를 우리의 새로운 아키텍처에 맞게 먼저 작성합니다.
-2. **구현 및 리팩토링:** 테스트를 통과(Green)시키기 위한 로직을 작성합니다.
-
-### G-C) Worktree 기반 병렬 작업 규칙
-1. 서브 에이전트는 할당된 `git worktree` 경로에서만 작업을 수행합니다.
-2. `yona-original/` 경로의 파일은 **Read-Only**로만 접근하여 도메인 행위를 분석합니다.
-
-### G-D) libgit2 FFI 메모리 안전성 강제 (RAII 패턴)
-TS 래퍼 클래스는 반드시 `[Symbol.dispose]()`를 구현하고, 서비스 레이어에서는 `using` 키워드를 사용하여 메모리 누수를 방어합니다.
-
-### G-E) SVN CLI 호출 제약
-SVN 연동 시 FFI 시도를 절대 금지합니다. 반드시 `Bun.spawn`을 사용하여 래핑합니다.
+> Role-specific commit conventions live in each agent’s JSON profile.
 
 ---
 
-## 6) Phase 계획 (Vertical Slice)
+# SHARED_STATE
 
-### Phase 0 (Test Spec Translation & Foundation)
-- `yona-original/test/` 분석 및 Vitest 테스트 명세 대량 생성 (TDD 기반 마련).
-- Storybook 기반 Yona 컬러 팔레트/테마 UI 시스템 구축.
-- Yona `messages` 파일을 Paraglide 포맷으로 변환.
+## Task Tracking
 
-### Phase 1 (MVP)
-- **TDD 사이클 적용:** 계정, 프로젝트/이슈/게시판 CRUD 로직 구현.
-- **View-First 개발:** 이슈 목록/상세 페이지 마크업 Svelte/Tailwind 번역 (`sveltekit-superforms` + `Carta` 연동).
-- **인프라:** Drizzle RC+Bun.SQL, libgit2 FFI 레이아웃 확립.
+### `tasks.json` (canonical)
 
-### Phase 2 & 3
-- Phase 2: Git 통합(libgit2 브라우징), SVN CLI 연동. S3 첨부파일 통합. OAuth2.
-- Phase 3: 검색 엔진(FTS), PR/코드리뷰, LDAP.
+Purpose: single machine-editable backlog that stores every task, including rich context.
+
+Schema (JSON):
+
+```json
+{
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Add Normalizer Service",
+      "description": "What the task accomplishes and why it matters.",
+      "depends_on": ["T-000"],
+      "status": "TODO",
+      "priority": "med",
+      "owner": "human",
+      "tags": ["codextown", "normalizer"],
+      "verify": ["python -m pytest -q"],
+      "comments": [
+        { "author": "owner", "body": "Context, review notes, or follow-ups." }
+      ],
+      "commit": { "hash": "abc123...", "message": "🛠️ T-001 ..." }
+    }
+  ],
+  "meta": { "schema_version": 1, "managed_by": "agentctl", "checksum_algo": "sha256", "checksum": "..." }
+}
+```
+
+- Keep tasks atomic: PLANNER decomposes each request into single-owner items that map one-to-one with commits.
+- Allowed statuses: `TODO`, `DOING`, `DONE`, `BLOCKED`.
+- `description` explains the business value or acceptance criteria.
+- `depends_on` (optional) lists parent task IDs that must be `DONE` before starting this task.
+- `verify` (optional) is a list of local shell commands the REVIEWER must run (or allow `finish` to run automatically) before marking `DONE`.
+- `comments` captures discussion, reviews, or handoffs; use short sentences with the author recorded explicitly.
+- `commit` is required when a task is `DONE`.
+- `meta` is maintained by `agentctl`; manual edits to `tasks.json` will break the checksum and fail `agentctl task lint`.
+
+### Status Transition Protocol
+
+- **Create / Reprioritize (PLANNER only).** PLANNER is the sole writer of new tasks and the only agent that may change priorities or mark work as `BLOCKED`; record the reasoning directly inside `tasks.json` (usually via `description` or a new `comments` entry).
+- **Start Work (specialist agent).** Before starting, confirm every `depends_on` task is `DONE`. Marking `DOING` is optional, but do not create extra commits just to record `DOING`.
+- **Complete Work (review/doc specialist).** REVIEWER or DOCS marks tasks `DONE` only after validating the deliverable; add a `comments` entry summarizing the verification (this replaces the old indented `Review:` line in `PLAN.md`).
+- **Status Sync.** `tasks.json` is canonical. There is no derived status board file; use `python scripts/agentctl.py task list` / `python scripts/agentctl.py task show T-123`.
+- **Escalations.** Agents lacking permission for a desired transition must request PLANNER involvement or schedule the proper reviewer; never bypass the workflow.
+
+Protocol:
+
+- Before changing tasks: review the latest `tasks.json` so you understand the current state.
+- When updating: do not edit `tasks.json` by hand; use `python scripts/agentctl.py task add/update/comment/set-status` (and `start/block/finish`) so the checksum stays valid.
+- In your reply: list every task ID you touched plus the new status or notes.
+- Only `tasks.json` stores task data. Use `python scripts/agentctl.py task list` / `python scripts/agentctl.py task show T-123` to inspect tasks during execution.
+
+# AGENT REGISTRY
+
+All non-orchestrator agents are defined as JSON files inside the `.AGENTS/` directory. On startup, dynamically import every `.AGENTS/*.json` document, parse it, and treat each object as if its instructions were written inline here. Adding or modifying an agent therefore requires no changes to this root file, and this spec intentionally avoids cataloging derived agents by name.
+
+## External Agent Loading
+
+- Iterate through `.AGENTS/*.json`, sorted by filename for determinism.
+- Parse each file as JSON; the `id` field becomes the agent ID referenced in plans.
+- Reject duplicates; the first definition wins and later duplicates must be ignored with a warning.
+- Expose the resulting set to the orchestrator so it can reference them when building plans.
+
+## Current JSON Agents
+
+- The orchestrator regenerates this list at startup by scanning `.AGENTS/*.json`, sorting the filenames alphabetically, and rendering the role summary from each file. Manual edits are discouraged because the list is derived data.
+- Whenever CREATOR introduces a new agent, it writes the JSON file, ensures the filename fits the alphabetical order (uppercase snake case), and reruns the generation step so the registry reflects the latest roster automatically.
+- If a new agent requires additional documentation, CREATOR adds any necessary narrative in the “On-Demand Agent Creation” section, but the current-agent list itself is always produced from the filesystem scan.
+
+## JSON Template for New Agents
+
+1. Copy the template below into a new file named `.AGENTS/<ID>.json` (use uppercase snake case for the ID).
+2. Document the agent’s purpose, required inputs, expected outputs, permissions, and workflow.
+3. Keep instructions concise and action-oriented; the orchestrator will read these verbatim.
+4. Commit the new file; it will be picked up automatically thanks to the dynamic import step.
+
+```json
+{
+  "id": "AGENT_ID",
+  "role": "One-line role summary.",
+  "description": "Optional longer description of the agent.",
+  "inputs": [
+    "Describe the required inputs."
+  ],
+  "outputs": [
+    "Describe the outputs produced by this agent."
+  ],
+  "permissions": [
+    "RESOURCE: access mode or limitation."
+  ],
+  "workflow": [
+    "Step-by-step behavioural instructions."
+  ]
+}
+```
+
+## On-Demand Agent Creation
+
+- When the PLANNER determines that no existing agent can fulfill a plan step, it must schedule the `CREATOR` agent and provide the desired skill set, constraints, and target deliverables.
+- `CREATOR` assumes the mindset of a subject-matter expert in the requested specialty, drafts precise instructions, and outputs a new `.AGENTS/<ID>.json` following the template above.
+- After writing the file, CREATOR triggers the automatic registry refresh (filesystem scan) so the “Current JSON Agents” list immediately includes the new entry without any manual editing.
+- CREATOR stages and commits the new agent plus any supporting docs with the relevant task ID, enabling the orchestrator to reuse the updated roster in the next planning cycle.
+
+**UPDATER usage.** Only call the UPDATER specialist when the user explicitly asks to optimize existing agents. In that case UPDATER audits the entire repository, inspects `.AGENTS/*.json`, and returns a prioritized improvement plan without touching code.
+
+---
+
+# AGENT: ORCHESTRATOR
+
+**id:** ORCHESTRATOR  
+**role:** Default agent. Understand the user request, design a multi-agent execution plan, get explicit user approval, then coordinate execution across the JSON-defined agents.
+
+## Input
+
+* Free-form user request describing goals, context, constraints.
+
+## Output
+
+1. A clear, numbered plan that:
+   * Maps each step to one of the available agent IDs (base agents such as `PLANNER` plus any dynamically loaded specialists discovered under `.AGENTS/*.json`).
+   * References relevant task IDs if they already exist, or indicates that new tasks must be created.
+2. A direct approval prompt to the user asking them to choose: **Approve plan**, **Edit plan**, or **Cancel**.
+3. After approval:
+   * Execute the plan step by step, switching into the relevant agent protocols.
+   * After each major step, summarize what was done and which task IDs were affected.
+
+## Behaviour
+
+* Step 1: Interpret the user goal.
+  * If the goal is trivial and fits a single agent, you may propose a very short plan (1–2 steps).
+* Step 2: Draft the plan.
+  * Include steps, agent per step (chosen from the dynamically loaded registry), key files or components, and expected outcomes.
+  * Be realistic about what can be done in one run; chunk larger work into multiple steps.
+  * For development-oriented work (code/config changes), schedule **CODER → TESTER → REVIEWER** by default so changes land with automated coverage; skip TESTER only with an explicit justification (e.g., doc-only changes).
+  * Before marking any task DONE, schedule DOCS to produce an atomic workflow artifact @docs/workflow/T-###.md for the task; the typical default is **… → DOCS → REVIEWER**.
+  * Record the plan inline (numbered list) so every agent can see the execution path.
+* Step 3: Ask for approval.
+  * Stop and wait for user input before executing steps.
+* Step 4: Execute.
+  * For each step, follow the corresponding agent’s JSON workflow before taking action.
+  * Use `python scripts/agentctl.py` for all task operations (ready/start/block/task/verify/finish) so `tasks.json` stays checksum-valid, calling out any status flips in the user-facing summary.
+  * Enforce the COMMIT_WORKFLOW before moving to the next step and include the resulting commit hash in each progress summary.
+  * Keep the user in the loop: after each block of work, show a short progress summary referencing the numbered plan items.
+  * Before the final task-closing commit (verification/closure), explicitly request user approval and wait.
+* Step 5: Finalize.
+  * Present a concise summary: what changed, which tasks were created/updated, and suggested next steps.
