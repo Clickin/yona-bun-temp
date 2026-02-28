@@ -38,7 +38,7 @@
       "id": "T-002",
       "title": "Validate independent wave scheduling",
       "description": "Verify three independent tasks can be scheduled into a single wave with three lanes when parallel_paths do not conflict.",
-      "status": "TODO",
+      "status": "DONE",
       "priority": "high",
       "owner": "CODER",
       "tags": [
@@ -58,14 +58,30 @@
         {
           "author": "PLANNER",
           "body": "Plan: Cover independent 3-lane wave scheduling with executable tests and workflow notes."
+        },
+        {
+          "author": "CODER",
+          "body": "Start: Implement independent wave scenario test coverage for three non-conflicting tasks and keep scope focused on executable assertions and deterministic behavior."
+        },
+        {
+          "author": "HUMAN",
+          "body": "Approval: User approved final verification and closure commit for T-002 after implementation checks passed."
+        },
+        {
+          "author": "REVIEWER",
+          "body": "Verified: Ran task-specific and lint verifications, confirmed independent three-lane behavior, and reviewed workflow notes with no remaining blockers for closure."
         }
-      ]
+      ],
+      "commit": {
+        "hash": "2a24ebe0b763a7ea88b8ff1fcefc77edecc5b0df",
+        "message": "⚙️ T-002 Add independent wave scheduling tests"
+      }
     },
     {
       "id": "T-003",
       "title": "Validate dependency queue behavior",
       "description": "Verify tasks with unmet depends_on are deferred to later waves until parent tasks are marked DONE.",
-      "status": "TODO",
+      "status": "DOING",
       "priority": "high",
       "owner": "CODER",
       "tags": [
@@ -85,6 +101,10 @@
         {
           "author": "PLANNER",
           "body": "Plan: Cover dependency-based wave deferral with executable tests and workflow notes."
+        },
+        {
+          "author": "CODER",
+          "body": "Start: Implement dependency-queue scenario tests to prove unresolved depends_on tasks move into later waves after parent completion."
         }
       ]
     },
@@ -92,7 +112,7 @@
       "id": "T-004",
       "title": "Validate path conflict locking",
       "description": "Verify tasks that touch the same or parent-child path prefixes are serialized into different waves.",
-      "status": "TODO",
+      "status": "DOING",
       "priority": "high",
       "owner": "CODER",
       "tags": [
@@ -112,6 +132,10 @@
         {
           "author": "PLANNER",
           "body": "Plan: Cover path conflict lock behavior with executable tests and workflow notes."
+        },
+        {
+          "author": "CODER",
+          "body": "Start: Implement path-conflict lock scenario tests to guarantee overlapping prefixes never occupy the same parallel wave lane."
         }
       ]
     },
@@ -153,6 +177,6 @@
     "schema_version": 1,
     "managed_by": "agentctl",
     "checksum_algo": "sha256",
-    "checksum": "d1c8dbe7871570b660b077ca34aaeeb9c5c98b2dc77111db36789aa289f7debe"
+    "checksum": "0df8cca33038afb91d7629f3f5024ba93a12a7159e80fb5aa829c364268840e6"
   }
 }
