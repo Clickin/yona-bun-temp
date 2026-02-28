@@ -87,12 +87,39 @@
           "body": "Plan: Cover dependency-based wave deferral with executable tests and workflow notes."
         }
       ]
+    },
+    {
+      "id": "T-004",
+      "title": "Validate path conflict locking",
+      "description": "Verify tasks that touch the same or parent-child path prefixes are serialized into different waves.",
+      "status": "TODO",
+      "priority": "high",
+      "owner": "CODER",
+      "tags": [
+        "orchestration",
+        "e2e",
+        "conflict"
+      ],
+      "verify": [
+        "python3 -m unittest discover -s tests -p 'test_wave_conflict.py'",
+        "python3 scripts/agentctl.py task lint"
+      ],
+      "parallel_paths": [
+        "tests/e2e/wave_conflict",
+        "docs/workflow/T-004.md"
+      ],
+      "comments": [
+        {
+          "author": "PLANNER",
+          "body": "Plan: Cover path conflict lock behavior with executable tests and workflow notes."
+        }
+      ]
     }
   ],
   "meta": {
     "schema_version": 1,
     "managed_by": "agentctl",
     "checksum_algo": "sha256",
-    "checksum": "94d9b6214441a28f03bb0bbca55e78caac162e83cae9d8ba3d2d5a2883daeed6"
+    "checksum": "cdbe38b633defdc61c015a016165c77fb88ec492992ef2477ae7ac8f4c8dc531"
   }
 }
