@@ -60,12 +60,39 @@
           "body": "Plan: Cover independent 3-lane wave scheduling with executable tests and workflow notes."
         }
       ]
+    },
+    {
+      "id": "T-003",
+      "title": "Validate dependency queue behavior",
+      "description": "Verify tasks with unmet depends_on are deferred to later waves until parent tasks are marked DONE.",
+      "status": "TODO",
+      "priority": "high",
+      "owner": "CODER",
+      "tags": [
+        "orchestration",
+        "e2e",
+        "dependency"
+      ],
+      "verify": [
+        "python3 -m unittest discover -s tests -p 'test_wave_dependency.py'",
+        "python3 scripts/agentctl.py task lint"
+      ],
+      "parallel_paths": [
+        "tests/e2e/wave_dependency",
+        "docs/workflow/T-003.md"
+      ],
+      "comments": [
+        {
+          "author": "PLANNER",
+          "body": "Plan: Cover dependency-based wave deferral with executable tests and workflow notes."
+        }
+      ]
     }
   ],
   "meta": {
     "schema_version": 1,
     "managed_by": "agentctl",
     "checksum_algo": "sha256",
-    "checksum": "b0fb94f8a3b4c88a5ae65e830558f13e1d306d3de97ff3bb80722c510d5eeec1"
+    "checksum": "94d9b6214441a28f03bb0bbca55e78caac162e83cae9d8ba3d2d5a2883daeed6"
   }
 }
