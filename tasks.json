@@ -81,7 +81,7 @@
       "id": "T-003",
       "title": "Validate dependency queue behavior",
       "description": "Verify tasks with unmet depends_on are deferred to later waves until parent tasks are marked DONE.",
-      "status": "DOING",
+      "status": "DONE",
       "priority": "high",
       "owner": "CODER",
       "tags": [
@@ -105,8 +105,20 @@
         {
           "author": "CODER",
           "body": "Start: Implement dependency-queue scenario tests to prove unresolved depends_on tasks move into later waves after parent completion."
+        },
+        {
+          "author": "HUMAN",
+          "body": "Approval: User approved final verification and closure commit for T-003 after implementation checks passed."
+        },
+        {
+          "author": "REVIEWER",
+          "body": "Verified: Ran task-specific and lint verifications, confirmed dependency queue deferral behavior, and reviewed workflow notes with no remaining blockers for closure."
         }
-      ]
+      ],
+      "commit": {
+        "hash": "800298985ad9cac8465ffda9791686e76a18c0c8",
+        "message": "⚙️ T-003 Add dependency wave queue tests"
+      }
     },
     {
       "id": "T-004",
@@ -177,6 +189,6 @@
     "schema_version": 1,
     "managed_by": "agentctl",
     "checksum_algo": "sha256",
-    "checksum": "0df8cca33038afb91d7629f3f5024ba93a12a7159e80fb5aa829c364268840e6"
+    "checksum": "cda868e26e3af4c6033796419fb3593f17200b7c9ec68dbf9c683a14c6f72f64"
   }
 }
