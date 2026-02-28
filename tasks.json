@@ -114,12 +114,45 @@
           "body": "Plan: Cover path conflict lock behavior with executable tests and workflow notes."
         }
       ]
+    },
+    {
+      "id": "T-005",
+      "title": "Harden operational workflow after e2e validation",
+      "description": "Apply operational hardening after e2e wave tests: ignore Python cache noise, tighten docs guidance, and preserve guardrail clarity for parallel task execution.",
+      "status": "TODO",
+      "priority": "med",
+      "owner": "CODER",
+      "tags": [
+        "orchestration",
+        "hardening",
+        "docs"
+      ],
+      "depends_on": [
+        "T-002",
+        "T-003",
+        "T-004"
+      ],
+      "verify": [
+        "python3 -m unittest discover -s tests -p 'test_wave_*.py'",
+        "python3 scripts/agentctl.py task lint"
+      ],
+      "parallel_paths": [
+        "gitignore",
+        "docs/agentctl.md",
+        "docs/workflow/T-005.md"
+      ],
+      "comments": [
+        {
+          "author": "PLANNER",
+          "body": "Plan: Capture hardening work after wave scenario coverage lands and closes."
+        }
+      ]
     }
   ],
   "meta": {
     "schema_version": 1,
     "managed_by": "agentctl",
     "checksum_algo": "sha256",
-    "checksum": "cdbe38b633defdc61c015a016165c77fb88ec492992ef2477ae7ac8f4c8dc531"
+    "checksum": "d1c8dbe7871570b660b077ca34aaeeb9c5c98b2dc77111db36789aa289f7debe"
   }
 }
