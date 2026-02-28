@@ -14,7 +14,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Set, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -39,6 +39,9 @@ GENERIC_COMMIT_TOKENS: Set[str] = {
     "tasks",
     "task",
 }
+
+PARALLEL_PLANNING_AGENTS: Tuple[str, ...] = ("PLANNER", "CODER", "TESTER", "DOCS", "REVIEWER")
+PLAN_MERGE_PRIORITY: Tuple[str, ...] = ("REVIEWER", "PLANNER", "CODER", "TESTER", "DOCS")
 
 
 def run(cmd: List[str], *, cwd: Path = ROOT, check: bool = True) -> subprocess.CompletedProcess:
@@ -207,6 +210,9 @@ def _task_text_blob(task: Dict) -> str:
     tags = task.get("tags")
     if isinstance(tags, list):
         parts.extend(t for t in tags if isinstance(t, str) and t.strip())
+    parallel_paths = task.get("parallel_paths")
+    if isinstance(parallel_paths, list):
+        parts.extend(p for p in parallel_paths if isinstance(p, str) and p.strip())
     comments = task.get("comments")
     if isinstance(comments, list):
         for comment in comments:
@@ -268,6 +274,66 @@ def cmd_task_search(args: argparse.Namespace) -> None:
         matches = matches[: args.limit]
     for task in matches:
         print(format_task_line(task))
+
+
+def cmd_task_waves(args: argparse.Namespace) -> None:
+    tasks = load_tasks()
+    tasks_by_id, warnings = index_tasks_by_id(tasks)
+    statuses = {s.strip().upper() for s in (args.status or ["TODO"])}
+    planned = plan_parallel_waves(
+        tasks_by_id,
+        candidate_statuses=statuses,
+        max_lanes=max(1, int(args.max_lanes)),
+        missing_path_policy=args.missing_path_policy,
+    )
+    warnings = warnings + list(planned.get("warnings") or [])
+
+    if args.json:
+        payload = {
+            "max_lanes": max(1, int(args.max_lanes)),
+            "candidate_statuses": sorted(statuses),
+            "missing_path_policy": args.missing_path_policy,
+            "warnings": sorted(set(warnings)),
+            "waves": [],
+            "blocked": planned.get("blocked") or [],
+        }
+        for idx, wave in enumerate(planned.get("waves") or [], start=1):
+            lanes: List[Dict[str, Any]] = []
+            for lane_idx, task_id in enumerate(wave, start=1):
+                task = tasks_by_id.get(task_id) or {}
+                lanes.append(
+                    {
+                        "lane": lane_idx,
+                        "id": task_id,
+                        "status": str(task.get("status") or "TODO").strip().upper(),
+                        "title": str(task.get("title") or "").strip(),
+                        "parallel_paths": task_parallel_paths(task),
+                    }
+                )
+            payload["waves"].append({"wave": idx, "lanes": lanes})
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+
+    if warnings and not args.quiet:
+        for warning in sorted(set(warnings)):
+            print(f"⚠️ {warning}")
+    for idx, wave in enumerate(planned.get("waves") or [], start=1):
+        print(f"Wave {idx}:")
+        for lane_idx, task_id in enumerate(wave, start=1):
+            task = tasks_by_id.get(task_id) or {}
+            status = str(task.get("status") or "TODO").strip().upper()
+            title = str(task.get("title") or "").strip()
+            paths = task_parallel_paths(task)
+            path_hint = ", ".join(paths) if paths else "(no parallel_paths; global lock)"
+            print(f"  L{lane_idx}: {task_id} [{status}] {title} :: {path_hint}")
+    blocked = planned.get("blocked") or []
+    if blocked:
+        print("")
+        print("Blocked:")
+        for item in blocked:
+            task_id = str(item.get("id") or "").strip() or "<unknown>"
+            reason = str(item.get("reason") or "blocked").strip()
+            print(f"  - {task_id}: {reason}")
 
 
 def cmd_task_scaffold(args: argparse.Namespace) -> None:
@@ -332,6 +398,8 @@ def cmd_task_show(args: argparse.Namespace) -> None:
     tags = task.get("tags") or []
     tags_str = ", ".join(t for t in tags if isinstance(t, str))
     print(f"Tags: {tags_str if tags_str else '-'}")
+    parallel_paths, _ = normalize_parallel_paths(task.get("parallel_paths"))
+    print(f"Parallel paths: {', '.join(parallel_paths) if parallel_paths else '-'}")
     description = str(task.get("description") or "").strip()
     if description:
         print("")
@@ -386,6 +454,28 @@ def normalize_depends_on(value: object) -> Tuple[List[str], List[str]]:
             continue
         seen.add(task_id)
         normalized.append(task_id)
+    return normalized, errors
+
+
+def normalize_parallel_paths(value: object) -> Tuple[List[str], List[str]]:
+    if value is None:
+        return [], []
+    if not isinstance(value, list):
+        return [], ["parallel_paths must be a list of path prefixes"]
+    errors: List[str] = []
+    normalized: List[str] = []
+    seen: Set[str] = set()
+    for raw in value:
+        if not isinstance(raw, str):
+            errors.append("parallel_paths entries must be strings")
+            continue
+        path = raw.strip().lstrip("./").rstrip("/")
+        if not path:
+            continue
+        if path in seen:
+            continue
+        seen.add(path)
+        normalized.append(path)
     return normalized, errors
 
 
@@ -523,6 +613,209 @@ def path_is_under(path: str, prefix: str) -> bool:
     return p == root or p.startswith(root + "/")
 
 
+def task_parallel_paths(task: Dict) -> List[str]:
+    paths, _ = normalize_parallel_paths(task.get("parallel_paths"))
+    return paths
+
+
+def tasks_conflict_by_path(
+    left: Dict,
+    right: Dict,
+    *,
+    missing_path_policy: str = "global-lock",
+) -> bool:
+    left_paths = task_parallel_paths(left)
+    right_paths = task_parallel_paths(right)
+    if not left_paths or not right_paths:
+        return missing_path_policy == "global-lock"
+    for left_path in left_paths:
+        for right_path in right_paths:
+            if path_is_under(left_path, right_path) or path_is_under(right_path, left_path):
+                return True
+    return False
+
+
+def plan_parallel_waves(
+    tasks_by_id: Dict[str, Dict],
+    *,
+    candidate_statuses: Set[str],
+    max_lanes: int,
+    missing_path_policy: str,
+) -> Dict[str, Any]:
+    dep_state, dep_warnings = compute_dependency_state(tasks_by_id)
+    done_ids: Set[str] = {
+        task_id for task_id, task in tasks_by_id.items() if str(task.get("status") or "TODO").strip().upper() == "DONE"
+    }
+    candidate_ids: Set[str] = {
+        task_id
+        for task_id, task in tasks_by_id.items()
+        if str(task.get("status") or "TODO").strip().upper() in candidate_statuses
+    }
+    unscheduled: Set[str] = set(candidate_ids)
+    waves: List[List[str]] = []
+
+    while unscheduled:
+        ready_ids: List[str] = []
+        for task_id in sorted(unscheduled):
+            dep_info = dep_state.get(task_id) or {}
+            depends_on = dep_info.get("depends_on") or []
+            if all(dep in done_ids for dep in depends_on):
+                ready_ids.append(task_id)
+        if not ready_ids:
+            break
+
+        selected: List[str] = []
+        for task_id in ready_ids:
+            task = tasks_by_id[task_id]
+            if any(
+                tasks_conflict_by_path(
+                    task,
+                    tasks_by_id[already],
+                    missing_path_policy=missing_path_policy,
+                )
+                for already in selected
+            ):
+                continue
+            selected.append(task_id)
+            if len(selected) >= max_lanes:
+                break
+
+        if not selected:
+            selected = [ready_ids[0]]
+
+        waves.append(selected)
+        for task_id in selected:
+            unscheduled.remove(task_id)
+            done_ids.add(task_id)
+
+    blocked: List[Dict[str, str]] = []
+    for task_id in sorted(unscheduled):
+        dep_info = dep_state.get(task_id) or {}
+        depends_on = dep_info.get("depends_on") or []
+        unresolved = [dep for dep in depends_on if dep not in done_ids]
+        reason = "waiting on deps: " + ", ".join(unresolved) if unresolved else "dependency deadlock or cycle"
+        blocked.append({"id": task_id, "reason": reason})
+
+    return {
+        "waves": waves,
+        "blocked": blocked,
+        "warnings": dep_warnings,
+    }
+
+
+def build_kickoff_payload(goal: str, constraints: Sequence[str], task_ids: Sequence[str]) -> Dict[str, Any]:
+    shared_input: Dict[str, Any] = {
+        "goal": goal.strip(),
+        "constraints": [item.strip() for item in constraints if item and item.strip()],
+        "task_ids": [task_id.strip() for task_id in task_ids if task_id and task_id.strip()],
+    }
+    return {
+        "shared_input": shared_input,
+        "priority_order": list(PLAN_MERGE_PRIORITY),
+        "agents": {
+            "PLANNER": {
+                "contract": ["id", "depends_on", "owner", "priority", "verify"],
+                "template": [{"id": "T-###", "depends_on": [], "owner": "CODER", "priority": "med", "verify": []}],
+            },
+            "CODER": {
+                "contract": ["id", "scope", "parallel_paths", "conflict_risk"],
+                "template": [{"id": "T-###", "scope": "...", "parallel_paths": ["src/..."], "conflict_risk": "low"}],
+            },
+            "TESTER": {
+                "contract": ["id", "tests", "commands"],
+                "template": [{"id": "T-###", "tests": ["happy path", "edge path", "regression"], "commands": ["..."]}],
+            },
+            "DOCS": {
+                "contract": ["id", "workflow_artifact", "doc_updates"],
+                "template": [{"id": "T-###", "workflow_artifact": "docs/workflow/T-###.md", "doc_updates": []}],
+            },
+            "REVIEWER": {
+                "contract": ["id", "acceptance", "blockers", "closure_checklist"],
+                "template": [{"id": "T-###", "acceptance": [], "blockers": [], "closure_checklist": []}],
+            },
+        },
+    }
+
+
+def load_agent_plan(path: Path, expected_agent: str) -> List[Dict[str, Any]]:
+    payload = load_json(path)
+    agent = str(payload.get("agent") or "").strip().upper()
+    if agent != expected_agent:
+        die(f"{path}: expected agent={expected_agent}, got {agent or '<missing>'}", code=2)
+    tasks = payload.get("tasks")
+    if not isinstance(tasks, list):
+        die(f"{path}: 'tasks' must be a list", code=2)
+    normalized: List[Dict[str, Any]] = []
+    for idx, item in enumerate(tasks):
+        if not isinstance(item, dict):
+            die(f"{path}: tasks[{idx}] must be an object", code=2)
+        task_id = str(item.get("id") or "").strip()
+        if not task_id:
+            die(f"{path}: tasks[{idx}].id must be non-empty", code=2)
+        entry = dict(item)
+        entry["id"] = task_id
+        normalized.append(entry)
+    return normalized
+
+
+def merge_agent_plans(agent_tasks: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
+    priority = {agent: idx for idx, agent in enumerate(PLAN_MERGE_PRIORITY)}
+    merged: Dict[str, Dict[str, Any]] = {}
+    field_owner: Dict[str, Dict[str, str]] = {}
+    conflicts: List[Dict[str, Any]] = []
+
+    for agent in PARALLEL_PLANNING_AGENTS:
+        for task_entry in agent_tasks.get(agent, []):
+            task_id = str(task_entry.get("id") or "").strip()
+            if not task_id:
+                continue
+            current = merged.setdefault(task_id, {"id": task_id})
+            owners = field_owner.setdefault(task_id, {})
+            for key, value in task_entry.items():
+                if key == "id":
+                    continue
+                if key not in current:
+                    current[key] = value
+                    owners[key] = agent
+                    continue
+                if current[key] == value:
+                    continue
+                prior_agent = owners.get(key, agent)
+                winner = prior_agent
+                if priority.get(agent, 99) < priority.get(prior_agent, 99):
+                    winner = agent
+                    current[key] = value
+                    owners[key] = agent
+                conflicts.append(
+                    {
+                        "task_id": task_id,
+                        "field": key,
+                        "winner": winner,
+                        "loser": agent if winner != agent else prior_agent,
+                    }
+                )
+
+    tasks_sorted = [merged[task_id] for task_id in sorted(merged)]
+    return {
+        "priority_order": list(PLAN_MERGE_PRIORITY),
+        "tasks": tasks_sorted,
+        "conflicts": conflicts,
+    }
+
+
+def task_has_approval_comment(task: Dict) -> bool:
+    comments = task.get("comments")
+    if not isinstance(comments, list):
+        return False
+    for comment in reversed(comments):
+        if not isinstance(comment, dict):
+            continue
+        body = str(comment.get("body") or "").strip()
+        if body.lower().startswith("approval:"):
+            return True
+    return False
+
+
 def guard_commit_check(
     *,
     task_id: str,
@@ -600,6 +893,71 @@ def cmd_agents(_: argparse.Namespace) -> None:
 
     if duplicates:
         die(f"Duplicate agent ids: {', '.join(sorted(set(duplicates)))}", code=2)
+
+
+def cmd_orchestrate_kickoff(args: argparse.Namespace) -> None:
+    known = load_agents_index()
+    missing_agents = [agent for agent in PARALLEL_PLANNING_AGENTS if known and agent not in known]
+    if missing_agents:
+        die("Missing required planning agents: " + ", ".join(missing_agents), code=2)
+    payload = build_kickoff_payload(args.goal, args.constraint or [], args.task or [])
+    if args.format == "json":
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+
+    print("# Parallel Planning Kickoff")
+    print("")
+    print(f"- Goal: {payload['shared_input']['goal']}")
+    constraints = payload["shared_input"]["constraints"]
+    if constraints:
+        print("- Constraints:")
+        for item in constraints:
+            print(f"  - {item}")
+    task_ids = payload["shared_input"]["task_ids"]
+    if task_ids:
+        print(f"- Task IDs: {', '.join(task_ids)}")
+    print(f"- Merge priority: {' > '.join(payload['priority_order'])}")
+    print("")
+    print("## Agent Contracts")
+    for agent in PARALLEL_PLANNING_AGENTS:
+        details = payload["agents"][agent]
+        contract = ", ".join(details.get("contract") or [])
+        print(f"- {agent}: {contract}")
+
+
+def cmd_orchestrate_merge(args: argparse.Namespace) -> None:
+    payloads = {
+        "PLANNER": load_agent_plan(Path(args.planner), "PLANNER"),
+        "CODER": load_agent_plan(Path(args.coder), "CODER"),
+        "TESTER": load_agent_plan(Path(args.tester), "TESTER"),
+        "DOCS": load_agent_plan(Path(args.docs), "DOCS"),
+        "REVIEWER": load_agent_plan(Path(args.reviewer), "REVIEWER"),
+    }
+    merged = merge_agent_plans(payloads)
+    if args.format == "json":
+        print(json.dumps(merged, ensure_ascii=False, indent=2))
+        return
+
+    print("# Merged Task DAG Draft")
+    print("")
+    print(f"- Merge priority: {' > '.join(merged['priority_order'])}")
+    print("")
+    for task in merged.get("tasks") or []:
+        task_id = str(task.get("id") or "").strip() or "<unknown>"
+        depends_on, _ = normalize_depends_on(task.get("depends_on"))
+        owner = str(task.get("owner") or "-").strip() or "-"
+        priority = str(task.get("priority") or "-").strip() or "-"
+        print(f"- {task_id}: owner={owner}, priority={priority}, depends_on={', '.join(depends_on) if depends_on else '-'}")
+    conflicts = merged.get("conflicts") or []
+    if conflicts:
+        print("")
+        print("## Field Conflicts")
+        for conflict in conflicts:
+            print(
+                "- "
+                + f"{conflict.get('task_id')}::{conflict.get('field')} -> "
+                + f"{conflict.get('winner')} over {conflict.get('loser')}"
+            )
 
 
 def cmd_quickstart(_: argparse.Namespace) -> None:
@@ -700,6 +1058,14 @@ def lint_tasks_json() -> Dict[str, List[str]]:
         if tags is not None:
             if not isinstance(tags, list) or any(not isinstance(tag, str) or not tag.strip() for tag in tags):
                 errors.append(f"{task_id}: tags must be a list of non-empty strings")
+
+        parallel_paths = task.get("parallel_paths")
+        if parallel_paths is not None:
+            normalized_paths, path_errors = normalize_parallel_paths(parallel_paths)
+            for path_error in path_errors:
+                errors.append(f"{task_id}: {path_error}")
+            if not normalized_paths:
+                errors.append(f"{task_id}: parallel_paths must contain at least one path when present")
 
         comments = task.get("comments")
         if comments is not None:
@@ -822,7 +1188,8 @@ def cmd_commit(args: argparse.Namespace) -> None:
             check=True,
         )
     except subprocess.CalledProcessError as exc:
-        die(exc.stderr.strip() or "git commit failed")
+        stderr = (exc.stderr or "").strip()
+        die(stderr or "git commit failed")
     commit_info = get_commit_info("HEAD")
     if not args.quiet:
         print(f"✅ committed {commit_info['hash'][:12]} {commit_info['message']}")
@@ -901,6 +1268,20 @@ def cmd_task_comment(args: argparse.Namespace) -> None:
     write_tasks_json(data)
 
 
+def cmd_task_approve(args: argparse.Namespace) -> None:
+    require_structured_comment(args.body, prefix="Approval:", min_chars=25)
+    data = load_json(TASKS_PATH)
+    target = _ensure_task_object(data, args.task_id)
+    comments = target.get("comments")
+    if not isinstance(comments, list):
+        comments = []
+    comments.append({"author": args.author, "body": args.body})
+    target["comments"] = comments
+    write_tasks_json(data)
+    if not args.quiet:
+        print(f"✅ recorded closure approval for {args.task_id}")
+
+
 def _ensure_task_object(data: Dict, task_id: str) -> Dict:
     tasks = data.get("tasks")
     if not isinstance(tasks, list):
@@ -935,6 +1316,10 @@ def cmd_task_add(args: argparse.Namespace) -> None:
         task["depends_on"] = list(dict.fromkeys(args.depends_on))
     if args.verify:
         task["verify"] = list(dict.fromkeys(args.verify))
+    if args.parallel_path:
+        paths = [path.strip().lstrip("./").rstrip("/") for path in args.parallel_path if path and path.strip()]
+        if paths:
+            task["parallel_paths"] = list(dict.fromkeys(paths))
     if args.comment_author and args.comment_body:
         task["comments"] = [{"author": args.comment_author, "body": args.comment_body}]
     tasks.append(task)
@@ -974,6 +1359,16 @@ def cmd_task_update(args: argparse.Namespace) -> None:
         existing = [cmd for cmd in (task.get("verify") or []) if isinstance(cmd, str)]
         merged = existing + args.verify
         task["verify"] = list(dict.fromkeys(cmd.strip() for cmd in merged if cmd.strip()))
+
+    if args.replace_parallel_paths:
+        task.pop("parallel_paths", None)
+    if args.parallel_path:
+        existing = [path for path in (task.get("parallel_paths") or []) if isinstance(path, str)]
+        merged = existing + args.parallel_path
+        normalized = [path.strip().lstrip("./").rstrip("/") for path in merged if isinstance(path, str) and path.strip()]
+        task["parallel_paths"] = list(dict.fromkeys(normalized))
+    if isinstance(task.get("parallel_paths"), list) and not task.get("parallel_paths"):
+        task.pop("parallel_paths", None)
 
     write_tasks_json(data)
 
@@ -1158,6 +1553,13 @@ def cmd_finish(args: argparse.Namespace) -> None:
         die("tasks.json must contain a top-level 'tasks' list")
 
     target = _ensure_task_object(data, args.task_id)
+    if args.require_approval_comment and not args.force:
+        if not task_has_approval_comment(target):
+            die(
+                f"{args.task_id}: missing Approval: comment. "
+                "Record closure approval first with `python scripts/agentctl.py task approve`.",
+                code=2,
+            )
 
     verify = target.get("verify")
     if verify is None:
@@ -1193,6 +1595,31 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_agents = sub.add_parser("agents", help="List registered agents under .AGENTS/")
     p_agents.set_defaults(func=cmd_agents)
+
+    p_orchestrate = sub.add_parser("orchestrate", help="Parallel orchestration helpers")
+    orchestrate_sub = p_orchestrate.add_subparsers(dest="orchestrate_cmd", required=True)
+
+    p_kickoff = orchestrate_sub.add_parser(
+        "kickoff",
+        help="Generate a parallel planning packet for PLANNER/CODER/TESTER/DOCS/REVIEWER",
+    )
+    p_kickoff.add_argument("--goal", required=True, help="Shared goal for all planning agents")
+    p_kickoff.add_argument("--constraint", action="append", help="Shared constraint (repeatable)")
+    p_kickoff.add_argument("--task", action="append", help="Related task id (repeatable)")
+    p_kickoff.add_argument("--format", choices=["markdown", "json"], default="markdown")
+    p_kickoff.set_defaults(func=cmd_orchestrate_kickoff)
+
+    p_merge = orchestrate_sub.add_parser(
+        "merge",
+        help="Merge per-agent planning outputs into a single task DAG draft",
+    )
+    p_merge.add_argument("--planner", required=True, help="Path to PLANNER JSON payload")
+    p_merge.add_argument("--coder", required=True, help="Path to CODER JSON payload")
+    p_merge.add_argument("--tester", required=True, help="Path to TESTER JSON payload")
+    p_merge.add_argument("--docs", required=True, help="Path to DOCS JSON payload")
+    p_merge.add_argument("--reviewer", required=True, help="Path to REVIEWER JSON payload")
+    p_merge.add_argument("--format", choices=["markdown", "json"], default="markdown")
+    p_merge.set_defaults(func=cmd_orchestrate_merge)
 
     p_ready = sub.add_parser("ready", help="Check if a task is ready to start (dependencies DONE)")
     p_ready.add_argument("task_id")
@@ -1268,6 +1695,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_add.add_argument("--tag", action="append", help="Repeatable")
     p_add.add_argument("--depends-on", action="append", dest="depends_on", help="Repeatable")
     p_add.add_argument("--verify", action="append", help="Repeatable: shell command")
+    p_add.add_argument("--parallel-path", action="append", dest="parallel_path", help="Repeatable path prefix for parallel conflict checks")
     p_add.add_argument("--comment-author", dest="comment_author")
     p_add.add_argument("--comment-body", dest="comment_body")
     p_add.set_defaults(func=cmd_task_add)
@@ -1284,6 +1712,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_update.add_argument("--replace-depends-on", action="store_true")
     p_update.add_argument("--verify", action="append", help="Repeatable (append)")
     p_update.add_argument("--replace-verify", action="store_true")
+    p_update.add_argument("--parallel-path", action="append", dest="parallel_path", help="Repeatable path prefix for parallel conflict checks (append)")
+    p_update.add_argument("--replace-parallel-paths", action="store_true")
     p_update.set_defaults(func=cmd_task_update)
 
     p_scrub = task_sub.add_parser("scrub", help="Replace text across tasks.json task fields")
@@ -1307,6 +1737,19 @@ def build_parser() -> argparse.ArgumentParser:
     p_next.add_argument("--limit", type=int, help="Limit number of results")
     p_next.add_argument("--quiet", action="store_true", help="Suppress warnings")
     p_next.set_defaults(func=cmd_task_next)
+
+    p_waves = task_sub.add_parser("waves", help="Plan dependency-safe, non-conflicting parallel execution waves")
+    p_waves.add_argument("--status", action="append", help="Candidate status filter (repeatable, default: TODO)")
+    p_waves.add_argument("--max-lanes", type=int, default=3, help="Maximum lanes per wave (default: 3)")
+    p_waves.add_argument(
+        "--missing-path-policy",
+        choices=["global-lock", "assume-safe"],
+        default="global-lock",
+        help="How to treat tasks missing parallel_paths (default: global-lock)",
+    )
+    p_waves.add_argument("--json", action="store_true", help="Emit machine-readable JSON output")
+    p_waves.add_argument("--quiet", action="store_true", help="Suppress warnings")
+    p_waves.set_defaults(func=cmd_task_waves)
 
     p_show = task_sub.add_parser("show", help="Show a single task from tasks.json")
     p_show.add_argument("task_id")
@@ -1338,6 +1781,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_comment.add_argument("--body", required=True)
     p_comment.set_defaults(func=cmd_task_comment)
 
+    p_approve = task_sub.add_parser("approve", help="Record explicit closure approval on a task")
+    p_approve.add_argument("task_id")
+    p_approve.add_argument("--author", required=True)
+    p_approve.add_argument("--body", required=True)
+    p_approve.add_argument("--quiet", action="store_true", help="Minimal output")
+    p_approve.set_defaults(func=cmd_task_approve)
+
     p_status = task_sub.add_parser("set-status", help="Update task status with readiness checks")
     p_status.add_argument("task_id")
     p_status.add_argument("status", help="TODO|DOING|BLOCKED|DONE")
@@ -1356,6 +1806,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_finish.add_argument("--author", help="Optional comment author (requires --body)")
     p_finish.add_argument("--body", help="Optional comment body (requires --author)")
     p_finish.add_argument("--skip-verify", action="store_true", help="Do not run verify even if configured")
+    p_finish.add_argument(
+        "--require-approval-comment",
+        action="store_true",
+        help="Require an Approval: comment before marking DONE",
+    )
     p_finish.add_argument("--quiet", action="store_true", help="Minimal output")
     p_finish.add_argument("--force", action="store_true", help="Bypass readiness and commit-subject checks")
     p_finish.add_argument(
