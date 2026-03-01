@@ -1,1 +1,4 @@
 yona-original
+__pycache__/
+*.py[cod]
+.pytest_cache/

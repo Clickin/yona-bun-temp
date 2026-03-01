@@ -49,6 +49,28 @@ python scripts/agentctl.py commit T-123 -m "✨ T-123 Short meaningful summary" 
 python scripts/agentctl.py finish T-123 --commit <git-rev> --author REVIEWER --body "Verified: ... (what ran, results, caveats)" --require-approval-comment
 ```
 
+## Wave Validation Flow
+
+Use this sequence when running parallel wave validation tasks like `T-002~T-004`.
+
+```bash
+# 1) inspect ready tasks and planned waves
+python scripts/agentctl.py task next
+python scripts/agentctl.py task waves --status TODO --max-lanes 3
+
+# 2) run scenario-specific tests
+python3 -m unittest discover -s tests -p 'test_wave_independent.py'
+python3 -m unittest discover -s tests -p 'test_wave_dependency.py'
+python3 -m unittest discover -s tests -p 'test_wave_conflict.py'
+
+# 3) run combined suite used by hardening task verification
+python3 -m unittest discover -s tests -p 'test_wave_*.py'
+
+# 4) close each task only after explicit approval comment is recorded
+python scripts/agentctl.py task approve T-123 --author HUMAN --body "Approval: ..."
+python scripts/agentctl.py finish T-123 --commit <impl-rev> --author REVIEWER --body "Verified: ..." --require-approval-comment
+```
+
 ## Ergonomics helpers
 
 ```bash
@@ -76,4 +98,5 @@ python scripts/agentctl.py guard suggest-allow --format args
 - Prefer `start/block/finish` over `task set-status`.
 - For closure safety, record explicit approval (`task approve`) before `finish --require-approval-comment`.
 - For safe parallelism, keep each task's `parallel_paths` current so `task waves` can detect conflicts.
+- Keep Python cache artifacts out of commit noise (`__pycache__/`, `*.pyc`, `.pytest_cache/` are ignored).
 - Keep allowlists tight: pass only the path prefixes you intend to commit.
