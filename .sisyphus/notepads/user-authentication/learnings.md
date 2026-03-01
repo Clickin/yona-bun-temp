@@ -1,2 +1,3 @@
 - Keep migration SQL aligned with legacy schema conventions in this repo (e.g., `varchar` columns often use `DEFAULT 'NULL'`, while text columns use `DEFAULT NULL`) to reduce drift between generated schema and manual migrations.
 - Drizzle migration separators (`--> statement-breakpoint`) are required markers for statement splitting and should be preserved in hand-written migration files.
+- Password and token helpers in this worktree can rely on WebCrypto (`crypto.subtle` + `crypto.getRandomValues`) without extra dependencies; URL-safe token storage works cleanly with base64url-encoded SHA-256 digests.
