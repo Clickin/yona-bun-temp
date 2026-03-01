@@ -124,7 +124,7 @@
       "id": "T-004",
       "title": "Validate path conflict locking",
       "description": "Verify tasks that touch the same or parent-child path prefixes are serialized into different waves.",
-      "status": "DOING",
+      "status": "DONE",
       "priority": "high",
       "owner": "CODER",
       "tags": [
@@ -148,8 +148,20 @@
         {
           "author": "CODER",
           "body": "Start: Implement path-conflict lock scenario tests to guarantee overlapping prefixes never occupy the same parallel wave lane."
+        },
+        {
+          "author": "HUMAN",
+          "body": "Approval: User approved final verification and closure commit for T-004 after implementation checks passed."
+        },
+        {
+          "author": "REVIEWER",
+          "body": "Verified: Ran task-specific and lint verifications, confirmed conflict-lock wave behavior, and reviewed workflow notes with no remaining blockers for closure."
         }
-      ]
+      ],
+      "commit": {
+        "hash": "c9502d28482fd520e701bce61d397dd4069850ca",
+        "message": "⚙️ T-004 Add path conflict lock tests"
+      }
     },
     {
       "id": "T-005",
@@ -189,6 +201,6 @@
     "schema_version": 1,
     "managed_by": "agentctl",
     "checksum_algo": "sha256",
-    "checksum": "cda868e26e3af4c6033796419fb3593f17200b7c9ec68dbf9c683a14c6f72f64"
+    "checksum": "cf851297868ca3198a8dc312e225a7d9a27605afe68b6585a131666f7c8a9a7e"
   }
 }
