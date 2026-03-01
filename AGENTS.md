@@ -24,6 +24,15 @@ shared_state:
 - Never invent external facts. For tasks and project state, treat `tasks.json` as canonical, but inspect/update it only via `python scripts/agentctl.py` (no manual edits).
 - The workspace is always a git repository. After completing each atomic task tracked in `tasks.json`, create a concise, human-readable commit before continuing.
 
+## Git Backend Policy (Yona)
+
+- Standardize Yona backend Git integration on the system `git` executable (Git binary) rather than `libgit2` FFI for the production path.
+- Treat `git http-backend` as transport only (clone/fetch/push via upload-pack/receive-pack). Do not use it as a replacement for web inline edit orchestration.
+- Implement web inline edit, commit creation, branch protection, and conflict handling in an application mutation layer; this layer must enforce authz, optimistic concurrency, and audit logging.
+- Keep repository storage rooted at `YONA_DATA/repo/<repo_id>` and harden path resolution to prevent traversal outside that root.
+- For subprocess Git execution, use argument arrays (no shell), environment allowlists, timeouts/output limits, and per-repository write locking.
+- Do not introduce `libgit2`/FFI as the default backend path unless a user explicitly requests and approves that deviation.
+
 ---
 
 # RESPONSE STYLE
@@ -44,6 +53,9 @@ shared_state:
 - Describe every edit, command, or validation precisely (file + snippet + replacement) because no automation surface exists; keep changes incremental so Codex can apply them verbatim.
 - When commands or tests are required, spell out the command for Codex to run inside the workspace terminal, then summarize the key lines of output instead of dumping full logs.
 - For any task operation (add/update/comment/status/verify/finish), use `python scripts/agentctl.py` rather than editing `tasks.json` directly so the checksum stays valid.
+- For Node.js package management and script execution in this repository, use `bun` (`bun install`, `bun run ...`) by default. Do not use `pnpm`/`npm` unless the user explicitly requests it.
+- For SvelteKit/backend testing, use `vitest` (via `bun run test:unit`) as the default runner; do not use Bun's built-in test runner for primary project tests.
+- When porting Yona behavior, inspect corresponding tests under `yona-original/test/` first and mirror their behavioral intent in Vitest test cases.
 - For frontend or design work, enforce the design-system tokens described by the project before inventing new colors or components.
 - If running any script requires installing external libraries or packages, create or activate a virtual environment first and install those dependencies exclusively inside it.
 
