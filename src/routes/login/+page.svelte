@@ -40,7 +40,7 @@
 	<h1 class="login-title">Sign in</h1>
 	<p class="login-subtitle">Welcome back to Yona</p>
 
-	<form on:submit={handleSubmit} class="login-form">
+	<form onsubmit={handleSubmit} method="post" action="/api/auth/login" class="login-form">
 		<div class="form-group">
 			<label for="email" class="form-label">Email</label>
 			<input
