@@ -1,4 +1,4 @@
-import { mysqlTable, mysqlSchema, AnyMySqlColumn, bigint, varchar, datetime, int, longtext, boolean, tinyint, date, timestamp, text, index, uniqueIndex, foreignKey } from "drizzle-orm/mysql-core"
+import { mysqlTable, bigint, varchar, datetime, int, longtext, boolean, tinyint, date, timestamp, text, index, uniqueIndex, foreignKey } from "drizzle-orm/mysql-core"
 import { sql } from "drizzle-orm"
 
 export const assignee = mysqlTable("assignee", {
@@ -282,6 +282,7 @@ export const sessions = mysqlTable("sessions", {
 	id: bigint({ mode: 'number' }).autoincrement().notNull(),
 	userId: bigint("user_id", { mode: 'number' }).notNull().references(() => n4user.id, { onDelete: "cascade", onUpdate: "restrict" } ),
 	tokenHash: varchar("token_hash", { length: 255 }).notNull(),
+	csrfToken: varchar("csrf_token", { length: 255 }).notNull(),
 	createdAt: datetime("created_at").notNull(),
 	expiresAt: datetime("expires_at").notNull(),
 	ipAddress: varchar("ip_address", { length: 255 }).default("NULL"),
