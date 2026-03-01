@@ -28,7 +28,7 @@ test('navigation works and shell persists', async ({ page }) => {
 
 	await page.getByTestId('yona-nav-login').click();
 	await expect(page).toHaveURL(/\/login/);
-	await expect(page.getByRole('heading', { level: 1, name: 'Login' })).toBeVisible();
+	await expect(page.getByRole('heading', { level: 1, name: 'Sign in' })).toBeVisible();
 	await expect(header).toBeVisible();
 	await expect(footer).toBeVisible();
 });

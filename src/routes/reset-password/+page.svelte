@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 
+	const { data } = $props<{ data: { csrfToken: string } }>();
+
 	let userId = $state('');
 	let newPassword = $state('');
 	let confirmPassword = $state('');
@@ -67,6 +69,7 @@
 				method: 'POST',
 				headers: {
 					'content-type': 'application/json',
+					'x-csrf-token': data.csrfToken,
 					'x-yona-user-id': adminUserId,
 					'x-yona-user-name': adminUserName,
 					'x-yona-user-email': adminUserEmail,
@@ -107,6 +110,7 @@
 	{/if}
 
 	<form onsubmit={handleSubmit} method="post" class="reset-form">
+		<input type="hidden" name="csrfToken" value={data.csrfToken} />
 		<!-- Target User Section -->
 		<div class="form-section">
 			<h2 class="section-title">Target User</h2>

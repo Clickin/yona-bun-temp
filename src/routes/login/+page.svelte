@@ -2,6 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { localizeHref } from '$lib/paraglide/runtime';
 
+	const { data } = $props<{ data: { csrfToken: string } }>();
+
 	let email = $state('');
 	let password = $state('');
 	let isLoading = $state(false);
@@ -16,7 +18,8 @@
 			const response = await fetch('/api/auth/login', {
 				method: 'POST',
 				headers: {
-					'content-type': 'application/json'
+					'content-type': 'application/json',
+					'x-csrf-token': data.csrfToken
 				},
 				body: JSON.stringify({ email, password })
 			});
@@ -41,6 +44,7 @@
 	<p class="login-subtitle">Welcome back to Yona</p>
 
 	<form onsubmit={handleSubmit} method="post" action="/api/auth/login" class="login-form">
+		<input type="hidden" name="csrfToken" value={data.csrfToken} />
 		<div class="form-group">
 			<label for="email" class="form-label">Email</label>
 			<input

@@ -14,3 +14,18 @@ Login form uses Svelte 5 $state runes for reactive form state, with generic erro
 
 - Admin password reset UI provides explicit admin auth fields (user ID, name, email) and sends x-yona-role: admin header since no admin session UI exists yet; this is a pragmatic interim solution for admin workflows.
 - Keep auth E2E deterministic by asserting client-side validation first and stubbing auth API responses (especially OAuth redirect initiations) instead of relying on external providers or seeded DB state.
+- Auth E2E for this worktree is most stable when success/error paths are validated through route stubs and request-shape assertions (payload + headers), while only lightweight real endpoint checks are kept for static contracts like unauthenticated session shape.
+- Security review (F2): Session cookie posture is strong by default (`httpOnly`, `sameSite: 'lax'`, env-driven `secure`, max-age sync to DB expiry) and session invalidation paths are implemented in source (`deleteSessionByToken` on logout, `deleteAllSessionsByUserId` on admin password reset).
+- Security review (F2): OAuth initiation/callback wiring correctly enforces state + verifier presence and clears temporary cookies on all invalid callback paths, while provider module import remains deferred inside handlers to avoid env-coupled startup failures.
+
+- F1 compliance audit (auth scope): SvelteKit `+server.ts` auth endpoints are thin adapters to Hono (`src/routes/api/auth/*/+server.ts` -> `src/lib/server/hono/auth-app.ts`), and registration does not include email verification flows (no `verify-email` endpoints/UI found).
+- Reset-password admin authorization should use `event.locals.session.userId` as the trust anchor and resolve admin eligibility server-side only (for now via `YONA_ADMIN_USER_IDS` allowlist), ignoring caller identity/role headers for privilege checks.
+- Keep shell E2E assertions aligned with visible copy (`Sign in` on login page); brittle text expectations can break final F3 even when feature behavior is correct.
+- CSRF enforcement for auth POST can stay minimal by using a two-tier trust anchor: session flows must match `event.locals.session.csrfToken`, while unauthenticated login/register only enforce CSRF when an anonymous double-submit cookie is present.
+- A practical anonymous CSRF pattern for SvelteKit pages is `+page.server.ts` issuing a non-httpOnly `sameSite=lax` token cookie and returning the same token so SPA `fetch` calls can send `x-csrf-token` without adding dependencies.
+- Route-stubbed auth E2E tests remain stable after CSRF hardening when assertions check request headers (`x-csrf-token`) instead of forcing payload shape changes.
+
+- Reset-password handler can reuse the email provider abstraction safely by mapping `EmailNotConfiguredError` and `EmailProviderNotImplementedError` to HTTP 503 while keeping the password mutation and admin/CSRF guards unchanged.
+- OAuth code exchange helper can stay provider-agnostic with a small provider config map (`client id/secret env names + token endpoint`) and a normalized return shape `{ accessToken, expiresIn, scope }` while still parsing both JSON and form-encoded token payloads.
+- Adding `drizzle.config.ts` in the worktree removes the immediate Drizzle CLI config blocker; `drizzle-kit push/studio` now load schema correctly and fail only on DB connectivity.
+- Coverage report generation in this repo requires `@vitest/coverage-v8`; once installed, `bun run test:unit -- --run --coverage` emits a full v8 coverage table.

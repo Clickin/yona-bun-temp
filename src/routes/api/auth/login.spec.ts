@@ -10,6 +10,9 @@ const mockHasValidSameOrigin = vi.hoisted(() => vi.fn());
 const mockReadAuthPayload = vi.hoisted(() => vi.fn());
 const mockCreateSession = vi.hoisted(() => vi.fn());
 const mockSetSessionCookie = vi.hoisted(() => vi.fn());
+const mockGetAnonymousCsrfCookieName = vi.hoisted(() => vi.fn());
+const mockReadRequestCsrfToken = vi.hoisted(() => vi.fn());
+const mockValidateCsrfToken = vi.hoisted(() => vi.fn());
 
 vi.mock('$lib/server/db', () => ({
 	getDb: mockGetDb
@@ -41,6 +44,12 @@ vi.mock('$lib/server/auth/session-helper', () => ({
 	setSessionCookie: mockSetSessionCookie
 }));
 
+vi.mock('$lib/server/auth/csrf', () => ({
+	getAnonymousCsrfCookieName: mockGetAnonymousCsrfCookieName,
+	readRequestCsrfToken: mockReadRequestCsrfToken,
+	validateCsrfToken: mockValidateCsrfToken
+}));
+
 function createDbMock(selectResults: unknown[]) {
 	let selectIndex = 0;
 
@@ -55,9 +64,16 @@ function createDbMock(selectResults: unknown[]) {
 	};
 }
 
-function createEvent(): Parameters<typeof POST>[0] {
+function createEvent(options?: { anonymousCsrfCookie?: string }): Parameters<typeof POST>[0] {
 	return {
 		cookies: {
+			get: vi.fn((name: string) => {
+				if (name === 'yona_csrf_token') {
+					return options?.anonymousCsrfCookie;
+				}
+
+				return undefined;
+			}),
 			set: vi.fn()
 		},
 		getClientAddress: () => '127.0.0.1',
@@ -71,6 +87,9 @@ describe('POST /api/auth/login', () => {
 		mockHasValidSameOrigin.mockReturnValue(true);
 		mockGetClientIp.mockReturnValue('127.0.0.1');
 		mockAllowAuthRequest.mockReturnValue(true);
+		mockGetAnonymousCsrfCookieName.mockReturnValue('yona_csrf_token');
+		mockReadRequestCsrfToken.mockReturnValue('csrf-token');
+		mockValidateCsrfToken.mockReturnValue(true);
 		mockReadAuthPayload.mockResolvedValue({
 			payload: {
 				email: 'user@example.com',
@@ -83,6 +102,25 @@ describe('POST /api/auth/login', () => {
 			token: 'session-token',
 			userId: 101
 		});
+	});
+
+	it('returns 403 when anonymous csrf cookie exists but request token is missing', async () => {
+		mockReadRequestCsrfToken.mockReturnValue('');
+		mockValidateCsrfToken.mockReturnValue(false);
+
+		const response = await POST(createEvent({ anonymousCsrfCookie: 'csrf-token' }));
+
+		expect(response.status).toBe(403);
+		await expect(response.json()).resolves.toEqual({ error: 'Forbidden' });
+	});
+
+	it('accepts anonymous csrf token when cookie and request token match', async () => {
+		mockGetDb.mockReturnValue(createDbMock([[]]));
+
+		const response = await POST(createEvent({ anonymousCsrfCookie: 'csrf-token' }));
+
+		expect(response.status).toBe(401);
+		expect(mockValidateCsrfToken).toHaveBeenCalledWith('csrf-token', { csrfToken: 'csrf-token' });
 	});
 
 	it('returns 401 with generic auth error when user is missing', async () => {
