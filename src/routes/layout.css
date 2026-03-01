@@ -1,1 +1,100 @@
 @import 'tailwindcss';
+
+:root {
+	--yona-accent: #f36c22;
+	--yona-header-bg: #1b1b1b;
+	--yona-nav-text: #a2a2a2;
+	--yona-max-width: 1200px;
+}
+
+.yona-header {
+	background: var(--yona-header-bg);
+	color: var(--yona-nav-text);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.yona-header-inner {
+	max-width: var(--yona-max-width);
+	margin: 0 auto;
+	height: 40px;
+	padding: 0 12px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.yona-brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	height: 40px;
+}
+
+.yona-logo {
+	width: 22px;
+	height: 22px;
+}
+
+.yona-wordmark {
+	font-weight: 700;
+	letter-spacing: 0.2px;
+	color: #fff;
+}
+
+.yona-nav {
+	display: inline-flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 14px;
+}
+
+.yona-nav a {
+	color: var(--yona-nav-text);
+	text-decoration: none;
+	height: 40px;
+	display: inline-flex;
+	align-items: center;
+	padding: 0 6px;
+}
+
+.yona-nav a:hover {
+	color: #fff;
+}
+
+.yona-main {
+	max-width: var(--yona-max-width);
+	margin: 0 auto;
+	padding: 18px 12px;
+}
+
+.yona-footer {
+	border-top: 1px solid rgba(0, 0, 0, 0.08);
+	background: #fff;
+}
+
+.yona-footer-inner {
+	max-width: var(--yona-max-width);
+	margin: 0 auto;
+	padding: 14px 12px;
+	text-align: center;
+	color: #333;
+	font-size: 12px;
+	line-height: 18px;
+}
+
+.yona-footer-sep {
+	padding: 0 8px;
+	color: rgba(0, 0, 0, 0.35);
+}
+
+.yona-footer-link {
+	color: inherit;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.yona-footer-link:hover {
+	color: var(--yona-accent);
+	text-decoration: underline;
+}
