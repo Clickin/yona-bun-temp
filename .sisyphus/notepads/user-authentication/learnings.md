@@ -13,3 +13,4 @@ Login form uses Svelte 5 $state runes for reactive form state, with generic erro
 
 
 - Admin password reset UI provides explicit admin auth fields (user ID, name, email) and sends x-yona-role: admin header since no admin session UI exists yet; this is a pragmatic interim solution for admin workflows.
+- Keep auth E2E deterministic by asserting client-side validation first and stubbing auth API responses (especially OAuth redirect initiations) instead of relying on external providers or seeded DB state.
