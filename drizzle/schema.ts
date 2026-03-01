@@ -270,9 +270,26 @@ export const linkedAccount = mysqlTable("linked_account", {
 	userCredentialId: bigint("user_credential_id", { mode: 'number' }).default(sql`NULL`).references(() => userCredential.id, { onDelete: "cascade", onUpdate: "restrict" } ),
 	providerUserId: varchar("provider_user_id", { length: 255 }).default("NULL"),
 	providerKey: varchar("provider_key", { length: 255 }).default("NULL"),
+	providerDisplayName: varchar("provider_display_name", { length: 255 }).default("NULL"),
+	avatarUrl: varchar("avatar_url", { length: 255 }).default("NULL"),
 },
 (table) => [
 	index("ix_linked_account_user_credential_1").on(table.userCredentialId),
+	uniqueIndex("uq_linked_account_provider_user_id_provider_key").on(table.providerUserId, table.providerKey),
+]);
+
+export const sessions = mysqlTable("sessions", {
+	id: bigint({ mode: 'number' }).autoincrement().notNull(),
+	userId: bigint("user_id", { mode: 'number' }).notNull().references(() => n4user.id, { onDelete: "cascade", onUpdate: "restrict" } ),
+	tokenHash: varchar("token_hash", { length: 255 }).notNull(),
+	createdAt: datetime("created_at").notNull(),
+	expiresAt: datetime("expires_at").notNull(),
+	ipAddress: varchar("ip_address", { length: 255 }).default("NULL"),
+	userAgent: text("user_agent").default(sql`NULL`),
+},
+(table) => [
+	index("ix_sessions_user_id").on(table.userId),
+	uniqueIndex("uq_sessions_token_hash").on(table.tokenHash),
 ]);
 
 export const mention = mysqlTable("mention", {
