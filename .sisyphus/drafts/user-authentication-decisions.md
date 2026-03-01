@@ -2,14 +2,14 @@
 
 ## OAuth Library Decision
 
-- **Selected library:** `auth.js` with `@auth/sveltekit` integration.
-- **Why this choice:** It is a vetted OAuth/OpenID solution with first-class SvelteKit support, stable provider integrations for GitHub and Google, and built-in session/cookie primitives that reduce custom security-critical code.
-- **Provider direction:** Use built-in GitHub and Google providers from the Auth.js ecosystem in a later implementation task. Do not implement custom OAuth flows.
+- **Selected library:** `arctic` for OAuth provider flows (GitHub + Google).
+- **Why this choice:** It is a vetted OAuth helper used in SvelteKit ecosystems and does not impose a parallel session framework, so we can keep session ownership in our application.
+- **Provider direction:** Use `arctic` for OAuth authorization/callback handling, then map provider identity to existing user/link tables. Do not implement custom OAuth protocol logic.
 
 ## Session Storage Strategy
 
-- **Single owner principle:** Auth.js will own session lifecycle to avoid split-brain behavior between multiple session systems.
-- **Persistence direction:** Use a database-backed session strategy once the sessions table task lands; avoid in-memory session storage.
+- **Single owner principle:** Our app owns the full session lifecycle to avoid split-brain behavior between multiple session systems.
+- **Persistence direction:** Use a custom database-backed session table in the upcoming sessions task and issue our own session cookie in middleware.
 - **Compatibility note:** Existing identity tables (`n4user`, `userCredential`, `linkedAccount`, `email`) remain source-of-truth for user identity linkage.
 
 ## Cookie Security Settings

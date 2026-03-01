@@ -1,8 +1,8 @@
 Task 1 decisions evidence
 
 - Decisions document created at: .sisyphus/drafts/user-authentication-decisions.md
-- OAuth choice: Auth.js (`@auth/sveltekit`) for GitHub + Google.
-- Session strategy: single owner (Auth.js) with DB-backed persistence in later task.
+- OAuth choice: `arctic` for GitHub + Google OAuth flows.
+- Session strategy: single owner is our app, with custom DB-backed sessions and app-issued session cookie in later tasks.
 - Cookie stance: HttpOnly, SameSite=Lax, Secure in production.
 - SMTP stance: auth remains enabled without SMTP; email sending fails with typed error.
 - Password reset direction: admin-driven out-of-band flow supported without SMTP.
