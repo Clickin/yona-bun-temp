@@ -8,3 +8,4 @@
 - Auth API tests are easiest to stabilize by mocking `getDb` chain methods (`select().from().where().limit()`) and session helpers, validating endpoint behavior without requiring a real database.
 - OAuth state and PKCE helpers can stay provider-agnostic by centering on WebCrypto only: random base64url values plus SHA-256-based challenge derivation.
 - Constant-time string comparison is sufficient for state/challenge checks when both values are normalized to URL-safe ASCII tokens.
+Login form uses Svelte 5 $state runes for reactive form state, with generic error messages for security.
