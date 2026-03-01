@@ -141,3 +141,7 @@ export async function deleteSessionByToken(token: string): Promise<void> {
 	const tokenHash = await hashSessionToken(token);
 	await getDb().delete(sessions).where(eq(sessions.tokenHash, tokenHash));
 }
+
+export async function deleteAllSessionsByUserId(userId: number): Promise<void> {
+	await getDb().delete(sessions).where(eq(sessions.userId, userId));
+}

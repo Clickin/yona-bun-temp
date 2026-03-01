@@ -3,11 +3,12 @@ import { dirname, join } from 'node:path';
 import { getYonaDataRoot } from '$lib/server/git/config';
 
 export interface AuthAuditRecord {
-	action: 'register' | 'login';
+	action: 'register' | 'login' | 'logout' | 'reset-password';
 	outcome: 'success' | 'fail' | 'denied';
 	ip: string;
 	userAgent: string;
 	targetEmail?: string;
+	targetUserId?: number;
 }
 
 function getAuthAuditLogPath(): string {
