@@ -23,7 +23,9 @@ const GENERIC_REGISTER_ERROR = 'Unable to register with the provided credentials
 const GENERIC_LOGIN_ERROR = 'Invalid email or password';
 const OAUTH_COOKIE_MAX_AGE_SECONDS = 10 * 60;
 const OAUTH_GITHUB_SCOPES = ['read:user', 'user:email'];
+const OAUTH_GOOGLE_SCOPES = ['openid', 'email', 'profile'];
 const GITHUB_PROVIDER_KEY = 'github';
+const GOOGLE_PROVIDER_KEY = 'google';
 const RESET_PASSWORD_WINDOW_MS = 60 * 60 * 1000;
 const RESET_PASSWORD_MAX_PER_WINDOW = 3;
 const MIN_PASSWORD_LENGTH = 8;
@@ -44,6 +46,13 @@ interface GitHubEmail {
 	verified?: boolean;
 }
 
+interface GoogleUserInfo {
+	email?: string;
+	name?: string;
+	picture?: string;
+	sub?: string;
+}
+
 function isSecureCookie(): boolean {
 	return process.env.NODE_ENV === 'production';
 }
@@ -51,6 +60,11 @@ function isSecureCookie(): boolean {
 function clearOauthCookies(event: RequestEvent): void {
 	event.cookies.delete('yona_oauth_github_state', { path: '/' });
 	event.cookies.delete('yona_oauth_github_verifier', { path: '/' });
+}
+
+function clearGoogleOauthCookies(event: RequestEvent): void {
+	event.cookies.delete('yona_oauth_google_state', { path: '/' });
+	event.cookies.delete('yona_oauth_google_verifier', { path: '/' });
 }
 
 function getWindowHour(now: Date): number {
@@ -150,6 +164,29 @@ async function fetchGitHubUser(accessToken: string): Promise<{ email: string; pr
 
 	return {
 		email: selectedEmail,
+		profile
+	};
+}
+
+async function fetchGoogleUser(accessToken: string): Promise<{ email: string; profile: GoogleUserInfo } | null> {
+	// OIDC userinfo endpoint for Google identity profile fields.
+	const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
+		headers: {
+			authorization: `Bearer ${accessToken}`
+		}
+	});
+
+	if (!response.ok) {
+		return null;
+	}
+
+	const profile = (await response.json()) as GoogleUserInfo;
+	if (!profile.email) {
+		return null;
+	}
+
+	return {
+		email: profile.email,
 		profile
 	};
 }
@@ -703,5 +740,135 @@ authApp.get('/api/auth/callback/github', async (c) => {
 	} catch {
 		clearOauthCookies(event);
 		return c.json({ error: 'Failed to authenticate with GitHub' }, 500);
+	}
+});
+
+authApp.get('/api/auth/google', async (c) => {
+	const event = c.env.event;
+	const { google } = await import('$lib/server/auth/oauth-providers');
+	const state = arctic.generateState();
+	const codeVerifier = arctic.generateCodeVerifier();
+	const authorizationUrl = (
+		google.createAuthorizationURL as unknown as (state: string, codeVerifier: string, scopes: string[]) => URL
+	)(state, codeVerifier, OAUTH_GOOGLE_SCOPES);
+
+	event.cookies.set('yona_oauth_google_state', state, {
+		httpOnly: true,
+		maxAge: OAUTH_COOKIE_MAX_AGE_SECONDS,
+		path: '/',
+		sameSite: 'lax',
+		secure: isSecureCookie()
+	});
+
+	event.cookies.set('yona_oauth_google_verifier', codeVerifier, {
+		httpOnly: true,
+		maxAge: OAUTH_COOKIE_MAX_AGE_SECONDS,
+		path: '/',
+		sameSite: 'lax',
+		secure: isSecureCookie()
+	});
+
+	return new Response(null, {
+		headers: {
+			location: authorizationUrl.toString()
+		},
+		status: 302
+	});
+});
+
+authApp.get('/api/auth/callback/google', async (c) => {
+	const event = c.env.event;
+	const { google } = await import('$lib/server/auth/oauth-providers');
+	const state = new URL(event.request.url).searchParams.get('state');
+	const code = new URL(event.request.url).searchParams.get('code');
+	const storedState = event.cookies.get('yona_oauth_google_state');
+	const codeVerifier = event.cookies.get('yona_oauth_google_verifier');
+
+	if (!state || !code || !storedState || !codeVerifier || state !== storedState) {
+		clearGoogleOauthCookies(event);
+		return c.json({ error: 'Invalid OAuth callback' }, 400);
+	}
+
+	try {
+		const tokens = await (
+			google.validateAuthorizationCode as unknown as (authorizationCode: string, codeVerifier: string) => unknown
+		)(code, codeVerifier);
+		const accessToken = getAccessToken(tokens);
+
+		if (!accessToken) {
+			clearGoogleOauthCookies(event);
+			return c.json({ error: 'Failed to exchange OAuth code' }, 400);
+		}
+
+		const googleUser = await fetchGoogleUser(accessToken);
+		if (!googleUser || !googleUser.profile.sub) {
+			clearGoogleOauthCookies(event);
+			return c.json({ error: 'Failed to load Google user' }, 400);
+		}
+
+		const providerUserId = googleUser.profile.sub;
+		const displayName = googleUser.profile.name ?? googleUser.email;
+		const avatarUrl = googleUser.profile.picture ?? null;
+
+		const db = getDb();
+		const [existingLinkedAccount] = await db
+			.select({
+				id: linkedAccount.id,
+				userCredentialId: linkedAccount.userCredentialId
+			})
+			.from(linkedAccount)
+			.where(and(eq(linkedAccount.providerKey, GOOGLE_PROVIDER_KEY), eq(linkedAccount.providerUserId, providerUserId)))
+			.limit(1);
+
+		let credentialId: number;
+
+		if (existingLinkedAccount?.userCredentialId) {
+			credentialId = existingLinkedAccount.userCredentialId;
+			await db
+				.update(linkedAccount)
+				.set({ avatarUrl, providerDisplayName: displayName })
+				.where(eq(linkedAccount.id, existingLinkedAccount.id));
+		} else {
+			const userId = await findOrCreateUser(googleUser.email, displayName);
+			credentialId = await findOrCreateCredential(userId, googleUser.email, displayName);
+
+			await db.insert(linkedAccount).values({
+				avatarUrl,
+				providerDisplayName: displayName,
+				providerKey: GOOGLE_PROVIDER_KEY,
+				providerUserId,
+				userCredentialId: credentialId
+			});
+		}
+
+		const [credential] = await db
+			.select({ userId: userCredential.userId })
+			.from(userCredential)
+			.where(eq(userCredential.id, credentialId))
+			.limit(1);
+
+		if (!credential?.userId) {
+			clearGoogleOauthCookies(event);
+			return c.json({ error: 'Failed to resolve account' }, 500);
+		}
+
+		const session = await createSession({
+			ipAddress: event.getClientAddress(),
+			userAgent: event.request.headers.get('user-agent') ?? 'unknown',
+			userId: credential.userId
+		});
+
+		setSessionCookie(event, session.token);
+		clearGoogleOauthCookies(event);
+
+		return new Response(null, {
+			headers: {
+				location: '/'
+			},
+			status: 302
+		});
+	} catch {
+		clearGoogleOauthCookies(event);
+		return c.json({ error: 'Failed to authenticate with Google' }, 500);
 	}
 });
