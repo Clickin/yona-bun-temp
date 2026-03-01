@@ -17,6 +17,15 @@ export class EmailNotConfiguredError extends Error {
 	}
 }
 
+export class EmailProviderNotImplementedError extends Error {
+	public readonly code = 'EMAIL_PROVIDER_NOT_IMPLEMENTED';
+
+	constructor(message = 'SMTP transport provider is not implemented in this task.') {
+		super(message);
+		this.name = 'EmailProviderNotImplementedError';
+	}
+}
+
 export class DevLogEmailProvider implements EmailProvider {
 	public async sendResetPasswordNotification(input: ResetPasswordNotificationInput): Promise<void> {
 		const template = buildResetPasswordTemplate(input);
@@ -40,6 +49,12 @@ export class NotConfiguredEmailProvider implements EmailProvider {
 	}
 }
 
+export class UnimplementedSmtpEmailProvider implements EmailProvider {
+	public async sendResetPasswordNotification(): Promise<void> {
+		throw new EmailProviderNotImplementedError();
+	}
+}
+
 export interface EmailProviderOptions {
 	nodeEnv?: string;
 	smtpEnabled?: boolean;
@@ -57,13 +72,13 @@ export function resolveEmailProvider(options: EmailProviderOptions = {}): EmailP
 	const nodeEnv = options.nodeEnv ?? process.env.NODE_ENV ?? 'development';
 	const smtpEnabled = options.smtpEnabled ?? parseBooleanFlag(process.env.SMTP_ENABLED);
 
-	if (!smtpEnabled) {
-		return new NotConfiguredEmailProvider();
-	}
-
 	if (nodeEnv === 'development') {
 		return new DevLogEmailProvider();
 	}
 
-	return new NotConfiguredEmailProvider('SMTP transport provider is not implemented in this task.');
+	if (!smtpEnabled) {
+		return new NotConfiguredEmailProvider();
+	}
+
+	return new UnimplementedSmtpEmailProvider();
 }

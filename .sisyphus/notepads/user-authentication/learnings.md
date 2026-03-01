@@ -2,3 +2,4 @@
 - Drizzle migration separators (`--> statement-breakpoint`) are required markers for statement splitting and should be preserved in hand-written migration files.
 - Password and token helpers in this worktree can rely on WebCrypto (`crypto.subtle` + `crypto.getRandomValues`) without extra dependencies; URL-safe token storage works cleanly with base64url-encoded SHA-256 digests.
 - Switched password hashing to `bcryptjs` for Bun compatibility, and kept the explicit DB `passwordSalt` meaningful by hashing and verifying `${password}:${salt}` with bcrypt.
+- Email provider resolution should prioritize `NODE_ENV=development` over SMTP flags so local auth flows keep working, while production can distinguish `EMAIL_NOT_CONFIGURED` from `EMAIL_PROVIDER_NOT_IMPLEMENTED`.
