@@ -1,0 +1,49 @@
+Task 6 curl verification scenarios (no secrets)
+
+1) Register success
+curl -i -X POST http://localhost:5173/api/auth/register \
+  -H 'Content-Type: application/json' \
+  -H 'Origin: http://localhost:5173' \
+  --data '{"email":"new-user@example.com","password":"test-password-123","name":"New User"}'
+Expected:
+- HTTP 201
+- Set-Cookie contains yona_session with HttpOnly
+- JSON includes csrfToken and session.userId
+
+2) Login wrong password (generic error)
+curl -i -X POST http://localhost:5173/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -H 'Origin: http://localhost:5173' \
+  --data '{"email":"new-user@example.com","password":"wrong-password"}'
+Expected:
+- HTTP 401
+- JSON body is {"error":"Invalid email or password"}
+
+3) Login success
+curl -i -X POST http://localhost:5173/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -H 'Origin: http://localhost:5173' \
+  --data '{"email":"new-user@example.com","password":"test-password-123"}'
+Expected:
+- HTTP 200
+- Set-Cookie contains yona_session with HttpOnly
+- JSON includes csrfToken and session.userId
+
+4) Session check when authenticated
+curl -i http://localhost:5173/api/auth/session \
+  -H 'Cookie: yona_session=<session-token>'
+Expected:
+- HTTP 200
+- JSON includes session object and user object
+
+5) Session check when unauthenticated
+curl -i http://localhost:5173/api/auth/session
+Expected:
+- HTTP 200
+- JSON body is {"session":null}
+
+6) Rate limit exceeded on login/register
+Run 6 requests within one minute from same IP.
+Expected:
+- First 5 requests continue normal handling
+- 6th request returns HTTP 429 and {"error":"Too many requests"}

@@ -3,3 +3,6 @@
 - Password and token helpers in this worktree can rely on WebCrypto (`crypto.subtle` + `crypto.getRandomValues`) without extra dependencies; URL-safe token storage works cleanly with base64url-encoded SHA-256 digests.
 - Switched password hashing to `bcryptjs` for Bun compatibility, and kept the explicit DB `passwordSalt` meaningful by hashing and verifying `${password}:${salt}` with bcrypt.
 - Email provider resolution should prioritize `NODE_ENV=development` over SMTP flags so local auth flows keep working, while production can distinguish `EMAIL_NOT_CONFIGURED` from `EMAIL_PROVIDER_NOT_IMPLEMENTED`.
+- For unauthenticated auth entrypoints (`register`/`login`), a pragmatic CSRF baseline is to enforce same-host requests and only allow `Origin` when it matches the request origin; this preserves browser protection and keeps local curl-based verification possible.
+- Minimal auth rate limiting can stay dependency-free with an in-memory `route + ip + minute` bucket map (5/min) plus opportunistic cleanup to cap memory.
+- Auth API tests are easiest to stabilize by mocking `getDb` chain methods (`select().from().where().limit()`) and session helpers, validating endpoint behavior without requiring a real database.
