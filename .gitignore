@@ -8,6 +8,9 @@ node_modules
 /.svelte-kit
 /build
 
+# Yona runtime data
+.yona-data/
+
 # OS
 .DS_Store
 Thumbs.db
