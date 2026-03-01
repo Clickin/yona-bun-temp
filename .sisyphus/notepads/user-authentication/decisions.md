@@ -1,0 +1,3 @@
+- Task 1: Selected Auth.js (`@auth/sveltekit`) for GitHub+Google OAuth in SvelteKit and decided Auth.js should be the single session owner with future DB-backed sessions.
+- Task 1: SMTP is optional for auth; missing SMTP only disables email sending via a typed `EmailNotConfiguredError`, while development can use a log-only provider.
+- Task 1 correction: Replaced Auth.js session ownership with app-owned custom DB sessions to match planned tasks (sessions table + middleware), and switched OAuth helper choice to `arctic` to avoid introducing a second session system.

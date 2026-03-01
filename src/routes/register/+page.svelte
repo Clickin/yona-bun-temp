@@ -5,34 +5,69 @@
 	const { data } = $props<{ data: { csrfToken: string } }>();
 
 	let email = $state('');
+	let name = $state('');
 	let password = $state('');
+	let confirmPassword = $state('');
 	let isLoading = $state(false);
 	let error = $state('');
 
+	function validateForm(): boolean {
+		error = '';
+
+		if (!email || !email.includes('@')) {
+			error = 'Please enter a valid email address';
+			return false;
+		}
+
+		if (!name || name.trim().length < 2) {
+			error = 'Name must be at least 2 characters';
+			return false;
+		}
+
+		if (!password || password.length < 8) {
+			error = 'Password must be at least 8 characters';
+			return false;
+		}
+
+		if (password !== confirmPassword) {
+			error = 'Passwords do not match';
+			return false;
+		}
+
+		return true;
+	}
+
 	async function handleSubmit(event: Event) {
 		event.preventDefault();
+
+		if (!validateForm()) {
+			return;
+		}
+
 		error = '';
 		isLoading = true;
 
 		try {
-			const response = await fetch('/api/auth/login', {
+			const response = await fetch('/api/auth/register', {
 				method: 'POST',
 				headers: {
 					'content-type': 'application/json',
 					'x-csrf-token': data.csrfToken
 				},
-				body: JSON.stringify({ email, password })
+				body: JSON.stringify({ email, name, password })
 			});
 
 			if (response.ok) {
-				await goto('/');
+				await goto(localizeHref('/login?registered=1'));
 			} else {
-				error = 'Invalid email or password';
+				error = 'Unable to register with provided information';
 				password = '';
+				confirmPassword = '';
 			}
 		} catch {
-			error = 'Invalid email or password';
+			error = 'Unable to register with provided information';
 			password = '';
+			confirmPassword = '';
 		} finally {
 			isLoading = false;
 		}
@@ -40,10 +75,10 @@
 </script>
 
 <div class="login-container">
-	<h1 class="login-title">Sign in</h1>
-	<p class="login-subtitle">Welcome back to Yona</p>
+	<h1 class="login-title">Create account</h1>
+	<p class="login-subtitle">Join Yona to start tracking issues</p>
 
-	<form onsubmit={handleSubmit} method="post" action="/api/auth/login" class="login-form">
+	<form onsubmit={handleSubmit} method="post" action="/api/auth/register" class="login-form">
 		<input type="hidden" name="csrfToken" value={data.csrfToken} />
 		<div class="form-group">
 			<label for="email" class="form-label">Email</label>
@@ -61,15 +96,46 @@
 		</div>
 
 		<div class="form-group">
+			<label for="name" class="form-label">Name</label>
+			<input
+				id="name"
+				name="name"
+				type="text"
+				autocomplete="name"
+				class="form-input"
+				placeholder="Your name"
+				bind:value={name}
+				required
+				disabled={isLoading}
+			/>
+		</div>
+
+		<div class="form-group">
 			<label for="password" class="form-label">Password</label>
 			<input
 				id="password"
 				name="password"
 				type="password"
-				autocomplete="current-password"
+				autocomplete="new-password"
 				class="form-input"
-				placeholder="••••••••"
+				placeholder="At least 8 characters"
 				bind:value={password}
+				required
+				disabled={isLoading}
+				minlength="8"
+			/>
+		</div>
+
+		<div class="form-group">
+			<label for="confirmPassword" class="form-label">Confirm Password</label>
+			<input
+				id="confirmPassword"
+				name="confirmPassword"
+				type="password"
+				autocomplete="new-password"
+				class="form-input"
+				placeholder="Re-enter password"
+				bind:value={confirmPassword}
 				required
 				disabled={isLoading}
 			/>
@@ -80,13 +146,12 @@
 		{/if}
 
 		<button type="submit" class="submit-button" disabled={isLoading}>
-			{isLoading ? 'Signing in...' : 'Sign in'}
+			{isLoading ? 'Creating account...' : 'Create account'}
 		</button>
 	</form>
 
 	<div class="login-links">
-		<a href={localizeHref('/register')} class="link">Create account</a>
-		<a href={localizeHref('/reset-password')} class="link">Forgot password?</a>
+		<a href={localizeHref('/login')} class="link">Already have an account? Sign in</a>
 	</div>
 </div>
 
@@ -196,7 +261,7 @@
 
 	.login-links {
 		display: flex;
-		justify-content: space-between;
+		justify-content: center;
 		margin-top: 20px;
 		padding-top: 20px;
 		border-top: 1px solid #e5e7eb;
