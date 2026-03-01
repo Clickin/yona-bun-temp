@@ -167,7 +167,7 @@
       "id": "T-005",
       "title": "Harden operational workflow after e2e validation",
       "description": "Apply operational hardening after e2e wave tests: ignore Python cache noise, tighten docs guidance, and preserve guardrail clarity for parallel task execution.",
-      "status": "TODO",
+      "status": "DONE",
       "priority": "med",
       "owner": "CODER",
       "tags": [
@@ -193,14 +193,30 @@
         {
           "author": "PLANNER",
           "body": "Plan: Capture hardening work after wave scenario coverage lands and closes."
+        },
+        {
+          "author": "CODER",
+          "body": "Start: Apply post-validation hardening by ignoring Python cache noise and tightening operator docs for wave-based execution and closure safety."
+        },
+        {
+          "author": "HUMAN",
+          "body": "Approval: User approved final verification and closure commit for T-005 after implementation checks passed."
+        },
+        {
+          "author": "REVIEWER",
+          "body": "Verified: Ran hardening verification suite and lint, confirmed cache-ignore and runbook updates, and reviewed workflow notes with no remaining blockers for closure."
         }
-      ]
+      ],
+      "commit": {
+        "hash": "ec04edf807aed49821ceca566e3fe82ee64f87d3",
+        "message": "⚙️ T-005 Harden cache ignores and wave runbook"
+      }
     }
   ],
   "meta": {
     "schema_version": 1,
     "managed_by": "agentctl",
     "checksum_algo": "sha256",
-    "checksum": "cf851297868ca3198a8dc312e225a7d9a27605afe68b6585a131666f7c8a9a7e"
+    "checksum": "f4145db26adfff973d181f4e71b71ae611f8c24adc86c043773e5ddf3fe75806"
   }
 }
