@@ -21,15 +21,26 @@
     "lint": "bun run lint:imports",
     "check": "bun run verify:agents && bun run lint:imports && bun --filter ./apps/web check",
     "check:watch": "bun --filter ./apps/web check:watch",
+    "migrate:generate:pg": "drizzle-kit generate --config=drizzle-pg.config.ts",
+    "migrate:generate:mysql": "drizzle-kit generate --config=drizzle-mysql.config.ts",
+    "migrate:generate:sqlite": "drizzle-kit generate --config=drizzle-sqlite.config.ts",
+    "migrate:generate": "bun run migrate:generate:pg && bun run migrate:generate:mysql && bun run migrate:generate:sqlite",
     "test:unit": "bun --filter ./apps/web test:unit",
     "test": "bun --filter ./apps/web test",
+    "test:db": "bun --filter ./apps/web test:db",
+    "test:db:native": "bun tests/bun-native-db-test.ts",
     "test:e2e": "bun --filter ./apps/web test:e2e"
   },
   "dependencies": {},
   "devDependencies": {
+    "@testcontainers/mysql": "^10.0.0",
+    "@testcontainers/postgresql": "^10.0.0",
+    "drizzle-kit": "1.0.0-beta.15-859cf75",
+    "drizzle-orm": "1.0.0-beta.15-859cf75",
     "husky": "^9.1.7",
     "oxfmt": "^0.35.0",
     "oxlint": "^1.50.0",
+    "testcontainers": "^10.0.0",
     "typescript": "^5.9.3"
   }
 }

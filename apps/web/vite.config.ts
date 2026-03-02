@@ -21,6 +21,7 @@ export default defineConfig({
       "@api": fileURLToPath(new URL("../../packages/api/src", import.meta.url)),
       "@infra": fileURLToPath(new URL("../../packages/infra/src", import.meta.url)),
       "@drizzle": fileURLToPath(new URL("../../drizzle", import.meta.url)),
+      bun: "bun",
     },
   },
   ssr: {

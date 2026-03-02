@@ -19,7 +19,7 @@ import { sql } from "drizzle-orm";
 export const assignee = mysqlTable(
   "assignee",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -36,14 +36,14 @@ export const assignee = mysqlTable(
 export const attachment = mysqlTable(
   "attachment",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     name: varchar({ length: 255 }).default("NULL"),
     hash: varchar({ length: 255 }).default("NULL"),
     containerType: varchar("container_type", { length: 20 }).default("NULL"),
     mimeType: varchar("mime_type", { length: 255 }).default("NULL"),
     size: bigint({ mode: "number" }).default(sql`NULL`),
     containerId: bigint("container_id", { mode: "number" }).notNull(),
-    createdDate: datetime("created_date").default(new Date("NULLZ")),
+    createdDate: datetime("created_date").default(sql`NULL`),
     ownerLoginId: varchar("owner_login_id", { length: 255 }).default("NULL"),
   },
   (table) => [
@@ -57,12 +57,12 @@ export const commentThread = mysqlTable(
   "comment_thread",
   {
     dtype: varchar({ length: 10 }).notNull(),
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     authorId: bigint("author_id", { mode: "number" }).default(sql`NULL`),
     authorLoginId: varchar("author_login_id", { length: 255 }).default("NULL"),
     authorName: varchar("author_name", { length: 255 }).default("NULL"),
     state: varchar({ length: 6 }).default("NULL"),
-    createdDate: datetime("created_date").default(new Date("NULLZ")),
+    createdDate: datetime("created_date").default(sql`NULL`),
     pullRequestId: bigint("pull_request_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => pullRequest.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -97,7 +97,7 @@ export const commentThreadN4user = mysqlTable("comment_thread_n4user", {
 export const commitComment = mysqlTable(
   "commit_comment",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     projectId: bigint("project_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => project.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -105,7 +105,7 @@ export const commitComment = mysqlTable(
     line: int().default(sql`NULL`),
     side: varchar({ length: 1 }).default("NULL"),
     contents: longtext().default(sql`NULL`),
-    createdDate: datetime("created_date").default(new Date("NULLZ")),
+    createdDate: datetime("created_date").default(sql`NULL`),
     authorId: bigint("author_id", { mode: "number" }).default(sql`NULL`),
     authorLoginId: varchar("author_login_id", { length: 255 }).default("NULL"),
     authorName: varchar("author_name", { length: 255 }).default("NULL"),
@@ -117,7 +117,7 @@ export const commitComment = mysqlTable(
 export const email = mysqlTable(
   "email",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -134,7 +134,7 @@ export const email = mysqlTable(
 export const favoriteIssue = mysqlTable(
   "favorite_issue",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "cascade", onUpdate: "restrict" }),
@@ -152,7 +152,7 @@ export const favoriteIssue = mysqlTable(
 export const favoriteOrganization = mysqlTable(
   "favorite_organization",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "cascade", onUpdate: "restrict" }),
@@ -174,7 +174,7 @@ export const favoriteOrganization = mysqlTable(
 export const favoriteProject = mysqlTable(
   "favorite_project",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "cascade", onUpdate: "restrict" }),
@@ -194,11 +194,11 @@ export const favoriteProject = mysqlTable(
 export const issue = mysqlTable(
   "issue",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     title: varchar({ length: 255 }).default("NULL"),
     body: longtext().default(sql`NULL`),
-    createdDate: datetime("created_date").default(new Date("NULLZ")),
-    updatedDate: datetime("updated_date").default(new Date("NULLZ")),
+    createdDate: datetime("created_date").default(sql`NULL`),
+    updatedDate: datetime("updated_date").default(sql`NULL`),
     authorId: bigint("author_id", { mode: "number" }).default(sql`NULL`),
     authorLoginId: varchar("author_login_id", { length: 255 }).default("NULL"),
     authorName: varchar("author_name", { length: 255 }).default("NULL"),
@@ -208,7 +208,7 @@ export const issue = mysqlTable(
     number: bigint({ mode: "number" }).default(sql`NULL`),
     numOfComments: int("num_of_comments").default(sql`NULL`),
     state: int().default(sql`NULL`),
-    dueDate: datetime("due_date").default(new Date("NULLZ")),
+    dueDate: datetime("due_date").default(sql`NULL`),
     milestoneId: bigint("milestone_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => milestone.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -245,9 +245,9 @@ export const issue = mysqlTable(
 export const issueComment = mysqlTable(
   "issue_comment",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     contents: longtext().default(sql`NULL`),
-    createdDate: datetime("created_date").default(new Date("NULLZ")),
+    createdDate: datetime("created_date").default(sql`NULL`),
     authorId: bigint("author_id", { mode: "number" }).default(sql`NULL`),
     authorLoginId: varchar("author_login_id", { length: 255 }).default("NULL"),
     authorName: varchar("author_name", { length: 255 }).default("NULL"),
@@ -288,8 +288,8 @@ export const issueCommentVoter = mysqlTable(
 export const issueEvent = mysqlTable(
   "issue_event",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
-    created: datetime().default(new Date("NULLZ")),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
+    created: datetime().default(sql`NULL`),
     senderLoginId: varchar("sender_login_id", { length: 255 }).default("NULL"),
     senderEmail: varchar("sender_email", { length: 255 }).default("NULL"),
     issueId: bigint("issue_id", { mode: "number" })
@@ -314,7 +314,7 @@ export const issueIssueLabel = mysqlTable("issue_issue_label", {
 export const issueLabel = mysqlTable(
   "issue_label",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     categoryId: bigint("category_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => issueLabelCategory.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -333,7 +333,7 @@ export const issueLabel = mysqlTable(
 export const issueLabelCategory = mysqlTable(
   "issue_label_category",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     projectId: bigint("project_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => project.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -346,8 +346,8 @@ export const issueLabelCategory = mysqlTable(
 export const issueSharer = mysqlTable(
   "issue_sharer",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
-    created: date().default(new Date("NULL")),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
+    created: date().default(sql`NULL`),
     loginId: varchar("login_id", { length: 255 }).default("NULL"),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
@@ -379,7 +379,7 @@ export const issueVoter = mysqlTable(
 export const label = mysqlTable(
   "label",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     category: varchar({ length: 255 }).default("NULL"),
     name: varchar({ length: 255 }).default("NULL"),
   },
@@ -389,7 +389,7 @@ export const label = mysqlTable(
 export const linkedAccount = mysqlTable(
   "linked_account",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userCredentialId: bigint("user_credential_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => userCredential.id, { onDelete: "cascade", onUpdate: "restrict" }),
@@ -410,7 +410,7 @@ export const linkedAccount = mysqlTable(
 export const sessions = mysqlTable(
   "sessions",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .notNull()
       .references(() => n4user.id, { onDelete: "cascade", onUpdate: "restrict" }),
@@ -430,7 +430,7 @@ export const sessions = mysqlTable(
 export const mention = mysqlTable(
   "mention",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     resourceType: varchar("resource_type", { length: 20 }).default("NULL"),
     resourceId: varchar("resource_id", { length: 255 }).default("NULL"),
     userId: bigint("user_id", { mode: "number" })
@@ -446,9 +446,9 @@ export const mention = mysqlTable(
 export const milestone = mysqlTable(
   "milestone",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     title: varchar({ length: 255 }).default("NULL"),
-    dueDate: datetime("due_date").default(new Date("NULLZ")),
+    dueDate: datetime("due_date").default(sql`NULL`),
     contents: longtext().default(sql`NULL`),
     state: int().default(sql`NULL`),
     projectId: bigint("project_id", { mode: "number" })
@@ -464,7 +464,7 @@ export const milestone = mysqlTable(
 export const n4user = mysqlTable(
   "n4user",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     name: varchar({ length: 255 }).default("NULL"),
     loginId: varchar("login_id", { length: 255 }).default("NULL"),
     password: varchar({ length: 255 }).default("NULL"),
@@ -472,8 +472,8 @@ export const n4user = mysqlTable(
     email: varchar({ length: 255 }).default("NULL"),
     rememberMe: boolean("remember_me").default(false),
     state: varchar({ length: 7 }).default("NULL"),
-    lastStateModifiedDate: datetime("last_state_modified_date").default(new Date("NULLZ")),
-    createdDate: datetime("created_date").default(new Date("NULLZ")),
+    lastStateModifiedDate: datetime("last_state_modified_date").default(sql`NULL`),
+    createdDate: datetime("created_date").default(sql`NULL`),
     lang: varchar({ length: 255 }).default("NULL"),
     token: varchar({ length: 255 }).default("NULL"),
     isGuest: boolean("is_guest").default(false),
@@ -490,10 +490,10 @@ export const n4user = mysqlTable(
 export const notificationEvent = mysqlTable(
   "notification_event",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     title: varchar({ length: 255 }).default("NULL"),
     senderId: bigint("sender_id", { mode: "number" }).default(sql`NULL`),
-    created: datetime().default(new Date("NULLZ")),
+    created: datetime().default(sql`NULL`),
     resourceType: varchar("resource_type", { length: 20 }).default("NULL"),
     resourceId: varchar("resource_id", { length: 255 }).default("NULL"),
     eventType: varchar("event_type", { length: 34 }).default("NULL"),
@@ -515,7 +515,7 @@ export const notificationEventN4user = mysqlTable("notification_event_n4user", {
 export const notificationMail = mysqlTable(
   "notification_mail",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     notificationEventId: bigint("notification_event_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => notificationEvent.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -524,16 +524,16 @@ export const notificationMail = mysqlTable(
 );
 
 export const organization = mysqlTable("organization", {
-  id: bigint({ mode: "number" }).autoincrement().notNull(),
+  id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
   name: varchar({ length: 255 }).default("NULL"),
-  created: datetime().default(new Date("NULLZ")),
+  created: datetime().default(sql`NULL`),
   descr: varchar({ length: 255 }).default("NULL"),
 });
 
 export const organizationUser = mysqlTable(
   "organization_user",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -554,11 +554,11 @@ export const organizationUser = mysqlTable(
 export const originalEmail = mysqlTable(
   "original_email",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     messageId: varchar("message_id", { length: 255 }).default("NULL"),
     resourceType: varchar("resource_type", { length: 20 }).default("NULL"),
     resourceId: varchar("resource_id", { length: 255 }).default("NULL"),
-    handledDate: datetime("handled_date").default(new Date("NULLZ")),
+    handledDate: datetime("handled_date").default(sql`NULL`),
   },
   (table) => [
     uniqueIndex("uq_original_email_message_id").on(table.messageId),
@@ -570,7 +570,9 @@ export const originalEmail = mysqlTable(
 export const playEvolutions = mysqlTable("play_evolutions", {
   id: int().notNull(),
   hash: varchar({ length: 255 }).notNull(),
-  appliedAt: timestamp("applied_at").default(new Date("current_timestamp()Z")).notNull(),
+  appliedAt: timestamp("applied_at")
+    .default(sql`current_timestamp()`)
+    .notNull(),
   applyScript: text("apply_script").default(sql`NULL`),
   revertScript: text("revert_script").default(sql`NULL`),
   state: varchar({ length: 255 }).default("NULL"),
@@ -580,11 +582,11 @@ export const playEvolutions = mysqlTable("play_evolutions", {
 export const posting = mysqlTable(
   "posting",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     title: varchar({ length: 255 }).default("NULL"),
     body: longtext().default(sql`NULL`),
-    createdDate: datetime("created_date").default(new Date("NULLZ")),
-    updatedDate: datetime("updated_date").default(new Date("NULLZ")),
+    createdDate: datetime("created_date").default(sql`NULL`),
+    updatedDate: datetime("updated_date").default(sql`NULL`),
     authorId: bigint("author_id", { mode: "number" }).default(sql`NULL`),
     authorLoginId: varchar("author_login_id", { length: 255 }).default("NULL"),
     authorName: varchar("author_name", { length: 255 }).default("NULL"),
@@ -616,9 +618,9 @@ export const posting = mysqlTable(
 export const postingComment = mysqlTable(
   "posting_comment",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     contents: longtext().default(sql`NULL`),
-    createdDate: datetime("created_date").default(new Date("NULLZ")),
+    createdDate: datetime("created_date").default(sql`NULL`),
     authorId: bigint("author_id", { mode: "number" }).default(sql`NULL`),
     authorLoginId: varchar("author_login_id", { length: 255 }).default("NULL"),
     authorName: varchar("author_name", { length: 255 }).default("NULL"),
@@ -655,17 +657,17 @@ export const postingIssueLabel = mysqlTable("posting_issue_label", {
 export const project = mysqlTable(
   "project",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     name: varchar({ length: 255 }).default("NULL"),
     overview: varchar({ length: 255 }).default("NULL"),
     vcs: varchar({ length: 255 }).default("NULL"),
     siteurl: varchar({ length: 255 }).default("NULL"),
     owner: varchar({ length: 255 }).default("NULL"),
-    createdDate: datetime("created_date").default(new Date("NULLZ")),
+    createdDate: datetime("created_date").default(sql`NULL`),
     lastIssueNumber: bigint("last_issue_number", { mode: "number" }).default(sql`NULL`),
     lastPostingNumber: bigint("last_posting_number", { mode: "number" }).default(sql`NULL`),
     originalProjectId: bigint("original_project_id", { mode: "number" }).default(sql`NULL`),
-    lastPushedDate: datetime("last_pushed_date").default(new Date("NULLZ")),
+    lastPushedDate: datetime("last_pushed_date").default(sql`NULL`),
     defaultReviewerCount: int("default_reviewer_count").default(sql`NULL`),
     isUsingReviewerCount: boolean("is_using_reviewer_count").default(false),
     organizationId: bigint("organization_id", { mode: "number" })
@@ -704,7 +706,7 @@ export const projectLabel = mysqlTable("project_label", {
 export const projectMenuSetting = mysqlTable(
   "project_menu_setting",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     projectId: bigint("project_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => project.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -721,8 +723,8 @@ export const projectMenuSetting = mysqlTable(
 export const projectPushedBranch = mysqlTable(
   "project_pushed_branch",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
-    pushedDate: datetime("pushed_date").default(new Date("NULLZ")),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
+    pushedDate: datetime("pushed_date").default(sql`NULL`),
     name: varchar({ length: 255 }).default("NULL"),
     projectId: bigint("project_id", { mode: "number" })
       .default(sql`NULL`)
@@ -734,7 +736,7 @@ export const projectPushedBranch = mysqlTable(
 export const projectTransfer = mysqlTable(
   "project_transfer",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     senderId: bigint("sender_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -742,7 +744,7 @@ export const projectTransfer = mysqlTable(
     projectId: bigint("project_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => project.id, { onDelete: "restrict", onUpdate: "restrict" }),
-    requested: datetime().default(new Date("NULLZ")),
+    requested: datetime().default(sql`NULL`),
     confirmKey: varchar("confirm_key", { length: 255 }).default("NULL"),
     accepted: boolean().default(false),
     newProjectName: varchar("new_project_name", { length: 255 }).default("NULL"),
@@ -756,7 +758,7 @@ export const projectTransfer = mysqlTable(
 export const projectUser = mysqlTable(
   "project_user",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -777,14 +779,14 @@ export const projectUser = mysqlTable(
 export const projectVisitation = mysqlTable(
   "project_visitation",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     projectId: bigint("project_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => project.id, { onDelete: "cascade", onUpdate: "cascade" }),
     recentlyVisitedProjectsId: bigint("recently_visited_projects_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => recentlyVisitedProjects.id, { onDelete: "restrict", onUpdate: "restrict" }),
-    visited: datetime().default(new Date("NULLZ")),
+    visited: datetime().default(sql`NULL`),
   },
   (table) => [
     index("ix_project_visitation_recentlyVisitedProjects_32").on(table.recentlyVisitedProjectsId),
@@ -794,7 +796,7 @@ export const projectVisitation = mysqlTable(
 );
 
 export const property = mysqlTable("property", {
-  id: bigint({ mode: "number" }).autoincrement().notNull(),
+  id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
   name: varchar({ length: 25 }).default("NULL"),
   value: varchar({ length: 255 }).default("NULL"),
 });
@@ -802,7 +804,7 @@ export const property = mysqlTable("property", {
 export const pullRequest = mysqlTable(
   "pull_request",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     title: varchar({ length: 255 }).default("NULL"),
     body: longtext().default(sql`NULL`),
     toProjectId: bigint("to_project_id", { mode: "number" })
@@ -819,9 +821,9 @@ export const pullRequest = mysqlTable(
     receiverId: bigint("receiver_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "restrict", onUpdate: "restrict" }),
-    created: datetime().default(new Date("NULLZ")),
-    updated: datetime().default(new Date("NULLZ")),
-    received: datetime().default(new Date("NULLZ")),
+    created: datetime().default(sql`NULL`),
+    updated: datetime().default(sql`NULL`),
+    received: datetime().default(sql`NULL`),
     state: int().default(sql`NULL`),
     isConflict: boolean("is_conflict").default(false),
     isMerging: boolean("is_merging").default(false),
@@ -842,13 +844,13 @@ export const pullRequest = mysqlTable(
 export const pullRequestCommit = mysqlTable(
   "pull_request_commit",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     pullRequestId: bigint("pull_request_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => pullRequest.id, { onDelete: "restrict", onUpdate: "restrict" }),
     commitId: varchar("commit_id", { length: 255 }).default("NULL"),
-    authorDate: datetime("author_date").default(new Date("NULLZ")),
-    created: datetime().default(new Date("NULLZ")),
+    authorDate: datetime("author_date").default(sql`NULL`),
+    created: datetime().default(sql`NULL`),
     commitMessage: longtext("commit_message").default(sql`NULL`),
     commitShortId: varchar("commit_short_id", { length: 255 }).default("NULL"),
     authorEmail: varchar("author_email", { length: 255 }).default("NULL"),
@@ -860,13 +862,13 @@ export const pullRequestCommit = mysqlTable(
 export const pullRequestEvent = mysqlTable(
   "pull_request_event",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     senderLoginId: varchar("sender_login_id", { length: 255 }).default("NULL"),
     pullRequestId: bigint("pull_request_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => pullRequest.id, { onDelete: "restrict", onUpdate: "restrict" }),
     eventType: varchar("event_type", { length: 34 }).default("NULL"),
-    created: datetime().default(new Date("NULLZ")),
+    created: datetime().default(sql`NULL`),
     oldValue: longtext("old_value").default(sql`NULL`),
     newValue: longtext("new_value").default(sql`NULL`),
   },
@@ -885,7 +887,7 @@ export const pullRequestReviewers = mysqlTable("pull_request_reviewers", {
 export const recentlyVisitedProjects = mysqlTable(
   "recently_visited_projects",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -896,7 +898,7 @@ export const recentlyVisitedProjects = mysqlTable(
 export const recentIssue = mysqlTable(
   "recent_issue",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "cascade", onUpdate: "restrict" }),
@@ -906,7 +908,7 @@ export const recentIssue = mysqlTable(
     postingId: bigint("posting_id", { mode: "number" }).default(sql`NULL`),
     title: varchar({ length: 255 }).default("NULL"),
     url: varchar({ length: 255 }).default("NULL"),
-    createdDate: datetime("created_date").default(new Date("NULLZ")),
+    createdDate: datetime("created_date").default(sql`NULL`),
   },
   (table) => [
     index("ix_recent_issue_user_1").on(table.userId),
@@ -920,7 +922,7 @@ export const recentIssue = mysqlTable(
 export const recentProject = mysqlTable(
   "recent_project",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" }).default(sql`NULL`),
     owner: varchar({ length: 255 }).default("NULL"),
     projectId: bigint("project_id", { mode: "number" })
@@ -934,9 +936,9 @@ export const recentProject = mysqlTable(
 export const reviewComment = mysqlTable(
   "review_comment",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     contents: longtext().default(sql`NULL`),
-    createdDate: datetime("created_date").default(new Date("NULLZ")),
+    createdDate: datetime("created_date").default(sql`NULL`),
     authorId: bigint("author_id", { mode: "number" }).default(sql`NULL`),
     authorLoginId: varchar("author_login_id", { length: 255 }).default("NULL"),
     authorName: varchar("author_name", { length: 255 }).default("NULL"),
@@ -948,7 +950,7 @@ export const reviewComment = mysqlTable(
 );
 
 export const role = mysqlTable("role", {
-  id: bigint({ mode: "number" }).autoincrement().notNull(),
+  id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
   name: varchar({ length: 255 }).default("NULL"),
   active: boolean().default(false),
 });
@@ -956,7 +958,7 @@ export const role = mysqlTable("role", {
 export const siteAdmin = mysqlTable(
   "site_admin",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     adminId: bigint("admin_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -967,7 +969,7 @@ export const siteAdmin = mysqlTable(
 export const titleHead = mysqlTable(
   "title_head",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     projectId: bigint("project_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => project.id, { onDelete: "cascade", onUpdate: "restrict" }),
@@ -983,7 +985,7 @@ export const titleHead = mysqlTable(
 export const unwatch = mysqlTable(
   "unwatch",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -999,7 +1001,7 @@ export const unwatch = mysqlTable(
 export const userCredential = mysqlTable(
   "user_credential",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "cascade", onUpdate: "restrict" }),
@@ -1033,7 +1035,7 @@ export const userEnrolledProject = mysqlTable("user_enrolled_project", {
 export const userProjectNotification = mysqlTable(
   "user_project_notification",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -1057,7 +1059,7 @@ export const userProjectNotification = mysqlTable(
 export const userSetting = mysqlTable(
   "user_setting",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "cascade", onUpdate: "restrict" }),
@@ -1069,7 +1071,7 @@ export const userSetting = mysqlTable(
 export const userVerification = mysqlTable(
   "user_verification",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "cascade", onUpdate: "restrict" }),
@@ -1086,7 +1088,7 @@ export const userVerification = mysqlTable(
 export const watch = mysqlTable(
   "watch",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     userId: bigint("user_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => n4user.id, { onDelete: "restrict", onUpdate: "restrict" }),
@@ -1102,13 +1104,13 @@ export const watch = mysqlTable(
 export const webhook = mysqlTable(
   "webhook",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     projectId: bigint("project_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => project.id, { onDelete: "restrict", onUpdate: "restrict" }),
     payloadUrl: varchar("payload_url", { length: 2000 }).default("NULL"),
     secret: varchar({ length: 250 }).default("NULL"),
-    createdAt: datetime("created_at").default(new Date("NULLZ")),
+    createdAt: datetime("created_at").default(sql`NULL`),
     gitPush: boolean("git_push").default(false),
     webhookType: boolean("webhook_type").default(true),
   },
@@ -1122,14 +1124,14 @@ export const webhook = mysqlTable(
 export const webhookThread = mysqlTable(
   "webhook_thread",
   {
-    id: bigint({ mode: "number" }).autoincrement().notNull(),
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
     webhookId: bigint("webhook_id", { mode: "number" })
       .default(sql`NULL`)
       .references(() => webhook.id, { onDelete: "cascade", onUpdate: "restrict" }),
     resourceType: varchar("resource_type", { length: 20 }).default("NULL"),
     resourceId: varchar("resource_id", { length: 255 }).default("NULL"),
     threadId: varchar("thread_id", { length: 2000 }).default("NULL"),
-    createdAt: datetime("created_at").default(new Date("NULLZ")),
+    createdAt: datetime("created_at").default(sql`NULL`),
   },
   (table) => [
     index("ix_webhook_thread_webhook_1").on(table.webhookId),

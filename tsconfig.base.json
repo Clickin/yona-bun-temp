@@ -17,7 +17,9 @@
       "@yona/infra": ["packages/infra/src/index.ts"],
       "@yona/infra/*": ["packages/infra/src/*"],
       "@web/*": ["apps/web/src/*"],
-      "@drizzle/*": ["drizzle/*"]
+      "@drizzle/mysql/*": ["drizzle/mysql/*"],
+      "@drizzle/pg/*": ["drizzle/pg/*"],
+      "@drizzle/sqlite/*": ["drizzle/sqlite/*"]
     }
   }
 }

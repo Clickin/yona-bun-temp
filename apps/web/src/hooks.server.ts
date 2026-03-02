@@ -1,8 +1,14 @@
-import type { Handle } from "@sveltejs/kit";
-import { sequence } from "@sveltejs/kit/hooks";
 import { getTextDirection } from "$lib/paraglide/runtime";
 import { paraglideMiddleware } from "$lib/paraglide/server";
 import { handleSession } from "$lib/server/auth/session-helper";
+import { runMigrations } from "$lib/server/db-migrator";
+import type { Handle } from "@sveltejs/kit";
+import { sequence } from "@sveltejs/kit/hooks";
+
+// Run database migrations on server startup
+runMigrations().catch((e) => {
+  console.error("Failed to run Drizzle migrations on boot:", e);
+});
 
 const handleParaglide: Handle = ({ event, resolve }) =>
   paraglideMiddleware(event.request, ({ request, locale }) => {
