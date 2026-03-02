@@ -1,0 +1,16 @@
+Task 6 repo bootstrap and git route smoke verification
+
+Commands:
+1) bun run test:unit -- --run src/lib/server/git/routes/git-routes-e2e.spec.ts
+2) bun run build
+
+Result:
+- git-routes-e2e.spec.ts: 2 passed, exit code 0
+- build: success, no 500-level route build failures, exit code 0
+
+Notes:
+- Route forwarders now normalize missing/non-Request event.request into a safe Request.
+- smart-http wildcard path extraction in packages/api now has path-based fallback when Hono wildcard param is empty.
+
+Timestamp:
+2026-03-02 (Asia/Seoul)

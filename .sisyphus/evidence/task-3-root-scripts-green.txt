@@ -1,0 +1,8 @@
+bun run check
+-> exit 0
+
+bun run test:unit -- --run
+-> exit 0
+
+bun run test:e2e
+-> exit 0

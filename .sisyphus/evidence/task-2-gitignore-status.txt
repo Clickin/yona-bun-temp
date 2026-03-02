@@ -1,0 +1,14 @@
+git status --porcelain=v1
+ M .gitignore
+ M CLAUDE.md
+?? .sisyphus/boulder.json
+?? .sisyphus/drafts/user-authentication.md
+?? .sisyphus/evidence/task-1-docs-citations.txt
+?? .sisyphus/evidence/task-1-docs-decisions.txt
+?? .sisyphus/notepads/agents-history/
+?? .sisyphus/notepads/db-research/
+?? .sisyphus/notepads/monorepo-sessions-bunsql-multidialect/
+?? .sisyphus/notepads/yona-shell-branding-migration/
+?? .sisyphus/plans/
+
+Verification: no lines contain "yona-original/".

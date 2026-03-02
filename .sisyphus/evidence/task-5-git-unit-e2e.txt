@@ -1,0 +1,7 @@
+bun run test:unit -- --run src/lib/server/git/routes/git-routes-e2e.spec.ts
+-> exit 0
+-> 2 passed
+
+bun run test:e2e
+-> exit 0
+-> 16 passed

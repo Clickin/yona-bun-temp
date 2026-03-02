@@ -1,0 +1,6 @@
+bun run build
+-> exit 0
+
+bun run preview -- --port 4173 (background)
+curl -i "http://localhost:4173/api/repos/test-repo/smart-http/info/refs?service=git-upload-pack"
+-> http status 404 (allowed set: 200/401/403/404, and not 500)

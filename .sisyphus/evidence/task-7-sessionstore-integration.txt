@@ -1,0 +1,20 @@
+Task 7 session store integration verification
+
+Commands:
+1) bun run test:unit -- --run src/lib/server/auth/session-store.integration.spec.ts src/lib/server/auth/session.spec.ts src/routes/api/auth/session.spec.ts src/routes/api/auth/logout.spec.ts
+2) bun run check
+3) bun run test:unit -- --run
+4) bun run test:e2e
+
+Result:
+- Targeted session specs: 4 files passed, 9 tests passed, exit code 0
+- Workspace check: svelte-check 0 errors, 0 warnings, exit code 0
+- Full unit suite: 31 files passed, 95 tests passed, exit code 0
+- E2E suite: 16 passed, exit code 0
+
+Notes:
+- First E2E attempt failed due to local port 4173 already occupied.
+- After freeing port 4173, E2E passed without code changes.
+
+Timestamp:
+2026-03-02 (Asia/Seoul)

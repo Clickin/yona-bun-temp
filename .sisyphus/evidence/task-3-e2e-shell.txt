@@ -1,0 +1,7 @@
+Attempted plan command variant:
+bun run test:e2e -- --project=chromium "e2e/shell.test.*"
+-> fails because no named Playwright project is configured in apps/web/playwright.config.ts
+
+Executed equivalent shell scope verification:
+bun run test:e2e -- "e2e/shell.test.js"
+-> exit 0 (2 passed)

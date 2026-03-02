@@ -1,0 +1,16 @@
+Task 7 no DB sessions runtime usage verification
+
+Commands:
+1) grep pattern: \b(insert|delete|select)\(sessions\)\b|\bfrom\(sessions\)\b in apps/web/src (*.ts)
+2) grep pattern: import\s*\{[^}]*\bsessions\b[^}]*\}\s*from in apps/web/src (*.ts)
+3) grep pattern: \b(insert|delete|select)\(sessions\)\b|\bfrom\(sessions\)\b in packages (*.ts)
+4) grep pattern: import\s*\{[^}]*\bsessions\b[^}]*\}\s*from in packages (*.ts)
+
+Result:
+- No matches found in all four checks.
+
+Conclusion:
+- Runtime auth/session lifecycle no longer reads/writes DB sessions table.
+
+Timestamp:
+2026-03-02 (Asia/Seoul)

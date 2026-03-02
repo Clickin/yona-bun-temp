@@ -1,0 +1,2 @@
+/Users/senghyunjo/github/yona-bun-temp/AGENTS.md:75: - `yona-original/` : **[Git Ignore 대상]** 기존 Yona 원본 소스코드 (레퍼런스)
+/Users/senghyunjo/github/yona-bun-temp/AGENTS.md:76: - `yona-original/` must stay local-only read-only reference data; agents must never modify or commit its contents.

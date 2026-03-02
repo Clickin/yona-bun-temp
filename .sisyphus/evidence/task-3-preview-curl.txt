@@ -1,0 +1,6 @@
+bun run build
+-> exit 0
+
+bun run preview -- --port 4173 (background)
+curl -sf http://localhost:4173/
+-> curl exit 0
