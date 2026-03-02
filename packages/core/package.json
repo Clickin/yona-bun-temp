@@ -1,7 +1,7 @@
 {
-	"name": "@yona/core",
-	"private": true,
-	"version": "0.0.1",
-	"type": "module",
-	"exports": "./src/index.ts"
+  "name": "@yona/core",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts"
 }

@@ -1,13 +1,11 @@
 {
-	"name": "@yona/infra",
-	"private": true,
-	"version": "0.0.1",
-	"type": "module",
-	"exports": "./src/index.ts",
-	"dependencies": {
-		"@yona/core": "workspace:*",
-		"drizzle-orm": "^1.0.0-beta.15-859cf75"
-}
-
-
+  "name": "@yona/infra",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "@yona/core": "workspace:*",
+    "drizzle-orm": "^1.0.0-beta.15-859cf75"
+  }
 }

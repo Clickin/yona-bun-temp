@@ -8,9 +8,8 @@
 - Auth API tests are easiest to stabilize by mocking `getDb` chain methods (`select().from().where().limit()`) and session helpers, validating endpoint behavior without requiring a real database.
 - OAuth state and PKCE helpers can stay provider-agnostic by centering on WebCrypto only: random base64url values plus SHA-256-based challenge derivation.
 - Constant-time string comparison is sufficient for state/challenge checks when both values are normalized to URL-safe ASCII tokens.
-Login form uses Svelte 5 $state runes for reactive form state, with generic error messages for security.
+  Login form uses Svelte 5 $state runes for reactive form state, with generic error messages for security.
 - Registration form mirrors login visual language, includes client-side validation (email, password length, password match), and redirects to login on success with query param hint.
-
 
 - Admin password reset UI provides explicit admin auth fields (user ID, name, email) and sends x-yona-role: admin header since no admin session UI exists yet; this is a pragmatic interim solution for admin workflows.
 - Keep auth E2E deterministic by asserting client-side validation first and stubbing auth API responses (especially OAuth redirect initiations) instead of relying on external providers or seeded DB state.

@@ -1,235 +1,838 @@
-<!--
-AGENTS_SPEC: v0.2
-default_agent: ORCHESTRATOR
-shared_state:
-  - tasks.json
--->
+# AGENTS.md: Yona → SvelteKit SSR(Bun) + Hono Type-Contract 포팅 마스터플랜
 
-# CODEX IDE CONTEXT
+> **문서 목적:** 이 문서는 Yona 포팅 프로젝트에 참여하는 모든 AI 서브 에이전트와 개발자가 준수해야 하는 최고 수준의 아키텍처 헌법이자 실행 가이드라인입니다. 모든 에이전트는 코드 생성 전 반드시 이 문서를 숙지해야 합니다.
 
-- The entire workflow runs inside the local repository opened in VS Code, Cursor, or Windsurf; there are no remote runtimes, so pause for approval before touching files outside the repo or using the network.
-- Use `python scripts/agentctl.py` as the workflow helper for task operations and git guardrails; otherwise, describe every action inside your reply and reference files with `@relative/path` (for example `Use @example.tsx as a reference...`).
-- Quick reference: run `python scripts/agentctl.py quickstart` (source: `docs/agentctl.md`).
-- Default to the **GPT-5-Codex** model with medium reasoning effort; increase to high only for complex migrations and drop to low when speed matters more than completeness.
-- For setup tips review https://developers.openai.com/codex/ide/; for advanced CLI usage see https://github.com/openai/codex/.
-
-# GLOBAL_RULES
-
-- Treat this file plus every JSON spec under `.AGENTS/` as the single source of truth for how agents behave during a run.
-- Model: GPT-5.1 (or compatible). Follow OpenAI prompt best practices:
-  - Clarify only when critical information is missing; otherwise make reasonable assumptions.
-  - Think step by step internally. DO NOT print full reasoning, only concise results, plans, and key checks.
-  - Prefer structured outputs (lists, tables, JSON) when they help execution.
-- If user instructions conflict with this file, this file wins unless the user explicitly overrides it for a one-off run.
-- Never invent external facts. For tasks and project state, treat `tasks.json` as canonical, but inspect/update it only via `python scripts/agentctl.py` (no manual edits).
-- The workspace is always a git repository. After completing each atomic task tracked in `tasks.json`, create a concise, human-readable commit before continuing.
-
-## Git Backend Policy (Yona)
-
-- Standardize Yona backend Git integration on the system `git` executable (Git binary) rather than `libgit2` FFI for the production path.
-- Treat `git http-backend` as transport only (clone/fetch/push via upload-pack/receive-pack). Do not use it as a replacement for web inline edit orchestration.
-- Implement web inline edit, commit creation, branch protection, and conflict handling in an application mutation layer; this layer must enforce authz, optimistic concurrency, and audit logging.
-- Keep repository storage rooted at `YONA_DATA/repo/<repo_id>` and harden path resolution to prevent traversal outside that root.
-- For subprocess Git execution, use argument arrays (no shell), environment allowlists, timeouts/output limits, and per-repository write locking.
-- Do not introduce `libgit2`/FFI as the default backend path unless a user explicitly requests and approves that deviation.
+> **변경 이력**
+>
+> - v7: Git 이력 분리 및 `yona-original` 레퍼런스 격리
+> - v8: 다중 서브 에이전트 병렬 작업을 위한 `git worktree` 개발 파이프라인 도입
+> - v9: 프론트엔드 아키텍처 확립 (Svelte 5 Runes, shadcn, Tailwind v4, Carta 등)
+> - **v10(최종):** 공식 `AGENTS.md` 지정 및 프론트엔드 에이전트를 위한 View-First 마크업 번역 전략(Scala 템플릿 → Svelte/Tailwind) 추가
+> - **v11(최신):** Git backend를 git executable로 변경, Session을 in-memory로 변경, DB 다이얼렉트 지원(Postgres/MySQL/SQLite), Import 컨벤션 일원화
 
 ---
 
-# RESPONSE STYLE
+## 0) 목표와 고정 의사결정
 
-- Clarity beats pleasantries. Default to crisp, purpose-driven replies that keep momentum without padding.
-- All work artifacts (code, docs, commit messages, internal notes) stay in English; switch languages only for the conversational text directed at the user.
-- Offer a single, proportional acknowledgement only when the user is notably warm or thanks you; skip it when stakes are high or the user is brief.
-- Structure is a courtesy, not mandatory. Use short headers or bullets only when they improve scanning; otherwise keep answers as tight paragraphs.
-- Never repeat acknowledgements. Once you signal understanding, pivot fully to solutioning.
-- Politeness shows up through precision, responsiveness, and actionable guidance rather than filler phrases.
+### 목표
+
+- Yona를 **SvelteKit SSR + Bun** 기반으로 재개발한다.
+- 런타임은 **단일(Bun)**, 배포는 **Bun SFX 생성**을 포함한다.
+- 제품은 소규모 사내팀(≤100명) 이슈 트래커 중심으로 최적화한다.
+
+### 고정 의사결정(변경 금지)
+
+- **프론트엔드 스택:** Svelte 5 (Runes 전용), Tailwind CSS v4, `shadcn-svelte`.
+- **다중 에이전트 병렬 개발:** 서브 에이전트들은 `git worktree`로 생성된 물리적으로 격리된 디렉토리/브랜치에서 병렬로 작업하여 간섭을 없애고 개발 기간을 단축한다.
+- **Git 포크(Fork) 금지 및 이력 분리:** 이 프로젝트는 기존 Yona의 포크가 아닌 완전한 신규 포팅이다.
+- **TDD (Red-Green) 강제:** 구현보다 **테스트 명세(Vitest)를 먼저 작성**하고 통과시킨다.
+- **Git 조작:** 시스템 `git` executable 경로를 사용한다. `libgit2-ffi`는 이 작업 패키지 범위 제외.
+- **SVN 조작:** FFI를 배제하고, `Bun.spawn` 기반의 외부 `svn` CLI 호출 방식을 고정한다.
+- **Hono 1급 시민 채택**: 도메인별 sub-app 분할 강제. tRPC 미도입.
+- **DB 드라이버:** `Bun.SQL` + Drizzle ORM `1.0.0-rc`\*\* 확정. 다이얼렉트 지원(Postgres/MySQL/SQLite)을 `drizzle-orm/bun-sql`로 통합.
+
+### Overrides / Decisions (Session: monorepo-sessions-bunsql-multidialect)
+
+- **Monorepo adoption is mandatory:** `apps/web`, `packages/api`, `packages/core`, `packages/infra`, `tools/*`.
+- **Git backend choice:** 시스템 `git` executable path 사용. `packages/libgit2-ffi`는 이 작업 패키지 범위 제외.
+- **Session management:** DB session 배제. in-memory session storage 사용 (Redis/Valkey는 나중에 동일한 추상화 뒤에 추가 가능).
+- **DB runtime access:** Bun.SQL with Drizzle `drizzle-orm/bun-sql` 사용. Postgres/MySQL/SQLite 세 다이얼렉트 선택 가능.
+- **Schema parity:** 모든 다이얼렉트 스키마 모듈에서 동일한 table name, column name, nullability, index/unique index definitions, foreign key 참조 대상과 onDelete/onUpdate 시맨틱스 유지.
+
+### Schema parity bar
+
+- Table names and column names must be equivalent across Postgres/MySQL/SQLite schema modules.
+- Nullability must match per column across all dialect schema modules.
+- Index and unique index definitions (name + indexed columns + uniqueness) must match across dialects.
+- Foreign keys must preserve referenced targets and onDelete/onUpdate semantics (SQLite onUpdate caveat is handled explicitly in parity tests/app layer).
+- Timestamp semantics must preserve Date at TypeScript boundary (PG `timestamp`, MySQL `datetime`, SQLite `integer({ mode: 'timestamp' | 'timestamp_ms' })`).
+
+### References
+
+- Drizzle bun-sql multi-dialect context: https://github.com/drizzle-team/drizzle-orm/issues/4937#issuecomment-3707293427
+- Bun SQL runtime documentation: https://bun.com/docs/runtime/sql
+- Bun SQL SQLite filename reference: https://bun.com/reference/bun/SQL/SQLiteOptions/filename
+
+### Overrides / Decisions (Session: user-authentication)
+
+- **OAuth providers:** GitHub OAuth, Google OAuth, Email/Password (세 제공자 모두 필수).
+- **Email verification:** Registration 시 이메일 인증 불필요. 이메일은 비밀번호 재설정 전용으로만 사용.
+- **Email usage:** SMTP 미설정 시 auth 시스템 비활성화 (단, OAuth는 이메일 자동 검증).
+- **Password reset:** admin-driven flow. admin 사용자가 모든 사용자의 비밀번호 재설정 가능.
+- **Account linking:** OAuth 로그인은 기존 이메일 계정에 자동 연결 (한 n4user가 여러 OAuth 제공자 보유 가능).
+- **Session cookies:** HttpOnly, SameSite=Lax (개발), Secure (프로덕션).
 
 ---
 
-# THINKING & TOOLING
+## 1) 프론트엔드 아키텍처 (View Layer)
 
-- Think step by step internally, surfacing only the concise plan, key checks, and final answer. Avoid spilling raw chain-of-thought.
-- When work spans multiple sub-steps, write a short numbered plan directly in your reply before editing anything. Update that list as progress is made so everyone can see the latest path.
-- Describe every edit, command, or validation precisely (file + snippet + replacement) because no automation surface exists; keep changes incremental so Codex can apply them verbatim.
-- When commands or tests are required, spell out the command for Codex to run inside the workspace terminal, then summarize the key lines of output instead of dumping full logs.
-- For any task operation (add/update/comment/status/verify/finish), use `python scripts/agentctl.py` rather than editing `tasks.json` directly so the checksum stays valid.
-- For Node.js package management and script execution in this repository, use `bun` (`bun install`, `bun run ...`) by default. Do not use `pnpm`/`npm` unless the user explicitly requests it.
-- For SvelteKit/backend testing, use `vitest` (via `bun run test:unit`) as the default runner; do not use Bun's built-in test runner for primary project tests.
-- When porting Yona behavior, inspect corresponding tests under `yona-original/test/` first and mirror their behavioral intent in Vitest test cases.
-- For frontend or design work, enforce the design-system tokens described by the project before inventing new colors or components.
-- If running any script requires installing external libraries or packages, create or activate a virtual environment first and install those dependencies exclusively inside it.
+SvelteKit은 SSR 및 뷰 렌더링을 전담하며, 아래의 엄격한 기술 스택을 따른다.
+
+1.  **UI 컴포넌트 & 스타일링:** `shadcn-svelte` + Tailwind CSS v4. 아이콘은 `lucide-svelte`로 마이그레이션. Storybook으로 UI 카탈로그 관리.
+2.  **상태 관리 (Svelte 5):** 기존 Svelte 4 문법 전면 금지. **Svelte 5 Runes (`$state`, `$derived`, `$effect`, `$props`)**만 사용.
+3.  **폼 핸들링:** **`sveltekit-superforms`** + Zod.
+4.  **마크다운 에디터:** **`BearToCode/carta`**.
+5.  **다국어 (i18n):** **`Paraglide JS`**. 기존 `conf/messages` 파싱 후 자동 변환.
+6.  **코드 품질 관리:** **`oxlint`**와 **`oxfmt`** 강제.
 
 ---
 
-# COMMIT_WORKFLOW
+## 2) 테스트 주도 마이그레이션 아키텍처
 
-- Treat each plan task (`T-###`) as an atomic unit of work and keep commits minimal.
-- Default to a 3-commit cadence per task:
-  1) **Planning**: add/update the task in `tasks.json` + create the initial workflow artifact `docs/workflow/T-###.md` (skeleton/spec) and commit them together.
-  2) **Implementation**: ship the actual change set in a single work commit (preferably including any required tests).
-  3) **Verification/closure**: run tests + review, update `docs/workflow/T-###.md` with what was implemented, and mark the task `DONE` (update `tasks.json`) in one final commit.
-- Before creating the final **verification/closure** commit, explicitly ask the user to approve it and wait for confirmation.
-- Avoid dedicated commits for intermediate status-only changes (e.g., a standalone “start/DOING” commit). If you need to record WIP state, do it without adding extra commits.
-- Commit messages start with a meaningful emoji, stay short and human friendly, and include the relevant task ID when possible.
-- Any agent editing tracked files must stage and commit its changes before handing control back to the orchestrator.
-- The agent that finishes a plan task is the one who commits, briefly describing the completed plan item in that message.
-- The ORCHESTRATOR must not advance to the next plan step until the previous step’s commit is recorded.
-- Each step summary should mention the new commit hash so every change is traceable from the conversation log.
-- Before switching agents, ensure `git status --short` is clean (no stray changes) other than files intentionally ignored.
-- Before committing, run `python scripts/agentctl.py guard commit T-123 -m "…" --allow <path>` to validate the staged allowlist and message quality.
-
-> Role-specific commit conventions live in each agent’s JSON profile.
+1.  **단위/통합 테스트 (Vitest):**
+    - Play Controller 테스트 ➡️ Hono API 통합 테스트
+    - Ebean Model 테스트 ➡️ Drizzle Schema / Core Domain 테스트
+    - Service 테스트 ➡️ Usecase 단위 테스트
+2.  **E2E 테스트 (Playwright):** 주요 유저 플로우 브라우저 관점 검증.
 
 ---
 
-# SHARED_STATE
+## 3) 리포 구조(모노레포 스타일)
 
-## Task Tracking
+- `yona-original/` : **[Git Ignore 대상]** 기존 Yona 원본 소스코드 (레퍼런스)
+- `yona-original/` must stay local-only read-only reference data; agents must never modify or commit its contents.
+- `apps/web/` : SvelteKit SSR, Storybook, Playwright E2E 테스트, Carta Editor 설정
+- `packages/api/` : Hono app (도메인별 sub-app)
+- `packages/core/` : 도메인 모델 + 유스케이스 + VcsService Port
+- `packages/infra/` : DB/VCS/FS 구현체
+- `tools/h2-migrator/` : H2→SQLite 이관 CLI
+- `tools/i18n-parser/` : Yona `conf/messages` → Paraglide 변환 스크립트
 
-### `tasks.json` (canonical)
+---
 
-Purpose: single machine-editable backlog that stores every task, including rich context.
+## 4) 아키텍처 가드레일(위반 금지)
 
-Schema (JSON):
+**G1) 레이어 책임:** SvelteKit은 뷰 SSR 전담. DB/Drizzle/VCS 직접 호출 금지.
+**G2) Hono Type-Contract:** `packages/api`의 Hono app 타입이 유일한 API 계약.
+**G3) Hybrid SSR 운영 모델:** 기본은 `+page.ts`. 세션/비밀정보만 `+page.server.ts`.
+**G4) DTO 직렬화 규약:** JSON-only 고정.
+**G5) 마크다운 렌더링 규약:** SSR 우선 렌더링.
+**G6) VCS는 프로젝트별 DI 주입:** 개별 프로젝트 단위로 Git/SVN 선택.
+
+**G7) 세션 관리:** DB session 배제. in-memory session 또는 redis/valkey session 제공. 단일 instance의 경우 in-memory session으로 충분하지만 높은 동시성을 위해서는 redis session 사용을 권장. 특정한 기준선은 정하지 않고 테스트 후 결정하도록 설정.
+
+**G8) Import 컨벤션(팀 고정 규칙):**
+
+- 패키지 경계(import across packages)는 반드시 `@yona/*` 사용 (`@yona/core`, `@yona/api`, `@yona/infra`).
+- 앱 내부 소스 참조는 `@web/*` 또는 SvelteKit 기본 alias(`$lib`, `$app`) 사용.
+- 루트 스키마/설정 참조는 `@drizzle/*` 사용.
+- `../../../` 형태의 깊은 상대경로 import는 금지(동일 디렉토리/인접 파일의 짧은 상대경로만 허용).
+- 새 코드 작성 시 alias 우선, 기존 코드 수정 시 상대경로를 alias로 함께 정리.
+
+---
+
+## 5) 🎯 [Agent Execution Guidelines & Samples]
+
+이 섹션은 AI 서브 에이전트가 코드를 작성할 때 반드시 지켜야 하는 프롬프트 수칙입니다.
+
+### G-A) 프론트엔드 에이전트: View-First 마크업 번역 전략
+
+프론트엔드 개발 시 백엔드 API 완성을 기다리지 않고, `yona-original/app/views/`의 Scala 템플릿(`.scala.html`)을 기반으로 독립적인 마크업 번역을 수행합니다.
+
+1. **의미론적 구조(Semantic) 100% 존중:** 기존 Yona 마크업의 레이아웃, 태그 계층, 폼 구조 등 UX 흐름을 그대로 가져옵니다.
+2. **템플릿 문법 치환:** `@if` ➡️ `{#if}`, `@for` ➡️ `{#each}`, `@messages` ➡️ Paraglide `m.key()`.
+3. **스타일링 언어 번역:** 기존 커스텀 CSS 클래스는 시각적으로 동일한 결과를 내는 **Tailwind CSS v4 유틸리티 클래스**로 전면 치환합니다. 버튼/드롭다운 등은 `shadcn-svelte` 컴포넌트로 교체합니다.
+4. **Mock 데이터 활용:** 컴포넌트 최상단에 `$state`로 Mock 데이터를 선언하여 UI 인터랙션을 우선 검증합니다.
+5. **Svelte 5 Runes 강제:** Svelte 4 문법(`export let`, `$:` 등)을 절대 사용하지 마십시오.
+
+### G-B) 백엔드/도메인 에이전트: 레퍼런스 조회 및 TDD 작성 지침
+
+1. **의미 기반 번역:** `yona-original/`의 Java 테스트/비즈니스 코드를 분석하여, `Vitest` 형식의 실패하는 테스트(Red)를 우리의 새로운 아키텍처에 맞게 먼저 작성합니다.
+2. **구현 및 리팩토링:** 테스트를 통과(Green)시키기 위한 로직을 작성합니다.
+
+### G-C) Worktree 기반 병렬 작업 규칙
+
+1. 서브 에이전트는 할당된 `git worktree` 경로에서만 작업을 수행합니다.
+2. `yona-original/` 경로의 파일은 **Read-Only**로만 접근하여 도메인 행위를 분석합니다.
+
+### G-D) Git backend 전략
+
+**시스템 git executable 사용:**
+
+- Git 연동은 시스템에 설치된 `git` executable을 호출하는 방식으로 구현합니다.
+- `packages/libgit2-ffi` 패키지는 이 작업 범위 제외합니다.
+- `packages/infra/src/git/executable.ts`에서 `child_process.spawn('git', ...)`을 사용하여 Git CLI를 래핑합니다.
+- `packages/infra/src/git/index.ts`에서 Git 기능을 export하여 `@yona/infra` 패키지로 제공합니다.
+
+**Git HTTP backend (전용):**
+
+- Git http-backend는 전용 레이어로만 사용합니다.
+- web inline edit, commit creation, branch protection 등은 application mutation 레이어에서 처리합니다.
+- 이 방식은 clone/fetch/push 등 repository 전송 작업에 사용하지 않습니다.
+
+### G-E) SVN CLI 호출 제약
+
+SVN 연동 시 FFI 시도를 절대 금지합니다. 반드시 `Bun.spawn`을 사용하여 래핑합니다.
+
+---
+
+## 6) Phase 계획 (Vertical Slice)
+
+### Phase 0 (Test Spec Translation & Foundation)
+
+- `yona-original/test/` 분석 및 Vitest 테스트 명세 대량 생성 (TDD 기반 마련).
+- Storybook 기반 Yona 컬러 팔레트/테마 UI 시스템 구축.
+- Yona `messages` 파일을 Paraglide 포맷으로 변환.
+
+### Phase 1 (MVP)
+
+- **TDD 사이클 적용:** 계정, 프로젝트/이슈/게시판 CRUD 로직 구현.
+- **View-First 개발:** 이슈 목록/상세 페이지 마크업 Svelte/Tailwind 번역 (`sveltekit-superforms` + `Carta` 연동).
+- **인프라:** Drizzle RC+Bun.SQL, git executable backend 레이아웃 확립.
+
+### Phase 2 & 3
+
+- Phase 2: Git 통합(git executable 브라우징), SVN CLI 연동. S3 첨부파일 통합. OAuth.
+- Phase 3: 검색 엔진(FTS), PR/코드리뷰, LDAP.
+
+---
+
+## 7) Bun SFX (Single-File Executable) 배포 가이드
+
+### 7-1) Cross-Compilation 지원
+
+`--target` 플래그를 사용하여 현재 머신과 다른 OS, 아키텍처, Bun 버전용 실행 파일을 컴파일할 수 있습니다.
+
+**지원되는 타겟:**
+
+| --target             | 운영체제 | 아키텍처 | Modern | Baseline | Libc  |
+| -------------------- | -------- | -------- | ------ | -------- | ----- |
+| bun-linux-x64        | Linux    | x64      | ✅     | ✅       | glibc |
+| bun-linux-arm64      | Linux    | arm64    | ✅     | N/A      | glibc |
+| bun-windows-x64      | Windows  | x64      | ✅     | ✅       | -     |
+| bun-windows-arm64    | Windows  | arm64    | ✅     | N/A      | -     |
+| bun-darwin-x64       | macOS    | x64      | ✅     | ✅       | -     |
+| bun-darwin-arm64     | macOS    | arm64    | ✅     | N/A      | -     |
+| bun-linux-x64-musl   | Linux    | x64      | ✅     | ✅       | musl  |
+| bun-linux-arm64-musl | Linux    | arm64    | ✅     | N/A      | musl  |
+
+**Baseline vs Modern:**
+
+- `baseline` (nehalem): 2013년 이전 CPU 지원, 더 호환성 높음
+- `modern` (haswell): 2013년 이후 CPU 전용, 더 빠름
+- x64 플랫폼에서 AVX2 SIMD 최적화를 위해 modern 권장 (단, 오래된 서버에서는 baseline 사용)
+
+**CLI 예시:**
+
+```bash
+# Linux x64 (표준)
+bun build --compile --target=bun-linux-x64 ./index.ts --outfile yona-server
+
+# Linux x64 baseline (오래된 서버용)
+bun build --compile --target=bun-linux-x64-baseline ./index.ts --outfile yona-server
+
+# Windows x64
+bun build --compile --target=bun-windows-x64 ./index.ts --outfile yona.exe
+
+# macOS ARM64 (Apple Silicon)
+bun build --compile --target=bun-darwin-arm64 ./index.ts --outfile yona-server
+
+# Linux ARM64 (Graviton/Raspberry Pi)
+bun build --compile --target=bun-linux-arm64 ./index.ts --outfile yona-server
+```
+
+**JavaScript API:**
+
+```typescript
+await Bun.build({
+  entrypoints: ["./index.ts"],
+  compile: {
+    target: "bun-linux-x64",
+    outfile: "./yona-server",
+  },
+});
+```
+
+### 7-2) 정적 리소스 임베딩 (Embed Assets)
+
+`with { type: "file" }` import attribute를 사용하여 이미지, JSON 설정, 템플릿 등의 정적 파일을 실행 파일에 직접 임베드할 수 있습니다.
+
+**기본 사용법:**
+
+```typescript
+// 이미지 파일 임베드
+import icon from "./public/icon.png" with { type: "file" };
+import { file } from "bun";
+
+// 읽기 (Buffer, Text, Blob)
+const bytes = await file(icon).arrayBuffer();
+const text = await file(icon).text();
+const blob = file(icon);
+
+// HTTP 서버에서 스트리밍
+export default {
+  fetch(req) {
+    return new Response(file(icon), {
+      headers: { "Content-Type": "image/png" },
+    });
+  },
+};
+```
+
+**JSON 설정 파일 임베드:**
+
+```typescript
+import configPath from "./default-config.json" with { type: "file" };
+import { file } from "bun";
+
+const defaultConfig = await file(configPath).json();
+```
+
+**디렉토리 임베드 (glob 패턴):**
+
+```bash
+# CLI: public 디렉토리의 모든 PNG 파일 임베드
+bun build --compile ./index.ts ./public/**/*.png --outfile yona-server
+```
+
+**SQLite DB 임베드 (읽기 전용):**
+
+```typescript
+import myEmbeddedDb from "./my.db" with { type: "sqlite", embed: "true" };
+
+// 임베드된 DB는 읽기-쓰기 가능하지만, 프로세스 종료 시 변경 사항이 손실됨
+console.log(myEmbeddedDb.query("select * from users LIMIT 1").get());
+```
+
+**정적 라우트 자동 생성 (Bun.serve):**
+
+```typescript
+import "./public/favicon.ico" with { type: "file" };
+import "./public/logo.png" with { type: "file" };
+import { embeddedFiles, serve } from "bun";
+
+// 모든 임베드된 파일로 정적 라우트 생성
+const staticRoutes: Record<string, Blob> = {};
+for (const blob of embeddedFiles) {
+  const name = blob.name.replace(/-[a-f0-9]+\./, "."); // 해시 제거
+  staticRoutes[`/${name}`] = blob;
+}
+
+serve({
+  static: staticRoutes,
+  fetch(req) {
+    return new Response("Not found", { status: 404 });
+  },
+});
+```
+
+### 7-3) Full-Stack Executable (서버 + 클라이언트)
+
+서버 코드에서 HTML 파일을 import하면 Bun이 자동으로 프론트엔드 자산(JS, CSS 등)을 번들하고 실행 파일에 임베드합니다.
+
+**예시:**
+
+```typescript
+// server.ts
+import { serve } from "bun";
+import index from "./index.html"; // HTML import
+
+const server = serve({
+  routes: {
+    "/": index, // 자동 번들된 프론트엔드 자산 제공
+    "/api/hello": { GET: () => Response.json({ message: "Hello from API" }) },
+  },
+});
+```
+
+```html
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Yona</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <h1>Yona Issue Tracker</h1>
+    <script src="./app.ts"></script>
+  </body>
+</html>
+```
+
+**빌드:**
+
+```bash
+bun build --compile ./server.ts --outfile yona-server
+```
+
+결과는 서버 코드, Bun 런타임, 모든 프론트엔드 자산(HTML, CSS, JS), npm 패키지를 포함하는 단일 실행 파일입니다.
+
+### 7-4) 프로덕션 배포 최적화
+
+**권장 빌드 명령어:**
+
+```bash
+bun build --compile --minify --sourcemap --bytecode ./path/to/server.ts --outfile yona-server
+```
+
+**플래그 설명:**
+
+| 플래그        | 설명                                                                                                                |
+| ------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `--minify`    | 코드 최소화. 대규모 앱에서 수 MB 크기 절약.                                                                         |
+| `--sourcemap` | zstd로 압축된 소스맵 임베드. 에러/스택트레이스가 원본 위치를 가리킴. **버그 리포트 시 원본 코드 위치 파악에 필수.** |
+| `--bytecode`  | 바이트코드 컴파일. 파싱 오버헤드를 빌드타임으로 이동하여 2배 빠른 시작시간.                                         |
+
+**JavaScript API:**
+
+```typescript
+await Bun.build({
+  entrypoints: ["./path/to/server.ts"],
+  compile: {
+    outfile: "./yona-server",
+  },
+  minify: true,
+  sourcemap: "linked",
+  bytecode: true,
+});
+```
+
+**빌드타임 상수 주입 (`--define`):**
+
+```bash
+bun build --compile \
+  --define BUILD_VERSION='"1.0.0"' \
+  --define BUILD_TIME='"2024-03-01T00:00:00Z"' \
+  ./server.ts --outfile yona-server
+```
+
+### 7-5) 빌드 자동화 스크립트
+
+`package.json`에 다중 타겟 빌드 스크립트 추가:
 
 ```json
 {
-  "tasks": [
-    {
-      "id": "T-001",
-      "title": "Add Normalizer Service",
-      "description": "What the task accomplishes and why it matters.",
-      "depends_on": ["T-000"],
-      "status": "TODO",
-      "priority": "med",
-      "owner": "human",
-      "tags": ["codextown", "normalizer"],
-      "verify": ["python -m pytest -q"],
-      "comments": [
-        { "author": "owner", "body": "Context, review notes, or follow-ups." }
-      ],
-      "commit": { "hash": "abc123...", "message": "🛠️ T-001 ..." }
-    }
-  ],
-  "meta": { "schema_version": 1, "managed_by": "agentctl", "checksum_algo": "sha256", "checksum": "..." }
+  "scripts": {
+    "build:sfx": "bun build --compile --minify --sourcemap --bytecode ./apps/web/index.ts --outfile dist/yona-server",
+    "build:sfx:linux": "bun build --compile --minify --sourcemap --bytecode --target=bun-linux-x64 ./apps/web/index.ts --outfile dist/yona-server-linux",
+    "build:sfx:linux-arm": "bun build --compile --minify --sourcemap --bytecode --target=bun-linux-arm64 ./apps/web/index.ts --outfile dist/yona-server-linux-arm",
+    "build:sfx:windows": "bun build --compile --minify --sourcemap --bytecode --target=bun-windows-x64 ./apps/web/index.ts --outfile dist/yona-server.exe",
+    "build:sfx:darwin-arm": "bun build --compile --minify --sourcemap --bytecode --target=bun-darwin-arm64 ./apps/web/index.ts --outfile dist/yona-server-darwin-arm"
+  }
 }
 ```
 
-- Keep tasks atomic: PLANNER decomposes each request into single-owner items that map one-to-one with commits.
-- Allowed statuses: `TODO`, `DOING`, `DONE`, `BLOCKED`.
-- `description` explains the business value or acceptance criteria.
-- `depends_on` (optional) lists parent task IDs that must be `DONE` before starting this task.
-- `verify` (optional) is a list of local shell commands the REVIEWER must run (or allow `finish` to run automatically) before marking `DONE`.
-- `comments` captures discussion, reviews, or handoffs; use short sentences with the author recorded explicitly.
-- `commit` is required when a task is `DONE`.
-- `meta` is maintained by `agentctl`; manual edits to `tasks.json` will break the checksum and fail `agentctl task lint`.
+### 7-6) 런타임 설정
 
-### Status Transition Protocol
+**환경 변수:**
 
-- **Create / Reprioritize (PLANNER only).** PLANNER is the sole writer of new tasks and the only agent that may change priorities or mark work as `BLOCKED`; record the reasoning directly inside `tasks.json` (usually via `description` or a new `comments` entry).
-- **Start Work (specialist agent).** Before starting, confirm every `depends_on` task is `DONE`. Marking `DOING` is optional, but do not create extra commits just to record `DOING`.
-- **Complete Work (review/doc specialist).** REVIEWER or DOCS marks tasks `DONE` only after validating the deliverable; add a `comments` entry summarizing the verification (this replaces the old indented `Review:` line in `PLAN.md`).
-- **Status Sync.** `tasks.json` is canonical. There is no derived status board file; use `python scripts/agentctl.py task list` / `python scripts/agentctl.py task show T-123`.
-- **Escalations.** Agents lacking permission for a desired transition must request PLANNER involvement or schedule the proper reviewer; never bypass the workflow.
+- `.env` 및 `bunfig.toml` 로딩은 기본적으로 활성화됨
+- 배포 시 결정적 실행을 위해 `--no-compile-autoload-dotenv` 및 `--no-compile-autoload-bunfig` 사용 가능
 
-Protocol:
+**BUN_OPTIONS로 런타임 플래그 전달:**
 
-- Before changing tasks: review the latest `tasks.json` so you understand the current state.
-- When updating: do not edit `tasks.json` by hand; use `python scripts/agentctl.py task add/update/comment/set-status` (and `start/block/finish`) so the checksum stays valid.
-- In your reply: list every task ID you touched plus the new status or notes.
-- Only `tasks.json` stores task data. Use `python scripts/agentctl.py task list` / `python scripts/agentctl.py task show T-123` to inspect tasks during execution.
+```bash
+# 프로파일링 활성화 (재컴파일 불필요)
+BUN_OPTIONS="--cpu-prof" ./yona-server
 
-# AGENT REGISTRY
-
-All non-orchestrator agents are defined as JSON files inside the `.AGENTS/` directory. On startup, dynamically import every `.AGENTS/*.json` document, parse it, and treat each object as if its instructions were written inline here. Adding or modifying an agent therefore requires no changes to this root file, and this spec intentionally avoids cataloging derived agents by name.
-
-## External Agent Loading
-
-- Iterate through `.AGENTS/*.json`, sorted by filename for determinism.
-- Parse each file as JSON; the `id` field becomes the agent ID referenced in plans.
-- Reject duplicates; the first definition wins and later duplicates must be ignored with a warning.
-- Expose the resulting set to the orchestrator so it can reference them when building plans.
-
-## Current JSON Agents
-
-- The orchestrator regenerates this list at startup by scanning `.AGENTS/*.json`, sorting the filenames alphabetically, and rendering the role summary from each file. Manual edits are discouraged because the list is derived data.
-- Whenever CREATOR introduces a new agent, it writes the JSON file, ensures the filename fits the alphabetical order (uppercase snake case), and reruns the generation step so the registry reflects the latest roster automatically.
-- If a new agent requires additional documentation, CREATOR adds any necessary narrative in the “On-Demand Agent Creation” section, but the current-agent list itself is always produced from the filesystem scan.
-
-## JSON Template for New Agents
-
-1. Copy the template below into a new file named `.AGENTS/<ID>.json` (use uppercase snake case for the ID).
-2. Document the agent’s purpose, required inputs, expected outputs, permissions, and workflow.
-3. Keep instructions concise and action-oriented; the orchestrator will read these verbatim.
-4. Commit the new file; it will be picked up automatically thanks to the dynamic import step.
-
-```json
-{
-  "id": "AGENT_ID",
-  "role": "One-line role summary.",
-  "description": "Optional longer description of the agent.",
-  "inputs": [
-    "Describe the required inputs."
-  ],
-  "outputs": [
-    "Describe the outputs produced by this agent."
-  ],
-  "permissions": [
-    "RESOURCE: access mode or limitation."
-  ],
-  "workflow": [
-    "Step-by-step behavioural instructions."
-  ]
-}
+# 여러 플래그 조합
+BUN_OPTIONS="--smol --cpu-prof-md" ./yona-server
 ```
 
-## On-Demand Agent Creation
+**런타임 인자 임베딩 (`--compile-exec-argv`):**
 
-- When the PLANNER determines that no existing agent can fulfill a plan step, it must schedule the `CREATOR` agent and provide the desired skill set, constraints, and target deliverables.
-- `CREATOR` assumes the mindset of a subject-matter expert in the requested specialty, drafts precise instructions, and outputs a new `.AGENTS/<ID>.json` following the template above.
-- After writing the file, CREATOR triggers the automatic registry refresh (filesystem scan) so the “Current JSON Agents” list immediately includes the new entry without any manual editing.
-- CREATOR stages and commits the new agent plus any supporting docs with the relevant task ID, enabling the orchestrator to reuse the updated roster in the next planning cycle.
+```bash
+bun build --compile --compile-exec-argv="--smol --user-agent=YonaBot" ./server.ts --outfile yona-server
+```
 
-**UPDATER usage.** Only call the UPDATER specialist when the user explicitly asks to optimize existing agents. In that case UPDATER audits the entire repository, inspects `.AGENTS/*.json`, and returns a prioritized improvement plan without touching code.
+### 7-7) GitHub Actions를 이용한 Cross-Compile Release
+
+Linux runner에서 모든 플랫폼을 cross-compile하여 자동으로 release를 생성합니다. `.github/workflows/release.yml`에 워크플로우를 추가하세요.
+
+**GitHub Actions Workflow 예시:**
+
+```yaml
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build for Linux x64
+        run: bun build --compile --minify --sourcemap --bytecode --target=bun-linux-x64 ./apps/web/index.ts --outfile dist/yona-server-linux-x64
+
+      - name: Build for Linux x64 (baseline)
+        run: bun build --compile --minify --sourcemap --bytecode --target=bun-linux-x64-baseline ./apps/web/index.ts --outfile dist/yona-server-linux-x64-baseline
+
+      - name: Build for Linux ARM64
+        run: bun build --compile --minify --sourcemap --bytecode --target=bun-linux-arm64 ./apps/web/index.ts --outfile dist/yona-server-linux-arm64
+
+      - name: Build for Linux ARM64 (musl)
+        run: bun build --compile --minify --sourcemap --bytecode --target=bun-linux-arm64-musl ./apps/web/index.ts --outfile dist/yona-server-linux-arm64-musl
+
+      - name: Build for Windows x64
+        run: bun build --compile --minify --sourcemap --bytecode --target=bun-windows-x64 ./apps/web/index.ts --outfile dist/yona-server.exe
+
+      - name: Build for Windows x64 (baseline)
+        run: bun build --compile --minify --sourcemap --bytecode --target=bun-windows-x64-baseline ./apps/web/index.ts --outfile dist/yona-server-baseline.exe
+
+      - name: Build for Windows ARM64
+        run: bun build --compile --minify --sourcemap --bytecode --target=bun-windows-arm64 ./apps/web/index.ts --outfile dist/yona-server-arm64.exe
+
+      - name: Build for macOS ARM64
+        run: bun build --compile --minify --sourcemap --bytecode --target=bun-darwin-arm64 ./apps/web/index.ts --outfile dist/yona-server-darwin-arm64
+
+      - name: Build for macOS x64
+        run: bun build --compile --minify --sourcemap --bytecode --target=bun-darwin-x64 ./apps/web/index.ts --outfile dist/yona-server-darwin-x64
+
+      - name: Make executables executable
+        run: |
+          chmod +x dist/yona-server-*
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS.txt
+          md5sum * > MD5SUMS.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/yona-server-linux-x64
+            dist/yona-server-linux-x64-baseline
+            dist/yona-server-linux-arm64
+            dist/yona-server-linux-arm64-musl
+            dist/yona-server.exe
+            dist/yona-server-baseline.exe
+            dist/yona-server-arm64.exe
+            dist/yona-server-darwin-arm64
+            dist/yona-server-darwin-x64
+            dist/SHA256SUMS.txt
+            dist/MD5SUMS.txt
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+**Release 정책:**
+
+1. **트리거**: Git tag (`v*`)를 push하거나 `workflow_dispatch`로 수동 실행
+2. **빌드 플랫폼**: 단일 Linux runner에서 모든 플랫폼 cross-compile
+3. **배포 파일**:
+   - Linux x64 (modern, baseline)
+   - Linux ARM64 (glibc, musl)
+   - Windows x64/ARM64 (modern, baseline)
+   - macOS ARM64/x64
+   - SHA256SUMS.txt, MD5SUMS.txt (무결성 검증용)
+4. **Prerelease 태그**: `alpha`, `beta`, `rc` 포함 시 자동으로 prerelease로 표시
+
+**사용 방법:**
+
+```bash
+# Release 생성
+git tag v1.0.0
+git push origin v1.0.0
+
+# Prerelease 생성
+git tag v1.0.0-beta.1
+git push origin v1.0.0-beta.1
+```
 
 ---
 
-# AGENT: ORCHESTRATOR
+## 8) SvelteKit 배포 전략
 
-**id:** ORCHESTRATOR  
-**role:** Default agent. Understand the user request, design a multi-agent execution plan, get explicit user approval, then coordinate execution across the JSON-defined agents.
+Yona의 배포 시나리오에 따라 두 가지 상반된 접근 방식을 제공합니다.
 
-## Input
+### 8-1) SFX 배포 (단일 실행 파일)
 
-* Free-form user request describing goals, context, constraints.
+**대상:** 일반 사용자, 온프레미스, 단일 서버 배포
 
-## Output
+**어댑터:** `@jesterkit/exe-sveltekit` 사용
 
-1. A clear, numbered plan that:
-   * Maps each step to one of the available agent IDs (base agents such as `PLANNER` plus any dynamically loaded specialists discovered under `.AGENTS/*.json`).
-   * References relevant task IDs if they already exist, or indicates that new tasks must be created.
-2. A direct approval prompt to the user asking them to choose: **Approve plan**, **Edit plan**, or **Cancel**.
-3. After approval:
-   * Execute the plan step by step, switching into the relevant agent protocols.
-   * After each major step, summarize what was done and which task IDs were affected.
+```javascript
+// svelte.config.js
+import adapter from "@jesterkit/exe-sveltekit";
 
-## Behaviour
+export default {
+  kit: {
+    adapter: adapter({
+      embedStatic: true, // 정적 자산을 바이너리에 임베드
+      target: "linux-x64", // 크로스-컴파일 타겟
+      binaryName: "yona-server",
+      volume: "/data", // 지속성 스토리지 마운트 포인트
+    }),
+  },
+};
+```
 
-* Step 1: Interpret the user goal.
-  * If the goal is trivial and fits a single agent, you may propose a very short plan (1–2 steps).
-* Step 2: Draft the plan.
-  * Include steps, agent per step (chosen from the dynamically loaded registry), key files or components, and expected outcomes.
-  * Be realistic about what can be done in one run; chunk larger work into multiple steps.
-  * For development-oriented work (code/config changes), schedule **CODER → TESTER → REVIEWER** by default so changes land with automated coverage; skip TESTER only with an explicit justification (e.g., doc-only changes).
-  * Before marking any task DONE, schedule DOCS to produce an atomic workflow artifact @docs/workflow/T-###.md for the task; the typical default is **… → DOCS → REVIEWER**.
-  * Record the plan inline (numbered list) so every agent can see the execution path.
-* Step 3: Ask for approval.
-  * Stop and wait for user input before executing steps.
-* Step 4: Execute.
-  * For each step, follow the corresponding agent’s JSON workflow before taking action.
-  * Use `python scripts/agentctl.py` for all task operations (ready/start/block/task/verify/finish) so `tasks.json` stays checksum-valid, calling out any status flips in the user-facing summary.
-  * Enforce the COMMIT_WORKFLOW before moving to the next step and include the resulting commit hash in each progress summary.
-  * Keep the user in the loop: after each block of work, show a short progress summary referencing the numbered plan items.
-  * Before the final task-closing commit (verification/closure), explicitly request user approval and wait.
-* Step 5: Finalize.
-  * Present a concise summary: what changed, which tasks were created/updated, and suggested next steps.
+**빌드 및 실행:**
+
+```bash
+# 개발
+bun run dev
+
+# 프로덕션 빌드 (자동으로 단일 바이너리 생성)
+bun run build
+
+# 실행
+./dist/yona-server
+```
+
+**주요 특징:**
+
+- ✅ **정적 자산 임베딩**: 모든 `public/` 디렉토리 자산이 바이너리에 포함
+- ✅ **전체 스택 보존**: SSR, API 라우트, 서버 훅, 서버 사이드 인증
+- ✅ **크로스-컴파일 네이티브 지원**: Linux, Windows, macOS, x64/ARM64, baseline/modern
+- ✅ **런타임 의존성 없음**: Bun 설치 필요 없이 바이너리 실행 가능
+- ✅ **Bun의 공식 `build --compile` API 사용**: 최적화된 SFX 생성
+
+**장점:**
+
+- 🎯 단일 파일 배포 (복사만으로 배포 완료)
+- 🚀 빠른 시작 시간 (바이트코드 컴파일)
+- 📦 런타임 의존성 없음
+- 🔒 Bun의 네이티브 성능 활용
+
+---
+
+### 8-2) Docker 배포 (CI/CD 및 클라우드)
+
+**대상:** CI/CD 파이프라인, 클라우드 플랫폼, 멀티 스테이지 빌드
+
+**어댑터:** `svelte-adapter-bun` 사용 (Bun 공식 권장)
+
+```javascript
+// svelte.config.js
+import adapter from "svelte-adapter-bun";
+
+export default {
+  kit: {
+    adapter: adapter({
+      out: "build",
+      serveAssets: true, // 정적 자산 제공
+      precompress: {
+        // 압축 활성화
+        brotli: true,
+        gzip: true,
+        files: ["html", "js", "json", "css", "svg", "xml", "wasm"],
+      },
+    }),
+  },
+};
+```
+
+**Dockerfile 예시:**
+
+```dockerfile
+# Multi-stage build for smaller image
+FROM oven/bun:latest AS builder
+WORKDIR /app
+
+# 의존성 설치
+COPY package.json bun.lockb ./
+RUN bun install --frozen-lockfile
+
+# 소스 코드 복사
+COPY . .
+
+# 프로덕션 빌드
+RUN bun run build
+
+# Runtime stage
+FROM oven/bun:latest
+WORKDIR /app
+
+# 빌드 결과물만 복사 (의존성 제외)
+COPY --from=builder /app/build ./build
+COPY --from=builder /app/package.json ./package.json
+
+# 환경 변수
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# 포트 노출
+EXPOSE 3000
+
+# 실행
+CMD ["bun", "run", "start"]
+```
+
+**Docker Compose 예시:**
+
+```yaml
+version: "3.8"
+services:
+  yona:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+    volumes:
+      - ./data:/app/data # 지속성 스토리지
+    restart: unless-stopped
+```
+
+**장점:**
+
+- 🐳 Docker layer caching 활용 (빌드 속도 향상)
+- 🔄 CI/CD 친화적 (GitHub Actions, GitLab CI 등)
+- 📦 의존성 격리 (reproducible builds)
+- 🌐 표준화된 배포 (클라우드 플랫폼 호환)
+
+---
+
+### 8-3) 배포 전략 선택 가이드
+
+| 비교 항목          | SFX 배포                         | Docker 배포                          |
+| ------------------ | -------------------------------- | ------------------------------------ |
+| **대상**           | 일반 사용자, 온프레미스          | CI/CD, 클라우드                      |
+| **어댑터**         | `@jesterkit/exe-sveltekit`       | `svelte-adapter-bun`                 |
+| **이점**           | 단일 파일, 런타임 의존성 없음    | Docker layer caching, 표준화된 배포  |
+| **단점**           | 크로스 컴파일 시 Bun 런타임 필요 | 이미지 사이즈 큼, 런타임 의존성 있음 |
+| **GitHub Actions** | SFX 생성 가능                    | 도커 이미지 빌드 및 푸시             |
+| **클라우드 호환**  | 수동 배포 필요                   | 모든 주요 클라우드 지원              |
+
+**추천 사항:**
+
+1. **SFX 배포**:
+   - 소규모 팀 (≤100명) 내부 배포
+   - 온프레미스 환경
+   - 단일 서버 운영
+   - 빠른 배포 필요한 경우
+
+2. **Docker 배포**:
+   - CI/CD 파이프라인 통합
+   - 클라우드 배포 (AWS, GCP, Azure, Vercel 등)
+   - 멀티 환경 운영 (dev/staging/prod)
+   - 스케일링 필요한 경우
+
+---
+
+### 8-4) GitHub Actions 워크플로우 (이중 배포 지원)
+
+SFX와 Docker 배포를 모두 지원하는 워크플로우 예시:
+
+```yaml
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # Job 1: SFX 빌드 (일반 사용자용)
+  build-sfx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build for Linux x64
+        run: bun build --compile --minify --sourcemap --bytecode --target=bun-linux-x64 ./dist/index.ts --output dist/yona-server-linux-x64
+
+      - name: Build for Windows x64
+        run: bun build --compile --minify --sourcemap --bytecode --target=bun-windows-x64 ./dist/index.ts --output dist/yona-server.exe
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum yona-server-* > SHA256SUMS.txt
+
+      - name: Upload SFX artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: yona-server-sfx
+          path: dist/yona-server-*
+          retention-days: 90
+
+  # Job 2: Docker 이미지 빌드 (CI/CD용)
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: build-sfx # SFX 빌드 먼저 완료
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Job 3: GitHub Release (SFX만)
+  release:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-sfx
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download SFX artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: yona-server-sfx
+          path: dist
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/yona-server-*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+---
+
+Linux runner에서 모든 플랫폼을 cross-compile하여 자동으로 release를 생성합니다. `.github/workflows/release.yml`에 워크플로우를 추가하세요.

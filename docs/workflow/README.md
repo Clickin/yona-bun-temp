@@ -18,4 +18,3 @@ Capture what was implemented for the task in a small, reviewable, and durable ar
 - Behavior / UX notes (if user-visible)
 - Verification (commands that were run, or how to validate locally)
 - Follow-ups / known gaps (if any)
-

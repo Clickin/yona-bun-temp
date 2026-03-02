@@ -1,28 +1,28 @@
 const repositoryWriteTails = new Map<string, Promise<void>>();
 
 export async function withRepositoryWriteLock<T>(
-	repositoryPath: string,
-	action: () => Promise<T>
+  repositoryPath: string,
+  action: () => Promise<T>,
 ): Promise<T> {
-	const previousTail = repositoryWriteTails.get(repositoryPath) ?? Promise.resolve();
+  const previousTail = repositoryWriteTails.get(repositoryPath) ?? Promise.resolve();
 
-	let releaseCurrent!: () => void;
-	const currentDone = new Promise<void>((resolve) => {
-		releaseCurrent = resolve;
-	});
+  let releaseCurrent!: () => void;
+  const currentDone = new Promise<void>((resolve) => {
+    releaseCurrent = resolve;
+  });
 
-	const currentTail = previousTail.then(() => currentDone);
-	repositoryWriteTails.set(repositoryPath, currentTail);
+  const currentTail = previousTail.then(() => currentDone);
+  repositoryWriteTails.set(repositoryPath, currentTail);
 
-	await previousTail;
+  await previousTail;
 
-	try {
-		return await action();
-	} finally {
-		releaseCurrent();
+  try {
+    return await action();
+  } finally {
+    releaseCurrent();
 
-		if (repositoryWriteTails.get(repositoryPath) === currentTail) {
-			repositoryWriteTails.delete(repositoryPath);
-		}
-	}
+    if (repositoryWriteTails.get(repositoryPath) === currentTail) {
+      repositoryWriteTails.delete(repositoryPath);
+    }
+  }
 }

@@ -7,14 +7,8 @@
       "status": "DONE",
       "priority": "high",
       "owner": "CODER",
-      "tags": [
-        "orchestration",
-        "parallel",
-        "agentctl"
-      ],
-      "verify": [
-        "python3 -m unittest discover -s tests -p 'test_agentctl_parallel.py'"
-      ],
+      "tags": ["orchestration", "parallel", "agentctl"],
+      "verify": ["python3 -m unittest discover -s tests -p 'test_agentctl_parallel.py'"],
       "comments": [
         {
           "author": "PLANNER",
@@ -41,19 +35,12 @@
       "status": "DONE",
       "priority": "high",
       "owner": "CODER",
-      "tags": [
-        "orchestration",
-        "e2e",
-        "wave"
-      ],
+      "tags": ["orchestration", "e2e", "wave"],
       "verify": [
         "python3 -m unittest discover -s tests -p 'test_wave_independent.py'",
         "python3 scripts/agentctl.py task lint"
       ],
-      "parallel_paths": [
-        "tests/e2e/wave_independent",
-        "docs/workflow/T-002.md"
-      ],
+      "parallel_paths": ["tests/e2e/wave_independent", "docs/workflow/T-002.md"],
       "comments": [
         {
           "author": "PLANNER",
@@ -84,19 +71,12 @@
       "status": "DONE",
       "priority": "high",
       "owner": "CODER",
-      "tags": [
-        "orchestration",
-        "e2e",
-        "dependency"
-      ],
+      "tags": ["orchestration", "e2e", "dependency"],
       "verify": [
         "python3 -m unittest discover -s tests -p 'test_wave_dependency.py'",
         "python3 scripts/agentctl.py task lint"
       ],
-      "parallel_paths": [
-        "tests/e2e/wave_dependency",
-        "docs/workflow/T-003.md"
-      ],
+      "parallel_paths": ["tests/e2e/wave_dependency", "docs/workflow/T-003.md"],
       "comments": [
         {
           "author": "PLANNER",
@@ -127,19 +107,12 @@
       "status": "DONE",
       "priority": "high",
       "owner": "CODER",
-      "tags": [
-        "orchestration",
-        "e2e",
-        "conflict"
-      ],
+      "tags": ["orchestration", "e2e", "conflict"],
       "verify": [
         "python3 -m unittest discover -s tests -p 'test_wave_conflict.py'",
         "python3 scripts/agentctl.py task lint"
       ],
-      "parallel_paths": [
-        "tests/e2e/wave_conflict",
-        "docs/workflow/T-004.md"
-      ],
+      "parallel_paths": ["tests/e2e/wave_conflict", "docs/workflow/T-004.md"],
       "comments": [
         {
           "author": "PLANNER",
@@ -170,25 +143,13 @@
       "status": "DONE",
       "priority": "med",
       "owner": "CODER",
-      "tags": [
-        "orchestration",
-        "hardening",
-        "docs"
-      ],
-      "depends_on": [
-        "T-002",
-        "T-003",
-        "T-004"
-      ],
+      "tags": ["orchestration", "hardening", "docs"],
+      "depends_on": ["T-002", "T-003", "T-004"],
       "verify": [
         "python3 -m unittest discover -s tests -p 'test_wave_*.py'",
         "python3 scripts/agentctl.py task lint"
       ],
-      "parallel_paths": [
-        "gitignore",
-        "docs/agentctl.md",
-        "docs/workflow/T-005.md"
-      ],
+      "parallel_paths": ["gitignore", "docs/agentctl.md", "docs/workflow/T-005.md"],
       "comments": [
         {
           "author": "PLANNER",

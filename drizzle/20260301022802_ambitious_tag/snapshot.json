@@ -7381,13 +7381,9 @@
       "table": "organization_user"
     },
     {
-      "columns": [
-        "category_id"
-      ],
+      "columns": ["category_id"],
       "tableTo": "issue_label_category",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7396,13 +7392,9 @@
       "table": "issue_label"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7411,13 +7403,9 @@
       "table": "issue_label"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7426,13 +7414,9 @@
       "table": "project_transfer"
     },
     {
-      "columns": [
-        "sender_id"
-      ],
+      "columns": ["sender_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7441,13 +7425,9 @@
       "table": "project_transfer"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7456,13 +7436,9 @@
       "table": "project_user"
     },
     {
-      "columns": [
-        "role_id"
-      ],
+      "columns": ["role_id"],
       "tableTo": "role",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7471,13 +7447,9 @@
       "table": "project_user"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7486,13 +7458,9 @@
       "table": "project_user"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7501,13 +7469,9 @@
       "table": "unwatch"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -7516,13 +7480,9 @@
       "table": "user_verification"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7531,13 +7491,9 @@
       "table": "issue_label_category"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7546,13 +7502,9 @@
       "table": "pull_request_reviewers"
     },
     {
-      "columns": [
-        "pull_request_id"
-      ],
+      "columns": ["pull_request_id"],
       "tableTo": "pull_request",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7561,13 +7513,9 @@
       "table": "pull_request_reviewers"
     },
     {
-      "columns": [
-        "issue_id"
-      ],
+      "columns": ["issue_id"],
       "tableTo": "issue",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7576,13 +7524,9 @@
       "table": "issue_event"
     },
     {
-      "columns": [
-        "issue_comment_id"
-      ],
+      "columns": ["issue_comment_id"],
       "tableTo": "issue_comment",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7591,13 +7535,9 @@
       "table": "issue_comment_voter"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7606,13 +7546,9 @@
       "table": "issue_comment_voter"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7621,13 +7557,9 @@
       "table": "project_pushed_branch"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "CASCADE",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -7636,13 +7568,9 @@
       "table": "project_visitation"
     },
     {
-      "columns": [
-        "recently_visited_projects_id"
-      ],
+      "columns": ["recently_visited_projects_id"],
       "tableTo": "recently_visited_projects",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7651,13 +7579,9 @@
       "table": "project_visitation"
     },
     {
-      "columns": [
-        "webhook_id"
-      ],
+      "columns": ["webhook_id"],
       "tableTo": "webhook",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -7666,13 +7590,9 @@
       "table": "webhook_thread"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7681,13 +7601,9 @@
       "table": "milestone"
     },
     {
-      "columns": [
-        "issue_id"
-      ],
+      "columns": ["issue_id"],
       "tableTo": "issue",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7696,13 +7612,9 @@
       "table": "issue_comment"
     },
     {
-      "columns": [
-        "parent_comment_id"
-      ],
+      "columns": ["parent_comment_id"],
       "tableTo": "issue_comment",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "SET NULL",
       "nameExplicit": true,
@@ -7711,13 +7623,9 @@
       "table": "issue_comment"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7726,13 +7634,9 @@
       "table": "user_enrolled_organization"
     },
     {
-      "columns": [
-        "organization_id"
-      ],
+      "columns": ["organization_id"],
       "tableTo": "organization",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7741,13 +7645,9 @@
       "table": "user_enrolled_organization"
     },
     {
-      "columns": [
-        "admin_id"
-      ],
+      "columns": ["admin_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7756,13 +7656,9 @@
       "table": "site_admin"
     },
     {
-      "columns": [
-        "notification_event_id"
-      ],
+      "columns": ["notification_event_id"],
       "tableTo": "notification_event",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7771,13 +7667,9 @@
       "table": "notification_mail"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7786,13 +7678,9 @@
       "table": "email"
     },
     {
-      "columns": [
-        "user_credential_id"
-      ],
+      "columns": ["user_credential_id"],
       "tableTo": "user_credential",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -7801,13 +7689,9 @@
       "table": "linked_account"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7816,13 +7700,9 @@
       "table": "user_enrolled_project"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7831,13 +7711,9 @@
       "table": "user_enrolled_project"
     },
     {
-      "columns": [
-        "issue_label_id"
-      ],
+      "columns": ["issue_label_id"],
       "tableTo": "issue_label",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7846,13 +7722,9 @@
       "table": "posting_issue_label"
     },
     {
-      "columns": [
-        "posting_id"
-      ],
+      "columns": ["posting_id"],
       "tableTo": "posting",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7861,13 +7733,9 @@
       "table": "posting_issue_label"
     },
     {
-      "columns": [
-        "assignee_id"
-      ],
+      "columns": ["assignee_id"],
       "tableTo": "assignee",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "CASCADE",
       "onDelete": "SET NULL",
       "nameExplicit": true,
@@ -7876,13 +7744,9 @@
       "table": "issue"
     },
     {
-      "columns": [
-        "milestone_id"
-      ],
+      "columns": ["milestone_id"],
       "tableTo": "milestone",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7891,13 +7755,9 @@
       "table": "issue"
     },
     {
-      "columns": [
-        "parent_id"
-      ],
+      "columns": ["parent_id"],
       "tableTo": "issue",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "SET NULL",
       "nameExplicit": true,
@@ -7906,13 +7766,9 @@
       "table": "issue"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "CASCADE",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -7921,13 +7777,9 @@
       "table": "issue"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7936,13 +7788,9 @@
       "table": "commit_comment"
     },
     {
-      "columns": [
-        "organization_id"
-      ],
+      "columns": ["organization_id"],
       "tableTo": "organization",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7951,13 +7799,9 @@
       "table": "organization_user"
     },
     {
-      "columns": [
-        "role_id"
-      ],
+      "columns": ["role_id"],
       "tableTo": "role",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7966,13 +7810,9 @@
       "table": "organization_user"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -7981,13 +7821,9 @@
       "table": "organization_user"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "CASCADE",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -7996,13 +7832,9 @@
       "table": "recent_project"
     },
     {
-      "columns": [
-        "contributor_id"
-      ],
+      "columns": ["contributor_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8011,13 +7843,9 @@
       "table": "pull_request"
     },
     {
-      "columns": [
-        "from_project_id"
-      ],
+      "columns": ["from_project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8026,13 +7854,9 @@
       "table": "pull_request"
     },
     {
-      "columns": [
-        "receiver_id"
-      ],
+      "columns": ["receiver_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8041,13 +7865,9 @@
       "table": "pull_request"
     },
     {
-      "columns": [
-        "to_project_id"
-      ],
+      "columns": ["to_project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8056,13 +7876,9 @@
       "table": "pull_request"
     },
     {
-      "columns": [
-        "issue_id"
-      ],
+      "columns": ["issue_id"],
       "tableTo": "issue",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8071,13 +7887,9 @@
       "table": "issue_issue_label"
     },
     {
-      "columns": [
-        "issue_label_id"
-      ],
+      "columns": ["issue_label_id"],
       "tableTo": "issue_label",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8086,13 +7898,9 @@
       "table": "issue_issue_label"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8101,13 +7909,9 @@
       "table": "mention"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8116,13 +7920,9 @@
       "table": "comment_thread"
     },
     {
-      "columns": [
-        "pull_request_id"
-      ],
+      "columns": ["pull_request_id"],
       "tableTo": "pull_request",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8131,13 +7931,9 @@
       "table": "comment_thread"
     },
     {
-      "columns": [
-        "issue_id"
-      ],
+      "columns": ["issue_id"],
       "tableTo": "issue",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -8146,13 +7942,9 @@
       "table": "issue_sharer"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -8161,13 +7953,9 @@
       "table": "issue_sharer"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8176,13 +7964,9 @@
       "table": "project_menu_setting"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8191,13 +7975,9 @@
       "table": "assignee"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8206,13 +7986,9 @@
       "table": "assignee"
     },
     {
-      "columns": [
-        "issue_id"
-      ],
+      "columns": ["issue_id"],
       "tableTo": "issue",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8221,13 +7997,9 @@
       "table": "issue_voter"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8236,13 +8008,9 @@
       "table": "issue_voter"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8251,13 +8019,9 @@
       "table": "webhook"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8266,13 +8030,9 @@
       "table": "user_project_notification"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8281,13 +8041,9 @@
       "table": "user_project_notification"
     },
     {
-      "columns": [
-        "comment_thread_id"
-      ],
+      "columns": ["comment_thread_id"],
       "tableTo": "comment_thread",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8296,13 +8052,9 @@
       "table": "comment_thread_n4user"
     },
     {
-      "columns": [
-        "n4user_id"
-      ],
+      "columns": ["n4user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8311,13 +8063,9 @@
       "table": "comment_thread_n4user"
     },
     {
-      "columns": [
-        "issue_id"
-      ],
+      "columns": ["issue_id"],
       "tableTo": "issue",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -8326,13 +8074,9 @@
       "table": "recent_issue"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -8341,13 +8085,9 @@
       "table": "recent_issue"
     },
     {
-      "columns": [
-        "issue_id"
-      ],
+      "columns": ["issue_id"],
       "tableTo": "issue",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -8356,13 +8096,9 @@
       "table": "favorite_issue"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -8371,13 +8107,9 @@
       "table": "favorite_issue"
     },
     {
-      "columns": [
-        "pull_request_id"
-      ],
+      "columns": ["pull_request_id"],
       "tableTo": "pull_request",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8386,13 +8118,9 @@
       "table": "pull_request_event"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -8401,13 +8129,9 @@
       "table": "favorite_project"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -8416,13 +8140,9 @@
       "table": "favorite_project"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -8431,13 +8151,9 @@
       "table": "user_credential"
     },
     {
-      "columns": [
-        "label_id"
-      ],
+      "columns": ["label_id"],
       "tableTo": "label",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8446,13 +8162,9 @@
       "table": "project_label"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8461,13 +8173,9 @@
       "table": "project_label"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8476,13 +8184,9 @@
       "table": "watch"
     },
     {
-      "columns": [
-        "organization_id"
-      ],
+      "columns": ["organization_id"],
       "tableTo": "organization",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8491,13 +8195,9 @@
       "table": "project"
     },
     {
-      "columns": [
-        "original_project_id"
-      ],
+      "columns": ["original_project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8506,13 +8206,9 @@
       "table": "project"
     },
     {
-      "columns": [
-        "parent_comment_id"
-      ],
+      "columns": ["parent_comment_id"],
       "tableTo": "posting_comment",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "SET NULL",
       "nameExplicit": true,
@@ -8521,13 +8217,9 @@
       "table": "posting_comment"
     },
     {
-      "columns": [
-        "posting_id"
-      ],
+      "columns": ["posting_id"],
       "tableTo": "posting",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8536,13 +8228,9 @@
       "table": "posting_comment"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -8551,13 +8239,9 @@
       "table": "user_setting"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -8566,13 +8250,9 @@
       "table": "title_head"
     },
     {
-      "columns": [
-        "parent_id"
-      ],
+      "columns": ["parent_id"],
       "tableTo": "posting",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "SET NULL",
       "nameExplicit": true,
@@ -8581,13 +8261,9 @@
       "table": "posting"
     },
     {
-      "columns": [
-        "project_id"
-      ],
+      "columns": ["project_id"],
       "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8596,13 +8272,9 @@
       "table": "posting"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8611,13 +8283,9 @@
       "table": "recently_visited_projects"
     },
     {
-      "columns": [
-        "thread_id"
-      ],
+      "columns": ["thread_id"],
       "tableTo": "comment_thread",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8626,13 +8294,9 @@
       "table": "review_comment"
     },
     {
-      "columns": [
-        "n4user_id"
-      ],
+      "columns": ["n4user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8641,13 +8305,9 @@
       "table": "notification_event_n4user"
     },
     {
-      "columns": [
-        "notification_event_id"
-      ],
+      "columns": ["notification_event_id"],
       "tableTo": "notification_event",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,
@@ -8656,13 +8316,9 @@
       "table": "notification_event_n4user"
     },
     {
-      "columns": [
-        "organization_id"
-      ],
+      "columns": ["organization_id"],
       "tableTo": "organization",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -8671,13 +8327,9 @@
       "table": "favorite_organization"
     },
     {
-      "columns": [
-        "user_id"
-      ],
+      "columns": ["user_id"],
       "tableTo": "n4user",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "CASCADE",
       "nameExplicit": true,
@@ -8686,13 +8338,9 @@
       "table": "favorite_organization"
     },
     {
-      "columns": [
-        "pull_request_id"
-      ],
+      "columns": ["pull_request_id"],
       "tableTo": "pull_request",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "RESTRICT",
       "onDelete": "RESTRICT",
       "nameExplicit": true,

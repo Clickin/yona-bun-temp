@@ -1,26 +1,35 @@
 {
-	"name": "yona-bun-temp",
-	"private": true,
-	"version": "0.0.1",
-	"type": "module",
-	"workspaces": ["apps/*", "packages/*", "tools/*"],
-	"scripts": {
-		"dev": "bun --filter ./apps/web dev",
-		"build": "bun --filter ./apps/web build",
-		"preview": "bun --filter ./apps/web preview",
-		"prepare": "bun --filter ./apps/web prepare",
-		"lint:imports": "bun run ./tools/lint-import-conventions.ts",
-		"lint": "bun run lint:imports",
-		"check": "bun run lint:imports && bun --filter ./apps/web check",
-		"check:watch": "bun --filter ./apps/web check:watch",
-		"test:unit": "bun --filter ./apps/web test:unit",
-		"test": "bun --filter ./apps/web test",
-		"test:e2e": "bun --filter ./apps/web test:e2e"
-	},
-	"dependencies": {},
-	"devDependencies": {
-		"oxlint": "^1.50.0",
-		"oxfmt": "^0.35.0",
-		"typescript": "^5.9.3"
-	}
+  "name": "yona-bun-temp",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "tools/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "verify:agents": "bun ./tools/verify-agents-integrity.mjs",
+    "dev": "bun --filter ./apps/web dev",
+    "build": "bun --filter ./apps/web build",
+    "preview": "bun --filter ./apps/web preview",
+    "prepare": "husky && bun --filter ./apps/web prepare",
+    "lint:ox": "oxlint .",
+    "format:check": "oxfmt --check .",
+    "precommit:verify": "bun ./tools/precommit-verify.mjs",
+    "lint:imports": "bun run ./tools/lint-import-conventions.ts",
+    "lint": "bun run lint:imports",
+    "check": "bun run verify:agents && bun run lint:imports && bun --filter ./apps/web check",
+    "check:watch": "bun --filter ./apps/web check:watch",
+    "test:unit": "bun --filter ./apps/web test:unit",
+    "test": "bun --filter ./apps/web test",
+    "test:e2e": "bun --filter ./apps/web test:e2e"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "oxfmt": "^0.35.0",
+    "oxlint": "^1.50.0",
+    "typescript": "^5.9.3"
+  }
 }

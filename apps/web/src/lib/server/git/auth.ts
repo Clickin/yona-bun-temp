@@ -1,1 +1,1 @@
-export { readMutationActor, type MutationActor } from '@yona/infra';
+export { readMutationActor, type MutationActor } from "@yona/infra";

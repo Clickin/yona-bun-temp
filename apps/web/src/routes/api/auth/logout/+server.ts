@@ -1,4 +1,4 @@
-import type { RequestHandler } from '@sveltejs/kit';
-import { forwardToApi } from '$lib/server/hono/forward-to-api';
+import type { RequestHandler } from "@sveltejs/kit";
+import { forwardToApi } from "$lib/server/hono/forward-to-api";
 
-export const POST: RequestHandler = (event) => forwardToApi(event, 'POST');
+export const POST: RequestHandler = (event) => forwardToApi(event, "POST");

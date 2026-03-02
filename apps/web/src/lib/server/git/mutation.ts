@@ -1,7 +1,7 @@
 export {
-	AuthorizationError,
-	ConflictError,
-	performInlineEditMutation,
-	readRepositoryFile,
-	type InlineEditMutationInput
-} from '@yona/infra';
+  AuthorizationError,
+  ConflictError,
+  performInlineEditMutation,
+  readRepositoryFile,
+  type InlineEditMutationInput,
+} from "@yona/infra";

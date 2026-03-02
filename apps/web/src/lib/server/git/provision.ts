@@ -1,1 +1,1 @@
-export { provisionRepository } from '@yona/infra';
+export { provisionRepository } from "@yona/infra";

@@ -1,7 +1,7 @@
 export {
-	canDirectWriteBranch,
-	getProtectedBranches,
-	getProtectedBranchWriteRoles,
-	getUnprotectedBranchWriteRoles,
-	isProtectedBranch
-} from '@yona/infra';
+  canDirectWriteBranch,
+  getProtectedBranches,
+  getProtectedBranchWriteRoles,
+  getUnprotectedBranchWriteRoles,
+  isProtectedBranch,
+} from "@yona/infra";

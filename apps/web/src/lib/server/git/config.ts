@@ -1,6 +1,6 @@
 export {
-	ensureYonaDataDirectories,
-	getGitAuditLogPath,
-	getRepositoryRoot,
-	getYonaDataRoot
-} from '@yona/infra';
+  ensureYonaDataDirectories,
+  getGitAuditLogPath,
+  getRepositoryRoot,
+  getYonaDataRoot,
+} from "@yona/infra";

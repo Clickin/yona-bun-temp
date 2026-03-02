@@ -1,1 +1,1 @@
-export { withRepositoryWriteLock } from '@yona/infra';
+export { withRepositoryWriteLock } from "@yona/infra";

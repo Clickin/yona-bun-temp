@@ -88,8 +88,8 @@
 				newPassword = '';
 				confirmPassword = '';
 			} else {
-				const data = (await response.json()) as { error?: string };
-				error = data.error || 'Failed to reset password';
+				const responseBody = (await response.json()) as { error?: string };
+				error = responseBody.error || 'Failed to reset password';
 			}
 		} catch {
 			error = 'Failed to reset password';
