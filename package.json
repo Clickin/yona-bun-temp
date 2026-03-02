@@ -29,12 +29,17 @@
     "test": "bun --filter ./apps/web test",
     "test:db": "bun --filter ./apps/web test:db",
     "test:db:native": "bun tests/bun-native-db-test.ts",
+    "test:db:node": "bun --filter ./apps/web test:db:node",
+    "test:db:node:coverage": "bun --filter ./apps/web test:db:node:coverage",
+    "test:db:node:smoke": "node tests/node-db-smoke.mjs",
+    "test:db:hybrid": "node tests/hybrid-testcontainers-node.mjs",
     "test:e2e": "bun --filter ./apps/web test:e2e"
   },
   "dependencies": {},
   "devDependencies": {
     "@testcontainers/mysql": "^10.0.0",
     "@testcontainers/postgresql": "^10.0.0",
+    "bun": "file:apps/web/src/lib/server/bun-package",
     "drizzle-kit": "1.0.0-beta.15-859cf75",
     "drizzle-orm": "1.0.0-beta.15-859cf75",
     "husky": "^9.1.7",

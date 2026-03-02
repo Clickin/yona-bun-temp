@@ -1,0 +1,37 @@
+name: DB Hybrid Validate
+
+on:
+  pull_request:
+    paths:
+      - "drizzle/**"
+      - "tests/hybrid-*.{ts,mjs}"
+      - "apps/web/src/lib/server/db/**"
+      - "apps/web/src/lib/server/test-utils/**"
+      - "package.json"
+      - "bun.lock"
+      - ".github/workflows/db-hybrid-validate.yml"
+  workflow_dispatch:
+
+jobs:
+  hybrid-db-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run Node+Bun hybrid DB validation
+        run: bun run test:db:hybrid

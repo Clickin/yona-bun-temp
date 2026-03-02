@@ -10,7 +10,7 @@ export async function setupPostgresTestDatabase(): Promise<{
   url: string;
   cleanup: () => Promise<void>;
 }> {
-  const container = await new PostgreSqlContainer().start();
+  const container = await new PostgreSqlContainer("postgres:13.3-alpine").start();
   const url = container.getConnectionUri();
 
   return {
@@ -31,7 +31,7 @@ export async function setupMySQLTestDatabase(): Promise<{
   url: string;
   cleanup: () => Promise<void>;
 }> {
-  const container = await new MySqlContainer().start();
+  const container = await new MySqlContainer("mysql:8.0.31").start();
   const url = container.getConnectionUri();
 
   return {

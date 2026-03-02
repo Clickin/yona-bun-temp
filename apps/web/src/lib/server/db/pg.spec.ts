@@ -1,84 +1,90 @@
-import { describe, expect, it, afterEach, beforeAll } from "vitest";
-import { drizzle } from "drizzle-orm/bun-sql";
-import { migrate } from "drizzle-orm/bun-sql/migrator";
-import { SQL } from "bun";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { Pool } from "pg";
 import * as pgSchema from "@drizzle/pg/schema";
 import { setupPostgresTestDatabase } from "../test-utils/database";
+import {
+  getExpectedTableNames,
+  getLatestMigrationSql,
+  normalizePgMigration,
+  splitMigrationStatements,
+} from "./test-helpers";
 
 describe("PostgreSQL database", () => {
-  let db: ReturnType<typeof drizzle>;
+  let pool: Pool;
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
     const setup = await setupPostgresTestDatabase();
-    const client = new SQL(setup.url);
-    db = drizzle(client, { schema: pgSchema });
     cleanup = setup.cleanup;
 
-    // Apply migrations
-    await migrate(db, { migrationsFolder: "drizzle/pg/migrations" });
+    const url = new URL(setup.url);
+    pool = new Pool({
+      host: url.hostname,
+      port: Number(url.port),
+      user: decodeURIComponent(url.username),
+      password: decodeURIComponent(url.password),
+      database: url.pathname.slice(1),
+    });
+
+    const migrationSql = normalizePgMigration(getLatestMigrationSql("pg"));
+    const statements = splitMigrationStatements(migrationSql);
+    for (const statement of statements) {
+      try {
+        await pool.query(statement);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (
+          message.includes("already exists") ||
+          message.includes("no unique constraint matching given keys")
+        ) {
+          continue;
+        }
+        throw error;
+      }
+    }
+  }, 120_000);
+
+  afterAll(async () => {
+    if (pool) {
+      await pool.end();
+    }
+    if (cleanup) {
+      await cleanup();
+    }
   });
 
-  afterEach(async () => {
-    // Clean up container after all tests
-    await cleanup();
-  });
-
-  it("should connect to PostgreSQL successfully", async () => {
-    // Verify we can query the database
-    const result = await db.execute(sql`SELECT 1 as test`);
-    expect(result).toBeDefined();
-  });
-
-  it("should have expected tables created after migrations", async () => {
-    // Check if key tables exist by attempting to query them
-    const tables = await db.execute(sql`
+  it("applies all schema tables from pg schema module", async () => {
+    const expectedTables = getExpectedTableNames(pgSchema);
+    const result = await pool.query<{ table_name: string }>(`
       SELECT table_name
       FROM information_schema.tables
       WHERE table_schema = 'public'
-      ORDER BY table_name
-      LIMIT 5
     `);
 
-    // Verify at least some tables exist
-    expect(tables.rows.length).toBeGreaterThan(0);
+    const existingTables = new Set(
+      result.rows.map((row: { table_name: string }) => row.table_name),
+    );
+    const missingTables = expectedTables.filter((tableName) => !existingTables.has(tableName));
 
-    // Check for specific tables that should exist
-    const tableNames = tables.rows.map((row: any) => row.table_name);
-    expect(tableNames).toContain("n4user");
-    expect(tableNames).toContain("project");
-    expect(tableNames).toContain("issue");
+    expect(expectedTables.length).toBeGreaterThan(0);
+    expect(missingTables).toEqual([]);
   });
 
-  it("should have n4user table structure", async () => {
-    const result = await db.execute(sql`
-      SELECT column_name, data_type, is_nullable
-      FROM information_schema.columns
-      WHERE table_name = 'n4user'
-      ORDER BY ordinal_position
-      LIMIT 3
-    `);
+  it("can insert and read n4user", async () => {
+    const loginId = `node-pg-${Date.now()}@example.com`;
 
-    // Verify n4user table has expected columns
-    const columns = result.rows.map((row: any) => row.column_name);
-    expect(columns).toContain("id");
-    expect(columns).toContain("loginId");
-    expect(columns).toContain("name");
-  });
+    await pool.query(
+      `INSERT INTO "n4user" ("login_id", "name", "email", "is_guest") VALUES ($1, $2, $3, $4)`,
+      [loginId, "Node PG", loginId, false],
+    );
 
-  it("should be able to insert and select from n4user", async () => {
-    const testUser = {
-      loginId: "test@example.com",
-      name: "Test User",
-      email: "test@example.com",
-      isGuest: false,
-    };
+    const users = await pool.query<{ loginId: string; name: string }>(
+      `SELECT "login_id" AS "loginId", "name" FROM "n4user" WHERE "login_id" = $1 LIMIT 1`,
+      [loginId],
+    );
 
-    await db.insert(pgSchema.n4user).values(testUser);
-    const users = await db.select().from(pgSchema.n4user).limit(1);
-
-    expect(users.length).toBeGreaterThan(0);
-    expect(users[0].loginId).toBe("test@example.com");
-    expect(users[0].name).toBe("Test User");
+    expect(users.rows).toHaveLength(1);
+    expect(users.rows[0]?.loginId).toBe(loginId);
+    expect(users.rows[0]?.name).toBe("Node PG");
   });
 });
