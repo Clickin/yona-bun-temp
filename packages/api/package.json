@@ -1,0 +1,14 @@
+{
+	"name": "@yona/api",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"exports": "./src/index.ts",
+	"dependencies": {
+		"@yona/infra": "workspace:*",
+		"@sveltejs/kit": "^2.50.2",
+		"arctic": "^3.7.0",
+		"drizzle-orm": "^1.0.0-beta.15-859cf75",
+		"hono": "^4.12.3"
+	}
+}

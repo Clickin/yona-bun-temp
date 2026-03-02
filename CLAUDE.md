@@ -21,3 +21,11 @@ You MUST use this tool whenever writing Svelte code before sending it to the use
 
 Generates a Svelte Playground link with the provided code.
 After completing the code, ask the user if they want a playground link. Only call this tool after user confirmation and NEVER if code was written to files in their project.
+
+## Project Overrides Mirror
+
+- Monorepo layout is mandatory: `apps/web`, `packages/api`, `packages/core`, `packages/infra`, `tools/*`.
+- Import convention is fixed: cross-package imports use `@yona/*`; app-internal imports use `@web/*` or `$lib/$app`; root schema/config imports use `@drizzle/*`; deep relative imports like `../../../` are disallowed.
+- Sessions default to in-memory via `SessionStore`; Redis/Valkey may be added later behind the same abstraction.
+- Git backend for this work package is system `git` executable; `packages/libgit2-ffi` is out of scope.
+- Runtime DB uses Bun.SQL + Drizzle `drizzle-orm/bun-sql` with parity across Postgres/MySQL/SQLite schemas.

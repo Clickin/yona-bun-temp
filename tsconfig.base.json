@@ -1,0 +1,23 @@
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"strict": true,
+		"skipLibCheck": true,
+		"baseUrl": ".",
+		"paths": {
+			"@core/*": ["packages/core/src/*"],
+			"@api/*": ["packages/api/src/*"],
+			"@infra/*": ["packages/infra/src/*"],
+			"@yona/core": ["packages/core/src/index.ts"],
+			"@yona/core/*": ["packages/core/src/*"],
+			"@yona/api": ["packages/api/src/index.ts"],
+			"@yona/api/*": ["packages/api/src/*"],
+			"@yona/infra": ["packages/infra/src/index.ts"],
+			"@yona/infra/*": ["packages/infra/src/*"],
+			"@web/*": ["apps/web/src/*"],
+			"@drizzle/*": ["drizzle/*"]
+		}
+	}
+}
