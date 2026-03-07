@@ -26,7 +26,7 @@ describe("repository provisioning", () => {
     const result = await provisionRepository("1001");
 
     expect(result.created).toBe(true);
-    expect(result.repositoryPath.endsWith("/repo/1001")).toBe(true);
+    expect(result.repositoryPath.replaceAll("\\", "/").endsWith("/repo/1001")).toBe(true);
 
     const workPath = join(tempRoot, "work");
     await runGit(["clone", result.repositoryPath, workPath], { cwd: tempRoot });

@@ -10,7 +10,7 @@ import {
   readRepositoryFile,
   resolveRepositoryPath,
   getRepositoryRoot,
-} from "@yona/infra";
+} from "@yona/vcs";
 
 interface InlineEditRequestBody {
   branch?: string;

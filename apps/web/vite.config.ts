@@ -15,28 +15,25 @@ export default defineConfig({
     alias: {
       "@app": fileURLToPath(new URL("../app/src", import.meta.url)),
       "@yona/core": fileURLToPath(new URL("../../packages/core/src/index.ts", import.meta.url)),
-      "@yona/api": fileURLToPath(new URL("../../packages/api/src/index.ts", import.meta.url)),
       "@yona/infra": fileURLToPath(new URL("../../packages/infra/src/index.ts", import.meta.url)),
       "@yona/db": fileURLToPath(new URL("../../packages/db/src/index.ts", import.meta.url)),
       "@yona/vcs": fileURLToPath(new URL("../../packages/vcs/src/index.ts", import.meta.url)),
       "@web": fileURLToPath(new URL("./src", import.meta.url)),
       "@core": fileURLToPath(new URL("../../packages/core/src", import.meta.url)),
-      "@api": fileURLToPath(new URL("../../packages/api/src", import.meta.url)),
       "@infra": fileURLToPath(new URL("../../packages/infra/src", import.meta.url)),
       "@drizzle": fileURLToPath(new URL("../../drizzle", import.meta.url)),
       bun: fileURLToPath(new URL("./src/lib/server/bun-shim.ts", import.meta.url)),
     },
   },
   ssr: {
-    noExternal: ["@yona/core", "@yona/api", "@yona/infra", "@yona/db", "@yona/vcs"],
+    noExternal: ["@yona/core", "@yona/infra", "@yona/db", "@yona/vcs"],
   },
   test: {
     expect: { requireAssertions: true },
     coverage: {
       provider: "v8",
       allowExternal: true,
-      include: ["src/**/*.ts", "../../packages/infra/src/git/**/*.ts"],
-      exclude: ["src/lib/server/git/*.ts"],
+      include: ["src/**/*.ts", "../../packages/vcs/src/**/*.ts"],
     },
     projects: [
       {
@@ -52,7 +49,6 @@ export default defineConfig({
           exclude: ["src/lib/server/**"],
         },
       },
-
       {
         extends: "./vite.config.ts",
         test: {
@@ -65,5 +61,3 @@ export default defineConfig({
     ],
   },
 });
-
-

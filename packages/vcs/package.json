@@ -3,5 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "exports": "./src/index.ts"
+  "exports": "./src/index.ts",
+  "scripts": {
+    "test": "bunx vitest run src/*.spec.ts",
+    "test:coverage": "bunx vitest run --coverage src/*.spec.ts"
+  }
 }

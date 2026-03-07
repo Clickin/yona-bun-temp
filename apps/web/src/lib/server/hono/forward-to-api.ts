@@ -1,5 +1,5 @@
 import type { RequestEvent } from "@sveltejs/kit";
-import { apiApp } from "@yona/api";
+import { apiApp } from "$lib/server/hono/api-app";
 
 function normalizeRequest(event: RequestEvent, method: string, fallbackPath: string): Request {
   if (event.request instanceof Request) {

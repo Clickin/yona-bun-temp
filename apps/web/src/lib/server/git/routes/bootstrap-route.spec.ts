@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@web/routes/api/repos/[repoId]/bootstrap/+server";
-import { provisionRepository, readMutationActor } from "@yona/infra";
+import { provisionRepository, readMutationActor } from "@yona/vcs";
 
-vi.mock("@yona/infra", async () => {
-  const actual = await vi.importActual<typeof import("@yona/infra")>("@yona/infra");
+vi.mock("@yona/vcs", async () => {
+  const actual = await vi.importActual<typeof import("@yona/vcs")>("@yona/vcs");
 
   return {
     ...actual,

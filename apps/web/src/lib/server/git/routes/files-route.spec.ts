@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "@web/routes/api/repos/[repoId]/files/+server";
-import { apiApp } from "@yona/api";
+import { apiApp } from "$lib/server/hono/api-app";
 
-vi.mock("@yona/api", () => ({
+vi.mock("$lib/server/hono/api-app", () => ({
   apiApp: {
     fetch: vi.fn(),
   },
