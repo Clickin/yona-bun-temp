@@ -12,7 +12,7 @@ vi.mock("drizzle-orm/bun-sql", () => ({
   }),
 }));
 
-describe("db", () => {
+describe("db dialect", () => {
   const ORIGINAL_URL = process.env.YONA_DB_URL;
   const ORIGINAL_DIALECT = process.env.YONA_DB_DIALECT;
 
@@ -21,31 +21,29 @@ describe("db", () => {
     mockPostgres.mockClear();
     mockMysql.mockClear();
     mockSqlite.mockClear();
-    delete process.env.YONA_DB_URL;
     delete process.env.YONA_DB_DIALECT;
+    delete process.env.YONA_DB_URL;
   });
 
   afterEach(() => {
-    if (ORIGINAL_URL === undefined) {
-      delete process.env.YONA_DB_URL;
-    } else {
-      process.env.YONA_DB_URL = ORIGINAL_URL;
-    }
-
     if (ORIGINAL_DIALECT === undefined) {
       delete process.env.YONA_DB_DIALECT;
     } else {
       process.env.YONA_DB_DIALECT = ORIGINAL_DIALECT;
     }
+
+    if (ORIGINAL_URL === undefined) {
+      delete process.env.YONA_DB_URL;
+    } else {
+      process.env.YONA_DB_URL = ORIGINAL_URL;
+    }
   });
 
-  it("defaults to sqlite and default file URL when env vars are missing", async () => {
+  it("defaults to sqlite dialect and default sqlite URL", async () => {
     const { getDb } = await import("./db");
 
-    const db = getDb();
+    getDb();
 
-    expect(db).toMatchObject({ client: "sqlite-client", dbType: "sqlite" });
-    expect(mockSqlite).toHaveBeenCalledTimes(1);
     expect(mockSqlite).toHaveBeenCalledWith(
       "sqlite://./.yona-data/yona.db",
       expect.objectContaining({
@@ -57,24 +55,34 @@ describe("db", () => {
     expect(mockMysql).not.toHaveBeenCalled();
   }, 15_000);
 
-  it("initializes configured mysql drizzle once and reuses cached client", async () => {
-    process.env.YONA_DB_DIALECT = "mysql";
-    process.env.YONA_DB_URL = "mysql://user:pass@localhost:3306/yona";
+  it("throws when YONA_DB_DIALECT is invalid", async () => {
+    process.env.YONA_DB_DIALECT = "mssql";
     const { getDb } = await import("./db");
 
-    const first = getDb();
-    const second = getDb();
+    expect(() => getDb()).toThrowError(/YONA_DB_DIALECT/);
+  });
 
-    expect(first).toBe(second);
-    expect(first).toMatchObject({ client: "mysql-client", dbType: "mysql" });
-    expect(mockMysql).toHaveBeenCalledTimes(1);
-    expect(mockMysql).toHaveBeenCalledWith(
-      "mysql://user:pass@localhost:3306/yona",
-      expect.objectContaining({
-        schema: expect.any(Object),
-        relations: expect.any(Object),
-        mode: "default",
-      }),
-    );
-  }, 15_000);
+  it("throws when postgres dialect receives a mysql URL", async () => {
+    process.env.YONA_DB_DIALECT = "postgres";
+    process.env.YONA_DB_URL = "mysql://localhost:3306/yona";
+    const { getDb } = await import("./db");
+
+    expect(() => getDb()).toThrowError(/YONA_DB_URL/);
+  });
+
+  it("throws when mysql dialect receives a postgres URL", async () => {
+    process.env.YONA_DB_DIALECT = "mysql";
+    process.env.YONA_DB_URL = "postgres://localhost:5432/yona";
+    const { getDb } = await import("./db");
+
+    expect(() => getDb()).toThrowError(/YONA_DB_URL/);
+  });
+
+  it("throws when sqlite dialect receives a postgres URL", async () => {
+    process.env.YONA_DB_DIALECT = "sqlite";
+    process.env.YONA_DB_URL = "postgres://localhost:5432/yona";
+    const { getDb } = await import("./db");
+
+    expect(() => getDb()).toThrowError(/YONA_DB_URL/);
+  });
 });

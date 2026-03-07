@@ -400,26 +400,6 @@ export const linkedAccount = sqliteTable(
   ],
 );
 
-export const sessions = sqliteTable(
-  "sessions",
-  {
-    id: integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
-    userId: integer("user_id", { mode: "number" })
-      .notNull()
-      .references(() => n4user.id, { onDelete: "cascade", onUpdate: "restrict" }),
-    tokenHash: text("token_hash").notNull(),
-    csrfToken: text("csrf_token").notNull(),
-    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
-    ipAddress: text("ip_address").default("NULL"),
-    userAgent: text("user_agent").default(sql`NULL`),
-  },
-  (table) => [
-    index("ix_sessions_user_id").on(table.userId),
-    uniqueIndex("uq_sessions_token_hash").on(table.tokenHash),
-  ],
-);
-
 export const mention = sqliteTable(
   "mention",
   {

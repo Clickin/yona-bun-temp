@@ -407,26 +407,6 @@ export const linkedAccount = mysqlTable(
   ],
 );
 
-export const sessions = mysqlTable(
-  "sessions",
-  {
-    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
-    userId: bigint("user_id", { mode: "number" })
-      .notNull()
-      .references(() => n4user.id, { onDelete: "cascade", onUpdate: "restrict" }),
-    tokenHash: varchar("token_hash", { length: 255 }).notNull(),
-    csrfToken: varchar("csrf_token", { length: 255 }).notNull(),
-    createdAt: datetime("created_at").notNull(),
-    expiresAt: datetime("expires_at").notNull(),
-    ipAddress: varchar("ip_address", { length: 255 }).default("NULL"),
-    userAgent: text("user_agent").default(sql`NULL`),
-  },
-  (table) => [
-    index("ix_sessions_user_id").on(table.userId),
-    uniqueIndex("uq_sessions_token_hash").on(table.tokenHash),
-  ],
-);
-
 export const mention = mysqlTable(
   "mention",
   {
