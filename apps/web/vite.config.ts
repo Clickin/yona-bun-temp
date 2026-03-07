@@ -13,9 +13,12 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
+      "@app": fileURLToPath(new URL("../app/src", import.meta.url)),
       "@yona/core": fileURLToPath(new URL("../../packages/core/src/index.ts", import.meta.url)),
       "@yona/api": fileURLToPath(new URL("../../packages/api/src/index.ts", import.meta.url)),
       "@yona/infra": fileURLToPath(new URL("../../packages/infra/src/index.ts", import.meta.url)),
+      "@yona/db": fileURLToPath(new URL("../../packages/db/src/index.ts", import.meta.url)),
+      "@yona/vcs": fileURLToPath(new URL("../../packages/vcs/src/index.ts", import.meta.url)),
       "@web": fileURLToPath(new URL("./src", import.meta.url)),
       "@core": fileURLToPath(new URL("../../packages/core/src", import.meta.url)),
       "@api": fileURLToPath(new URL("../../packages/api/src", import.meta.url)),
@@ -25,7 +28,7 @@ export default defineConfig({
     },
   },
   ssr: {
-    noExternal: ["@yona/core", "@yona/api", "@yona/infra"],
+    noExternal: ["@yona/core", "@yona/api", "@yona/infra", "@yona/db", "@yona/vcs"],
   },
   test: {
     expect: { requireAssertions: true },
@@ -62,3 +65,5 @@ export default defineConfig({
     ],
   },
 });
+
+
