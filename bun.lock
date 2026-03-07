@@ -84,10 +84,27 @@
     "packages/api": {
       "name": "@yona/api",
       "version": "0.0.1",
+      "dependencies": {
+        "@yona/auth": "workspace:*",
+      },
+    },
+    "packages/auth": {
+      "name": "@yona/auth",
+      "version": "0.0.1",
+      "dependencies": {
+        "bcryptjs": "^3.0.3",
+      },
+      "devDependencies": {
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18",
+      },
     },
     "packages/core": {
       "name": "@yona/core",
       "version": "0.0.1",
+      "dependencies": {
+        "@yona/auth": "workspace:*",
+      },
     },
     "packages/db": {
       "name": "@yona/db",
@@ -110,6 +127,7 @@
       "name": "@yona/infra",
       "version": "0.0.1",
       "dependencies": {
+        "@yona/auth": "workspace:*",
         "@yona/core": "workspace:*",
         "drizzle-orm": "^1.0.0-beta.15-859cf75",
       },
@@ -627,6 +645,8 @@
     "@yona/api": ["@yona/api@workspace:packages/api"],
 
     "@yona/app": ["@yona/app@workspace:apps/app"],
+
+    "@yona/auth": ["@yona/auth@workspace:packages/auth"],
 
     "@yona/core": ["@yona/core@workspace:packages/core"],
 
