@@ -47,3 +47,4 @@
 - `docs/agents/07-bun-sfx-deployment.md`
 - `docs/agents/08-sveltekit-deployment-strategy.md`
 - `docs/agents/09-llm-onboarding-checklist.md`
+- `docs/agents/10-legacy-provenance-baseline.md`
