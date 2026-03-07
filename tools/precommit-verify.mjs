@@ -9,6 +9,7 @@ const IGNORED_PREFIXES = [
   "coverage/",
   ".husky/_/",
 ];
+const GENERATED_FILE_SUFFIXES = ["routeTree.gen.ts"];
 const OXLINT_EXTENSIONS = new Set([
   ".js",
   ".cjs",
@@ -54,6 +55,8 @@ const getExtension = (file) => {
   return file.slice(dot).toLowerCase();
 };
 
+const isGeneratedFile = (file) => GENERATED_FILE_SUFFIXES.some((suffix) => file.endsWith(suffix));
+
 const stagedResult = spawnSync("git", STAGED_CMD, { encoding: "utf8" });
 if (stagedResult.status !== 0) {
   process.exit(stagedResult.status ?? 1);
@@ -70,13 +73,17 @@ if (stagedFiles.length === 0) {
   process.exit(0);
 }
 
-const lintTargets = stagedFiles.filter((file) => OXLINT_EXTENSIONS.has(getExtension(file)));
+const lintTargets = stagedFiles
+  .filter((file) => OXLINT_EXTENSIONS.has(getExtension(file)))
+  .filter((file) => !isGeneratedFile(file));
 if (lintTargets.length > 0) {
   console.log(`precommit: running oxlint on ${lintTargets.length} staged file(s)`);
   run("bunx", ["oxlint", ...lintTargets]);
 }
 
-const formatTargets = stagedFiles.filter((file) => OXFMT_EXTENSIONS.has(getExtension(file)));
+const formatTargets = stagedFiles
+  .filter((file) => OXFMT_EXTENSIONS.has(getExtension(file)))
+  .filter((file) => !isGeneratedFile(file));
 if (formatTargets.length > 0) {
   console.log(`precommit: running oxfmt --check on ${formatTargets.length} staged file(s)`);
   run("bunx", ["oxfmt", "--check", ...formatTargets]);
