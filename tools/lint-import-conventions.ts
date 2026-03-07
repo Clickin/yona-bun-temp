@@ -37,6 +37,18 @@ const ALLOWED_EXCEPTIONS = new Set([
   "apps/web/src/lib/server/hono/auth-app.ts",
   "packages/api/src/auth/auth-app.ts",
 ]);
+const TARGET_OWNERSHIP_PREFIXES = [
+  "apps/app/",
+  "packages/auth/",
+  "packages/contracts/",
+  "packages/db/",
+  "packages/domain/",
+  "packages/i18n/",
+  "packages/integrations/",
+  "packages/ui/",
+  "packages/vcs/",
+];
+const LEGACY_OWNERSHIP_IMPORTS = ["@yona/api", "@yona/core", "@yona/infra"];
 
 async function collectFiles(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -82,6 +94,16 @@ function isException(file: string): boolean {
   return ALLOWED_EXCEPTIONS.has(file);
 }
 
+function isTargetOwnershipFile(file: string): boolean {
+  return TARGET_OWNERSHIP_PREFIXES.some((prefix) => file.startsWith(prefix));
+}
+
+function isLegacyOwnershipImport(importPath: string): boolean {
+  return LEGACY_OWNERSHIP_IMPORTS.some(
+    (legacyImport) => importPath === legacyImport || importPath.startsWith(`${legacyImport}/`),
+  );
+}
+
 function validateImport(file: string, importPath: string): string | null {
   if (/^(\.\.\/){3,}/.test(importPath)) {
     return "Deep relative import is forbidden; use project aliases.";
@@ -102,6 +124,16 @@ function validateImport(file: string, importPath: string): string | null {
       importPath.startsWith("$app")
     ) {
       return "packages/* must not import app internals (@web/$lib/$app).";
+    }
+  }
+
+  if (isTargetOwnershipFile(file) && isLegacyOwnershipImport(importPath)) {
+    return "Target ownership must not depend on legacy @yona/api, @yona/core, or @yona/infra packages.";
+  }
+
+  if (file.startsWith("apps/app/")) {
+    if (importPath.startsWith("@web/") || importPath.startsWith("$lib") || importPath.startsWith("$app")) {
+      return "apps/app must not import SvelteKit app internals (@web/$lib/$app).";
     }
   }
 
@@ -152,3 +184,6 @@ async function main(): Promise<void> {
 }
 
 await main();
+
+
+
