@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { and, eq } from "drizzle-orm";
 import type { RequestEvent } from "@sveltejs/kit";
 import { linkedAccount, n4user, userCredential } from "@drizzle/schema";
-import { getDb } from "$lib/server/db";
+import { getDb } from "@yona/db";
 import { appendAuthAuditLog } from "$lib/server/auth/audit";
 import {
   getAnonymousCsrfCookieName,

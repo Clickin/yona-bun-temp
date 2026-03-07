@@ -2,6 +2,8 @@ import { inMemorySessionStore, resetInMemorySessionStoreForTests } from "@yona/i
 import { generateCsrfToken } from "./csrf";
 import { generateResetToken, hashToken } from "./tokens";
 
+// Legacy DB migrations still preserve the sessions table for in-place upgrades.
+// Runtime auth must continue to use the in-memory store instead of DB-backed sessions.
 const DEFAULT_COOKIE_NAME = "yona_session";
 const DEFAULT_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 const SESSION_COOKIE_PATH = "/";

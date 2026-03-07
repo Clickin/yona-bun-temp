@@ -6,7 +6,7 @@ const mockValidateAuthorizationCode = vi.hoisted(() => vi.fn());
 const mockCreateSession = vi.hoisted(() => vi.fn());
 const mockSetSessionCookie = vi.hoisted(() => vi.fn());
 
-vi.mock("$lib/server/db", () => ({
+vi.mock("@yona/db", () => ({
   getDb: mockGetDb,
 }));
 

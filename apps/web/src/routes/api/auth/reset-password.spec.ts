@@ -24,7 +24,7 @@ const MockEmailProviderNotImplementedError = vi.hoisted(
     },
 );
 
-vi.mock("$lib/server/db", () => ({
+vi.mock("@yona/db", () => ({
   getDb: mockGetDb,
 }));
 

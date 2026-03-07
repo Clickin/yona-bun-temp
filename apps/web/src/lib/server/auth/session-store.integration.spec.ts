@@ -5,7 +5,7 @@ import { handleSession, setSessionCookie } from "./session-helper";
 
 const mockGetDb = vi.hoisted(() => vi.fn());
 
-vi.mock("$lib/server/db", () => ({
+vi.mock("@yona/db", () => ({
   getDb: mockGetDb,
 }));
 

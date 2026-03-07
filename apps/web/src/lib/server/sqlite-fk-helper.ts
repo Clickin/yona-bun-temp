@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { getDb } from "./db";
+import { getDb } from "@yona/db";
 
 export interface FkRule<TTable, TColumn> {
   table: TTable;

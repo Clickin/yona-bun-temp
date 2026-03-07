@@ -40,7 +40,7 @@ describe("db dialect", () => {
   });
 
   it("defaults to sqlite dialect and default sqlite URL", async () => {
-    const { getDb } = await import("./db");
+    const { getDb } = await import("./index");
 
     getDb();
 
@@ -57,7 +57,7 @@ describe("db dialect", () => {
 
   it("throws when YONA_DB_DIALECT is invalid", async () => {
     process.env.YONA_DB_DIALECT = "mssql";
-    const { getDb } = await import("./db");
+    const { getDb } = await import("./index");
 
     expect(() => getDb()).toThrowError(/YONA_DB_DIALECT/);
   });
@@ -65,7 +65,7 @@ describe("db dialect", () => {
   it("throws when postgres dialect receives a mysql URL", async () => {
     process.env.YONA_DB_DIALECT = "postgres";
     process.env.YONA_DB_URL = "mysql://localhost:3306/yona";
-    const { getDb } = await import("./db");
+    const { getDb } = await import("./index");
 
     expect(() => getDb()).toThrowError(/YONA_DB_URL/);
   });
@@ -73,7 +73,7 @@ describe("db dialect", () => {
   it("throws when mysql dialect receives a postgres URL", async () => {
     process.env.YONA_DB_DIALECT = "mysql";
     process.env.YONA_DB_URL = "postgres://localhost:5432/yona";
-    const { getDb } = await import("./db");
+    const { getDb } = await import("./index");
 
     expect(() => getDb()).toThrowError(/YONA_DB_URL/);
   });
@@ -81,7 +81,7 @@ describe("db dialect", () => {
   it("throws when sqlite dialect receives a postgres URL", async () => {
     process.env.YONA_DB_DIALECT = "sqlite";
     process.env.YONA_DB_URL = "postgres://localhost:5432/yona";
-    const { getDb } = await import("./db");
+    const { getDb } = await import("./index");
 
     expect(() => getDb()).toThrowError(/YONA_DB_URL/);
   });

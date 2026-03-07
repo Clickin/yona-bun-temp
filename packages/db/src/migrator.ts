@@ -1,6 +1,6 @@
 import { migrate } from "drizzle-orm/bun-sql/migrator";
 import { join } from "path";
-import { getDb } from "./db";
+import { getDb } from "./index";
 
 export async function runMigrations() {
   const db = getDb();

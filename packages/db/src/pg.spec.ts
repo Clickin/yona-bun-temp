@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Pool } from "pg";
 import * as pgSchema from "@drizzle/pg/schema";
-import { setupPostgresTestDatabase } from "../test-utils/database";
+import { setupPostgresTestDatabase } from "./test-utils/database";
 import {
   getExpectedTableNames,
-  getLatestMigrationSql,
+  getMigrationSqlChain,
   normalizePgMigration,
   splitMigrationStatements,
 } from "./test-helpers";
@@ -26,7 +26,7 @@ describe("PostgreSQL database", () => {
       database: url.pathname.slice(1),
     });
 
-    const migrationSql = normalizePgMigration(getLatestMigrationSql("pg"));
+    const migrationSql = normalizePgMigration(getMigrationSqlChain("pg"));
     const statements = splitMigrationStatements(migrationSql);
     for (const statement of statements) {
       try {
@@ -68,6 +68,7 @@ describe("PostgreSQL database", () => {
 
     expect(expectedTables.length).toBeGreaterThan(0);
     expect(missingTables).toEqual([]);
+    expect(existingTables.has("sessions")).toBe(true);
   });
 
   it("can insert and read n4user", async () => {

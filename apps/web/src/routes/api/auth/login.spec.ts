@@ -14,7 +14,7 @@ const mockGetAnonymousCsrfCookieName = vi.hoisted(() => vi.fn());
 const mockReadRequestCsrfToken = vi.hoisted(() => vi.fn());
 const mockValidateCsrfToken = vi.hoisted(() => vi.fn());
 
-vi.mock("$lib/server/db", () => ({
+vi.mock("@yona/db", () => ({
   getDb: mockGetDb,
 }));
 

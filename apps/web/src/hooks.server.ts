@@ -1,7 +1,7 @@
 import { getTextDirection } from "$lib/paraglide/runtime";
 import { paraglideMiddleware } from "$lib/paraglide/server";
 import { handleSession } from "$lib/server/auth/session-helper";
-import { runMigrations } from "$lib/server/db-migrator";
+import { runMigrations } from "@yona/db";
 import type { Handle } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 

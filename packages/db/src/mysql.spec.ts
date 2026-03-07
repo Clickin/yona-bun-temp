@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import mysql from "mysql2/promise";
 import * as mysqlSchema from "@drizzle/mysql/schema";
-import { setupMySQLTestDatabase } from "../test-utils/database";
+import { setupMySQLTestDatabase } from "./test-utils/database";
 import {
   getExpectedTableNames,
-  getLatestMigrationSql,
+  getMigrationSqlChain,
   normalizeMySqlMigration,
   splitMigrationStatements,
 } from "./test-helpers";
@@ -19,7 +19,7 @@ describe("MySQL database", () => {
 
     connection = await mysql.createConnection({ uri: setup.url, multipleStatements: true });
 
-    const migrationSql = normalizeMySqlMigration(getLatestMigrationSql("mysql"));
+    const migrationSql = normalizeMySqlMigration(getMigrationSqlChain("mysql"));
     const statements = splitMigrationStatements(migrationSql);
 
     for (const statement of statements) {
@@ -49,6 +49,7 @@ describe("MySQL database", () => {
 
     expect(expectedTables.length).toBeGreaterThan(0);
     expect(missingTables).toEqual([]);
+    expect(existingTables.has("sessions")).toBe(true);
   });
 
   it("can insert and read n4user", async () => {

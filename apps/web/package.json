@@ -11,15 +11,13 @@
     "check": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "test:unit": "vitest",
-    "test:db": "vitest run src/lib/server/db/*.spec.ts",
-    "test:db:node": "vitest run src/lib/server/db/pg.spec.ts src/lib/server/db/mysql.spec.ts src/lib/server/db/migrations.spec.ts",
-    "test:db:node:coverage": "vitest run src/lib/server/db/pg.spec.ts src/lib/server/db/mysql.spec.ts src/lib/server/db/migrations.spec.ts --coverage.enabled --coverage.allowExternal=false --coverage.include=\"src/lib/server/db/**/*.ts\" --coverage.include=\"src/lib/server/test-utils/database.ts\" --coverage.reportsDirectory=coverage/db-node --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=html",
     "test": "bun run test:unit -- --run && bun run test:e2e",
     "test:e2e": "playwright test"
   },
   "dependencies": {
     "@yona/api": "workspace:*",
     "@yona/core": "workspace:*",
+    "@yona/db": "workspace:*",
     "@yona/infra": "workspace:*",
     "arctic": "^3.7.0",
     "bcryptjs": "^3.0.3",
