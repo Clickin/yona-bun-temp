@@ -4,7 +4,7 @@
 
 ## 배포 토폴로지
 
-- 하나의 Bun application이 UI SSR, server function, server route를 함께 제공한다.
+- 하나의 Bun application이 UI SSR, thin `serverFunction` adapter, in-process `tRPC` backend, server route를 함께 제공한다.
 - notification/integration delivery는 같은 Bun process 내부의 dedicated worker에서 처리한다.
 - 별도 backend API 프로세스를 canonical topology로 두지 않는다.
 

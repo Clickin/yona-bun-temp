@@ -1,39 +1,92 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@app/lib/shell-data", () => ({
-  buildProtectedRedirect: vi.fn((session: { isAuthenticated: boolean }, attemptedHref: string) =>
-    session.isAuthenticated
-      ? null
-      : {
-          to: "/login",
-          search: {
-            redirect: attemptedHref,
-          },
-        },
-  ),
   getPublicShellData: vi.fn(async () => ({
-    headline: "Yona App Shell",
+    headline: "Yona Canonical App",
     summary:
-      "TanStack Start, Router, Query, and server functions are wired into a single Bun-first shell.",
+      "TanStack Start, Router, Query, and server functions now own the primary Yona application runtime.",
     workstreams: [
-      "request-scoped query client",
-      "SSR loader prefetch + suspense query hydration",
-      "beforeLoad auth boundary",
+      "server functions own internal auth mutations",
+      "server routes expose canonical HTTP auth surfaces",
+      "protected routes read the session projection before render",
     ],
   })),
   getProtectedShellData: vi.fn(async () => ({
     title: "Protected Workspace",
     lanes: [],
   })),
-  readDemoSession: vi.fn(async () => ({
-    isAuthenticated: false,
+}));
+
+vi.mock("@app/lib/auth", () => ({
+  buildProtectedRedirect: vi.fn((session: { isAnonymous: boolean }, attemptedHref: string) =>
+    session.isAnonymous
+      ? {
+          to: "/login",
+          search: {
+            redirect: attemptedHref,
+          },
+        }
+      : null,
+  ),
+  readCurrentSession: vi.fn(async () => ({
+    actorId: null,
+    isAnonymous: true,
+    isConfirmed: false,
+    isSiteAdmin: false,
+    loginId: null,
     userLabel: null,
+    emailAddress: null,
   })),
-  signInDemo: vi.fn(async () => ({
+  signInWithPassword: vi.fn(async () => ({
+    ok: true,
+    session: {
+      actorId: 1,
+      emailAddress: "admin@yona.local",
+      isAnonymous: false,
+      isConfirmed: true,
+      isSiteAdmin: true,
+      loginId: "admin",
+      userLabel: "Admin",
+    },
+  })),
+  registerWithPassword: vi.fn(async () => ({
+    ok: true,
+    session: {
+      actorId: 2,
+      emailAddress: "door@example.com",
+      isAnonymous: false,
+      isConfirmed: true,
+      isSiteAdmin: false,
+      loginId: "door",
+      userLabel: "Door TTS",
+    },
+  })),
+  requestPasswordReset: vi.fn(async () => ({
     ok: true,
   })),
-  signOutDemo: vi.fn(async () => ({
+  completePasswordReset: vi.fn(async () => ({
     ok: true,
+    session: {
+      actorId: null,
+      emailAddress: null,
+      isAnonymous: true,
+      isConfirmed: false,
+      isSiteAdmin: false,
+      loginId: null,
+      userLabel: null,
+    },
+  })),
+  signOut: vi.fn(async () => ({
+    ok: true,
+    session: {
+      actorId: null,
+      emailAddress: null,
+      isAnonymous: true,
+      isConfirmed: false,
+      isSiteAdmin: false,
+      loginId: null,
+      userLabel: null,
+    },
   })),
 }));
 
@@ -50,8 +103,8 @@ describe("TanStack Start app shell", () => {
     await router.load();
     const html = renderToString(<RouterProvider router={router} />);
 
-    expect(html).toContain("Yona App Shell");
-    expect(html).toContain("request-scoped query client");
+    expect(html).toContain("Yona Canonical App");
+    expect(html).toContain("server functions own internal auth mutations");
   });
 
   it("creates a fresh query client for each router instance", () => {

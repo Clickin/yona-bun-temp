@@ -5,7 +5,6 @@
   "type": "module",
   "exports": "./src/index.ts",
   "dependencies": {
-    "@yona/core": "workspace:*",
-    "drizzle-orm": "^1.0.0-beta.15-859cf75"
+    "@yona/auth": "workspace:*"
   }
 }

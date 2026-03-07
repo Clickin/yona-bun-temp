@@ -9,7 +9,7 @@
 
 ## 계층 매핑 규칙
 
-- Play controller test -> server function test 또는 server route test
+- Play controller test -> `tRPC` procedure test + `serverFunction` adapter test 또는 server route test
 - Play model test -> domain test
 - `AccessControlTest` 류 -> domain ACL test + route authorization test
 - `playRepository` test -> protocol integration test
@@ -41,7 +41,8 @@ Intent:
 Modern translation:
 
 - domain permission test
-- server-function authorization test
+- `tRPC` procedure authorization test
+- `serverFunction` adapter authorization test
 
 Deviation:
 

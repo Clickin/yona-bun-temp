@@ -7,6 +7,7 @@ node_modules
 .wrangler
 /apps/web/.svelte-kit
 /apps/web/build
+/apps/app/dist
 
 # Yona runtime data
 .yona-data/

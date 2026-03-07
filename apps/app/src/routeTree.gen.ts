@@ -9,10 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProtectedRouteImport } from './routes/protected'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiAuthSessionRouteImport } from './routes/api/auth/session'
+import { Route as ApiAuthProviderProviderCallbackRouteImport } from './routes/api/auth/provider/$provider/callback'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProtectedRoute = ProtectedRouteImport.update({
   id: '/protected',
   path: '/protected',
@@ -23,44 +38,119 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthSessionRoute = ApiAuthSessionRouteImport.update({
+  id: '/api/auth/session',
+  path: '/api/auth/session',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthProviderProviderCallbackRoute =
+  ApiAuthProviderProviderCallbackRouteImport.update({
+    id: '/api/auth/provider/$provider/callback',
+    path: '/api/auth/provider/$provider/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/protected': typeof ProtectedRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/api/auth/session': typeof ApiAuthSessionRoute
+  '/api/auth/provider/$provider/callback': typeof ApiAuthProviderProviderCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/protected': typeof ProtectedRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/api/auth/session': typeof ApiAuthSessionRoute
+  '/api/auth/provider/$provider/callback': typeof ApiAuthProviderProviderCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/protected': typeof ProtectedRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/api/auth/session': typeof ApiAuthSessionRoute
+  '/api/auth/provider/$provider/callback': typeof ApiAuthProviderProviderCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/protected'
+  fullPaths:
+    | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/protected'
+    | '/register'
+    | '/reset-password'
+    | '/api/auth/session'
+    | '/api/auth/provider/$provider/callback'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/protected'
-  id: '__root__' | '/' | '/login' | '/protected'
+  to:
+    | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/protected'
+    | '/register'
+    | '/reset-password'
+    | '/api/auth/session'
+    | '/api/auth/provider/$provider/callback'
+  id:
+    | '__root__'
+    | '/'
+    | '/forgot-password'
+    | '/login'
+    | '/protected'
+    | '/register'
+    | '/reset-password'
+    | '/api/auth/session'
+    | '/api/auth/provider/$provider/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   ProtectedRoute: typeof ProtectedRoute
+  RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiAuthSessionRoute: typeof ApiAuthSessionRoute
+  ApiAuthProviderProviderCallbackRoute: typeof ApiAuthProviderProviderCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/protected': {
       id: '/protected'
       path: '/protected'
@@ -75,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -82,13 +179,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/session': {
+      id: '/api/auth/session'
+      path: '/api/auth/session'
+      fullPath: '/api/auth/session'
+      preLoaderRoute: typeof ApiAuthSessionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/provider/$provider/callback': {
+      id: '/api/auth/provider/$provider/callback'
+      path: '/api/auth/provider/$provider/callback'
+      fullPath: '/api/auth/provider/$provider/callback'
+      preLoaderRoute: typeof ApiAuthProviderProviderCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   ProtectedRoute: ProtectedRoute,
+  RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  ApiAuthSessionRoute: ApiAuthSessionRoute,
+  ApiAuthProviderProviderCallbackRoute: ApiAuthProviderProviderCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

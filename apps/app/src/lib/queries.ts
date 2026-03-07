@@ -1,5 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
-import { getProtectedShellData, getPublicShellData, readDemoSession } from "./shell-data";
+import { readCurrentSession } from "./auth";
+import { currentSessionQueryKey } from "./auth-shared";
+import { getProtectedShellData, getPublicShellData } from "./shell-data";
 
 export function publicShellQueryOptions() {
   return queryOptions({
@@ -15,9 +17,9 @@ export function protectedShellQueryOptions() {
   });
 }
 
-export function demoSessionQueryOptions() {
+export function currentSessionQueryOptions() {
   return queryOptions({
-    queryKey: ["app-shell", "session"],
-    queryFn: () => readDemoSession(),
+    queryKey: currentSessionQueryKey,
+    queryFn: () => readCurrentSession(),
   });
 }

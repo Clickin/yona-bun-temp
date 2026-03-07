@@ -7,7 +7,14 @@ export default defineConfig({
   server: {
     port: 3001,
   },
-  plugins: [tsConfigPaths(), tanstackStart({ srcDirectory: "src" }), viteReact()],
+  plugins: [
+    tsConfigPaths({
+      ignoreConfigErrors: true,
+      projects: ["./tsconfig.json"],
+    }),
+    tanstackStart({ srcDirectory: "src" }),
+    viteReact(),
+  ],
   test: {
     environment: "node",
     include: ["src/**/*.spec.ts", "src/**/*.spec.tsx"],

@@ -46,16 +46,16 @@ function RootRouteComponent() {
       <div className="app-frame">
         <div className="hero-card">
           <div className="hero-copy">
-            <p className="kicker">Wave A1</p>
-            <h1>Intentional shell, not legacy carry-over.</h1>
+            <p className="kicker">Wave W2</p>
+            <h1>Canonical app auth now lives in TanStack Start.</h1>
             <p className="lead">
-              This app proves the target stack: TanStack Start + Router + Query on Bun, with server
-              functions for internal reads and mutations.
+              The active runtime is `apps/app`: server functions own internal auth flows, and server
+              routes reserve canonical HTTP auth surfaces.
             </p>
           </div>
           <nav className="shell-nav">
             <Link to="/" activeProps={{ className: "nav-pill active" }} className="nav-pill">
-              Public Route
+              Home
             </Link>
             <Link
               to="/protected"
@@ -65,7 +65,21 @@ function RootRouteComponent() {
               Protected Route
             </Link>
             <Link to="/login" activeProps={{ className: "nav-pill active" }} className="nav-pill">
-              Demo Login
+              Login
+            </Link>
+            <Link
+              to="/register"
+              activeProps={{ className: "nav-pill active" }}
+              className="nav-pill"
+            >
+              Register
+            </Link>
+            <Link
+              to="/forgot-password"
+              activeProps={{ className: "nav-pill active" }}
+              className="nav-pill"
+            >
+              Reset
             </Link>
           </nav>
         </div>

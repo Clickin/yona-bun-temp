@@ -3,18 +3,23 @@
 ## G1) Canonical App Model
 
 - target baseline은 `TanStack Start + React + Bun`이다.
-- `SvelteKit`, `Hono`, `tRPC`를 새 canonical transport로 도입하지 않는다.
-- UI, SSR, auth/session projection, server route가 하나의 deployable app 안에 존재한다.
+- `SvelteKit`, `Hono`를 새 canonical transport로 도입하지 않는다.
+- UI, SSR, auth/session projection, thin `serverFunction` adapter, in-process `tRPC`, server route가 하나의 deployable app 안에 존재한다.
 
 ## G2) Transport Boundary
 
-- 내부 앱 read/mutation은 `createServerFn`.
+- 내부 앱 read/mutation의 canonical backend boundary는 in-process `tRPC`.
+- TanStack Start `serverFunction`은 app-facing thin adapter shell이다.
+- app-internal non-plain-JSON 타입은 `superjson` transformer로 처리한다.
 - 명시적 HTTP/protocol control이 필요한 경우만 server route를 사용한다.
+- route loader, `beforeLoad`, component, `serverFunction` adapter의 direct DB call을 금지한다.
+- session 조회와 redirect는 app layer에서 수행할 수 있지만, feature ACL source of truth는 `tRPC`/domain에 둔다.
+- session-aware route라는 이유만으로 full SSR을 강제하지 않으며, route 목적에 따라 `ssr: true`, `ssr: 'data-only'`, `ssr: false`를 선택한다.
 - smart HTTP, OAuth callback, asset download, webhook ingress, AI endpoint는 server route로 구현한다.
 
 ## G3) Ownership Boundary
 
-- `apps/app`은 route tree, router setup, query integration, root context만 소유한다.
+- `apps/app`은 route tree, router setup, query integration, root context, `tRPC` context/caller/adapter wiring, server route composition만 소유한다.
 - `packages/domain`은 ACL, aggregate behavior, invariant를 소유한다.
 - `packages/db`는 schema, migration, parity test를 소유한다.
 - `packages/vcs`는 git/svn executable policy와 protocol helper를 소유한다.

@@ -1,0 +1,19 @@
+{
+  "name": "@yona/auth",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "bunx vitest run src/*.spec.ts"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

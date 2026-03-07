@@ -7,7 +7,7 @@
       "devDependencies": {
         "@testcontainers/mysql": "^10.0.0",
         "@testcontainers/postgresql": "^10.0.0",
-        "bun": "file:apps/web/src/lib/server/bun-package",
+        "bun": "file:tools/bun-package",
         "drizzle-kit": "1.0.0-beta.15-859cf75",
         "drizzle-orm": "1.0.0-beta.15-859cf75",
         "husky": "^9.1.7",
@@ -84,10 +84,40 @@
     "packages/api": {
       "name": "@yona/api",
       "version": "0.0.1",
+      "dependencies": {
+        "@yona/auth": "workspace:*",
+      },
+    },
+    "packages/auth": {
+      "name": "@yona/auth",
+      "version": "0.0.1",
+      "dependencies": {
+        "bcryptjs": "^3.0.3",
+      },
+      "devDependencies": {
+        "@types/node": "^24.6.0",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18",
+      },
+    },
+    "packages/contracts": {
+      "name": "@yona/contracts",
+      "version": "0.0.1",
+      "dependencies": {
+        "zod": "^4.1.11",
+      },
+      "devDependencies": {
+        "typescript": "^5.9.3",
+        "vite-tsconfig-paths": "^5.1.4",
+        "vitest": "^4.0.18",
+      },
     },
     "packages/core": {
       "name": "@yona/core",
       "version": "0.0.1",
+      "dependencies": {
+        "@yona/auth": "workspace:*",
+      },
     },
     "packages/db": {
       "name": "@yona/db",
@@ -106,17 +136,32 @@
         "vitest": "^4.0.18",
       },
     },
+    "packages/domain": {
+      "name": "@yona/domain",
+      "version": "0.0.1",
+      "dependencies": {
+        "@yona/contracts": "workspace:*",
+      },
+      "devDependencies": {
+        "typescript": "^5.9.3",
+        "vite-tsconfig-paths": "^5.1.4",
+        "vitest": "^4.0.18",
+      },
+    },
     "packages/infra": {
       "name": "@yona/infra",
       "version": "0.0.1",
       "dependencies": {
-        "@yona/core": "workspace:*",
-        "drizzle-orm": "^1.0.0-beta.15-859cf75",
+        "@yona/auth": "workspace:*",
       },
     },
     "packages/vcs": {
       "name": "@yona/vcs",
       "version": "0.0.1",
+    },
+    "tools/bun-package": {
+      "name": "bun",
+      "version": "0.0.0",
     },
   },
   "packages": {
@@ -628,9 +673,15 @@
 
     "@yona/app": ["@yona/app@workspace:apps/app"],
 
+    "@yona/auth": ["@yona/auth@workspace:packages/auth"],
+
+    "@yona/contracts": ["@yona/contracts@workspace:packages/contracts"],
+
     "@yona/core": ["@yona/core@workspace:packages/core"],
 
     "@yona/db": ["@yona/db@workspace:packages/db"],
+
+    "@yona/domain": ["@yona/domain@workspace:packages/domain"],
 
     "@yona/infra": ["@yona/infra@workspace:packages/infra"],
 
@@ -726,7 +777,9 @@
 
     "buildcheck": ["buildcheck@0.0.7", "", {}, "sha512-lHblz4ahamxpTmnsk+MNTRWsjYKv965MwOrSJyeD588rR3Jcu7swE+0wN5F+PbL5cjgu/9ObkhfzEPuofEMwLA=="],
 
-    "bun": ["bun@file:apps/web/src/lib/server/bun-package", {}],
+    "bun": ["bun@workspace:tools/bun-package"],
+
+    "bun": ["bun@file:tools/bun-package", {}],
 
     "bundle-name": ["bundle-name@4.1.0", "", { "dependencies": { "run-applescript": "^7.0.0" } }, "sha512-tjwM5exMg6BGRI+kNmTntNsvdZS1X8BFYS6tnJ2hdH0kVxM6/eVZ2xy+FqStSWvYmtfFMDLIxurorHwDKfDz5Q=="],
 

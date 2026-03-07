@@ -16,7 +16,9 @@
 
 - **재작성 방식:** 현재 `SvelteKit + Hono` 구현을 확장하지 않고, target architecture로 명시적으로 전환한다.
 - **앱 모델:** `TanStack Start + TanStack Router + TanStack Query + React`.
-- **내부 인터페이스:** 내부 앱 read/mutation은 `createServerFn`이 baseline이다.
+- **내부 인터페이스:** 내부 앱 read/mutation의 canonical backend boundary는 in-process `tRPC`다.
+- **앱 어댑터:** TanStack Start `serverFunction`은 app-facing thin adapter shell이다.
+- **직렬화:** app-internal non-plain-JSON 타입은 `superjson`을 baseline으로 사용한다.
 - **외부 인터페이스:** protocol 또는 외부 소비자 endpoint는 server route로 구현한다.
 - **인증 경계:** `Better Auth`를 사용하되 canonical user, credential, linked account, ACL, audit는 Yona가 직접 소유한다.
 - **세션:** DB session persistence는 금지한다. 기본은 in-memory이며 `Redis/Valkey` secondary storage를 허용한다.
@@ -41,6 +43,9 @@
 
 - `SPEC.md`
 - https://tanstack.com/start/latest/docs/framework/react/overview
+- https://tanstack.com/start/latest/docs/framework/react/examples/with-trpc
+- https://trpc.io/docs/
+- https://github.com/flightcontrolhq/superjson
 - https://www.better-auth.com/docs/adapters/drizzle
 - https://www.better-auth.com/docs/concepts/database#secondary-storage
 - https://bun.com/docs/runtime/sql

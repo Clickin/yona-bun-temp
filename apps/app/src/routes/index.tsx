@@ -25,6 +25,13 @@ function HomeRouteComponent() {
           </p>
         </article>
       ))}
+      <article className="panel">
+        <strong>Primary auth entrypoints</strong>
+        <p className="note">
+          `/login`, `/register`, `/forgot-password`, `/reset-password`, and
+          <code> /api/auth/session </code> are now part of the canonical app surface.
+        </p>
+      </article>
     </section>
   );
 }

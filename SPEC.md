@@ -30,7 +30,9 @@ Language: Korean-first, English identifiers
 Yona는 `TanStack Start + React + Bun` 기반의 단일 런타임 애플리케이션으로 재구축한다. canonical app model은 다음과 같다.
 
 - `TanStack Start + TanStack Router + TanStack Query`
-- 내부 앱용 읽기/변경은 `createServerFn`
+- 내부 앱용 읽기/변경의 canonical backend boundary는 in-process `tRPC`
+- TanStack Start `serverFunction`은 app-facing thin adapter로만 사용
+- `Date` 등 non-plain-JSON 타입은 app-internal RPC boundary에서 `superjson`으로 직렬화
 - 외부 소비자 또는 프로토콜 endpoint는 server routes
 - user-uploaded asset은 prebundled static asset이 아니라 Yona-controlled asset route로 제공
 - 인증 프레임워크는 `Better Auth` 우선
@@ -50,7 +52,8 @@ Yona는 `TanStack Start + React + Bun` 기반의 단일 런타임 애플리케�
 - in-memory session store
 - git executable backend
 
-재개발은 레거시 Yona의 행위 의미를 보존하면서도, TanStack 중심 full-stack architecture로 재정렬되어야 한다. 기본 구현 기준은 Hono도 아니고 tRPC도 아니다. 기본 기준은 TanStack Start native server functions와 server routes다. `tRPC`는 향후 선택 가능한 확장 surface로만 남긴다.
+재개발은 레거시 Yona의 행위 의미를 보존하면서도, TanStack 중심 full-stack architecture로 재정렬되어야 한다. 기본 구현 기준은 Hono가 아니라 TanStack Start + in-process `tRPC` + server route다. `serverFunction`은 transport shell이고 business read/mutation은 `tRPC` procedure가 담당한다.
+현재 `apps/app`의 `serverFunction` 예제 코드는 pre-migration shell로 간주하며, 문서 기준선과의 차이는 후속 구현 작업에서 해소한다.
 
 ## 3. 고정 결정
 
@@ -73,9 +76,10 @@ Yona는 `TanStack Start + React + Bun` 기반의 단일 런타임 애플리케�
 
 ### 3.3 백엔드 인터페이스 모델
 
-- 내부 앱 action: `createServerFn`
+- 내부 앱 action/backend boundary: in-process `tRPC`
+- TanStack Start `serverFunction`: app-facing thin adapter shell
+- app-internal transformer: `superjson`
 - 외부 HTTP/protocol endpoint: TanStack Start server routes
-- `tRPC`: 선택 가능한 확장 레이어일 뿐 canonical transport가 아니다.
 - `Hono`: target architecture에서 제외한다.
 
 ### 3.4 인증과 세션
@@ -330,10 +334,11 @@ migration 기간 alias:
 canonical app은 다음 요소를 가진 단일 TanStack Start 애플리케이션이다.
 
 - UI와 internal route composition을 위한 route tree
-- 내부 business operation을 위한 server function
+- 내부 business operation을 위한 `tRPC` router/procedure/caller/context
+- app-facing adapter shell로서의 TanStack Start `serverFunction`
 - public/protocol-oriented endpoint를 위한 server route
 - request별로 생성되는 `QueryClient`
-- auth/session projection과 query client를 담는 root route context
+- auth/session projection, `QueryClient`, `tRPC` caller를 담는 root route context
 
 이 구조의 의미는 다음과 같다.
 
@@ -341,21 +346,23 @@ canonical app은 다음 요소를 가진 단일 TanStack Start 애플리케이�
 - SSR, data loading, mutation, auth, protocol endpoint가 하나의 deployable app 안에 존재한다.
 - 오래 사는 infra concern은 package로 분리한다.
 
-## 7.2 TanStack Start Native Server Function을 baseline으로 두는 이유
+## 7.2 In-process tRPC를 internal backend baseline으로 두는 이유
 
-baseline이 tRPC가 아닌 이유:
+baseline이 `tRPC`인 이유:
 
-- typed server function 제공
-- loader와 자연스럽게 결합
-- redirect-aware server execution
-- TanStack Query와 직접 결합되는 SSR 모델
-- 내부 UI 전용 action에 불필요한 transport layer를 추가하지 않음
+- browser와 SSR이 동일한 backend boundary를 공유할 수 있음
+- procedure/caller/context 구성이 transport와 business logic를 분리함
+- `superjson` transformer로 `Date` 같은 non-plain-JSON 타입을 안정적으로 왕복시킬 수 있음
+- TanStack Query와 caller 기반 SSR wiring을 결합할 수 있음
+- 단일 런타임 안에서 backend를 분리한 것과 같은 유지보수 경계를 확보함
 
 canonical rule:
 
-- 내부 application read/mutation은 `createServerFn`
+- 내부 application read/mutation은 `tRPC` procedure를 canonical entry로 사용
 - 완전한 HTTP semantics가 필요한 경우만 server route
-- server function으로 충분한 internal CRUD에 tRPC를 기본 도입하지 않음
+- TanStack Start `serverFunction`은 slug/adapter shell로만 사용하고 직접 DB client나 domain rule을 호출하지 않음
+- route loader, `beforeLoad`, component, `serverFunction` adapter는 DB client를 직접 import/call하지 않음
+- SSR, preload, mutation orchestration은 `tRPC` caller 또는 그 위의 thin query integration만 사용
 
 ## 7.3 Server Route가 여전히 필수인 이유
 
@@ -378,13 +385,20 @@ canonical rule:
 애플리케이션은 TanStack Router + Query integration pattern을 강제한다.
 
 - request마다 fresh `QueryClient` 생성
-- router context에 `queryClient` 주입
+- router context에 `queryClient`와 `tRPC` caller 주입
 - `setupRouterSsrQueryIntegration` 사용
 - `defaultPreloadStaleTime: 0` 설정
 - cache의 단일 authoritative source는 TanStack Query
 - route loader는 `ensureQueryData` 역할만 수행
 - critical data는 component에서 `useSuspenseQuery`
 - first render 이후 불러와도 되는 secondary data만 `useQuery`
+- route loader, `beforeLoad`, component는 DB client가 아니라 `tRPC` caller/query helper를 사용한다.
+- `serverFunction` adapter는 transport entry만 담당하고 cache hydration 또는 mutation orchestration 앞에서 `tRPC` procedure에 위임한다.
+- app-internal RPC는 `superjson`을 기본 transformer로 사용하되, raw HTTP/server route는 명시적 JSON/binary/header contract를 유지한다.
+- session-aware route라고 해서 SSR을 강제하지 않는다. route 목적에 따라 `ssr: true`, `ssr: 'data-only'`, `ssr: false`를 선택한다.
+- `ssr: true`는 SEO, above-the-fold content, 첫 요청의 빠른 의미 전달이 필요한 화면에 사용한다.
+- `ssr: 'data-only'`는 session/cookie 기반 gate와 초기 데이터 준비는 서버에서 하되, component 렌더링은 클라이언트에서만 하려는 화면에 사용한다.
+- `ssr: false`는 순수 앱 화면, SEO 비중이 낮고 hydration 이후 query 중심으로 충분한 화면에 사용한다.
 
 이 항목은 권고가 아니라 아키텍처 강제 조건이다.
 
@@ -469,6 +483,12 @@ session 요구사항:
 ## 8.4 Route protection
 
 보호된 UI route는 route 또는 layout boundary의 `beforeLoad`로 보호한다.
+
+역할 분리 원칙:
+
+- session 조회, redirect, cookie/session rotation, transport-level response shape는 `beforeLoad`, `serverFunction`, server route가 담당한다.
+- resource/action 권한 판단은 `tRPC` procedure와 `packages/domain` ACL/policy가 담당한다.
+- `beforeLoad` 또는 `serverFunction`에서 coarse authn gate를 두는 것은 허용하지만, feature-specific ACL source of truth를 app layer에 두지 않는다.
 
 canonical route group:
 
@@ -835,10 +855,10 @@ phase deliverable 예시:
 - authenticated area는 `beforeLoad`로 보호
 - `packages/auth`에 Better Auth integration package 구성
 - in-memory 기반 보조 저장소 또는 Yona 소유 세션 abstraction 사용
-- 로그인, 가입, 로그아웃, 현재 세션, 로컬 자격 증명 변경은 server function
-- 추가 이메일, 즐겨찾기/최근 방문, 알림 설정, API 토큰, 기본 랜딩 페이지 변경은 server function
+- 로그인, 가입, 로그아웃, 현재 세션, 로컬 자격 증명 변경은 `tRPC` procedure + thin `serverFunction` adapter로 구성
+- 추가 이메일, 즐겨찾기/최근 방문, 알림 설정, API 토큰, 기본 랜딩 페이지 변경은 `tRPC` procedure + thin `serverFunction` adapter로 구성
 - OAuth callback 등 명시적 HTTP endpoint는 server route
-- 사이드바/알림 피드/사용자 대시보드 읽기 모델은 route loader + query-backed server function으로 구성
+- 사이드바/알림 피드/사용자 대시보드 읽기 모델은 route loader + query-backed `tRPC` caller로 구성
 
 ### 공개 surface
 
@@ -936,7 +956,7 @@ phase deliverable 예시:
   - `/orgs/$orgSlug`
   - `/projects/$owner/$projectSlug`
 - 프로젝트 홈/dashboard/history/statistics loader는 이 section이 소유
-- CRUD, 가입 요청/취소, 멤버 변경, 이관 확인은 server function
+- CRUD, 가입 요청/취소, 멤버 변경, 이관 확인은 `tRPC` procedure + thin `serverFunction` adapter로 구성
 - 명시적 HTTP interop가 필요한 곳만 server route
 
 ### 공개 surface
@@ -1038,7 +1058,7 @@ state, participant, metadata, event를 포함한 full parity issue tracking doma
   - `/projects/$owner/$projectSlug/issues`
   - `/projects/$owner/$projectSlug/issues/$issueNumber`
 - list/detail은 loader + suspense pattern 적용
-- create, edit, delete, comment, mass update, vote, watch, share는 server function
+- create, edit, delete, comment, mass update, vote, watch, share는 `tRPC` procedure + thin `serverFunction` adapter로 구성
 
 ### 도메인 모델
 
@@ -1099,7 +1119,7 @@ state, participant, metadata, event를 포함한 full parity issue tracking doma
 
 - project-level discussion route
 - list/detail에 loader/query pattern 적용
-- post/comment operation은 server function
+- post/comment operation은 `tRPC` procedure + thin `serverFunction` adapter로 구성
 
 ### 도메인 모델
 
@@ -1144,7 +1164,7 @@ attachment, avatar, logo, temporary upload lifecycle을 resource-oriented author
 
 ### 목표 구현
 
-- upload init/finalize/delete는 server function
+- upload init/finalize/delete는 `tRPC` procedure + thin `serverFunction` adapter로 구성
 - file byte delivery는 server route
 - metadata는 DB가, blob storage는 adapter가 소유
 - phase 1 blob store는 local filesystem
@@ -1221,8 +1241,8 @@ attachment, avatar, logo, temporary upload lifecycle을 resource-oriented author
 
 - 저장소 보기용 route tree
 - smart HTTP와 raw 다운로드는 server route
-- UI용 구조화된 저장소 읽기는 server function
-- 커밋 댓글 create/delete와 code discussion thread open/close는 server function
+- UI용 구조화된 저장소 읽기는 `tRPC` procedure + thin `serverFunction` adapter로 구성
+- 커밋 댓글 create/delete와 code discussion thread open/close는 `tRPC` procedure + thin `serverFunction` adapter로 구성
 
 ### 도메인 모델
 
@@ -1296,7 +1316,7 @@ attachment, avatar, logo, temporary upload lifecycle을 resource-oriented author
 - PR 목록/상세/변경사항/상태/리뷰 목록 endpoint
 - 상세 페이지는 streaming SSR 우선
 - 커밋/스레드/병합 상태/리뷰를 route + query composition으로 구성
-- 닫기, 다시 열기, 병합, 리뷰, 댓글 스레드 상태 변경은 server function
+- 닫기, 다시 열기, 병합, 리뷰, 댓글 스레드 상태 변경은 `tRPC` procedure + thin `serverFunction` adapter로 구성
 
 ### 도메인 모델
 
@@ -1353,7 +1373,7 @@ scoped, permission-aware, multi-type search를 제공한다.
 ### 목표 구현
 
 - query-driven search page
-- internal search view는 server function
+- internal search view는 `tRPC` procedure + thin `serverFunction` adapter로 구성
 - machine 또는 AI consumer용 search endpoint는 필요 시 server route
 
 ### 검색 동등성 규칙
@@ -1601,6 +1621,7 @@ provider-specific note:
 - router setup
 - query integration
 - root context wiring
+- `tRPC` router/context/caller/adapter wiring
 - server route
 - app composition
 
@@ -1626,7 +1647,9 @@ provider-specific note:
 - Zod schema
 - DTO
 - error code
+- `tRPC` procedure input/output schema
 - route/server-function shared contract
+- `superjson`-safe contract shape
 
 ## 15.4 `packages/db`
 
@@ -1679,7 +1702,9 @@ provider-specific note:
 ## 16.2 Security
 
 - mutation에 대한 CSRF protection
-- server function/protected route에 auth middleware
+- `tRPC` procedure, thin `serverFunction` adapter, protected route에 auth middleware
+- route loader, `beforeLoad`, component, `serverFunction` adapter에서 DB client 직접 import/call 금지
+- session이 필요한 페이지도 SPA navigation을 유지할 수 있어야 하며, session 존재만으로 full SSR을 강제하지 않는다.
 - secure cookie setting
 - VCS/file route의 path traversal 방지
 - asset route의 ACL, content disposition, cache policy 직접 통제
@@ -1735,7 +1760,7 @@ provider-specific note:
 
 계층 매핑 규칙:
 
-- Play controller test -> server function test 또는 server route test
+- Play controller test -> `tRPC` procedure test + `serverFunction` adapter test 또는 server route test
 - model test -> domain test
 - `AccessControlTest` 류 -> domain ACL test + route authorization test
 - `playRepository` test -> route/protocol integration test
@@ -1768,7 +1793,8 @@ Intent:
 Modern translation:
 
 - domain permission test
-- server-function authorization test
+- `tRPC` procedure authorization test
+- `serverFunction` adapter authorization test
 - route response test
 
 Deviation:
@@ -1792,7 +1818,7 @@ Deviation:
 - 첨부파일 binding lifecycle
 - integration event envelope canonicalization
 
-### 17.5 Server function test
+### 17.5 tRPC procedure / serverFunction adapter test
 
 검증 대상:
 
@@ -1805,7 +1831,8 @@ Deviation:
 - upload finalize/bind flow
 - 커밋 댓글와 thread state mutation
 - integration config mutation
-- legacy controller outcome의 typed server-function 번역
+- legacy controller outcome의 typed `tRPC` translation
+- thin `serverFunction` adapter의 slug/redirect/transport shell 동작
 
 ### 17.6 Server route test
 
@@ -1886,7 +1913,7 @@ Deviation:
 - package restructuring 적용
 - Better Auth + in-memory secondary storage spike
 - asset route / storage abstraction baseline
-- server function/server route convention 확립
+- `tRPC`/`serverFunction`/server route convention 확립
 - legacy test inventory table 작성
 - feature-to-legacy-test mapping baseline 작성
 - legacy provenance 템플릿과 translation 규칙 확정
@@ -2041,17 +2068,29 @@ Mitigation:
 - storage abstraction을 명시적으로 유지
 - future Redis/Valkey secondary storage 확장을 대비
 
-### tRPC 재도입 압력
+### serverFunction adapter의 backend boundary 우회 위험
 
 Risk:
 
-- 이후 작업에서 internal API 전부를 tRPC로 바꾸려는 압력이 생길 수 있다.
+- loader, component, `serverFunction` adapter가 편의상 DB client를 직접 호출하면서 `tRPC` backend boundary를 우회할 수 있다.
 
 Mitigation:
 
-- server function baseline을 spec에 고정
-- tRPC는 optional이며 금지 대상은 아니라고 명시
-- 광범위 도입 전 새 ADR을 요구
+- internal read/mutation canonical entry를 `tRPC` procedure로 고정
+- route loader, `beforeLoad`, component, `serverFunction` adapter의 direct DB call 금지를 문서와 리뷰 체크리스트에 반영
+- thin adapter가 transport shell 역할만 하는지 테스트와 code review에서 확인
+
+### superjson boundary drift
+
+Risk:
+
+- app-internal RPC와 raw HTTP route가 같은 DTO를 무분별하게 공유하면 `Date` 같은 타입의 직렬화 규칙이 섞일 수 있다.
+
+Mitigation:
+
+- app-internal RPC transformer는 `superjson`으로 고정
+- raw HTTP/server route는 명시적 JSON/binary/header contract를 별도로 유지
+- `packages/contracts`에서 transformer-safe contract와 raw HTTP contract의 경계를 문서화
 
 ### Integration provider API drift
 
@@ -2083,6 +2122,8 @@ TanStack 및 Better Auth 참고 자료:
 - TanStack Start overview: https://tanstack.com/start/latest/docs/framework/react/overview
 - TanStack Start auth guide: https://tanstack.com/start/latest/docs/framework/react/guide/authentication
 - TanStack Start `with-trpc` example: https://tanstack.com/start/latest/docs/framework/react/examples/with-trpc
+- tRPC docs: https://trpc.io/docs/
+- superjson: https://github.com/flightcontrolhq/superjson
 - TanStack Start basic React Query example: https://tanstack.com/start/latest/docs/framework/react/examples/start-basic-react-query
 - TanStack Start basic Auth.js example: https://tanstack.com/start/latest/docs/framework/react/examples/start-basic-authjs
 - TanStack Start LLMO guide: https://tanstack.com/start/latest/docs/framework/react/guide/llmo

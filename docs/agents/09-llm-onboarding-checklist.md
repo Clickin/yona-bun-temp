@@ -9,6 +9,7 @@
 
 - 목표는 legacy Yona behavior parity이며, 축소판 issue tracker를 만드는 작업이 아니다.
 - 최종 baseline은 `TanStack Start + React + Bun` 단일 애플리케이션이다.
+- 현재 operator가 실행/검증 대상으로 삼아야 할 앱도 `apps/app`이다.
 - 현재 `SvelteKit + Hono` 코드는 target baseline이 아니라 migration source material이다.
 
 ## 추천 읽기 순서
@@ -28,20 +29,22 @@
 
 ## 구현 위치 체크리스트
 
-- [ ] route tree, SSR wiring, orchestration은 `apps/app`에 둔다.
+- [ ] route tree, SSR wiring, orchestration, `tRPC` context/caller/adapter wiring은 `apps/app`에 둔다.
 - [ ] auth bridge와 session secondary storage는 `packages/auth`에 둔다.
 - [ ] domain invariant, ACL, lifecycle rule은 `packages/domain`에 둔다.
 - [ ] schema, migration, parity test는 `packages/db`에 둔다.
-- [ ] Zod schema, DTO, error code는 `packages/contracts`에 둔다.
+- [ ] Zod schema, DTO, error code, `tRPC` procedure contract는 `packages/contracts`에 둔다.
 - [ ] integration provider, outbox/worker는 `packages/integrations`에 둔다.
 - [ ] Git/SVN executable integration과 smart HTTP helper는 `packages/vcs`에 둔다.
 - [ ] `apps/web`, `packages/api`, `packages/core`, `packages/infra`에 새 장기 ownership을 추가하지 않는다.
+- [ ] `apps/web`, `packages/api`, `packages/core`, `packages/infra`를 active runtime이나 root verification target으로 되돌리지 않는다.
 
 ## Transport 선택 체크리스트
 
-- [ ] 내부 앱 read/mutation이면 `createServerFn`을 쓴다.
-- [ ] 완전한 HTTP semantics가 필요한 경우만 server route를 쓴다.
-- [ ] `tRPC`를 canonical baseline으로 도입하지 않는다.
+- [ ] 내부 앱 read/mutation의 canonical entry는 `tRPC` procedure로 둔다.
+- [ ] TanStack Start `serverFunction`은 thin adapter로만 쓰고, 완전한 HTTP semantics가 필요한 경우만 server route를 쓴다.
+- [ ] session 조회/redirect는 app layer에서 처리하되, feature-specific authorization source of truth는 `tRPC`/domain에 둔다.
+- [ ] app-internal RPC에는 `superjson`을 기본 transformer로 사용한다.
 - [ ] `Hono` sub-app을 새 canonical API로 확장하지 않는다.
 
 ## 고정 제약 체크리스트
@@ -59,7 +62,7 @@
 
 - [ ] failing Red test 없이 Green 구현부터 시작하지 않는다.
 - [ ] legacy test가 있으면 그것을 1차 입력으로 쓴다.
-- [ ] legacy controller intent는 server function/server route test로 번역한다.
+- [ ] legacy controller intent는 `tRPC` procedure test + `serverFunction` adapter test 또는 server route test로 번역한다.
 - [ ] legacy model intent는 domain test로 번역한다.
 - [ ] ACL matrix는 domain ACL test와 route authorization test로 확인한다.
 - [ ] protocol은 route/protocol integration test로 확인한다.
@@ -74,7 +77,9 @@
 - [ ] visibility와 search filtering 영향이 있는지 확인했다.
 - [ ] TanStack Query를 유일한 cache authority로 유지했다.
 - [ ] loader는 `ensureQueryData`, component는 `useSuspenseQuery` 중심 규칙을 따랐다.
+- [ ] loader, `beforeLoad`, component, `serverFunction` adapter가 DB client를 직접 import/call하지 않음을 확인했다.
 - [ ] feature가 project home, issue detail, PR detail, org overview라면 streaming SSR 적용 여부를 검토했다.
+- [ ] session-aware route라는 이유만으로 SSR을 강제하지 않았고, `ssr: true`, `ssr: 'data-only'`, `ssr: false` 중 하나를 의도적으로 선택했다.
 
 ## 금지 사항 체크리스트
 
@@ -89,7 +94,7 @@
 
 - [ ] feature별 legacy provenance를 남겼다.
 - [ ] Red test와 Green 구현 trace를 남겼다.
-- [ ] relevant domain/server-function/server-route/E2E test가 통과했다.
+- [ ] relevant domain/`tRPC` procedure/`serverFunction` adapter/server-route/E2E test가 통과했다.
 - [ ] 3개 DB 영향이 있는 경우 parity 확인 근거를 남겼다.
 - [ ] 문서와 deviation 기록을 갱신했다.
 - [ ] 해당 `SPEC.md` feature 섹션의 완료 기준을 다시 확인했다.
