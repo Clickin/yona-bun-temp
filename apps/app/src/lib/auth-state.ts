@@ -26,6 +26,7 @@ interface AppUserRecord {
 }
 
 interface AppAuthState {
+  pendingMutation: Promise<void>;
   nextUserId: number;
   usersByEmailAddress: Map<string, number>;
   usersById: Map<number, AppUserRecord>;
@@ -72,6 +73,12 @@ export interface CreateAppUserInput {
   password: string;
 }
 
+export interface IssuePasswordResetTokenResult {
+  expiresAt: Date | null;
+  ok: true;
+  resetToken: string | null;
+}
+
 function normalizeIdentifier(value: string): string {
   return value.trim().toLowerCase();
 }
@@ -83,6 +90,7 @@ function getGlobalState(): AppAuthState {
 
   if (!globalObject.__YONA_APP_AUTH_STATE__) {
     globalObject.__YONA_APP_AUTH_STATE__ = {
+      pendingMutation: Promise.resolve(),
       nextUserId: 1,
       usersByEmailAddress: new Map(),
       usersById: new Map(),
@@ -108,6 +116,24 @@ function linkUser(state: AppAuthState, user: AppUserRecord): void {
   state.usersById.set(user.id, user);
   state.usersByLoginId.set(normalizeIdentifier(user.loginId), user.id);
   state.usersByEmailAddress.set(normalizeIdentifier(user.emailAddress), user.id);
+}
+
+async function withSerializedMutation<T>(mutation: () => Promise<T>): Promise<T> {
+  const state = getGlobalState();
+  const previousMutation = state.pendingMutation;
+  let resolveCurrentMutation!: () => void;
+  const currentMutation = new Promise<void>((resolve) => {
+    resolveCurrentMutation = resolve;
+  });
+
+  state.pendingMutation = currentMutation;
+  await previousMutation;
+
+  try {
+    return await mutation();
+  } finally {
+    resolveCurrentMutation();
+  }
 }
 
 async function persistUser(state: AppAuthState, input: CreateAppUserInput): Promise<AppUserRecord> {
@@ -147,27 +173,29 @@ function findUserByIdentifier(identifier: string): AppUserRecord | null {
 }
 
 export async function createAppUser(input: CreateAppUserInput): Promise<CreateAppUserResult> {
-  const state = getGlobalState();
-  const loginId = normalizeIdentifier(input.loginId);
-  const emailAddress = normalizeIdentifier(input.emailAddress);
+  return withSerializedMutation(async () => {
+    const state = getGlobalState();
+    const loginId = normalizeIdentifier(input.loginId);
+    const emailAddress = normalizeIdentifier(input.emailAddress);
 
-  if (state.usersByLoginId.has(loginId) || state.usersByEmailAddress.has(emailAddress)) {
+    if (state.usersByLoginId.has(loginId) || state.usersByEmailAddress.has(emailAddress)) {
+      return {
+        code: "auth.login-id-conflict",
+        ok: false,
+      };
+    }
+
+    const user = await persistUser(state, {
+      ...input,
+      emailAddress,
+      loginId,
+    });
+
     return {
-      code: "auth.login-id-conflict",
-      ok: false,
+      ok: true,
+      user: summarizeUser(user),
     };
-  }
-
-  const user = await persistUser(state, {
-    ...input,
-    emailAddress,
-    loginId,
   });
-
-  return {
-    ok: true,
-    user: summarizeUser(user),
-  };
 }
 
 export async function authenticatePasswordSignIn(
@@ -216,50 +244,47 @@ export async function findAppUserById(userId: number): Promise<AppUserSummary | 
 
 export async function issuePasswordResetToken(
   request: PasswordResetRequest,
-): Promise<{ ok: true; resetToken: string | null }> {
-  const parsedRequest = passwordResetRequestSchema.parse(request);
-  const user = findUserByIdentifier(parsedRequest.loginId);
+): Promise<IssuePasswordResetTokenResult> {
+  return withSerializedMutation(async () => {
+    const parsedRequest = passwordResetRequestSchema.parse(request);
+    const user = findUserByIdentifier(parsedRequest.loginId);
 
-  if (!user || user.emailAddress !== normalizeIdentifier(parsedRequest.emailAddress)) {
+    if (!user || user.emailAddress !== normalizeIdentifier(parsedRequest.emailAddress)) {
+      return {
+        expiresAt: null,
+        ok: true,
+        resetToken: null,
+      };
+    }
+
+    const resetToken = generateResetToken();
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
+    user.resetTokenHash = await hashToken(resetToken);
+    user.resetTokenExpiresAt = expiresAt;
+
     return {
+      expiresAt,
       ok: true,
-      resetToken: null,
+      resetToken,
     };
-  }
-
-  const resetToken = generateResetToken();
-  user.resetTokenHash = await hashToken(resetToken);
-  user.resetTokenExpiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
-
-  return {
-    ok: true,
-    resetToken,
-  };
+  });
 }
 
-export async function resetPasswordWithToken(input: {
-  newPassword: string;
-  token: string;
-}): Promise<{ ok: false } | { ok: true; user: AppUserSummary }> {
-  for (const user of getGlobalState().usersById.values()) {
-    if (!user.resetTokenHash || !user.resetTokenExpiresAt) {
-      continue;
+export async function resetPasswordByAdmin(input: {
+  userId: number;
+}): Promise<{ ok: false } | { ok: true; temporaryPassword: string; user: AppUserSummary }> {
+  return withSerializedMutation(async () => {
+    const user = getGlobalState().usersById.get(input.userId);
+    if (!user) {
+      return {
+        ok: false,
+      };
     }
 
-    if (user.resetTokenExpiresAt.getTime() < Date.now()) {
-      user.resetTokenHash = null;
-      user.resetTokenExpiresAt = null;
-      continue;
-    }
-
-    const tokenMatches = await verifyToken(input.token, user.resetTokenHash);
-    if (!tokenMatches) {
-      continue;
-    }
-
+    const temporaryPassword = generateResetToken().slice(0, 16);
     const passwordSalt = generateResetToken();
     user.passwordSalt = passwordSalt;
-    user.passwordHash = await hashPassword(input.newPassword, passwordSalt);
+    user.passwordHash = await hashPassword(temporaryPassword, passwordSalt);
     user.resetTokenHash = null;
     user.resetTokenExpiresAt = null;
 
@@ -267,13 +292,51 @@ export async function resetPasswordWithToken(input: {
 
     return {
       ok: true,
+      temporaryPassword,
       user: summarizeUser(user),
     };
-  }
+  });
+}
 
-  return {
-    ok: false,
-  };
+export async function resetPasswordWithToken(input: {
+  newPassword: string;
+  token: string;
+}): Promise<{ ok: false } | { ok: true; user: AppUserSummary }> {
+  return withSerializedMutation(async () => {
+    for (const user of getGlobalState().usersById.values()) {
+      if (!user.resetTokenHash || !user.resetTokenExpiresAt) {
+        continue;
+      }
+
+      if (user.resetTokenExpiresAt.getTime() < Date.now()) {
+        user.resetTokenHash = null;
+        user.resetTokenExpiresAt = null;
+        continue;
+      }
+
+      const tokenMatches = await verifyToken(input.token, user.resetTokenHash);
+      if (!tokenMatches) {
+        continue;
+      }
+
+      const passwordSalt = generateResetToken();
+      user.passwordSalt = passwordSalt;
+      user.passwordHash = await hashPassword(input.newPassword, passwordSalt);
+      user.resetTokenHash = null;
+      user.resetTokenExpiresAt = null;
+
+      await deleteAllSessionsByUserId(user.id);
+
+      return {
+        ok: true,
+        user: summarizeUser(user),
+      };
+    }
+
+    return {
+      ok: false,
+    };
+  });
 }
 
 export function resetAuthStateForTests(): void {
@@ -282,6 +345,7 @@ export function resetAuthStateForTests(): void {
   };
 
   globalObject.__YONA_APP_AUTH_STATE__ = {
+    pendingMutation: Promise.resolve(),
     nextUserId: 1,
     usersByEmailAddress: new Map(),
     usersById: new Map(),

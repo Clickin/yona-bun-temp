@@ -41,9 +41,13 @@ function ForgotPasswordRouteComponent() {
             React.startTransition(() => {
               void (async () => {
                 try {
-                  await requestPasswordReset({
+                  const result = await requestPasswordReset({
                     data: formState,
                   });
+                  if (!result.ok) {
+                    setErrorMessage(result.message);
+                    return;
+                  }
                   setSubmitted(true);
                 } catch (error) {
                   setErrorMessage(
@@ -82,7 +86,7 @@ function ForgotPasswordRouteComponent() {
         </form>
         <p className="note">
           {submitted
-            ? "If the login ID and email address matched, reset instructions were queued without exposing the token to the browser."
+            ? "If the login ID and email address matched, reset instructions were emailed without exposing the token to the browser."
             : "The response stays generic even when the account does not exist, matching the legacy controller contract."}
         </p>
         <div className="link-row">

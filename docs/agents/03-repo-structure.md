@@ -9,7 +9,7 @@
 - `packages/contracts/`: Zod schema, DTO, error code, `tRPC` procedure contract, `superjson`-safe contract shape
 - `packages/db/`: Drizzle schema, migration, parity test, DB helper
 - `packages/domain/`: aggregate/entity behavior, use case, ACL, invariant
-- `packages/integrations/`: provider contract, adapter, delivery worker
+- `packages/integrations/`: provider contract, adapter, email/integration delivery runtime
 - `packages/i18n/`: text resource와 message catalog
 - `packages/ui/`: shared React UI
 - `packages/vcs/`: git/svn executable integration, smart HTTP helper

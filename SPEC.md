@@ -293,7 +293,7 @@ packages/
   contracts/            # Zod schema, DTO, error code
   db/                   # Drizzle schema, migration, query helper, parity test
   domain/               # Domain service, use case, ACL, invariant
-  integrations/         # Integration provider contract, SDK adapter, delivery worker
+  integrations/         # Integration provider contract, SDK adapter, optional delivery runtime
   i18n/                 # Message catalog, translation key, public text resource
   ui/                   # Shared React UI
   vcs/                  # Git/SVN adapter와 protocol support
@@ -512,9 +512,10 @@ canonical route group:
 - Google OAuth
 - logout
 - session inspection endpoint
-- 관리자 주도 비밀번호 재설정
+- 관리자 랜덤 비밀번호 재설정 + self-serve 이메일 기반 비밀번호 재설정
 - email/provider identity 기반 account linking
 - auth action audit trail
+- forgot-password는 계정 존재 여부와 메일 전송 실패 여부를 브라우저에 구분해서 노출하지 않는다.
 
 ## 8.6 초기 delivery에서 제외할 항목
 
@@ -832,7 +833,7 @@ phase deliverable 예시:
 - 사이드바 / 알림 피드
 - 사용자 API 토큰
 - 기본 랜딩 페이지
-- 관리자 주도 비밀번호 재설정
+- 관리자 랜덤 비밀번호 재설정 + self-serve 이메일 기반 비밀번호 재설정
 
 ### 주요 레거시 근거
 
@@ -876,6 +877,11 @@ phase deliverable 예시:
 - `/api/me/favorites`
 - `/api/me/recent`
 - `/api/me/token`
+
+### 보안 규칙
+
+- self-serve password reset 링크는 trusted public origin 환경 변수에서만 생성한다.
+- request host, `X-Forwarded-*`, `Origin` header는 reset 링크 생성에 사용하지 않는다.
 
 ### 도메인 모델
 
@@ -1447,8 +1453,8 @@ scoped, permission-aware, multi-type search를 제공한다.
 
 ### 목표 구현
 
-- outbox 기반 비동기 이벤트 전송
-- inbox/mailbox worker는 같은 Bun process의 전용 worker 경로에서 polling/IDLE을 수행
+- request path에서 감당 가능한 비동기 I/O는 main event loop에서 처리
+- polling/IDLE inbox, durable retry chain, CPU-bound transformation이 필요한 경우에만 별도 runtime 경로를 둔다
 - 사용자 설정 모델
 - canonical event envelope 생성 후 provider adapter가 payload를 변환
 - 수신 메일 parser는 발신자 신원 해석, 중복 메시지 억제, 권한 인지 이슈/댓글/리뷰 생성, 원본 이메일 로깅을 수행한다
@@ -1595,7 +1601,7 @@ canonical event flow:
 2. canonical integration event envelope 구성
 3. subscription filter 적용
 4. provider adapter가 provider payload로 변환
-5. async delivery worker가 전송/재시도/감사 기록 처리
+5. delivery runtime은 workload에 따라 inline async path 또는 별도 runtime 경로 중 하나를 선택해 전송/재시도/감사 기록을 처리
 
 ## 14.4 Initial built-in providers
 
@@ -1675,7 +1681,7 @@ provider-specific note:
 
 - integration provider contract
 - provider SDK / HTTP adapter
-- delivery worker
+- optional delivery runtime
 - inbound verification helper
 - integration health check
 

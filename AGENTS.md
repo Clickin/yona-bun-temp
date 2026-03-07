@@ -26,7 +26,7 @@
 - Git/SVN 연동은 system executable만 사용한다.
 - user-uploaded asset은 Yona-controlled route로만 전달한다.
 - `llms.txt`와 AI datasource endpoint는 Phase 6 hardening 범위로 취급한다.
-- notification/integration delivery 같은 async 작업은 Bun process 내부의 별도 worker 경로에서 처리한다.
+- notification/integration delivery는 기본적으로 main event loop의 async I/O로 처리하고, polling, retry chain, CPU-bound work처럼 분리가 필요한 경우에만 별도 runtime 경로를 둔다.
 
 ## Execution Rules
 

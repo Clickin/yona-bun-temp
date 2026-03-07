@@ -4,6 +4,7 @@ import {
   authenticatePasswordSignIn,
   createAppUser,
   issuePasswordResetToken,
+  resetPasswordByAdmin,
   resetAuthStateForTests,
   resetPasswordWithToken,
 } from "./auth-state";
@@ -97,6 +98,31 @@ describe("app auth state", () => {
     });
   });
 
+  it("preserves uniqueness when concurrent registrations race", async () => {
+    const [first, second] = await Promise.all([
+      createAppUser({
+        emailAddress: "door@example.com",
+        loginId: "door",
+        name: "Door One",
+        password: "strong-pass-123",
+      }),
+      createAppUser({
+        emailAddress: "door@example.com",
+        loginId: "door",
+        name: "Door Two",
+        password: "strong-pass-123",
+      }),
+    ]);
+
+    expect([first, second].filter((result) => result.ok)).toHaveLength(1);
+    expect([first, second].filter((result) => !result.ok)).toEqual([
+      {
+        code: "auth.login-id-conflict",
+        ok: false,
+      },
+    ]);
+  });
+
   it("issues a reset token, rotates the password, and invalidates active sessions", async () => {
     const creation = await createAppUser({
       emailAddress: "doortts@gmail.com",
@@ -137,6 +163,52 @@ describe("app auth state", () => {
       ok: false,
     });
     await expect(authenticatePasswordSignIn("doortts", "changed-pass-456")).resolves.toMatchObject({
+      ok: true,
+      session: {
+        isAnonymous: false,
+      },
+    });
+  });
+
+  it("resets a password with an admin-generated temporary password and invalidates sessions", async () => {
+    const creation = await createAppUser({
+      emailAddress: "doortts@gmail.com",
+      loginId: "doortts",
+      name: "Door TTS",
+      password: "strong-pass-123",
+    });
+
+    if (!creation.ok) {
+      throw new Error("Expected test user to be created.");
+    }
+
+    const session = await createSession({
+      userId: creation.user.id,
+    });
+
+    const adminReset = await resetPasswordByAdmin({
+      userId: creation.user.id,
+    });
+
+    expect(adminReset).toMatchObject({
+      ok: true,
+      user: {
+        id: creation.user.id,
+      },
+    });
+    expect(await getSessionByToken(session.token)).toBeNull();
+
+    if (!adminReset.ok) {
+      throw new Error("Expected admin reset to succeed.");
+    }
+
+    await expect(authenticatePasswordSignIn("doortts", "strong-pass-123")).resolves.toMatchObject({
+      code: "auth.credentials-invalid",
+      ok: false,
+    });
+    await expect(
+      authenticatePasswordSignIn("doortts", adminReset.temporaryPassword),
+    ).resolves.toMatchObject({
       ok: true,
       session: {
         isAnonymous: false,

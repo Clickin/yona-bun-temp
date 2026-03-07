@@ -34,4 +34,10 @@ export {
   readAuthPayload,
   type AuthPayload,
 } from "./request-validation";
+export {
+  consumeAuthRateLimit,
+  resetAuthRateLimitForTests,
+  type AuthRateLimitDecision,
+  type AuthRateLimitRoute,
+} from "./rate-limit";
 export { authApp, LEGACY_AUTH_APP_SHIM_MESSAGE, type LegacyAuthAppShim } from "./legacy-api-shim";

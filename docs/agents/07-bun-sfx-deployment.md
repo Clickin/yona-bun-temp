@@ -20,7 +20,7 @@ bun build --compile --target=bun-windows-x64 ./apps/app/src/server.ts --outfile 
 
 ## 런타임 구성
 
-- app server, `tRPC` backend wiring, dedicated worker는 같은 Bun process 안에서 초기화한다.
+- app server와 `tRPC` backend wiring은 같은 Bun process 안에서 초기화하고, 별도 runtime 경로가 필요한 background workload만 선택적으로 함께 초기화한다.
 - in-memory session을 사용할 경우 process restart 시 active session이 사라진다는 점을 운영 문서에 명시한다.
 - horizontal scaling이 필요하면 secondary storage를 먼저 붙인다.
 

@@ -34,7 +34,7 @@
 
 - VCS subprocess는 safe argv execution만 허용한다.
 - asset delivery는 항상 Yona ACL 아래에서 처리한다.
-- integration delivery는 request path에서 직접 오래 실행하지 않고 worker/outbox를 사용한다.
+- integration delivery는 request path에서 감당 가능한 async I/O면 inline으로 처리하고, 장시간 retry/polling/CPU-bound work만 별도 runtime 경로를 검토한다.
 
 ## 금지 사항
 

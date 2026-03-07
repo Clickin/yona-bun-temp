@@ -61,8 +61,8 @@
 
 ## G9) Background Work
 
-- notification/integration delivery는 Bun process 내부의 dedicated worker에서 실행한다.
-- request path는 outbox enqueue와 validation에 집중하고 장시간 delivery를 직접 수행하지 않는다.
+- notification/integration delivery는 기본적으로 main event loop의 async I/O로 처리한다.
+- polling, durable retry, CPU-bound transform처럼 분리가 필요한 workload만 별도 runtime 경로로 분리한다.
 
 ## G10) Test Provenance
 

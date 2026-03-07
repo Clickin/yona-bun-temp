@@ -34,7 +34,7 @@
 - [ ] domain invariant, ACL, lifecycle rule은 `packages/domain`에 둔다.
 - [ ] schema, migration, parity test는 `packages/db`에 둔다.
 - [ ] Zod schema, DTO, error code, `tRPC` procedure contract는 `packages/contracts`에 둔다.
-- [ ] integration provider, outbox/worker는 `packages/integrations`에 둔다.
+- [ ] integration provider와 email/integration delivery runtime은 `packages/integrations`에 둔다.
 - [ ] Git/SVN executable integration과 smart HTTP helper는 `packages/vcs`에 둔다.
 - [ ] `apps/web`, `packages/api`, `packages/core`, `packages/infra`에 새 장기 ownership을 추가하지 않는다.
 - [ ] `apps/web`, `packages/api`, `packages/core`, `packages/infra`를 active runtime이나 root verification target으로 되돌리지 않는다.
@@ -56,7 +56,7 @@
 - [ ] user-uploaded asset은 항상 Yona-controlled route로 제공한다.
 - [ ] asset ACL, cache header, content disposition은 Yona가 직접 통제한다.
 - [ ] Git/SVN은 system executable만 사용한다.
-- [ ] notification/integration delivery는 request path에서 오래 실행하지 않고 worker/outbox로 보낸다.
+- [ ] notification/integration delivery가 request path에서 감당 가능한 async I/O인지, 별도 runtime 경로가 필요한 workload인지 먼저 판단했다.
 
 ## 테스트 프로토콜 체크리스트
 

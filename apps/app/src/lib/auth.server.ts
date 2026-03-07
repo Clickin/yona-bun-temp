@@ -3,9 +3,12 @@ import {
   getCookie,
   getRequestHeader,
   getRequestIP,
+  setResponseHeader,
+  setResponseStatus,
   setCookie,
 } from "@tanstack/react-start/server";
 import {
+  consumeAuthRateLimit,
   createSession,
   deleteSessionByToken,
   getSessionByToken,
@@ -14,6 +17,7 @@ import {
 } from "@yona/auth";
 import type { SessionRecord } from "@yona/auth";
 import type { AuthErrorCode } from "@yona/contracts";
+import { buildPasswordResetUrl, sendPasswordResetEmail } from "@yona/integrations";
 import {
   authenticatePasswordSignIn,
   createAppUser,
@@ -143,7 +147,45 @@ function authErrorMessage(code: AuthErrorCode): string {
     return "That login ID or email address is already in use.";
   }
 
+  if (code === "auth.rate-limited") {
+    return "Too many requests. Try again later.";
+  }
+
   return "Invalid login ID, email, or password.";
+}
+
+function logPasswordResetDeliveryFailure(error: unknown, loginId: string): void {
+  console.error("[auth:forgot-password] Failed to deliver password reset email.", {
+    error,
+    loginId,
+  });
+}
+
+async function getAuthRateLimitFailure(route: "forgot-password" | "login" | "register"): Promise<{
+  code: "auth.rate-limited";
+  message: string;
+  ok: false;
+  retryAfterSeconds: number;
+} | null> {
+  const ipAddress = getRequestIP({ xForwardedFor: true }) ?? "unknown";
+  const decision = await consumeAuthRateLimit({
+    ip: ipAddress,
+    route,
+  });
+
+  if (decision.ok) {
+    return null;
+  }
+
+  setResponseStatus(429, "Too Many Requests");
+  setResponseHeader("Retry-After", String(decision.retryAfterSeconds));
+
+  return {
+    code: "auth.rate-limited",
+    message: authErrorMessage("auth.rate-limited"),
+    ok: false,
+    retryAfterSeconds: decision.retryAfterSeconds,
+  };
 }
 
 export async function readCurrentSessionServer(): Promise<AppSessionProjection> {
@@ -165,10 +207,21 @@ export async function signInWithPasswordServer(data: {
       ok: false;
     }
   | {
+      code: "auth.rate-limited";
+      message: string;
+      ok: false;
+      retryAfterSeconds: number;
+    }
+  | {
       ok: true;
       session: AppSessionProjection;
     }
 > {
+  const rateLimitFailure = await getAuthRateLimitFailure("login");
+  if (rateLimitFailure) {
+    return rateLimitFailure;
+  }
+
   const result = await authenticatePasswordSignIn(data.identifier, data.password);
 
   if (!result.ok) {
@@ -197,10 +250,21 @@ export async function registerWithPasswordServer(data: {
       ok: false;
     }
   | {
+      code: "auth.rate-limited";
+      message: string;
+      ok: false;
+      retryAfterSeconds: number;
+    }
+  | {
       ok: true;
       session: AppSessionProjection;
     }
 > {
+  const rateLimitFailure = await getAuthRateLimitFailure("register");
+  if (rateLimitFailure) {
+    return rateLimitFailure;
+  }
+
   const result = await createAppUser(data);
 
   if (!result.ok) {
@@ -220,11 +284,39 @@ export async function registerWithPasswordServer(data: {
 export async function requestPasswordResetServer(data: {
   emailAddress: string;
   loginId: string;
-}): Promise<{ ok: true }> {
-  await issuePasswordResetToken({
+}): Promise<
+  | {
+      code: "auth.rate-limited";
+      message: string;
+      ok: false;
+      retryAfterSeconds: number;
+    }
+  | {
+      ok: true;
+    }
+> {
+  const rateLimitFailure = await getAuthRateLimitFailure("forgot-password");
+  if (rateLimitFailure) {
+    return rateLimitFailure;
+  }
+
+  const resetRequest = await issuePasswordResetToken({
     emailAddress: data.emailAddress,
     loginId: data.loginId,
   });
+
+  if (resetRequest.resetToken && resetRequest.expiresAt) {
+    try {
+      await sendPasswordResetEmail({
+        expiresAt: resetRequest.expiresAt,
+        loginId: data.loginId.trim(),
+        resetUrl: buildPasswordResetUrl(resetRequest.resetToken),
+        to: data.emailAddress.trim().toLowerCase(),
+      });
+    } catch (error) {
+      logPasswordResetDeliveryFailure(error, data.loginId.trim());
+    }
+  }
 
   return {
     ok: true,

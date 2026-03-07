@@ -5,6 +5,7 @@ export const authErrorCodeValues = [
   "auth.credentials-invalid",
   "auth.login-id-conflict",
   "auth.password-reset-requested",
+  "auth.rate-limited",
 ] as const;
 
 export const authErrorCodeSchema = z.enum(authErrorCodeValues);

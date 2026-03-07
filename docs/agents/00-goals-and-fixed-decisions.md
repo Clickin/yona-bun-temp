@@ -23,7 +23,8 @@
 - **인증 경계:** `Better Auth`를 사용하되 canonical user, credential, linked account, ACL, audit는 Yona가 직접 소유한다.
 - **세션:** DB session persistence는 금지한다. 기본은 in-memory이며 `Redis/Valkey` secondary storage를 허용한다.
 - **OAuth:** GitHub OAuth, Google OAuth, Email/Password를 모두 지원한다.
-- **비밀번호 정책:** password reset은 admin-driven baseline을 유지한다.
+- **비밀번호 정책:** password reset은 admin random-password reset과 self-serve email reset을 함께 지원한다.
+- **Reset link origin:** self-serve reset 링크는 trusted public origin env에서만 생성한다.
 - **VCS:** Git/SVN은 system executable 기반으로 유지하고 FFI는 범위 밖이다.
 - **DB 런타임:** `Bun.SQL + Drizzle`.
 - **지원 DB:** `PostgreSQL`, `MySQL/MariaDB`, `SQLite`를 모두 first-class로 지원한다.
@@ -32,7 +33,7 @@
 - **Asset delivery:** user-uploaded asset은 Yona-controlled route로만 제공한다.
 - **Plugin model:** arbitrary runtime plugin은 금지하고 out-of-process integration provider만 허용한다.
 - **AI surface:** `llms.txt`와 AI datasource endpoint는 Phase 6 hardening 범위로 취급한다.
-- **Async delivery:** notification/integration delivery는 Bun process 내부의 dedicated worker에서 처리한다.
+- **Async delivery:** notification/integration delivery는 기본적으로 main event loop의 async I/O로 처리하고, polling/retry/CPU-bound work에만 별도 runtime 경로를 사용한다.
 
 ## 전환 입장
 
