@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Pool } from "pg";
 import * as pgSchema from "@drizzle/pg/schema";
-import { setupPostgresTestDatabase } from "../test-utils/database";
+import { setupPostgresTestDatabase } from "./test-utils/database";
 import {
   getExpectedTableNames,
   getLatestMigrationSql,

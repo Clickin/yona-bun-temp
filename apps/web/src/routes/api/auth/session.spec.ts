@@ -3,7 +3,7 @@ import { GET } from "./session/+server";
 
 const mockGetDb = vi.hoisted(() => vi.fn());
 
-vi.mock("$lib/server/db", () => ({
+vi.mock("@yona/db", () => ({
   getDb: mockGetDb,
 }));
 

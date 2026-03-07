@@ -1,9 +1,10 @@
 import { describe, expect, it, beforeAll } from "vitest";
+import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/bun-sql";
 import { migrate } from "drizzle-orm/bun-sql/migrator";
 import { SQL } from "bun";
 import * as sqliteSchema from "@drizzle/sqlite/schema";
-import { setupSQLiteTestDatabase } from "../test-utils/database";
+import { setupSQLiteTestDatabase } from "./test-utils/database";
 
 describe("SQLite database", () => {
   let db: ReturnType<typeof drizzle>;

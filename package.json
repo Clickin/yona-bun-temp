@@ -27,10 +27,10 @@
     "migrate:generate": "bun run migrate:generate:pg && bun run migrate:generate:mysql && bun run migrate:generate:sqlite",
     "test:unit": "bun --filter ./apps/web test:unit",
     "test": "bun --filter ./apps/web test",
-    "test:db": "bun --filter ./apps/web test:db",
+    "test:db": "bun --filter ./packages/db test",
     "test:db:native": "bun tests/bun-native-db-test.ts",
-    "test:db:node": "bun --filter ./apps/web test:db:node",
-    "test:db:node:coverage": "bun --filter ./apps/web test:db:node:coverage",
+    "test:db:node": "bun --filter ./packages/db test:node",
+    "test:db:node:coverage": "bun --filter ./packages/db test:node:coverage",
     "test:db:node:smoke": "node tests/node-db-smoke.mjs",
     "test:db:hybrid": "node tests/hybrid-testcontainers-node.mjs",
     "test:e2e": "bun --filter ./apps/web test:e2e"

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import mysql from "mysql2/promise";
 import * as mysqlSchema from "@drizzle/mysql/schema";
-import { setupMySQLTestDatabase } from "../test-utils/database";
+import { setupMySQLTestDatabase } from "./test-utils/database";
 import {
   getExpectedTableNames,
   getLatestMigrationSql,

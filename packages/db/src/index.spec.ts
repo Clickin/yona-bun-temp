@@ -40,7 +40,7 @@ describe("db", () => {
   });
 
   it("defaults to sqlite and default file URL when env vars are missing", async () => {
-    const { getDb } = await import("./db");
+    const { getDb } = await import("./index");
 
     const db = getDb();
 
@@ -60,7 +60,7 @@ describe("db", () => {
   it("initializes configured mysql drizzle once and reuses cached client", async () => {
     process.env.YONA_DB_DIALECT = "mysql";
     process.env.YONA_DB_URL = "mysql://user:pass@localhost:3306/yona";
-    const { getDb } = await import("./db");
+    const { getDb } = await import("./index");
 
     const first = getDb();
     const second = getDb();
