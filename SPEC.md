@@ -1700,7 +1700,7 @@ provider-specific note:
 
 ## 17. 테스트 전략
 
-테스트는 behavior-first이면서 legacy-provenance-first로 구성한다. 새 기능은 AI가 처음부터 테스트를 추측해 작성하는 방식이 아니라, `yona-original`의 대응 test/controller/model을 먼저 읽고 intent를 추출한 뒤 failing Red test를 작성하고 Green 구현으로 이어간다. Java test를 1:1 포팅하지는 않지만, 레거시가 검증한 행위 의미는 반드시 현대 TS 테스트로 번역한다.
+테스트는 behavior-first이면서 legacy-provenance-first로 구성한다. 새 기능은 AI가 처음부터 테스트를 추측해 작성하는 방식이 아니라, `yona-original`의 대응 test/controller/model을 먼저 읽고 intent를 추출한 뒤 failing Red test를 작성하고 Green 구현으로 이어간다. Java test를 1:1 포팅하지는 않지만, 레거시가 검증한 행위 의미는 반드시 현대 TS 테스트로 번역한다. legacy build/test runtime을 실제로 재현해 실행하는 것은 선택 사항이며, 필수 조건은 legacy source를 읽고 semantic intent를 추출하는 것이다.
 
 ### 17.1 Legacy intent source of truth
 
@@ -1716,6 +1716,9 @@ provider-specific note:
 
 - implementer는 대응 feature의 legacy source를 먼저 확인해야 한다.
 - legacy source가 있으면 그것이 테스트 작성의 1차 입력이다.
+- legacy source를 읽어 intent를 추출하는 것은 필수다.
+- legacy Java build/test 환경을 실제로 재현하거나 원본 test 결과를 다시 실행해 확인하는 것은 필수 요구사항이 아니다.
+- 다만 정적 독해만으로 intent가 불명확할 때는 원본 실행 결과를 추가 증거로 활용할 수 있다.
 - legacy test가 없을 때만 spec-derived test를 1차 입력으로 사용한다.
 - `yona-original/`은 read-only reference이며, 자동 변환 산출물의 입력이지 수정 대상이 아니다.
 

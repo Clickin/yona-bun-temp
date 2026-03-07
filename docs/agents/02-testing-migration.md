@@ -4,6 +4,7 @@
 
 - 테스트 전략은 behavior-first이면서 legacy-provenance-first다.
 - 구현자는 먼저 legacy source를 읽고 intent를 추출한 뒤 failing Red test를 작성한다.
+- legacy build/test runtime을 실제로 재현하는 것은 선택 사항이고, semantic intent extraction이 필수다.
 - legacy semantics와 다른 결정을 했다면 deviation을 남긴다.
 
 ## 계층 매핑 규칙
@@ -59,6 +60,12 @@ Deviation:
 - failing Red test가 먼저 존재해야 한다.
 - Green 구현 후 translation target layer별 테스트가 통과해야 한다.
 - legacy source가 없는 경우에만 spec-derived test를 단독 근거로 사용할 수 있다.
+
+## Legacy 실행 재현 규칙
+
+- `yona-original`의 test/controller/model/fixture를 읽고 의미를 추출하는 것은 필수다.
+- legacy Java build, sbt 대체 환경, 로컬 라이브러리 배치까지 재현해서 원본 테스트를 실행하는 것은 필수 요구사항이 아니다.
+- 원본 실행은 intent가 애매하거나 fixture/side effect 해석이 불충분할 때만 추가 증거로 검토한다.
 
 ## 우선 exemplar
 
