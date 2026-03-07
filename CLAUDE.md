@@ -1,31 +1,37 @@
-You are able to use the Svelte MCP server, where you have access to comprehensive Svelte 5 and SvelteKit documentation. Here's how to use the available tools effectively:
+Project context mirror for Yona:
 
-## Available MCP Tools:
+## Canonical Source
 
-### 1. list-sections
+- `SPEC.md` is the canonical execution spec.
+- `docs/agents/*.md` are condensed agent-facing mirrors.
+- The old `SvelteKit + Hono` direction is historical and should not be expanded except when extracting or deleting code during migration.
 
-Use this FIRST to discover all available documentation sections. Returns a structured list with titles, use_cases, and paths.
-When asked about Svelte or SvelteKit topics, ALWAYS use this tool at the start of the chat to find relevant sections.
+## Target Architecture
 
-### 2. get-documentation
+- One `TanStack Start + React + Bun` application.
+- Internal app operations use `createServerFn`.
+- External or protocol-sensitive surfaces use server routes.
+- `Better Auth` is the auth framework, but Yona owns canonical identity, ACL, audit, and resource permission semantics.
+- Session persistence in DB is forbidden. Baseline is in-memory with optional `Redis/Valkey` secondary storage.
+- Runtime DB access is `Bun.SQL + Drizzle` with `PostgreSQL`, `MySQL/MariaDB`, and `SQLite` treated as first-class from the first implementation.
+- Async notification/integration delivery runs inside the Bun process through a dedicated worker path.
 
-Retrieves full documentation content for specific sections. Accepts single or multiple sections.
-After calling the list-sections tool, you MUST analyze the returned documentation sections (especially the use_cases field) and then use the get-documentation tool to fetch ALL documentation sections that are relevant for the user's task.
+## Package Direction
 
-### 3. svelte-autofixer
+- Target ownership lives in `apps/app`, `packages/auth`, `packages/contracts`, `packages/db`, `packages/domain`, `packages/integrations`, `packages/i18n`, `packages/ui`, `packages/vcs`.
+- Current `apps/web`, `packages/api`, `packages/core`, and `packages/infra` are transition assets and extraction sources.
 
-Analyzes Svelte code and returns issues and suggestions.
-You MUST use this tool whenever writing Svelte code before sending it to the user. Keep calling it until no issues or suggestions are returned.
+## Import Rules
 
-### 4. playground-link
+- Cross-package imports use `@yona/*`.
+- New app-internal imports use `@app/*`.
+- `@drizzle/*` is allowed during migration for shared schema/config access.
+- Legacy `@web`, `$lib`, `$app`, `@core`, `@api`, `@infra` aliases may remain only inside untouched migration-era code and should not appear in new long-lived files.
 
-Generates a Svelte Playground link with the provided code.
-After completing the code, ask the user if they want a playground link. Only call this tool after user confirmation and NEVER if code was written to files in their project.
+## Execution Rules
 
-## Project Overrides Mirror
-
-- Monorepo layout is mandatory: `apps/web`, `packages/api`, `packages/core`, `packages/infra`, `tools/*`.
-- Import convention is fixed: cross-package imports use `@yona/*`; app-internal imports use `@web/*` or `$lib/$app`; root schema/config imports use `@drizzle/*`; deep relative imports like `../../../` are disallowed.
-- Sessions default to in-memory via `SessionStore`; Redis/Valkey may be added later behind the same abstraction.
-- Git backend for this work package is system `git` executable; `packages/libgit2-ffi` is out of scope.
-- Runtime DB uses Bun.SQL + Drizzle `drizzle-orm/bun-sql` with parity across Postgres/MySQL/SQLite schemas.
+- Start from the relevant `SPEC.md` section and matching `docs/agents/*` summary.
+- Identify legacy Yona references before implementing a feature.
+- Write failing Red tests before implementation.
+- When writing schema or query code, explicitly account for PostgreSQL/MySQL/SQLite parity, especially around datetime, FTS, and raw SQL.
+- Prefer official TanStack Start/Router/Query, Better Auth, Bun, and Drizzle documentation when framework behavior must be verified.

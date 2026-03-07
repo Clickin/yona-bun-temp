@@ -1,37 +1,44 @@
-# 05) Agent Execution Guidelines & Samples
+# 05) Agent Execution Guidelines
 
-## G-A) 프론트엔드 에이전트: View-First 마크업 번역
+## 기본 절차
 
-1. **Semantic 구조 존중:** 기존 Yona 마크업의 UX 흐름을 최대한 유지.
-2. **템플릿 문법 치환:** `@if` -> `{#if}`, `@for` -> `{#each}`, `@messages` -> Paraglide `m.key()`.
-3. **스타일링 치환:** 기존 CSS를 Tailwind v4 유틸리티로 치환, 핵심 UI는 `shadcn-svelte` 사용.
-4. **Mock 데이터 활용:** `$state` 기반 mock으로 UI 인터랙션 우선 검증.
-5. **Svelte 5 Runes 강제:** Svelte 4 문법 사용 금지.
+1. 관련 `SPEC.md` 섹션과 `docs/agents/*` mirror를 읽는다.
+2. 대응 legacy reference를 `yona-original/`에서 식별한다.
+3. 보호해야 하는 intent, permission result, state transition을 추출한다.
+4. failing Red test를 먼저 작성한다.
+5. target package 경계 안에서 Green 구현을 작성한다.
+6. dialect/auth/asset/VCS/worker 영향이 있는지 점검한다.
+7. 필요한 문서와 deviation 기록을 갱신한다.
 
-## G-B) 백엔드/도메인 에이전트: 레퍼런스 조회 및 TDD
+## 코드 배치 규칙
 
-1. `yona-original/`의 테스트/비즈니스 코드를 의미 기반으로 분석.
-2. Vitest 형식의 실패하는 테스트(Red)를 먼저 작성.
-3. 테스트를 통과시키는 구현(Green) 후 리팩토링.
+- 새 장기 구현은 `apps/app`과 target packages에 둔다.
+- `apps/web`, `packages/api`, `packages/core`, `packages/infra`에는 extraction 또는 compatibility shim 외의 새 ownership을 추가하지 않는다.
+- app layer는 orchestration만 하고 domain invariant를 가지지 않는다.
 
-## G-C) Worktree 기반 병렬 작업 규칙
+## DB 작업 규칙
 
-1. 할당된 `git worktree` 경로에서만 작업.
-2. `yona-original/`은 read-only 접근만 허용.
+- query를 작성할 때는 처음부터 `PostgreSQL`, `MySQL/MariaDB`, `SQLite`를 모두 고려한다.
+- 단순 Drizzle query라도 timestamp, sorting, null semantics, FTS 영향이 없는지 확인한다.
+- dialect-specific SQL이 필요하면 세 DB별 의도와 fallback을 같이 기록한다.
 
-## G-D) Git backend 전략
+## Auth 작업 규칙
 
-- 시스템 `git` executable 사용.
-- `packages/libgit2-ffi` 범위 제외.
-- `packages/infra/src/git/executable.ts`에서 `spawn('git', ...)` 래핑.
-- `packages/infra/src/git/index.ts`에서 export.
+- `Better Auth`를 thin integration layer로 유지한다.
+- canonical user/credential/linked-account model은 Yona domain으로 둔다.
+- DB session을 재도입하지 않는다.
+- secondary storage가 필요하면 동일 추상화 뒤에 붙인다.
 
-### Git HTTP backend (전용)
+## VCS / Asset / Integration 규칙
 
-- clone/fetch/push 전송은 일반 Git 경로를 사용.
-- web inline edit, commit creation, branch protection은 application mutation 레이어에서 처리.
+- VCS subprocess는 safe argv execution만 허용한다.
+- asset delivery는 항상 Yona ACL 아래에서 처리한다.
+- integration delivery는 request path에서 직접 오래 실행하지 않고 worker/outbox를 사용한다.
 
-## G-E) SVN CLI 호출 제약
+## 금지 사항
 
-- SVN 연동에서 FFI 시도 금지.
-- 반드시 `Bun.spawn` 기반 CLI 래핑 사용.
+- 새 `SvelteKit` page/route를 target architecture로 추가하는 행위
+- 새 `Hono` sub-app을 canonical API로 확장하는 행위
+- 단일 DB만 생각하고 raw SQL을 추가하는 행위
+- legacy provenance 없이 feature를 완료 처리하는 행위
+- arbitrary runtime plugin execution을 허용하는 행위

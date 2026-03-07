@@ -1,49 +1,47 @@
 # 00) 목표와 고정 의사결정
 
+## Canonical Source
+
+- `SPEC.md`가 최상위 canonical document다.
+- 이 문서는 `SPEC.md`를 실행 규칙 중심으로 요약한 mirror다.
+- 하위 문서가 `SPEC.md`와 충돌하면 `SPEC.md`를 우선한다.
+
 ## 목표
 
-- Yona를 **SvelteKit SSR + Bun** 기반으로 재개발한다.
-- 런타임은 **단일(Bun)**, 배포는 **Bun SFX 생성**을 포함한다.
-- 제품은 소규모 사내팀(<=100명) 이슈 트래커 중심으로 최적화한다.
+- Yona를 `TanStack Start + React + Bun` 기반의 단일 애플리케이션으로 전면 재작성한다.
+- 목표 범위는 legacy Yona behavior parity이며, 축소판 issue tracker를 만들지 않는다.
+- 결과물은 일반 Bun 실행, `bun compile` SFX, Docker 배포를 모두 지원해야 한다.
 
-## 고정 의사결정(변경 금지)
+## 고정 의사결정
 
-- **프론트엔드 스택:** Svelte 5 (Runes 전용), Tailwind CSS v4, `shadcn-svelte`.
-- **다중 에이전트 병렬 개발:** `git worktree` 기반 병렬 작업을 강제한다.
-- **Git 포크 금지 및 이력 분리:** 기존 Yona 포크가 아닌 신규 포팅으로 진행한다.
-- **TDD 강제:** 구현보다 테스트 명세(Vitest)를 먼저 작성한다.
-- **Git 조작:** 시스템 `git` executable 사용. `libgit2-ffi`는 범위 제외.
-- **SVN 조작:** FFI 금지. `Bun.spawn` 기반 외부 `svn` CLI 호출 고정.
-- **Hono 1급 시민 채택:** 도메인별 sub-app 분할, tRPC 미도입.
-- **DB 드라이버:** `Bun.SQL` + Drizzle ORM `1.0.0-rc**` + `drizzle-orm/bun-sql`.
+- **재작성 방식:** 현재 `SvelteKit + Hono` 구현을 확장하지 않고, target architecture로 명시적으로 전환한다.
+- **앱 모델:** `TanStack Start + TanStack Router + TanStack Query + React`.
+- **내부 인터페이스:** 내부 앱 read/mutation은 `createServerFn`이 baseline이다.
+- **외부 인터페이스:** protocol 또는 외부 소비자 endpoint는 server route로 구현한다.
+- **인증 경계:** `Better Auth`를 사용하되 canonical user, credential, linked account, ACL, audit는 Yona가 직접 소유한다.
+- **세션:** DB session persistence는 금지한다. 기본은 in-memory이며 `Redis/Valkey` secondary storage를 허용한다.
+- **OAuth:** GitHub OAuth, Google OAuth, Email/Password를 모두 지원한다.
+- **비밀번호 정책:** password reset은 admin-driven baseline을 유지한다.
+- **VCS:** Git/SVN은 system executable 기반으로 유지하고 FFI는 범위 밖이다.
+- **DB 런타임:** `Bun.SQL + Drizzle`.
+- **지원 DB:** `PostgreSQL`, `MySQL/MariaDB`, `SQLite`를 모두 first-class로 지원한다.
+- **Schema parity:** table/column/nullability/index/fk/timestamp semantics는 세 dialect에서 동등해야 한다.
+- **Query 작성 규칙:** query를 작성할 때부터 세 dialect를 동시에 고려한다. 특히 datetime, FTS, raw SQL은 dialect 차이를 명시적으로 검토한다.
+- **Asset delivery:** user-uploaded asset은 Yona-controlled route로만 제공한다.
+- **Plugin model:** arbitrary runtime plugin은 금지하고 out-of-process integration provider만 허용한다.
+- **AI surface:** `llms.txt`와 AI datasource endpoint는 Phase 6 hardening 범위로 취급한다.
+- **Async delivery:** notification/integration delivery는 Bun process 내부의 dedicated worker에서 처리한다.
 
-## Overrides / Decisions (monorepo-sessions-bunsql-multidialect)
+## 전환 입장
 
-- **Monorepo mandatory:** `apps/web`, `packages/api`, `packages/core`, `packages/infra`, `tools/*`.
-- **Git backend:** 시스템 git executable 경로 사용.
-- **Session management:** DB session 배제, in-memory session 사용.
-- **DB runtime:** Bun.SQL + Drizzle `drizzle-orm/bun-sql`, Postgres/MySQL/SQLite 선택 지원.
-- **Schema parity:** 다이얼렉트 간 table/column/nullability/index/fk semantics 동등성 유지.
+- 현재 `apps/web`, `packages/api`, `packages/core`, `packages/infra`는 target ownership이 아니라 extraction source다.
+- 장기 ownership은 `apps/app`, `packages/auth`, `packages/contracts`, `packages/db`, `packages/domain`, `packages/integrations`, `packages/i18n`, `packages/ui`, `packages/vcs`로 이동한다.
 
-## Schema parity bar
+## 참고 자료
 
-- Table names and column names must be equivalent across Postgres/MySQL/SQLite schema modules.
-- Nullability must match per column across all dialect schema modules.
-- Index and unique index definitions (name + columns + uniqueness) must match across dialects.
-- Foreign keys must preserve targets and onDelete/onUpdate semantics.
-- Timestamp semantics must preserve Date at TypeScript boundary.
-
-## References
-
-- Drizzle bun-sql multi-dialect context: https://github.com/drizzle-team/drizzle-orm/issues/4937#issuecomment-3707293427
-- Bun SQL runtime documentation: https://bun.com/docs/runtime/sql
-- Bun SQL SQLite filename reference: https://bun.com/reference/bun/SQL/SQLiteOptions/filename
-
-## Overrides / Decisions (user-authentication)
-
-- **OAuth providers:** GitHub OAuth, Google OAuth, Email/Password 모두 필수.
-- **Email verification:** 회원가입 시 이메일 인증 불필요, 비밀번호 재설정 용도로만 사용.
-- **Email usage:** SMTP 미설정 시 auth 시스템 비활성화(단, OAuth 이메일 자동 검증).
-- **Password reset:** admin-driven flow.
-- **Account linking:** OAuth 로그인 시 기존 이메일 계정 자동 연결.
-- **Session cookies:** HttpOnly, SameSite=Lax(dev), Secure(prod).
+- `SPEC.md`
+- https://tanstack.com/start/latest/docs/framework/react/overview
+- https://www.better-auth.com/docs/adapters/drizzle
+- https://www.better-auth.com/docs/concepts/database#secondary-storage
+- https://bun.com/docs/runtime/sql
+- https://bun.com/docs/bundler/executables

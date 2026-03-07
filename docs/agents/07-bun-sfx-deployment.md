@@ -1,56 +1,42 @@
-# 07) Bun SFX (Single-File Executable) 배포 가이드
+# 07) Bun SFX 배포 가이드
 
-## 7-1) Cross-Compilation
+## 목표
 
-- `bun build --compile --target=...`로 타 OS/아키텍처 바이너리 생성.
-- x64에서는 modern/baseline 선택 가능 (환경 호환성 기준으로 선택).
-- 권장: 운영 환경 CPU/OS 매트릭스를 먼저 정의 후 타겟별 빌드.
+- 하나의 Bun application을 일반 실행, SFX, Docker 세 방식으로 배포 가능하게 유지한다.
+- app server, server routes, in-process worker는 하나의 배포 단위로 움직인다.
+
+## SFX 원칙
+
+- `bun build --compile --target=...`를 사용해 단일 실행 파일을 생성한다.
+- 운영 대상 OS/아키텍처를 먼저 확정한 뒤 target matrix를 정한다.
+- user-uploaded asset과 DB 파일은 실행 파일에 임베드하지 않고 외부 storage path로 둔다.
 
 예시:
 
 ```bash
-bun build --compile --target=bun-linux-x64 ./index.ts --outfile yona-server
-bun build --compile --target=bun-windows-x64 ./index.ts --outfile yona.exe
-bun build --compile --target=bun-darwin-arm64 ./index.ts --outfile yona-server
+bun build --compile --target=bun-linux-x64 ./apps/app/src/server.ts --outfile yona-server
+bun build --compile --target=bun-windows-x64 ./apps/app/src/server.ts --outfile yona.exe
 ```
 
-## 7-2) 정적 리소스 임베딩
+## 런타임 구성
 
-- `with { type: "file" }`로 파일을 실행 파일에 포함 가능.
-- 이미지/JSON/템플릿 등 배포 시 외부 파일 의존도를 낮춘다.
+- app server와 dedicated worker는 같은 Bun process 안에서 초기화한다.
+- in-memory session을 사용할 경우 process restart 시 active session이 사라진다는 점을 운영 문서에 명시한다.
+- horizontal scaling이 필요하면 secondary storage를 먼저 붙인다.
 
-## 7-3) Full-Stack Executable
+## 배포 주의사항
 
-- 서버에서 HTML을 import하면 Bun이 프론트엔드 자산(JS/CSS)도 함께 번들한다.
-- 결과적으로 서버 + 클라이언트가 단일 바이너리로 배포된다.
+- static build asset과 user-uploaded asset을 분리한다.
+- secret, OAuth credential, integration signing material은 실행 파일이 아니라 환경 변수/비밀 저장소에서 주입한다.
+- dialect별 connection string과 migration folder resolution이 일치해야 한다.
 
-## 7-4) 프로덕션 최적화
+## Docker와의 관계
 
-권장 플래그:
-
-```bash
-bun build --compile --minify --sourcemap --bytecode ./path/to/server.ts --outfile yona-server
-```
-
-- `--minify`: 바이너리 크기 절감
-- `--sourcemap`: 디버깅 정확도 향상
-- `--bytecode`: 시작 시간 단축
-
-## 7-5) 다중 타겟 빌드 자동화
-
-- `package.json` scripts에서 OS/아키텍처별 `build:sfx:*` 스크립트를 분리 운영.
-
-## 7-6) 런타임 설정
-
-- `.env` / `bunfig.toml` autoload 기본 활성화.
-- 필요시 `BUN_OPTIONS`로 실행 플래그 주입.
-
-## 7-7) GitHub Actions Cross-Compile Release
-
-- 단일 Linux runner에서 다중 플랫폼 빌드 가능.
-- release artifact와 checksum 파일(`SHA256SUMS`)을 함께 배포.
+- Docker는 SFX의 대체가 아니라 병행 지원 대상이다.
+- CI/CD와 multi-env 운영에서는 Docker를 우선 검토한다.
+- 내부 단일 서버 설치 경험이 중요하면 SFX를 우선 검토한다.
 
 ## 참고 링크
 
-- Bun compile/build 문서: https://bun.com/docs/bundler/executables
-- Bun SQL 런타임 문서: https://bun.com/docs/runtime/sql
+- https://bun.com/docs/bundler/executables
+- https://bun.com/docs/runtime/sql
