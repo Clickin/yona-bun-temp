@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runGit } from "@yona/infra";
+import { runGit } from "@yona/vcs";
 import { POST as BOOTSTRAP_POST } from "@web/routes/api/repos/[repoId]/bootstrap/+server";
 import { GET as FILES_GET } from "@web/routes/api/repos/[repoId]/files/+server";
 import { POST as INLINE_EDIT_POST } from "@web/routes/api/repos/[repoId]/inline-edit/+server";

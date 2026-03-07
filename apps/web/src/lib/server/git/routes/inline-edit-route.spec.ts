@@ -5,11 +5,13 @@ import {
   getRepositoryRoot,
   readMutationActor,
   resolveRepositoryPath,
-} from "@yona/infra";
-import { AuthorizationError, ConflictError, performInlineEditMutation } from "@yona/infra";
+  AuthorizationError,
+  ConflictError,
+  performInlineEditMutation,
+} from "@yona/vcs";
 
-vi.mock("@yona/infra", async () => {
-  const actual = await vi.importActual<typeof import("@yona/infra")>("@yona/infra");
+vi.mock("@yona/vcs", async () => {
+  const actual = await vi.importActual<typeof import("@yona/vcs")>("@yona/vcs");
 
   return {
     ...actual,
