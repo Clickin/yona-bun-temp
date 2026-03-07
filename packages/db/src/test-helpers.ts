@@ -8,21 +8,25 @@ export function getMigrationsFolder(dbType: DbType): string {
   return path.join(process.cwd(), "..", "..", "drizzle", dbType, "migrations");
 }
 
-export function getLatestMigrationSql(dbType: DbType): string {
+export function getMigrationSqlChain(dbType: DbType): string {
   const migrationsFolder = getMigrationsFolder(dbType);
   const entries = fs
     .readdirSync(migrationsFolder, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
-    .sort();
+    .toSorted();
 
-  const latestFolder = entries.at(-1);
-  if (!latestFolder) {
+  if (entries.length === 0) {
     throw new Error(`No migration folders found for ${dbType}`);
   }
 
-  const migrationPath = path.join(migrationsFolder, latestFolder, "migration.sql");
-  return fs.readFileSync(migrationPath, "utf8");
+  return entries
+    .map((folder) => {
+      const migrationPath = path.join(migrationsFolder, folder, "migration.sql");
+      return fs.readFileSync(migrationPath, "utf8").trim();
+    })
+    .filter((sqlText) => sqlText.length > 0)
+    .join("\n--> statement-breakpoint\n");
 }
 
 export function normalizeMySqlMigration(sqlText: string): string {
@@ -42,7 +46,8 @@ export function splitMigrationStatements(sqlText: string): string[] {
   return sqlText
     .split("--> statement-breakpoint")
     .map((statement) => statement.trim())
-    .filter((statement) => statement.length > 0);
+    .filter((statement) => statement.length > 0)
+    .filter((statement) => statement.replace(/--.*$/gm, "").trim().length > 0);
 }
 
 export function getExpectedTableNames(schemaModule: Record<string, unknown>): string[] {
@@ -59,5 +64,5 @@ export function getExpectedTableNames(schemaModule: Record<string, unknown>): st
     }
   }
 
-  return [...tableNames].sort();
+  return [...tableNames].toSorted();
 }

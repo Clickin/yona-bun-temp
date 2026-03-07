@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeAll } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/bun-sql";
 import { migrate } from "drizzle-orm/bun-sql/migrator";
@@ -14,20 +14,15 @@ describe("SQLite database", () => {
     const client = new SQL(setup.url);
     db = drizzle(client, { schema: sqliteSchema });
 
-    // Apply migrations
     await migrate(db, { migrationsFolder: "drizzle/sqlite/migrations" });
   });
 
-  // No cleanup needed for in-memory database - it's isolated per test run
-
   it("should connect to SQLite successfully", async () => {
-    // Verify we can query the database
     const result = await db.execute(sql`SELECT 1 as test`);
     expect(result).toBeDefined();
   });
 
   it("should have expected tables created after migrations", async () => {
-    // Check if key tables exist by querying sqlite_master
     const result = await db.execute(sql`
       SELECT name
       FROM sqlite_master
@@ -37,14 +32,23 @@ describe("SQLite database", () => {
       LIMIT 5
     `);
 
-    // Verify at least some tables exist
     expect(result.rows.length).toBeGreaterThan(0);
 
-    // Check for specific tables that should exist
     const tableNames = result.rows.map((row: any) => row.name);
     expect(tableNames).toContain("n4user");
     expect(tableNames).toContain("project");
     expect(tableNames).toContain("issue");
+  });
+
+  it("retains the legacy sessions table for in-place upgrades", async () => {
+    const result = await db.execute(sql`
+      SELECT name
+      FROM sqlite_master
+      WHERE type = 'table'
+      AND name = 'sessions'
+    `);
+
+    expect(result.rows).toHaveLength(1);
   });
 
   it("should have n4user table structure", async () => {
@@ -52,7 +56,6 @@ describe("SQLite database", () => {
       PRAGMA table_info(n4user)
     `);
 
-    // Verify n4user table has expected columns
     const columns = result.rows.map((row: any) => row.name);
     expect(columns).toContain("id");
     expect(columns).toContain("loginId");

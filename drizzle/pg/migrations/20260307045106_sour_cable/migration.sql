@@ -1,1 +1,2 @@
-DROP TABLE "sessions";
+-- Keep the legacy sessions table for in-place Yona upgrades.
+-- Runtime auth uses the in-memory session store, so new code must not depend on this table.
