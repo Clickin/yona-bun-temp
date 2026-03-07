@@ -16,7 +16,9 @@
 ## Fixed Decisions
 
 - 현재 `SvelteKit + Hono` 코드는 target baseline이 아니라 migration source material이다.
-- 내부 앱 read/mutation은 `createServerFn`, 외부/프로토콜 endpoint는 server route가 canonical이다.
+- 내부 앱 read/mutation의 canonical backend boundary는 in-process `tRPC`다.
+- TanStack Start `serverFunction`은 app-facing thin adapter이고, `Date` 같은 non-plain-JSON 타입은 `superjson`으로 처리한다.
+- 외부/프로토콜 endpoint는 server route가 canonical이다.
 - 인증 프레임워크는 `Better Auth`를 우선 사용하되, canonical identity, ACL, audit, domain permission은 Yona가 직접 소유한다.
 - DB session persistence는 금지한다. 기본은 in-memory session이며 `Redis/Valkey` secondary storage를 허용한다.
 - `PostgreSQL`, `MySQL/MariaDB`, `SQLite`를 day 1부터 동등한 지원 대상으로 취급한다.

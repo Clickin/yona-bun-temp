@@ -10,7 +10,7 @@
 - package restructuring 시작
 - Better Auth + session abstraction spike
 - asset gateway baseline
-- server function / server route convention 고정
+- `tRPC` / `serverFunction` / server route convention 고정
 
 완료 기준:
 

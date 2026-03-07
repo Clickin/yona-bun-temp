@@ -3,7 +3,7 @@
 ## 목표
 
 - 하나의 Bun application을 일반 실행, SFX, Docker 세 방식으로 배포 가능하게 유지한다.
-- app server, server routes, in-process worker는 하나의 배포 단위로 움직인다.
+- app server, in-process `tRPC` backend, thin `serverFunction` adapter, server route, in-process worker는 하나의 배포 단위로 움직인다.
 
 ## SFX 원칙
 
@@ -20,7 +20,7 @@ bun build --compile --target=bun-windows-x64 ./apps/app/src/server.ts --outfile 
 
 ## 런타임 구성
 
-- app server와 dedicated worker는 같은 Bun process 안에서 초기화한다.
+- app server, `tRPC` backend wiring, dedicated worker는 같은 Bun process 안에서 초기화한다.
 - in-memory session을 사용할 경우 process restart 시 active session이 사라진다는 점을 운영 문서에 명시한다.
 - horizontal scaling이 필요하면 secondary storage를 먼저 붙인다.
 

@@ -15,17 +15,23 @@
 ## SSR / Query 규칙
 
 - request마다 fresh `QueryClient`를 생성한다.
-- router context에 auth/session projection과 `queryClient`를 주입한다.
+- router context에 auth/session projection, `queryClient`, `tRPC` caller를 주입한다.
 - `setupRouterSsrQueryIntegration` 패턴을 baseline으로 사용한다.
 - route loader는 cache authority가 아니라 `ensureQueryData` 역할만 수행한다.
+- route loader, `beforeLoad`, component, `serverFunction` adapter는 DB client를 직접 import/call하지 않는다.
 - above-the-fold critical data는 component에서 `useSuspenseQuery`로 소비한다.
 - secondary panel처럼 첫 render 이후 로드해도 되는 데이터만 `useQuery`를 사용한다.
+- session-aware route라고 해서 SSR을 강제하지 않는다. `ssr: true`, `ssr: 'data-only'`, `ssr: false`를 화면 목적에 맞게 선택한다.
+- `ssr: true`는 SEO/above-the-fold 우선 화면, `ssr: 'data-only'`는 session gate + client render 화면, `ssr: false`는 순수 앱 화면에 사용한다.
 
 ## Route와 Action 규칙
 
-- 내부 read/mutation은 `createServerFn`으로 구현한다.
+- 내부 read/mutation의 canonical backend boundary는 in-process `tRPC`다.
+- TanStack Start `serverFunction`은 slug/transport shell만 담당하고 handler는 `tRPC` procedure로 위임한다.
+- app-internal RPC는 `superjson`을 기본 transformer로 사용한다.
 - OAuth callback, asset delivery, smart HTTP, inbound webhook처럼 HTTP semantics가 중요한 surface는 server route로 구현한다.
-- 보호된 화면은 `beforeLoad`로 인증/권한 경계를 건다.
+- 보호된 화면은 `beforeLoad`로 인증 경계를 건다.
+- session 조회, redirect, cookie/session rotation은 `beforeLoad` 또는 `serverFunction`이 맡고, feature-specific authorization source of truth는 `tRPC` procedure와 domain policy에 둔다.
 
 ## 화면 구조 원칙
 
@@ -37,3 +43,4 @@
 
 - 새 장기 코드에서 `SvelteKit`, `Hono`, `@web`, `$lib`, `$app`를 새 baseline으로 도입하지 않는다.
 - 기존 `apps/web` UI는 copy, field contract, test intent를 추출하기 위한 reference다.
+- 현재 `apps/app`의 `serverFunction` 예제 코드는 pre-migration shell로 간주한다.

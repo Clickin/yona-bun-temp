@@ -15,6 +15,7 @@
 - 새 장기 구현은 `apps/app`과 target packages에 둔다.
 - `apps/web`, `packages/api`, `packages/core`, `packages/infra`에는 extraction 또는 compatibility shim 외의 새 ownership을 추가하지 않는다.
 - app layer는 orchestration만 하고 domain invariant를 가지지 않는다.
+- loader, `beforeLoad`, component, `serverFunction` adapter는 DB client를 직접 호출하지 않고 `tRPC` backend boundary를 통해서만 domain/db로 진입한다.
 
 ## DB 작업 규칙
 

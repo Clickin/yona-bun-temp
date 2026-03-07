@@ -6,7 +6,7 @@
 - `apps/app/`: TanStack Start application
 - `apps/migrator-h2/`: H2 -> SQLite migration CLI
 - `packages/auth/`: Better Auth integration, auth bridge, session secondary storage
-- `packages/contracts/`: Zod schema, DTO, error code
+- `packages/contracts/`: Zod schema, DTO, error code, `tRPC` procedure contract, `superjson`-safe contract shape
 - `packages/db/`: Drizzle schema, migration, parity test, DB helper
 - `packages/domain/`: aggregate/entity behavior, use case, ACL, invariant
 - `packages/integrations/`: provider contract, adapter, delivery worker
@@ -22,7 +22,7 @@
 
 ## 경계 규칙
 
-- `apps/app`은 route tree, SSR wiring, root context, server route composition을 소유한다.
+- `apps/app`은 route tree, SSR wiring, root context, `tRPC` context/caller/adapter wiring, server route composition을 소유한다.
 - app은 raw DB schema, domain invariant, VCS subprocess policy를 직접 소유하지 않는다.
 - `packages/domain`은 ACL과 cross-feature invariant를 소유한다.
 - `packages/db`는 schema와 migration을 소유한다.
