@@ -12,6 +12,23 @@ export const authErrorCodeSchema = z.enum(authErrorCodeValues);
 
 export type AuthErrorCode = z.infer<typeof authErrorCodeSchema>;
 
+export const authIdentifierSchema = z.string().trim().min(1, "Login ID or email is required.");
+
+export const authPasswordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters.")
+  .max(128, "Password must be at most 128 characters.");
+
+export const authEmailAddressSchema = z.string().trim().email("A valid email address is required.");
+
+export const authLoginIdSchema = z.string().trim().min(1, "Login ID is required.");
+
+export const authDisplayNameSchema = z
+  .string()
+  .trim()
+  .min(1, "Display name is required.")
+  .max(255, "Display name must be at most 255 characters.");
+
 export const sessionProjectionSchema = z
   .object({
     actorId: z.number().int().positive().nullable(),
@@ -60,9 +77,231 @@ export const sessionProjectionSchema = z
 
 export type SessionProjection = z.infer<typeof sessionProjectionSchema>;
 
-export const passwordResetRequestSchema = z.object({
-  emailAddress: z.string().email(),
-  loginId: z.string().min(1),
-});
+export const authUserSummarySchema = z
+  .object({
+    emailAddress: authEmailAddressSchema,
+    id: z.number().int().positive(),
+    isConfirmed: z.boolean(),
+    isSiteAdmin: z.boolean(),
+    loginId: authLoginIdSchema,
+    name: authDisplayNameSchema,
+  })
+  .strict();
+
+export type AuthUserSummary = z.infer<typeof authUserSummarySchema>;
+
+export const appSessionProjectionSchema = sessionProjectionSchema
+  .extend({
+    emailAddress: authEmailAddressSchema.nullable(),
+    userLabel: authDisplayNameSchema.nullable(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.isAnonymous) {
+      if (value.emailAddress !== null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["emailAddress"],
+          message: "Anonymous sessions must not expose an email address.",
+        });
+      }
+
+      if (value.userLabel !== null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["userLabel"],
+          message: "Anonymous sessions must not expose a user label.",
+        });
+      }
+
+      return;
+    }
+
+    if (value.emailAddress === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["emailAddress"],
+        message: "Authenticated sessions require an email address.",
+      });
+    }
+
+    if (value.userLabel === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["userLabel"],
+        message: "Authenticated sessions require a user label.",
+      });
+    }
+  });
+
+export type AppSessionProjection = z.infer<typeof appSessionProjectionSchema>;
+
+export const signInWithPasswordInputSchema = z
+  .object({
+    identifier: authIdentifierSchema,
+    password: authPasswordSchema,
+  })
+  .strict();
+
+export type SignInWithPasswordInput = z.infer<typeof signInWithPasswordInputSchema>;
+
+export const registerWithPasswordInputSchema = z
+  .object({
+    emailAddress: authEmailAddressSchema,
+    loginId: authLoginIdSchema,
+    name: authDisplayNameSchema,
+    password: authPasswordSchema,
+  })
+  .strict();
+
+export type RegisterWithPasswordInput = z.infer<typeof registerWithPasswordInputSchema>;
+
+export const passwordResetRequestSchema = z
+  .object({
+    emailAddress: authEmailAddressSchema,
+    loginId: authLoginIdSchema,
+  })
+  .strict();
 
 export type PasswordResetRequest = z.infer<typeof passwordResetRequestSchema>;
+
+export const requestPasswordResetInputSchema = passwordResetRequestSchema;
+
+export type RequestPasswordResetInput = z.infer<typeof requestPasswordResetInputSchema>;
+
+export const completePasswordResetInputSchema = z
+  .object({
+    newPassword: authPasswordSchema,
+    token: z.string().trim().min(1, "Reset token is required."),
+  })
+  .strict();
+
+export type CompletePasswordResetInput = z.infer<typeof completePasswordResetInputSchema>;
+
+export const authFailureSchema = z
+  .object({
+    code: authErrorCodeSchema,
+    message: z.string().min(1),
+    ok: z.literal(false),
+  })
+  .strict();
+
+export type AuthFailure = z.infer<typeof authFailureSchema>;
+
+export const authRateLimitFailureSchema = z
+  .object({
+    code: z.literal("auth.rate-limited"),
+    message: z.string().min(1),
+    ok: z.literal(false),
+    retryAfterSeconds: z.number().int().positive(),
+  })
+  .strict();
+
+export type AuthRateLimitFailure = z.infer<typeof authRateLimitFailureSchema>;
+
+export const readCurrentSessionResultSchema = appSessionProjectionSchema;
+
+export type ReadCurrentSessionResult = z.infer<typeof readCurrentSessionResultSchema>;
+
+export const readCurrentSessionOutputSchema = readCurrentSessionResultSchema;
+
+export type ReadCurrentSessionOutput = ReadCurrentSessionResult;
+
+export const signInWithPasswordResultSchema = z.union([
+  authFailureSchema,
+  authRateLimitFailureSchema,
+  z
+    .object({
+      ok: z.literal(true),
+      session: appSessionProjectionSchema,
+    })
+    .strict(),
+]);
+
+export type SignInWithPasswordResult = z.infer<typeof signInWithPasswordResultSchema>;
+
+export const signInWithPasswordOutputSchema = signInWithPasswordResultSchema;
+
+export type SignInWithPasswordOutput = SignInWithPasswordResult;
+
+export const registerWithPasswordResultSchema = z.union([
+  authFailureSchema,
+  authRateLimitFailureSchema,
+  z
+    .object({
+      ok: z.literal(true),
+      session: appSessionProjectionSchema,
+    })
+    .strict(),
+]);
+
+export type RegisterWithPasswordResult = z.infer<typeof registerWithPasswordResultSchema>;
+
+export const registerWithPasswordOutputSchema = registerWithPasswordResultSchema;
+
+export type RegisterWithPasswordOutput = RegisterWithPasswordResult;
+
+export const requestPasswordResetResultSchema = z.union([
+  authRateLimitFailureSchema,
+  z
+    .object({
+      ok: z.literal(true),
+    })
+    .strict(),
+]);
+
+export type RequestPasswordResetResult = z.infer<typeof requestPasswordResetResultSchema>;
+
+export const requestPasswordResetOutputSchema = requestPasswordResetResultSchema;
+
+export type RequestPasswordResetOutput = RequestPasswordResetResult;
+
+export const completePasswordResetResultSchema = z.union([
+  z
+    .object({
+      message: z.string().min(1),
+      ok: z.literal(false),
+    })
+    .strict(),
+  z
+    .object({
+      ok: z.literal(true),
+      session: appSessionProjectionSchema,
+    })
+    .strict(),
+]);
+
+export type CompletePasswordResetResult = z.infer<typeof completePasswordResetResultSchema>;
+
+export const completePasswordResetOutputSchema = completePasswordResetResultSchema;
+
+export type CompletePasswordResetOutput = CompletePasswordResetResult;
+
+export const signOutResultSchema = z
+  .object({
+    ok: z.literal(true),
+    session: appSessionProjectionSchema,
+  })
+  .strict();
+
+export type SignOutResult = z.infer<typeof signOutResultSchema>;
+
+export const signOutOutputSchema = signOutResultSchema;
+
+export type SignOutOutput = SignOutResult;
+
+export const sessionRoutePayloadSchema = z
+  .object({
+    session: z
+      .object({
+        csrfToken: z.string().min(1),
+        expiresAt: z.string().datetime({ offset: true }),
+        projection: appSessionProjectionSchema,
+        userId: z.number().int().positive(),
+      })
+      .strict()
+      .nullable(),
+    user: authUserSummarySchema.nullable(),
+  })
+  .strict();
+
+export type SessionRoutePayload = z.infer<typeof sessionRoutePayloadSchema>;

@@ -8,9 +8,11 @@ import {
   createRootRouteWithContext,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import type { AppAuthCaller } from "@app/lib/auth-client";
 import appCss from "../styles/app.css?url";
 
 interface AppRouterContext {
+  authCaller: AppAuthCaller;
   queryClient: QueryClient;
 }
 
@@ -49,8 +51,8 @@ function RootRouteComponent() {
             <p className="kicker">Wave W2</p>
             <h1>Canonical app auth now lives in TanStack Start.</h1>
             <p className="lead">
-              The active runtime is `apps/app`: server functions own internal auth flows, and server
-              routes reserve canonical HTTP auth surfaces.
+              The active runtime is `apps/app`: tRPC owns internal auth flows, and server routes
+              reserve canonical HTTP auth surfaces.
             </p>
           </div>
           <nav className="shell-nav">

@@ -114,5 +114,8 @@ describe("TanStack Start app shell", () => {
     expect(firstRouter.options.context.queryClient).not.toBe(
       secondRouter.options.context.queryClient,
     );
+    expect(firstRouter.options.context.authCaller).not.toBe(
+      secondRouter.options.context.authCaller,
+    );
   });
 });

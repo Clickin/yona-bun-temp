@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import { readCurrentSession } from "./auth";
+import type { AppAuthCaller } from "./auth-client";
 import { currentSessionQueryKey } from "./auth-shared";
 import { getProtectedShellData, getPublicShellData } from "./shell-data";
 
@@ -17,9 +17,9 @@ export function protectedShellQueryOptions() {
   });
 }
 
-export function currentSessionQueryOptions() {
+export function currentSessionQueryOptions(authCaller: Pick<AppAuthCaller, "readCurrentSession">) {
   return queryOptions({
     queryKey: currentSessionQueryKey,
-    queryFn: () => readCurrentSession(),
+    queryFn: () => authCaller.readCurrentSession(),
   });
 }

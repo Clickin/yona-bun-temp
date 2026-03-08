@@ -1,13 +1,16 @@
 import * as React from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate, useRouter } from "@tanstack/react-router";
-import { buildProtectedRedirect, readCurrentSession, signOut } from "@app/lib/auth";
+import { buildProtectedRedirect } from "@app/lib/auth";
 import { setCurrentSessionData } from "@app/lib/auth-shared";
 import { currentSessionQueryOptions, protectedShellQueryOptions } from "@app/lib/queries";
 
 export const Route = createFileRoute("/protected")({
-  beforeLoad: async ({ location }) => {
-    const redirectTarget = buildProtectedRedirect(await readCurrentSession(), location.href);
+  beforeLoad: async ({ context, location }) => {
+    const redirectTarget = buildProtectedRedirect(
+      await context.authCaller.readCurrentSession(),
+      location.href,
+    );
     if (redirectTarget) {
       throw redirect(redirectTarget);
     }
@@ -15,24 +18,25 @@ export const Route = createFileRoute("/protected")({
   loader: ({ context }) =>
     Promise.all([
       context.queryClient.ensureQueryData(protectedShellQueryOptions()),
-      context.queryClient.ensureQueryData(currentSessionQueryOptions()),
+      context.queryClient.ensureQueryData(currentSessionQueryOptions(context.authCaller)),
     ]),
   component: ProtectedRouteComponent,
 });
 
 function ProtectedRouteComponent() {
   const shell = useSuspenseQuery(protectedShellQueryOptions());
-  const session = useSuspenseQuery(currentSessionQueryOptions());
   const navigate = useNavigate();
   const router = useRouter();
+  const authCaller = router.options.context.authCaller;
   const queryClient = router.options.context.queryClient;
+  const session = useSuspenseQuery(currentSessionQueryOptions(authCaller));
   const [isSigningOut, setIsSigningOut] = React.useState(false);
 
   const handleSignOut = () => {
     setIsSigningOut(true);
     React.startTransition(() => {
       void (async () => {
-        const result = await signOut();
+        const result = await authCaller.signOut();
         setCurrentSessionData(queryClient, result.session);
         await navigate({ to: "/" });
         setIsSigningOut(false);

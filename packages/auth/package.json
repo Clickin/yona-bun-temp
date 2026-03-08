@@ -6,15 +6,18 @@
   "exports": "./src/index.ts",
   "scripts": {
     "check": "tsc --noEmit",
-    "test": "bunx vitest run src/*.spec.ts"
+    "test": "bunx vitest run --config vitest.config.ts"
   },
   "dependencies": {
+    "@yona/contracts": "workspace:*",
+    "@yona/domain": "workspace:*",
     "bcryptjs": "^3.0.3",
     "keyv": "^5.5.4"
   },
   "devDependencies": {
     "@types/node": "^24.6.0",
     "typescript": "^5.9.3",
+    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.18"
   }
 }

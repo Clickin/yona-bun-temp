@@ -2,7 +2,6 @@ import * as React from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { z } from "zod";
-import { signInWithPassword, signOut } from "@app/lib/auth";
 import { setCurrentSessionData } from "@app/lib/auth-shared";
 import { currentSessionQueryOptions } from "@app/lib/queries";
 
@@ -13,15 +12,17 @@ const loginSearchSchema = z.object({
 
 export const Route = createFileRoute("/login")({
   validateSearch: loginSearchSchema,
-  loader: ({ context }) => context.queryClient.ensureQueryData(currentSessionQueryOptions()),
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(currentSessionQueryOptions(context.authCaller)),
   component: LoginRouteComponent,
 });
 
 function LoginRouteComponent() {
-  const session = useSuspenseQuery(currentSessionQueryOptions());
-  const navigate = useNavigate();
   const router = useRouter();
+  const authCaller = router.options.context.authCaller;
   const queryClient = router.options.context.queryClient;
+  const session = useSuspenseQuery(currentSessionQueryOptions(authCaller));
+  const navigate = useNavigate();
   const search = Route.useSearch();
   const redirectTo = search.redirect || "/protected";
   const [pendingAction, setPendingAction] = React.useState<"signin" | "signout" | null>(null);
@@ -37,11 +38,9 @@ function LoginRouteComponent() {
       void (async () => {
         try {
           if (action === "signin") {
-            const result = await signInWithPassword({
-              data: {
-                identifier,
-                password,
-              },
+            const result = await authCaller.signInWithPassword({
+              identifier,
+              password,
             });
             if (!result.ok) {
               setErrorMessage(result.message);
@@ -50,7 +49,7 @@ function LoginRouteComponent() {
             setCurrentSessionData(queryClient, result.session);
             await navigate({ to: redirectTo });
           } else {
-            const result = await signOut();
+            const result = await authCaller.signOut();
             setCurrentSessionData(queryClient, result.session);
             await navigate({ to: "/" });
           }

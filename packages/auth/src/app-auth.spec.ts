@@ -1,15 +1,16 @@
-import { __resetSessionStoreForTests, createSession, getSessionByToken } from "@yona/auth";
 import { beforeEach, describe, expect, it } from "vitest";
+import type { RegisterWithPasswordInput } from "@yona/contracts";
+import { __resetSessionStoreForTests, createSession, getSessionByToken } from "./session";
 import {
   authenticatePasswordSignIn,
   createAppUser,
   issuePasswordResetToken,
-  resetPasswordByAdmin,
   resetAuthStateForTests,
+  resetPasswordByAdmin,
   resetPasswordWithToken,
-} from "./auth-state";
+} from "./app-service";
 
-describe("app auth state", () => {
+describe("app auth service", () => {
   beforeEach(() => {
     resetAuthStateForTests();
     __resetSessionStoreForTests();
@@ -98,6 +99,18 @@ describe("app auth state", () => {
     });
   });
 
+  it("rejects unexpected bootstrap flags so the public create-user contract stays narrow", async () => {
+    await expect(
+      createAppUser({
+        emailAddress: "door@example.com",
+        isConfirmed: false,
+        loginId: "door",
+        name: "Door TTS",
+        password: "strong-pass-123",
+      } as RegisterWithPasswordInput & { isConfirmed: boolean }),
+    ).rejects.toThrowError();
+  });
+
   it("preserves uniqueness when concurrent registrations race", async () => {
     const [first, second] = await Promise.all([
       createAppUser({
@@ -167,6 +180,60 @@ describe("app auth state", () => {
       session: {
         isAnonymous: false,
       },
+    });
+  });
+
+  it("fails a password reset when the token is invalid", async () => {
+    // Legacy provenance:
+    // - yona-original/test/models/PasswordResetTest.java:testResetPassword_wrongHash
+    await createAppUser({
+      emailAddress: "door@example.com",
+      loginId: "door",
+      name: "Door TTS",
+      password: "strong-pass-123",
+    });
+
+    await expect(
+      resetPasswordWithToken({
+        newPassword: "changed-pass-456",
+        token: "not-a-real-token",
+      }),
+    ).resolves.toEqual({
+      ok: false,
+    });
+  });
+
+  it("fails a password reset when the token is expired", async () => {
+    // Legacy provenance:
+    // - yona-original/test/models/PasswordResetTest.java:testIsValidResetHash_expiredHash
+    const issuedAt = new Date("2030-01-01T00:00:00.000Z");
+    const expiredAt = new Date(issuedAt.getTime() + 60 * 60 * 1000 + 5_000);
+
+    await createAppUser({
+      emailAddress: "door@example.com",
+      loginId: "door",
+      name: "Door TTS",
+      password: "strong-pass-123",
+    });
+
+    const resetRequest = await issuePasswordResetToken(
+      {
+        emailAddress: "door@example.com",
+        loginId: "door",
+      },
+      issuedAt,
+    );
+
+    await expect(
+      resetPasswordWithToken(
+        {
+          newPassword: "changed-pass-456",
+          token: resetRequest.resetToken!,
+        },
+        expiredAt,
+      ),
+    ).resolves.toEqual({
+      ok: false,
     });
   });
 

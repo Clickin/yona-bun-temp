@@ -1,9 +1,11 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter, type RouterHistory } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
+import { createAppAuthCaller, type AppAuthCaller } from "./lib/auth-client";
 import { routeTree } from "./routeTree.gen";
 
 export interface AppRouterOptions {
+  authCaller?: AppAuthCaller;
   history?: RouterHistory;
   queryClient?: QueryClient;
 }
@@ -19,12 +21,14 @@ function createAppQueryClient() {
 }
 
 export function getRouter(options: AppRouterOptions = {}) {
+  const authCaller = options.authCaller ?? createAppAuthCaller();
   const queryClient = options.queryClient ?? createAppQueryClient();
 
   const router = createRouter({
     routeTree,
     history: options.history,
     context: {
+      authCaller,
       queryClient,
     },
     defaultPreload: "intent",

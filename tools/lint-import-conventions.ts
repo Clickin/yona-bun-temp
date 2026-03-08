@@ -33,10 +33,7 @@ interface Violation {
   reason: string;
 }
 
-const ALLOWED_EXCEPTIONS = new Set([
-  "apps/web/src/lib/server/hono/auth-app.ts",
-  "packages/api/src/auth/auth-app.ts",
-]);
+const ALLOWED_EXCEPTIONS = new Set(["apps/web/src/lib/server/hono/auth-app.ts"]);
 const TARGET_OWNERSHIP_PREFIXES = [
   "apps/app/",
   "packages/auth/",
@@ -48,7 +45,7 @@ const TARGET_OWNERSHIP_PREFIXES = [
   "packages/ui/",
   "packages/vcs/",
 ];
-const LEGACY_OWNERSHIP_IMPORTS = ["@yona/api", "@yona/core", "@yona/infra"];
+const LEGACY_OWNERSHIP_IMPORTS = ["@yona/core", "@yona/infra"];
 
 async function collectFiles(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -109,12 +106,12 @@ function validateImport(file: string, importPath: string): string | null {
     return "Deep relative import is forbidden; use project aliases.";
   }
 
-  if (
-    importPath.startsWith("@core/") ||
-    importPath.startsWith("@api/") ||
-    importPath.startsWith("@infra/")
-  ) {
-    return "Use @yona/* package imports instead of @core/@api/@infra aliases.";
+  if (importPath.startsWith("@core/") || importPath.startsWith("@infra/")) {
+    return "Use @yona/* package imports instead of @core/@infra aliases.";
+  }
+
+  if (importPath.startsWith("@api/")) {
+    return "@api/* is removed; import from target ownership packages instead.";
   }
 
   if (file.startsWith("packages/") && !isException(file)) {
@@ -128,11 +125,15 @@ function validateImport(file: string, importPath: string): string | null {
   }
 
   if (isTargetOwnershipFile(file) && isLegacyOwnershipImport(importPath)) {
-    return "Target ownership must not depend on legacy @yona/api, @yona/core, or @yona/infra packages.";
+    return "Target ownership must not depend on legacy @yona/core or @yona/infra packages.";
   }
 
   if (file.startsWith("apps/app/")) {
-    if (importPath.startsWith("@web/") || importPath.startsWith("$lib") || importPath.startsWith("$app")) {
+    if (
+      importPath.startsWith("@web/") ||
+      importPath.startsWith("$lib") ||
+      importPath.startsWith("$app")
+    ) {
       return "apps/app must not import SvelteKit app internals (@web/$lib/$app).";
     }
   }
@@ -184,6 +185,3 @@ async function main(): Promise<void> {
 }
 
 await main();
-
-
-

@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Link, createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { z } from "zod";
-import { completePasswordReset } from "@app/lib/auth";
 import { currentSessionQueryKey } from "@app/lib/auth-shared";
 
 const resetPasswordSearchSchema = z.object({
@@ -16,6 +15,7 @@ export const Route = createFileRoute("/reset-password")({
 function ResetPasswordRouteComponent() {
   const navigate = useNavigate();
   const router = useRouter();
+  const authCaller = router.options.context.authCaller;
   const queryClient = router.options.context.queryClient;
   const search = Route.useSearch();
   const [pending, setPending] = React.useState(false);
@@ -40,11 +40,9 @@ function ResetPasswordRouteComponent() {
             React.startTransition(() => {
               void (async () => {
                 try {
-                  const result = await completePasswordReset({
-                    data: {
-                      newPassword,
-                      token,
-                    },
+                  const result = await authCaller.completePasswordReset({
+                    newPassword,
+                    token,
                   });
 
                   if (!result.ok) {

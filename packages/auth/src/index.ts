@@ -29,6 +29,26 @@ export {
 export { hashPassword, verifyPassword } from "./password";
 export { generateResetToken, hashToken, verifyToken } from "./tokens";
 export {
+  authenticatePasswordSignIn,
+  buildAnonymousAppSession,
+  buildAuthenticatedAppSession,
+  buildSessionRoutePayload,
+  createAppUser,
+  findAppUserById,
+  issueAppSession,
+  issuePasswordResetToken,
+  readCurrentSession,
+  resetAuthStateForTests,
+  resetPasswordByAdmin,
+  resetPasswordWithToken,
+  type CreateAppUserInput,
+  type CreateAppUserResult,
+  type IssuePasswordResetTokenResult,
+  type IssuedAppSession,
+  type PasswordSignInResult,
+  type ResolvedCurrentSession,
+} from "./app-service";
+export {
   getClientIp,
   hasValidSameOrigin,
   readAuthPayload,
@@ -40,4 +60,3 @@ export {
   type AuthRateLimitDecision,
   type AuthRateLimitRoute,
 } from "./rate-limit";
-export { authApp, LEGACY_AUTH_APP_SHIM_MESSAGE, type LegacyAuthAppShim } from "./legacy-api-shim";

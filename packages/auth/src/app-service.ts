@@ -1,24 +1,34 @@
+import type {
+  AppSessionProjection,
+  AuthErrorCode,
+  AuthUserSummary,
+  CompletePasswordResetInput,
+  PasswordResetRequest,
+  RegisterWithPasswordInput,
+  SessionProjection,
+  SessionRoutePayload,
+} from "@yona/contracts";
 import {
-  deleteAllSessionsByUserId,
-  generateResetToken,
-  hashPassword,
-  hashToken,
-  verifyPassword,
-  verifyToken,
-} from "@yona/auth";
-import type { AuthErrorCode, PasswordResetRequest, SessionProjection } from "@yona/contracts";
-import { passwordResetRequestSchema } from "@yona/contracts";
+  completePasswordResetInputSchema,
+  passwordResetRequestSchema,
+  registerWithPasswordInputSchema,
+  signInWithPasswordInputSchema,
+} from "@yona/contracts";
 import { buildAnonymousSession, resolvePasswordSignIn } from "@yona/domain";
+import {
+  createSession,
+  deleteAllSessionsByUserId,
+  deleteSessionByToken,
+  getSessionByToken,
+} from "./session";
+import type { CreateRuntimeSessionInput, CreatedSession } from "./session";
+import type { SessionRecord } from "./session-store";
+import { generateResetToken, hashToken, verifyToken } from "./tokens";
+import { hashPassword, verifyPassword } from "./password";
 
 const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
-interface AppUserRecord {
-  emailAddress: string;
-  id: number;
-  isConfirmed: boolean;
-  isSiteAdmin: boolean;
-  loginId: string;
-  name: string;
+interface AppUserRecord extends AuthUserSummary {
   passwordHash: string;
   passwordSalt: string;
   resetTokenExpiresAt: Date | null;
@@ -26,20 +36,11 @@ interface AppUserRecord {
 }
 
 interface AppAuthState {
-  pendingMutation: Promise<void>;
   nextUserId: number;
+  pendingMutation: Promise<void>;
   usersByEmailAddress: Map<string, number>;
   usersById: Map<number, AppUserRecord>;
   usersByLoginId: Map<string, number>;
-}
-
-export interface AppUserSummary {
-  emailAddress: string;
-  id: number;
-  isConfirmed: boolean;
-  isSiteAdmin: boolean;
-  loginId: string;
-  name: string;
 }
 
 export type PasswordSignInResult =
@@ -51,7 +52,7 @@ export type PasswordSignInResult =
   | {
       ok: true;
       session: SessionProjection;
-      user: AppUserSummary;
+      user: AuthUserSummary;
     };
 
 export type CreateAppUserResult =
@@ -61,22 +62,28 @@ export type CreateAppUserResult =
     }
   | {
       ok: true;
-      user: AppUserSummary;
+      user: AuthUserSummary;
     };
 
-export interface CreateAppUserInput {
-  emailAddress: string;
-  isConfirmed?: boolean;
-  isSiteAdmin?: boolean;
-  loginId: string;
-  name: string;
-  password: string;
-}
+export type CreateAppUserInput = RegisterWithPasswordInput;
 
 export interface IssuePasswordResetTokenResult {
   expiresAt: Date | null;
   ok: true;
   resetToken: string | null;
+}
+
+export interface ResolvedCurrentSession {
+  clearCookie: boolean;
+  projection: AppSessionProjection;
+  sessionRecord: SessionRecord | null;
+  token: string | null;
+  user: AuthUserSummary | null;
+}
+
+export interface IssuedAppSession {
+  projection: AppSessionProjection;
+  session: CreatedSession;
 }
 
 function normalizeIdentifier(value: string): string {
@@ -90,8 +97,8 @@ function getGlobalState(): AppAuthState {
 
   if (!globalObject.__YONA_APP_AUTH_STATE__) {
     globalObject.__YONA_APP_AUTH_STATE__ = {
-      pendingMutation: Promise.resolve(),
       nextUserId: 1,
+      pendingMutation: Promise.resolve(),
       usersByEmailAddress: new Map(),
       usersById: new Map(),
       usersByLoginId: new Map(),
@@ -101,7 +108,7 @@ function getGlobalState(): AppAuthState {
   return globalObject.__YONA_APP_AUTH_STATE__;
 }
 
-function summarizeUser(user: AppUserRecord): AppUserSummary {
+function summarizeUser(user: AppUserRecord): AuthUserSummary {
   return {
     emailAddress: user.emailAddress,
     id: user.id,
@@ -136,14 +143,17 @@ async function withSerializedMutation<T>(mutation: () => Promise<T>): Promise<T>
   }
 }
 
-async function persistUser(state: AppAuthState, input: CreateAppUserInput): Promise<AppUserRecord> {
+async function persistUser(
+  state: AppAuthState,
+  input: RegisterWithPasswordInput,
+): Promise<AppUserRecord> {
   const passwordSalt = generateResetToken();
   const passwordHash = await hashPassword(input.password, passwordSalt);
   const user: AppUserRecord = {
     emailAddress: normalizeIdentifier(input.emailAddress),
     id: state.nextUserId,
-    isConfirmed: input.isConfirmed ?? true,
-    isSiteAdmin: input.isSiteAdmin ?? false,
+    isConfirmed: true,
+    isSiteAdmin: false,
     loginId: normalizeIdentifier(input.loginId),
     name: input.name.trim(),
     passwordHash,
@@ -172,11 +182,32 @@ function findUserByIdentifier(identifier: string): AppUserRecord | null {
   return state.usersById.get(userId) ?? null;
 }
 
+export function buildAnonymousAppSession(): AppSessionProjection {
+  return {
+    ...buildAnonymousSession(),
+    emailAddress: null,
+    userLabel: null,
+  };
+}
+
+export function buildAuthenticatedAppSession(user: AuthUserSummary): AppSessionProjection {
+  return {
+    actorId: user.id,
+    emailAddress: user.emailAddress,
+    isAnonymous: false,
+    isConfirmed: user.isConfirmed,
+    isSiteAdmin: user.isSiteAdmin,
+    loginId: user.loginId,
+    userLabel: user.name,
+  };
+}
+
 export async function createAppUser(input: CreateAppUserInput): Promise<CreateAppUserResult> {
   return withSerializedMutation(async () => {
+    const parsedInput = registerWithPasswordInputSchema.parse(input);
     const state = getGlobalState();
-    const loginId = normalizeIdentifier(input.loginId);
-    const emailAddress = normalizeIdentifier(input.emailAddress);
+    const loginId = normalizeIdentifier(parsedInput.loginId);
+    const emailAddress = normalizeIdentifier(parsedInput.emailAddress);
 
     if (state.usersByLoginId.has(loginId) || state.usersByEmailAddress.has(emailAddress)) {
       return {
@@ -187,6 +218,7 @@ export async function createAppUser(input: CreateAppUserInput): Promise<CreateAp
 
     const user = await persistUser(state, {
       ...input,
+      ...parsedInput,
       emailAddress,
       loginId,
     });
@@ -202,9 +234,15 @@ export async function authenticatePasswordSignIn(
   identifier: string,
   password: string,
 ): Promise<PasswordSignInResult> {
-  const user = findUserByIdentifier(identifier);
+  const parsedInput = signInWithPasswordInputSchema.parse({
+    identifier,
+    password,
+  });
+  const user = findUserByIdentifier(parsedInput.identifier);
   const passwordMatches =
-    user === null ? false : await verifyPassword(password, user.passwordHash, user.passwordSalt);
+    user === null
+      ? false
+      : await verifyPassword(parsedInput.password, user.passwordHash, user.passwordSalt);
 
   const decision = resolvePasswordSignIn(
     user === null
@@ -237,13 +275,14 @@ export async function authenticatePasswordSignIn(
   };
 }
 
-export async function findAppUserById(userId: number): Promise<AppUserSummary | null> {
+export async function findAppUserById(userId: number): Promise<AuthUserSummary | null> {
   const user = getGlobalState().usersById.get(userId);
   return user ? summarizeUser(user) : null;
 }
 
 export async function issuePasswordResetToken(
   request: PasswordResetRequest,
+  now = new Date(),
 ): Promise<IssuePasswordResetTokenResult> {
   return withSerializedMutation(async () => {
     const parsedRequest = passwordResetRequestSchema.parse(request);
@@ -258,7 +297,7 @@ export async function issuePasswordResetToken(
     }
 
     const resetToken = generateResetToken();
-    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
+    const expiresAt = new Date(now.getTime() + PASSWORD_RESET_TOKEN_TTL_MS);
     user.resetTokenHash = await hashToken(resetToken);
     user.resetTokenExpiresAt = expiresAt;
 
@@ -272,7 +311,7 @@ export async function issuePasswordResetToken(
 
 export async function resetPasswordByAdmin(input: {
   userId: number;
-}): Promise<{ ok: false } | { ok: true; temporaryPassword: string; user: AppUserSummary }> {
+}): Promise<{ ok: false } | { ok: true; temporaryPassword: string; user: AuthUserSummary }> {
   return withSerializedMutation(async () => {
     const user = getGlobalState().usersById.get(input.userId);
     if (!user) {
@@ -298,30 +337,35 @@ export async function resetPasswordByAdmin(input: {
   });
 }
 
-export async function resetPasswordWithToken(input: {
-  newPassword: string;
-  token: string;
-}): Promise<{ ok: false } | { ok: true; user: AppUserSummary }> {
+export async function resetPasswordWithToken(
+  input: {
+    newPassword: string;
+    token: string;
+  },
+  now = new Date(),
+): Promise<{ ok: false } | { ok: true; user: AuthUserSummary }> {
   return withSerializedMutation(async () => {
+    const parsedInput: CompletePasswordResetInput = completePasswordResetInputSchema.parse(input);
+
     for (const user of getGlobalState().usersById.values()) {
       if (!user.resetTokenHash || !user.resetTokenExpiresAt) {
         continue;
       }
 
-      if (user.resetTokenExpiresAt.getTime() < Date.now()) {
+      if (user.resetTokenExpiresAt.getTime() < now.getTime()) {
         user.resetTokenHash = null;
         user.resetTokenExpiresAt = null;
         continue;
       }
 
-      const tokenMatches = await verifyToken(input.token, user.resetTokenHash);
+      const tokenMatches = await verifyToken(parsedInput.token, user.resetTokenHash);
       if (!tokenMatches) {
         continue;
       }
 
       const passwordSalt = generateResetToken();
       user.passwordSalt = passwordSalt;
-      user.passwordHash = await hashPassword(input.newPassword, passwordSalt);
+      user.passwordHash = await hashPassword(parsedInput.newPassword, passwordSalt);
       user.resetTokenHash = null;
       user.resetTokenExpiresAt = null;
 
@@ -339,14 +383,105 @@ export async function resetPasswordWithToken(input: {
   });
 }
 
+export async function readCurrentSession(
+  token: string | undefined,
+): Promise<ResolvedCurrentSession> {
+  if (!token) {
+    return {
+      clearCookie: false,
+      projection: buildAnonymousAppSession(),
+      sessionRecord: null,
+      token: null,
+      user: null,
+    };
+  }
+
+  const sessionRecord = await getSessionByToken(token);
+  if (!sessionRecord) {
+    await deleteSessionByToken(token);
+    return {
+      clearCookie: true,
+      projection: buildAnonymousAppSession(),
+      sessionRecord: null,
+      token,
+      user: null,
+    };
+  }
+
+  const user = await findAppUserById(sessionRecord.userId);
+  if (!user) {
+    await deleteSessionByToken(token);
+    return {
+      clearCookie: true,
+      projection: buildAnonymousAppSession(),
+      sessionRecord: null,
+      token,
+      user: null,
+    };
+  }
+
+  return {
+    clearCookie: false,
+    projection: buildAuthenticatedAppSession(user),
+    sessionRecord,
+    token,
+    user,
+  };
+}
+
+export async function issueAppSession(
+  userId: number,
+  input: Omit<CreateRuntimeSessionInput, "userId"> = {},
+): Promise<IssuedAppSession> {
+  const session = await createSession({
+    ...input,
+    userId,
+  });
+  const user = await findAppUserById(userId);
+
+  return {
+    projection: user ? buildAuthenticatedAppSession(user) : buildAnonymousAppSession(),
+    session,
+  };
+}
+
+export async function buildSessionRoutePayload(
+  token: string | undefined,
+): Promise<{ clearCookie: boolean; payload: SessionRoutePayload }> {
+  const currentSession = await readCurrentSession(token);
+
+  if (!currentSession.sessionRecord || !currentSession.user) {
+    return {
+      clearCookie: currentSession.clearCookie,
+      payload: {
+        session: null,
+        user: null,
+      },
+    };
+  }
+
+  return {
+    clearCookie: currentSession.clearCookie,
+    payload: {
+      session: {
+        csrfToken: currentSession.sessionRecord.csrfToken,
+        expiresAt: currentSession.sessionRecord.expiresAt.toISOString(),
+        projection: currentSession.projection,
+        userId: currentSession.sessionRecord.userId,
+      },
+      user: currentSession.user,
+    },
+  };
+}
+
 export function resetAuthStateForTests(): void {
   const globalObject = globalThis as typeof globalThis & {
     __YONA_APP_AUTH_STATE__?: AppAuthState;
   };
 
   globalObject.__YONA_APP_AUTH_STATE__ = {
-    pendingMutation: Promise.resolve(),
     nextUserId: 1,
+    pendingMutation: Promise.resolve(),
     usersByEmailAddress: new Map(),
     usersById: new Map(),
     usersByLoginId: new Map(),

@@ -1,12 +1,13 @@
 import * as React from "react";
-import { Link, createFileRoute } from "@tanstack/react-router";
-import { requestPasswordReset } from "@app/lib/auth";
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/forgot-password")({
   component: ForgotPasswordRouteComponent,
 });
 
 function ForgotPasswordRouteComponent() {
+  const router = useRouter();
+  const authCaller = router.options.context.authCaller;
   const [pending, setPending] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [submitted, setSubmitted] = React.useState(false);
@@ -41,9 +42,7 @@ function ForgotPasswordRouteComponent() {
             React.startTransition(() => {
               void (async () => {
                 try {
-                  const result = await requestPasswordReset({
-                    data: formState,
-                  });
+                  const result = await authCaller.requestPasswordReset(formState);
                   if (!result.ok) {
                     setErrorMessage(result.message);
                     return;
