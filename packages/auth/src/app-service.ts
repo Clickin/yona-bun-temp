@@ -14,6 +14,12 @@ import {
   registerWithPasswordInputSchema,
   signInWithPasswordInputSchema,
 } from "@yona/contracts";
+import {
+  createPasswordAuthUser,
+  findAuthUserById,
+  findAuthUserByIdentifier,
+  updateAuthUserPassword,
+} from "@yona/db";
 import { buildAnonymousSession, resolvePasswordSignIn } from "@yona/domain";
 import {
   createSession,
@@ -28,19 +34,14 @@ import { hashPassword, verifyPassword } from "./password";
 
 const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
-interface AppUserRecord extends AuthUserSummary {
-  passwordHash: string;
-  passwordSalt: string;
-  resetTokenExpiresAt: Date | null;
-  resetTokenHash: string | null;
+interface PasswordResetState {
+  expiresAt: Date;
+  tokenHash: string;
 }
 
 interface AppAuthState {
-  nextUserId: number;
   pendingMutation: Promise<void>;
-  usersByEmailAddress: Map<string, number>;
-  usersById: Map<number, AppUserRecord>;
-  usersByLoginId: Map<string, number>;
+  resetTokensByUserId: Map<number, PasswordResetState>;
 }
 
 export type PasswordSignInResult =
@@ -97,18 +98,22 @@ function getGlobalState(): AppAuthState {
 
   if (!globalObject.__YONA_APP_AUTH_STATE__) {
     globalObject.__YONA_APP_AUTH_STATE__ = {
-      nextUserId: 1,
       pendingMutation: Promise.resolve(),
-      usersByEmailAddress: new Map(),
-      usersById: new Map(),
-      usersByLoginId: new Map(),
+      resetTokensByUserId: new Map(),
     };
   }
 
   return globalObject.__YONA_APP_AUTH_STATE__;
 }
 
-function summarizeUser(user: AppUserRecord): AuthUserSummary {
+function summarizeUser(user: {
+  emailAddress: string;
+  id: number;
+  isConfirmed: boolean;
+  isSiteAdmin: boolean;
+  loginId: string;
+  name: string;
+}): AuthUserSummary {
   return {
     emailAddress: user.emailAddress,
     id: user.id,
@@ -117,12 +122,6 @@ function summarizeUser(user: AppUserRecord): AuthUserSummary {
     loginId: user.loginId,
     name: user.name,
   };
-}
-
-function linkUser(state: AppAuthState, user: AppUserRecord): void {
-  state.usersById.set(user.id, user);
-  state.usersByLoginId.set(normalizeIdentifier(user.loginId), user.id);
-  state.usersByEmailAddress.set(normalizeIdentifier(user.emailAddress), user.id);
 }
 
 async function withSerializedMutation<T>(mutation: () => Promise<T>): Promise<T> {
@@ -143,43 +142,13 @@ async function withSerializedMutation<T>(mutation: () => Promise<T>): Promise<T>
   }
 }
 
-async function persistUser(
-  state: AppAuthState,
-  input: RegisterWithPasswordInput,
-): Promise<AppUserRecord> {
-  const passwordSalt = generateResetToken();
-  const passwordHash = await hashPassword(input.password, passwordSalt);
-  const user: AppUserRecord = {
-    emailAddress: normalizeIdentifier(input.emailAddress),
-    id: state.nextUserId,
-    isConfirmed: true,
-    isSiteAdmin: false,
-    loginId: normalizeIdentifier(input.loginId),
-    name: input.name.trim(),
-    passwordHash,
-    passwordSalt,
-    resetTokenExpiresAt: null,
-    resetTokenHash: null,
-  };
-
-  state.nextUserId += 1;
-  linkUser(state, user);
-
-  return user;
-}
-
-function findUserByIdentifier(identifier: string): AppUserRecord | null {
+function clearExpiredResetTokens(now: Date): void {
   const state = getGlobalState();
-  const normalizedIdentifier = normalizeIdentifier(identifier);
-  const userId =
-    state.usersByLoginId.get(normalizedIdentifier) ??
-    state.usersByEmailAddress.get(normalizedIdentifier);
-
-  if (!userId) {
-    return null;
+  for (const [userId, tokenState] of state.resetTokensByUserId.entries()) {
+    if (tokenState.expiresAt.getTime() < now.getTime()) {
+      state.resetTokensByUserId.delete(userId);
+    }
   }
-
-  return state.usersById.get(userId) ?? null;
 }
 
 export function buildAnonymousAppSession(): AppSessionProjection {
@@ -202,31 +171,54 @@ export function buildAuthenticatedAppSession(user: AuthUserSummary): AppSessionP
   };
 }
 
+function isDuplicateUserError(error: unknown): boolean {
+  return error instanceof Error && /duplicate|unique|uq_/i.test(error.message);
+}
+
 export async function createAppUser(input: CreateAppUserInput): Promise<CreateAppUserResult> {
   return withSerializedMutation(async () => {
     const parsedInput = registerWithPasswordInputSchema.parse(input);
-    const state = getGlobalState();
     const loginId = normalizeIdentifier(parsedInput.loginId);
     const emailAddress = normalizeIdentifier(parsedInput.emailAddress);
 
-    if (state.usersByLoginId.has(loginId) || state.usersByEmailAddress.has(emailAddress)) {
+    const [existingByLoginId, existingByEmail] = await Promise.all([
+      findAuthUserByIdentifier(loginId),
+      findAuthUserByIdentifier(emailAddress),
+    ]);
+
+    if (existingByLoginId || existingByEmail) {
       return {
         code: "auth.login-id-conflict",
         ok: false,
       };
     }
 
-    const user = await persistUser(state, {
-      ...input,
-      ...parsedInput,
-      emailAddress,
-      loginId,
-    });
+    const passwordSalt = generateResetToken();
+    const passwordHash = await hashPassword(parsedInput.password, passwordSalt);
 
-    return {
-      ok: true,
-      user: summarizeUser(user),
-    };
+    try {
+      const user = await createPasswordAuthUser({
+        emailAddress,
+        loginId,
+        name: parsedInput.name,
+        passwordHash,
+        passwordSalt,
+      });
+
+      return {
+        ok: true,
+        user: summarizeUser(user),
+      };
+    } catch (error) {
+      if (isDuplicateUserError(error)) {
+        return {
+          code: "auth.login-id-conflict",
+          ok: false,
+        };
+      }
+
+      throw error;
+    }
   });
 }
 
@@ -238,9 +230,9 @@ export async function authenticatePasswordSignIn(
     identifier,
     password,
   });
-  const user = findUserByIdentifier(parsedInput.identifier);
+  const user = await findAuthUserByIdentifier(parsedInput.identifier);
   const passwordMatches =
-    user === null
+    user === null || !user.passwordHash || !user.passwordSalt
       ? false
       : await verifyPassword(parsedInput.password, user.passwordHash, user.passwordSalt);
 
@@ -276,7 +268,7 @@ export async function authenticatePasswordSignIn(
 }
 
 export async function findAppUserById(userId: number): Promise<AuthUserSummary | null> {
-  const user = getGlobalState().usersById.get(userId);
+  const user = await findAuthUserById(userId);
   return user ? summarizeUser(user) : null;
 }
 
@@ -286,9 +278,13 @@ export async function issuePasswordResetToken(
 ): Promise<IssuePasswordResetTokenResult> {
   return withSerializedMutation(async () => {
     const parsedRequest = passwordResetRequestSchema.parse(request);
-    const user = findUserByIdentifier(parsedRequest.loginId);
+    const user = await findAuthUserByIdentifier(parsedRequest.loginId);
 
-    if (!user || user.emailAddress !== normalizeIdentifier(parsedRequest.emailAddress)) {
+    if (
+      !user ||
+      user.loginId !== normalizeIdentifier(parsedRequest.loginId) ||
+      user.emailAddress !== normalizeIdentifier(parsedRequest.emailAddress)
+    ) {
       return {
         expiresAt: null,
         ok: true,
@@ -298,8 +294,10 @@ export async function issuePasswordResetToken(
 
     const resetToken = generateResetToken();
     const expiresAt = new Date(now.getTime() + PASSWORD_RESET_TOKEN_TTL_MS);
-    user.resetTokenHash = await hashToken(resetToken);
-    user.resetTokenExpiresAt = expiresAt;
+    getGlobalState().resetTokensByUserId.set(user.id, {
+      expiresAt,
+      tokenHash: await hashToken(resetToken),
+    });
 
     return {
       expiresAt,
@@ -313,7 +311,7 @@ export async function resetPasswordByAdmin(input: {
   userId: number;
 }): Promise<{ ok: false } | { ok: true; temporaryPassword: string; user: AuthUserSummary }> {
   return withSerializedMutation(async () => {
-    const user = getGlobalState().usersById.get(input.userId);
+    const user = await findAppUserById(input.userId);
     if (!user) {
       return {
         ok: false,
@@ -322,17 +320,20 @@ export async function resetPasswordByAdmin(input: {
 
     const temporaryPassword = generateResetToken().slice(0, 16);
     const passwordSalt = generateResetToken();
-    user.passwordSalt = passwordSalt;
-    user.passwordHash = await hashPassword(temporaryPassword, passwordSalt);
-    user.resetTokenHash = null;
-    user.resetTokenExpiresAt = null;
+    const passwordHash = await hashPassword(temporaryPassword, passwordSalt);
 
+    await updateAuthUserPassword({
+      passwordHash,
+      passwordSalt,
+      userId: user.id,
+    });
+    getGlobalState().resetTokensByUserId.delete(user.id);
     await deleteAllSessionsByUserId(user.id);
 
     return {
       ok: true,
       temporaryPassword,
-      user: summarizeUser(user),
+      user,
     };
   });
 }
@@ -346,34 +347,35 @@ export async function resetPasswordWithToken(
 ): Promise<{ ok: false } | { ok: true; user: AuthUserSummary }> {
   return withSerializedMutation(async () => {
     const parsedInput: CompletePasswordResetInput = completePasswordResetInputSchema.parse(input);
+    const state = getGlobalState();
+    clearExpiredResetTokens(now);
 
-    for (const user of getGlobalState().usersById.values()) {
-      if (!user.resetTokenHash || !user.resetTokenExpiresAt) {
-        continue;
-      }
-
-      if (user.resetTokenExpiresAt.getTime() < now.getTime()) {
-        user.resetTokenHash = null;
-        user.resetTokenExpiresAt = null;
-        continue;
-      }
-
-      const tokenMatches = await verifyToken(parsedInput.token, user.resetTokenHash);
+    for (const [userId, tokenState] of state.resetTokensByUserId.entries()) {
+      const tokenMatches = await verifyToken(parsedInput.token, tokenState.tokenHash);
       if (!tokenMatches) {
         continue;
       }
 
       const passwordSalt = generateResetToken();
-      user.passwordSalt = passwordSalt;
-      user.passwordHash = await hashPassword(parsedInput.newPassword, passwordSalt);
-      user.resetTokenHash = null;
-      user.resetTokenExpiresAt = null;
+      const passwordHash = await hashPassword(parsedInput.newPassword, passwordSalt);
+      await updateAuthUserPassword({
+        passwordHash,
+        passwordSalt,
+        userId,
+      });
+      state.resetTokensByUserId.delete(userId);
+      await deleteAllSessionsByUserId(userId);
 
-      await deleteAllSessionsByUserId(user.id);
+      const user = await findAppUserById(userId);
+      if (!user) {
+        return {
+          ok: false,
+        };
+      }
 
       return {
         ok: true,
-        user: summarizeUser(user),
+        user,
       };
     }
 
@@ -480,10 +482,7 @@ export function resetAuthStateForTests(): void {
   };
 
   globalObject.__YONA_APP_AUTH_STATE__ = {
-    nextUserId: 1,
     pendingMutation: Promise.resolve(),
-    usersByEmailAddress: new Map(),
-    usersById: new Map(),
-    usersByLoginId: new Map(),
+    resetTokensByUserId: new Map(),
   };
 }

@@ -2,12 +2,15 @@ import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import {
   type AuthErrorCode,
+  currentUserApiTokenSchema,
   completePasswordResetInputSchema,
   completePasswordResetOutputSchema,
   readCurrentSessionOutputSchema,
+  readCurrentUserApiTokenOutputSchema,
   registerWithPasswordInputSchema,
   registerWithPasswordOutputSchema,
   requestPasswordResetInputSchema,
+  rotateCurrentUserApiTokenOutputSchema,
   requestPasswordResetOutputSchema,
   signInWithPasswordInputSchema,
   signInWithPasswordOutputSchema,
@@ -19,13 +22,16 @@ import {
   consumeAuthRateLimit,
   createAppUser,
   deleteSessionByToken,
+  getOrCreateUserApiToken,
   getSessionByToken,
   getSessionCookieName,
   getSessionCookieOptions,
   issueAppSession,
   issuePasswordResetToken,
   readCurrentSession,
+  rotateUserApiToken,
   resetPasswordWithToken,
+  validateCsrfToken,
   type SessionCookieOptions,
 } from "@yona/auth";
 import { buildPasswordResetUrl, sendPasswordResetEmail } from "@yona/integrations";
@@ -61,6 +67,20 @@ function clearSessionCookie(ctx: AuthProcedureContext): void {
   ctx.deleteCookie(sessionCookieName, {
     path: "/",
   });
+}
+
+async function requireAuthenticatedCurrentSession(ctx: AuthProcedureContext) {
+  const currentSession = await readCurrentSession(ctx.getCookie(sessionCookieName));
+  if (currentSession.clearCookie) {
+    clearSessionCookie(ctx);
+  }
+
+  if (!currentSession.user || !currentSession.sessionRecord) {
+    ctx.setResponseStatus(401, "Unauthorized");
+    throw new Error("Authentication required.");
+  }
+
+  return currentSession;
 }
 
 function authErrorMessage(code: AuthErrorCode): string {
@@ -125,6 +145,14 @@ export const authRouter = t.router({
 
     return currentSession.projection;
   }),
+  readCurrentUserApiToken: t.procedure
+    .output(readCurrentUserApiTokenOutputSchema)
+    .query(async ({ ctx }) => {
+      const currentSession = await requireAuthenticatedCurrentSession(ctx);
+      return currentUserApiTokenSchema.parse({
+        token: await getOrCreateUserApiToken(currentSession.user!.id),
+      });
+    }),
   signInWithPassword: t.procedure
     .input(signInWithPasswordInputSchema)
     .output(signInWithPasswordOutputSchema)
@@ -252,6 +280,20 @@ export const authRouter = t.router({
       session: buildAnonymousAppSession(),
     };
   }),
+  rotateCurrentUserApiToken: t.procedure
+    .output(rotateCurrentUserApiTokenOutputSchema)
+    .mutation(async ({ ctx }) => {
+      const currentSession = await requireAuthenticatedCurrentSession(ctx);
+      const csrfToken = ctx.getRequestHeader("x-csrf-token")?.trim() ?? "";
+      if (!validateCsrfToken(csrfToken, currentSession.sessionRecord!)) {
+        ctx.setResponseStatus(403, "Forbidden");
+        throw new Error("CSRF validation failed.");
+      }
+
+      return currentUserApiTokenSchema.parse({
+        token: await rotateUserApiToken(currentSession.user!.id),
+      });
+    }),
 });
 
 export function createAuthCaller(overrides: Partial<AuthProcedureContext> = {}) {

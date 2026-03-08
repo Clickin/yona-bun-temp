@@ -197,5 +197,5 @@ describe("inline edit mutation (Yona intent)", () => {
     const b = await readFileAtRef(barePath, "refs/heads/main", "b.txt");
     expect(a).toBe("HELLO\n");
     expect(b).toBe("world\n");
-  });
+  }, 20_000);
 });

@@ -1,6 +1,5 @@
 import { access } from "node:fs/promises";
 import { spawn } from "node:child_process";
-import { getRemoteAddress, readMutationActor } from "./auth";
 import { ensureYonaDataDirectories, getRepositoryRoot } from "./config";
 import { resolveRepositoryPath } from "./executable";
 
@@ -14,11 +13,17 @@ export interface GitCgiOutput {
 }
 
 export interface GitHttpBackendEnvInput {
+  actorName?: string;
   repoRoot: string;
   pathInfo: string;
   request: Request;
-  actorName?: string;
-  remoteAddr: string;
+  remoteAddress: string;
+}
+
+export interface SmartHttpAuthorizationContext {
+  allowWrite: boolean;
+  remoteAddress: string;
+  remoteUserName?: string;
 }
 
 function findDelimiterIndex(buffer: Buffer, delimiter: Buffer): number {
@@ -90,6 +95,7 @@ export function parseGitHttpBackendOutput(buffer: Buffer): GitCgiOutput {
 }
 
 async function runGitHttpBackendCgi(params: {
+  authorization: SmartHttpAuthorizationContext;
   repositoryId: string;
   pathInfo: string;
   request: Request;
@@ -100,13 +106,12 @@ async function runGitHttpBackendCgi(params: {
   const repoPath = resolveRepositoryPath(repoRoot, params.repositoryId);
   await access(repoPath);
 
-  const actor = readMutationActor(params.request.headers);
   const env = buildGitHttpBackendEnv({
-    repoRoot,
+    actorName: params.authorization.remoteUserName,
     pathInfo: params.pathInfo,
     request: params.request,
-    actorName: actor?.name,
-    remoteAddr: getRemoteAddress(params.request.headers),
+    remoteAddress: params.authorization.remoteAddress,
+    repoRoot,
   });
 
   const child = spawn("git", ["http-backend"], {
@@ -170,7 +175,7 @@ export function buildGitHttpBackendEnv(input: GitHttpBackendEnvInput): Record<st
     REQUEST_METHOD: input.request.method.toUpperCase(),
     QUERY_STRING: query,
     CONTENT_TYPE: input.request.headers.get("content-type") ?? "",
-    REMOTE_ADDR: input.remoteAddr,
+    REMOTE_ADDR: input.remoteAddress,
     GIT_HTTP_EXPORT_ALL: "1",
     GIT_TERMINAL_PROMPT: "0",
   };
@@ -189,15 +194,16 @@ export function buildGitHttpBackendEnv(input: GitHttpBackendEnvInput): Record<st
 }
 
 export async function handleSmartHttpRequest(params: {
+  authorization: SmartHttpAuthorizationContext;
   repositoryId: string;
   pathInfo: string;
   request: Request;
 }): Promise<Response> {
-  if (requiresReceivePackAuth(params.request, params.pathInfo)) {
-    const actor = readMutationActor(params.request.headers);
-    if (!actor || !actor.canDirectWrite) {
-      return new Response("Forbidden", { status: 403 });
-    }
+  if (
+    requiresReceivePackAuth(params.request, params.pathInfo) &&
+    !params.authorization.allowWrite
+  ) {
+    return new Response("Forbidden", { status: 403 });
   }
 
   try {

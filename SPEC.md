@@ -241,7 +241,7 @@ legacy suite 활용 기준:
 
 주요 경로:
 
-- [`apps/web`](/G:/programming/yona/apps/web)
+- [`apps/app`](/G:/programming/yona/apps/app)
 - [`packages/api`](/G:/programming/yona/packages/api)
 - [`packages/core`](/G:/programming/yona/packages/core)
 - [`packages/infra`](/G:/programming/yona/packages/infra)
@@ -249,8 +249,8 @@ legacy suite 활용 기준:
 
 현재 이미 구현된 영역:
 
-- SvelteKit 기반 UI shell과 auth page
-- Hono 기반 auth/repo API
+- TanStack Start 기반 UI shell과 server route
+- request-scoped session/token/basic auth resolver
 - in-memory session store
 - git executable backend
 - smart HTTP handling
@@ -258,28 +258,29 @@ legacy suite 활용 기준:
 
 주요 현재 구현 참조:
 
-- [`apps/web/src/lib/server/hono/auth-app.ts`](/G:/programming/yona/apps/web/src/lib/server/hono/auth-app.ts)
-- [`apps/web/src/lib/server/auth/session.ts`](/G:/programming/yona/apps/web/src/lib/server/auth/session.ts)
+- [`apps/app/src/lib/auth-trpc.server.ts`](/G:/programming/yona/apps/app/src/lib/auth-trpc.server.ts)
+- [`apps/app/src/lib/server-request-auth.ts`](/G:/programming/yona/apps/app/src/lib/server-request-auth.ts)
+- [`packages/auth/src/request-auth.ts`](/G:/programming/yona/packages/auth/src/request-auth.ts)
 - [`packages/infra/src/session/in-memory-session-store.ts`](/G:/programming/yona/packages/infra/src/session/in-memory-session-store.ts)
 - [`packages/infra/src/git/executable.ts`](/G:/programming/yona/packages/infra/src/git/executable.ts)
 - [`packages/api/src/repos/repo-app.ts`](/G:/programming/yona/packages/api/src/repos/repo-app.ts)
-- [`apps/web/src/lib/server/db.ts`](/G:/programming/yona/apps/web/src/lib/server/db.ts)
+- [`packages/db/src/repository-access.ts`](/G:/programming/yona/packages/db/src/repository-access.ts)
 - [`docs/workflow/HANDOFF-GIT-EXEC-BACKEND-2026-03-01.md`](/G:/programming/yona/docs/workflow/HANDOFF-GIT-EXEC-BACKEND-2026-03-01.md)
 - [`docs/agents/00-goals-and-fixed-decisions.md`](/G:/programming/yona/docs/agents/00-goals-and-fixed-decisions.md)
 - [`docs/agents/04-architecture-guardrails.md`](/G:/programming/yona/docs/agents/04-architecture-guardrails.md)
 
 ## 4.4 재사용과 전환 매트릭스
 
-| Current asset                | Decision               | Notes                                                                                     |
-| ---------------------------- | ---------------------- | ----------------------------------------------------------------------------------------- |
-| `apps/web` Svelte page       | Partial reuse          | UX copy, test intent, auth field contract는 재사용하고 route 구현은 TanStack Start로 교체 |
-| Hono auth app                | Interface-only reuse   | validation, CSRF, rate-limit, audit semantics는 재사용하고 transport는 폐기               |
-| `packages/core` port         | Reuse                  | `SessionStore`, `VcsService`, DB provider 패턴은 계속 유효                                |
-| `packages/infra` git backend | Reuse                  | 현재 저장소에서 가장 강한 자산                                                            |
-| in-memory session store      | Reuse                  | Better Auth secondary storage 또는 Yona auth session ownership으로 연결                   |
-| Drizzle schema/migration     | Reuse with restructure | `packages/db`로 이동, parity test 유지                                                    |
-| Hono repo endpoint           | Partial reuse          | TanStack server route로 재표현                                                            |
-| SvelteKit route test         | Partial reuse          | TanStack route/server-function test로 번역                                                |
+| Current asset                   | Decision               | Notes                                                                                    |
+| ------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------- |
+| legacy SvelteKit page semantics | Partial reuse          | UX copy, test intent, auth field contract는 재사용했고 runtime 자체는 workspace에서 제거 |
+| Hono auth app                   | Interface-only reuse   | validation, CSRF, rate-limit, audit semantics는 재사용하고 transport는 폐기              |
+| `packages/core` port            | Reuse                  | `SessionStore`, `VcsService`, DB provider 패턴은 계속 유효                               |
+| `packages/infra` git backend    | Reuse                  | 현재 저장소에서 가장 강한 자산                                                           |
+| in-memory session store         | Reuse                  | Better Auth secondary storage 또는 Yona auth session ownership으로 연결                  |
+| Drizzle schema/migration        | Reuse with restructure | `packages/db`로 이동, parity test 유지                                                   |
+| Hono repo endpoint              | Partial reuse          | TanStack server route로 재표현                                                           |
+| SvelteKit route test            | Partial reuse          | TanStack route/server-function test로 번역                                               |
 
 ## 5. 목표 모노레포 구조
 
@@ -304,7 +305,7 @@ packages/
 - `packages/core` -> `packages/domain`, `packages/contracts`
 - `packages/infra` -> `packages/vcs`, `packages/db`, `packages/auth`
 - `packages/api` -> transport package로는 제거하고 logic를 `packages/domain`, `packages/auth`, `packages/vcs`, `packages/integrations`로 이동
-- `apps/web` -> `apps/app`으로 교체
+- `apps/web` -> `apps/app`으로 교체 완료
 
 ## 6. Import Convention
 
@@ -2143,7 +2144,7 @@ TanStack 및 Better Auth 참고 자료:
 - [`docs/agents/00-goals-and-fixed-decisions.md`](/G:/programming/yona/docs/agents/00-goals-and-fixed-decisions.md)
 - [`docs/agents/04-architecture-guardrails.md`](/G:/programming/yona/docs/agents/04-architecture-guardrails.md)
 - [`docs/workflow/HANDOFF-GIT-EXEC-BACKEND-2026-03-01.md`](/G:/programming/yona/docs/workflow/HANDOFF-GIT-EXEC-BACKEND-2026-03-01.md)
-- [`apps/web/src/lib/server/hono/auth-app.ts`](/G:/programming/yona/apps/web/src/lib/server/hono/auth-app.ts)
+- [`apps/app/src/lib/auth-trpc.server.ts`](/G:/programming/yona/apps/app/src/lib/auth-trpc.server.ts)
 - [`packages/infra/src/git/executable.ts`](/G:/programming/yona/packages/infra/src/git/executable.ts)
 - [`packages/infra/src/session/in-memory-session-store.ts`](/G:/programming/yona/packages/infra/src/session/in-memory-session-store.ts)
 - [`yona-original/conf/routes`](/G:/programming/yona/yona-original/conf/routes)

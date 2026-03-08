@@ -1,5 +1,119 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RegisterWithPasswordInput } from "@yona/contracts";
+
+interface MockUser {
+  apiToken: null | string;
+  emailAddress: string;
+  id: number;
+  isConfirmed: boolean;
+  isSiteAdmin: boolean;
+  loginId: string;
+  name: string;
+  passwordHash: null | string;
+  passwordSalt: null | string;
+}
+
+function normalizeIdentifier(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function cloneUser(user: MockUser | undefined): MockUser | null {
+  return user ? { ...user } : null;
+}
+
+const { dbMock } = vi.hoisted(() => {
+  const state = {
+    nextUserId: 1,
+    users: new Map<number, MockUser>(),
+  };
+
+  return {
+    dbMock: {
+      __resetDbForTests() {
+        state.nextUserId = 1;
+        state.users = new Map();
+      },
+      async createPasswordAuthUser(input: {
+        emailAddress: string;
+        loginId: string;
+        name: string;
+        passwordHash: string;
+        passwordSalt: string;
+      }) {
+        for (const user of state.users.values()) {
+          if (
+            user.loginId === normalizeIdentifier(input.loginId) ||
+            user.emailAddress === normalizeIdentifier(input.emailAddress)
+          ) {
+            throw new Error("unique constraint violation");
+          }
+        }
+
+        const user: MockUser = {
+          apiToken: null,
+          emailAddress: normalizeIdentifier(input.emailAddress),
+          id: state.nextUserId,
+          isConfirmed: true,
+          isSiteAdmin: false,
+          loginId: normalizeIdentifier(input.loginId),
+          name: input.name.trim(),
+          passwordHash: input.passwordHash,
+          passwordSalt: input.passwordSalt,
+        };
+
+        state.nextUserId += 1;
+        state.users.set(user.id, user);
+        return cloneUser(user);
+      },
+      async findAuthUserByApiToken(token: string) {
+        const normalizedToken = token.trim();
+        for (const user of state.users.values()) {
+          if (user.apiToken === normalizedToken) {
+            return cloneUser(user);
+          }
+        }
+
+        return null;
+      },
+      async findAuthUserById(userId: number) {
+        return cloneUser(state.users.get(userId));
+      },
+      async findAuthUserByIdentifier(identifier: string) {
+        const normalizedIdentifier = normalizeIdentifier(identifier);
+        for (const user of state.users.values()) {
+          if (user.loginId === normalizedIdentifier || user.emailAddress === normalizedIdentifier) {
+            return cloneUser(user);
+          }
+        }
+
+        return null;
+      },
+      async readUserApiToken(userId: number) {
+        return state.users.get(userId)?.apiToken ?? null;
+      },
+      async updateAuthUserPassword(input: {
+        passwordHash: string;
+        passwordSalt: string;
+        userId: number;
+      }) {
+        const user = state.users.get(input.userId);
+        if (user) {
+          user.passwordHash = input.passwordHash;
+          user.passwordSalt = input.passwordSalt;
+        }
+      },
+      async updateUserApiToken(userId: number, token: string) {
+        const user = state.users.get(userId);
+        if (user) {
+          user.apiToken = token;
+        }
+      },
+    },
+  };
+});
+
+vi.mock("@yona/db", () => dbMock);
+
 import { __resetSessionStoreForTests, createSession, getSessionByToken } from "./session";
 import {
   authenticatePasswordSignIn,
@@ -12,6 +126,7 @@ import {
 
 describe("app auth service", () => {
   beforeEach(() => {
+    dbMock.__resetDbForTests();
     resetAuthStateForTests();
     __resetSessionStoreForTests();
   });

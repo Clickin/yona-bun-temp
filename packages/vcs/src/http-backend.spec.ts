@@ -53,7 +53,7 @@ describe("git http-backend parser", () => {
       pathInfo: "/1001/info/refs",
       request,
       actorName: "editor",
-      remoteAddr: "127.0.0.1",
+      remoteAddress: "127.0.0.1",
     });
 
     expect(env.GIT_PROJECT_ROOT).toBe("/yona-data/repo");

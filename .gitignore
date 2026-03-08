@@ -5,8 +5,6 @@ node_modules
 .vercel
 .netlify
 .wrangler
-/apps/web/.svelte-kit
-/apps/web/build
 /apps/app/dist
 
 # Yona runtime data
@@ -28,7 +26,3 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 # Playwright
 test-results
-apps/web/test-results
-# Paraglide
-apps/web/src/lib/paraglide
-apps/web/project.inlang/cache/

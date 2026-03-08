@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const STAGED_CMD = ["diff", "--cached", "--name-only", "--diff-filter=ACMR"];
@@ -39,6 +41,39 @@ const OXFMT_EXTENSIONS = new Set([
   ".svelte",
 ]);
 
+const resolveExecutable = (name) => {
+  if (process.platform === "win32") {
+    const commonGitPaths = [
+      "C:\\Program Files\\Git\\cmd\\git.exe",
+      "C:\\Program Files\\Git\\bin\\git.exe",
+    ];
+    if (name === "git") {
+      const resolvedGitPath = commonGitPaths.find((candidate) => existsSync(candidate));
+      if (resolvedGitPath) {
+        return resolvedGitPath;
+      }
+    }
+
+    const whereResult = spawnSync("where.exe", [name], { encoding: "utf8" });
+    const resolved = whereResult.stdout
+      ?.split("\n")
+      .map((entry) => entry.trim())
+      .find(Boolean);
+    if (resolved) {
+      return resolved;
+    }
+  }
+
+  return name;
+};
+
+const GIT_BIN = resolveExecutable("git");
+const TOOL_BIN_DIR = join(process.cwd(), "node_modules", ".bin");
+const OXFMT_BIN =
+  process.platform === "win32" ? join(TOOL_BIN_DIR, "oxfmt.exe") : join(TOOL_BIN_DIR, "oxfmt");
+const OXLINT_BIN =
+  process.platform === "win32" ? join(TOOL_BIN_DIR, "oxlint.exe") : join(TOOL_BIN_DIR, "oxlint");
+
 const run = (command, args) => {
   const result = spawnSync(command, args, { stdio: "inherit" });
   if (result.status !== 0) {
@@ -57,7 +92,7 @@ const getExtension = (file) => {
 
 const isGeneratedFile = (file) => GENERATED_FILE_SUFFIXES.some((suffix) => file.endsWith(suffix));
 
-const stagedResult = spawnSync("git", STAGED_CMD, { encoding: "utf8" });
+const stagedResult = spawnSync(GIT_BIN, STAGED_CMD, { encoding: "utf8" });
 if (stagedResult.status !== 0) {
   process.exit(stagedResult.status ?? 1);
 }
@@ -78,7 +113,7 @@ const lintTargets = stagedFiles
   .filter((file) => !isGeneratedFile(file));
 if (lintTargets.length > 0) {
   console.log(`precommit: running oxlint on ${lintTargets.length} staged file(s)`);
-  run("bunx", ["oxlint", ...lintTargets]);
+  run(OXLINT_BIN, lintTargets);
 }
 
 const formatTargets = stagedFiles
@@ -86,7 +121,7 @@ const formatTargets = stagedFiles
   .filter((file) => !isGeneratedFile(file));
 if (formatTargets.length > 0) {
   console.log(`precommit: running oxfmt --check on ${formatTargets.length} staged file(s)`);
-  run("bunx", ["oxfmt", "--check", ...formatTargets]);
+  run(OXFMT_BIN, ["--check", ...formatTargets]);
 }
 
 console.log("precommit: verification passed");

@@ -289,6 +289,22 @@ export const signOutOutputSchema = signOutResultSchema;
 
 export type SignOutOutput = SignOutResult;
 
+export const currentUserApiTokenSchema = z
+  .object({
+    token: z.string().min(1),
+  })
+  .strict();
+
+export type CurrentUserApiToken = z.infer<typeof currentUserApiTokenSchema>;
+
+export const readCurrentUserApiTokenOutputSchema = currentUserApiTokenSchema;
+
+export type ReadCurrentUserApiTokenOutput = CurrentUserApiToken;
+
+export const rotateCurrentUserApiTokenOutputSchema = currentUserApiTokenSchema;
+
+export type RotateCurrentUserApiTokenOutput = CurrentUserApiToken;
+
 export const sessionRoutePayloadSchema = z
   .object({
     session: z

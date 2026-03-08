@@ -37,7 +37,7 @@
 
 ## 전환 입장
 
-- 현재 `apps/web`, `packages/api`, `packages/core`, `packages/infra`는 target ownership이 아니라 extraction source다.
+- 현재 `packages/api`, `packages/core`, `packages/infra`는 target ownership이 아니라 extraction source다. `apps/web` runtime은 제거되었다.
 - 장기 ownership은 `apps/app`, `packages/auth`, `packages/contracts`, `packages/db`, `packages/domain`, `packages/integrations`, `packages/i18n`, `packages/ui`, `packages/vcs`로 이동한다.
 
 ## 참고 자료

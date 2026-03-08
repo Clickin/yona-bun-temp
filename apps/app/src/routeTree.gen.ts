@@ -8,191 +8,290 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as RegisterRouteImport } from './routes/register'
-import { Route as ProtectedRouteImport } from './routes/protected'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiAuthSessionRouteImport } from './routes/api/auth/session'
-import { Route as ApiAuthProviderProviderCallbackRouteImport } from './routes/api/auth/provider/$provider/callback'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as ResetPasswordRouteImport } from "./routes/reset-password";
+import { Route as RegisterRouteImport } from "./routes/register";
+import { Route as ProtectedRouteImport } from "./routes/protected";
+import { Route as LoginRouteImport } from "./routes/login";
+import { Route as ForgotPasswordRouteImport } from "./routes/forgot-password";
+import { Route as IndexRouteImport } from "./routes/index";
+import { Route as ApiMeTokenRouteImport } from "./routes/api/me/token";
+import { Route as ApiAuthSessionRouteImport } from "./routes/api/auth/session";
+import { Route as ApiReposRepoIdInlineEditRouteImport } from "./routes/api/repos/$repoId/inline-edit";
+import { Route as ApiReposRepoIdFilesRouteImport } from "./routes/api/repos/$repoId/files";
+import { Route as ApiReposRepoIdBootstrapRouteImport } from "./routes/api/repos/$repoId/bootstrap";
+import { Route as ApiReposRepoIdSmartHttpSplatRouteImport } from "./routes/api/repos/$repoId/smart-http/$";
+import { Route as ApiAuthProviderProviderCallbackRouteImport } from "./routes/api/auth/provider/$provider/callback";
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+  id: "/reset-password",
+  path: "/reset-password",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
+  id: "/register",
+  path: "/register",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ProtectedRoute = ProtectedRouteImport.update({
-  id: '/protected',
-  path: '/protected',
+  id: "/protected",
+  path: "/protected",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+  id: "/login",
+  path: "/login",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
+  id: "/forgot-password",
+  path: "/forgot-password",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
+const ApiMeTokenRoute = ApiMeTokenRouteImport.update({
+  id: "/api/me/token",
+  path: "/api/me/token",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const ApiAuthSessionRoute = ApiAuthSessionRouteImport.update({
-  id: '/api/auth/session',
-  path: '/api/auth/session',
+  id: "/api/auth/session",
+  path: "/api/auth/session",
   getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAuthProviderProviderCallbackRoute =
-  ApiAuthProviderProviderCallbackRouteImport.update({
-    id: '/api/auth/provider/$provider/callback',
-    path: '/api/auth/provider/$provider/callback',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+} as any);
+const ApiReposRepoIdInlineEditRoute = ApiReposRepoIdInlineEditRouteImport.update({
+  id: "/api/repos/$repoId/inline-edit",
+  path: "/api/repos/$repoId/inline-edit",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ApiReposRepoIdFilesRoute = ApiReposRepoIdFilesRouteImport.update({
+  id: "/api/repos/$repoId/files",
+  path: "/api/repos/$repoId/files",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ApiReposRepoIdBootstrapRoute = ApiReposRepoIdBootstrapRouteImport.update({
+  id: "/api/repos/$repoId/bootstrap",
+  path: "/api/repos/$repoId/bootstrap",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ApiReposRepoIdSmartHttpSplatRoute = ApiReposRepoIdSmartHttpSplatRouteImport.update({
+  id: "/api/repos/$repoId/smart-http/$",
+  path: "/api/repos/$repoId/smart-http/$",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ApiAuthProviderProviderCallbackRoute = ApiAuthProviderProviderCallbackRouteImport.update({
+  id: "/api/auth/provider/$provider/callback",
+  path: "/api/auth/provider/$provider/callback",
+  getParentRoute: () => rootRouteImport,
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/forgot-password': typeof ForgotPasswordRoute
-  '/login': typeof LoginRoute
-  '/protected': typeof ProtectedRoute
-  '/register': typeof RegisterRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/api/auth/session': typeof ApiAuthSessionRoute
-  '/api/auth/provider/$provider/callback': typeof ApiAuthProviderProviderCallbackRoute
+  "/": typeof IndexRoute;
+  "/forgot-password": typeof ForgotPasswordRoute;
+  "/login": typeof LoginRoute;
+  "/protected": typeof ProtectedRoute;
+  "/register": typeof RegisterRoute;
+  "/reset-password": typeof ResetPasswordRoute;
+  "/api/auth/session": typeof ApiAuthSessionRoute;
+  "/api/me/token": typeof ApiMeTokenRoute;
+  "/api/repos/$repoId/bootstrap": typeof ApiReposRepoIdBootstrapRoute;
+  "/api/repos/$repoId/files": typeof ApiReposRepoIdFilesRoute;
+  "/api/repos/$repoId/inline-edit": typeof ApiReposRepoIdInlineEditRoute;
+  "/api/auth/provider/$provider/callback": typeof ApiAuthProviderProviderCallbackRoute;
+  "/api/repos/$repoId/smart-http/$": typeof ApiReposRepoIdSmartHttpSplatRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/forgot-password': typeof ForgotPasswordRoute
-  '/login': typeof LoginRoute
-  '/protected': typeof ProtectedRoute
-  '/register': typeof RegisterRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/api/auth/session': typeof ApiAuthSessionRoute
-  '/api/auth/provider/$provider/callback': typeof ApiAuthProviderProviderCallbackRoute
+  "/": typeof IndexRoute;
+  "/forgot-password": typeof ForgotPasswordRoute;
+  "/login": typeof LoginRoute;
+  "/protected": typeof ProtectedRoute;
+  "/register": typeof RegisterRoute;
+  "/reset-password": typeof ResetPasswordRoute;
+  "/api/auth/session": typeof ApiAuthSessionRoute;
+  "/api/me/token": typeof ApiMeTokenRoute;
+  "/api/repos/$repoId/bootstrap": typeof ApiReposRepoIdBootstrapRoute;
+  "/api/repos/$repoId/files": typeof ApiReposRepoIdFilesRoute;
+  "/api/repos/$repoId/inline-edit": typeof ApiReposRepoIdInlineEditRoute;
+  "/api/auth/provider/$provider/callback": typeof ApiAuthProviderProviderCallbackRoute;
+  "/api/repos/$repoId/smart-http/$": typeof ApiReposRepoIdSmartHttpSplatRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/forgot-password': typeof ForgotPasswordRoute
-  '/login': typeof LoginRoute
-  '/protected': typeof ProtectedRoute
-  '/register': typeof RegisterRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/api/auth/session': typeof ApiAuthSessionRoute
-  '/api/auth/provider/$provider/callback': typeof ApiAuthProviderProviderCallbackRoute
+  __root__: typeof rootRouteImport;
+  "/": typeof IndexRoute;
+  "/forgot-password": typeof ForgotPasswordRoute;
+  "/login": typeof LoginRoute;
+  "/protected": typeof ProtectedRoute;
+  "/register": typeof RegisterRoute;
+  "/reset-password": typeof ResetPasswordRoute;
+  "/api/auth/session": typeof ApiAuthSessionRoute;
+  "/api/me/token": typeof ApiMeTokenRoute;
+  "/api/repos/$repoId/bootstrap": typeof ApiReposRepoIdBootstrapRoute;
+  "/api/repos/$repoId/files": typeof ApiReposRepoIdFilesRoute;
+  "/api/repos/$repoId/inline-edit": typeof ApiReposRepoIdInlineEditRoute;
+  "/api/auth/provider/$provider/callback": typeof ApiAuthProviderProviderCallbackRoute;
+  "/api/repos/$repoId/smart-http/$": typeof ApiReposRepoIdSmartHttpSplatRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
+  fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
-    | '/'
-    | '/forgot-password'
-    | '/login'
-    | '/protected'
-    | '/register'
-    | '/reset-password'
-    | '/api/auth/session'
-    | '/api/auth/provider/$provider/callback'
-  fileRoutesByTo: FileRoutesByTo
+    | "/"
+    | "/forgot-password"
+    | "/login"
+    | "/protected"
+    | "/register"
+    | "/reset-password"
+    | "/api/auth/session"
+    | "/api/me/token"
+    | "/api/repos/$repoId/bootstrap"
+    | "/api/repos/$repoId/files"
+    | "/api/repos/$repoId/inline-edit"
+    | "/api/auth/provider/$provider/callback"
+    | "/api/repos/$repoId/smart-http/$";
+  fileRoutesByTo: FileRoutesByTo;
   to:
-    | '/'
-    | '/forgot-password'
-    | '/login'
-    | '/protected'
-    | '/register'
-    | '/reset-password'
-    | '/api/auth/session'
-    | '/api/auth/provider/$provider/callback'
+    | "/"
+    | "/forgot-password"
+    | "/login"
+    | "/protected"
+    | "/register"
+    | "/reset-password"
+    | "/api/auth/session"
+    | "/api/me/token"
+    | "/api/repos/$repoId/bootstrap"
+    | "/api/repos/$repoId/files"
+    | "/api/repos/$repoId/inline-edit"
+    | "/api/auth/provider/$provider/callback"
+    | "/api/repos/$repoId/smart-http/$";
   id:
-    | '__root__'
-    | '/'
-    | '/forgot-password'
-    | '/login'
-    | '/protected'
-    | '/register'
-    | '/reset-password'
-    | '/api/auth/session'
-    | '/api/auth/provider/$provider/callback'
-  fileRoutesById: FileRoutesById
+    | "__root__"
+    | "/"
+    | "/forgot-password"
+    | "/login"
+    | "/protected"
+    | "/register"
+    | "/reset-password"
+    | "/api/auth/session"
+    | "/api/me/token"
+    | "/api/repos/$repoId/bootstrap"
+    | "/api/repos/$repoId/files"
+    | "/api/repos/$repoId/inline-edit"
+    | "/api/auth/provider/$provider/callback"
+    | "/api/repos/$repoId/smart-http/$";
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  ForgotPasswordRoute: typeof ForgotPasswordRoute
-  LoginRoute: typeof LoginRoute
-  ProtectedRoute: typeof ProtectedRoute
-  RegisterRoute: typeof RegisterRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
-  ApiAuthSessionRoute: typeof ApiAuthSessionRoute
-  ApiAuthProviderProviderCallbackRoute: typeof ApiAuthProviderProviderCallbackRoute
+  IndexRoute: typeof IndexRoute;
+  ForgotPasswordRoute: typeof ForgotPasswordRoute;
+  LoginRoute: typeof LoginRoute;
+  ProtectedRoute: typeof ProtectedRoute;
+  RegisterRoute: typeof RegisterRoute;
+  ResetPasswordRoute: typeof ResetPasswordRoute;
+  ApiAuthSessionRoute: typeof ApiAuthSessionRoute;
+  ApiMeTokenRoute: typeof ApiMeTokenRoute;
+  ApiReposRepoIdBootstrapRoute: typeof ApiReposRepoIdBootstrapRoute;
+  ApiReposRepoIdFilesRoute: typeof ApiReposRepoIdFilesRoute;
+  ApiReposRepoIdInlineEditRoute: typeof ApiReposRepoIdInlineEditRoute;
+  ApiAuthProviderProviderCallbackRoute: typeof ApiAuthProviderProviderCallbackRoute;
+  ApiReposRepoIdSmartHttpSplatRoute: typeof ApiReposRepoIdSmartHttpSplatRoute;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/protected': {
-      id: '/protected'
-      path: '/protected'
-      fullPath: '/protected'
-      preLoaderRoute: typeof ProtectedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/auth/session': {
-      id: '/api/auth/session'
-      path: '/api/auth/session'
-      fullPath: '/api/auth/session'
-      preLoaderRoute: typeof ApiAuthSessionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/auth/provider/$provider/callback': {
-      id: '/api/auth/provider/$provider/callback'
-      path: '/api/auth/provider/$provider/callback'
-      fullPath: '/api/auth/provider/$provider/callback'
-      preLoaderRoute: typeof ApiAuthProviderProviderCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+    "/reset-password": {
+      id: "/reset-password";
+      path: "/reset-password";
+      fullPath: "/reset-password";
+      preLoaderRoute: typeof ResetPasswordRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/register": {
+      id: "/register";
+      path: "/register";
+      fullPath: "/register";
+      preLoaderRoute: typeof RegisterRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/protected": {
+      id: "/protected";
+      path: "/protected";
+      fullPath: "/protected";
+      preLoaderRoute: typeof ProtectedRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/login": {
+      id: "/login";
+      path: "/login";
+      fullPath: "/login";
+      preLoaderRoute: typeof LoginRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/forgot-password": {
+      id: "/forgot-password";
+      path: "/forgot-password";
+      fullPath: "/forgot-password";
+      preLoaderRoute: typeof ForgotPasswordRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/api/me/token": {
+      id: "/api/me/token";
+      path: "/api/me/token";
+      fullPath: "/api/me/token";
+      preLoaderRoute: typeof ApiMeTokenRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/api/auth/session": {
+      id: "/api/auth/session";
+      path: "/api/auth/session";
+      fullPath: "/api/auth/session";
+      preLoaderRoute: typeof ApiAuthSessionRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/api/repos/$repoId/inline-edit": {
+      id: "/api/repos/$repoId/inline-edit";
+      path: "/api/repos/$repoId/inline-edit";
+      fullPath: "/api/repos/$repoId/inline-edit";
+      preLoaderRoute: typeof ApiReposRepoIdInlineEditRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/api/repos/$repoId/files": {
+      id: "/api/repos/$repoId/files";
+      path: "/api/repos/$repoId/files";
+      fullPath: "/api/repos/$repoId/files";
+      preLoaderRoute: typeof ApiReposRepoIdFilesRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/api/repos/$repoId/bootstrap": {
+      id: "/api/repos/$repoId/bootstrap";
+      path: "/api/repos/$repoId/bootstrap";
+      fullPath: "/api/repos/$repoId/bootstrap";
+      preLoaderRoute: typeof ApiReposRepoIdBootstrapRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/api/repos/$repoId/smart-http/$": {
+      id: "/api/repos/$repoId/smart-http/$";
+      path: "/api/repos/$repoId/smart-http/$";
+      fullPath: "/api/repos/$repoId/smart-http/$";
+      preLoaderRoute: typeof ApiReposRepoIdSmartHttpSplatRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/api/auth/provider/$provider/callback": {
+      id: "/api/auth/provider/$provider/callback";
+      path: "/api/auth/provider/$provider/callback";
+      fullPath: "/api/auth/provider/$provider/callback";
+      preLoaderRoute: typeof ApiAuthProviderProviderCallbackRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
@@ -204,17 +303,22 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiAuthSessionRoute: ApiAuthSessionRoute,
+  ApiMeTokenRoute: ApiMeTokenRoute,
+  ApiReposRepoIdBootstrapRoute: ApiReposRepoIdBootstrapRoute,
+  ApiReposRepoIdFilesRoute: ApiReposRepoIdFilesRoute,
+  ApiReposRepoIdInlineEditRoute: ApiReposRepoIdInlineEditRoute,
   ApiAuthProviderProviderCallbackRoute: ApiAuthProviderProviderCallbackRoute,
-}
+  ApiReposRepoIdSmartHttpSplatRoute: ApiReposRepoIdSmartHttpSplatRoute,
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
 
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
+import type { getRouter } from "./router.tsx";
+import type { createStart } from "@tanstack/react-start";
+declare module "@tanstack/react-start" {
   interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
+    ssr: true;
+    router: Awaited<ReturnType<typeof getRouter>>;
   }
 }

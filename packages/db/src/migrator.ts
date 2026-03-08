@@ -1,14 +1,13 @@
 import { migrate } from "drizzle-orm/bun-sql/migrator";
-import { join } from "path";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "path";
 import { getDb } from "./index";
 
 export async function runMigrations() {
   const db = getDb();
+  const packageRoot = dirname(fileURLToPath(new URL("../package.json", import.meta.url)));
 
-  // Resolve migrations folder based on the current dialect
-  // Path assumes running from workspace root or properly packaged SFX
-  // where the original drizzle folder is preserved.
-  const migrationsFolder = join(process.cwd(), "drizzle", db.dbType, "migrations");
+  const migrationsFolder = join(packageRoot, "..", "..", "drizzle", db.dbType, "migrations");
 
   console.log(`[Migrator] Running startup migrations for ${db.dbType} from ${migrationsFolder}`);
 

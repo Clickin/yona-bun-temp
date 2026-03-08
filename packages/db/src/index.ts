@@ -128,4 +128,19 @@ export function getDb() {
 
 export type DatabaseType = ReturnType<typeof getDb>;
 
-export { runMigrations } from "./migrator";
+export function __resetDbForTests(): void {
+  cachedDb = undefined;
+}
+
+export {
+  createPasswordAuthUser,
+  findAuthUserByApiToken,
+  findAuthUserById,
+  findAuthUserByIdentifier,
+  readUserApiToken,
+  updateAuthUserPassword,
+  updateUserApiToken,
+  type DbAuthUserRecord,
+} from "./auth-users";
+export { loadRepositoryAccessFacts, type RepositoryAccessFactsRecord } from "./repository-access";
+export { getDbSchema, type RuntimeDbSchema } from "./runtime-schema";

@@ -30,7 +30,6 @@
       "@yona/ui/*": ["packages/ui/src/*"],
       "@yona/vcs": ["packages/vcs/src/index.ts"],
       "@yona/vcs/*": ["packages/vcs/src/*"],
-      "@web/*": ["apps/web/src/*"],
       "@drizzle/mysql/*": ["drizzle/mysql/*"],
       "@drizzle/pg/*": ["drizzle/pg/*"],
       "@drizzle/sqlite/*": ["drizzle/sqlite/*"]

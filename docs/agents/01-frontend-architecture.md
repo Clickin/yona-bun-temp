@@ -42,6 +42,6 @@
 ## Migration 규칙
 
 - 새 장기 코드에서 `SvelteKit`, `Hono`, `@web`, `$lib`, `$app`를 새 baseline으로 도입하지 않는다.
-- 기존 `apps/web` UI는 copy, field contract, test intent를 추출하기 위한 reference-only source다.
-- operator 관점의 실행/검증 entry도 `apps/app`을 기준으로 맞추고, `apps/web`는 root runtime으로 취급하지 않는다.
+- 제거된 `apps/web` UI의 semantics는 UX copy, field contract, test intent를 추출하기 위한 legacy reference로만 취급한다.
+- operator 관점의 실행/검증 entry는 `apps/app`만 기준으로 본다.
 - 현재 `apps/app`의 `serverFunction` 예제 코드는 pre-migration shell로 간주한다.

@@ -16,7 +16,7 @@
 
 ## Transitional State
 
-- 현재 active runtime은 `apps/app`이며, `apps/web`, `packages/api`, `packages/core`, `packages/infra`는 migration 중간 산물이다.
+- 현재 active runtime은 `apps/app`이며, `packages/api`, `packages/core`, `packages/infra`는 migration 중간 산물이다. `apps/web` runtime은 제거되었다.
 - 새 장기 ownership은 target package에 두고, 기존 패키지는 extraction/deletion 대상으로 다룬다.
 - 현재 strongest reusable asset은 git executable backend, in-memory session store, multi-dialect Drizzle schema/test다.
 - root operator flow에서는 위 legacy 경로를 primary runtime이나 completion target으로 취급하지 않는다.

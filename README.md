@@ -6,7 +6,7 @@ Yona는 `TanStack Start + React + Bun` 기반으로 레거시 Yona의 behavior p
 
 - active runtime은 `apps/app`이다.
 - root `bun run dev`, `build`, `preview`, `check`, `test`는 `apps/app`을 기준으로 본다.
-- `apps/web`, `packages/api`, `packages/core`, `packages/infra`는 migration-source/reference-only 경로다. 새 장기 ownership을 추가하지 않는다.
+- `packages/api`, `packages/core`, `packages/infra`는 extraction/deletion 대상인 legacy 경로다. 새 장기 ownership을 추가하지 않는다.
 
 ## Working Rules
 

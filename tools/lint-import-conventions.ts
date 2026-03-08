@@ -33,7 +33,7 @@ interface Violation {
   reason: string;
 }
 
-const ALLOWED_EXCEPTIONS = new Set(["apps/web/src/lib/server/hono/auth-app.ts"]);
+const ALLOWED_EXCEPTIONS = new Set<string>();
 const TARGET_OWNERSHIP_PREFIXES = [
   "apps/app/",
   "packages/auth/",
@@ -135,12 +135,6 @@ function validateImport(file: string, importPath: string): string | null {
       importPath.startsWith("$app")
     ) {
       return "apps/app must not import SvelteKit app internals (@web/$lib/$app).";
-    }
-  }
-
-  if (file.startsWith("apps/web/src/")) {
-    if (importPath.includes("/packages/") || importPath.startsWith("../../packages/")) {
-      return "apps/web must use @yona/* for cross-package imports.";
     }
   }
 

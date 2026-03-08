@@ -17,7 +17,7 @@ export {
   parseGitHttpBackendOutput,
   requiresReceivePackAuth,
 } from "./http-backend";
-export { readMutationActor, type MutationActor } from "./auth";
+export { createMutationActor, type MutationActor } from "./auth";
 export {
   ensureYonaDataDirectories,
   getGitAuditLogPath,

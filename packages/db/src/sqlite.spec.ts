@@ -1,73 +1,74 @@
-import { beforeAll, describe, expect, it } from "vitest";
-import { sql } from "drizzle-orm";
+import { beforeAll, describe, expect, it } from "bun:test";
 import { drizzle } from "drizzle-orm/bun-sql";
-import { migrate } from "drizzle-orm/bun-sql/migrator";
-import { SQL } from "bun";
 import * as sqliteSchema from "@drizzle/sqlite/schema";
 import { setupSQLiteTestDatabase } from "./test-utils/database";
+import { applySqliteMigrations } from "./test-helpers";
 
 describe("SQLite database", () => {
-  let db: ReturnType<typeof drizzle>;
+  let db: ReturnType<(typeof drizzle)["sqlite"]>;
 
   beforeAll(async () => {
     const setup = await setupSQLiteTestDatabase();
-    const client = new SQL(setup.url);
-    db = drizzle(client, { schema: sqliteSchema });
+    db = (drizzle as any).sqlite(setup.url, { schema: sqliteSchema });
 
-    await migrate(db, { migrationsFolder: "drizzle/sqlite/migrations" });
+    await applySqliteMigrations(db);
   });
 
   it("should connect to SQLite successfully", async () => {
-    const result = await db.execute(sql`SELECT 1 as test`);
-    expect(result).toBeDefined();
+    const result = await db.$client`SELECT 1 as test`;
+    expect(result).toEqual([
+      {
+        test: 1,
+      },
+    ]);
   });
 
   it("should have expected tables created after migrations", async () => {
-    const result = await db.execute(sql`
+    const result = await db.$client`
       SELECT name
       FROM sqlite_master
       WHERE type = 'table'
       AND name NOT LIKE 'sqlite_%'
       ORDER BY name
-      LIMIT 5
-    `);
+    `;
 
-    expect(result.rows.length).toBeGreaterThan(0);
+    expect(result.length).toBeGreaterThan(0);
 
-    const tableNames = result.rows.map((row: any) => row.name);
+    const tableNames = result.map((row: any) => row.name);
     expect(tableNames).toContain("n4user");
     expect(tableNames).toContain("project");
     expect(tableNames).toContain("issue");
   });
 
   it("retains the legacy sessions table for in-place upgrades", async () => {
-    const result = await db.execute(sql`
+    const result = await db.$client`
       SELECT name
       FROM sqlite_master
       WHERE type = 'table'
       AND name = 'sessions'
-    `);
+    `;
 
-    expect(result.rows).toHaveLength(1);
+    expect(result).toHaveLength(1);
   });
 
   it("should have n4user table structure", async () => {
-    const result = await db.execute(sql`
-      PRAGMA table_info(n4user)
-    `);
+    const result = await db.$client`PRAGMA table_info(n4user)`;
 
-    const columns = result.rows.map((row: any) => row.name);
+    const columns = result.map((row: any) => row.name);
     expect(columns).toContain("id");
-    expect(columns).toContain("loginId");
+    expect(columns).toContain("login_id");
     expect(columns).toContain("name");
   });
 
   it("should be able to insert and select from n4user", async () => {
     const testUser = {
+      createdDate: new Date(0),
+      lastStateModifiedDate: new Date(0),
       loginId: "test@example.com",
       name: "Test User",
       email: "test@example.com",
       isGuest: false,
+      token: null,
     };
 
     await db.insert(sqliteSchema.n4user).values(testUser);

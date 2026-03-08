@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { getTableName } from "drizzle-orm";
+import { getTableName, sql } from "drizzle-orm";
 
 type DbType = "pg" | "mysql" | "sqlite";
 
@@ -65,4 +65,15 @@ export function getExpectedTableNames(schemaModule: Record<string, unknown>): st
   }
 
   return [...tableNames].toSorted();
+}
+
+export async function applySqliteMigrations(db: {
+  run(query: unknown): Promise<unknown>;
+}): Promise<void> {
+  const migrationSql = getMigrationSqlChain("sqlite");
+  const statements = splitMigrationStatements(migrationSql);
+
+  for (const statement of statements) {
+    await db.run(sql.raw(statement));
+  }
 }

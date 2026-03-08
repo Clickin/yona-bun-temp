@@ -1,6 +1,7 @@
 const RANDOM_TOKEN_SIZE_BYTES = 32;
 
 const textEncoder = new TextEncoder();
+const hmacKeyCache = new Map<string, Promise<CryptoKey>>();
 
 function toBase64Url(buffer: ArrayBuffer | Uint8Array): string {
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
@@ -27,6 +28,26 @@ function constantTimeEqual(left: string, right: string): boolean {
   return mismatch === 0;
 }
 
+async function importHmacKey(secret: string): Promise<CryptoKey> {
+  const cachedKey = hmacKeyCache.get(secret);
+  if (cachedKey) {
+    return cachedKey;
+  }
+
+  const importedKey = crypto.subtle.importKey(
+    "raw",
+    textEncoder.encode(secret),
+    {
+      hash: "SHA-256",
+      name: "HMAC",
+    },
+    false,
+    ["sign"],
+  );
+  hmacKeyCache.set(secret, importedKey);
+  return importedKey;
+}
+
 export function generateResetToken(): string {
   const randomBytes = crypto.getRandomValues(new Uint8Array(RANDOM_TOKEN_SIZE_BYTES));
   return toBase64Url(randomBytes);
@@ -40,4 +61,10 @@ export async function hashToken(token: string): Promise<string> {
 export async function verifyToken(token: string, hashedToken: string): Promise<boolean> {
   const candidateHash = await hashToken(token);
   return constantTimeEqual(candidateHash, hashedToken);
+}
+
+export async function signTokenWithSecret(token: string, secret: string): Promise<string> {
+  const key = await importHmacKey(secret);
+  const signature = await crypto.subtle.sign("HMAC", key, textEncoder.encode(token));
+  return toBase64Url(signature);
 }

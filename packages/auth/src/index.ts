@@ -29,6 +29,13 @@ export {
 export { hashPassword, verifyPassword } from "./password";
 export { generateResetToken, hashToken, verifyToken } from "./tokens";
 export {
+  getOrCreateUserApiToken,
+  resolveRequestPrincipal,
+  rotateUserApiToken,
+  type RequestAuthMethod,
+  type ResolvedRequestPrincipal,
+} from "./request-auth";
+export {
   authenticatePasswordSignIn,
   buildAnonymousAppSession,
   buildAuthenticatedAppSession,

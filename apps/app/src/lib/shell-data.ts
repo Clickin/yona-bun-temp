@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { loadProtectedShellData } from "./protected-shell-data";
 
 export const getPublicShellData = createServerFn({ method: "GET" }).handler(async () => {
   return {
@@ -13,13 +14,6 @@ export const getPublicShellData = createServerFn({ method: "GET" }).handler(asyn
   };
 });
 
-export const getProtectedShellData = createServerFn({ method: "GET" }).handler(async () => {
-  return {
-    lanes: [
-      "Public dashboard preloads before render.",
-      "Protected route redirects until the in-memory auth session exists.",
-      "Password, registration, and reset flows mutate through createServerFn.",
-    ],
-    title: "Protected Workspace",
-  };
-});
+export const getProtectedShellData = createServerFn({ method: "GET" }).handler(
+  loadProtectedShellData,
+);

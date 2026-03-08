@@ -18,11 +18,21 @@ export function createServerAuthCaller() {
     deleteCookie,
     getCookie,
     getRequestHeader,
-    getRequestIp: () => getRequestIP({ xForwardedFor: true }),
+    getRequestIp: () => getRequestIP(),
     setCookie,
     setResponseHeader,
     setResponseStatus,
   });
+}
+
+export async function requireAuthenticatedAppSessionServer() {
+  const session = await createServerAuthCaller().readCurrentSession();
+  if (session.isAnonymous) {
+    setResponseStatus(401, "Unauthorized");
+    throw new Error("Authentication required.");
+  }
+
+  return session;
 }
 
 export async function readSessionRoutePayloadServer() {
