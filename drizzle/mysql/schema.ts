@@ -540,12 +540,16 @@ export const notificationMail = mysqlTable(
   (table) => [index("ix_notification_mail_notificationEvent_17").on(table.notificationEventId)],
 );
 
-export const organization = mysqlTable("organization", {
-  id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
-  name: varchar({ length: 255 }).default("NULL"),
-  created: datetime().default(sql`NULL`),
-  descr: varchar({ length: 255 }).default("NULL"),
-});
+export const organization = mysqlTable(
+  "organization",
+  {
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
+    name: varchar({ length: 255 }).default("NULL"),
+    created: datetime().default(sql`NULL`),
+    descr: varchar({ length: 255 }).default("NULL"),
+  },
+  (table) => [uniqueIndex("uq_organization_name").on(table.name)],
+);
 
 export const organizationUser = mysqlTable(
   "organization_user",
@@ -701,6 +705,7 @@ export const project = mysqlTable(
   (table) => [
     index("ix_project_organization_24").on(table.organizationId),
     index("ix_project_originalProject_23").on(table.originalProjectId),
+    uniqueIndex("uq_project_owner_name").on(table.owner, table.name),
     foreignKey({
       columns: [table.originalProjectId],
       foreignColumns: [table.id],

@@ -511,12 +511,16 @@ export const notificationMail = sqliteTable(
   (table) => [index("ix_notification_mail_notificationEvent_17").on(table.notificationEventId)],
 );
 
-export const organization = sqliteTable("organization", {
-  id: integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
-  name: text().default("NULL"),
-  created: integer({ mode: "timestamp" }).default(new Date("NULLZ")),
-  descr: text().default("NULL"),
-});
+export const organization = sqliteTable(
+  "organization",
+  {
+    id: integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
+    name: text().default("NULL"),
+    created: integer({ mode: "timestamp" }).default(new Date("NULLZ")),
+    descr: text().default("NULL"),
+  },
+  (table) => [uniqueIndex("uq_organization_name").on(table.name)],
+);
 
 export const organizationUser = sqliteTable(
   "organization_user",
@@ -674,6 +678,7 @@ export const project = sqliteTable(
   (table) => [
     index("ix_project_organization_24").on(table.organizationId),
     index("ix_project_originalProject_23").on(table.originalProjectId),
+    uniqueIndex("uq_project_owner_name").on(table.owner, table.name),
     foreignKey({
       columns: [table.originalProjectId],
       foreignColumns: [table.id],

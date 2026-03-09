@@ -4,6 +4,7 @@
 
 - This document fixes the initial Phase 0B legacy provenance baseline for the first migration wave.
 - Canonical rules still live in `SPEC.md`; this file is an execution mirror for exact source-path and target-layer mapping.
+- Feature-level provenance now lives under [`docs/provenance/phase-0b/`](/G:/programming/yona/docs/provenance/phase-0b/README.md).
 
 ## Required Fields
 
@@ -42,6 +43,23 @@
 - `AccessControlTest.isAllowed_siteAdmin`, `isAllowed_projectCreator`, `isAllowed_notAMember`, and `isAllowed_resource_to_group_member` now map to `packages/domain/src/project-authorization.spec.ts`, which freezes the first public/protected read-write matrix for site admin, manager, member, and anonymous actors.
 - `apps/app` now reserves `/api/auth/provider/:provider/callback` as the canonical OAuth callback contract, but GitHub/Google provider exchange is still an explicit pending migration item rather than a completed Wave 1 feature.
 - These are Wave-1 baselines only. They are not full feature completion proofs and must be extended by later `tRPC` procedure/`serverFunction` adapter/server-route tests in `apps/app` and `packages/auth`.
+
+## Phase 0B Provenance Docs
+
+- [`docs/provenance/phase-0b/legacy-test-inventory.md`](/G:/programming/yona/docs/provenance/phase-0b/legacy-test-inventory.md) is the scan of `yona-original/test/**` used to route each feature to its primary legacy source and owner package.
+- [`docs/provenance/phase-0b/organization.md`](/G:/programming/yona/docs/provenance/phase-0b/organization.md) freezes the org create/read/update baseline and the settings-path deviation.
+- [`docs/provenance/phase-0b/project.md`](/G:/programming/yona/docs/provenance/phase-0b/project.md) freezes the project create/read/update plus visibility baseline and records the `/projectform` and `/settingform` deviations.
+- [`docs/provenance/phase-0b/issue.md`](/G:/programming/yona/docs/provenance/phase-0b/issue.md) narrows issue work in this batch to the first edit-authorization exemplar only.
+- [`docs/provenance/phase-0b/fixture-strategy.md`](/G:/programming/yona/docs/provenance/phase-0b/fixture-strategy.md) freezes the canonical fixture names and scenario mapping derived from `conf/test-data.yml`.
+
+## Phase 0B Exit Reminder
+
+- The current Org/Project batch is Phase 0B core completion plus Phase 1 kickoff. It must not claim full Phase 0B completion.
+- Full 0B exit still has explicit pending blockers:
+  - project enrollment request and cancel implementation
+  - workspace recent or favorite or default landing implementation
+  - PR exemplar implementation
+  - search exemplar implementation
 
 ## Translation Notes
 

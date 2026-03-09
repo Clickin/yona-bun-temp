@@ -8,7 +8,8 @@
     "test": "bunx vitest run --config vitest.config.ts"
   },
   "dependencies": {
-    "@yona/contracts": "workspace:*"
+    "@yona/contracts": "workspace:*",
+    "@yona/db": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

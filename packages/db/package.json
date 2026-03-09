@@ -8,7 +8,7 @@
     "test": "vitest run --config vitest.config.ts src/index.spec.ts src/dialect.spec.ts src/drizzle-import.spec.ts src/migrations.spec.ts",
     "test:node": "vitest run --config vitest.config.ts src/pg.spec.ts src/mysql.spec.ts",
     "test:node:coverage": "vitest run --config vitest.config.ts src/pg.spec.ts src/mysql.spec.ts src/migrations.spec.ts --coverage.enabled --coverage.allowExternal=false --coverage.include=\"src/**/*.ts\" --coverage.reportsDirectory=coverage/db-node --coverage.reporter=text --coverage.reporter=json-summary --coverage.reporter=html",
-    "test:sqlite": "bun test src/sqlite.spec.ts src/auth-users.spec.ts src/repository-access.spec.ts"
+    "test:sqlite": "bun test src/sqlite.spec.ts src/auth-users.spec.ts src/repository-access.spec.ts src/org-project.spec.ts"
   },
   "dependencies": {
     "drizzle-orm": "^1.0.0-beta.15-859cf75"

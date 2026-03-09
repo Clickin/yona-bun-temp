@@ -97,4 +97,22 @@ describe("SQLite database", () => {
     expect(getDefaultValue(verificationColumns, "created_at")).not.toBe("NaN");
     expect(getDefaultValue(verificationColumns, "updated_at")).not.toBe("NaN");
   });
+
+  it("creates unique identifier indexes for organizations and owner-scoped projects", async () => {
+    const organizationIndexes = await db.$client`PRAGMA index_list(organization)`;
+    const projectIndexes = await db.$client`PRAGMA index_list(project)`;
+
+    expect(
+      organizationIndexes.some(
+        (row: { name: string; unique: number }) =>
+          row.name === "uq_organization_name" && row.unique === 1,
+      ),
+    ).toBe(true);
+    expect(
+      projectIndexes.some(
+        (row: { name: string; unique: number }) =>
+          row.name === "uq_project_owner_name" && row.unique === 1,
+      ),
+    ).toBe(true);
+  });
 });

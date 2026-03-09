@@ -113,7 +113,13 @@ const { dbMock, sendPasswordResetEmailMock } = vi.hoisted(() => {
   };
 });
 
-vi.mock("@yona/db", () => dbMock);
+vi.mock("@yona/db", async () => {
+  const actual = await vi.importActual<typeof import("@yona/db")>("@yona/db");
+  return {
+    ...actual,
+    ...dbMock,
+  };
+});
 
 vi.mock("@yona/integrations", async () => {
   const actual = await vi.importActual<typeof import("@yona/integrations")>("@yona/integrations");

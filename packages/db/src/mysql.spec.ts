@@ -72,4 +72,16 @@ describe("MySQL database", () => {
     expect(users[0]?.login_id).toBe(loginId);
     expect(users[0]?.name).toBe("Node MySQL");
   });
+
+  it("creates unique identifier indexes for organizations and owner-scoped projects", async () => {
+    const [organizationIndexes] = await connection.query<
+      (mysql.RowDataPacket & { Key_name: string; Non_unique: number })[]
+    >("SHOW INDEX FROM `organization` WHERE `Key_name` = 'uq_organization_name'");
+    const [projectIndexes] = await connection.query<
+      (mysql.RowDataPacket & { Key_name: string; Non_unique: number })[]
+    >("SHOW INDEX FROM `project` WHERE `Key_name` = 'uq_project_owner_name'");
+
+    expect(organizationIndexes.some((row) => row.Non_unique === 0)).toBe(true);
+    expect(projectIndexes.some((row) => row.Non_unique === 0)).toBe(true);
+  });
 });

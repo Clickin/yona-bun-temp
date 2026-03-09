@@ -156,4 +156,23 @@ export {
   type AttachmentTemporaryBindingRecord,
 } from "./attachment-assets";
 export { loadRepositoryAccessFacts, type RepositoryAccessFactsRecord } from "./repository-access";
+export {
+  createOrganizationRecord,
+  createProjectRecord,
+  grantOrganizationAdmin,
+  grantProjectManager,
+  organizationNameExists,
+  projectIdentifierExists,
+  readOrganizationAuthorization,
+  readOrganizationByName,
+  readProjectAuthorization,
+  readProjectByOwnerAndName,
+  updateOrganizationRecord,
+  updateProjectRecord,
+  userLoginIdExists,
+  type OrganizationAuthorizationRecord,
+  type OrganizationRecord,
+  type ProjectAuthorizationRecord,
+  type ProjectRecord,
+} from "./org-project";
 export { getDbSchema, type RuntimeDbSchema } from "./runtime-schema";

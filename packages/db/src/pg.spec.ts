@@ -88,4 +88,17 @@ describe("PostgreSQL database", () => {
     expect(users.rows[0]?.loginId).toBe(loginId);
     expect(users.rows[0]?.name).toBe("Node PG");
   });
+
+  it("creates unique identifier indexes for organizations and owner-scoped projects", async () => {
+    const indexes = await pool.query<{ indexdef: string; indexname: string }>(`
+      SELECT indexname, indexdef
+      FROM pg_indexes
+      WHERE schemaname = 'public'
+        AND indexname IN ('uq_organization_name', 'uq_project_owner_name')
+      ORDER BY indexname
+    `);
+
+    expect(indexes.rows).toHaveLength(2);
+    expect(indexes.rows[0]?.indexdef ?? indexes.rows[1]?.indexdef).toContain("UNIQUE INDEX");
+  });
 });

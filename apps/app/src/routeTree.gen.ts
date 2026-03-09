@@ -15,10 +15,16 @@ import { Route as ProtectedRouteImport } from './routes/protected'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProjectsNewRouteImport } from './routes/projects/new'
+import { Route as OrganizationsNewRouteImport } from './routes/organizations/new'
+import { Route as OrganizationsOrganizationNameIndexRouteImport } from './routes/organizations/$organizationName/index'
+import { Route as OwnerProjectNameIndexRouteImport } from './routes/$owner/$projectName/index'
+import { Route as OrganizationsOrganizationNameSettingsRouteImport } from './routes/organizations/$organizationName/settings'
 import { Route as ApiMeTokenRouteImport } from './routes/api/me/token'
 import { Route as ApiAuthSessionRouteImport } from './routes/api/auth/session'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAssetsAssetIdRouteImport } from './routes/api/assets/$assetId'
+import { Route as OwnerProjectNameSettingsRouteImport } from './routes/$owner/$projectName/settings'
 import { Route as ApiReposRepoIdInlineEditRouteImport } from './routes/api/repos/$repoId/inline-edit'
 import { Route as ApiReposRepoIdFilesRouteImport } from './routes/api/repos/$repoId/files'
 import { Route as ApiReposRepoIdBootstrapRouteImport } from './routes/api/repos/$repoId/bootstrap'
@@ -56,6 +62,33 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProjectsNewRoute = ProjectsNewRouteImport.update({
+  id: '/projects/new',
+  path: '/projects/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizationsNewRoute = OrganizationsNewRouteImport.update({
+  id: '/organizations/new',
+  path: '/organizations/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizationsOrganizationNameIndexRoute =
+  OrganizationsOrganizationNameIndexRouteImport.update({
+    id: '/organizations/$organizationName/',
+    path: '/organizations/$organizationName/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const OwnerProjectNameIndexRoute = OwnerProjectNameIndexRouteImport.update({
+  id: '/$owner/$projectName/',
+  path: '/$owner/$projectName/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizationsOrganizationNameSettingsRoute =
+  OrganizationsOrganizationNameSettingsRouteImport.update({
+    id: '/organizations/$organizationName/settings',
+    path: '/organizations/$organizationName/settings',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiMeTokenRoute = ApiMeTokenRouteImport.update({
   id: '/api/me/token',
   path: '/api/me/token',
@@ -76,6 +109,12 @@ const ApiAssetsAssetIdRoute = ApiAssetsAssetIdRouteImport.update({
   path: '/api/assets/$assetId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OwnerProjectNameSettingsRoute =
+  OwnerProjectNameSettingsRouteImport.update({
+    id: '/$owner/$projectName/settings',
+    path: '/$owner/$projectName/settings',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiReposRepoIdInlineEditRoute =
   ApiReposRepoIdInlineEditRouteImport.update({
     id: '/api/repos/$repoId/inline-edit',
@@ -118,10 +157,16 @@ export interface FileRoutesByFullPath {
   '/protected': typeof ProtectedRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/organizations/new': typeof OrganizationsNewRoute
+  '/projects/new': typeof ProjectsNewRoute
+  '/$owner/$projectName/settings': typeof OwnerProjectNameSettingsRoute
   '/api/assets/$assetId': typeof ApiAssetsAssetIdRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/session': typeof ApiAuthSessionRoute
   '/api/me/token': typeof ApiMeTokenRoute
+  '/organizations/$organizationName/settings': typeof OrganizationsOrganizationNameSettingsRoute
+  '/$owner/$projectName/': typeof OwnerProjectNameIndexRoute
+  '/organizations/$organizationName/': typeof OrganizationsOrganizationNameIndexRoute
   '/api/assets/$assetId/download': typeof ApiAssetsAssetIdDownloadRoute
   '/api/repos/$repoId/bootstrap': typeof ApiReposRepoIdBootstrapRoute
   '/api/repos/$repoId/files': typeof ApiReposRepoIdFilesRoute
@@ -136,10 +181,16 @@ export interface FileRoutesByTo {
   '/protected': typeof ProtectedRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/organizations/new': typeof OrganizationsNewRoute
+  '/projects/new': typeof ProjectsNewRoute
+  '/$owner/$projectName/settings': typeof OwnerProjectNameSettingsRoute
   '/api/assets/$assetId': typeof ApiAssetsAssetIdRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/session': typeof ApiAuthSessionRoute
   '/api/me/token': typeof ApiMeTokenRoute
+  '/organizations/$organizationName/settings': typeof OrganizationsOrganizationNameSettingsRoute
+  '/$owner/$projectName': typeof OwnerProjectNameIndexRoute
+  '/organizations/$organizationName': typeof OrganizationsOrganizationNameIndexRoute
   '/api/assets/$assetId/download': typeof ApiAssetsAssetIdDownloadRoute
   '/api/repos/$repoId/bootstrap': typeof ApiReposRepoIdBootstrapRoute
   '/api/repos/$repoId/files': typeof ApiReposRepoIdFilesRoute
@@ -155,10 +206,16 @@ export interface FileRoutesById {
   '/protected': typeof ProtectedRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/organizations/new': typeof OrganizationsNewRoute
+  '/projects/new': typeof ProjectsNewRoute
+  '/$owner/$projectName/settings': typeof OwnerProjectNameSettingsRoute
   '/api/assets/$assetId': typeof ApiAssetsAssetIdRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/session': typeof ApiAuthSessionRoute
   '/api/me/token': typeof ApiMeTokenRoute
+  '/organizations/$organizationName/settings': typeof OrganizationsOrganizationNameSettingsRoute
+  '/$owner/$projectName/': typeof OwnerProjectNameIndexRoute
+  '/organizations/$organizationName/': typeof OrganizationsOrganizationNameIndexRoute
   '/api/assets/$assetId/download': typeof ApiAssetsAssetIdDownloadRoute
   '/api/repos/$repoId/bootstrap': typeof ApiReposRepoIdBootstrapRoute
   '/api/repos/$repoId/files': typeof ApiReposRepoIdFilesRoute
@@ -175,10 +232,16 @@ export interface FileRouteTypes {
     | '/protected'
     | '/register'
     | '/reset-password'
+    | '/organizations/new'
+    | '/projects/new'
+    | '/$owner/$projectName/settings'
     | '/api/assets/$assetId'
     | '/api/auth/$'
     | '/api/auth/session'
     | '/api/me/token'
+    | '/organizations/$organizationName/settings'
+    | '/$owner/$projectName/'
+    | '/organizations/$organizationName/'
     | '/api/assets/$assetId/download'
     | '/api/repos/$repoId/bootstrap'
     | '/api/repos/$repoId/files'
@@ -193,10 +256,16 @@ export interface FileRouteTypes {
     | '/protected'
     | '/register'
     | '/reset-password'
+    | '/organizations/new'
+    | '/projects/new'
+    | '/$owner/$projectName/settings'
     | '/api/assets/$assetId'
     | '/api/auth/$'
     | '/api/auth/session'
     | '/api/me/token'
+    | '/organizations/$organizationName/settings'
+    | '/$owner/$projectName'
+    | '/organizations/$organizationName'
     | '/api/assets/$assetId/download'
     | '/api/repos/$repoId/bootstrap'
     | '/api/repos/$repoId/files'
@@ -211,10 +280,16 @@ export interface FileRouteTypes {
     | '/protected'
     | '/register'
     | '/reset-password'
+    | '/organizations/new'
+    | '/projects/new'
+    | '/$owner/$projectName/settings'
     | '/api/assets/$assetId'
     | '/api/auth/$'
     | '/api/auth/session'
     | '/api/me/token'
+    | '/organizations/$organizationName/settings'
+    | '/$owner/$projectName/'
+    | '/organizations/$organizationName/'
     | '/api/assets/$assetId/download'
     | '/api/repos/$repoId/bootstrap'
     | '/api/repos/$repoId/files'
@@ -230,10 +305,16 @@ export interface RootRouteChildren {
   ProtectedRoute: typeof ProtectedRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  OrganizationsNewRoute: typeof OrganizationsNewRoute
+  ProjectsNewRoute: typeof ProjectsNewRoute
+  OwnerProjectNameSettingsRoute: typeof OwnerProjectNameSettingsRoute
   ApiAssetsAssetIdRoute: typeof ApiAssetsAssetIdRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAuthSessionRoute: typeof ApiAuthSessionRoute
   ApiMeTokenRoute: typeof ApiMeTokenRoute
+  OrganizationsOrganizationNameSettingsRoute: typeof OrganizationsOrganizationNameSettingsRoute
+  OwnerProjectNameIndexRoute: typeof OwnerProjectNameIndexRoute
+  OrganizationsOrganizationNameIndexRoute: typeof OrganizationsOrganizationNameIndexRoute
   ApiReposRepoIdBootstrapRoute: typeof ApiReposRepoIdBootstrapRoute
   ApiReposRepoIdFilesRoute: typeof ApiReposRepoIdFilesRoute
   ApiReposRepoIdInlineEditRoute: typeof ApiReposRepoIdInlineEditRoute
@@ -285,6 +366,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/projects/new': {
+      id: '/projects/new'
+      path: '/projects/new'
+      fullPath: '/projects/new'
+      preLoaderRoute: typeof ProjectsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizations/new': {
+      id: '/organizations/new'
+      path: '/organizations/new'
+      fullPath: '/organizations/new'
+      preLoaderRoute: typeof OrganizationsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizations/$organizationName/': {
+      id: '/organizations/$organizationName/'
+      path: '/organizations/$organizationName'
+      fullPath: '/organizations/$organizationName/'
+      preLoaderRoute: typeof OrganizationsOrganizationNameIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$owner/$projectName/': {
+      id: '/$owner/$projectName/'
+      path: '/$owner/$projectName'
+      fullPath: '/$owner/$projectName/'
+      preLoaderRoute: typeof OwnerProjectNameIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizations/$organizationName/settings': {
+      id: '/organizations/$organizationName/settings'
+      path: '/organizations/$organizationName/settings'
+      fullPath: '/organizations/$organizationName/settings'
+      preLoaderRoute: typeof OrganizationsOrganizationNameSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/me/token': {
       id: '/api/me/token'
       path: '/api/me/token'
@@ -311,6 +427,13 @@ declare module '@tanstack/react-router' {
       path: '/api/assets/$assetId'
       fullPath: '/api/assets/$assetId'
       preLoaderRoute: typeof ApiAssetsAssetIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$owner/$projectName/settings': {
+      id: '/$owner/$projectName/settings'
+      path: '/$owner/$projectName/settings'
+      fullPath: '/$owner/$projectName/settings'
+      preLoaderRoute: typeof OwnerProjectNameSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/repos/$repoId/inline-edit': {
@@ -376,10 +499,18 @@ const rootRouteChildren: RootRouteChildren = {
   ProtectedRoute: ProtectedRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  OrganizationsNewRoute: OrganizationsNewRoute,
+  ProjectsNewRoute: ProjectsNewRoute,
+  OwnerProjectNameSettingsRoute: OwnerProjectNameSettingsRoute,
   ApiAssetsAssetIdRoute: ApiAssetsAssetIdRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAuthSessionRoute: ApiAuthSessionRoute,
   ApiMeTokenRoute: ApiMeTokenRoute,
+  OrganizationsOrganizationNameSettingsRoute:
+    OrganizationsOrganizationNameSettingsRoute,
+  OwnerProjectNameIndexRoute: OwnerProjectNameIndexRoute,
+  OrganizationsOrganizationNameIndexRoute:
+    OrganizationsOrganizationNameIndexRoute,
   ApiReposRepoIdBootstrapRoute: ApiReposRepoIdBootstrapRoute,
   ApiReposRepoIdFilesRoute: ApiReposRepoIdFilesRoute,
   ApiReposRepoIdInlineEditRoute: ApiReposRepoIdInlineEditRoute,

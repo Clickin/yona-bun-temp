@@ -18,9 +18,13 @@ const {
   resolveRepositoryPathMock: vi.fn(() => "/repo-root/1001.git"),
 }));
 
-vi.mock("@yona/db", () => ({
-  loadRepositoryAccessFacts: loadRepositoryAccessFactsMock,
-}));
+vi.mock("@yona/db", async () => {
+  const actual = await vi.importActual<typeof import("@yona/db")>("@yona/db");
+  return {
+    ...actual,
+    loadRepositoryAccessFacts: loadRepositoryAccessFactsMock,
+  };
+});
 
 vi.mock("@yona/vcs", async () => {
   const actual = await vi.importActual<typeof import("@yona/vcs")>("@yona/vcs");
