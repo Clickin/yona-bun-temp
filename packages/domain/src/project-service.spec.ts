@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { authorizeProjectAccess } from "./project-authorization";
-import { DomainConflictError, DomainPermissionError, listProjectMembers, updateProject } from "./project-service";
+import {
+  DomainConflictError,
+  DomainPermissionError,
+  listProjectMembers,
+  updateProject,
+} from "./project-service";
 
 describe("project authorization", () => {
   it("preserves the project visibility read matrix for public, protected, and private scopes", () => {

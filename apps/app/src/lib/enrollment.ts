@@ -1,8 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import {
-  enrollmentMutationResultSchema,
-  enrollmentRequestRefSchema,
-} from "@yona/contracts";
+import { enrollmentMutationResultSchema, enrollmentRequestRefSchema } from "@yona/contracts";
 
 export const enrollProject = createServerFn({ method: "POST" })
   .inputValidator(enrollmentRequestRefSchema)

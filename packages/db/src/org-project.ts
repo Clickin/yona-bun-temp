@@ -219,10 +219,7 @@ function mapOrganizationMemberRole(value: null | string): null | OrganizationMem
   return null;
 }
 
-function mapUserSummaryRecord(row: {
-  loginId: null | string;
-  userLabel: null | string;
-}): null | {
+function mapUserSummaryRecord(row: { loginId: null | string; userLabel: null | string }): null | {
   loginId: string;
   userLabel: string;
 } {
@@ -540,16 +537,20 @@ export async function readOrganizationMembers(
     .orderBy(schema.n4user.name, schema.n4user.loginId);
 
   const members = memberRows
-    .map((row: {
-      loginId: null | string;
-      role: null | string;
-      userId: number;
-      userLabel: null | string;
-    }) => ({
-      mapped: mapOrganizationMemberRecord(row),
-      userId: row.userId,
-    }))
-    .filter((row: { mapped: null | OrganizationMemberRecord; userId: number }) => row.mapped !== null);
+    .map(
+      (row: {
+        loginId: null | string;
+        role: null | string;
+        userId: number;
+        userLabel: null | string;
+      }) => ({
+        mapped: mapOrganizationMemberRecord(row),
+        userId: row.userId,
+      }),
+    )
+    .filter(
+      (row: { mapped: null | OrganizationMemberRecord; userId: number }) => row.mapped !== null,
+    );
 
   const memberUserIds = new Set(members.map((row: { userId: number }) => row.userId));
 
@@ -569,8 +570,9 @@ export async function readOrganizationMembers(
       .filter((row: { userId: number }) => !memberUserIds.has(row.userId))
       .map(mapUserSummaryRecord)
       .filter(
-        (row: null | OrganizationEnrollmentRequestSummaryRecord): row is OrganizationEnrollmentRequestSummaryRecord =>
-          row !== null,
+        (
+          row: null | OrganizationEnrollmentRequestSummaryRecord,
+        ): row is OrganizationEnrollmentRequestSummaryRecord => row !== null,
       ),
     members: members.map((row: { mapped: OrganizationMemberRecord }) => row.mapped),
   };
@@ -915,15 +917,17 @@ export async function readProjectMembers(
     .orderBy(schema.n4user.name, schema.n4user.loginId);
 
   const members = memberRows
-    .map((row: {
-      loginId: null | string;
-      role: null | string;
-      userId: number;
-      userLabel: null | string;
-    }) => ({
-      mapped: mapProjectMemberRecord(row),
-      userId: row.userId,
-    }))
+    .map(
+      (row: {
+        loginId: null | string;
+        role: null | string;
+        userId: number;
+        userLabel: null | string;
+      }) => ({
+        mapped: mapProjectMemberRecord(row),
+        userId: row.userId,
+      }),
+    )
     .filter((row: { mapped: null | ProjectMemberRecord; userId: number }) => row.mapped !== null);
 
   const memberUserIds = new Set(members.map((row: { userId: number }) => row.userId));
@@ -944,8 +948,9 @@ export async function readProjectMembers(
       .filter((row: { userId: number }) => !memberUserIds.has(row.userId))
       .map(mapUserSummaryRecord)
       .filter(
-        (row: null | ProjectEnrollmentRequestSummaryRecord): row is ProjectEnrollmentRequestSummaryRecord =>
-          row !== null,
+        (
+          row: null | ProjectEnrollmentRequestSummaryRecord,
+        ): row is ProjectEnrollmentRequestSummaryRecord => row !== null,
       ),
     members: members.map((row: { mapped: ProjectMemberRecord }) => row.mapped),
   };

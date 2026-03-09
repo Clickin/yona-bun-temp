@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const {
-  cancelEnrollProjectMock,
-  enrollProjectMock,
-  readCurrentSessionMock,
-} = vi.hoisted(() => ({
+const { cancelEnrollProjectMock, enrollProjectMock, readCurrentSessionMock } = vi.hoisted(() => ({
   cancelEnrollProjectMock: vi.fn(),
   enrollProjectMock: vi.fn(),
   readCurrentSessionMock: vi.fn(),
