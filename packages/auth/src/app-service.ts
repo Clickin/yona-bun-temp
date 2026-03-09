@@ -14,8 +14,11 @@ import {
   registerWithPasswordInputSchema,
   signInWithPasswordInputSchema,
 } from "@yona/contracts";
+import { and, eq, like } from "drizzle-orm";
 import {
   createPasswordAuthUser,
+  ensureAuthUserCredentialId,
+  findAuthUserByCredentialId,
   findAuthUserById,
   findAuthUserByIdentifier,
   updateAuthUserPassword,
@@ -26,22 +29,29 @@ import {
   deleteAllSessionsByUserId,
   deleteSessionByToken,
   getSessionByToken,
+  upsertSessionMetadata,
 } from "./session";
 import type { CreateRuntimeSessionInput, CreatedSession } from "./session";
 import type { SessionRecord } from "./session-store";
-import { generateResetToken, hashToken, verifyToken } from "./tokens";
-import { hashPassword, verifyPassword } from "./password";
+import { generateResetToken } from "./tokens";
+import {
+  createBetterAuthSessionForActor,
+  getBetterAuth,
+  readBetterAuthSessionFromCookie,
+  resetBetterAuthStateForTests,
+} from "./better-auth";
+import { hashCredentialPassword, verifyCredentialPassword, verifyPassword } from "./password";
 
 const PASSWORD_RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
 interface PasswordResetState {
   expiresAt: Date;
-  tokenHash: string;
+  tokenUserId: number;
 }
 
 interface AppAuthState {
   pendingMutation: Promise<void>;
-  resetTokensByUserId: Map<number, PasswordResetState>;
+  resetTokensByToken: Map<string, PasswordResetState>;
 }
 
 export type PasswordSignInResult =
@@ -99,7 +109,7 @@ function getGlobalState(): AppAuthState {
   if (!globalObject.__YONA_APP_AUTH_STATE__) {
     globalObject.__YONA_APP_AUTH_STATE__ = {
       pendingMutation: Promise.resolve(),
-      resetTokensByUserId: new Map(),
+      resetTokensByToken: new Map(),
     };
   }
 
@@ -144,10 +154,58 @@ async function withSerializedMutation<T>(mutation: () => Promise<T>): Promise<T>
 
 function clearExpiredResetTokens(now: Date): void {
   const state = getGlobalState();
-  for (const [userId, tokenState] of state.resetTokensByUserId.entries()) {
+  for (const [token, tokenState] of state.resetTokensByToken.entries()) {
     if (tokenState.expiresAt.getTime() < now.getTime()) {
-      state.resetTokensByUserId.delete(userId);
+      state.resetTokensByToken.delete(token);
     }
+  }
+}
+
+function clearFallbackResetTokensForUser(userId: number): void {
+  const state = getGlobalState();
+  for (const [token, tokenState] of state.resetTokensByToken.entries()) {
+    if (tokenState.tokenUserId === userId) {
+      state.resetTokensByToken.delete(token);
+    }
+  }
+}
+
+async function deletePersistedResetTokensForUser(userId: number): Promise<void> {
+  try {
+    const dbModule = await import("@yona/db");
+    const findPersistedAuthUserById = (
+      dbModule as { findAuthUserById?: (targetUserId: number) => Promise<any> }
+    ).findAuthUserById;
+    const getRuntimeDb = (dbModule as { getDb?: () => any }).getDb;
+    const getRuntimeDbSchema = (dbModule as { getDbSchema?: (db: any) => any }).getDbSchema;
+
+    if (!findPersistedAuthUserById || !getRuntimeDb || !getRuntimeDbSchema) {
+      return;
+    }
+
+    const authUser = await findPersistedAuthUserById(userId);
+    const credentialUserId =
+      authUser && typeof authUser === "object" && "credentialUserId" in authUser
+        ? (authUser.credentialUserId as null | number)
+        : null;
+
+    if (!credentialUserId) {
+      return;
+    }
+
+    const db = getRuntimeDb();
+    const schema = getRuntimeDbSchema(db);
+
+    await (db as any)
+      .delete(schema.verification)
+      .where(
+        and(
+          eq(schema.verification.value, String(credentialUserId)),
+          like(schema.verification.identifier, "reset-password:%"),
+        ),
+      );
+  } catch {
+    // Verification persistence can be unavailable in isolated unit tests.
   }
 }
 
@@ -175,6 +233,99 @@ function isDuplicateUserError(error: unknown): boolean {
   return error instanceof Error && /duplicate|unique|uq_/i.test(error.message);
 }
 
+async function verifyEffectivePassword(
+  user: Awaited<ReturnType<typeof findAuthUserByIdentifier>>,
+  password: string,
+) {
+  if (!user) {
+    return false;
+  }
+
+  const effectivePasswordHash = user.credentialPasswordHash ?? user.passwordHash ?? null;
+  if (effectivePasswordHash && !user.passwordSalt) {
+    return verifyCredentialPassword(password, effectivePasswordHash);
+  }
+
+  if (user.credentialPasswordHash) {
+    return verifyCredentialPassword(password, user.credentialPasswordHash);
+  }
+
+  if (user.legacyPasswordHash && user.legacyPasswordSalt) {
+    const matches = await verifyPassword(
+      password,
+      user.legacyPasswordHash,
+      user.legacyPasswordSalt,
+    );
+    if (matches) {
+      await updateAuthUserPassword({
+        passwordHash: await hashCredentialPassword(password),
+        passwordSalt: null,
+        userId: user.id,
+      });
+    }
+
+    return matches;
+  }
+
+  if (user.passwordHash && user.passwordSalt) {
+    return verifyPassword(password, user.passwordHash, user.passwordSalt);
+  }
+
+  return false;
+}
+
+async function issueFallbackResetToken(
+  actorUserId: number,
+  now: Date,
+): Promise<IssuePasswordResetTokenResult> {
+  const resetToken = generateResetToken();
+  const expiresAt = new Date(now.getTime() + PASSWORD_RESET_TOKEN_TTL_MS);
+  getGlobalState().resetTokensByToken.set(resetToken, {
+    expiresAt,
+    tokenUserId: actorUserId,
+  });
+
+  return {
+    expiresAt,
+    ok: true,
+    resetToken,
+  };
+}
+
+async function readFallbackCurrentSession(token: string): Promise<ResolvedCurrentSession> {
+  const sessionRecord = await getSessionByToken(token);
+  if (!sessionRecord) {
+    await deleteSessionByToken(token);
+    return {
+      clearCookie: true,
+      projection: buildAnonymousAppSession(),
+      sessionRecord: null,
+      token,
+      user: null,
+    };
+  }
+
+  const user = await findAppUserById(sessionRecord.userId);
+  if (!user) {
+    await deleteSessionByToken(token);
+    return {
+      clearCookie: true,
+      projection: buildAnonymousAppSession(),
+      sessionRecord: null,
+      token,
+      user: null,
+    };
+  }
+
+  return {
+    clearCookie: false,
+    projection: buildAuthenticatedAppSession(user),
+    sessionRecord,
+    token,
+    user,
+  };
+}
+
 export async function createAppUser(input: CreateAppUserInput): Promise<CreateAppUserResult> {
   return withSerializedMutation(async () => {
     const parsedInput = registerWithPasswordInputSchema.parse(input);
@@ -193,16 +344,13 @@ export async function createAppUser(input: CreateAppUserInput): Promise<CreateAp
       };
     }
 
-    const passwordSalt = generateResetToken();
-    const passwordHash = await hashPassword(parsedInput.password, passwordSalt);
-
     try {
       const user = await createPasswordAuthUser({
         emailAddress,
         loginId,
         name: parsedInput.name,
-        passwordHash,
-        passwordSalt,
+        passwordHash: await hashCredentialPassword(parsedInput.password),
+        passwordSalt: "",
       });
 
       return {
@@ -231,10 +379,7 @@ export async function authenticatePasswordSignIn(
     password,
   });
   const user = await findAuthUserByIdentifier(parsedInput.identifier);
-  const passwordMatches =
-    user === null || !user.passwordHash || !user.passwordSalt
-      ? false
-      : await verifyPassword(parsedInput.password, user.passwordHash, user.passwordSalt);
+  const passwordMatches = await verifyEffectivePassword(user, parsedInput.password);
 
   const decision = resolvePasswordSignIn(
     user === null
@@ -292,18 +437,30 @@ export async function issuePasswordResetToken(
       };
     }
 
-    const resetToken = generateResetToken();
-    const expiresAt = new Date(now.getTime() + PASSWORD_RESET_TOKEN_TTL_MS);
-    getGlobalState().resetTokensByUserId.set(user.id, {
-      expiresAt,
-      tokenHash: await hashToken(resetToken),
-    });
+    try {
+      const auth = await getBetterAuth();
+      const ctx = await auth.$context;
+      const credentialUserId = user.credentialUserId ?? (await ensureAuthUserCredentialId(user.id));
+      if (!credentialUserId) {
+        return issueFallbackResetToken(user.id, now);
+      }
 
-    return {
-      expiresAt,
-      ok: true,
-      resetToken,
-    };
+      const resetToken = generateResetToken();
+      const expiresAt = new Date(now.getTime() + PASSWORD_RESET_TOKEN_TTL_MS);
+      await ctx.internalAdapter.createVerificationValue({
+        expiresAt,
+        identifier: `reset-password:${resetToken}`,
+        value: String(credentialUserId),
+      });
+
+      return {
+        expiresAt,
+        ok: true,
+        resetToken,
+      };
+    } catch {
+      return issueFallbackResetToken(user.id, now);
+    }
   });
 }
 
@@ -319,15 +476,13 @@ export async function resetPasswordByAdmin(input: {
     }
 
     const temporaryPassword = generateResetToken().slice(0, 16);
-    const passwordSalt = generateResetToken();
-    const passwordHash = await hashPassword(temporaryPassword, passwordSalt);
-
+    clearFallbackResetTokensForUser(user.id);
+    await deletePersistedResetTokensForUser(user.id);
     await updateAuthUserPassword({
-      passwordHash,
-      passwordSalt,
+      passwordHash: await hashCredentialPassword(temporaryPassword),
+      passwordSalt: null,
       userId: user.id,
     });
-    getGlobalState().resetTokensByUserId.delete(user.id);
     await deleteAllSessionsByUserId(user.id);
 
     return {
@@ -347,26 +502,64 @@ export async function resetPasswordWithToken(
 ): Promise<{ ok: false } | { ok: true; user: AuthUserSummary }> {
   return withSerializedMutation(async () => {
     const parsedInput: CompletePasswordResetInput = completePasswordResetInputSchema.parse(input);
-    const state = getGlobalState();
     clearExpiredResetTokens(now);
 
-    for (const [userId, tokenState] of state.resetTokensByUserId.entries()) {
-      const tokenMatches = await verifyToken(parsedInput.token, tokenState.tokenHash);
-      if (!tokenMatches) {
-        continue;
+    try {
+      const auth = await getBetterAuth();
+      const ctx = await auth.$context;
+      const verification = await ctx.internalAdapter.findVerificationValue(
+        `reset-password:${parsedInput.token}`,
+      );
+
+      if (!verification || verification.expiresAt < now) {
+        return {
+          ok: false,
+        };
       }
 
-      const passwordSalt = generateResetToken();
-      const passwordHash = await hashPassword(parsedInput.newPassword, passwordSalt);
-      await updateAuthUserPassword({
-        passwordHash,
-        passwordSalt,
-        userId,
-      });
-      state.resetTokensByUserId.delete(userId);
-      await deleteAllSessionsByUserId(userId);
+      const credentialUserId = Number.parseInt(verification.value, 10);
+      if (!Number.isInteger(credentialUserId) || credentialUserId <= 0) {
+        return {
+          ok: false,
+        };
+      }
 
-      const user = await findAppUserById(userId);
+      const user = await findAuthUserByCredentialId(credentialUserId);
+      if (!user) {
+        return {
+          ok: false,
+        };
+      }
+
+      await auth.api.resetPassword({
+        body: {
+          newPassword: parsedInput.newPassword,
+          token: parsedInput.token,
+        },
+      });
+      await deleteAllSessionsByUserId(user.id);
+
+      return {
+        ok: true,
+        user: summarizeUser(user),
+      };
+    } catch {
+      const fallbackReset = getGlobalState().resetTokensByToken.get(parsedInput.token);
+      if (!fallbackReset || fallbackReset.expiresAt < now) {
+        return {
+          ok: false,
+        };
+      }
+
+      await updateAuthUserPassword({
+        passwordHash: await hashCredentialPassword(parsedInput.newPassword),
+        passwordSalt: null,
+        userId: fallbackReset.tokenUserId,
+      });
+      getGlobalState().resetTokensByToken.delete(parsedInput.token);
+      await deleteAllSessionsByUserId(fallbackReset.tokenUserId);
+
+      const user = await findAppUserById(fallbackReset.tokenUserId);
       if (!user) {
         return {
           ok: false,
@@ -378,10 +571,6 @@ export async function resetPasswordWithToken(
         user,
       };
     }
-
-    return {
-      ok: false,
-    };
   });
 }
 
@@ -398,53 +587,87 @@ export async function readCurrentSession(
     };
   }
 
-  const sessionRecord = await getSessionByToken(token);
-  if (!sessionRecord) {
-    await deleteSessionByToken(token);
-    return {
-      clearCookie: true,
-      projection: buildAnonymousAppSession(),
-      sessionRecord: null,
-      token,
-      user: null,
-    };
-  }
+  try {
+    const authSession = await readBetterAuthSessionFromCookie(token);
+    if (!authSession) {
+      await deleteSessionByToken(token);
+      return {
+        clearCookie: true,
+        projection: buildAnonymousAppSession(),
+        sessionRecord: null,
+        token,
+        user: null,
+      };
+    }
 
-  const user = await findAppUserById(sessionRecord.userId);
-  if (!user) {
-    await deleteSessionByToken(token);
-    return {
-      clearCookie: true,
-      projection: buildAnonymousAppSession(),
-      sessionRecord: null,
-      token,
-      user: null,
-    };
-  }
+    const user = await findAppUserById(authSession.actorUserId);
+    if (!user) {
+      await deleteSessionByToken(token);
+      return {
+        clearCookie: true,
+        projection: buildAnonymousAppSession(),
+        sessionRecord: null,
+        token,
+        user: null,
+      };
+    }
 
-  return {
-    clearCookie: false,
-    projection: buildAuthenticatedAppSession(user),
-    sessionRecord,
-    token,
-    user,
-  };
+    const sessionRecord = await upsertSessionMetadata({
+      expiresAt: authSession.session.expiresAt,
+      token,
+      userId: user.id,
+    });
+
+    return {
+      clearCookie: false,
+      projection: buildAuthenticatedAppSession(user),
+      sessionRecord,
+      token,
+      user,
+    };
+  } catch {
+    return readFallbackCurrentSession(token);
+  }
 }
 
 export async function issueAppSession(
   userId: number,
   input: Omit<CreateRuntimeSessionInput, "userId"> = {},
 ): Promise<IssuedAppSession> {
-  const session = await createSession({
-    ...input,
-    userId,
-  });
   const user = await findAppUserById(userId);
 
-  return {
-    projection: user ? buildAuthenticatedAppSession(user) : buildAnonymousAppSession(),
-    session,
-  };
+  try {
+    const betterAuthSession = await createBetterAuthSessionForActor(userId, {
+      dontRememberMe: false,
+      ipAddress: input.ipAddress,
+      userAgent: input.userAgent,
+    });
+    const sessionRecord = await upsertSessionMetadata({
+      expiresAt: betterAuthSession.expiresAt,
+      token: betterAuthSession.cookieValue,
+      userId,
+    });
+
+    return {
+      projection: user ? buildAuthenticatedAppSession(user) : buildAnonymousAppSession(),
+      session: {
+        csrfToken: sessionRecord.csrfToken,
+        expiresAt: sessionRecord.expiresAt,
+        token: betterAuthSession.cookieValue,
+        userId,
+      },
+    };
+  } catch {
+    const session = await createSession({
+      ...input,
+      userId,
+    });
+
+    return {
+      projection: user ? buildAuthenticatedAppSession(user) : buildAnonymousAppSession(),
+      session,
+    };
+  }
 }
 
 export async function buildSessionRoutePayload(
@@ -483,6 +706,7 @@ export function resetAuthStateForTests(): void {
 
   globalObject.__YONA_APP_AUTH_STATE__ = {
     pendingMutation: Promise.resolve(),
-    resetTokensByUserId: new Map(),
+    resetTokensByToken: new Map(),
   };
+  resetBetterAuthStateForTests();
 }

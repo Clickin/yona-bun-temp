@@ -134,7 +134,9 @@ export function __resetDbForTests(): void {
 
 export {
   createPasswordAuthUser,
+  ensureAuthUserCredentialId,
   findAuthUserByApiToken,
+  findAuthUserByCredentialId,
   findAuthUserById,
   findAuthUserByIdentifier,
   readUserApiToken,
@@ -142,5 +144,16 @@ export {
   updateUserApiToken,
   type DbAuthUserRecord,
 } from "./auth-users";
+export {
+  loadAttachmentAssetRecord,
+  loadAttachmentProjectMembershipFacts,
+  type AttachmentAssetRecord,
+  type AttachmentBindingRecord,
+  type AttachmentGlobalBindingRecord,
+  type AttachmentProjectBindingRecord,
+  type AttachmentProjectMembershipFactsRecord,
+  type AttachmentProjectMembershipTarget,
+  type AttachmentTemporaryBindingRecord,
+} from "./attachment-assets";
 export { loadRepositoryAccessFacts, type RepositoryAccessFactsRecord } from "./repository-access";
 export { getDbSchema, type RuntimeDbSchema } from "./runtime-schema";

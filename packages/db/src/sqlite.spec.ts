@@ -4,6 +4,10 @@ import * as sqliteSchema from "@drizzle/sqlite/schema";
 import { setupSQLiteTestDatabase } from "./test-utils/database";
 import { applySqliteMigrations } from "./test-helpers";
 
+function getDefaultValue(rows: any[], columnName: string) {
+  return rows.find((row) => row.name === columnName)?.dflt_value ?? null;
+}
+
 describe("SQLite database", () => {
   let db: ReturnType<(typeof drizzle)["sqlite"]>;
 
@@ -77,5 +81,20 @@ describe("SQLite database", () => {
     expect(users.length).toBeGreaterThan(0);
     expect(users[0].loginId).toBe("test@example.com");
     expect(users[0].name).toBe("Test User");
+  });
+
+  it("keeps new auth timestamp defaults nullable instead of NaN", async () => {
+    const linkedAccountColumns = await db.$client`PRAGMA table_info(linked_account)`;
+    const userCredentialColumns = await db.$client`PRAGMA table_info(user_credential)`;
+    const verificationColumns = await db.$client`PRAGMA table_info(verification)`;
+
+    expect(getDefaultValue(linkedAccountColumns, "access_token_expires_at")).not.toBe("NaN");
+    expect(getDefaultValue(linkedAccountColumns, "refresh_token_expires_at")).not.toBe("NaN");
+    expect(getDefaultValue(linkedAccountColumns, "created_at")).not.toBe("NaN");
+    expect(getDefaultValue(linkedAccountColumns, "updated_at")).not.toBe("NaN");
+    expect(getDefaultValue(userCredentialColumns, "created_at")).not.toBe("NaN");
+    expect(getDefaultValue(userCredentialColumns, "updated_at")).not.toBe("NaN");
+    expect(getDefaultValue(verificationColumns, "created_at")).not.toBe("NaN");
+    expect(getDefaultValue(verificationColumns, "updated_at")).not.toBe("NaN");
   });
 });

@@ -4,11 +4,13 @@ import { TRPCError } from "@trpc/server";
 const {
   authorizeRepositoryRequestMock,
   handleSmartHttpRequestMock,
+  loadRepositoryAccessFactsMock,
   requiresReceivePackAuthMock,
   resolveServerRequestPrincipalMock,
 } = vi.hoisted(() => ({
   authorizeRepositoryRequestMock: vi.fn(),
   handleSmartHttpRequestMock: vi.fn(),
+  loadRepositoryAccessFactsMock: vi.fn(),
   requiresReceivePackAuthMock: vi.fn(),
   resolveServerRequestPrincipalMock: vi.fn(),
 }));
@@ -16,6 +18,14 @@ const {
 vi.mock("@app/lib/repo-trpc", () => ({
   authorizeRepositoryRequest: authorizeRepositoryRequestMock,
 }));
+
+vi.mock("@yona/db", async () => {
+  const actual = await vi.importActual<typeof import("@yona/db")>("@yona/db");
+  return {
+    ...actual,
+    loadRepositoryAccessFacts: loadRepositoryAccessFactsMock,
+  };
+});
 
 vi.mock("@app/lib/server-request-auth", async () => {
   const actual = await vi.importActual<typeof import("@app/lib/server-request-auth")>(
@@ -44,12 +54,28 @@ function getHandlers() {
       params: { _splat?: string; repoId: string };
       request: Request;
     }) => Promise<Response>;
+    POST: (input: {
+      params: { _splat?: string; repoId: string };
+      request: Request;
+    }) => Promise<Response>;
   };
 }
 
 describe("/api/repos/$repoId/smart-http/$ route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    loadRepositoryAccessFactsMock.mockResolvedValue({
+      isAnonymous: false,
+      isCodeAccessibleMemberOnly: false,
+      isGitRepository: true,
+      isOrganizationAdmin: false,
+      isOrganizationMember: false,
+      isProjectManager: false,
+      isProjectMember: false,
+      isSiteAdmin: false,
+      projectId: 1001,
+      projectScope: "public",
+    });
   });
 
   it("returns a Basic challenge when explicit credentials are invalid", async () => {
@@ -132,6 +158,7 @@ describe("/api/repos/$repoId/smart-http/$ route", () => {
     });
 
     expect(response.status).toBe(403);
+    await expect(response.text()).resolves.toBe("Forbidden");
   });
 
   it("delegates allowed smart-http requests to the VCS backend with server-derived context", async () => {
@@ -181,5 +208,100 @@ describe("/api/repos/$repoId/smart-http/$ route", () => {
       }),
     );
     expect(response.status).toBe(200);
+  });
+
+  it("rejects getanyfile-style info/refs requests before auth", async () => {
+    const response = await getHandlers().GET({
+      params: { _splat: "info/refs", repoId: "1001" },
+      request: new Request("http://localhost/api/repos/1001/smart-http/info/refs"),
+    });
+
+    expect(response.status).toBe(403);
+    await expect(response.text()).resolves.toBe("Unsupported service: getanyfile");
+    expect(resolveServerRequestPrincipalMock).not.toHaveBeenCalled();
+    expect(authorizeRepositoryRequestMock).not.toHaveBeenCalled();
+    expect(handleSmartHttpRequestMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 for non-git repositories before authz delegation", async () => {
+    resolveServerRequestPrincipalMock.mockResolvedValueOnce({
+      authMethod: "session",
+      hasInvalidCredentials: false,
+      ipAddress: "127.0.0.1",
+      isAuthenticated: true,
+      isRateLimited: false,
+      retryAfterSeconds: null,
+      session: null,
+      shouldClearSessionCookie: false,
+      user: {
+        emailAddress: "door@example.com",
+        id: 7,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        name: "Door TTS",
+      },
+    });
+    requiresReceivePackAuthMock.mockReturnValueOnce(false);
+    loadRepositoryAccessFactsMock.mockResolvedValueOnce({
+      isAnonymous: false,
+      isCodeAccessibleMemberOnly: false,
+      isGitRepository: false,
+      isOrganizationAdmin: false,
+      isOrganizationMember: false,
+      isProjectManager: false,
+      isProjectMember: false,
+      isSiteAdmin: false,
+      projectId: 1001,
+      projectScope: "public",
+    });
+
+    const response = await getHandlers().GET({
+      params: { _splat: "info/refs", repoId: "1001" },
+      request: new Request(
+        "http://localhost/api/repos/1001/smart-http/info/refs?service=git-upload-pack",
+      ),
+    });
+
+    expect(response.status).toBe(404);
+    expect(authorizeRepositoryRequestMock).not.toHaveBeenCalled();
+    expect(handleSmartHttpRequestMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 413 for oversized rpc bodies before invoking git-http-backend", async () => {
+    resolveServerRequestPrincipalMock.mockResolvedValueOnce({
+      authMethod: "session",
+      hasInvalidCredentials: false,
+      ipAddress: "127.0.0.1",
+      isAuthenticated: true,
+      isRateLimited: false,
+      retryAfterSeconds: null,
+      session: null,
+      shouldClearSessionCookie: false,
+      user: {
+        emailAddress: "door@example.com",
+        id: 7,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        name: "Door TTS",
+      },
+    });
+    requiresReceivePackAuthMock.mockReturnValueOnce(true);
+
+    const response = await getHandlers().POST({
+      params: { _splat: "git-receive-pack", repoId: "1001" },
+      request: new Request("http://localhost/api/repos/1001/smart-http/git-receive-pack", {
+        body: "ignored",
+        headers: {
+          "content-length": String(100 * 1024 * 1024 + 1),
+        },
+        method: "POST",
+      }),
+    });
+
+    expect(response.status).toBe(413);
+    expect(authorizeRepositoryRequestMock).not.toHaveBeenCalled();
+    expect(handleSmartHttpRequestMock).not.toHaveBeenCalled();
   });
 });

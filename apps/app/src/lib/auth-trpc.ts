@@ -34,6 +34,7 @@ import {
   validateCsrfToken,
   type SessionCookieOptions,
 } from "@yona/auth";
+import { getBetterAuthSessionCookieOptions } from "@yona/auth/better-auth";
 import { buildPasswordResetUrl, sendPasswordResetEmail } from "@yona/integrations";
 
 export interface AuthProcedureContext {
@@ -67,6 +68,14 @@ function clearSessionCookie(ctx: AuthProcedureContext): void {
   ctx.deleteCookie(sessionCookieName, {
     path: "/",
   });
+}
+
+async function resolveSessionCookieOptions(): Promise<SessionCookieOptions> {
+  try {
+    return await getBetterAuthSessionCookieOptions();
+  } catch {
+    return getSessionCookieOptions();
+  }
 }
 
 async function requireAuthenticatedCurrentSession(ctx: AuthProcedureContext) {
@@ -175,7 +184,11 @@ export const authRouter = t.router({
         ipAddress: ctx.getRequestIp(),
         userAgent: ctx.getRequestHeader("user-agent") ?? "unknown",
       });
-      ctx.setCookie(sessionCookieName, issuedSession.session.token, getSessionCookieOptions());
+      ctx.setCookie(
+        sessionCookieName,
+        issuedSession.session.token,
+        await resolveSessionCookieOptions(),
+      );
 
       return {
         ok: true,
@@ -204,7 +217,11 @@ export const authRouter = t.router({
         ipAddress: ctx.getRequestIp(),
         userAgent: ctx.getRequestHeader("user-agent") ?? "unknown",
       });
-      ctx.setCookie(sessionCookieName, issuedSession.session.token, getSessionCookieOptions());
+      ctx.setCookie(
+        sessionCookieName,
+        issuedSession.session.token,
+        await resolveSessionCookieOptions(),
+      );
 
       return {
         ok: true,

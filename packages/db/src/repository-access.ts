@@ -9,6 +9,7 @@ const ORG_ADMIN_ROLE_ID = 6;
 const ORG_MEMBER_ROLE_ID = 7;
 
 export interface RepositoryAccessFactsRecord {
+  isGitRepository: boolean;
   isAnonymous: boolean;
   isCodeAccessibleMemberOnly: boolean;
   isOrganizationAdmin: boolean;
@@ -71,6 +72,7 @@ export async function loadRepositoryAccessFacts(
       isCodeAccessibleMemberOnly: schema.project.isCodeAccessibleMemberOnly,
       organizationId: schema.project.organizationId,
       projectScope: schema.project.projectScope,
+      vcs: schema.project.vcs,
     })
     .from(schema.project)
     .where(eq(schema.project.id, parsedRepositoryId))
@@ -82,6 +84,7 @@ export async function loadRepositoryAccessFacts(
 
   if (userId === null) {
     return {
+      isGitRepository: project.vcs?.trim().toUpperCase() === "GIT",
       isAnonymous: true,
       isCodeAccessibleMemberOnly: Boolean(project.isCodeAccessibleMemberOnly),
       isOrganizationAdmin: false,
@@ -153,6 +156,7 @@ export async function loadRepositoryAccessFacts(
   );
 
   return {
+    isGitRepository: project.vcs?.trim().toUpperCase() === "GIT",
     isAnonymous: false,
     isCodeAccessibleMemberOnly: Boolean(project.isCodeAccessibleMemberOnly),
     isOrganizationAdmin,

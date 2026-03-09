@@ -390,6 +390,19 @@ export const linkedAccount = sqliteTable(
     providerKey: text("provider_key").default("NULL"),
     providerDisplayName: text("provider_display_name").default("NULL"),
     avatarUrl: text("avatar_url").default("NULL"),
+    password: text().default("NULL"),
+    accessToken: text("access_token").default("NULL"),
+    refreshToken: text("refresh_token").default("NULL"),
+    idToken: text("id_token").default("NULL"),
+    accessTokenExpiresAt: integer("access_token_expires_at", { mode: "timestamp" }).default(
+      sql`NULL`,
+    ),
+    refreshTokenExpiresAt: integer("refresh_token_expires_at", { mode: "timestamp" }).default(
+      sql`NULL`,
+    ),
+    scope: text().default("NULL"),
+    createdAt: integer("created_at", { mode: "timestamp" }).default(sql`NULL`),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`NULL`),
   },
   (table) => [
     index("ix_linked_account_user_credential_1").on(table.userCredentialId),
@@ -987,8 +1000,31 @@ export const userCredential = sqliteTable(
     name: text().default("NULL"),
     active: integer({ mode: "boolean" }).default(false),
     emailValidated: integer("email_validated", { mode: "boolean" }).default(false),
+    image: text().default("NULL"),
+    createdAt: integer("created_at", { mode: "timestamp" }).default(sql`NULL`),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`NULL`),
   },
-  (table) => [index("ix_user_credential_user_id_1").on(table.userId)],
+  (table) => [
+    index("ix_user_credential_user_id_1").on(table.userId),
+    uniqueIndex("uq_user_credential_email").on(table.email),
+    uniqueIndex("uq_user_credential_login_id").on(table.loginId),
+  ],
+);
+
+export const verification = sqliteTable(
+  "verification",
+  {
+    id: integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
+    identifier: text().notNull(),
+    value: text().notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).default(sql`NULL`),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`NULL`),
+  },
+  (table) => [
+    uniqueIndex("uq_verification_identifier").on(table.identifier),
+    index("ix_verification_expires_at").on(table.expiresAt),
+  ],
 );
 
 export const userEnrolledOrganization = sqliteTable("user_enrolled_organization", {

@@ -101,15 +101,11 @@ export async function hashSessionToken(token: string): Promise<string> {
 export async function createSession(input: CreateRuntimeSessionInput): Promise<CreatedSession> {
   const now = input.now ?? new Date();
   const token = generateResetToken();
-  const tokenHash = await hashSessionToken(token);
-  const csrfToken = generateResetToken();
   const expiresAt = new Date(now.getTime() + getSessionCookieMaxAge() * 1000);
-
-  await inMemorySessionStore.create({
+  const { csrfToken } = await upsertSessionMetadata({
     createdAt: now,
-    csrfToken,
     expiresAt,
-    tokenHash,
+    token,
     userId: input.userId,
   });
 
@@ -129,11 +125,51 @@ export async function getSessionByToken(
   return inMemorySessionStore.getByTokenHash(tokenHash, now);
 }
 
+export async function upsertSessionMetadata(input: {
+  createdAt?: Date;
+  csrfToken?: string;
+  expiresAt: Date;
+  token: string;
+  userId: number;
+}): Promise<SessionRecord> {
+  const tokenHash = await hashSessionToken(input.token);
+  const existingSession = await inMemorySessionStore.getByTokenHash(tokenHash, new Date(0));
+  const csrfToken = input.csrfToken ?? existingSession?.csrfToken ?? generateResetToken();
+
+  await inMemorySessionStore.create({
+    createdAt: input.createdAt ?? new Date(),
+    csrfToken,
+    expiresAt: input.expiresAt,
+    tokenHash,
+    userId: input.userId,
+  });
+
+  return {
+    csrfToken,
+    expiresAt: input.expiresAt,
+    userId: input.userId,
+  };
+}
+
 export async function deleteSessionByToken(token: string): Promise<void> {
   const tokenHash = await hashSessionToken(token);
   await inMemorySessionStore.deleteByTokenHash(tokenHash);
+
+  try {
+    const { deleteBetterAuthSessionByCookieValue } = await import("./better-auth");
+    await deleteBetterAuthSessionByCookieValue(token);
+  } catch {
+    // Better Auth may be unavailable in isolated unit tests.
+  }
 }
 
 export async function deleteAllSessionsByUserId(userId: number): Promise<void> {
   await inMemorySessionStore.deleteAllByUserId(userId);
+
+  try {
+    const { deleteBetterAuthSessionsByActorId } = await import("./better-auth");
+    await deleteBetterAuthSessionsByActorId(userId);
+  } catch {
+    // Better Auth may be unavailable in isolated unit tests.
+  }
 }

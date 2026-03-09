@@ -1,7 +1,14 @@
 import type { QueryClient } from "@tanstack/react-query";
-export { buildAnonymousAppSession } from "@yona/auth";
-import { buildAnonymousAppSession } from "@yona/auth";
 import type { AppSessionProjection } from "@yona/contracts";
+import { buildAnonymousSession } from "@yona/domain";
+
+export function buildAnonymousAppSession(): AppSessionProjection {
+  return {
+    ...buildAnonymousSession(),
+    emailAddress: null,
+    userLabel: null,
+  };
+}
 
 export interface ProtectedRedirect {
   search: {

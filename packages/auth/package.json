@@ -12,7 +12,9 @@
     "@yona/contracts": "workspace:*",
     "@yona/db": "workspace:*",
     "@yona/domain": "workspace:*",
+    "@yona/integrations": "workspace:*",
     "bcryptjs": "^3.0.3",
+    "better-auth": "^1.5.1",
     "keyv": "^5.5.4"
   },
   "devDependencies": {

@@ -63,6 +63,7 @@ describe("repository access facts", () => {
 
     const facts = await loadRepositoryAccessFacts("300", 100, db as never);
     expect(facts).toMatchObject({
+      isGitRepository: true,
       isAnonymous: false,
       isOrganizationAdmin: false,
       isOrganizationMember: true,
@@ -130,6 +131,7 @@ describe("repository access facts", () => {
 
     const orgMemberFacts = await loadRepositoryAccessFacts("301", 101, db as never);
     expect(orgMemberFacts).toMatchObject({
+      isGitRepository: true,
       isCodeAccessibleMemberOnly: true,
       isOrganizationMember: true,
       isProjectManager: false,
@@ -161,9 +163,27 @@ describe("repository access facts", () => {
     });
 
     await expect(loadRepositoryAccessFacts("302", null, db as never)).resolves.toMatchObject({
+      isGitRepository: true,
       isAnonymous: true,
       projectId: 302,
       projectScope: "public",
+    });
+  });
+
+  it("marks non-git projects so protocol routes can normalize them to 404", async () => {
+    await db.insert(project).values({
+      id: 303,
+      isCodeAccessibleMemberOnly: false,
+      name: "legacy-svn-project",
+      owner: "legacy",
+      projectScope: "public",
+      vcs: "SVN",
+    });
+
+    await expect(loadRepositoryAccessFacts("303", null, db as never)).resolves.toMatchObject({
+      isAnonymous: true,
+      isGitRepository: false,
+      projectId: 303,
     });
   });
 });

@@ -135,6 +135,7 @@ import { createAuthCaller, type AuthProcedureContext } from "./auth-trpc";
 
 interface TestAuthContext extends AuthProcedureContext {
   cookies: Map<string, string>;
+  cookieOptions: Map<string, unknown>;
   requestHeaders: Map<string, string>;
   responseHeaders: Map<string, string>;
   responseStatus: null | {
@@ -147,6 +148,7 @@ interface TestAuthContext extends AuthProcedureContext {
 
 function createTestContext(): TestAuthContext {
   const cookies = new Map<string, string>();
+  const cookieOptions = new Map<string, unknown>();
   const requestHeaders = new Map<string, string>([["user-agent", "vitest"]]);
   const responseHeaders = new Map<string, string>();
   let responseStatus: TestAuthContext["responseStatus"] = null;
@@ -159,8 +161,10 @@ function createTestContext(): TestAuthContext {
 
   return {
     cookies,
+    cookieOptions,
     deleteCookie(name) {
       cookies.delete(name);
+      cookieOptions.delete(name);
     },
     getCookie(name) {
       return cookies.get(name);
@@ -178,8 +182,9 @@ function createTestContext(): TestAuthContext {
     },
     setResponseHeaderMock,
     setResponseStatusMock,
-    setCookie(name, value) {
+    setCookie(name, value, options) {
       cookies.set(name, value);
+      cookieOptions.set(name, options);
     },
     setResponseHeader(name, value) {
       setResponseHeaderMock(name, value);
@@ -276,6 +281,39 @@ describe("auth tRPC procedures", () => {
     });
 
     expect(context.cookies.has(getSessionCookieName())).toBe(false);
+  });
+
+  it("preserves secure cookie settings when Better Auth session initialization falls back", async () => {
+    const context = createTestContext();
+    const caller = createAuthCaller(context);
+    process.env = {
+      ...ORIGINAL_ENV,
+      NODE_ENV: "production",
+      YONA_PUBLIC_ORIGIN: "https://public.yona.test",
+    };
+
+    await createAppUser({
+      emailAddress: "door@example.com",
+      loginId: "door",
+      name: "Door TTS",
+      password: "strong-pass-123",
+    });
+
+    await expect(
+      caller.signInWithPassword({
+        identifier: "door",
+        password: "strong-pass-123",
+      }),
+    ).resolves.toMatchObject({
+      ok: true,
+    });
+
+    expect(context.cookieOptions.get(getSessionCookieName())).toMatchObject({
+      httpOnly: true,
+      path: "/",
+      sameSite: "lax",
+      secure: true,
+    });
   });
 
   it("collapses stale session cookies to anonymous and clears the cookie", async () => {

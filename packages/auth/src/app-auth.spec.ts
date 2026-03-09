@@ -397,4 +397,52 @@ describe("app auth service", () => {
       },
     });
   });
+
+  it("invalidates outstanding reset tokens when an admin rotates the password", async () => {
+    const creation = await createAppUser({
+      emailAddress: "doortts@gmail.com",
+      loginId: "doortts",
+      name: "Door TTS",
+      password: "strong-pass-123",
+    });
+
+    if (!creation.ok) {
+      throw new Error("Expected test user to be created.");
+    }
+
+    const resetRequest = await issuePasswordResetToken({
+      emailAddress: "doortts@gmail.com",
+      loginId: "doortts",
+    });
+
+    if (!resetRequest.resetToken) {
+      throw new Error("Expected reset token to be issued.");
+    }
+
+    const adminReset = await resetPasswordByAdmin({
+      userId: creation.user.id,
+    });
+
+    if (!adminReset.ok) {
+      throw new Error("Expected admin reset to succeed.");
+    }
+
+    await expect(
+      resetPasswordWithToken({
+        newPassword: "changed-pass-456",
+        token: resetRequest.resetToken,
+      }),
+    ).resolves.toEqual({
+      ok: false,
+    });
+
+    await expect(
+      authenticatePasswordSignIn("doortts", adminReset.temporaryPassword),
+    ).resolves.toMatchObject({
+      ok: true,
+      session: {
+        isAnonymous: false,
+      },
+    });
+  });
 });

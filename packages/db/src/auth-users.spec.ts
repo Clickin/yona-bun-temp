@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from "bun:test";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/bun-sql";
 import { n4user, siteAdmin } from "@drizzle/sqlite/schema";
 import {
@@ -87,5 +88,42 @@ describe("db auth user helpers", () => {
       id: user.id,
       isSiteAdmin: true,
     });
+  });
+
+  it("rolls back root auth-user creation when credential bootstrap fails", async () => {
+    await createPasswordAuthUser(
+      {
+        emailAddress: "rollback@example.com",
+        loginId: "rollback-primary",
+        name: "Rollback Primary",
+        passwordHash: "hashed-password",
+        passwordSalt: "salt",
+      },
+      db as never,
+    );
+
+    await expect(
+      createPasswordAuthUser(
+        {
+          emailAddress: "rollback@example.com",
+          loginId: "rollback-secondary",
+          name: "Rollback Secondary",
+          passwordHash: "hashed-password",
+          passwordSalt: "salt",
+        },
+        db as never,
+      ),
+    ).rejects.toThrow();
+
+    await expect(findAuthUserByIdentifier("rollback-secondary", db as never)).resolves.toBeNull();
+
+    const leftoverActors = await db
+      .select({
+        id: n4user.id,
+      })
+      .from(n4user)
+      .where(eq(n4user.loginId, "rollback-secondary"));
+
+    expect(leftoverActors).toHaveLength(0);
   });
 });

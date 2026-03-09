@@ -14,6 +14,7 @@ export {
   getSessionCookieName,
   getSessionCookieOptions,
   hashSessionToken,
+  upsertSessionMetadata,
   type CreatedSession,
   type CreateRuntimeSessionInput,
   type SessionCookieOptionInput,
@@ -26,7 +27,12 @@ export {
   readRequestCsrfToken,
   validateCsrfToken,
 } from "./csrf";
-export { hashPassword, verifyPassword } from "./password";
+export {
+  hashCredentialPassword,
+  hashPassword,
+  verifyCredentialPassword,
+  verifyPassword,
+} from "./password";
 export { generateResetToken, hashToken, verifyToken } from "./tokens";
 export {
   getOrCreateUserApiToken,
@@ -35,6 +41,15 @@ export {
   type RequestAuthMethod,
   type ResolvedRequestPrincipal,
 } from "./request-auth";
+export {
+  createBetterAuthSessionForActor,
+  deleteBetterAuthSessionByCookieValue,
+  deleteBetterAuthSessionsByActorId,
+  getBetterAuth,
+  getBetterAuthSessionCookieOptions,
+  readBetterAuthSessionFromCookie,
+  resetBetterAuthStateForTests,
+} from "./better-auth";
 export {
   authenticatePasswordSignIn,
   buildAnonymousAppSession,

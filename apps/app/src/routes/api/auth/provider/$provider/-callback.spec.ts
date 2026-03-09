@@ -1,27 +1,51 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { authHandlerMock, getBetterAuthMock } = vi.hoisted(() => {
+  const handlerMock = vi.fn(async (request: Request) =>
+    Response.json({
+      forwardedTo: request.url,
+    }),
+  );
+
+  return {
+    authHandlerMock: handlerMock,
+    getBetterAuthMock: vi.fn(async () => ({
+      handler: handlerMock,
+    })),
+  };
+});
+
+vi.mock("@yona/auth/better-auth", () => ({
+  getBetterAuth: getBetterAuthMock,
+}));
+
 import { Route } from "./callback";
 
 function getCallbackHandler() {
   return (
     Route.options.server!.handlers as {
-      GET: (input: { params: { provider: string } }) => Promise<Response>;
+      GET: (input: { params: { provider: string }; request: Request }) => Promise<Response>;
     }
   ).GET;
 }
 
 describe("/api/auth/provider/$provider/callback route", () => {
-  it("keeps supported providers reserved until OAuth migration lands", async () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("forwards supported providers to the Better Auth callback route", async () => {
     const response = await getCallbackHandler()({
       params: {
         provider: "github",
       },
+      request: new Request("https://yona.test/api/auth/provider/github/callback?code=oauth-code"),
     });
 
-    expect(response.status).toBe(501);
+    expect(authHandlerMock).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      error:
-        "OAuth callback contract is reserved in apps/app, but provider exchange is still pending migration.",
-      provider: "github",
+      forwardedTo: "https://yona.test/api/auth/callback/github?code=oauth-code",
     });
   });
 
@@ -30,6 +54,7 @@ describe("/api/auth/provider/$provider/callback route", () => {
       params: {
         provider: "gitlab",
       },
+      request: new Request("https://yona.test/api/auth/provider/gitlab/callback"),
     });
 
     expect(response.status).toBe(400);

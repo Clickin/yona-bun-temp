@@ -398,6 +398,15 @@ export const linkedAccount = pgTable(
     providerKey: varchar("provider_key", { length: 255 }).default("NULL"),
     providerDisplayName: varchar("provider_display_name", { length: 255 }).default("NULL"),
     avatarUrl: varchar("avatar_url", { length: 255 }).default("NULL"),
+    password: varchar({ length: 255 }).default("NULL"),
+    accessToken: longtext("access_token").default(sql`NULL`),
+    refreshToken: longtext("refresh_token").default(sql`NULL`),
+    idToken: longtext("id_token").default(sql`NULL`),
+    accessTokenExpiresAt: datetime("access_token_expires_at").default(sql`NULL`),
+    refreshTokenExpiresAt: datetime("refresh_token_expires_at").default(sql`NULL`),
+    scope: varchar({ length: 255 }).default("NULL"),
+    createdAt: datetime("created_at").default(sql`NULL`),
+    updatedAt: datetime("updated_at").default(sql`NULL`),
   },
   (table) => [
     index("ix_linked_account_user_credential_1").on(table.userCredentialId),
@@ -991,8 +1000,31 @@ export const userCredential = pgTable(
     name: varchar({ length: 255 }).default("NULL"),
     active: boolean().default(false),
     emailValidated: boolean("email_validated").default(false),
+    image: varchar({ length: 255 }).default("NULL"),
+    createdAt: datetime("created_at").default(sql`NULL`),
+    updatedAt: datetime("updated_at").default(sql`NULL`),
   },
-  (table) => [index("ix_user_credential_user_id_1").on(table.userId)],
+  (table) => [
+    index("ix_user_credential_user_id_1").on(table.userId),
+    uniqueIndex("uq_user_credential_email").on(table.email),
+    uniqueIndex("uq_user_credential_login_id").on(table.loginId),
+  ],
+);
+
+export const verification = pgTable(
+  "verification",
+  {
+    id: bigserial({ mode: "number" }).notNull(),
+    identifier: varchar({ length: 255 }).notNull(),
+    value: varchar({ length: 255 }).notNull(),
+    expiresAt: datetime("expires_at").notNull(),
+    createdAt: datetime("created_at").default(sql`NULL`),
+    updatedAt: datetime("updated_at").default(sql`NULL`),
+  },
+  (table) => [
+    uniqueIndex("uq_verification_identifier").on(table.identifier),
+    index("ix_verification_expires_at").on(table.expiresAt),
+  ],
 );
 
 export const userEnrolledOrganization = pgTable("user_enrolled_organization", {

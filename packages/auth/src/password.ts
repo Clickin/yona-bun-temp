@@ -17,3 +17,14 @@ export async function verifyPassword(
 ): Promise<boolean> {
   return compare(buildPasswordInput(password, salt), passwordHash);
 }
+
+export async function hashCredentialPassword(password: string): Promise<string> {
+  return hash(password, BCRYPT_COST_FACTOR);
+}
+
+export async function verifyCredentialPassword(
+  password: string,
+  passwordHash: string,
+): Promise<boolean> {
+  return compare(password, passwordHash);
+}

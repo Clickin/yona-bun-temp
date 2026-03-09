@@ -1,6 +1,6 @@
 import {
   mysqlTable,
-  bigint,
+  bigint as mysqlBigint,
   varchar,
   datetime,
   int,
@@ -13,8 +13,36 @@ import {
   index,
   uniqueIndex,
   foreignKey,
+  type MySqlBigIntConfig,
 } from "drizzle-orm/mysql-core";
 import { sql } from "drizzle-orm";
+
+type LegacyAutoIncrementPrimaryKeyBuilder = {
+  autoincrement(): unknown;
+  primaryKey(): unknown;
+};
+
+function withLegacyAutoIncrementPrimaryKey(column: LegacyAutoIncrementPrimaryKeyBuilder) {
+  const primaryKey = column.primaryKey.bind(column);
+
+  return Object.assign(column, {
+    primaryKey(config?: { autoIncrement?: boolean }) {
+      if (config?.autoIncrement) {
+        column.autoincrement();
+      }
+
+      return primaryKey();
+    },
+  });
+}
+
+function bigint(config: MySqlBigIntConfig): any;
+function bigint(name: string, config: MySqlBigIntConfig): any;
+function bigint(...args: [MySqlBigIntConfig] | [string, MySqlBigIntConfig]) {
+  const column = args.length === 1 ? mysqlBigint(args[0]) : mysqlBigint(args[0], args[1]);
+
+  return withLegacyAutoIncrementPrimaryKey(column);
+}
 
 export const assignee = mysqlTable(
   "assignee",
@@ -397,6 +425,15 @@ export const linkedAccount = mysqlTable(
     providerKey: varchar("provider_key", { length: 255 }).default("NULL"),
     providerDisplayName: varchar("provider_display_name", { length: 255 }).default("NULL"),
     avatarUrl: varchar("avatar_url", { length: 255 }).default("NULL"),
+    password: varchar({ length: 255 }).default("NULL"),
+    accessToken: longtext("access_token").default(sql`NULL`),
+    refreshToken: longtext("refresh_token").default(sql`NULL`),
+    idToken: longtext("id_token").default(sql`NULL`),
+    accessTokenExpiresAt: datetime("access_token_expires_at").default(sql`NULL`),
+    refreshTokenExpiresAt: datetime("refresh_token_expires_at").default(sql`NULL`),
+    scope: varchar({ length: 255 }).default("NULL"),
+    createdAt: datetime("created_at").default(sql`NULL`),
+    updatedAt: datetime("updated_at").default(sql`NULL`),
   },
   (table) => [
     index("ix_linked_account_user_credential_1").on(table.userCredentialId),
@@ -990,8 +1027,31 @@ export const userCredential = mysqlTable(
     name: varchar({ length: 255 }).default("NULL"),
     active: boolean().default(false),
     emailValidated: boolean("email_validated").default(false),
+    image: varchar({ length: 255 }).default("NULL"),
+    createdAt: datetime("created_at").default(sql`NULL`),
+    updatedAt: datetime("updated_at").default(sql`NULL`),
   },
-  (table) => [index("ix_user_credential_user_id_1").on(table.userId)],
+  (table) => [
+    index("ix_user_credential_user_id_1").on(table.userId),
+    uniqueIndex("uq_user_credential_email").on(table.email),
+    uniqueIndex("uq_user_credential_login_id").on(table.loginId),
+  ],
+);
+
+export const verification = mysqlTable(
+  "verification",
+  {
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
+    identifier: varchar({ length: 255 }).notNull(),
+    value: varchar({ length: 255 }).notNull(),
+    expiresAt: datetime("expires_at").notNull(),
+    createdAt: datetime("created_at").default(sql`NULL`),
+    updatedAt: datetime("updated_at").default(sql`NULL`),
+  },
+  (table) => [
+    uniqueIndex("uq_verification_identifier").on(table.identifier),
+    index("ix_verification_expires_at").on(table.expiresAt),
+  ],
 );
 
 export const userEnrolledOrganization = mysqlTable("user_enrolled_organization", {

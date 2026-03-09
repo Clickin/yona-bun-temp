@@ -7,6 +7,18 @@ import viteReact from "@vitejs/plugin-react";
 export default defineConfig({
   resolve: {
     alias: {
+      "@yona/auth/better-auth": fileURLToPath(
+        new URL("../../packages/auth/src/better-auth.ts", import.meta.url),
+      ),
+      "@yona/contracts": fileURLToPath(
+        new URL("../../packages/contracts/src/index.ts", import.meta.url),
+      ),
+      "@yona/db": fileURLToPath(new URL("../../packages/db/src/index.ts", import.meta.url)),
+      "@yona/domain": fileURLToPath(new URL("../../packages/domain/src/index.ts", import.meta.url)),
+      "@yona/integrations": fileURLToPath(
+        new URL("../../packages/integrations/src/index.ts", import.meta.url),
+      ),
+      "@yona/vcs": fileURLToPath(new URL("../../packages/vcs/src/index.ts", import.meta.url)),
       "@drizzle/mysql/relations": fileURLToPath(
         new URL("../../drizzle/mysql/relations.ts", import.meta.url),
       ),
