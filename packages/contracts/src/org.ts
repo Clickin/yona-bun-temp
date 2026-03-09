@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { authDisplayNameSchema, authLoginIdSchema } from "./auth";
 
 const ORGANIZATION_NAME_PATTERN = /^[a-zA-Z0-9가-힣-]+([_.][a-z_.A-Z0-9가-힣-]+)*$/;
 
@@ -50,6 +51,40 @@ export const organizationUpdateInputSchema = z
   .strict();
 
 export type OrganizationUpdateInput = z.infer<typeof organizationUpdateInputSchema>;
+
+export const organizationMemberRoleValues = ["org_admin", "org_member"] as const;
+
+export const organizationMemberRoleSchema = z.enum(organizationMemberRoleValues);
+
+export type OrganizationMemberRole = z.infer<typeof organizationMemberRoleSchema>;
+
+export const organizationMemberSchema = z
+  .object({
+    loginId: authLoginIdSchema,
+    role: organizationMemberRoleSchema,
+    userLabel: authDisplayNameSchema,
+  })
+  .strict();
+
+export type OrganizationMember = z.infer<typeof organizationMemberSchema>;
+
+export const organizationEnrollmentRequestSchema = z
+  .object({
+    loginId: authLoginIdSchema,
+    userLabel: authDisplayNameSchema,
+  })
+  .strict();
+
+export type OrganizationEnrollmentRequest = z.infer<typeof organizationEnrollmentRequestSchema>;
+
+export const organizationMemberDirectorySchema = z
+  .object({
+    enrollmentRequests: z.array(organizationEnrollmentRequestSchema),
+    members: z.array(organizationMemberSchema),
+  })
+  .strict();
+
+export type OrganizationMemberDirectory = z.infer<typeof organizationMemberDirectorySchema>;
 
 export const organizationSummarySchema = z
   .object({

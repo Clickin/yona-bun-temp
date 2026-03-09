@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   createProjectMock,
+  listProjectMembersMock,
   readCurrentSessionMock,
   readProjectDetailMock,
   readProjectSettingsMock,
   updateProjectMock,
 } = vi.hoisted(() => ({
   createProjectMock: vi.fn(),
+  listProjectMembersMock: vi.fn(),
   readCurrentSessionMock: vi.fn(),
   readProjectDetailMock: vi.fn(),
   readProjectSettingsMock: vi.fn(),
@@ -19,6 +21,7 @@ vi.mock("@yona/domain", async () => {
   return {
     ...actual,
     createProject: createProjectMock,
+    listProjectMembers: listProjectMembersMock,
     readProjectDetail: readProjectDetailMock,
     readProjectSettings: readProjectSettingsMock,
     updateProject: updateProjectMock,
@@ -150,6 +153,21 @@ describe("project tRPC", () => {
       projectScope: "private",
       viewerCanUpdate: true,
     });
+    listProjectMembersMock.mockResolvedValueOnce({
+      enrollmentRequests: [
+        {
+          loginId: "guest-user",
+          userLabel: "Guest User",
+        },
+      ],
+      members: [
+        {
+          loginId: "yobi",
+          role: "manager",
+          userLabel: "Yobi",
+        },
+      ],
+    });
 
     const caller = createProjectCaller(createContext("session-token"));
 
@@ -174,6 +192,27 @@ describe("project tRPC", () => {
       ownerName: "yobi",
       projectName: "projectYobi",
       projectScope: "public",
+    });
+
+    await expect(
+      caller.readProjectMembers({
+        ownerName: "yobi",
+        projectName: "projectYobi",
+      }),
+    ).resolves.toEqual({
+      enrollmentRequests: [
+        {
+          loginId: "guest-user",
+          userLabel: "Guest User",
+        },
+      ],
+      members: [
+        {
+          loginId: "yobi",
+          role: "manager",
+          userLabel: "Yobi",
+        },
+      ],
     });
 
     await expect(

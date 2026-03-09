@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   createOrganizationMock,
+  listOrganizationMembersMock,
   readCurrentSessionMock,
   readOrganizationDetailMock,
   readOrganizationSettingsMock,
   updateOrganizationMock,
 } = vi.hoisted(() => ({
   createOrganizationMock: vi.fn(),
+  listOrganizationMembersMock: vi.fn(),
   readCurrentSessionMock: vi.fn(),
   readOrganizationDetailMock: vi.fn(),
   readOrganizationSettingsMock: vi.fn(),
@@ -19,6 +21,7 @@ vi.mock("@yona/domain", async () => {
   return {
     ...actual,
     createOrganization: createOrganizationMock,
+    listOrganizationMembers: listOrganizationMembersMock,
     readOrganizationDetail: readOrganizationDetailMock,
     readOrganizationSettings: readOrganizationSettingsMock,
     updateOrganization: updateOrganizationMock,
@@ -134,6 +137,21 @@ describe("organization tRPC", () => {
       organizationName: "weblabs",
       viewerCanUpdate: true,
     });
+    listOrganizationMembersMock.mockResolvedValueOnce({
+      enrollmentRequests: [
+        {
+          loginId: "guest-user",
+          userLabel: "Guest User",
+        },
+      ],
+      members: [
+        {
+          loginId: "doortts",
+          role: "org_admin",
+          userLabel: "Door TTS",
+        },
+      ],
+    });
 
     const caller = createOrganizationCaller(createContext("session-token"));
 
@@ -146,6 +164,26 @@ describe("organization tRPC", () => {
       description: "weblab < labs",
       organizationName: "weblabs",
       viewerCanUpdate: true,
+    });
+
+    await expect(
+      caller.readOrganizationMembers({
+        organizationName: "weblabs",
+      }),
+    ).resolves.toEqual({
+      enrollmentRequests: [
+        {
+          loginId: "guest-user",
+          userLabel: "Guest User",
+        },
+      ],
+      members: [
+        {
+          loginId: "doortts",
+          role: "org_admin",
+          userLabel: "Door TTS",
+        },
+      ],
     });
 
     await expect(

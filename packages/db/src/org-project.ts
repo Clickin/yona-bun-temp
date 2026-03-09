@@ -1,7 +1,9 @@
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import type {
+  OrganizationMemberRole,
   OrganizationCreateInput,
   OrganizationUpdateInput,
+  ProjectMemberRole,
   ProjectCreateInput,
   ProjectScope,
   ProjectUpdateInput,
@@ -30,6 +32,27 @@ export interface OrganizationAuthorizationRecord {
   };
 }
 
+export interface OrganizationEnrollmentRequestSummaryRecord {
+  loginId: string;
+  userLabel: string;
+}
+
+export interface OrganizationMemberRecord {
+  loginId: string;
+  role: OrganizationMemberRole;
+  userLabel: string;
+}
+
+export interface OrganizationMemberDirectoryRecord {
+  enrollmentRequests: OrganizationEnrollmentRequestSummaryRecord[];
+  members: OrganizationMemberRecord[];
+}
+
+export interface EnrollmentRequestRecord {
+  projectId: number;
+  userId: number;
+}
+
 export interface ProjectRecord {
   id: number;
   organizationId: null | number;
@@ -50,6 +73,22 @@ export interface ProjectAuthorizationRecord {
     isProjectMember: boolean;
     isSiteAdmin: boolean;
   };
+}
+
+export interface ProjectEnrollmentRequestSummaryRecord {
+  loginId: string;
+  userLabel: string;
+}
+
+export interface ProjectMemberRecord {
+  loginId: string;
+  role: ProjectMemberRole;
+  userLabel: string;
+}
+
+export interface ProjectMemberDirectoryRecord {
+  enrollmentRequests: ProjectEnrollmentRequestSummaryRecord[];
+  members: ProjectMemberRecord[];
 }
 
 function normalizeIdentifier(value: string): string {
@@ -159,6 +198,76 @@ function mapProjectRecord(row: {
     overview: normalizeNullableText(row.overview),
     projectName,
     projectScope: normalizeProjectScope(row.projectScope),
+  };
+}
+
+function mapProjectMemberRole(value: null | string): null | ProjectMemberRole {
+  const normalized = normalizeNullableText(value)?.toLowerCase();
+  if (normalized === "manager" || normalized === "member") {
+    return normalized;
+  }
+
+  return null;
+}
+
+function mapOrganizationMemberRole(value: null | string): null | OrganizationMemberRole {
+  const normalized = normalizeNullableText(value)?.toLowerCase();
+  if (normalized === "org_admin" || normalized === "org_member") {
+    return normalized;
+  }
+
+  return null;
+}
+
+function mapUserSummaryRecord(row: {
+  loginId: null | string;
+  userLabel: null | string;
+}): null | {
+  loginId: string;
+  userLabel: string;
+} {
+  const loginId = normalizeNullableText(row.loginId);
+  if (!loginId) {
+    return null;
+  }
+
+  return {
+    loginId,
+    userLabel: normalizeNullableText(row.userLabel) ?? loginId,
+  };
+}
+
+function mapProjectMemberRecord(row: {
+  loginId: null | string;
+  role: null | string;
+  userLabel: null | string;
+}): null | ProjectMemberRecord {
+  const summary = mapUserSummaryRecord(row);
+  const role = mapProjectMemberRole(row.role);
+  if (!summary || !role) {
+    return null;
+  }
+
+  return {
+    ...summary,
+    role,
+  };
+}
+
+function mapOrganizationMemberRecord(row: {
+  loginId: null | string;
+  role: null | string;
+  userLabel: null | string;
+}): null | OrganizationMemberRecord {
+  const summary = mapUserSummaryRecord(row);
+  const role = mapOrganizationMemberRole(row.role);
+  if (!summary || !role) {
+    return null;
+  }
+
+  return {
+    ...summary,
+    role,
   };
 }
 
@@ -407,6 +516,66 @@ export async function updateOrganizationRecord(
   });
 }
 
+export async function readOrganizationMembers(
+  organizationId: number,
+  db = getDb(),
+): Promise<OrganizationMemberDirectoryRecord> {
+  const schema = getDbSchema(db);
+  const memberRows = await (db as any)
+    .select({
+      loginId: schema.n4user.loginId,
+      role: schema.role.name,
+      userId: schema.n4user.id,
+      userLabel: schema.n4user.name,
+    })
+    .from(schema.organizationUser)
+    .innerJoin(schema.n4user, eq(schema.organizationUser.userId, schema.n4user.id))
+    .innerJoin(schema.role, eq(schema.organizationUser.roleId, schema.role.id))
+    .where(
+      and(
+        eq(schema.organizationUser.organizationId, organizationId),
+        inArray(schema.organizationUser.roleId, [ORG_ADMIN_ROLE_ID, ORG_MEMBER_ROLE_ID]),
+      ),
+    )
+    .orderBy(schema.n4user.name, schema.n4user.loginId);
+
+  const members = memberRows
+    .map((row: {
+      loginId: null | string;
+      role: null | string;
+      userId: number;
+      userLabel: null | string;
+    }) => ({
+      mapped: mapOrganizationMemberRecord(row),
+      userId: row.userId,
+    }))
+    .filter((row: { mapped: null | OrganizationMemberRecord; userId: number }) => row.mapped !== null);
+
+  const memberUserIds = new Set(members.map((row: { userId: number }) => row.userId));
+
+  const enrollmentRows = await (db as any)
+    .select({
+      loginId: schema.n4user.loginId,
+      userId: schema.n4user.id,
+      userLabel: schema.n4user.name,
+    })
+    .from(schema.userEnrolledOrganization)
+    .innerJoin(schema.n4user, eq(schema.userEnrolledOrganization.userId, schema.n4user.id))
+    .where(eq(schema.userEnrolledOrganization.organizationId, organizationId))
+    .orderBy(schema.n4user.name, schema.n4user.loginId);
+
+  return {
+    enrollmentRequests: enrollmentRows
+      .filter((row: { userId: number }) => !memberUserIds.has(row.userId))
+      .map(mapUserSummaryRecord)
+      .filter(
+        (row: null | OrganizationEnrollmentRequestSummaryRecord): row is OrganizationEnrollmentRequestSummaryRecord =>
+          row !== null,
+      ),
+    members: members.map((row: { mapped: OrganizationMemberRecord }) => row.mapped),
+  };
+}
+
 export async function readProjectByOwnerAndName(
   ownerName: string,
   projectName: string,
@@ -646,4 +815,138 @@ export async function updateProjectRecord(
 
     return readProjectByOwnerAndName(current.ownerName, input.projectName, tx);
   });
+}
+
+export async function readEnrollmentRequest(
+  projectId: number,
+  userId: number,
+  db = getDb(),
+): Promise<EnrollmentRequestRecord | null> {
+  const schema = getDbSchema(db);
+  const [row] = await (db as any)
+    .select({
+      projectId: schema.userEnrolledProject.projectId,
+      userId: schema.userEnrolledProject.userId,
+    })
+    .from(schema.userEnrolledProject)
+    .where(
+      and(
+        eq(schema.userEnrolledProject.projectId, projectId),
+        eq(schema.userEnrolledProject.userId, userId),
+      ),
+    )
+    .limit(1);
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    projectId: row.projectId,
+    userId: row.userId,
+  };
+}
+
+export async function createEnrollmentRequest(
+  projectId: number,
+  userId: number,
+  db = getDb(),
+): Promise<EnrollmentRequestRecord> {
+  const schema = getDbSchema(db);
+
+  return (db as any).transaction(async (tx: DatabaseType) => {
+    const existing = await readEnrollmentRequest(projectId, userId, tx);
+    if (existing) {
+      return existing;
+    }
+
+    await (tx as any).insert(schema.userEnrolledProject).values({
+      projectId,
+      userId,
+    });
+
+    const created = await readEnrollmentRequest(projectId, userId, tx);
+    if (!created) {
+      throw new Error("Failed to load newly created enrollment request.");
+    }
+
+    return created;
+  });
+}
+
+export async function deleteEnrollmentRequest(
+  projectId: number,
+  userId: number,
+  db = getDb(),
+): Promise<void> {
+  const schema = getDbSchema(db);
+
+  await (db as any)
+    .delete(schema.userEnrolledProject)
+    .where(
+      and(
+        eq(schema.userEnrolledProject.projectId, projectId),
+        eq(schema.userEnrolledProject.userId, userId),
+      ),
+    );
+}
+
+export async function readProjectMembers(
+  projectId: number,
+  db = getDb(),
+): Promise<ProjectMemberDirectoryRecord> {
+  const schema = getDbSchema(db);
+  const memberRows = await (db as any)
+    .select({
+      loginId: schema.n4user.loginId,
+      role: schema.role.name,
+      userId: schema.n4user.id,
+      userLabel: schema.n4user.name,
+    })
+    .from(schema.projectUser)
+    .innerJoin(schema.n4user, eq(schema.projectUser.userId, schema.n4user.id))
+    .innerJoin(schema.role, eq(schema.projectUser.roleId, schema.role.id))
+    .where(
+      and(
+        eq(schema.projectUser.projectId, projectId),
+        inArray(schema.projectUser.roleId, [PROJECT_MANAGER_ROLE_ID, PROJECT_MEMBER_ROLE_ID]),
+      ),
+    )
+    .orderBy(schema.n4user.name, schema.n4user.loginId);
+
+  const members = memberRows
+    .map((row: {
+      loginId: null | string;
+      role: null | string;
+      userId: number;
+      userLabel: null | string;
+    }) => ({
+      mapped: mapProjectMemberRecord(row),
+      userId: row.userId,
+    }))
+    .filter((row: { mapped: null | ProjectMemberRecord; userId: number }) => row.mapped !== null);
+
+  const memberUserIds = new Set(members.map((row: { userId: number }) => row.userId));
+
+  const enrollmentRows = await (db as any)
+    .select({
+      loginId: schema.n4user.loginId,
+      userId: schema.n4user.id,
+      userLabel: schema.n4user.name,
+    })
+    .from(schema.userEnrolledProject)
+    .innerJoin(schema.n4user, eq(schema.userEnrolledProject.userId, schema.n4user.id))
+    .where(eq(schema.userEnrolledProject.projectId, projectId))
+    .orderBy(schema.n4user.name, schema.n4user.loginId);
+
+  return {
+    enrollmentRequests: enrollmentRows
+      .filter((row: { userId: number }) => !memberUserIds.has(row.userId))
+      .map(mapUserSummaryRecord)
+      .filter(
+        (row: null | ProjectEnrollmentRequestSummaryRecord): row is ProjectEnrollmentRequestSummaryRecord =>
+          row !== null,
+      ),
+    members: members.map((row: { mapped: ProjectMemberRecord }) => row.mapped),
+  };
 }

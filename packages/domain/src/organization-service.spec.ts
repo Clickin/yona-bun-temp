@@ -3,6 +3,7 @@ import {
   DomainConflictError,
   DomainPermissionError,
   createOrganization,
+  listOrganizationMembers,
   updateOrganization,
 } from "./organization-service";
 
@@ -116,5 +117,68 @@ describe("organization service", () => {
         deps,
       ),
     ).rejects.toBeInstanceOf(DomainPermissionError);
+  });
+
+  it("returns organization members for actors with update authority", async () => {
+    const deps = {
+      createOrganizationRecord: vi.fn(),
+      grantOrganizationAdmin: vi.fn(),
+      organizationNameExists: vi.fn().mockResolvedValue(false),
+      readOrganizationAuthorization: vi.fn().mockResolvedValue({
+        organization: {
+          createdAt: new Date("2026-03-09T00:00:00.000Z"),
+          description: "labs",
+          id: 11,
+          organizationName: "labs",
+        },
+        viewer: {
+          isOrganizationAdmin: true,
+          isOrganizationMember: true,
+          isSiteAdmin: false,
+        },
+      }),
+      readOrganizationByName: vi.fn(),
+      readOrganizationMembers: vi.fn().mockResolvedValue({
+        enrollmentRequests: [
+          {
+            loginId: "guest-user",
+            userLabel: "Guest User",
+          },
+        ],
+        members: [
+          {
+            loginId: "doortts",
+            role: "org_admin",
+            userLabel: "Door TTS",
+          },
+        ],
+      }),
+      updateOrganizationRecord: vi.fn(),
+      userLoginIdExists: vi.fn().mockResolvedValue(false),
+    };
+
+    await expect(
+      listOrganizationMembers(
+        authenticatedActor,
+        {
+          organizationName: "labs",
+        },
+        deps,
+      ),
+    ).resolves.toEqual({
+      enrollmentRequests: [
+        {
+          loginId: "guest-user",
+          userLabel: "Guest User",
+        },
+      ],
+      members: [
+        {
+          loginId: "doortts",
+          role: "org_admin",
+          userLabel: "Door TTS",
+        },
+      ],
+    });
   });
 });

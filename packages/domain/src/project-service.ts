@@ -1,5 +1,7 @@
 import {
+  projectMemberDirectorySchema,
   projectDetailSchema,
+  type ProjectMemberDirectory,
   type ProjectCreateInput,
   type ProjectDetail,
   type ProjectRef,
@@ -9,6 +11,7 @@ import {
   createProjectRecord,
   grantProjectManager,
   projectIdentifierExists,
+  readProjectMembers,
   readOrganizationAuthorization,
   readProjectAuthorization,
   updateProjectRecord,
@@ -29,6 +32,7 @@ export interface ProjectServiceDeps {
   createProjectRecord: typeof createProjectRecord;
   grantProjectManager: typeof grantProjectManager;
   projectIdentifierExists: typeof projectIdentifierExists;
+  readProjectMembers: typeof readProjectMembers;
   readOrganizationAuthorization: typeof readOrganizationAuthorization;
   readProjectAuthorization: typeof readProjectAuthorization;
   updateProjectRecord: typeof updateProjectRecord;
@@ -39,6 +43,7 @@ const defaultDeps: ProjectServiceDeps = {
   createProjectRecord,
   grantProjectManager,
   projectIdentifierExists,
+  readProjectMembers,
   readOrganizationAuthorization,
   readProjectAuthorization,
   updateProjectRecord,
@@ -78,6 +83,20 @@ function toProjectDetail(
     projectScope: record.projectScope,
     viewerCanUpdate,
   });
+}
+
+function toProjectMemberDirectory(record: {
+  enrollmentRequests: {
+    loginId: string;
+    userLabel: string;
+  }[];
+  members: {
+    loginId: string;
+    role: "manager" | "member";
+    userLabel: string;
+  }[];
+}): ProjectMemberDirectory {
+  return projectMemberDirectorySchema.parse(record);
 }
 
 export async function createProject(
@@ -239,4 +258,34 @@ export async function updateProject(
   }
 
   return toProjectDetail(updated, true);
+}
+
+export async function listProjectMembers(
+  actor: DomainActor,
+  input: ProjectRef,
+  deps: ProjectServiceDeps = defaultDeps,
+): Promise<ProjectMemberDirectory> {
+  requireAuthenticatedActor(actor);
+
+  const authorization = await deps.readProjectAuthorization(
+    input.ownerName,
+    input.projectName,
+    actor.actorId,
+  );
+  if (!authorization) {
+    throw new DomainNotFoundError("Project not found.");
+  }
+
+  const updateDecision = authorizeProjectAccess(
+    {
+      ...authorization.viewer,
+      projectScope: authorization.project.projectScope,
+    },
+    "update",
+  );
+  if (!updateDecision.allowed) {
+    throw new DomainPermissionError("Project update is not allowed.");
+  }
+
+  return toProjectMemberDirectory(await deps.readProjectMembers(authorization.project.id));
 }

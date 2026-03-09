@@ -1,10 +1,17 @@
 import {
+  projectMemberDirectorySchema,
   projectCreateInputSchema,
   projectDetailSchema,
   projectRefSchema,
   projectUpdateInputSchema,
 } from "@yona/contracts";
-import { createProject, readProjectDetail, readProjectSettings, updateProject } from "@yona/domain";
+import {
+  createProject,
+  listProjectMembers,
+  readProjectDetail,
+  readProjectSettings,
+  updateProject,
+} from "@yona/domain";
 import {
   createDefaultAppResourceProcedureContext,
   readDomainActor,
@@ -43,6 +50,18 @@ export const projectRouter = t.router({
       try {
         return projectDetailSchema.parse(
           await readProjectSettings(await readDomainActor(ctx), input),
+        );
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
+      }
+    }),
+  readProjectMembers: t.procedure
+    .input(projectRefSchema)
+    .output(projectMemberDirectorySchema)
+    .query(async ({ ctx, input }) => {
+      try {
+        return projectMemberDirectorySchema.parse(
+          await listProjectMembers(await readDomainActor(ctx), input),
         );
       } catch (error) {
         return rethrowDomainAsTrpc(error);

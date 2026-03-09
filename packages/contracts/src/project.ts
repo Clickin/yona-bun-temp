@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { projectScopeSchema } from "./acl";
+import { authDisplayNameSchema, authLoginIdSchema } from "./auth";
 import { organizationNameSchema } from "./org";
 
 const PROJECT_NAME_PATTERN = /^[a-zA-Z0-9-_.가-힣]+$/;
@@ -61,6 +62,40 @@ export const projectUpdateInputSchema = z
   .strict();
 
 export type ProjectUpdateInput = z.infer<typeof projectUpdateInputSchema>;
+
+export const projectMemberRoleValues = ["manager", "member"] as const;
+
+export const projectMemberRoleSchema = z.enum(projectMemberRoleValues);
+
+export type ProjectMemberRole = z.infer<typeof projectMemberRoleSchema>;
+
+export const projectMemberSchema = z
+  .object({
+    loginId: authLoginIdSchema,
+    role: projectMemberRoleSchema,
+    userLabel: authDisplayNameSchema,
+  })
+  .strict();
+
+export type ProjectMember = z.infer<typeof projectMemberSchema>;
+
+export const projectEnrollmentRequestSummarySchema = z
+  .object({
+    loginId: authLoginIdSchema,
+    userLabel: authDisplayNameSchema,
+  })
+  .strict();
+
+export type ProjectEnrollmentRequestSummary = z.infer<typeof projectEnrollmentRequestSummarySchema>;
+
+export const projectMemberDirectorySchema = z
+  .object({
+    enrollmentRequests: z.array(projectEnrollmentRequestSummarySchema),
+    members: z.array(projectMemberSchema),
+  })
+  .strict();
+
+export type ProjectMemberDirectory = z.infer<typeof projectMemberDirectorySchema>;
 
 export const projectSummarySchema = z
   .object({

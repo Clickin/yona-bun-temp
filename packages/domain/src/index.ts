@@ -1,6 +1,7 @@
 export * from "./errors";
 export * from "./auth-policy";
 export * from "./asset-authorization";
+export * from "./enrollment-service";
 export * from "./issue-authorization";
 export * from "./organization-service";
 export * from "./project-authorization";

@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
+  projectMemberDirectorySchema,
   projectCreateInputSchema,
   projectDetailSchema,
   projectRefSchema,
@@ -18,6 +19,15 @@ export const readProjectSettings = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { createServerProjectCaller } = await import("./project-trpc.server");
     return projectDetailSchema.parse(await createServerProjectCaller().readProjectSettings(data));
+  });
+
+export const readProjectMembers = createServerFn({ method: "GET" })
+  .inputValidator(projectRefSchema)
+  .handler(async ({ data }) => {
+    const { createServerProjectCaller } = await import("./project-trpc.server");
+    return projectMemberDirectorySchema.parse(
+      await createServerProjectCaller().readProjectMembers(data),
+    );
   });
 
 export const createProject = createServerFn({ method: "POST" })

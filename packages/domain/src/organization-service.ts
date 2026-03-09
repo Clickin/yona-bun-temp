@@ -1,7 +1,9 @@
 import {
+  organizationMemberDirectorySchema,
   organizationDetailSchema,
   type OrganizationCreateInput,
   type OrganizationDetail,
+  type OrganizationMemberDirectory,
   type OrganizationRef,
   type OrganizationUpdateInput,
 } from "@yona/contracts";
@@ -11,6 +13,7 @@ import {
   organizationNameExists,
   readOrganizationAuthorization,
   readOrganizationByName,
+  readOrganizationMembers,
   updateOrganizationRecord,
   userLoginIdExists,
 } from "@yona/db";
@@ -29,6 +32,7 @@ export interface OrganizationServiceDeps {
   organizationNameExists: typeof organizationNameExists;
   readOrganizationAuthorization: typeof readOrganizationAuthorization;
   readOrganizationByName: typeof readOrganizationByName;
+  readOrganizationMembers: typeof readOrganizationMembers;
   updateOrganizationRecord: typeof updateOrganizationRecord;
   userLoginIdExists: typeof userLoginIdExists;
 }
@@ -39,6 +43,7 @@ const defaultDeps: OrganizationServiceDeps = {
   organizationNameExists,
   readOrganizationAuthorization,
   readOrganizationByName,
+  readOrganizationMembers,
   updateOrganizationRecord,
   userLoginIdExists,
 };
@@ -70,6 +75,20 @@ function toOrganizationDetail(
     organizationName: record.organizationName,
     viewerCanUpdate,
   });
+}
+
+function toOrganizationMemberDirectory(record: {
+  enrollmentRequests: {
+    loginId: string;
+    userLabel: string;
+  }[];
+  members: {
+    loginId: string;
+    role: "org_admin" | "org_member";
+    userLabel: string;
+  }[];
+}): OrganizationMemberDirectory {
+  return organizationMemberDirectorySchema.parse(record);
 }
 
 export async function createOrganization(
@@ -181,4 +200,28 @@ export async function updateOrganization(
   }
 
   return toOrganizationDetail(updated, true);
+}
+
+export async function listOrganizationMembers(
+  actor: DomainActor,
+  input: OrganizationRef,
+  deps: OrganizationServiceDeps = defaultDeps,
+): Promise<OrganizationMemberDirectory> {
+  requireAuthenticatedActor(actor);
+
+  const authorization = await deps.readOrganizationAuthorization(
+    input.organizationName,
+    actor.actorId,
+  );
+  if (!authorization) {
+    throw new DomainNotFoundError("Organization not found.");
+  }
+
+  if (!canUpdateOrganization(authorization.viewer)) {
+    throw new DomainPermissionError("Organization update is not allowed.");
+  }
+
+  return toOrganizationMemberDirectory(
+    await deps.readOrganizationMembers(authorization.organization.id),
+  );
 }

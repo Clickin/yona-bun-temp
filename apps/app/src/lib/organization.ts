@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import {
   organizationCreateInputSchema,
   organizationDetailSchema,
+  organizationMemberDirectorySchema,
   organizationRefSchema,
   organizationUpdateInputSchema,
 } from "@yona/contracts";
@@ -21,6 +22,15 @@ export const readOrganizationSettings = createServerFn({ method: "GET" })
     const { createServerOrganizationCaller } = await import("./organization-trpc.server");
     return organizationDetailSchema.parse(
       await createServerOrganizationCaller().readOrganizationSettings(data),
+    );
+  });
+
+export const readOrganizationMembers = createServerFn({ method: "GET" })
+  .inputValidator(organizationRefSchema)
+  .handler(async ({ data }) => {
+    const { createServerOrganizationCaller } = await import("./organization-trpc.server");
+    return organizationMemberDirectorySchema.parse(
+      await createServerOrganizationCaller().readOrganizationMembers(data),
     );
   });
 

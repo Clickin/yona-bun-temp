@@ -1,11 +1,13 @@
 import {
   organizationCreateInputSchema,
   organizationDetailSchema,
+  organizationMemberDirectorySchema,
   organizationRefSchema,
   organizationUpdateInputSchema,
 } from "@yona/contracts";
 import {
   createOrganization,
+  listOrganizationMembers,
   readOrganizationDetail,
   readOrganizationSettings,
   updateOrganization,
@@ -50,6 +52,18 @@ export const organizationRouter = t.router({
       try {
         return organizationDetailSchema.parse(
           await readOrganizationSettings(await readDomainActor(ctx), input),
+        );
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
+      }
+    }),
+  readOrganizationMembers: t.procedure
+    .input(organizationRefSchema)
+    .output(organizationMemberDirectorySchema)
+    .query(async ({ ctx, input }) => {
+      try {
+        return organizationMemberDirectorySchema.parse(
+          await listOrganizationMembers(await readDomainActor(ctx), input),
         );
       } catch (error) {
         return rethrowDomainAsTrpc(error);

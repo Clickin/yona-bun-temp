@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   projectCreateInputSchema,
   projectDetailSchema,
+  projectEnrollmentRequestSummarySchema,
+  projectMemberDirectorySchema,
+  projectMemberSchema,
   projectNameSchema,
   projectSummarySchema,
   projectUpdateInputSchema,
@@ -81,6 +84,62 @@ describe("project contracts", () => {
       projectName: "projectYobi",
       projectScope: "public",
       viewerCanUpdate: true,
+    });
+  });
+
+  it("parses project member directories with pending enrollment requests", () => {
+    expect(
+      projectMemberSchema.parse({
+        loginId: "yobi",
+        role: "manager",
+        userLabel: "Yobi",
+      }),
+    ).toEqual({
+      loginId: "yobi",
+      role: "manager",
+      userLabel: "Yobi",
+    });
+
+    expect(
+      projectEnrollmentRequestSummarySchema.parse({
+        loginId: "guest-user",
+        userLabel: "Guest User",
+      }),
+    ).toEqual({
+      loginId: "guest-user",
+      userLabel: "Guest User",
+    });
+
+    expect(
+      projectMemberDirectorySchema.parse({
+        enrollmentRequests: [
+          {
+            loginId: "guest-user",
+            userLabel: "Guest User",
+          },
+        ],
+        members: [
+          {
+            loginId: "yobi",
+            role: "manager",
+            userLabel: "Yobi",
+          },
+        ],
+      }),
+    ).toEqual({
+      enrollmentRequests: [
+        {
+          loginId: "guest-user",
+          userLabel: "Guest User",
+        },
+      ],
+      members: [
+        {
+          loginId: "yobi",
+          role: "manager",
+          userLabel: "Yobi",
+        },
+      ],
     });
   });
 });
