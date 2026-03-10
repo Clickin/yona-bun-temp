@@ -42,6 +42,11 @@ export {
   type ResolvedRequestPrincipal,
 } from "./request-auth";
 export {
+  handleBetterAuthPublicRequest,
+  isSupportedBetterAuthCallbackProvider,
+  type BetterAuthCallbackProvider,
+} from "./better-auth-http";
+export {
   createBetterAuthSessionForActor,
   deleteBetterAuthSessionByCookieValue,
   deleteBetterAuthSessionsByActorId,

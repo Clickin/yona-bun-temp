@@ -84,4 +84,30 @@ describe("MySQL database", () => {
     expect(organizationIndexes.some((row) => row.Non_unique === 0)).toBe(true);
     expect(projectIndexes.some((row) => row.Non_unique === 0)).toBe(true);
   });
+
+  it("rejects case-only duplicates for organization and project route identifiers", async () => {
+    await connection.query("INSERT INTO `organization` (`name`, `descr`) VALUES (?, ?)", [
+      "labs",
+      "primary org",
+    ]);
+
+    await expect(
+      connection.query("INSERT INTO `organization` (`name`, `descr`) VALUES (?, ?)", [
+        "LABS",
+        "duplicate org",
+      ]),
+    ).rejects.toThrow();
+
+    await connection.query(
+      "INSERT INTO `project` (`name`, `owner`, `overview`, `project_scope`, `vcs`) VALUES (?, ?, ?, ?, ?)",
+      ["project-yona", "labs", "original project", "public", "GIT"],
+    );
+
+    await expect(
+      connection.query(
+        "INSERT INTO `project` (`name`, `owner`, `overview`, `project_scope`, `vcs`) VALUES (?, ?, ?, ?, ?)",
+        ["PROJECT-YONA", "LABS", "duplicate project", "public", "GIT"],
+      ),
+    ).rejects.toThrow();
+  });
 });

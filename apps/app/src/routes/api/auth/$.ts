@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { handleBetterAuthPublicRequest } from "@yona/auth";
 
 async function handleAuthRequest(request: Request): Promise<Response> {
-  const { getBetterAuth } = await import("@yona/auth/better-auth");
-  const auth = await getBetterAuth();
-  return auth.handler(request);
+  return handleBetterAuthPublicRequest(request);
 }
 
 export const Route = createFileRoute("/api/auth/$")({

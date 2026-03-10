@@ -26,6 +26,12 @@ describe("auth rate limit", () => {
       ok: true,
       retryAfterSeconds: 60,
     });
+    await expect(
+      consumeAuthRateLimit({ ip: "127.0.0.1", now, route: "oauth-callback" }),
+    ).resolves.toEqual({
+      ok: true,
+      retryAfterSeconds: 60,
+    });
     await expect(consumeAuthRateLimit({ ip: "127.0.0.2", now, route: "login" })).resolves.toEqual({
       ok: true,
       retryAfterSeconds: 60,

@@ -9,6 +9,10 @@ const RATE_LIMIT_POLICY = {
     maxRequests: 5,
     windowMs: 60_000,
   },
+  "oauth-callback": {
+    maxRequests: 20,
+    windowMs: 60_000,
+  },
   register: {
     maxRequests: 5,
     windowMs: 60_000,

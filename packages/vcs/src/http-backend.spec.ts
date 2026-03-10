@@ -1,8 +1,11 @@
+import { PassThrough } from "node:stream";
 import { describe, expect, it } from "vitest";
 import {
   buildGitHttpBackendEnv,
+  createSmartHttpRequestBodySource,
   parseGitHttpBackendOutput,
   requiresReceivePackAuth,
+  SmartHttpPayloadTooLargeError,
 } from "./http-backend";
 
 describe("git http-backend parser", () => {
@@ -40,7 +43,8 @@ describe("git http-backend parser", () => {
     const request = new Request(
       "http://localhost/api/repos/1001/smart-http/info/refs?service=git-upload-pack",
       {
-        method: "GET",
+        body: "packet-line",
+        method: "POST",
         headers: {
           "git-protocol": "version=2",
           "content-type": "application/x-git-upload-pack-request",
@@ -53,6 +57,7 @@ describe("git http-backend parser", () => {
       pathInfo: "/1001/info/refs",
       request,
       actorName: "editor",
+      contentLength: 11,
       remoteAddress: "127.0.0.1",
     });
 
@@ -62,6 +67,7 @@ describe("git http-backend parser", () => {
     expect(env.QUERY_STRING).toBe("service=git-upload-pack");
     expect(env.GIT_PROTOCOL).toBe("version=2");
     expect(env.HTTP_GIT_PROTOCOL).toBe("version=2");
+    expect(env.CONTENT_LENGTH).toBe("11");
     expect(env.REMOTE_USER).toBe("editor");
     expect(env.REMOTE_ADDR).toBe("127.0.0.1");
   });
@@ -83,5 +89,47 @@ describe("git http-backend parser", () => {
     expect(requiresReceivePackAuth(receivePackPathReq, "/1001/git-receive-pack")).toBe(true);
     expect(requiresReceivePackAuth(receivePackServiceReq, "/1001/info/refs")).toBe(true);
     expect(requiresReceivePackAuth(uploadPackReq, "/1001/info/refs")).toBe(false);
+  });
+
+  it("spools POST bodies into a reusable source with the measured byte length", async () => {
+    const request = new Request("http://localhost/repo/git-receive-pack", {
+      body: "PACKDATA",
+      method: "POST",
+    });
+    const source = await createSmartHttpRequestBodySource(request);
+    const output = new PassThrough();
+    const chunks: Buffer[] = [];
+
+    output.on("data", (chunk: Buffer) => {
+      chunks.push(Buffer.from(chunk));
+    });
+
+    await source.pipeTo(output);
+    await source.cleanup();
+
+    expect(source.contentLength).toBe(8);
+    expect(Buffer.concat(chunks).toString("utf-8")).toBe("PACKDATA");
+  });
+
+  it("rejects bodies whose actual size exceeds the limit even when content-length is understated", async () => {
+    const oversizedChunk = new Uint8Array(100 * 1024 * 1024 + 1);
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(oversizedChunk);
+        controller.close();
+      },
+    });
+    const request = new Request("http://localhost/repo/git-receive-pack", {
+      body: stream as BodyInit,
+      duplex: "half" as RequestDuplex,
+      headers: {
+        "content-length": "1",
+      },
+      method: "POST",
+    });
+
+    await expect(createSmartHttpRequestBodySource(request)).rejects.toBeInstanceOf(
+      SmartHttpPayloadTooLargeError,
+    );
   });
 });

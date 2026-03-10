@@ -1,10 +1,16 @@
-import { access } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { access, mkdtemp, open, rm } from "node:fs/promises";
 import { spawn } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { pipeline } from "node:stream/promises";
+import type { Writable } from "node:stream";
 import { ensureYonaDataDirectories, getRepositoryRoot } from "./config";
 import { resolveRepositoryPath } from "./executable";
 
 const HEADER_BODY_DELIMITER_CRLF = Buffer.from("\r\n\r\n", "utf-8");
 const HEADER_BODY_DELIMITER_LF = Buffer.from("\n\n", "utf-8");
+export const MAX_SMART_HTTP_RPC_BYTES = 100 * 1024 * 1024;
 
 export interface GitCgiOutput {
   status: number;
@@ -14,6 +20,7 @@ export interface GitCgiOutput {
 
 export interface GitHttpBackendEnvInput {
   actorName?: string;
+  contentLength?: number;
   repoRoot: string;
   pathInfo: string;
   request: Request;
@@ -24,6 +31,124 @@ export interface SmartHttpAuthorizationContext {
   allowWrite: boolean;
   remoteAddress: string;
   remoteUserName?: string;
+}
+
+export class SmartHttpPayloadTooLargeError extends Error {
+  constructor(limitBytes: number) {
+    super(`Smart HTTP request body exceeds ${limitBytes} bytes.`);
+  }
+}
+
+export interface SmartHttpRequestBodySource {
+  cleanup(): Promise<void>;
+  contentLength: number;
+  pipeTo(writable: Writable): Promise<void>;
+}
+
+function readAnnouncedContentLength(request: Request): null | number {
+  const contentLength = request.headers.get("content-length");
+  if (!contentLength) {
+    return null;
+  }
+
+  const parsedLength = Number.parseInt(contentLength, 10);
+  return Number.isFinite(parsedLength) && parsedLength >= 0 ? parsedLength : null;
+}
+
+function endWritable(writable: Writable): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const handleError = (error: Error) => {
+      writable.off("finish", handleFinish);
+      reject(error);
+    };
+    const handleFinish = () => {
+      writable.off("error", handleError);
+      resolve();
+    };
+
+    writable.once("error", handleError);
+    writable.once("finish", handleFinish);
+    writable.end();
+  });
+}
+
+async function writeAllToFile(
+  handle: Awaited<ReturnType<typeof open>>,
+  chunk: Uint8Array,
+): Promise<void> {
+  let offset = 0;
+
+  while (offset < chunk.byteLength) {
+    const { bytesWritten } = await handle.write(chunk, offset, chunk.byteLength - offset);
+    offset += bytesWritten;
+  }
+}
+
+export async function createSmartHttpRequestBodySource(
+  request: Request,
+): Promise<SmartHttpRequestBodySource> {
+  if (request.method.toUpperCase() === "GET" || !request.body) {
+    return {
+      cleanup: async () => {},
+      contentLength: 0,
+      pipeTo: (writable) => endWritable(writable),
+    };
+  }
+
+  const announcedContentLength = readAnnouncedContentLength(request);
+  if (announcedContentLength !== null && announcedContentLength > MAX_SMART_HTTP_RPC_BYTES) {
+    throw new SmartHttpPayloadTooLargeError(MAX_SMART_HTTP_RPC_BYTES);
+  }
+
+  const tempDir = await mkdtemp(join(tmpdir(), "yona-git-http-"));
+  const bodyPath = join(tempDir, "request-body");
+  let contentLength = 0;
+
+  try {
+    const handle = await open(bodyPath, "w");
+
+    try {
+      const reader = request.body.getReader();
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            break;
+          }
+
+          contentLength += value.byteLength;
+          if (contentLength > MAX_SMART_HTTP_RPC_BYTES) {
+            throw new SmartHttpPayloadTooLargeError(MAX_SMART_HTTP_RPC_BYTES);
+          }
+
+          await writeAllToFile(handle, value);
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    } finally {
+      await handle.close();
+    }
+
+    return {
+      cleanup: async () => {
+        await rm(tempDir, { force: true, recursive: true });
+      },
+      contentLength,
+      pipeTo: async (writable) => {
+        if (contentLength === 0) {
+          await endWritable(writable);
+          return;
+        }
+
+        await pipeline(createReadStream(bodyPath), writable);
+      },
+    };
+  } catch (error) {
+    await rm(tempDir, { force: true, recursive: true });
+    throw error;
+  }
 }
 
 function findDelimiterIndex(buffer: Buffer, delimiter: Buffer): number {
@@ -105,52 +230,61 @@ async function runGitHttpBackendCgi(params: {
   const repoRoot = getRepositoryRoot();
   const repoPath = resolveRepositoryPath(repoRoot, params.repositoryId);
   await access(repoPath);
+  const requestBodySource = await createSmartHttpRequestBodySource(params.request);
 
-  const env = buildGitHttpBackendEnv({
-    actorName: params.authorization.remoteUserName,
-    pathInfo: params.pathInfo,
-    request: params.request,
-    remoteAddress: params.authorization.remoteAddress,
-    repoRoot,
-  });
+  try {
+    const env = buildGitHttpBackendEnv({
+      actorName: params.authorization.remoteUserName,
+      contentLength: requestBodySource.contentLength,
+      pathInfo: params.pathInfo,
+      request: params.request,
+      remoteAddress: params.authorization.remoteAddress,
+      repoRoot,
+    });
 
-  const child = spawn("git", ["http-backend"], {
-    cwd: repoRoot,
-    env,
-    stdio: ["pipe", "pipe", "pipe"],
-  });
+    const child = spawn("git", ["http-backend"], {
+      cwd: repoRoot,
+      env,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
 
-  const stdoutChunks: Buffer[] = [];
-  const stderrChunks: Buffer[] = [];
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
 
-  child.stdout.on("data", (chunk: Buffer) => {
-    stdoutChunks.push(Buffer.from(chunk));
-  });
+    child.stdout.on("data", (chunk: Buffer) => {
+      stdoutChunks.push(Buffer.from(chunk));
+    });
 
-  child.stderr.on("data", (chunk: Buffer) => {
-    stderrChunks.push(Buffer.from(chunk));
-  });
+    child.stderr.on("data", (chunk: Buffer) => {
+      stderrChunks.push(Buffer.from(chunk));
+    });
 
-  if (params.request.method.toUpperCase() !== "GET") {
-    const body = Buffer.from(await params.request.arrayBuffer());
-    if (body.length > 0) {
-      child.stdin.write(body);
+    let inputError: null | unknown = null;
+    const inputPromise = requestBodySource.pipeTo(child.stdin).catch((error: unknown) => {
+      inputError = error;
+    });
+
+    const exitCode = await new Promise<number>((resolveExit, rejectExit) => {
+      child.on("error", rejectExit);
+      child.on("close", (code) => resolveExit(code ?? -1));
+    });
+
+    await inputPromise;
+
+    if (exitCode !== 0) {
+      throw new Error(
+        `git http-backend failed (${exitCode}): ${Buffer.concat(stderrChunks).toString("utf-8")}`,
+      );
     }
+
+    if (inputError) {
+      throw inputError;
+    }
+
+    return parseGitHttpBackendOutput(Buffer.concat(stdoutChunks));
+  } finally {
+    await requestBodySource.cleanup();
   }
-  child.stdin.end();
-
-  const exitCode = await new Promise<number>((resolveExit, rejectExit) => {
-    child.on("error", rejectExit);
-    child.on("close", (code) => resolveExit(code ?? -1));
-  });
-
-  if (exitCode !== 0) {
-    throw new Error(
-      `git http-backend failed (${exitCode}): ${Buffer.concat(stderrChunks).toString("utf-8")}`,
-    );
-  }
-
-  return parseGitHttpBackendOutput(Buffer.concat(stdoutChunks));
 }
 
 export function requiresReceivePackAuth(request: Request, pathInfo: string): boolean {
@@ -190,6 +324,10 @@ export function buildGitHttpBackendEnv(input: GitHttpBackendEnvInput): Record<st
     env.REMOTE_USER = input.actorName;
   }
 
+  if (input.request.method.toUpperCase() !== "GET") {
+    env.CONTENT_LENGTH = String(input.contentLength ?? 0);
+  }
+
   return env;
 }
 
@@ -214,6 +352,10 @@ export async function handleSmartHttpRequest(params: {
       headers: cgiOutput.headers,
     });
   } catch (error) {
+    if (error instanceof SmartHttpPayloadTooLargeError) {
+      return new Response("Request Entity Too Large", { status: 413 });
+    }
+
     const message = error instanceof Error ? error.message : "Unknown smart-http error";
     if (
       message.includes("Invalid repository id") ||

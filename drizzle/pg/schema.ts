@@ -521,7 +521,7 @@ export const organization = pgTable(
     created: datetime().default(sql`NULL`),
     descr: varchar({ length: 255 }).default("NULL"),
   },
-  (table) => [uniqueIndex("uq_organization_name").on(table.name)],
+  (table) => [uniqueIndex("uq_organization_name").on(sql`lower(${table.name})`)],
 );
 
 export const organizationUser = pgTable(
@@ -678,7 +678,7 @@ export const project = pgTable(
   (table) => [
     index("ix_project_organization_24").on(table.organizationId),
     index("ix_project_originalProject_23").on(table.originalProjectId),
-    uniqueIndex("uq_project_owner_name").on(table.owner, table.name),
+    uniqueIndex("uq_project_owner_name").on(sql`lower(${table.owner})`, sql`lower(${table.name})`),
     foreignKey({
       columns: [table.originalProjectId],
       foreignColumns: [table.id],

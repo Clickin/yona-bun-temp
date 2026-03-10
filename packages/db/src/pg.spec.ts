@@ -101,4 +101,30 @@ describe("PostgreSQL database", () => {
     expect(indexes.rows).toHaveLength(2);
     expect(indexes.rows[0]?.indexdef ?? indexes.rows[1]?.indexdef).toContain("UNIQUE INDEX");
   });
+
+  it("rejects case-only duplicates for organization and project route identifiers", async () => {
+    await pool.query(`INSERT INTO "organization" ("name", "descr") VALUES ($1, $2)`, [
+      "labs",
+      "primary org",
+    ]);
+
+    await expect(
+      pool.query(`INSERT INTO "organization" ("name", "descr") VALUES ($1, $2)`, [
+        "LABS",
+        "duplicate org",
+      ]),
+    ).rejects.toThrow();
+
+    await pool.query(
+      `INSERT INTO "project" ("name", "owner", "overview", "project_scope", "vcs") VALUES ($1, $2, $3, $4, $5)`,
+      ["project-yona", "labs", "original project", "public", "GIT"],
+    );
+
+    await expect(
+      pool.query(
+        `INSERT INTO "project" ("name", "owner", "overview", "project_scope", "vcs") VALUES ($1, $2, $3, $4, $5)`,
+        ["PROJECT-YONA", "LABS", "duplicate project", "public", "GIT"],
+      ),
+    ).rejects.toThrow();
+  });
 });

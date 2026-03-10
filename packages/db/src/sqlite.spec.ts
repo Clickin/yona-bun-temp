@@ -115,4 +115,30 @@ describe("SQLite database", () => {
       ),
     ).toBe(true);
   });
+
+  it("rejects case-only duplicates for organization and project route identifiers", async () => {
+    await db.$client`
+      INSERT INTO organization (name, descr)
+      VALUES ('labs', 'primary org')
+    `;
+
+    await expect(
+      db.$client`
+        INSERT INTO organization (name, descr)
+        VALUES ('LABS', 'duplicate org')
+      `,
+    ).rejects.toThrow();
+
+    await db.$client`
+      INSERT INTO project (name, owner, overview, project_scope, vcs)
+      VALUES ('project-yona', 'labs', 'original project', 'public', 'GIT')
+    `;
+
+    await expect(
+      db.$client`
+        INSERT INTO project (name, owner, overview, project_scope, vcs)
+        VALUES ('PROJECT-YONA', 'LABS', 'duplicate project', 'public', 'GIT')
+      `,
+    ).rejects.toThrow();
+  });
 });
