@@ -10,18 +10,8 @@ import {
   readTemporaryUploadRecord,
   resolveUploadBindingProjectId,
 } from "@yona/db";
+import { requireAuthenticatedActor } from "./actor-utils";
 import { DomainNotFoundError, DomainPermissionError, type DomainActor } from "./errors";
-
-function requireAuthenticatedActor(actor: DomainActor): asserts actor is DomainActor & {
-  actorId: number;
-  loginId: string;
-} {
-  if (actor.isAnonymous || actor.actorId === null || actor.loginId === null) {
-    throw new DomainPermissionError("Authentication required.", {
-      requiresAuthentication: true,
-    });
-  }
-}
 
 export async function finalizeUploadSession(
   actor: DomainActor,

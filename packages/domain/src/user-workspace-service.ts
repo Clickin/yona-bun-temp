@@ -25,7 +25,8 @@ import {
   toggleFavoriteProjectForUser,
   trackRecentProjectVisitForUser,
 } from "@yona/db";
-import { DomainNotFoundError, DomainPermissionError, type DomainActor } from "./errors";
+import { requireAuthenticatedActor } from "./actor-utils";
+import { DomainNotFoundError, type DomainActor } from "./errors";
 
 export interface UserWorkspaceServiceDeps {
   listFavoriteProjectsForUser: typeof listFavoriteProjectsForUser;
@@ -46,16 +47,6 @@ const defaultDeps: UserWorkspaceServiceDeps = {
   toggleFavoriteProjectForUser,
   trackRecentProjectVisitForUser,
 };
-
-function requireAuthenticatedActor(actor: DomainActor): asserts actor is DomainActor & {
-  actorId: number;
-} {
-  if (actor.isAnonymous || actor.actorId === null) {
-    throw new DomainPermissionError("Authentication required.", {
-      requiresAuthentication: true,
-    });
-  }
-}
 
 export async function readMyFavorites(
   actor: DomainActor,

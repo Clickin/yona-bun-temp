@@ -17,6 +17,7 @@ import {
   updateOrganizationRecord,
   userLoginIdExists,
 } from "@yona/db";
+import { requireAuthenticatedActor } from "./actor-utils";
 import {
   DomainConflictError,
   DomainNotFoundError,
@@ -47,17 +48,6 @@ const defaultDeps: OrganizationServiceDeps = {
   updateOrganizationRecord,
   userLoginIdExists,
 };
-
-function requireAuthenticatedActor(actor: DomainActor): asserts actor is DomainActor & {
-  actorId: number;
-  loginId: string;
-} {
-  if (actor.isAnonymous || actor.actorId === null || actor.loginId === null) {
-    throw new DomainPermissionError("Authentication required.", {
-      requiresAuthentication: true,
-    });
-  }
-}
 
 function canUpdateOrganization(viewer: { isOrganizationAdmin: boolean; isSiteAdmin: boolean }) {
   return viewer.isSiteAdmin || viewer.isOrganizationAdmin;

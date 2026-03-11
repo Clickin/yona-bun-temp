@@ -17,6 +17,7 @@ import {
   updateProjectRecord,
   userLoginIdExists,
 } from "@yona/db";
+import { requireAuthenticatedActor } from "./actor-utils";
 import { authorizeProjectAccess } from "./project-authorization";
 import {
   DomainConflictError,
@@ -49,17 +50,6 @@ const defaultDeps: ProjectServiceDeps = {
   updateProjectRecord,
   userLoginIdExists,
 };
-
-function requireAuthenticatedActor(actor: DomainActor): asserts actor is DomainActor & {
-  actorId: number;
-  loginId: string;
-} {
-  if (actor.isAnonymous || actor.actorId === null || actor.loginId === null) {
-    throw new DomainPermissionError("Authentication required.", {
-      requiresAuthentication: true,
-    });
-  }
-}
 
 function normalizeIdentity(value: string): string {
   return value.trim().toLowerCase();

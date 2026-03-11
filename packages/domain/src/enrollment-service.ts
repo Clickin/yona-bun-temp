@@ -8,6 +8,7 @@ import {
   deleteEnrollmentRequest,
   readProjectAuthorization,
 } from "@yona/db";
+import { requireAuthenticatedActor } from "./actor-utils";
 import {
   DomainConflictError,
   DomainNotFoundError,
@@ -28,17 +29,6 @@ const defaultDeps: EnrollmentServiceDeps = {
   deleteEnrollmentRequest,
   readProjectAuthorization,
 };
-
-function requireAuthenticatedActor(actor: DomainActor): asserts actor is DomainActor & {
-  actorId: number;
-  loginId: string;
-} {
-  if (actor.isAnonymous || actor.actorId === null || actor.loginId === null) {
-    throw new DomainPermissionError("Authentication required.", {
-      requiresAuthentication: true,
-    });
-  }
-}
 
 function isProjectGuest(viewer: {
   isProjectManager: boolean;

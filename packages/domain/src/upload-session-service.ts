@@ -1,17 +1,7 @@
 import { createUploadSessionOutputSchema, type CreateUploadSessionOutput } from "@yona/contracts";
 import { createTemporaryUploadRecord } from "@yona/db";
-import { DomainPermissionError, type DomainActor } from "./errors";
-
-function requireAuthenticatedActor(actor: DomainActor): asserts actor is DomainActor & {
-  actorId: number;
-  loginId: string;
-} {
-  if (actor.isAnonymous || actor.actorId === null || actor.loginId === null) {
-    throw new DomainPermissionError("Authentication required.", {
-      requiresAuthentication: true,
-    });
-  }
-}
+import { requireAuthenticatedActor } from "./actor-utils";
+import type { DomainActor } from "./errors";
 
 export async function createUploadSession(
   actor: DomainActor,
