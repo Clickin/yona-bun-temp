@@ -3,6 +3,7 @@ export interface DomainActor {
   isAnonymous: boolean;
   isSiteAdmin: boolean;
   loginId: null | string;
+  name?: null | string;
 }
 
 export class DomainConflictError extends Error {
