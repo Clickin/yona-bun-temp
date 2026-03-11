@@ -19,8 +19,12 @@ import {
   readProjectAuthorization,
   updateIssueStateByProjectAndNumber,
 } from "@yona/db";
-import { authorizeProjectAccess } from "./project-authorization";
-import { DomainNotFoundError, DomainPermissionError, type DomainActor } from "./errors";
+import { getActorDisplayName, requireAuthenticatedActor } from "./actor-utils";
+import { DomainNotFoundError, type DomainActor } from "./errors";
+import {
+  requireProjectReadAuthorization,
+  requireProjectWriteAuthorization,
+} from "./project-authorization";
 
 export interface IssueServiceDeps {
   createIssueCommentRecord: typeof createIssueCommentRecord;
@@ -41,74 +45,6 @@ const defaultDeps: IssueServiceDeps = {
   readProjectAuthorization,
   updateIssueStateByProjectAndNumber,
 };
-
-function requireAuthenticatedActor(actor: DomainActor): asserts actor is DomainActor & {
-  actorId: number;
-  loginId: string;
-} {
-  if (actor.isAnonymous || actor.actorId === null || actor.loginId === null) {
-    throw new DomainPermissionError("Authentication required.", {
-      requiresAuthentication: true,
-    });
-  }
-}
-
-async function requireProjectReadAuthorization(
-  actor: DomainActor,
-  input: {
-    ownerName: string;
-    projectName: string;
-  },
-  deps: IssueServiceDeps,
-) {
-  const authorization = await deps.readProjectAuthorization(
-    input.ownerName,
-    input.projectName,
-    actor.actorId,
-  );
-  if (!authorization) {
-    throw new DomainNotFoundError("Project not found.");
-  }
-
-  const readDecision = authorizeProjectAccess(
-    {
-      ...authorization.viewer,
-      projectScope: authorization.project.projectScope,
-    },
-    "read",
-  );
-  if (!readDecision.allowed) {
-    throw new DomainPermissionError("Project read is not allowed.", {
-      requiresAuthentication: actor.actorId === null,
-    });
-  }
-
-  return authorization;
-}
-
-async function requireProjectWriteAuthorization(
-  actor: DomainActor,
-  input: {
-    ownerName: string;
-    projectName: string;
-  },
-  deps: IssueServiceDeps,
-) {
-  requireAuthenticatedActor(actor);
-  const authorization = await requireProjectReadAuthorization(actor, input, deps);
-  const writeDecision = authorizeProjectAccess(
-    {
-      ...authorization.viewer,
-      projectScope: authorization.project.projectScope,
-    },
-    "update",
-  );
-  if (!writeDecision.allowed) {
-    throw new DomainPermissionError("Project update is not allowed.");
-  }
-
-  return authorization;
-}
 
 export async function listIssues(
   actor: DomainActor,
@@ -172,7 +108,7 @@ export async function createIssue(
   const issueNumber = await deps.createIssueRecord({
     authorId: actor.actorId,
     authorLoginId: actor.loginId,
-    authorName: actor.loginId,
+    authorName: getActorDisplayName(actor),
     body: input.body,
     projectId: authorization.project.id,
     title: input.title.trim(),
@@ -208,7 +144,7 @@ export async function createIssueComment(
   await deps.createIssueCommentRecord({
     authorId: actor.actorId,
     authorLoginId: actor.loginId,
-    authorName: actor.loginId,
+    authorName: getActorDisplayName(actor),
     contents: parsedInput.contents,
     issueId,
     projectId: authorization.project.id,

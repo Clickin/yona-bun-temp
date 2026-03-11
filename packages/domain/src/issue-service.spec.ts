@@ -12,6 +12,7 @@ const authenticatedActor = {
   isAnonymous: false,
   isSiteAdmin: false,
   loginId: "door",
+  name: "Door TTS",
 };
 
 function createDeps() {
@@ -92,6 +93,11 @@ describe("issue service", () => {
     ).resolves.toMatchObject({
       issueNumber: 1,
     });
+    expect(deps.createIssueRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorName: "Door TTS",
+      }),
+    );
 
     await expect(
       createIssueComment(
@@ -107,6 +113,11 @@ describe("issue service", () => {
     ).resolves.toMatchObject({
       issueNumber: 1,
     });
+    expect(deps.createIssueCommentRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorName: "Door TTS",
+      }),
+    );
 
     await expect(
       updateIssueState(

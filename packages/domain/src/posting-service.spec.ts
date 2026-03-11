@@ -11,6 +11,7 @@ const authenticatedActor = {
   isAnonymous: false,
   isSiteAdmin: false,
   loginId: "doortts",
+  name: "Door TTS",
 };
 
 describe("posting service", () => {
@@ -53,6 +54,7 @@ describe("posting service", () => {
         viewer: {
           actorId: 7,
           isOrganizationAdmin: false,
+          isOrganizationMember: false,
           isProjectManager: true,
           isProjectMember: true,
         },
@@ -76,6 +78,11 @@ describe("posting service", () => {
         deps,
       ),
     ).resolves.toMatchObject({ postingNumber: 3 });
+    expect(deps.createPostingRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorName: "Door TTS",
+      }),
+    );
     await expect(
       createPostingComment(
         authenticatedActor,
@@ -88,5 +95,10 @@ describe("posting service", () => {
         deps,
       ),
     ).resolves.toMatchObject({ postingNumber: 3 });
+    expect(deps.createPostingCommentRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorName: "Door TTS",
+      }),
+    );
   });
 });
