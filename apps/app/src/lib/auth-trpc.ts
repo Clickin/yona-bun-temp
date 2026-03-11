@@ -1,6 +1,8 @@
 import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import {
+  changeCurrentUserPasswordInputSchema,
+  changeCurrentUserPasswordOutputSchema,
   type AuthErrorCode,
   currentUserApiTokenSchema,
   completePasswordResetInputSchema,
@@ -12,12 +14,16 @@ import {
   requestPasswordResetInputSchema,
   rotateCurrentUserApiTokenOutputSchema,
   requestPasswordResetOutputSchema,
+  updateCurrentUserProfileInputSchema,
+  updateCurrentUserProfileOutputSchema,
   signInWithPasswordInputSchema,
   signInWithPasswordOutputSchema,
   signOutOutputSchema,
 } from "@yona/contracts";
 import {
+  changeCurrentUserPassword,
   authenticatePasswordSignIn,
+  buildAuthenticatedAppSession,
   buildAnonymousAppSession,
   consumeAuthRateLimit,
   createAppUser,
@@ -31,6 +37,7 @@ import {
   readCurrentSession,
   rotateUserApiToken,
   resetPasswordWithToken,
+  updateCurrentUserProfile,
   validateCsrfToken,
   type SessionCookieOptions,
 } from "@yona/auth";
@@ -90,6 +97,17 @@ async function requireAuthenticatedCurrentSession(ctx: AuthProcedureContext) {
   }
 
   return currentSession;
+}
+
+function requireValidCsrfToken(
+  ctx: AuthProcedureContext,
+  currentSession: Awaited<ReturnType<typeof requireAuthenticatedCurrentSession>>,
+): void {
+  const csrfToken = ctx.getRequestHeader("x-csrf-token")?.trim() ?? "";
+  if (!validateCsrfToken(csrfToken, currentSession.sessionRecord!)) {
+    ctx.setResponseStatus(403, "Forbidden");
+    throw new Error("CSRF validation failed.");
+  }
 }
 
 function authErrorMessage(code: AuthErrorCode): string {
@@ -301,15 +319,40 @@ export const authRouter = t.router({
     .output(rotateCurrentUserApiTokenOutputSchema)
     .mutation(async ({ ctx }) => {
       const currentSession = await requireAuthenticatedCurrentSession(ctx);
-      const csrfToken = ctx.getRequestHeader("x-csrf-token")?.trim() ?? "";
-      if (!validateCsrfToken(csrfToken, currentSession.sessionRecord!)) {
-        ctx.setResponseStatus(403, "Forbidden");
-        throw new Error("CSRF validation failed.");
-      }
+      requireValidCsrfToken(ctx, currentSession);
 
       return currentUserApiTokenSchema.parse({
         token: await rotateUserApiToken(currentSession.user!.id),
       });
+    }),
+  updateCurrentUserProfile: t.procedure
+    .input(updateCurrentUserProfileInputSchema)
+    .output(updateCurrentUserProfileOutputSchema)
+    .mutation(async ({ ctx, input }) => {
+      const currentSession = await requireAuthenticatedCurrentSession(ctx);
+      requireValidCsrfToken(ctx, currentSession);
+      const result = await updateCurrentUserProfile(currentSession.user!.id, input);
+      if (!result.ok) {
+        ctx.setResponseStatus(409, "Conflict");
+        throw new Error(authErrorMessage(result.code));
+      }
+
+      return updateCurrentUserProfileOutputSchema.parse(buildAuthenticatedAppSession(result.user));
+    }),
+  changeCurrentUserPassword: t.procedure
+    .input(changeCurrentUserPasswordInputSchema)
+    .output(changeCurrentUserPasswordOutputSchema)
+    .mutation(async ({ ctx, input }) => {
+      const currentSession = await requireAuthenticatedCurrentSession(ctx);
+      requireValidCsrfToken(ctx, currentSession);
+      const result = await changeCurrentUserPassword(currentSession.user!.id, input);
+      if (!result.ok) {
+        ctx.setResponseStatus(401, "Unauthorized");
+        throw new Error(authErrorMessage(result.code));
+      }
+
+      clearSessionCookie(ctx);
+      return changeCurrentUserPasswordOutputSchema.parse({ ok: true });
     }),
 });
 

@@ -5,6 +5,12 @@ import {
   bootstrapRepositoryOutputSchema,
   inlineEditRepositoryInputSchema,
   inlineEditRepositoryOutputSchema,
+  listRepositoryBranchesInputSchema,
+  listRepositoryBranchesOutputSchema,
+  listRepositoryCommitsInputSchema,
+  listRepositoryCommitsOutputSchema,
+  readRepositoryCommitInputSchema,
+  readRepositoryCommitOutputSchema,
   readRepositoryFileInputSchema,
   readRepositoryFileOutputSchema,
 } from "@yona/contracts";
@@ -15,8 +21,10 @@ import {
   ConflictError,
   createMutationActor,
   ensureYonaDataDirectories,
+  GitCommandError,
   getRepositoryRoot,
   performInlineEditMutation,
+  runGit,
   provisionRepository,
   readRepositoryFile,
   resolveRepositoryPath,
@@ -82,6 +90,25 @@ function createRepositoryMutationActor(
     name: principal.user.name,
     role: isAdmin ? "admin" : "maintainer",
   });
+}
+
+function parseIsoDate(value: string): Date {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Invalid git timestamp format.",
+    });
+  }
+  return parsed;
+}
+
+function parseTabSeparatedRows(output: string): string[][] {
+  return output
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => line.split("\t"));
 }
 
 export const repoRouter = t.router({
@@ -159,6 +186,113 @@ export const repoRouter = t.router({
         filePath: input.filePath,
         repositoryId: input.repoId,
       });
+    }),
+  listRepositoryBranches: t.procedure
+    .input(listRepositoryBranchesInputSchema)
+    .output(listRepositoryBranchesOutputSchema)
+    .query(async ({ ctx, input }) => {
+      await authorizeRepositoryRequest(ctx.principal, input.repoId, "read");
+      await ensureYonaDataDirectories();
+      const repoPath = resolveRepositoryPath(getRepositoryRoot(), input.repoId);
+
+      try {
+        const result = await runGit(
+          ["for-each-ref", "--format=%(refname:short)\t%(objectname)\t%(HEAD)", "refs/heads"],
+          { cwd: repoPath },
+        );
+        return listRepositoryBranchesOutputSchema.parse(
+          parseTabSeparatedRows(result.stdout).map((parts) => ({
+            isHead: (parts[2] ?? "").trim() === "*",
+            name: parts[0] ?? "",
+            oid: parts[1] ?? "",
+          })),
+        );
+      } catch (error) {
+        if (error instanceof GitCommandError) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Repository branches could not be loaded.",
+          });
+        }
+        throw error;
+      }
+    }),
+  listRepositoryCommits: t.procedure
+    .input(listRepositoryCommitsInputSchema)
+    .output(listRepositoryCommitsOutputSchema)
+    .query(async ({ ctx, input }) => {
+      await authorizeRepositoryRequest(ctx.principal, input.repoId, "read");
+      await ensureYonaDataDirectories();
+      const repoPath = resolveRepositoryPath(getRepositoryRoot(), input.repoId);
+
+      try {
+        const result = await runGit(
+          ["log", `--max-count=${input.limit}`, "--format=%H\t%h\t%s\t%an\t%aI", input.branch],
+          { cwd: repoPath },
+        );
+        return listRepositoryCommitsOutputSchema.parse(
+          parseTabSeparatedRows(result.stdout).map((parts) => ({
+            authorName: parts[3] ?? "",
+            authoredAt: parseIsoDate(parts[4] ?? ""),
+            oid: parts[0] ?? "",
+            shortOid: parts[1] ?? "",
+            subject: parts[2] ?? "",
+          })),
+        );
+      } catch (error) {
+        if (error instanceof GitCommandError) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Repository commits could not be loaded.",
+          });
+        }
+        throw error;
+      }
+    }),
+  readRepositoryCommitDetail: t.procedure
+    .input(readRepositoryCommitInputSchema)
+    .output(readRepositoryCommitOutputSchema)
+    .query(async ({ ctx, input }) => {
+      await authorizeRepositoryRequest(ctx.principal, input.repoId, "read");
+      await ensureYonaDataDirectories();
+      const repoPath = resolveRepositoryPath(getRepositoryRoot(), input.repoId);
+
+      try {
+        const metadata = await runGit(
+          ["show", "-s", "--format=%H\t%h\t%s\t%an\t%ae\t%aI", input.oid],
+          {
+            cwd: repoPath,
+          },
+        );
+        const body = await runGit(["show", "-s", "--format=%b", input.oid], {
+          cwd: repoPath,
+        });
+        const [parts] = parseTabSeparatedRows(metadata.stdout);
+        if (!parts) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Commit not found.",
+          });
+        }
+
+        return readRepositoryCommitOutputSchema.parse({
+          authorEmail: parts[4] ?? "",
+          authorName: parts[3] ?? "",
+          authoredAt: parseIsoDate(parts[5] ?? ""),
+          body: body.stdout.trimEnd(),
+          oid: parts[0] ?? "",
+          shortOid: parts[1] ?? "",
+          subject: parts[2] ?? "",
+        });
+      } catch (error) {
+        if (error instanceof GitCommandError) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Commit not found.",
+          });
+        }
+        throw error;
+      }
     }),
 });
 

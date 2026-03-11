@@ -23,7 +23,6 @@ export const Route = createFileRoute("/api/auth/provider/$provider/callback")({
         return handleBetterAuthPublicRequest(
           new Request(url, {
             body: request.body ?? null,
-            duplex: request.body ? ("half" as RequestDuplex) : undefined,
             headers: request.headers,
             method: request.method,
           }),

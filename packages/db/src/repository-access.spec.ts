@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from "bun:test";
+import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { drizzle } from "drizzle-orm/bun-sql";
 import {
   n4user,
@@ -16,6 +16,21 @@ import { applySqliteMigrations } from "./test-helpers";
 describe("repository access facts", () => {
   let db: ReturnType<(typeof drizzle)["sqlite"]>;
 
+  const closeDatabaseClient = async () => {
+    const client = db.$client as {
+      close?: () => Promise<void> | void;
+      end?: () => Promise<void> | void;
+    };
+    if (typeof client.close === "function") {
+      await client.close();
+      return;
+    }
+
+    if (typeof client.end === "function") {
+      await client.end();
+    }
+  };
+
   beforeAll(async () => {
     const setup = await setupSQLiteTestDatabase();
     db = (drizzle as any).sqlite(setup.url, {
@@ -29,6 +44,10 @@ describe("repository access facts", () => {
       { id: 6, active: true, name: "org_admin" },
       { id: 7, active: true, name: "org_member" },
     ]);
+  });
+
+  afterAll(async () => {
+    await closeDatabaseClient();
   });
 
   it("loads protected-project access for an organization member", async () => {

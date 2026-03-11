@@ -83,6 +83,9 @@ function RootRouteComponent() {
             >
               Reset
             </Link>
+            <Link to="/me" activeProps={{ className: "nav-pill active" }} className="nav-pill">
+              My Workspace
+            </Link>
           </nav>
         </div>
         <Outlet />

@@ -133,6 +133,44 @@ export function __resetDbForTests(): void {
 }
 
 export {
+  createIssueCommentRecord,
+  createIssueRecord,
+  listIssuesByProject,
+  readIssueByProjectAndNumber,
+  readIssueIdByProjectAndNumber,
+  updateIssueStateByProjectAndNumber,
+} from "./issues";
+export {
+  createPostingCommentRecord,
+  createPostingRecord,
+  listPostingsByProject,
+  readPostingByProjectAndNumber,
+  readPostingIdByProjectAndNumber,
+} from "./postings";
+export {
+  createPullRequestRecord,
+  listPullRequestsByProject,
+  readPullRequestByProjectAndNumber,
+  updatePullRequestStateByProjectAndNumber,
+} from "./pull-requests";
+export {
+  createIssueLabelRecord,
+  createLabelCategoryRecord,
+  createMilestoneRecord,
+  deleteIssueLabelRecord,
+  deleteLabelCategoryRecord,
+  deleteMilestoneRecord,
+  listIssueLabelsByProject,
+  listLabelCategoriesByProject,
+  listMilestonesByProject,
+  readIssueLabelByProjectAndId,
+  readLabelCategoryByProjectAndId,
+  readMilestoneByProjectAndId,
+  updateIssueLabelRecord,
+  updateLabelCategoryRecord,
+  updateMilestoneRecord,
+} from "./labels-milestones";
+export {
   createPasswordAuthUser,
   ensureAuthUserCredentialId,
   findAuthUserByApiToken,
@@ -141,6 +179,7 @@ export {
   findAuthUserByIdentifier,
   readUserApiToken,
   updateAuthUserPassword,
+  updateAuthUserProfile,
   updateUserApiToken,
   type DbAuthUserRecord,
 } from "./auth-users";
@@ -156,6 +195,23 @@ export {
   type AttachmentTemporaryBindingRecord,
 } from "./attachment-assets";
 export { loadRepositoryAccessFacts, type RepositoryAccessFactsRecord } from "./repository-access";
+export {
+  listFavoriteProjectsForUser,
+  listNotificationsForUser,
+  listRecentProjectsForUser,
+  readUserPublicProfileByLoginId,
+  setProjectNotificationAllowed,
+  toggleFavoriteProjectForUser,
+  trackRecentProjectVisitForUser,
+} from "./personal-workspace";
+export {
+  canManageProjectUploadTarget,
+  createTemporaryUploadRecord,
+  finalizeTemporaryUploadRecord,
+  readTemporaryUploadRecord,
+  resolveUploadBindingProjectId,
+  type TemporaryUploadRecord,
+} from "./upload-session";
 export {
   createEnrollmentRequest,
   createOrganizationRecord,

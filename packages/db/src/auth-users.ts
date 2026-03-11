@@ -494,3 +494,37 @@ export async function updateUserApiToken(
     })
     .where(eq(schema.n4user.id, userId));
 }
+
+export async function updateAuthUserProfile(
+  input: {
+    emailAddress: string;
+    name: string;
+    userId: number;
+  },
+  db = getDb(),
+): Promise<void> {
+  const schema = getDbSchema(db);
+  const normalizedEmailAddress = normalizeIdentifier(input.emailAddress);
+  const normalizedName = input.name.trim();
+
+  await (db as any)
+    .update(schema.n4user)
+    .set({
+      email: normalizedEmailAddress,
+      name: normalizedName,
+    })
+    .where(eq(schema.n4user.id, input.userId));
+
+  if (!schema.userCredential) {
+    return;
+  }
+
+  await (db as any)
+    .update(schema.userCredential)
+    .set({
+      email: normalizedEmailAddress,
+      name: normalizedName,
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.userCredential.userId, input.userId));
+}

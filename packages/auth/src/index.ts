@@ -56,6 +56,7 @@ export {
   resetBetterAuthStateForTests,
 } from "./better-auth";
 export {
+  changeCurrentUserPassword,
   authenticatePasswordSignIn,
   buildAnonymousAppSession,
   buildAuthenticatedAppSession,
@@ -68,6 +69,7 @@ export {
   resetAuthStateForTests,
   resetPasswordByAdmin,
   resetPasswordWithToken,
+  updateCurrentUserProfile,
   type CreateAppUserInput,
   type CreateAppUserResult,
   type IssuePasswordResetTokenResult,

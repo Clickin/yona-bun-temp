@@ -102,6 +102,13 @@ const { dbMock, sendPasswordResetEmailMock } = vi.hoisted(() => {
           user.passwordSalt = input.passwordSalt;
         }
       },
+      async updateAuthUserProfile(input: { emailAddress: string; name: string; userId: number }) {
+        const user = state.users.get(input.userId);
+        if (user) {
+          user.emailAddress = normalizeIdentifier(input.emailAddress);
+          user.name = input.name.trim();
+        }
+      },
       async updateUserApiToken(userId: number, token: string) {
         const user = state.users.get(userId);
         if (user) {
@@ -494,5 +501,114 @@ describe("auth tRPC procedures", () => {
 
     expect(rotatedToken.token).toEqual(expect.any(String));
     expect(rotatedToken.token).not.toBe(currentToken.token);
+  });
+
+  it("updates current user profile and changes password", async () => {
+    const context = createTestContext();
+    const caller = createAuthCaller(context);
+
+    await createAppUser({
+      emailAddress: "door@example.com",
+      loginId: "door",
+      name: "Door TTS",
+      password: "strong-pass-123",
+    });
+
+    await caller.signInWithPassword({
+      identifier: "door",
+      password: "strong-pass-123",
+    });
+
+    const sessionToken = context.cookies.get(getSessionCookieName());
+    if (!sessionToken) {
+      throw new Error("Expected signed-in session cookie.");
+    }
+
+    const session = await getSessionByToken(sessionToken);
+    if (!session) {
+      throw new Error("Expected active session record.");
+    }
+
+    context.requestHeaders.set("x-csrf-token", session.csrfToken);
+
+    await expect(
+      caller.updateCurrentUserProfile({
+        emailAddress: "doortts@example.com",
+        name: "Door Updated",
+      }),
+    ).resolves.toMatchObject({
+      emailAddress: "doortts@example.com",
+      userLabel: "Door Updated",
+    });
+
+    await expect(
+      caller.changeCurrentUserPassword({
+        currentPassword: "strong-pass-123",
+        newPassword: "strong-pass-456",
+      }),
+    ).resolves.toEqual({
+      ok: true,
+    });
+
+    await expect(
+      caller.signInWithPassword({
+        identifier: "door",
+        password: "strong-pass-456",
+      }),
+    ).resolves.toMatchObject({
+      ok: true,
+    });
+  });
+
+  it("rejects current user profile updates without a valid csrf token", async () => {
+    const context = createTestContext();
+    const caller = createAuthCaller(context);
+
+    await createAppUser({
+      emailAddress: "door@example.com",
+      loginId: "door",
+      name: "Door TTS",
+      password: "strong-pass-123",
+    });
+
+    await caller.signInWithPassword({
+      identifier: "door",
+      password: "strong-pass-123",
+    });
+
+    await expect(
+      caller.updateCurrentUserProfile({
+        emailAddress: "doortts@example.com",
+        name: "Door Updated",
+      }),
+    ).rejects.toThrow("CSRF validation failed.");
+
+    expect(context.setResponseStatusMock).toHaveBeenCalledWith(403, "Forbidden");
+  });
+
+  it("rejects current user password changes without a valid csrf token", async () => {
+    const context = createTestContext();
+    const caller = createAuthCaller(context);
+
+    await createAppUser({
+      emailAddress: "door@example.com",
+      loginId: "door",
+      name: "Door TTS",
+      password: "strong-pass-123",
+    });
+
+    await caller.signInWithPassword({
+      identifier: "door",
+      password: "strong-pass-123",
+    });
+
+    await expect(
+      caller.changeCurrentUserPassword({
+        currentPassword: "strong-pass-123",
+        newPassword: "strong-pass-456",
+      }),
+    ).rejects.toThrow("CSRF validation failed.");
+
+    expect(context.setResponseStatusMock).toHaveBeenCalledWith(403, "Forbidden");
   });
 });

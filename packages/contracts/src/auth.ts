@@ -289,6 +289,36 @@ export const signOutOutputSchema = signOutResultSchema;
 
 export type SignOutOutput = SignOutResult;
 
+export const updateCurrentUserProfileInputSchema = z
+  .object({
+    emailAddress: authEmailAddressSchema,
+    name: authDisplayNameSchema,
+  })
+  .strict();
+
+export type UpdateCurrentUserProfileInput = z.infer<typeof updateCurrentUserProfileInputSchema>;
+
+export const updateCurrentUserProfileOutputSchema = appSessionProjectionSchema;
+
+export type UpdateCurrentUserProfileOutput = z.infer<typeof updateCurrentUserProfileOutputSchema>;
+
+export const changeCurrentUserPasswordInputSchema = z
+  .object({
+    currentPassword: authPasswordSchema,
+    newPassword: authPasswordSchema,
+  })
+  .strict();
+
+export type ChangeCurrentUserPasswordInput = z.infer<typeof changeCurrentUserPasswordInputSchema>;
+
+export const changeCurrentUserPasswordOutputSchema = z
+  .object({
+    ok: z.literal(true),
+  })
+  .strict();
+
+export type ChangeCurrentUserPasswordOutput = z.infer<typeof changeCurrentUserPasswordOutputSchema>;
+
 export const currentUserApiTokenSchema = z
   .object({
     token: z.string().min(1),

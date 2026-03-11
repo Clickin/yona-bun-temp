@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from "bun:test";
+import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { drizzle } from "drizzle-orm/bun-sql";
 import * as sqliteSchema from "@drizzle/sqlite/schema";
 import { setupSQLiteTestDatabase } from "./test-utils/database";
@@ -11,11 +11,30 @@ function getDefaultValue(rows: any[], columnName: string) {
 describe("SQLite database", () => {
   let db: ReturnType<(typeof drizzle)["sqlite"]>;
 
+  const closeDatabaseClient = async () => {
+    const client = db.$client as {
+      close?: () => Promise<void> | void;
+      end?: () => Promise<void> | void;
+    };
+    if (typeof client.close === "function") {
+      await client.close();
+      return;
+    }
+
+    if (typeof client.end === "function") {
+      await client.end();
+    }
+  };
+
   beforeAll(async () => {
     const setup = await setupSQLiteTestDatabase();
     db = (drizzle as any).sqlite(setup.url, { schema: sqliteSchema });
 
     await applySqliteMigrations(db);
+  });
+
+  afterAll(async () => {
+    await closeDatabaseClient();
   });
 
   it("should connect to SQLite successfully", async () => {
@@ -122,23 +141,31 @@ describe("SQLite database", () => {
       VALUES ('labs', 'primary org')
     `;
 
-    await expect(
-      db.$client`
+    let organizationDuplicateError: unknown = null;
+    try {
+      await db.$client`
         INSERT INTO organization (name, descr)
         VALUES ('LABS', 'duplicate org')
-      `,
-    ).rejects.toThrow();
+      `;
+    } catch (error) {
+      organizationDuplicateError = error;
+    }
+    expect(organizationDuplicateError).not.toBeNull();
 
     await db.$client`
       INSERT INTO project (name, owner, overview, project_scope, vcs)
       VALUES ('project-yona', 'labs', 'original project', 'public', 'GIT')
     `;
 
-    await expect(
-      db.$client`
+    let projectDuplicateError: unknown = null;
+    try {
+      await db.$client`
         INSERT INTO project (name, owner, overview, project_scope, vcs)
         VALUES ('PROJECT-YONA', 'LABS', 'duplicate project', 'public', 'GIT')
-      `,
-    ).rejects.toThrow();
+      `;
+    } catch (error) {
+      projectDuplicateError = error;
+    }
+    expect(projectDuplicateError).not.toBeNull();
   });
 });

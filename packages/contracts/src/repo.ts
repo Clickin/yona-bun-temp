@@ -53,6 +53,77 @@ export const readRepositoryFileOutputSchema = z
 
 export type ReadRepositoryFileOutput = z.infer<typeof readRepositoryFileOutputSchema>;
 
+export const repositoryBranchSummarySchema = z
+  .object({
+    isHead: z.boolean(),
+    name: repositoryBranchSchema,
+    oid: repositoryOidSchema,
+  })
+  .strict();
+
+export type RepositoryBranchSummary = z.infer<typeof repositoryBranchSummarySchema>;
+
+export const listRepositoryBranchesInputSchema = z
+  .object({
+    repoId: repositoryIdSchema,
+  })
+  .strict();
+
+export type ListRepositoryBranchesInput = z.infer<typeof listRepositoryBranchesInputSchema>;
+
+export const listRepositoryBranchesOutputSchema = repositoryBranchSummarySchema.array();
+
+export type ListRepositoryBranchesOutput = z.infer<typeof listRepositoryBranchesOutputSchema>;
+
+export const repositoryCommitSummarySchema = z
+  .object({
+    authorName: z.string().trim().min(1),
+    authoredAt: z.date(),
+    oid: repositoryOidSchema,
+    shortOid: repositoryOidSchema,
+    subject: z.string(),
+  })
+  .strict();
+
+export type RepositoryCommitSummary = z.infer<typeof repositoryCommitSummarySchema>;
+
+export const listRepositoryCommitsInputSchema = z
+  .object({
+    branch: repositoryBranchSchema,
+    limit: z.number().int().min(1).max(100).default(20),
+    repoId: repositoryIdSchema,
+  })
+  .strict();
+
+export type ListRepositoryCommitsInput = z.infer<typeof listRepositoryCommitsInputSchema>;
+
+export const listRepositoryCommitsOutputSchema = repositoryCommitSummarySchema.array();
+
+export type ListRepositoryCommitsOutput = z.infer<typeof listRepositoryCommitsOutputSchema>;
+
+export const readRepositoryCommitInputSchema = z
+  .object({
+    oid: repositoryOidSchema,
+    repoId: repositoryIdSchema,
+  })
+  .strict();
+
+export type ReadRepositoryCommitInput = z.infer<typeof readRepositoryCommitInputSchema>;
+
+export const readRepositoryCommitOutputSchema = z
+  .object({
+    authorEmail: z.string().trim().min(1),
+    authorName: z.string().trim().min(1),
+    authoredAt: z.date(),
+    body: z.string(),
+    oid: repositoryOidSchema,
+    shortOid: repositoryOidSchema,
+    subject: z.string(),
+  })
+  .strict();
+
+export type ReadRepositoryCommitOutput = z.infer<typeof readRepositoryCommitOutputSchema>;
+
 export const inlineEditCommitSchema = z
   .object({
     blobOid: repositoryOidSchema,

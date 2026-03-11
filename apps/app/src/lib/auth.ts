@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
+  changeCurrentUserPasswordInputSchema,
+  changeCurrentUserPasswordOutputSchema,
   completePasswordResetInputSchema,
   completePasswordResetOutputSchema,
   readCurrentSessionOutputSchema,
@@ -7,6 +9,8 @@ import {
   registerWithPasswordOutputSchema,
   requestPasswordResetInputSchema,
   requestPasswordResetOutputSchema,
+  updateCurrentUserProfileInputSchema,
+  updateCurrentUserProfileOutputSchema,
   signInWithPasswordInputSchema,
   signInWithPasswordOutputSchema,
   signOutOutputSchema,
@@ -65,3 +69,21 @@ export const signOut = createServerFn({ method: "POST" }).handler(async () => {
   const { createServerAuthCaller } = await import("./auth-trpc.server");
   return signOutOutputSchema.parse(await createServerAuthCaller().signOut());
 });
+
+export const updateCurrentUserProfile = createServerFn({ method: "POST" })
+  .inputValidator(updateCurrentUserProfileInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerAuthCaller } = await import("./auth-trpc.server");
+    return updateCurrentUserProfileOutputSchema.parse(
+      await createServerAuthCaller().updateCurrentUserProfile(data),
+    );
+  });
+
+export const changeCurrentUserPassword = createServerFn({ method: "POST" })
+  .inputValidator(changeCurrentUserPasswordInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerAuthCaller } = await import("./auth-trpc.server");
+    return changeCurrentUserPasswordOutputSchema.parse(
+      await createServerAuthCaller().changeCurrentUserPassword(data),
+    );
+  });

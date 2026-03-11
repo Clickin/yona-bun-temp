@@ -2,17 +2,21 @@ import type {
   AppSessionProjection,
   AuthErrorCode,
   AuthUserSummary,
+  ChangeCurrentUserPasswordInput,
   CompletePasswordResetInput,
   PasswordResetRequest,
   RegisterWithPasswordInput,
   SessionProjection,
   SessionRoutePayload,
+  UpdateCurrentUserProfileInput,
 } from "@yona/contracts";
 import {
+  changeCurrentUserPasswordInputSchema,
   completePasswordResetInputSchema,
   passwordResetRequestSchema,
   registerWithPasswordInputSchema,
   signInWithPasswordInputSchema,
+  updateCurrentUserProfileInputSchema,
 } from "@yona/contracts";
 import { and, eq, like } from "drizzle-orm";
 import {
@@ -22,6 +26,7 @@ import {
   findAuthUserById,
   findAuthUserByIdentifier,
   updateAuthUserPassword,
+  updateAuthUserProfile,
 } from "@yona/db";
 import { buildAnonymousSession, resolvePasswordSignIn } from "@yona/domain";
 import {
@@ -410,6 +415,67 @@ export async function authenticatePasswordSignIn(
     session: decision.session,
     user: summarizeUser(user),
   };
+}
+
+export async function updateCurrentUserProfile(
+  userId: number,
+  input: UpdateCurrentUserProfileInput,
+): Promise<{ ok: false; code: "auth.login-id-conflict" } | { ok: true; user: AuthUserSummary }> {
+  return withSerializedMutation(async () => {
+    const parsedInput = updateCurrentUserProfileInputSchema.parse(input);
+    const nextEmailAddress = normalizeIdentifier(parsedInput.emailAddress);
+    const conflictingUser = await findAuthUserByIdentifier(nextEmailAddress);
+    if (conflictingUser && conflictingUser.id !== userId) {
+      return {
+        code: "auth.login-id-conflict",
+        ok: false,
+      };
+    }
+
+    await updateAuthUserProfile({
+      emailAddress: nextEmailAddress,
+      name: parsedInput.name,
+      userId,
+    });
+
+    const updatedUser = await findAppUserById(userId);
+    if (!updatedUser) {
+      throw new Error("User profile update target was not found.");
+    }
+
+    return {
+      ok: true,
+      user: updatedUser,
+    };
+  });
+}
+
+export async function changeCurrentUserPassword(
+  userId: number,
+  input: ChangeCurrentUserPasswordInput,
+): Promise<{ ok: false; code: "auth.credentials-invalid" } | { ok: true }> {
+  return withSerializedMutation(async () => {
+    const parsedInput = changeCurrentUserPasswordInputSchema.parse(input);
+    const user = await findAuthUserById(userId);
+    const currentPasswordMatches = await verifyEffectivePassword(user, parsedInput.currentPassword);
+    if (!currentPasswordMatches) {
+      return {
+        code: "auth.credentials-invalid",
+        ok: false,
+      };
+    }
+
+    await updateAuthUserPassword({
+      passwordHash: await hashCredentialPassword(parsedInput.newPassword),
+      passwordSalt: null,
+      userId,
+    });
+    await deleteAllSessionsByUserId(userId);
+
+    return {
+      ok: true,
+    };
+  });
 }
 
 export async function findAppUserById(userId: number): Promise<AuthUserSummary | null> {

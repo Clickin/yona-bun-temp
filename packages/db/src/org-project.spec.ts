@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from "bun:test";
+import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/bun-sql";
 import {
@@ -31,6 +31,21 @@ import { setupSQLiteTestDatabase } from "./test-utils/database";
 describe("organization and project helpers", () => {
   let db: ReturnType<(typeof drizzle)["sqlite"]>;
 
+  const closeDatabaseClient = async () => {
+    const client = db.$client as {
+      close?: () => Promise<void> | void;
+      end?: () => Promise<void> | void;
+    };
+    if (typeof client.close === "function") {
+      await client.close();
+      return;
+    }
+
+    if (typeof client.end === "function") {
+      await client.end();
+    }
+  };
+
   beforeAll(async () => {
     const setup = await setupSQLiteTestDatabase();
     db = (drizzle as any).sqlite(setup.url, {
@@ -43,6 +58,10 @@ describe("organization and project helpers", () => {
       { active: true, id: 6, name: "org_admin" },
       { active: true, id: 7, name: "org_member" },
     ]);
+  });
+
+  afterAll(async () => {
+    await closeDatabaseClient();
   });
 
   it("reads and updates organizations by public name while preserving org-owned project owners", async () => {

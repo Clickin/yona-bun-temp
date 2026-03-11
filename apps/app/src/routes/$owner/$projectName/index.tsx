@@ -26,6 +26,28 @@ function ProjectDetailRouteComponent() {
           {data.organizationName ? <span className="badge">org-owned</span> : null}
         </div>
         <p className="note">{data.overview ?? "No overview yet."}</p>
+        <div className="link-row">
+          <Link
+            className="link-text"
+            params={{
+              owner: data.ownerName,
+              projectName: data.projectName,
+            }}
+            to="/$owner/$projectName/discussions"
+          >
+            Discussions
+          </Link>
+          <Link
+            className="link-text"
+            params={{
+              owner: data.ownerName,
+              projectName: data.projectName,
+            }}
+            to="/$owner/$projectName/pulls"
+          >
+            Pull Requests
+          </Link>
+        </div>
         {data.viewerCanUpdate ? (
           <div className="link-row">
             <Link
@@ -37,6 +59,26 @@ function ProjectDetailRouteComponent() {
               to="/$owner/$projectName/settings"
             >
               Edit settings
+            </Link>
+            <Link
+              className="link-text"
+              params={{
+                owner: data.ownerName,
+                projectName: data.projectName,
+              }}
+              to="/$owner/$projectName/code"
+            >
+              Browse code
+            </Link>
+            <Link
+              className="link-text"
+              params={{
+                owner: data.ownerName,
+                projectName: data.projectName,
+              }}
+              to="/$owner/$projectName/branches"
+            >
+              Branches
             </Link>
           </div>
         ) : null}

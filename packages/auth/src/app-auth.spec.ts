@@ -112,7 +112,13 @@ const { dbMock } = vi.hoisted(() => {
   };
 });
 
-vi.mock("@yona/db", () => dbMock);
+vi.mock("@yona/db", async () => {
+  const actual = await vi.importActual<typeof import("@yona/db")>("@yona/db");
+  return {
+    ...actual,
+    ...dbMock,
+  };
+});
 
 import { __resetSessionStoreForTests, createSession, getSessionByToken } from "./session";
 import {

@@ -4,28 +4,44 @@ import { getTableName, sql } from "drizzle-orm";
 
 type DbType = "pg" | "mysql" | "sqlite";
 
+function sortStrings(values: Iterable<string>): string[] {
+  const sorted: string[] = [];
+
+  for (const value of values) {
+    let index = 0;
+    while (index < sorted.length && sorted[index] <= value) {
+      index += 1;
+    }
+    sorted.splice(index, 0, value);
+  }
+
+  return sorted;
+}
+
 export function getMigrationsFolder(dbType: DbType): string {
   return path.join(process.cwd(), "..", "..", "drizzle", dbType, "migrations");
 }
 
 export function getMigrationSqlChain(dbType: DbType): string {
   const migrationsFolder = getMigrationsFolder(dbType);
-  const entries = fs
-    .readdirSync(migrationsFolder, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .toSorted();
+  const entries = sortStrings(
+    fs
+      .readdirSync(migrationsFolder, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name),
+  );
 
-  if (entries.length === 0) {
+  const migrationPaths = entries
+    .map((folder: string) => path.join(migrationsFolder, folder, "migration.sql"))
+    .filter((migrationPath: string) => fs.existsSync(migrationPath));
+
+  if (migrationPaths.length === 0) {
     throw new Error(`No migration folders found for ${dbType}`);
   }
 
-  return entries
-    .map((folder) => {
-      const migrationPath = path.join(migrationsFolder, folder, "migration.sql");
-      return fs.readFileSync(migrationPath, "utf8").trim();
-    })
-    .filter((sqlText) => sqlText.length > 0)
+  return migrationPaths
+    .map((migrationPath: string) => fs.readFileSync(migrationPath, "utf8").trim())
+    .filter((sqlText: string) => sqlText.length > 0)
     .join("\n--> statement-breakpoint\n");
 }
 
@@ -64,7 +80,7 @@ export function getExpectedTableNames(schemaModule: Record<string, unknown>): st
     }
   }
 
-  return [...tableNames].toSorted();
+  return sortStrings(tableNames);
 }
 
 export async function applySqliteMigrations(db: {

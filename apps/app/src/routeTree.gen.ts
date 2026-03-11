@@ -12,24 +12,46 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProtectedRouteImport } from './routes/protected'
+import { Route as MeRouteImport } from './routes/me'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as UsersLoginIdRouteImport } from './routes/users/$loginId'
 import { Route as ProjectsNewRouteImport } from './routes/projects/new'
 import { Route as OrganizationsNewRouteImport } from './routes/organizations/new'
+import { Route as MeSettingsRouteImport } from './routes/me/settings'
+import { Route as ApiUploadsRouteImport } from './routes/api/uploads'
 import { Route as OrganizationsOrganizationNameIndexRouteImport } from './routes/organizations/$organizationName/index'
 import { Route as OwnerProjectNameIndexRouteImport } from './routes/$owner/$projectName/index'
 import { Route as OrganizationsOrganizationNameSettingsRouteImport } from './routes/organizations/$organizationName/settings'
 import { Route as ApiMeTokenRouteImport } from './routes/api/me/token'
+import { Route as ApiMeSidebarRouteImport } from './routes/api/me/sidebar'
+import { Route as ApiMeRecentRouteImport } from './routes/api/me/recent'
+import { Route as ApiMeNotificationsRouteImport } from './routes/api/me/notifications'
+import { Route as ApiMeFavoritesRouteImport } from './routes/api/me/favorites'
 import { Route as ApiAuthSessionRouteImport } from './routes/api/auth/session'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAssetsAssetIdRouteImport } from './routes/api/assets/$assetId'
 import { Route as OwnerProjectNameSettingsRouteImport } from './routes/$owner/$projectName/settings'
+import { Route as OwnerProjectNameCodeRouteImport } from './routes/$owner/$projectName/code'
+import { Route as OwnerProjectNameBranchesRouteImport } from './routes/$owner/$projectName/branches'
+import { Route as OwnerProjectNamePullsIndexRouteImport } from './routes/$owner/$projectName/pulls/index'
+import { Route as OwnerProjectNameIssuesIndexRouteImport } from './routes/$owner/$projectName/issues/index'
+import { Route as OwnerProjectNameDiscussionsIndexRouteImport } from './routes/$owner/$projectName/discussions/index'
+import { Route as ApiUploadsUploadIdFinalizeRouteImport } from './routes/api/uploads/$uploadId/finalize'
 import { Route as ApiReposRepoIdInlineEditRouteImport } from './routes/api/repos/$repoId/inline-edit'
 import { Route as ApiReposRepoIdFilesRouteImport } from './routes/api/repos/$repoId/files'
+import { Route as ApiReposRepoIdCommitsRouteImport } from './routes/api/repos/$repoId/commits'
+import { Route as ApiReposRepoIdBranchesRouteImport } from './routes/api/repos/$repoId/branches'
 import { Route as ApiReposRepoIdBootstrapRouteImport } from './routes/api/repos/$repoId/bootstrap'
 import { Route as ApiAssetsAssetIdDownloadRouteImport } from './routes/api/assets/$assetId/download'
+import { Route as OwnerProjectNamePullsPullRequestNumberRouteImport } from './routes/$owner/$projectName/pulls/$pullRequestNumber'
+import { Route as OwnerProjectNameIssuesIssueNumberRouteImport } from './routes/$owner/$projectName/issues/$issueNumber'
+import { Route as OwnerProjectNameDiscussionsPostNumberRouteImport } from './routes/$owner/$projectName/discussions/$postNumber'
+import { Route as OwnerProjectNameCommitOidRouteImport } from './routes/$owner/$projectName/commit/$oid'
 import { Route as ApiReposRepoIdSmartHttpSplatRouteImport } from './routes/api/repos/$repoId/smart-http/$'
+import { Route as ApiReposRepoIdCommitsOidRouteImport } from './routes/api/repos/$repoId/commits/$oid'
+import { Route as ApiProjectsOwnerProjectNameRepoIdRouteImport } from './routes/api/projects/$owner/$projectName/repo-id'
 import { Route as ApiAuthProviderProviderCallbackRouteImport } from './routes/api/auth/provider/$provider/callback'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -47,6 +69,11 @@ const ProtectedRoute = ProtectedRouteImport.update({
   path: '/protected',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MeRoute = MeRouteImport.update({
+  id: '/me',
+  path: '/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -62,6 +89,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UsersLoginIdRoute = UsersLoginIdRouteImport.update({
+  id: '/users/$loginId',
+  path: '/users/$loginId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProjectsNewRoute = ProjectsNewRouteImport.update({
   id: '/projects/new',
   path: '/projects/new',
@@ -70,6 +102,16 @@ const ProjectsNewRoute = ProjectsNewRouteImport.update({
 const OrganizationsNewRoute = OrganizationsNewRouteImport.update({
   id: '/organizations/new',
   path: '/organizations/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeSettingsRoute = MeSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => MeRoute,
+} as any)
+const ApiUploadsRoute = ApiUploadsRouteImport.update({
+  id: '/api/uploads',
+  path: '/api/uploads',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrganizationsOrganizationNameIndexRoute =
@@ -94,6 +136,26 @@ const ApiMeTokenRoute = ApiMeTokenRouteImport.update({
   path: '/api/me/token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMeSidebarRoute = ApiMeSidebarRouteImport.update({
+  id: '/api/me/sidebar',
+  path: '/api/me/sidebar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMeRecentRoute = ApiMeRecentRouteImport.update({
+  id: '/api/me/recent',
+  path: '/api/me/recent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMeNotificationsRoute = ApiMeNotificationsRouteImport.update({
+  id: '/api/me/notifications',
+  path: '/api/me/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMeFavoritesRoute = ApiMeFavoritesRouteImport.update({
+  id: '/api/me/favorites',
+  path: '/api/me/favorites',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSessionRoute = ApiAuthSessionRouteImport.update({
   id: '/api/auth/session',
   path: '/api/auth/session',
@@ -115,6 +177,41 @@ const OwnerProjectNameSettingsRoute =
     path: '/$owner/$projectName/settings',
     getParentRoute: () => rootRouteImport,
   } as any)
+const OwnerProjectNameCodeRoute = OwnerProjectNameCodeRouteImport.update({
+  id: '/$owner/$projectName/code',
+  path: '/$owner/$projectName/code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerProjectNameBranchesRoute =
+  OwnerProjectNameBranchesRouteImport.update({
+    id: '/$owner/$projectName/branches',
+    path: '/$owner/$projectName/branches',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const OwnerProjectNamePullsIndexRoute =
+  OwnerProjectNamePullsIndexRouteImport.update({
+    id: '/$owner/$projectName/pulls/',
+    path: '/$owner/$projectName/pulls/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const OwnerProjectNameIssuesIndexRoute =
+  OwnerProjectNameIssuesIndexRouteImport.update({
+    id: '/$owner/$projectName/issues/',
+    path: '/$owner/$projectName/issues/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const OwnerProjectNameDiscussionsIndexRoute =
+  OwnerProjectNameDiscussionsIndexRouteImport.update({
+    id: '/$owner/$projectName/discussions/',
+    path: '/$owner/$projectName/discussions/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiUploadsUploadIdFinalizeRoute =
+  ApiUploadsUploadIdFinalizeRouteImport.update({
+    id: '/$uploadId/finalize',
+    path: '/$uploadId/finalize',
+    getParentRoute: () => ApiUploadsRoute,
+  } as any)
 const ApiReposRepoIdInlineEditRoute =
   ApiReposRepoIdInlineEditRouteImport.update({
     id: '/api/repos/$repoId/inline-edit',
@@ -124,6 +221,16 @@ const ApiReposRepoIdInlineEditRoute =
 const ApiReposRepoIdFilesRoute = ApiReposRepoIdFilesRouteImport.update({
   id: '/api/repos/$repoId/files',
   path: '/api/repos/$repoId/files',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReposRepoIdCommitsRoute = ApiReposRepoIdCommitsRouteImport.update({
+  id: '/api/repos/$repoId/commits',
+  path: '/api/repos/$repoId/commits',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReposRepoIdBranchesRoute = ApiReposRepoIdBranchesRouteImport.update({
+  id: '/api/repos/$repoId/branches',
+  path: '/api/repos/$repoId/branches',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiReposRepoIdBootstrapRoute = ApiReposRepoIdBootstrapRouteImport.update({
@@ -137,10 +244,46 @@ const ApiAssetsAssetIdDownloadRoute =
     path: '/download',
     getParentRoute: () => ApiAssetsAssetIdRoute,
   } as any)
+const OwnerProjectNamePullsPullRequestNumberRoute =
+  OwnerProjectNamePullsPullRequestNumberRouteImport.update({
+    id: '/$owner/$projectName/pulls/$pullRequestNumber',
+    path: '/$owner/$projectName/pulls/$pullRequestNumber',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const OwnerProjectNameIssuesIssueNumberRoute =
+  OwnerProjectNameIssuesIssueNumberRouteImport.update({
+    id: '/$owner/$projectName/issues/$issueNumber',
+    path: '/$owner/$projectName/issues/$issueNumber',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const OwnerProjectNameDiscussionsPostNumberRoute =
+  OwnerProjectNameDiscussionsPostNumberRouteImport.update({
+    id: '/$owner/$projectName/discussions/$postNumber',
+    path: '/$owner/$projectName/discussions/$postNumber',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const OwnerProjectNameCommitOidRoute =
+  OwnerProjectNameCommitOidRouteImport.update({
+    id: '/$owner/$projectName/commit/$oid',
+    path: '/$owner/$projectName/commit/$oid',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiReposRepoIdSmartHttpSplatRoute =
   ApiReposRepoIdSmartHttpSplatRouteImport.update({
     id: '/api/repos/$repoId/smart-http/$',
     path: '/api/repos/$repoId/smart-http/$',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiReposRepoIdCommitsOidRoute =
+  ApiReposRepoIdCommitsOidRouteImport.update({
+    id: '/$oid',
+    path: '/$oid',
+    getParentRoute: () => ApiReposRepoIdCommitsRoute,
+  } as any)
+const ApiProjectsOwnerProjectNameRepoIdRoute =
+  ApiProjectsOwnerProjectNameRepoIdRouteImport.update({
+    id: '/api/projects/$owner/$projectName/repo-id',
+    path: '/api/projects/$owner/$projectName/repo-id',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiAuthProviderProviderCallbackRoute =
@@ -154,48 +297,92 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/me': typeof MeRouteWithChildren
   '/protected': typeof ProtectedRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/api/uploads': typeof ApiUploadsRouteWithChildren
+  '/me/settings': typeof MeSettingsRoute
   '/organizations/new': typeof OrganizationsNewRoute
   '/projects/new': typeof ProjectsNewRoute
+  '/users/$loginId': typeof UsersLoginIdRoute
+  '/$owner/$projectName/branches': typeof OwnerProjectNameBranchesRoute
+  '/$owner/$projectName/code': typeof OwnerProjectNameCodeRoute
   '/$owner/$projectName/settings': typeof OwnerProjectNameSettingsRoute
   '/api/assets/$assetId': typeof ApiAssetsAssetIdRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/session': typeof ApiAuthSessionRoute
+  '/api/me/favorites': typeof ApiMeFavoritesRoute
+  '/api/me/notifications': typeof ApiMeNotificationsRoute
+  '/api/me/recent': typeof ApiMeRecentRoute
+  '/api/me/sidebar': typeof ApiMeSidebarRoute
   '/api/me/token': typeof ApiMeTokenRoute
   '/organizations/$organizationName/settings': typeof OrganizationsOrganizationNameSettingsRoute
   '/$owner/$projectName/': typeof OwnerProjectNameIndexRoute
   '/organizations/$organizationName/': typeof OrganizationsOrganizationNameIndexRoute
+  '/$owner/$projectName/commit/$oid': typeof OwnerProjectNameCommitOidRoute
+  '/$owner/$projectName/discussions/$postNumber': typeof OwnerProjectNameDiscussionsPostNumberRoute
+  '/$owner/$projectName/issues/$issueNumber': typeof OwnerProjectNameIssuesIssueNumberRoute
+  '/$owner/$projectName/pulls/$pullRequestNumber': typeof OwnerProjectNamePullsPullRequestNumberRoute
   '/api/assets/$assetId/download': typeof ApiAssetsAssetIdDownloadRoute
   '/api/repos/$repoId/bootstrap': typeof ApiReposRepoIdBootstrapRoute
+  '/api/repos/$repoId/branches': typeof ApiReposRepoIdBranchesRoute
+  '/api/repos/$repoId/commits': typeof ApiReposRepoIdCommitsRouteWithChildren
   '/api/repos/$repoId/files': typeof ApiReposRepoIdFilesRoute
   '/api/repos/$repoId/inline-edit': typeof ApiReposRepoIdInlineEditRoute
+  '/api/uploads/$uploadId/finalize': typeof ApiUploadsUploadIdFinalizeRoute
+  '/$owner/$projectName/discussions/': typeof OwnerProjectNameDiscussionsIndexRoute
+  '/$owner/$projectName/issues/': typeof OwnerProjectNameIssuesIndexRoute
+  '/$owner/$projectName/pulls/': typeof OwnerProjectNamePullsIndexRoute
   '/api/auth/provider/$provider/callback': typeof ApiAuthProviderProviderCallbackRoute
+  '/api/projects/$owner/$projectName/repo-id': typeof ApiProjectsOwnerProjectNameRepoIdRoute
+  '/api/repos/$repoId/commits/$oid': typeof ApiReposRepoIdCommitsOidRoute
   '/api/repos/$repoId/smart-http/$': typeof ApiReposRepoIdSmartHttpSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/me': typeof MeRouteWithChildren
   '/protected': typeof ProtectedRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/api/uploads': typeof ApiUploadsRouteWithChildren
+  '/me/settings': typeof MeSettingsRoute
   '/organizations/new': typeof OrganizationsNewRoute
   '/projects/new': typeof ProjectsNewRoute
+  '/users/$loginId': typeof UsersLoginIdRoute
+  '/$owner/$projectName/branches': typeof OwnerProjectNameBranchesRoute
+  '/$owner/$projectName/code': typeof OwnerProjectNameCodeRoute
   '/$owner/$projectName/settings': typeof OwnerProjectNameSettingsRoute
   '/api/assets/$assetId': typeof ApiAssetsAssetIdRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/session': typeof ApiAuthSessionRoute
+  '/api/me/favorites': typeof ApiMeFavoritesRoute
+  '/api/me/notifications': typeof ApiMeNotificationsRoute
+  '/api/me/recent': typeof ApiMeRecentRoute
+  '/api/me/sidebar': typeof ApiMeSidebarRoute
   '/api/me/token': typeof ApiMeTokenRoute
   '/organizations/$organizationName/settings': typeof OrganizationsOrganizationNameSettingsRoute
   '/$owner/$projectName': typeof OwnerProjectNameIndexRoute
   '/organizations/$organizationName': typeof OrganizationsOrganizationNameIndexRoute
+  '/$owner/$projectName/commit/$oid': typeof OwnerProjectNameCommitOidRoute
+  '/$owner/$projectName/discussions/$postNumber': typeof OwnerProjectNameDiscussionsPostNumberRoute
+  '/$owner/$projectName/issues/$issueNumber': typeof OwnerProjectNameIssuesIssueNumberRoute
+  '/$owner/$projectName/pulls/$pullRequestNumber': typeof OwnerProjectNamePullsPullRequestNumberRoute
   '/api/assets/$assetId/download': typeof ApiAssetsAssetIdDownloadRoute
   '/api/repos/$repoId/bootstrap': typeof ApiReposRepoIdBootstrapRoute
+  '/api/repos/$repoId/branches': typeof ApiReposRepoIdBranchesRoute
+  '/api/repos/$repoId/commits': typeof ApiReposRepoIdCommitsRouteWithChildren
   '/api/repos/$repoId/files': typeof ApiReposRepoIdFilesRoute
   '/api/repos/$repoId/inline-edit': typeof ApiReposRepoIdInlineEditRoute
+  '/api/uploads/$uploadId/finalize': typeof ApiUploadsUploadIdFinalizeRoute
+  '/$owner/$projectName/discussions': typeof OwnerProjectNameDiscussionsIndexRoute
+  '/$owner/$projectName/issues': typeof OwnerProjectNameIssuesIndexRoute
+  '/$owner/$projectName/pulls': typeof OwnerProjectNamePullsIndexRoute
   '/api/auth/provider/$provider/callback': typeof ApiAuthProviderProviderCallbackRoute
+  '/api/projects/$owner/$projectName/repo-id': typeof ApiProjectsOwnerProjectNameRepoIdRoute
+  '/api/repos/$repoId/commits/$oid': typeof ApiReposRepoIdCommitsOidRoute
   '/api/repos/$repoId/smart-http/$': typeof ApiReposRepoIdSmartHttpSplatRoute
 }
 export interface FileRoutesById {
@@ -203,24 +390,46 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
+  '/me': typeof MeRouteWithChildren
   '/protected': typeof ProtectedRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/api/uploads': typeof ApiUploadsRouteWithChildren
+  '/me/settings': typeof MeSettingsRoute
   '/organizations/new': typeof OrganizationsNewRoute
   '/projects/new': typeof ProjectsNewRoute
+  '/users/$loginId': typeof UsersLoginIdRoute
+  '/$owner/$projectName/branches': typeof OwnerProjectNameBranchesRoute
+  '/$owner/$projectName/code': typeof OwnerProjectNameCodeRoute
   '/$owner/$projectName/settings': typeof OwnerProjectNameSettingsRoute
   '/api/assets/$assetId': typeof ApiAssetsAssetIdRouteWithChildren
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/session': typeof ApiAuthSessionRoute
+  '/api/me/favorites': typeof ApiMeFavoritesRoute
+  '/api/me/notifications': typeof ApiMeNotificationsRoute
+  '/api/me/recent': typeof ApiMeRecentRoute
+  '/api/me/sidebar': typeof ApiMeSidebarRoute
   '/api/me/token': typeof ApiMeTokenRoute
   '/organizations/$organizationName/settings': typeof OrganizationsOrganizationNameSettingsRoute
   '/$owner/$projectName/': typeof OwnerProjectNameIndexRoute
   '/organizations/$organizationName/': typeof OrganizationsOrganizationNameIndexRoute
+  '/$owner/$projectName/commit/$oid': typeof OwnerProjectNameCommitOidRoute
+  '/$owner/$projectName/discussions/$postNumber': typeof OwnerProjectNameDiscussionsPostNumberRoute
+  '/$owner/$projectName/issues/$issueNumber': typeof OwnerProjectNameIssuesIssueNumberRoute
+  '/$owner/$projectName/pulls/$pullRequestNumber': typeof OwnerProjectNamePullsPullRequestNumberRoute
   '/api/assets/$assetId/download': typeof ApiAssetsAssetIdDownloadRoute
   '/api/repos/$repoId/bootstrap': typeof ApiReposRepoIdBootstrapRoute
+  '/api/repos/$repoId/branches': typeof ApiReposRepoIdBranchesRoute
+  '/api/repos/$repoId/commits': typeof ApiReposRepoIdCommitsRouteWithChildren
   '/api/repos/$repoId/files': typeof ApiReposRepoIdFilesRoute
   '/api/repos/$repoId/inline-edit': typeof ApiReposRepoIdInlineEditRoute
+  '/api/uploads/$uploadId/finalize': typeof ApiUploadsUploadIdFinalizeRoute
+  '/$owner/$projectName/discussions/': typeof OwnerProjectNameDiscussionsIndexRoute
+  '/$owner/$projectName/issues/': typeof OwnerProjectNameIssuesIndexRoute
+  '/$owner/$projectName/pulls/': typeof OwnerProjectNamePullsIndexRoute
   '/api/auth/provider/$provider/callback': typeof ApiAuthProviderProviderCallbackRoute
+  '/api/projects/$owner/$projectName/repo-id': typeof ApiProjectsOwnerProjectNameRepoIdRoute
+  '/api/repos/$repoId/commits/$oid': typeof ApiReposRepoIdCommitsOidRoute
   '/api/repos/$repoId/smart-http/$': typeof ApiReposRepoIdSmartHttpSplatRoute
 }
 export interface FileRouteTypes {
@@ -229,72 +438,138 @@ export interface FileRouteTypes {
     | '/'
     | '/forgot-password'
     | '/login'
+    | '/me'
     | '/protected'
     | '/register'
     | '/reset-password'
+    | '/api/uploads'
+    | '/me/settings'
     | '/organizations/new'
     | '/projects/new'
+    | '/users/$loginId'
+    | '/$owner/$projectName/branches'
+    | '/$owner/$projectName/code'
     | '/$owner/$projectName/settings'
     | '/api/assets/$assetId'
     | '/api/auth/$'
     | '/api/auth/session'
+    | '/api/me/favorites'
+    | '/api/me/notifications'
+    | '/api/me/recent'
+    | '/api/me/sidebar'
     | '/api/me/token'
     | '/organizations/$organizationName/settings'
     | '/$owner/$projectName/'
     | '/organizations/$organizationName/'
+    | '/$owner/$projectName/commit/$oid'
+    | '/$owner/$projectName/discussions/$postNumber'
+    | '/$owner/$projectName/issues/$issueNumber'
+    | '/$owner/$projectName/pulls/$pullRequestNumber'
     | '/api/assets/$assetId/download'
     | '/api/repos/$repoId/bootstrap'
+    | '/api/repos/$repoId/branches'
+    | '/api/repos/$repoId/commits'
     | '/api/repos/$repoId/files'
     | '/api/repos/$repoId/inline-edit'
+    | '/api/uploads/$uploadId/finalize'
+    | '/$owner/$projectName/discussions/'
+    | '/$owner/$projectName/issues/'
+    | '/$owner/$projectName/pulls/'
     | '/api/auth/provider/$provider/callback'
+    | '/api/projects/$owner/$projectName/repo-id'
+    | '/api/repos/$repoId/commits/$oid'
     | '/api/repos/$repoId/smart-http/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/forgot-password'
     | '/login'
+    | '/me'
     | '/protected'
     | '/register'
     | '/reset-password'
+    | '/api/uploads'
+    | '/me/settings'
     | '/organizations/new'
     | '/projects/new'
+    | '/users/$loginId'
+    | '/$owner/$projectName/branches'
+    | '/$owner/$projectName/code'
     | '/$owner/$projectName/settings'
     | '/api/assets/$assetId'
     | '/api/auth/$'
     | '/api/auth/session'
+    | '/api/me/favorites'
+    | '/api/me/notifications'
+    | '/api/me/recent'
+    | '/api/me/sidebar'
     | '/api/me/token'
     | '/organizations/$organizationName/settings'
     | '/$owner/$projectName'
     | '/organizations/$organizationName'
+    | '/$owner/$projectName/commit/$oid'
+    | '/$owner/$projectName/discussions/$postNumber'
+    | '/$owner/$projectName/issues/$issueNumber'
+    | '/$owner/$projectName/pulls/$pullRequestNumber'
     | '/api/assets/$assetId/download'
     | '/api/repos/$repoId/bootstrap'
+    | '/api/repos/$repoId/branches'
+    | '/api/repos/$repoId/commits'
     | '/api/repos/$repoId/files'
     | '/api/repos/$repoId/inline-edit'
+    | '/api/uploads/$uploadId/finalize'
+    | '/$owner/$projectName/discussions'
+    | '/$owner/$projectName/issues'
+    | '/$owner/$projectName/pulls'
     | '/api/auth/provider/$provider/callback'
+    | '/api/projects/$owner/$projectName/repo-id'
+    | '/api/repos/$repoId/commits/$oid'
     | '/api/repos/$repoId/smart-http/$'
   id:
     | '__root__'
     | '/'
     | '/forgot-password'
     | '/login'
+    | '/me'
     | '/protected'
     | '/register'
     | '/reset-password'
+    | '/api/uploads'
+    | '/me/settings'
     | '/organizations/new'
     | '/projects/new'
+    | '/users/$loginId'
+    | '/$owner/$projectName/branches'
+    | '/$owner/$projectName/code'
     | '/$owner/$projectName/settings'
     | '/api/assets/$assetId'
     | '/api/auth/$'
     | '/api/auth/session'
+    | '/api/me/favorites'
+    | '/api/me/notifications'
+    | '/api/me/recent'
+    | '/api/me/sidebar'
     | '/api/me/token'
     | '/organizations/$organizationName/settings'
     | '/$owner/$projectName/'
     | '/organizations/$organizationName/'
+    | '/$owner/$projectName/commit/$oid'
+    | '/$owner/$projectName/discussions/$postNumber'
+    | '/$owner/$projectName/issues/$issueNumber'
+    | '/$owner/$projectName/pulls/$pullRequestNumber'
     | '/api/assets/$assetId/download'
     | '/api/repos/$repoId/bootstrap'
+    | '/api/repos/$repoId/branches'
+    | '/api/repos/$repoId/commits'
     | '/api/repos/$repoId/files'
     | '/api/repos/$repoId/inline-edit'
+    | '/api/uploads/$uploadId/finalize'
+    | '/$owner/$projectName/discussions/'
+    | '/$owner/$projectName/issues/'
+    | '/$owner/$projectName/pulls/'
     | '/api/auth/provider/$provider/callback'
+    | '/api/projects/$owner/$projectName/repo-id'
+    | '/api/repos/$repoId/commits/$oid'
     | '/api/repos/$repoId/smart-http/$'
   fileRoutesById: FileRoutesById
 }
@@ -302,23 +577,42 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
+  MeRoute: typeof MeRouteWithChildren
   ProtectedRoute: typeof ProtectedRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiUploadsRoute: typeof ApiUploadsRouteWithChildren
   OrganizationsNewRoute: typeof OrganizationsNewRoute
   ProjectsNewRoute: typeof ProjectsNewRoute
+  UsersLoginIdRoute: typeof UsersLoginIdRoute
+  OwnerProjectNameBranchesRoute: typeof OwnerProjectNameBranchesRoute
+  OwnerProjectNameCodeRoute: typeof OwnerProjectNameCodeRoute
   OwnerProjectNameSettingsRoute: typeof OwnerProjectNameSettingsRoute
   ApiAssetsAssetIdRoute: typeof ApiAssetsAssetIdRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAuthSessionRoute: typeof ApiAuthSessionRoute
+  ApiMeFavoritesRoute: typeof ApiMeFavoritesRoute
+  ApiMeNotificationsRoute: typeof ApiMeNotificationsRoute
+  ApiMeRecentRoute: typeof ApiMeRecentRoute
+  ApiMeSidebarRoute: typeof ApiMeSidebarRoute
   ApiMeTokenRoute: typeof ApiMeTokenRoute
   OrganizationsOrganizationNameSettingsRoute: typeof OrganizationsOrganizationNameSettingsRoute
   OwnerProjectNameIndexRoute: typeof OwnerProjectNameIndexRoute
   OrganizationsOrganizationNameIndexRoute: typeof OrganizationsOrganizationNameIndexRoute
+  OwnerProjectNameCommitOidRoute: typeof OwnerProjectNameCommitOidRoute
+  OwnerProjectNameDiscussionsPostNumberRoute: typeof OwnerProjectNameDiscussionsPostNumberRoute
+  OwnerProjectNameIssuesIssueNumberRoute: typeof OwnerProjectNameIssuesIssueNumberRoute
+  OwnerProjectNamePullsPullRequestNumberRoute: typeof OwnerProjectNamePullsPullRequestNumberRoute
   ApiReposRepoIdBootstrapRoute: typeof ApiReposRepoIdBootstrapRoute
+  ApiReposRepoIdBranchesRoute: typeof ApiReposRepoIdBranchesRoute
+  ApiReposRepoIdCommitsRoute: typeof ApiReposRepoIdCommitsRouteWithChildren
   ApiReposRepoIdFilesRoute: typeof ApiReposRepoIdFilesRoute
   ApiReposRepoIdInlineEditRoute: typeof ApiReposRepoIdInlineEditRoute
+  OwnerProjectNameDiscussionsIndexRoute: typeof OwnerProjectNameDiscussionsIndexRoute
+  OwnerProjectNameIssuesIndexRoute: typeof OwnerProjectNameIssuesIndexRoute
+  OwnerProjectNamePullsIndexRoute: typeof OwnerProjectNamePullsIndexRoute
   ApiAuthProviderProviderCallbackRoute: typeof ApiAuthProviderProviderCallbackRoute
+  ApiProjectsOwnerProjectNameRepoIdRoute: typeof ApiProjectsOwnerProjectNameRepoIdRoute
   ApiReposRepoIdSmartHttpSplatRoute: typeof ApiReposRepoIdSmartHttpSplatRoute
 }
 
@@ -345,6 +639,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/me': {
+      id: '/me'
+      path: '/me'
+      fullPath: '/me'
+      preLoaderRoute: typeof MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -366,6 +667,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/users/$loginId': {
+      id: '/users/$loginId'
+      path: '/users/$loginId'
+      fullPath: '/users/$loginId'
+      preLoaderRoute: typeof UsersLoginIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/projects/new': {
       id: '/projects/new'
       path: '/projects/new'
@@ -378,6 +686,20 @@ declare module '@tanstack/react-router' {
       path: '/organizations/new'
       fullPath: '/organizations/new'
       preLoaderRoute: typeof OrganizationsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/me/settings': {
+      id: '/me/settings'
+      path: '/settings'
+      fullPath: '/me/settings'
+      preLoaderRoute: typeof MeSettingsRouteImport
+      parentRoute: typeof MeRoute
+    }
+    '/api/uploads': {
+      id: '/api/uploads'
+      path: '/api/uploads'
+      fullPath: '/api/uploads'
+      preLoaderRoute: typeof ApiUploadsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/organizations/$organizationName/': {
@@ -408,6 +730,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/me/sidebar': {
+      id: '/api/me/sidebar'
+      path: '/api/me/sidebar'
+      fullPath: '/api/me/sidebar'
+      preLoaderRoute: typeof ApiMeSidebarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/me/recent': {
+      id: '/api/me/recent'
+      path: '/api/me/recent'
+      fullPath: '/api/me/recent'
+      preLoaderRoute: typeof ApiMeRecentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/me/notifications': {
+      id: '/api/me/notifications'
+      path: '/api/me/notifications'
+      fullPath: '/api/me/notifications'
+      preLoaderRoute: typeof ApiMeNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/me/favorites': {
+      id: '/api/me/favorites'
+      path: '/api/me/favorites'
+      fullPath: '/api/me/favorites'
+      preLoaderRoute: typeof ApiMeFavoritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/session': {
       id: '/api/auth/session'
       path: '/api/auth/session'
@@ -436,6 +786,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnerProjectNameSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$owner/$projectName/code': {
+      id: '/$owner/$projectName/code'
+      path: '/$owner/$projectName/code'
+      fullPath: '/$owner/$projectName/code'
+      preLoaderRoute: typeof OwnerProjectNameCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$owner/$projectName/branches': {
+      id: '/$owner/$projectName/branches'
+      path: '/$owner/$projectName/branches'
+      fullPath: '/$owner/$projectName/branches'
+      preLoaderRoute: typeof OwnerProjectNameBranchesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$owner/$projectName/pulls/': {
+      id: '/$owner/$projectName/pulls/'
+      path: '/$owner/$projectName/pulls'
+      fullPath: '/$owner/$projectName/pulls/'
+      preLoaderRoute: typeof OwnerProjectNamePullsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$owner/$projectName/issues/': {
+      id: '/$owner/$projectName/issues/'
+      path: '/$owner/$projectName/issues'
+      fullPath: '/$owner/$projectName/issues/'
+      preLoaderRoute: typeof OwnerProjectNameIssuesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$owner/$projectName/discussions/': {
+      id: '/$owner/$projectName/discussions/'
+      path: '/$owner/$projectName/discussions'
+      fullPath: '/$owner/$projectName/discussions/'
+      preLoaderRoute: typeof OwnerProjectNameDiscussionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/uploads/$uploadId/finalize': {
+      id: '/api/uploads/$uploadId/finalize'
+      path: '/$uploadId/finalize'
+      fullPath: '/api/uploads/$uploadId/finalize'
+      preLoaderRoute: typeof ApiUploadsUploadIdFinalizeRouteImport
+      parentRoute: typeof ApiUploadsRoute
+    }
     '/api/repos/$repoId/inline-edit': {
       id: '/api/repos/$repoId/inline-edit'
       path: '/api/repos/$repoId/inline-edit'
@@ -448,6 +840,20 @@ declare module '@tanstack/react-router' {
       path: '/api/repos/$repoId/files'
       fullPath: '/api/repos/$repoId/files'
       preLoaderRoute: typeof ApiReposRepoIdFilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/repos/$repoId/commits': {
+      id: '/api/repos/$repoId/commits'
+      path: '/api/repos/$repoId/commits'
+      fullPath: '/api/repos/$repoId/commits'
+      preLoaderRoute: typeof ApiReposRepoIdCommitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/repos/$repoId/branches': {
+      id: '/api/repos/$repoId/branches'
+      path: '/api/repos/$repoId/branches'
+      fullPath: '/api/repos/$repoId/branches'
+      preLoaderRoute: typeof ApiReposRepoIdBranchesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/repos/$repoId/bootstrap': {
@@ -464,11 +870,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAssetsAssetIdDownloadRouteImport
       parentRoute: typeof ApiAssetsAssetIdRoute
     }
+    '/$owner/$projectName/pulls/$pullRequestNumber': {
+      id: '/$owner/$projectName/pulls/$pullRequestNumber'
+      path: '/$owner/$projectName/pulls/$pullRequestNumber'
+      fullPath: '/$owner/$projectName/pulls/$pullRequestNumber'
+      preLoaderRoute: typeof OwnerProjectNamePullsPullRequestNumberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$owner/$projectName/issues/$issueNumber': {
+      id: '/$owner/$projectName/issues/$issueNumber'
+      path: '/$owner/$projectName/issues/$issueNumber'
+      fullPath: '/$owner/$projectName/issues/$issueNumber'
+      preLoaderRoute: typeof OwnerProjectNameIssuesIssueNumberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$owner/$projectName/discussions/$postNumber': {
+      id: '/$owner/$projectName/discussions/$postNumber'
+      path: '/$owner/$projectName/discussions/$postNumber'
+      fullPath: '/$owner/$projectName/discussions/$postNumber'
+      preLoaderRoute: typeof OwnerProjectNameDiscussionsPostNumberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$owner/$projectName/commit/$oid': {
+      id: '/$owner/$projectName/commit/$oid'
+      path: '/$owner/$projectName/commit/$oid'
+      fullPath: '/$owner/$projectName/commit/$oid'
+      preLoaderRoute: typeof OwnerProjectNameCommitOidRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/repos/$repoId/smart-http/$': {
       id: '/api/repos/$repoId/smart-http/$'
       path: '/api/repos/$repoId/smart-http/$'
       fullPath: '/api/repos/$repoId/smart-http/$'
       preLoaderRoute: typeof ApiReposRepoIdSmartHttpSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/repos/$repoId/commits/$oid': {
+      id: '/api/repos/$repoId/commits/$oid'
+      path: '/$oid'
+      fullPath: '/api/repos/$repoId/commits/$oid'
+      preLoaderRoute: typeof ApiReposRepoIdCommitsOidRouteImport
+      parentRoute: typeof ApiReposRepoIdCommitsRoute
+    }
+    '/api/projects/$owner/$projectName/repo-id': {
+      id: '/api/projects/$owner/$projectName/repo-id'
+      path: '/api/projects/$owner/$projectName/repo-id'
+      fullPath: '/api/projects/$owner/$projectName/repo-id'
+      preLoaderRoute: typeof ApiProjectsOwnerProjectNameRepoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/provider/$provider/callback': {
@@ -481,6 +929,28 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface MeRouteChildren {
+  MeSettingsRoute: typeof MeSettingsRoute
+}
+
+const MeRouteChildren: MeRouteChildren = {
+  MeSettingsRoute: MeSettingsRoute,
+}
+
+const MeRouteWithChildren = MeRoute._addFileChildren(MeRouteChildren)
+
+interface ApiUploadsRouteChildren {
+  ApiUploadsUploadIdFinalizeRoute: typeof ApiUploadsUploadIdFinalizeRoute
+}
+
+const ApiUploadsRouteChildren: ApiUploadsRouteChildren = {
+  ApiUploadsUploadIdFinalizeRoute: ApiUploadsUploadIdFinalizeRoute,
+}
+
+const ApiUploadsRouteWithChildren = ApiUploadsRoute._addFileChildren(
+  ApiUploadsRouteChildren,
+)
+
 interface ApiAssetsAssetIdRouteChildren {
   ApiAssetsAssetIdDownloadRoute: typeof ApiAssetsAssetIdDownloadRoute
 }
@@ -492,29 +962,65 @@ const ApiAssetsAssetIdRouteChildren: ApiAssetsAssetIdRouteChildren = {
 const ApiAssetsAssetIdRouteWithChildren =
   ApiAssetsAssetIdRoute._addFileChildren(ApiAssetsAssetIdRouteChildren)
 
+interface ApiReposRepoIdCommitsRouteChildren {
+  ApiReposRepoIdCommitsOidRoute: typeof ApiReposRepoIdCommitsOidRoute
+}
+
+const ApiReposRepoIdCommitsRouteChildren: ApiReposRepoIdCommitsRouteChildren = {
+  ApiReposRepoIdCommitsOidRoute: ApiReposRepoIdCommitsOidRoute,
+}
+
+const ApiReposRepoIdCommitsRouteWithChildren =
+  ApiReposRepoIdCommitsRoute._addFileChildren(
+    ApiReposRepoIdCommitsRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
+  MeRoute: MeRouteWithChildren,
   ProtectedRoute: ProtectedRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiUploadsRoute: ApiUploadsRouteWithChildren,
   OrganizationsNewRoute: OrganizationsNewRoute,
   ProjectsNewRoute: ProjectsNewRoute,
+  UsersLoginIdRoute: UsersLoginIdRoute,
+  OwnerProjectNameBranchesRoute: OwnerProjectNameBranchesRoute,
+  OwnerProjectNameCodeRoute: OwnerProjectNameCodeRoute,
   OwnerProjectNameSettingsRoute: OwnerProjectNameSettingsRoute,
   ApiAssetsAssetIdRoute: ApiAssetsAssetIdRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAuthSessionRoute: ApiAuthSessionRoute,
+  ApiMeFavoritesRoute: ApiMeFavoritesRoute,
+  ApiMeNotificationsRoute: ApiMeNotificationsRoute,
+  ApiMeRecentRoute: ApiMeRecentRoute,
+  ApiMeSidebarRoute: ApiMeSidebarRoute,
   ApiMeTokenRoute: ApiMeTokenRoute,
   OrganizationsOrganizationNameSettingsRoute:
     OrganizationsOrganizationNameSettingsRoute,
   OwnerProjectNameIndexRoute: OwnerProjectNameIndexRoute,
   OrganizationsOrganizationNameIndexRoute:
     OrganizationsOrganizationNameIndexRoute,
+  OwnerProjectNameCommitOidRoute: OwnerProjectNameCommitOidRoute,
+  OwnerProjectNameDiscussionsPostNumberRoute:
+    OwnerProjectNameDiscussionsPostNumberRoute,
+  OwnerProjectNameIssuesIssueNumberRoute:
+    OwnerProjectNameIssuesIssueNumberRoute,
+  OwnerProjectNamePullsPullRequestNumberRoute:
+    OwnerProjectNamePullsPullRequestNumberRoute,
   ApiReposRepoIdBootstrapRoute: ApiReposRepoIdBootstrapRoute,
+  ApiReposRepoIdBranchesRoute: ApiReposRepoIdBranchesRoute,
+  ApiReposRepoIdCommitsRoute: ApiReposRepoIdCommitsRouteWithChildren,
   ApiReposRepoIdFilesRoute: ApiReposRepoIdFilesRoute,
   ApiReposRepoIdInlineEditRoute: ApiReposRepoIdInlineEditRoute,
+  OwnerProjectNameDiscussionsIndexRoute: OwnerProjectNameDiscussionsIndexRoute,
+  OwnerProjectNameIssuesIndexRoute: OwnerProjectNameIssuesIndexRoute,
+  OwnerProjectNamePullsIndexRoute: OwnerProjectNamePullsIndexRoute,
   ApiAuthProviderProviderCallbackRoute: ApiAuthProviderProviderCallbackRoute,
+  ApiProjectsOwnerProjectNameRepoIdRoute:
+    ApiProjectsOwnerProjectNameRepoIdRoute,
   ApiReposRepoIdSmartHttpSplatRoute: ApiReposRepoIdSmartHttpSplatRoute,
 }
 export const routeTree = rootRouteImport

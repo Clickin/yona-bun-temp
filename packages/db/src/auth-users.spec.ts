@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from "bun:test";
+import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/bun-sql";
 import { n4user, siteAdmin } from "@drizzle/sqlite/schema";
@@ -15,12 +15,31 @@ import { applySqliteMigrations } from "./test-helpers";
 describe("db auth user helpers", () => {
   let db: ReturnType<(typeof drizzle)["sqlite"]>;
 
+  const closeDatabaseClient = async () => {
+    const client = db.$client as {
+      close?: () => Promise<void> | void;
+      end?: () => Promise<void> | void;
+    };
+    if (typeof client.close === "function") {
+      await client.close();
+      return;
+    }
+
+    if (typeof client.end === "function") {
+      await client.end();
+    }
+  };
+
   beforeAll(async () => {
     const setup = await setupSQLiteTestDatabase();
     db = (drizzle as any).sqlite(setup.url, {
       schema: await import("@drizzle/sqlite/schema"),
     });
     await applySqliteMigrations(db);
+  });
+
+  afterAll(async () => {
+    await closeDatabaseClient();
   });
 
   it("creates and resolves a password-backed auth user", async () => {
