@@ -1,4 +1,6 @@
 import type { ProjectRole, ProjectScope } from "@yona/contracts";
+import { requireAuthenticatedActor } from "./actor-utils";
+import { DomainNotFoundError, DomainPermissionError, type DomainActor } from "./errors";
 
 export type ProjectOperation = "delete" | "read" | "update";
 
@@ -28,6 +30,31 @@ export type ProjectAccessReason =
 export interface ProjectAccessDecision {
   allowed: boolean;
   reason: ProjectAccessReason;
+}
+
+export interface ProjectAuthorizationInput {
+  ownerName: string;
+  projectName: string;
+}
+
+interface ProjectAuthorizationRecord {
+  project: {
+    projectScope: ProjectScope;
+  };
+  viewer: {
+    isOrganizationAdmin: boolean;
+    isOrganizationMember: boolean;
+    isProjectManager: boolean;
+    isProjectMember: boolean;
+  };
+}
+
+export interface ProjectAuthorizationDeps<TAuthorization extends ProjectAuthorizationRecord> {
+  readProjectAuthorization(
+    ownerName: string,
+    projectName: string,
+    actorId: null | number,
+  ): Promise<null | TAuthorization>;
 }
 
 export function authorizeProjectAccess(
@@ -122,4 +149,64 @@ export function canAccessProject(
   );
 
   return decision.allowed;
+}
+
+export async function requireProjectReadAuthorization<
+  TAuthorization extends ProjectAuthorizationRecord,
+>(
+  actor: DomainActor,
+  input: ProjectAuthorizationInput,
+  deps: ProjectAuthorizationDeps<TAuthorization>,
+): Promise<TAuthorization> {
+  const authorization = await deps.readProjectAuthorization(
+    input.ownerName,
+    input.projectName,
+    actor.actorId,
+  );
+  if (!authorization) {
+    throw new DomainNotFoundError("Project not found.");
+  }
+
+  const readDecision = authorizeProjectAccess(
+    {
+      isAnonymous: actor.isAnonymous,
+      isSiteAdmin: actor.isSiteAdmin,
+      ...authorization.viewer,
+      projectScope: authorization.project.projectScope,
+    },
+    "read",
+  );
+  if (!readDecision.allowed) {
+    throw new DomainPermissionError("Project read is not allowed.", {
+      requiresAuthentication: actor.isAnonymous,
+    });
+  }
+
+  return authorization;
+}
+
+export async function requireProjectWriteAuthorization<
+  TAuthorization extends ProjectAuthorizationRecord,
+>(
+  actor: DomainActor,
+  input: ProjectAuthorizationInput,
+  deps: ProjectAuthorizationDeps<TAuthorization>,
+): Promise<TAuthorization> {
+  requireAuthenticatedActor(actor);
+
+  const authorization = await requireProjectReadAuthorization(actor, input, deps);
+  const writeDecision = authorizeProjectAccess(
+    {
+      isAnonymous: actor.isAnonymous,
+      isSiteAdmin: actor.isSiteAdmin,
+      ...authorization.viewer,
+      projectScope: authorization.project.projectScope,
+    },
+    "update",
+  );
+  if (!writeDecision.allowed) {
+    throw new DomainPermissionError("Project update is not allowed.");
+  }
+
+  return authorization;
 }

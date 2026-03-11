@@ -17,8 +17,12 @@ import {
   readPullRequestByProjectAndNumber,
   updatePullRequestStateByProjectAndNumber,
 } from "@yona/db";
-import { authorizeProjectAccess } from "./project-authorization";
-import { DomainNotFoundError, DomainPermissionError, type DomainActor } from "./errors";
+import { requireAuthenticatedActor } from "./actor-utils";
+import { DomainNotFoundError, type DomainActor } from "./errors";
+import {
+  requireProjectReadAuthorization,
+  requireProjectWriteAuthorization,
+} from "./project-authorization";
 
 export interface PullRequestServiceDeps {
   createPullRequestRecord: typeof createPullRequestRecord;
@@ -35,74 +39,6 @@ const defaultDeps: PullRequestServiceDeps = {
   readPullRequestByProjectAndNumber,
   updatePullRequestStateByProjectAndNumber,
 };
-
-function requireAuthenticatedActor(actor: DomainActor): asserts actor is DomainActor & {
-  actorId: number;
-  loginId: string;
-} {
-  if (actor.isAnonymous || actor.actorId === null || actor.loginId === null) {
-    throw new DomainPermissionError("Authentication required.", {
-      requiresAuthentication: true,
-    });
-  }
-}
-
-async function requireProjectReadAuthorization(
-  actor: DomainActor,
-  input: {
-    ownerName: string;
-    projectName: string;
-  },
-  deps: PullRequestServiceDeps,
-) {
-  const authorization = await deps.readProjectAuthorization(
-    input.ownerName,
-    input.projectName,
-    actor.actorId,
-  );
-  if (!authorization) {
-    throw new DomainNotFoundError("Project not found.");
-  }
-
-  const readDecision = authorizeProjectAccess(
-    {
-      ...authorization.viewer,
-      projectScope: authorization.project.projectScope,
-    },
-    "read",
-  );
-  if (!readDecision.allowed) {
-    throw new DomainPermissionError("Project read is not allowed.", {
-      requiresAuthentication: actor.actorId === null,
-    });
-  }
-
-  return authorization;
-}
-
-async function requireProjectWriteAuthorization(
-  actor: DomainActor,
-  input: {
-    ownerName: string;
-    projectName: string;
-  },
-  deps: PullRequestServiceDeps,
-) {
-  requireAuthenticatedActor(actor);
-  const authorization = await requireProjectReadAuthorization(actor, input, deps);
-  const writeDecision = authorizeProjectAccess(
-    {
-      ...authorization.viewer,
-      projectScope: authorization.project.projectScope,
-    },
-    "update",
-  );
-  if (!writeDecision.allowed) {
-    throw new DomainPermissionError("Project update is not allowed.");
-  }
-
-  return authorization;
-}
 
 export async function listPullRequests(
   actor: DomainActor,
