@@ -311,13 +311,32 @@ export const changeCurrentUserPasswordInputSchema = z
 
 export type ChangeCurrentUserPasswordInput = z.infer<typeof changeCurrentUserPasswordInputSchema>;
 
-export const changeCurrentUserPasswordOutputSchema = z
+export const changeCurrentUserPasswordFailureSchema = z
   .object({
-    ok: z.literal(true),
+    code: z.literal("auth.credentials-invalid"),
+    message: z.string().min(1),
+    ok: z.literal(false),
   })
   .strict();
 
-export type ChangeCurrentUserPasswordOutput = z.infer<typeof changeCurrentUserPasswordOutputSchema>;
+export type ChangeCurrentUserPasswordFailure = z.infer<
+  typeof changeCurrentUserPasswordFailureSchema
+>;
+
+export const changeCurrentUserPasswordResultSchema = z.union([
+  changeCurrentUserPasswordFailureSchema,
+  z
+    .object({
+      ok: z.literal(true),
+    })
+    .strict(),
+]);
+
+export type ChangeCurrentUserPasswordResult = z.infer<typeof changeCurrentUserPasswordResultSchema>;
+
+export const changeCurrentUserPasswordOutputSchema = changeCurrentUserPasswordResultSchema;
+
+export type ChangeCurrentUserPasswordOutput = ChangeCurrentUserPasswordResult;
 
 export const currentUserApiTokenSchema = z
   .object({

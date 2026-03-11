@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   appSessionProjectionSchema,
   authErrorCodeSchema,
+  changeCurrentUserPasswordOutputSchema,
   completePasswordResetInputSchema,
   passwordResetRequestSchema,
   registerWithPasswordInputSchema,
@@ -94,6 +95,26 @@ describe("auth contracts", () => {
       newPassword: "changed-pass-456",
       token: "reset-token",
     });
+
+    expect(
+      changeCurrentUserPasswordOutputSchema.parse({
+        code: "auth.credentials-invalid",
+        message: "Current password is invalid.",
+        ok: false,
+      }),
+    ).toEqual({
+      code: "auth.credentials-invalid",
+      message: "Current password is invalid.",
+      ok: false,
+    });
+
+    expect(
+      changeCurrentUserPasswordOutputSchema.safeParse({
+        code: "auth.login-id-conflict",
+        message: "This mutation should not emit login-id conflicts.",
+        ok: false,
+      }).success,
+    ).toBe(false);
   });
 
   it("rejects authenticated app sessions that omit app-facing identity fields", () => {

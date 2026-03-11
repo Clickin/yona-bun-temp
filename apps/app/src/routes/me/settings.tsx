@@ -153,10 +153,15 @@ function MeSettingsRouteComponent() {
             React.startTransition(() => {
               void (async () => {
                 try {
-                  await authCaller.changeCurrentUserPassword({
+                  const result = await authCaller.changeCurrentUserPassword({
                     currentPassword: passwordFormState.currentPassword,
                     newPassword: passwordFormState.newPassword,
                   });
+
+                  if (!result.ok) {
+                    setPasswordErrorMessage(result.message);
+                    return;
+                  }
 
                   setPasswordResultMessage("Password updated. Please sign in again.");
                   await router.navigate({

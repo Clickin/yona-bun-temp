@@ -348,7 +348,11 @@ export const authRouter = t.router({
       const result = await changeCurrentUserPassword(currentSession.user!.id, input);
       if (!result.ok) {
         ctx.setResponseStatus(401, "Unauthorized");
-        throw new Error(authErrorMessage(result.code));
+        return changeCurrentUserPasswordOutputSchema.parse({
+          code: result.code,
+          message: authErrorMessage(result.code),
+          ok: false,
+        });
       }
 
       clearSessionCookie(ctx);

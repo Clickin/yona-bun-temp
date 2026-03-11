@@ -558,6 +558,29 @@ describe("auth tRPC procedures", () => {
     ).resolves.toMatchObject({
       ok: true,
     });
+
+    const refreshedSessionToken = context.cookies.get(getSessionCookieName());
+    if (!refreshedSessionToken) {
+      throw new Error("Expected refreshed session cookie.");
+    }
+
+    const refreshedSession = await getSessionByToken(refreshedSessionToken);
+    if (!refreshedSession) {
+      throw new Error("Expected refreshed session record.");
+    }
+
+    context.requestHeaders.set("x-csrf-token", refreshedSession.csrfToken);
+
+    await expect(
+      caller.changeCurrentUserPassword({
+        currentPassword: "wrong-pass-123",
+        newPassword: "strong-pass-789",
+      }),
+    ).resolves.toEqual({
+      code: "auth.credentials-invalid",
+      message: "Invalid login ID, email, or password.",
+      ok: false,
+    });
   });
 
   it("rejects current user profile updates without a valid csrf token", async () => {
