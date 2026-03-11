@@ -1,5 +1,18 @@
 import { getRequestIP } from "@tanstack/react-start/server";
-import { getSessionCookieName, resolveRequestPrincipal } from "@yona/auth";
+import {
+  getSessionCookieName,
+  resolveRequestPrincipal,
+  type ResolvedRequestPrincipal,
+} from "@yona/auth";
+import type { DomainActor } from "@yona/domain";
+
+export interface DomainActorInput {
+  actorId: null | number;
+  isAnonymous: boolean;
+  isSiteAdmin: boolean;
+  loginId: null | string;
+  name: null | string;
+}
 
 function readCookieValue(headers: Headers, name: string): string | undefined {
   const cookieHeader = headers.get("cookie");
@@ -14,7 +27,15 @@ function readCookieValue(headers: Headers, name: string): string | undefined {
     }
 
     const rawValue = rawValueParts.join("=").trim();
-    return rawValue.length > 0 ? decodeURIComponent(rawValue) : undefined;
+    if (rawValue.length === 0) {
+      return undefined;
+    }
+
+    try {
+      return decodeURIComponent(rawValue);
+    } catch {
+      return undefined;
+    }
   }
 
   return undefined;
@@ -33,6 +54,26 @@ export async function resolveServerRequestPrincipal(request: Request) {
     cookieSessionToken: readCookieValue(request.headers, getSessionCookieName()),
     headers: request.headers,
     remoteAddress: readTrustedRequestIp(),
+  });
+}
+
+export function createDomainActor(input: DomainActorInput): DomainActor {
+  return {
+    actorId: input.actorId,
+    isAnonymous: input.isAnonymous,
+    isSiteAdmin: input.isSiteAdmin,
+    loginId: input.loginId,
+    name: input.name,
+  };
+}
+
+export function toDomainActor(principal: Pick<ResolvedRequestPrincipal, "user">): DomainActor {
+  return createDomainActor({
+    actorId: principal.user?.id ?? null,
+    isAnonymous: !principal.user,
+    isSiteAdmin: Boolean(principal.user?.isSiteAdmin),
+    loginId: principal.user?.loginId ?? null,
+    name: principal.user?.name ?? null,
   });
 }
 

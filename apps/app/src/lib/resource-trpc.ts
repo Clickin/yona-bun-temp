@@ -1,5 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
+import { createDomainActor } from "@app/lib/server-request-auth";
 import { getSessionCookieName, readCurrentSession } from "@yona/auth";
 import {
   DomainConflictError,
@@ -35,27 +36,19 @@ function clearSessionCookie(ctx: AppResourceProcedureContext): void {
   });
 }
 
-function toDomainActor(input: {
-  actorId: null | number;
-  isAnonymous: boolean;
-  isSiteAdmin: boolean;
-  loginId: null | string;
-}): DomainActor {
-  return {
-    actorId: input.actorId,
-    isAnonymous: input.isAnonymous,
-    isSiteAdmin: input.isSiteAdmin,
-    loginId: input.loginId,
-  };
-}
-
 export async function readDomainActor(ctx: AppResourceProcedureContext): Promise<DomainActor> {
   const currentSession = await readCurrentSession(ctx.getCookie(sessionCookieName));
   if (currentSession.clearCookie) {
     clearSessionCookie(ctx);
   }
 
-  return toDomainActor(currentSession.projection);
+  return createDomainActor({
+    actorId: currentSession.projection.actorId,
+    isAnonymous: currentSession.projection.isAnonymous,
+    isSiteAdmin: currentSession.projection.isSiteAdmin,
+    loginId: currentSession.projection.loginId,
+    name: currentSession.projection.userLabel,
+  });
 }
 
 export function rethrowDomainAsTrpc(error: unknown): never {
