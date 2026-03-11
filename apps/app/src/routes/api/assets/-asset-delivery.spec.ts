@@ -105,6 +105,7 @@ describe("/api/assets routes", () => {
     expect(response.headers.get("ETag")).toBe('"hash-inline-inline"');
     expect(response.headers.get("Content-Disposition")).toContain("inline;");
     expect(response.headers.get("Vary")).toBe("Authorization, Cookie");
+    expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
     await expect(response.text()).resolves.toBe("hello");
   });
 

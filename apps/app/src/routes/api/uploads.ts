@@ -1,20 +1,18 @@
 import { join } from "node:path";
 import { createFileRoute } from "@tanstack/react-router";
-import { resolveServerRequestPrincipal } from "@app/lib/server-request-auth";
+import { resolveServerRequestPrincipal, toDomainActor } from "@app/lib/server-request-auth";
 import { persistUploadStream } from "@app/lib/upload-blob";
 import { createUploadSession } from "@yona/domain";
 import { getYonaDataRoot } from "@yona/vcs";
 
+const ALLOWED_MIME_TYPES = new Set([
+  "application/pdf",
+  "image/gif",
+  "image/jpeg",
+  "image/png",
+  "text/plain",
+]);
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
-
-function toDomainActor(principal: Awaited<ReturnType<typeof resolveServerRequestPrincipal>>) {
-  return {
-    actorId: principal.user?.id ?? null,
-    isAnonymous: !principal.user,
-    isSiteAdmin: Boolean(principal.user?.isSiteAdmin),
-    loginId: principal.user?.loginId ?? null,
-  };
-}
 
 function sanitizeUploadFileName(fileName: string): string {
   const sanitized = Array.from(fileName)
@@ -52,6 +50,24 @@ function isOversizedRequest(request: Request): boolean {
   return Number.isFinite(parsedLength) && parsedLength > MAX_UPLOAD_BYTES;
 }
 
+function readRequestMimeType(request: Request): null | string {
+  const contentType = request.headers.get("content-type")?.trim();
+  if (!contentType) {
+    return null;
+  }
+
+  const mimeType = contentType.split(";", 1)[0]?.trim().toLowerCase();
+  return mimeType && mimeType.length > 0 ? mimeType : null;
+}
+
+function requireAllowedMimeType(mimeType: null | string): string {
+  if (!mimeType || !ALLOWED_MIME_TYPES.has(mimeType)) {
+    throw new Error("Unsupported media type.");
+  }
+
+  return mimeType;
+}
+
 function createUploadErrorResponse(error: unknown): Response {
   const message = error instanceof Error ? error.message : "Upload request failed.";
   const status =
@@ -65,9 +81,11 @@ function createUploadErrorResponse(error: unknown): Response {
             ? 400
             : message === "multipart/form-data is not supported on this endpoint."
               ? 415
-              : message.includes("required") || message.includes("invalid")
-                ? 400
-                : 500;
+              : message === "Unsupported media type."
+                ? 415
+                : message.includes("required") || message.includes("invalid")
+                  ? 400
+                  : 500;
 
   return Response.json(
     {
@@ -120,7 +138,7 @@ export const Route = createFileRoute("/api/uploads")({
             throw new Error("Raw upload body is required.");
           }
 
-          const mimeType = request.headers.get("content-type")?.trim() || null;
+          const mimeType = requireAllowedMimeType(readRequestMimeType(request));
           const uploadRoot = join(getYonaDataRoot(), "uploads");
           const { hash, size } = await persistUploadStream({
             maxBytes: MAX_UPLOAD_BYTES,

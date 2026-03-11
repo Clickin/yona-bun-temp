@@ -1,39 +1,48 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { resolveServerRequestPrincipal } from "@app/lib/server-request-auth";
+import { resolveServerRequestPrincipal, toDomainActor } from "@app/lib/server-request-auth";
 import { validateCsrfToken } from "@yona/auth";
 import { finalizeUploadSessionInputSchema } from "@yona/contracts";
-import { finalizeUploadSession } from "@yona/domain";
-
-function toDomainActor(principal: Awaited<ReturnType<typeof resolveServerRequestPrincipal>>) {
-  return {
-    actorId: principal.user?.id ?? null,
-    isAnonymous: !principal.user,
-    isSiteAdmin: Boolean(principal.user?.isSiteAdmin),
-    loginId: principal.user?.loginId ?? null,
-  };
-}
+import {
+  DomainConflictError,
+  DomainNotFoundError,
+  DomainPermissionError,
+  DomainValidationError,
+  finalizeUploadSession,
+} from "@yona/domain";
+import { ZodError } from "zod";
 
 function createFinalizeErrorResponse(error: unknown): Response {
   const message = error instanceof Error ? error.message : "Finalize request failed.";
-  const status =
-    message === "Authentication required."
-      ? 401
-      : message === "CSRF validation failed."
-        ? 403
-        : message.toLowerCase().includes("not found")
-          ? 404
-          : message.toLowerCase().includes("permission")
-            ? 403
-            : 400;
 
-  return Response.json(
-    {
-      error: message,
-    },
-    {
-      status,
-    },
-  );
+  if (error instanceof DomainPermissionError) {
+    return Response.json({ error: message }, { status: error.requiresAuthentication ? 401 : 403 });
+  }
+
+  if (error instanceof DomainConflictError) {
+    return Response.json({ error: message }, { status: 409 });
+  }
+
+  if (error instanceof DomainNotFoundError) {
+    return Response.json({ error: message }, { status: 404 });
+  }
+
+  if (
+    error instanceof DomainValidationError ||
+    error instanceof SyntaxError ||
+    error instanceof ZodError
+  ) {
+    return Response.json({ error: "Invalid request payload." }, { status: 400 });
+  }
+
+  if (message === "Authentication required.") {
+    return Response.json({ error: message }, { status: 401 });
+  }
+
+  if (message === "CSRF validation failed.") {
+    return Response.json({ error: message }, { status: 403 });
+  }
+
+  return Response.json({ error: "Finalize request failed." }, { status: 500 });
 }
 
 export const Route = createFileRoute("/api/uploads/$uploadId/finalize")({

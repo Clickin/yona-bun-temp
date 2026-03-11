@@ -58,6 +58,7 @@ function createAssetHeaders(input: {
     "Content-Type": input.mimeType ?? "application/octet-stream",
     ETag: input.eTag,
     Vary: "Authorization, Cookie",
+    "X-Content-Type-Options": "nosniff",
   });
 
   if (input.size !== null) {
@@ -132,7 +133,7 @@ export async function handleAssetRequest(input: {
   }
 
   const blobPath = createAssetBlobPath(record.hash);
-  let fileStat;
+  let fileStat: Awaited<ReturnType<typeof stat>>;
 
   try {
     fileStat = await stat(blobPath);

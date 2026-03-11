@@ -1,4 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  DomainConflictError,
+  DomainNotFoundError,
+  DomainPermissionError,
+  DomainValidationError,
+} from "@yona/domain";
 
 const { finalizeUploadSessionMock, resolveServerRequestPrincipalMock } = vi.hoisted(() => ({
   finalizeUploadSessionMock: vi.fn(),
@@ -43,6 +49,7 @@ describe("POST /api/uploads/$uploadId/finalize", () => {
         id: 1,
         isSiteAdmin: false,
         loginId: "door",
+        name: "Door TTS",
       },
     });
   });
@@ -90,6 +97,7 @@ describe("POST /api/uploads/$uploadId/finalize", () => {
         id: 1,
         isSiteAdmin: false,
         loginId: "door",
+        name: "Door TTS",
       },
     });
 
@@ -112,5 +120,155 @@ describe("POST /api/uploads/$uploadId/finalize", () => {
       error: "CSRF validation failed.",
     });
     expect(finalizeUploadSessionMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 403 for domain permission failures", async () => {
+    finalizeUploadSessionMock.mockRejectedValueOnce(
+      new DomainPermissionError("Only the uploader can finalize this upload."),
+    );
+
+    const response = await getHandlers().POST({
+      params: { uploadId: "1" },
+      request: new Request("http://localhost/api/uploads/1/finalize", {
+        body: JSON.stringify({
+          resourceId: 1,
+          resourceType: "user_avatar",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      }),
+    });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: "Only the uploader can finalize this upload.",
+    });
+  });
+
+  it("returns 401 when a domain permission error requires authentication", async () => {
+    finalizeUploadSessionMock.mockRejectedValueOnce(
+      new DomainPermissionError("Authentication required.", {
+        requiresAuthentication: true,
+      }),
+    );
+
+    const response = await getHandlers().POST({
+      params: { uploadId: "1" },
+      request: new Request("http://localhost/api/uploads/1/finalize", {
+        body: JSON.stringify({
+          resourceId: 1,
+          resourceType: "user_avatar",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      }),
+    });
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: "Authentication required.",
+    });
+  });
+
+  it("returns 404 for missing upload sessions", async () => {
+    finalizeUploadSessionMock.mockRejectedValueOnce(
+      new DomainNotFoundError("Upload session not found."),
+    );
+
+    const response = await getHandlers().POST({
+      params: { uploadId: "999" },
+      request: new Request("http://localhost/api/uploads/999/finalize", {
+        body: JSON.stringify({
+          resourceId: 1,
+          resourceType: "user_avatar",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      }),
+    });
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      error: "Upload session not found.",
+    });
+  });
+
+  it("returns 409 for upload finalize conflicts", async () => {
+    finalizeUploadSessionMock.mockRejectedValueOnce(
+      new DomainConflictError("Upload target is already finalized."),
+    );
+
+    const response = await getHandlers().POST({
+      params: { uploadId: "1" },
+      request: new Request("http://localhost/api/uploads/1/finalize", {
+        body: JSON.stringify({
+          resourceId: 1,
+          resourceType: "user_avatar",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      }),
+    });
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      error: "Upload target is already finalized.",
+    });
+  });
+
+  it("returns 400 for domain validation failures", async () => {
+    finalizeUploadSessionMock.mockRejectedValueOnce(
+      new DomainValidationError("Upload binding payload is invalid."),
+    );
+
+    const response = await getHandlers().POST({
+      params: { uploadId: "1" },
+      request: new Request("http://localhost/api/uploads/1/finalize", {
+        body: JSON.stringify({
+          resourceId: 1,
+          resourceType: "user_avatar",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      }),
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "Invalid request payload.",
+    });
+  });
+
+  it("returns 500 for unexpected finalize failures", async () => {
+    finalizeUploadSessionMock.mockRejectedValueOnce(new Error("Database connection dropped."));
+
+    const response = await getHandlers().POST({
+      params: { uploadId: "1" },
+      request: new Request("http://localhost/api/uploads/1/finalize", {
+        body: JSON.stringify({
+          resourceId: 1,
+          resourceType: "user_avatar",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      }),
+    });
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: "Finalize request failed.",
+    });
   });
 });

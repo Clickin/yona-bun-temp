@@ -50,6 +50,7 @@ describe("POST /api/uploads", () => {
         id: 1,
         isSiteAdmin: false,
         loginId: "door",
+        name: "Door TTS",
       },
     });
   });
@@ -140,12 +141,32 @@ describe("POST /api/uploads", () => {
     expect(persistUploadStreamMock).not.toHaveBeenCalled();
   });
 
+  it("rejects requests whose declared mime type is not on the allowlist", async () => {
+    const response = await getHandlers().POST({
+      request: new Request("http://localhost/api/uploads", {
+        body: new Uint8Array([1, 2, 3, 4]),
+        headers: {
+          "Content-Type": "application/x-msdownload",
+          "X-Upload-Filename": "malware.exe",
+        },
+        method: "POST",
+      }),
+    });
+
+    expect(response.status).toBe(415);
+    await expect(response.json()).resolves.toEqual({
+      error: "Unsupported media type.",
+    });
+    expect(persistUploadStreamMock).not.toHaveBeenCalled();
+    expect(createUploadSessionMock).not.toHaveBeenCalled();
+  });
+
   it("rejects requests without a filename header", async () => {
     const response = await getHandlers().POST({
       request: new Request("http://localhost/api/uploads", {
         body: new Uint8Array([1, 2, 3, 4]),
         headers: {
-          "Content-Type": "application/octet-stream",
+          "Content-Type": "image/png",
         },
         method: "POST",
       }),
@@ -163,7 +184,7 @@ describe("POST /api/uploads", () => {
         body: new Uint8Array([1, 2, 3, 4]),
         headers: {
           "Content-Length": String(25 * 1024 * 1024 + 1),
-          "Content-Type": "application/octet-stream",
+          "Content-Type": "image/png",
           "X-Upload-Filename": "large.bin",
         },
         method: "POST",
@@ -184,7 +205,7 @@ describe("POST /api/uploads", () => {
       request: new Request("http://localhost/api/uploads", {
         body: new Uint8Array([1, 2, 3, 4]),
         headers: {
-          "Content-Type": "application/octet-stream",
+          "Content-Type": "image/png",
           "X-Upload-Filename": "large.bin",
         },
         method: "POST",
