@@ -5,6 +5,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 
 export default defineConfig({
+  root: fileURLToPath(new URL("./", import.meta.url)),
   resolve: {
     alias: {
       "@yona/auth/better-auth": fileURLToPath(
