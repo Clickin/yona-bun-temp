@@ -10,4 +10,5 @@ export * from "./posting";
 export * from "./project";
 export * from "./pull-request";
 export * from "./repo";
+export * from "./search";
 export * from "./upload";
