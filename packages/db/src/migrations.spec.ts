@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
+import {
+  SEARCH_DOCUMENT_TYPES,
+  SEARCH_DOCUMENT_TABLE,
+  SQLITE_SEARCH_DOCUMENT_BOOTSTRAP_MODE,
+  SQLITE_SEARCH_DOCUMENT_FTS_TABLE,
+  SQLITE_SEARCH_DOCUMENT_SYNC_MODE,
+  SQLITE_SEARCH_DOCUMENT_SYNC_TRIGGERS,
+} from "./search-projection";
+import { getMigrationSqlChain } from "./test-helpers";
 
 describe("Database migrations", () => {
   it("should have PostgreSQL migrations generated", () => {
@@ -66,6 +75,38 @@ describe("Database migrations", () => {
       const hashEntries = fs.readdirSync(hashFolderPath);
       expect(hashEntries.some((e: string) => e.endsWith("migration.sql"))).toBe(true);
       expect(hashEntries.some((e: string) => e.endsWith("snapshot.json"))).toBe(true);
+    }
+  });
+
+  it("adds bounded search projection storage and SQLite external-content backfill flow for all dialects", () => {
+    const pgMigrationSql = getMigrationSqlChain("pg");
+    const mysqlMigrationSql = getMigrationSqlChain("mysql");
+    const sqliteMigrationSql = getMigrationSqlChain("sqlite");
+
+    expect(pgMigrationSql).toContain(`CREATE TABLE "${SEARCH_DOCUMENT_TABLE}"`);
+    expect(pgMigrationSql).toContain("tsvector GENERATED ALWAYS AS");
+    expect(pgMigrationSql).toContain("USING gin");
+
+    expect(mysqlMigrationSql).toContain(`CREATE TABLE \`${SEARCH_DOCUMENT_TABLE}\``);
+    expect(mysqlMigrationSql).toContain("CREATE FULLTEXT INDEX");
+
+    expect(SEARCH_DOCUMENT_TYPES).toEqual([
+      "user",
+      "project",
+      "issue",
+      "posting",
+      "review_comment",
+    ]);
+    expect(sqliteMigrationSql).toContain(`CREATE TABLE "${SEARCH_DOCUMENT_TABLE}"`);
+    expect(sqliteMigrationSql).toContain(
+      `CREATE VIRTUAL TABLE "${SQLITE_SEARCH_DOCUMENT_FTS_TABLE}" USING fts5`,
+    );
+    expect(SQLITE_SEARCH_DOCUMENT_SYNC_MODE).toBe("external-content");
+    expect(sqliteMigrationSql).toContain("content='search_document'");
+    expect(SQLITE_SEARCH_DOCUMENT_BOOTSTRAP_MODE).toContain("backfill");
+    expect(sqliteMigrationSql).toContain("VALUES ('rebuild')");
+    for (const triggerName of SQLITE_SEARCH_DOCUMENT_SYNC_TRIGGERS) {
+      expect(sqliteMigrationSql).toContain(`CREATE TRIGGER "${triggerName}"`);
     }
   });
 });
