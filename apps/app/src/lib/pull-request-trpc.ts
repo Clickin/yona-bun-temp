@@ -2,13 +2,18 @@ import {
   pullRequestCreateInputSchema,
   pullRequestDetailSchema,
   pullRequestRefSchema,
+  pullRequestReviewThreadFilterInputSchema,
+  pullRequestReviewThreadSchema,
   pullRequestStateUpdateInputSchema,
   pullRequestSummarySchema,
   projectRefSchema,
+  type PullRequestReviewThread,
+  type PullRequestReviewThreadFilterInput,
 } from "@yona/contracts";
 import {
   createPullRequest,
   listPullRequests,
+  listPullRequestReviewThreads,
   readPullRequestDetail,
   updatePullRequestState,
 } from "@yona/domain";
@@ -19,6 +24,34 @@ import {
   t,
   type AppResourceProcedureContext,
 } from "./resource-trpc";
+
+function matchesReviewThreadFilter(
+  thread: PullRequestReviewThread,
+  input: PullRequestReviewThreadFilterInput,
+): boolean {
+  if (input.state && thread.state !== input.state) {
+    return false;
+  }
+
+  if (input.authorLoginId && thread.authorLoginId !== input.authorLoginId) {
+    return false;
+  }
+
+  if (input.participantLoginId && !thread.participants.includes(input.participantLoginId)) {
+    return false;
+  }
+
+  if (!input.filter) {
+    return true;
+  }
+
+  const normalizedFilter = input.filter.toLowerCase();
+  const searchValues = [thread.commitId, thread.path, thread.text]
+    .filter((value): value is string => value !== null)
+    .map((value) => value.toLowerCase());
+
+  return searchValues.some((value) => value.includes(normalizedFilter));
+}
 
 export const pullRequestRouter = t.router({
   createPullRequest: t.procedure
@@ -41,6 +74,19 @@ export const pullRequestRouter = t.router({
         return pullRequestSummarySchema
           .array()
           .parse(await listPullRequests(await readDomainActor(ctx), input));
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
+      }
+    }),
+  listPullRequestReviewThreads: t.procedure
+    .input(pullRequestReviewThreadFilterInputSchema)
+    .output(pullRequestReviewThreadSchema.array())
+    .query(async ({ ctx, input }) => {
+      try {
+        const threads = pullRequestReviewThreadSchema
+          .array()
+          .parse(await listPullRequestReviewThreads(await readDomainActor(ctx), input));
+        return threads.filter((thread) => matchesReviewThreadFilter(thread, input));
       } catch (error) {
         return rethrowDomainAsTrpc(error);
       }

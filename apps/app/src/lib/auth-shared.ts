@@ -1,11 +1,14 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { AppSessionProjection } from "@yona/contracts";
-import { buildAnonymousSession } from "@yona/domain";
 
 export function buildAnonymousAppSession(): AppSessionProjection {
   return {
-    ...buildAnonymousSession(),
+    actorId: null,
     emailAddress: null,
+    isAnonymous: true,
+    isConfirmed: false,
+    isSiteAdmin: false,
+    loginId: null,
     userLabel: null,
   };
 }
