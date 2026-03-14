@@ -944,6 +944,50 @@ export const reviewComment = sqliteTable(
   (table) => [index("ix_review_comment_thread_41").on(table.threadId)],
 );
 
+export const searchDocument = sqliteTable(
+  "search_document",
+  {
+    id: integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
+    documentType: text("document_type").notNull(),
+    documentId: integer("document_id", { mode: "number" }).notNull(),
+    scopeKind: text("scope_kind").notNull(),
+    accessScope: text("access_scope").notNull(),
+    organizationId: integer("organization_id", { mode: "number" })
+      .default(sql`NULL`)
+      .references(() => organization.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    projectId: integer("project_id", { mode: "number" })
+      .default(sql`NULL`)
+      .references(() => project.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    principalUserId: integer("principal_user_id", { mode: "number" })
+      .default(sql`NULL`)
+      .references(() => n4user.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    title: text().default("NULL"),
+    body: text().default(sql`NULL`),
+    path: text().default("NULL"),
+    documentText: text("document_text").notNull().default(""),
+    updatedDate: integer("updated_date", { mode: "timestamp" }).default(sql`NULL`),
+  },
+  (table) => [
+    uniqueIndex("uq_search_document_source").on(table.documentType, table.documentId),
+    index("ix_search_document_scope").on(table.scopeKind, table.organizationId, table.projectId),
+    index("ix_search_document_access").on(
+      table.accessScope,
+      table.organizationId,
+      table.projectId,
+      table.principalUserId,
+    ),
+    index("ix_search_document_updated_48").on(table.updatedDate),
+  ],
+);
+
+export const searchDocumentFts = sqliteTable("search_document_fts", {
+  documentType: text("document_type"),
+  title: text(),
+  body: text(),
+  path: text(),
+  documentText: text("document_text"),
+});
+
 export const role = sqliteTable("role", {
   id: integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
   name: text().default("NULL"),
