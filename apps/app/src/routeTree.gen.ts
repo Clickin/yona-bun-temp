@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SearchRouteImport } from './routes/search'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProtectedRouteImport } from './routes/protected'
@@ -54,6 +55,11 @@ import { Route as ApiReposRepoIdCommitsOidRouteImport } from './routes/api/repos
 import { Route as ApiProjectsOwnerProjectNameRepoIdRouteImport } from './routes/api/projects/$owner/$projectName/repo-id'
 import { Route as ApiAuthProviderProviderCallbackRouteImport } from './routes/api/auth/provider/$provider/callback'
 
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -301,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/protected': typeof ProtectedRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/search': typeof SearchRoute
   '/api/uploads': typeof ApiUploadsRouteWithChildren
   '/me/settings': typeof MeSettingsRoute
   '/organizations/new': typeof OrganizationsNewRoute
@@ -347,6 +354,7 @@ export interface FileRoutesByTo {
   '/protected': typeof ProtectedRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/search': typeof SearchRoute
   '/api/uploads': typeof ApiUploadsRouteWithChildren
   '/me/settings': typeof MeSettingsRoute
   '/organizations/new': typeof OrganizationsNewRoute
@@ -394,6 +402,7 @@ export interface FileRoutesById {
   '/protected': typeof ProtectedRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/search': typeof SearchRoute
   '/api/uploads': typeof ApiUploadsRouteWithChildren
   '/me/settings': typeof MeSettingsRoute
   '/organizations/new': typeof OrganizationsNewRoute
@@ -442,6 +451,7 @@ export interface FileRouteTypes {
     | '/protected'
     | '/register'
     | '/reset-password'
+    | '/search'
     | '/api/uploads'
     | '/me/settings'
     | '/organizations/new'
@@ -488,6 +498,7 @@ export interface FileRouteTypes {
     | '/protected'
     | '/register'
     | '/reset-password'
+    | '/search'
     | '/api/uploads'
     | '/me/settings'
     | '/organizations/new'
@@ -534,6 +545,7 @@ export interface FileRouteTypes {
     | '/protected'
     | '/register'
     | '/reset-password'
+    | '/search'
     | '/api/uploads'
     | '/me/settings'
     | '/organizations/new'
@@ -581,6 +593,7 @@ export interface RootRouteChildren {
   ProtectedRoute: typeof ProtectedRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SearchRoute: typeof SearchRoute
   ApiUploadsRoute: typeof ApiUploadsRouteWithChildren
   OrganizationsNewRoute: typeof OrganizationsNewRoute
   ProjectsNewRoute: typeof ProjectsNewRoute
@@ -618,6 +631,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -983,6 +1003,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProtectedRoute: ProtectedRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SearchRoute: SearchRoute,
   ApiUploadsRoute: ApiUploadsRouteWithChildren,
   OrganizationsNewRoute: OrganizationsNewRoute,
   ProjectsNewRoute: ProjectsNewRoute,
