@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import mysql from "mysql2/promise";
 import * as mysqlSchema from "@drizzle/mysql/schema";
+import { SEARCH_DOCUMENT_TABLE } from "./search-projection";
 import { setupMySQLTestDatabase } from "./test-utils/database";
 import {
   getExpectedTableNames,
@@ -86,28 +87,58 @@ describe("MySQL database", () => {
   });
 
   it("rejects case-only duplicates for organization and project route identifiers", async () => {
-    await connection.query("INSERT INTO `organization` (`name`, `descr`) VALUES (?, ?)", [
+    const [organizationIdRows] = await connection.query<
+      (mysql.RowDataPacket & { next_id: number })[]
+    >("SELECT COALESCE(MAX(`id`), 0) + 1 AS next_id FROM `organization`");
+    const nextOrganizationId = organizationIdRows[0]?.next_id ?? 1;
+
+    await connection.query("INSERT INTO `organization` (`id`, `name`, `descr`) VALUES (?, ?, ?)", [
+      nextOrganizationId,
       "labs",
       "primary org",
     ]);
 
     await expect(
-      connection.query("INSERT INTO `organization` (`name`, `descr`) VALUES (?, ?)", [
+      connection.query("INSERT INTO `organization` (`id`, `name`, `descr`) VALUES (?, ?, ?)", [
+        nextOrganizationId + 1,
         "LABS",
         "duplicate org",
       ]),
     ).rejects.toThrow();
 
+    const [projectIdRows] = await connection.query<(mysql.RowDataPacket & { next_id: number })[]>(
+      "SELECT COALESCE(MAX(`id`), 0) + 1 AS next_id FROM `project`",
+    );
+    const nextProjectId = projectIdRows[0]?.next_id ?? 1;
+
     await connection.query(
-      "INSERT INTO `project` (`name`, `owner`, `overview`, `project_scope`, `vcs`) VALUES (?, ?, ?, ?, ?)",
-      ["project-yona", "labs", "original project", "public", "GIT"],
+      "INSERT INTO `project` (`id`, `name`, `owner`, `overview`, `project_scope`, `vcs`) VALUES (?, ?, ?, ?, ?, ?)",
+      [nextProjectId, "project-yona", "labs", "original project", "public", "GIT"],
     );
 
     await expect(
       connection.query(
-        "INSERT INTO `project` (`name`, `owner`, `overview`, `project_scope`, `vcs`) VALUES (?, ?, ?, ?, ?)",
-        ["PROJECT-YONA", "LABS", "duplicate project", "public", "GIT"],
+        "INSERT INTO `project` (`id`, `name`, `owner`, `overview`, `project_scope`, `vcs`) VALUES (?, ?, ?, ?, ?, ?)",
+        [nextProjectId + 1, "PROJECT-YONA", "LABS", "duplicate project", "public", "GIT"],
       ),
     ).rejects.toThrow();
+  });
+
+  it("creates the search projection table with a FULLTEXT index", async () => {
+    const [createRows] = await connection.query<
+      (mysql.RowDataPacket & { "Create Table": string; Table: string })[]
+    >(`SHOW CREATE TABLE \`${SEARCH_DOCUMENT_TABLE}\``);
+    const [indexRows] = await connection.query<
+      (mysql.RowDataPacket & { Key_name: string; Index_type: string })[]
+    >(
+      `SHOW INDEX FROM \`${SEARCH_DOCUMENT_TABLE}\` WHERE \`Key_name\` = 'ft_search_document_text_49'`,
+    );
+
+    expect(createRows).toHaveLength(1);
+    expect(createRows[0]?.["Create Table"] ?? "").toContain(
+      "FULLTEXT KEY `ft_search_document_text_49`",
+    );
+    expect(indexRows.length).toBeGreaterThan(0);
+    expect(indexRows.every((row) => row.Index_type === "FULLTEXT")).toBe(true);
   });
 });

@@ -1,6 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { drizzle } from "drizzle-orm/bun-sql";
 import * as sqliteSchema from "@drizzle/sqlite/schema";
+import {
+  SEARCH_DOCUMENT_TABLE,
+  SQLITE_SEARCH_DOCUMENT_BOOTSTRAP_MODE,
+  SQLITE_SEARCH_DOCUMENT_FTS_TABLE,
+  SQLITE_SEARCH_DOCUMENT_SYNC_MODE,
+  SQLITE_SEARCH_DOCUMENT_SYNC_TRIGGERS,
+} from "./search-projection";
 import { setupSQLiteTestDatabase } from "./test-utils/database";
 import { applySqliteMigrations } from "./test-helpers";
 
@@ -167,5 +174,51 @@ describe("SQLite database", () => {
       projectDuplicateError = error;
     }
     expect(projectDuplicateError).not.toBeNull();
+  });
+
+  it("creates explicit FTS5 external-content sync infrastructure for the search projection", async () => {
+    const ftsRows = await db.$client`
+      SELECT sql
+      FROM sqlite_master
+      WHERE type = 'table'
+        AND name = ${SQLITE_SEARCH_DOCUMENT_FTS_TABLE}
+    `;
+    const triggerRows = await db.$client`
+      SELECT name
+      FROM sqlite_master
+      WHERE type = 'trigger'
+        AND tbl_name = ${SEARCH_DOCUMENT_TABLE}
+      ORDER BY name
+    `;
+
+    expect(ftsRows).toHaveLength(1);
+    expect(SQLITE_SEARCH_DOCUMENT_SYNC_MODE).toBe("external-content");
+    expect(String(ftsRows[0]?.sql ?? "")).toContain("USING fts5");
+    expect(String(ftsRows[0]?.sql ?? "")).toContain("content='search_document'");
+    expect(triggerRows.map((row: any) => row.name)).toEqual([
+      ...SQLITE_SEARCH_DOCUMENT_SYNC_TRIGGERS,
+    ]);
+  });
+
+  it("keeps the SQLite search projection FTS table in sync through triggers and backfill bootstrap", async () => {
+    await db.insert(sqliteSchema.searchDocument).values({
+      accessScope: "public",
+      body: "searchable body",
+      documentId: 101,
+      documentText: "hello bounded projection",
+      documentType: "issue",
+      scopeKind: "project",
+      title: "Hello projection",
+    });
+
+    const matches = await db.$client`
+      SELECT rowid, title
+      FROM search_document_fts
+      WHERE search_document_fts MATCH 'hello'
+    `;
+
+    expect(SQLITE_SEARCH_DOCUMENT_BOOTSTRAP_MODE).toContain("backfill");
+    expect(matches).toHaveLength(1);
+    expect(matches[0]?.title).toBe("Hello projection");
   });
 });

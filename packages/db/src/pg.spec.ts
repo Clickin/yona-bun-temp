@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Pool } from "pg";
 import * as pgSchema from "@drizzle/pg/schema";
+import { SEARCH_DOCUMENT_TABLE } from "./search-projection";
 import { setupPostgresTestDatabase } from "./test-utils/database";
 import {
   getExpectedTableNames,
@@ -28,19 +29,25 @@ describe("PostgreSQL database", () => {
 
     const migrationSql = normalizePgMigration(getMigrationSqlChain("pg"));
     const statements = splitMigrationStatements(migrationSql);
-    for (const statement of statements) {
-      try {
-        await pool.query(statement);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (
-          message.includes("already exists") ||
-          message.includes("no unique constraint matching given keys")
-        ) {
-          continue;
+    const client = await pool.connect();
+    try {
+      for (const statement of statements) {
+        try {
+          await client.query(statement);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          if (
+            message.includes("already exists") ||
+            message.includes("no unique constraint matching given keys") ||
+            /^index .* does not exist$/i.test(message)
+          ) {
+            continue;
+          }
+          throw new Error(`PostgreSQL migration failed: ${message}\nSQL: ${statement}`);
         }
-        throw error;
       }
+    } finally {
+      client.release();
     }
   }, 120_000);
 
@@ -126,5 +133,41 @@ describe("PostgreSQL database", () => {
         ["PROJECT-YONA", "LABS", "duplicate project", "public", "GIT"],
       ),
     ).rejects.toThrow();
+  });
+
+  it("creates the search projection table with generated tsvector and GIN index", async () => {
+    const column = await pool.query<{
+      generation_expression: string | null;
+      is_generated: string;
+      udt_name: string;
+    }>(
+      `
+        SELECT generation_expression, is_generated, udt_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = $1
+          AND column_name = 'search_vector'
+      `,
+      [SEARCH_DOCUMENT_TABLE],
+    );
+    const indexes = await pool.query<{ indexdef: string }>(
+      `
+        SELECT indexdef
+        FROM pg_indexes
+        WHERE schemaname = 'public'
+          AND tablename = $1
+          AND indexname = 'ix_search_document_vector_49'
+      `,
+      [SEARCH_DOCUMENT_TABLE],
+    );
+
+    expect(column.rows).toHaveLength(1);
+    expect(column.rows[0]?.is_generated).toBe("ALWAYS");
+    expect(column.rows[0]?.udt_name).toBe("tsvector");
+    expect(column.rows[0]?.generation_expression ?? "").toContain(
+      "to_tsvector('simple'::regconfig",
+    );
+    expect(indexes.rows).toHaveLength(1);
+    expect(indexes.rows[0]?.indexdef).toContain("USING gin");
   });
 });
