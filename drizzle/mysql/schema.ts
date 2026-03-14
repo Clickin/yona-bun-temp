@@ -974,6 +974,42 @@ export const reviewComment = mysqlTable(
   (table) => [index("ix_review_comment_thread_41").on(table.threadId)],
 );
 
+export const searchDocument = mysqlTable(
+  "search_document",
+  {
+    id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
+    documentType: varchar("document_type", { length: 32 }).notNull(),
+    documentId: bigint("document_id", { mode: "number" }).notNull(),
+    scopeKind: varchar("scope_kind", { length: 16 }).notNull(),
+    accessScope: varchar("access_scope", { length: 32 }).notNull(),
+    organizationId: bigint("organization_id", { mode: "number" })
+      .default(sql`NULL`)
+      .references(() => organization.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    projectId: bigint("project_id", { mode: "number" })
+      .default(sql`NULL`)
+      .references(() => project.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    principalUserId: bigint("principal_user_id", { mode: "number" })
+      .default(sql`NULL`)
+      .references(() => n4user.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    title: varchar({ length: 255 }).default("NULL"),
+    body: longtext().default(sql`NULL`),
+    path: varchar({ length: 255 }).default("NULL"),
+    documentText: longtext("document_text").notNull().default(""),
+    updatedDate: datetime("updated_date").default(sql`NULL`),
+  },
+  (table) => [
+    uniqueIndex("uq_search_document_source").on(table.documentType, table.documentId),
+    index("ix_search_document_scope").on(table.scopeKind, table.organizationId, table.projectId),
+    index("ix_search_document_access").on(
+      table.accessScope,
+      table.organizationId,
+      table.projectId,
+      table.principalUserId,
+    ),
+    index("ix_search_document_updated_48").on(table.updatedDate),
+  ],
+);
+
 export const role = mysqlTable("role", {
   id: bigint({ mode: "number" }).primaryKey({ autoIncrement: true }),
   name: varchar({ length: 255 }).default("NULL"),
