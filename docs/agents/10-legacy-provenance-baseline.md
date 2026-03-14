@@ -55,11 +55,28 @@
 ## Phase 0B Exit Reminder
 
 - The current Org/Project batch is Phase 0B core completion plus Phase 1 kickoff. It must not claim full Phase 0B completion.
-- Full 0B exit still has explicit pending blockers:
-  - project enrollment request and cancel implementation
-  - workspace recent or favorite or default landing implementation
-  - PR exemplar implementation
-  - search exemplar implementation
+- The blocker wording below is bounded and evidence-backed. It does not claim full Phase 0B exit.
+- The PR and search wording below exists to reconcile stale blocker text with explicit bounded exemplars. It does not upgrade those capabilities to full parity in this batch.
+- Enrollment and workspace implementation evidence already exists for these landed slices:
+  - project enrollment request/cancel: `packages/domain/src/enrollment-service.ts`, `packages/domain/src/enrollment-service.spec.ts`, `apps/app/src/lib/enrollment-trpc.spec.ts`
+  - workspace recent/favorite surface: `packages/domain/src/user-workspace-service.ts`, `packages/db/src/personal-workspace.spec.ts`, `apps/app/src/lib/me-trpc.spec.ts`, `apps/app/src/routes/me.tsx`
+- Bounded PR and review-thread exemplar evidence now exists for these landed slices:
+  - PR open/close/reopen plus review-thread read/filter: `packages/contracts/src/pull-request.spec.ts`, `packages/domain/src/pull-request-service.spec.ts`, `apps/app/src/lib/pull-request-trpc.spec.ts`
+- Bounded internal search exemplar evidence now exists for these landed slices:
+  - internal `global` / `organization` / `project` search over `user`, `project`, `issue`, `posting`, and `review_comment`: `packages/contracts/src/search.spec.ts`, `packages/db/src/search.spec.ts`, `packages/domain/src/search-service.spec.ts`, `apps/app/src/lib/search.spec.ts`, `apps/app/src/lib/search-trpc.spec.ts`
+- remaining true blockers for full 0B exit are:
+  - organization enrollment request/cancel implementation
+  - workspace default landing page implementation, while favorite/recent are already implemented
+- Full PR/review parity stays in Phase 4, because `SPEC.md:1297` still owns merge semantics, reviewer rules, stale-thread meaning, richer review lifecycle, and full PR composition beyond the bounded exemplar.
+- Full internal search parity stays in Phase 5, because `SPEC.md:1359` still owns the broader multi-type surface, type-specific filtering and counts, and complete three-dialect search coverage beyond the bounded exemplar.
+- AI-facing search endpoints stay in Phase 6, because `AGENTS.md` marks `llms.txt` and AI datasource work as hardening scope rather than a Phase 0B or Phase 5 blocker.
+- In short, bounded PR/search exemplar implementation is now evidence-backed, while full PR parity stays deferred to Phase 4 and full internal search parity stays deferred to Phase 5. The workspace default landing page and organization enrollment remain outstanding.
+
+## Explicit Deferred Items
+
+- Phase 4 PR or review deferrals: merge acceptance and merge-conflict handling, reviewer threshold and assignment lifecycle, review comment create/edit/delete flows, stale-thread meaning, PR detail and diff composition, source-branch cleanup or restore, fork or clone workflow, and PR event timeline translation. These are deferred because the current Phase 0B provenance freeze is intentionally narrower than `SPEC.md:1297`.
+- Phase 5 search deferrals: `issue_comment`, `posting_comment`, `milestone`, broader review-search-condition behavior beyond internal `review_comment`, type-specific result counts, and full field-coverage parity across PostgreSQL, MySQL or MariaDB, and SQLite for the complete internal type set. These are deferred because the current Phase 0B provenance freeze is intentionally narrower than `SPEC.md:1359`.
+- Phase 6 search deferrals: `llms.txt`, AI datasource endpoints, and other AI-facing search surfaces. These are deferred because the fixed phase plan keeps them in hardening scope rather than feature-parity scope.
 
 ## Translation Notes
 
