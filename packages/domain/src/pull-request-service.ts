@@ -2,23 +2,28 @@ import {
   pullRequestCreateInputSchema,
   pullRequestDetailSchema,
   pullRequestRefSchema,
+  pullRequestReviewThreadFilterInputSchema,
+  pullRequestReviewThreadSchema,
   pullRequestStateUpdateInputSchema,
   pullRequestSummarySchema,
   type PullRequestCreateInput,
   type PullRequestDetail,
   type PullRequestRef,
+  type PullRequestReviewThread,
+  type PullRequestReviewThreadFilterInput,
   type PullRequestStateUpdateInput,
   type PullRequestSummary,
 } from "@yona/contracts";
 import {
   createPullRequestRecord,
+  listPullRequestReviewThreadsByProject,
   listPullRequestsByProject,
   readProjectAuthorization,
   readPullRequestByProjectAndNumber,
   updatePullRequestStateByProjectAndNumber,
 } from "@yona/db";
 import { requireAuthenticatedActor } from "./actor-utils";
-import { DomainNotFoundError, type DomainActor } from "./errors";
+import { DomainNotFoundError, DomainValidationError, type DomainActor } from "./errors";
 import {
   requireProjectReadAuthorization,
   requireProjectWriteAuthorization,
@@ -26,6 +31,7 @@ import {
 
 export interface PullRequestServiceDeps {
   createPullRequestRecord: typeof createPullRequestRecord;
+  listPullRequestReviewThreadsByProject: typeof listPullRequestReviewThreadsByProject;
   listPullRequestsByProject: typeof listPullRequestsByProject;
   readProjectAuthorization: typeof readProjectAuthorization;
   readPullRequestByProjectAndNumber: typeof readPullRequestByProjectAndNumber;
@@ -34,11 +40,40 @@ export interface PullRequestServiceDeps {
 
 const defaultDeps: PullRequestServiceDeps = {
   createPullRequestRecord,
+  listPullRequestReviewThreadsByProject,
   listPullRequestsByProject,
   readProjectAuthorization,
   readPullRequestByProjectAndNumber,
   updatePullRequestStateByProjectAndNumber,
 };
+
+function matchesReviewThreadFilter(
+  thread: PullRequestReviewThread,
+  input: PullRequestReviewThreadFilterInput,
+): boolean {
+  if (input.state && thread.state !== input.state) {
+    return false;
+  }
+
+  if (input.authorLoginId && thread.authorLoginId !== input.authorLoginId) {
+    return false;
+  }
+
+  if (input.participantLoginId && !thread.participants.includes(input.participantLoginId)) {
+    return false;
+  }
+
+  if (!input.filter) {
+    return true;
+  }
+
+  const normalizedFilter = input.filter.toLowerCase();
+  const searchValues = [thread.commitId, thread.path, thread.text]
+    .filter((value): value is string => value !== null)
+    .map((value) => value.toLowerCase());
+
+  return searchValues.some((value) => value.includes(normalizedFilter));
+}
 
 export async function listPullRequests(
   actor: DomainActor,
@@ -81,6 +116,30 @@ export async function readPullRequestDetail(
   return pullRequestDetailSchema.parse(pullRequest);
 }
 
+export async function readPullRequestReviewThreads(
+  actor: DomainActor,
+  input: PullRequestReviewThreadFilterInput,
+  deps: PullRequestServiceDeps = defaultDeps,
+): Promise<PullRequestReviewThread[]> {
+  const parsedInput = pullRequestReviewThreadFilterInputSchema.parse(input);
+  const authorization = await requireProjectReadAuthorization(actor, parsedInput, deps);
+
+  return pullRequestReviewThreadSchema.array().parse(
+    (
+      await deps.listPullRequestReviewThreadsByProject({
+        authorLoginId: parsedInput.authorLoginId,
+        filter: parsedInput.filter,
+        participantLoginId: parsedInput.participantLoginId,
+        projectId: authorization.project.id,
+        projectName: authorization.project.projectName,
+        state: parsedInput.state,
+      })
+    ).filter((thread) => matchesReviewThreadFilter(thread, parsedInput)),
+  );
+}
+
+export const listPullRequestReviewThreads = readPullRequestReviewThreads;
+
 export async function createPullRequest(
   actor: DomainActor,
   input: PullRequestCreateInput,
@@ -117,6 +176,21 @@ export async function updatePullRequestState(
   requireAuthenticatedActor(actor);
   const parsedInput = pullRequestStateUpdateInputSchema.parse(input);
   const authorization = await requireProjectWriteAuthorization(actor, parsedInput, deps);
+
+  const currentPullRequest = await deps.readPullRequestByProjectAndNumber(
+    authorization.project.id,
+    parsedInput.pullRequestNumber,
+    authorization.project.ownerName,
+    authorization.project.projectName,
+  );
+  if (!currentPullRequest) {
+    throw new DomainNotFoundError("Pull request not found.");
+  }
+
+  if (parsedInput.state === "open" && currentPullRequest.state === "open") {
+    throw new DomainValidationError("Pull request is already open.");
+  }
+
   await deps.updatePullRequestStateByProjectAndNumber({
     projectId: authorization.project.id,
     pullRequestNumber: parsedInput.pullRequestNumber,
