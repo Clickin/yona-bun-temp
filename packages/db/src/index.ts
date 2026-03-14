@@ -1,8 +1,10 @@
-import * as mysqlRelations from "@drizzle/mysql/relations";
+import { mkdirSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { relations as mysqlRelations } from "@drizzle/mysql/relations";
 import * as mysqlSchema from "@drizzle/mysql/schema";
-import * as pgRelations from "@drizzle/pg/relations";
+import { relations as pgRelations } from "@drizzle/pg/relations";
 import * as pgSchema from "@drizzle/pg/schema";
-import * as sqliteRelations from "@drizzle/sqlite/relations";
+import { relations as sqliteRelations } from "@drizzle/sqlite/relations";
 import * as sqliteSchema from "@drizzle/sqlite/schema";
 import { drizzle } from "drizzle-orm/bun-sql";
 
@@ -90,27 +92,49 @@ function validateConnectionUrl(dialect: Dialect, url: string): void {
   );
 }
 
+function ensureSqliteDirectory(url: string): void {
+  if (url === ":memory:") {
+    return;
+  }
+
+  const rawPath = url.startsWith("sqlite://")
+    ? url.slice("sqlite://".length)
+    : url.startsWith("sqlite:")
+      ? url.slice("sqlite:".length)
+      : url.startsWith("file://")
+        ? url.slice("file://".length)
+        : url.startsWith("file:")
+          ? url.slice("file:".length)
+          : null;
+
+  if (!rawPath || rawPath === ":memory:") {
+    return;
+  }
+
+  mkdirSync(dirname(resolve(rawPath)), { recursive: true });
+}
+
 function createDatabase(dialect: Dialect, connectionUrl: string) {
   if (dialect === "postgres") {
     const db = (drizzle as any).postgres(connectionUrl, {
-      schema: pgSchema,
       relations: pgRelations,
+      schema: pgSchema,
     });
     return Object.assign(db, { dbType: "postgres" as const });
   }
 
   if (dialect === "mysql") {
     const db = (drizzle as any).mysql(connectionUrl, {
-      schema: mysqlSchema,
       relations: mysqlRelations,
+      schema: mysqlSchema,
       mode: "default",
     });
     return Object.assign(db, { dbType: "mysql" as const });
   }
 
   const db = (drizzle as any).sqlite(connectionUrl, {
-    schema: sqliteSchema,
     relations: sqliteRelations,
+    schema: sqliteSchema,
   });
   return Object.assign(db, { dbType: "sqlite" as const });
 }
@@ -120,6 +144,9 @@ export function getDb() {
     const dialect = requireDialect();
     const connectionUrl = requireConnectionUrl(dialect);
     validateConnectionUrl(dialect, connectionUrl);
+    if (dialect === "sqlite") {
+      ensureSqliteDirectory(connectionUrl);
+    }
     cachedDb = createDatabase(dialect, connectionUrl);
   }
 
@@ -149,6 +176,7 @@ export {
 } from "./postings";
 export {
   createPullRequestRecord,
+  listPullRequestReviewThreadsByProject,
   listPullRequestsByProject,
   readPullRequestByProjectAndNumber,
   updatePullRequestStateByProjectAndNumber,
@@ -212,6 +240,22 @@ export {
   resolveUploadBindingProjectId,
   type TemporaryUploadRecord,
 } from "./upload-session";
+export { searchDocuments, type SearchActorContext } from "./search";
+export {
+  SEARCH_DOCUMENT_ACCESS_SCOPES,
+  SEARCH_DOCUMENT_PERMISSION_COLUMNS,
+  SEARCH_DOCUMENT_SCOPE_KINDS,
+  SEARCH_DOCUMENT_TABLE,
+  SEARCH_DOCUMENT_TYPES,
+  SQLITE_SEARCH_DOCUMENT_BOOTSTRAP_MODE,
+  SQLITE_SEARCH_DOCUMENT_FTS_TABLE,
+  SQLITE_SEARCH_DOCUMENT_SYNC_MODE,
+  SQLITE_SEARCH_DOCUMENT_SYNC_TRIGGERS,
+  isSearchDocumentType,
+  type SearchDocumentAccessScope,
+  type SearchDocumentScopeKind,
+  type SearchDocumentType,
+} from "./search-projection";
 export {
   createEnrollmentRequest,
   createOrganizationRecord,
