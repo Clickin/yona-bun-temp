@@ -1,10 +1,17 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, redirect } from "@tanstack/react-router";
 import { ContentCard, SidebarSection, SiteShell } from "@app/components/parity-shells";
+import { resolveAuthenticatedHomePath } from "@app/lib/auth-shared";
 import { useTranslate } from "@app/lib/i18n-react";
 import { publicShellQueryOptions } from "@app/lib/queries";
 
 export const Route = createFileRoute("/_app/")({
+  beforeLoad: async ({ context }) => {
+    const session = await context.authCaller.readCurrentSession();
+    if (!session.isAnonymous) {
+      throw redirect({ href: resolveAuthenticatedHomePath(session) });
+    }
+  },
   loader: ({ context }) => context.queryClient.ensureQueryData(publicShellQueryOptions()),
   component: HomeRouteComponent,
 });

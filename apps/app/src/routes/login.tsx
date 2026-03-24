@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { z } from "zod";
 import { AuthShell } from "@app/components/parity-shells";
-import { setCurrentSessionData } from "@app/lib/auth-shared";
+import { resolvePostAuthRedirectPath, setCurrentSessionData } from "@app/lib/auth-shared";
 import { useTranslate } from "@app/lib/i18n-react";
 import { currentSessionQueryOptions } from "@app/lib/queries";
 
@@ -27,7 +27,7 @@ function LoginRouteComponent() {
   const navigate = useNavigate();
   const search = Route.useSearch();
   const t = useTranslate();
-  const redirectTo = search.redirect || "/protected";
+  const redirectTo = search.redirect;
   const [pendingAction, setPendingAction] = React.useState<"signin" | "signout" | null>(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [identifier, setIdentifier] = React.useState("");
@@ -50,7 +50,9 @@ function LoginRouteComponent() {
               return;
             }
             setCurrentSessionData(queryClient, result.session);
-            await navigate({ to: redirectTo });
+            await navigate({
+              href: resolvePostAuthRedirectPath(result.session, redirectTo),
+            });
           } else {
             const result = await authCaller.signOut();
             setCurrentSessionData(queryClient, result.session);

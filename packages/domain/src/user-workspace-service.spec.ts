@@ -1,13 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  readMyDefaultLandingPreference,
   readMyFavorites,
   readMyRecentProjects,
   readPublicUserProfile,
   recordRecentProjectVisit,
+  setMyDefaultLandingPreference,
   toggleFavoriteProject,
   updateProjectNotificationPreference,
 } from "./user-workspace-service";
-import { DomainPermissionError } from "./errors";
+import { DomainPermissionError, DomainValidationError } from "./errors";
 
 const authenticatedActor = {
   actorId: 7,
@@ -43,7 +45,9 @@ describe("user workspace service", () => {
           projectName: "yona",
         },
       ]),
+      readDefaultLandingPathForUser: vi.fn().mockResolvedValue(null),
       readUserPublicProfileByLoginId: vi.fn(),
+      setDefaultLandingPathForUser: vi.fn().mockResolvedValue("/me"),
       setProjectNotificationAllowed: vi.fn().mockResolvedValue({
         allowed: true,
         notificationType: "watch",
@@ -103,7 +107,9 @@ describe("user workspace service", () => {
       listFavoriteProjectsForUser: vi.fn(),
       listNotificationsForUser: vi.fn(),
       listRecentProjectsForUser: vi.fn(),
+      readDefaultLandingPathForUser: vi.fn().mockResolvedValue(null),
       readUserPublicProfileByLoginId: vi.fn(),
+      setDefaultLandingPathForUser: vi.fn().mockResolvedValue("/me"),
       setProjectNotificationAllowed: vi.fn().mockResolvedValue({
         allowed: false,
         notificationType: "watch",
@@ -133,16 +139,77 @@ describe("user workspace service", () => {
     });
   });
 
+  it("reads and saves default landing preferences", async () => {
+    const deps = {
+      listFavoriteProjectsForUser: vi.fn(),
+      listNotificationsForUser: vi.fn(),
+      listRecentProjectsForUser: vi.fn(),
+      readDefaultLandingPathForUser: vi
+        .fn()
+        .mockResolvedValueOnce("/search?lang=ko-KR&scope=global&pageSize=20")
+        .mockResolvedValueOnce("/search?pageSize=20&scope=global&query=yona"),
+      readUserPublicProfileByLoginId: vi.fn(),
+      setDefaultLandingPathForUser: vi
+        .fn()
+        .mockResolvedValue("/search?pageSize=20&scope=global&query=yona"),
+      setProjectNotificationAllowed: vi.fn(),
+      toggleFavoriteProjectForUser: vi.fn(),
+      trackRecentProjectVisitForUser: vi.fn(),
+    };
+
+    await expect(readMyDefaultLandingPreference(authenticatedActor, deps)).resolves.toEqual({
+      path: "/search?pageSize=20&scope=global",
+    });
+
+    await expect(
+      setMyDefaultLandingPreference(
+        authenticatedActor,
+        {
+          path: "/search?scope=global&pageSize=20&query=yona&lang=ko-KR",
+        },
+        deps,
+      ),
+    ).resolves.toEqual({
+      path: "/search?pageSize=20&scope=global&query=yona",
+    });
+  });
+
+  it("rejects invalid default landing preferences", async () => {
+    const deps = {
+      listFavoriteProjectsForUser: vi.fn(),
+      listNotificationsForUser: vi.fn(),
+      listRecentProjectsForUser: vi.fn(),
+      readDefaultLandingPathForUser: vi.fn().mockResolvedValue(null),
+      readUserPublicProfileByLoginId: vi.fn(),
+      setDefaultLandingPathForUser: vi.fn(),
+      setProjectNotificationAllowed: vi.fn(),
+      toggleFavoriteProjectForUser: vi.fn(),
+      trackRecentProjectVisitForUser: vi.fn(),
+    };
+
+    await expect(
+      setMyDefaultLandingPreference(
+        authenticatedActor,
+        {
+          path: "/projects/new",
+        },
+        deps,
+      ),
+    ).rejects.toBeInstanceOf(DomainValidationError);
+  });
+
   it("reads public user profile by login id", async () => {
     const deps = {
       listFavoriteProjectsForUser: vi.fn(),
       listNotificationsForUser: vi.fn(),
       listRecentProjectsForUser: vi.fn(),
+      readDefaultLandingPathForUser: vi.fn().mockResolvedValue(null),
       readUserPublicProfileByLoginId: vi.fn().mockResolvedValue({
         joinedAt: null,
         loginId: "doortts",
         userLabel: "Door TTS",
       }),
+      setDefaultLandingPathForUser: vi.fn().mockResolvedValue("/me"),
       setProjectNotificationAllowed: vi.fn(),
       toggleFavoriteProjectForUser: vi.fn(),
       trackRecentProjectVisitForUser: vi.fn(),

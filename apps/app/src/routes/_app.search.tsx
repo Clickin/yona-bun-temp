@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { DefaultLandingAction } from "@app/components/default-landing-action";
 import { ContentCard, SidebarSection, SiteShell } from "@app/components/parity-shells";
 import {
   boundedSearchTypeValues,
@@ -52,7 +53,9 @@ function createEmptySearchState(): BoundedSearchRouteSearch {
   });
 }
 
-function getSearchPrompt(search: BoundedSearchRouteSearch): "organization" | "project" | "query" | null {
+function getSearchPrompt(
+  search: BoundedSearchRouteSearch,
+): "organization" | "project" | "query" | null {
   if (!search.query) {
     return "query";
   }
@@ -146,6 +149,7 @@ function SearchRouteComponent() {
 
   return (
     <SiteShell
+      actions={<DefaultLandingAction />}
       eyebrow={t("title.search")}
       sidebar={
         <SidebarSection title={t("title.search")}>
@@ -164,7 +168,9 @@ function SearchRouteComponent() {
               <select
                 defaultValue={search.scope}
                 name="scope"
-                onChange={(event) => setScopeInput(event.target.value as BoundedSearchRouteSearch["scope"])}
+                onChange={(event) =>
+                  setScopeInput(event.target.value as BoundedSearchRouteSearch["scope"])
+                }
               >
                 <option value="global">{t("search.scope.all")}</option>
                 <option value="organization">{t("search.scope.group")}</option>
@@ -250,23 +256,33 @@ function SearchRouteComponent() {
           <span className="badge">
             {t(
               "app.search.typesBadge",
-              search.types?.length ? search.types.map((type) => typeLabels[type]).join(", ") : t("app.search.allTypes"),
+              search.types?.length
+                ? search.types.map((type) => typeLabels[type]).join(", ")
+                : t("app.search.allTypes"),
             )}
           </span>
         </div>
         {loaderData.page ? (
           <div className="badge-row">
-            <span className="badge">{t("app.search.returned", loaderData.page.counts.returned)}</span>
+            <span className="badge">
+              {t("app.search.returned", loaderData.page.counts.returned)}
+            </span>
             <span className="badge">{t("app.search.total", loaderData.page.counts.total)}</span>
-            <span className="badge">{t("app.search.cursor", search.cursor ?? t("app.search.initialCursor"))}</span>
+            <span className="badge">
+              {t("app.search.cursor", search.cursor ?? t("app.search.initialCursor"))}
+            </span>
           </div>
         ) : null}
         {searchPrompt === "query" ? <p className="note">{t("app.search.queryHelp")}</p> : null}
         {searchPrompt === "organization" ? (
           <p className="note">{t("app.search.scopeHelp.organization")}</p>
         ) : null}
-        {searchPrompt === "project" ? <p className="note">{t("app.search.scopeHelp.project")}</p> : null}
-        {loaderData.errorMessage ? <p className="note error-note">{loaderData.errorMessage}</p> : null}
+        {searchPrompt === "project" ? (
+          <p className="note">{t("app.search.scopeHelp.project")}</p>
+        ) : null}
+        {loaderData.errorMessage ? (
+          <p className="note error-note">{loaderData.errorMessage}</p>
+        ) : null}
         {loaderData.page && loaderData.page.items.length === 0 ? (
           <p className="note">{t("title.no.results")}</p>
         ) : null}
@@ -348,6 +364,15 @@ function ResultHeadline({ result }: { result: SearchResult }) {
         </Link>
       );
     case "review_comment":
-      return <>{t("app.search.result.reviewComment", result.reviewCommentId, result.ownerName, result.projectName)}</>;
+      return (
+        <>
+          {t(
+            "app.search.result.reviewComment",
+            result.reviewCommentId,
+            result.ownerName,
+            result.projectName,
+          )}
+        </>
+      );
   }
 }

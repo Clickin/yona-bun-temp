@@ -59,7 +59,9 @@
 - The PR and search wording below exists to reconcile stale blocker text with explicit bounded exemplars. It does not upgrade those capabilities to full parity in this batch.
 - Enrollment and workspace implementation evidence already exists for these landed slices:
   - project enrollment request/cancel: `packages/domain/src/enrollment-service.ts`, `packages/domain/src/enrollment-service.spec.ts`, `apps/app/src/lib/enrollment-trpc.spec.ts`
+  - organization enrollment request/cancel: `packages/domain/src/enrollment-service.ts`, `packages/domain/src/enrollment-service.spec.ts`, `apps/app/src/lib/enrollment-trpc.spec.ts`
   - workspace recent/favorite surface: `packages/domain/src/user-workspace-service.ts`, `packages/db/src/personal-workspace.spec.ts`, `apps/app/src/lib/me-trpc.spec.ts`, `apps/app/src/routes/me.tsx`
+  - workspace default landing surface: `packages/domain/src/default-landing.ts`, `packages/domain/src/default-landing.spec.ts`, `packages/auth/src/app-service.ts`, `apps/app/src/routes/_app.index.tsx`
 - Bounded PR and review-thread exemplar evidence now exists for these landed slices:
   - PR open/close/reopen plus review-thread read/filter: `packages/contracts/src/pull-request.spec.ts`, `packages/domain/src/pull-request-service.spec.ts`, `apps/app/src/lib/pull-request-trpc.spec.ts`
 - Bounded internal search exemplar evidence now exists for these landed slices:
@@ -70,7 +72,7 @@
 - Full PR/review parity stays in Phase 4, because `SPEC.md:1297` still owns merge semantics, reviewer rules, stale-thread meaning, richer review lifecycle, and full PR composition beyond the bounded exemplar.
 - Full internal search parity stays in Phase 5, because `SPEC.md:1359` still owns the broader multi-type surface, type-specific filtering and counts, and complete three-dialect search coverage beyond the bounded exemplar.
 - AI-facing search endpoints stay in Phase 6, because `AGENTS.md` marks `llms.txt` and AI datasource work as hardening scope rather than a Phase 0B or Phase 5 blocker.
-- In short, bounded PR/search exemplar implementation is now evidence-backed, while full PR parity stays deferred to Phase 4 and full internal search parity stays deferred to Phase 5. The workspace default landing page and organization enrollment remain outstanding.
+- In short, bounded PR/search exemplar implementation is now evidence-backed, org enrollment and workspace default landing are landed in this repo state, while full PR parity stays deferred to Phase 4 and full internal search parity stays deferred to Phase 5.
 
 ## Explicit Deferred Items
 

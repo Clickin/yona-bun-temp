@@ -2,7 +2,7 @@ import * as React from "react";
 import { Link, createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { z } from "zod";
 import { AuthShell } from "@app/components/parity-shells";
-import { setCurrentSessionData } from "@app/lib/auth-shared";
+import { resolvePostAuthRedirectPath, setCurrentSessionData } from "@app/lib/auth-shared";
 import { useTranslate } from "@app/lib/i18n-react";
 import { currentSessionQueryOptions } from "@app/lib/queries";
 
@@ -24,7 +24,7 @@ function RegisterRouteComponent() {
   const navigate = useNavigate();
   const search = Route.useSearch();
   const t = useTranslate();
-  const redirectTo = search.redirect || "/protected";
+  const redirectTo = search.redirect;
   const [pending, setPending] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [formState, setFormState] = React.useState({
@@ -64,7 +64,9 @@ function RegisterRouteComponent() {
                 }
 
                 setCurrentSessionData(queryClient, result.session);
-                await navigate({ to: redirectTo });
+                await navigate({
+                  href: resolvePostAuthRedirectPath(result.session, redirectTo),
+                });
               } catch (error) {
                 setErrorMessage(error instanceof Error ? error.message : t("user.login.invalid"));
               } finally {

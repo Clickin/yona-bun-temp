@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
+  defaultLandingPreferenceInputSchema,
+  defaultLandingPreferenceSchema,
   personalNotificationsSchema,
   personalProjectEntrySchema,
   personalProjectFavoriteToggleResultSchema,
@@ -32,6 +34,15 @@ export const readMyNotifications = createServerFn({ method: "GET" }).handler(asy
   return personalNotificationsSchema.parse(await createServerMeCaller().readMyNotifications());
 });
 
+export const readMyDefaultLandingPreference = createServerFn({ method: "GET" }).handler(
+  async () => {
+    const { createServerMeCaller } = await import("./me-trpc.server");
+    return defaultLandingPreferenceSchema.parse(
+      await createServerMeCaller().readMyDefaultLandingPreference(),
+    );
+  },
+);
+
 export const toggleFavoriteProject = createServerFn({ method: "POST" })
   .inputValidator(personalProjectEntrySchema)
   .handler(async ({ data }) => {
@@ -56,6 +67,15 @@ export const updateProjectNotificationPreference = createServerFn({ method: "POS
     const { createServerMeCaller } = await import("./me-trpc.server");
     return projectNotificationPreferenceSchema.parse(
       await createServerMeCaller().updateProjectNotificationPreference(data),
+    );
+  });
+
+export const setMyDefaultLandingPreference = createServerFn({ method: "POST" })
+  .inputValidator(defaultLandingPreferenceInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerMeCaller } = await import("./me-trpc.server");
+    return defaultLandingPreferenceSchema.parse(
+      await createServerMeCaller().setMyDefaultLandingPreference(data),
     );
   });
 

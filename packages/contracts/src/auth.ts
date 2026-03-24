@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { defaultLandingPathSchema } from "./default-landing";
 
 export const authErrorCodeValues = [
   "auth.account-not-confirmed",
@@ -92,6 +93,7 @@ export type AuthUserSummary = z.infer<typeof authUserSummarySchema>;
 
 export const appSessionProjectionSchema = sessionProjectionSchema
   .extend({
+    defaultLandingPath: defaultLandingPathSchema.nullable().default(null),
     emailAddress: authEmailAddressSchema.nullable(),
     userLabel: authDisplayNameSchema.nullable(),
   })

@@ -1,5 +1,6 @@
 export * from "./errors";
 export * from "./actor-utils";
+export * from "./default-landing";
 export * from "./auth-policy";
 export * from "./asset-authorization";
 export * from "./asset-binding-service";

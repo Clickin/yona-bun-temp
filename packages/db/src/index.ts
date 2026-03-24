@@ -227,7 +227,9 @@ export {
   listFavoriteProjectsForUser,
   listNotificationsForUser,
   listRecentProjectsForUser,
+  readDefaultLandingPathForUser,
   readUserPublicProfileByLoginId,
+  setDefaultLandingPathForUser,
   setProjectNotificationAllowed,
   toggleFavoriteProjectForUser,
   trackRecentProjectVisitForUser,
@@ -292,4 +294,3 @@ export {
   type ProjectRecord,
 } from "./org-project";
 export { getDbSchema, type RuntimeDbSchema } from "./runtime-schema";
-

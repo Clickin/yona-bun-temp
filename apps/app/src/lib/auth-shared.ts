@@ -1,9 +1,11 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { AppSessionProjection } from "@yona/contracts";
+import { resolveDefaultLandingPath, resolvePostAuthLandingPath } from "@yona/domain";
 
 export function buildAnonymousAppSession(): AppSessionProjection {
   return {
     actorId: null,
+    defaultLandingPath: null,
     emailAddress: null,
     isAnonymous: true,
     isConfirmed: false,
@@ -36,6 +38,17 @@ export function buildProtectedRedirect(
     },
     to: "/login",
   };
+}
+
+export function resolveAuthenticatedHomePath(session: AppSessionProjection): string {
+  return resolveDefaultLandingPath(session.defaultLandingPath);
+}
+
+export function resolvePostAuthRedirectPath(
+  session: AppSessionProjection,
+  requestedRedirect: string | undefined,
+): string {
+  return resolvePostAuthLandingPath(requestedRedirect, session.defaultLandingPath);
 }
 
 export function setCurrentSessionData(

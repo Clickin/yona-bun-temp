@@ -288,6 +288,51 @@ export async function trackRecentProjectVisitForUser(
   };
 }
 
+export async function readDefaultLandingPathForUser(
+  userId: number,
+  db = getDb(),
+): Promise<null | string> {
+  const schema = getDbSchema(db);
+  const [row] = await db
+    .select({
+      loginDefaultPage: schema.userSetting.loginDefaultPage,
+    })
+    .from(schema.userSetting)
+    .where(eq(schema.userSetting.userId, userId))
+    .limit(1);
+
+  return normalizeNullableText(row?.loginDefaultPage ?? null);
+}
+
+export async function setDefaultLandingPathForUser(
+  userId: number,
+  path: null | string,
+  db = getDb(),
+): Promise<null | string> {
+  const schema = getDbSchema(db);
+  const normalizedPath = normalizeNullableText(path);
+  const [existing] = await db
+    .select({ id: schema.userSetting.id })
+    .from(schema.userSetting)
+    .where(eq(schema.userSetting.userId, userId))
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(schema.userSetting)
+      .set({
+        loginDefaultPage: normalizedPath,
+      })
+      .where(eq(schema.userSetting.id, existing.id));
+  } else {
+    await db.insert(schema.userSetting).values({
+      loginDefaultPage: normalizedPath,
+      userId,
+    });
+  }
+
+  return normalizedPath;
+}
 export async function setProjectNotificationAllowed(
   userId: number,
   input: {

@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { useTranslate } from "@app/lib/i18n-react";
+import { DefaultLandingAction } from "./default-landing-action";
 import type {
   OrganizationDetail,
   PersonalSidebar,
@@ -25,13 +26,7 @@ function toInitials(label: string) {
     .join("");
 }
 
-export function SidebarSection({
-  children,
-  title,
-}: {
-  children: React.ReactNode;
-  title: string;
-}) {
+export function SidebarSection({ children, title }: { children: React.ReactNode; title: string }) {
   return (
     <section className="sidebar-card">
       <h2 className="sidebar-heading">{title}</h2>
@@ -40,13 +35,7 @@ export function SidebarSection({
   );
 }
 
-export function ContentCard({
-  children,
-  title,
-}: {
-  children: React.ReactNode;
-  title: string;
-}) {
+export function ContentCard({ children, title }: { children: React.ReactNode; title: string }) {
   return (
     <section className="content-card">
       <header className="section-header">
@@ -132,6 +121,7 @@ export function WorkspaceShell({
 
   return (
     <SiteShell
+      actions={activeTab === "overview" ? <DefaultLandingAction /> : undefined}
       description={description}
       eyebrow={t("app.workspace.eyebrow")}
       sidebar={<WorkspaceSidebar sidebar={sidebar} />}
@@ -232,6 +222,7 @@ export function ProfileShell({
 
   return (
     <SiteShell
+      actions={<DefaultLandingAction />}
       description={t("app.profile.description", profile.loginId)}
       eyebrow={t("app.profile.eyebrow")}
       sidebar={<ProfileSidebar profile={profile} />}
@@ -268,7 +259,14 @@ function ProfileSidebar({ profile }: { profile: UserPublicProfile }) {
   );
 }
 
-type ProjectMenuKey = "branches" | "code" | "discussions" | "home" | "issues" | "pulls" | "settings";
+type ProjectMenuKey =
+  | "branches"
+  | "code"
+  | "discussions"
+  | "home"
+  | "issues"
+  | "pulls"
+  | "settings";
 
 export function ProjectShell({
   activeMenu,
@@ -301,16 +299,21 @@ export function ProjectShell({
             </h1>
             <div className="badge-row">
               <span className="badge">{project.projectScope}</span>
-              {project.organizationName ? <span className="badge">{t("app.project.organizationOwned")}</span> : null}
+              {project.organizationName ? (
+                <span className="badge">{t("app.project.organizationOwned")}</span>
+              ) : null}
             </div>
           </div>
           <p className="page-summary">{project.overview ?? t("app.project.noOverview")}</p>
         </div>
-        {project.viewerCanUpdate ? (
+        {activeMenu !== "settings" || project.viewerCanUpdate ? (
           <div className="page-actions">
-            <Link className="secondary-cta" params={params} to="/$owner/$projectName/settings">
-              {t("app.project.settings")}
-            </Link>
+            {activeMenu !== "settings" ? <DefaultLandingAction /> : null}
+            {project.viewerCanUpdate ? (
+              <Link className="secondary-cta" params={params} to="/$owner/$projectName/settings">
+                {t("app.project.settings")}
+              </Link>
+            ) : null}
           </div>
         ) : null}
       </header>
@@ -345,14 +348,18 @@ export function ProjectShell({
             {t("menu.pullRequest")}
           </Link>
           <Link
-            className={activeMenu === "discussions" ? "entity-menu-link is-active" : "entity-menu-link"}
+            className={
+              activeMenu === "discussions" ? "entity-menu-link is-active" : "entity-menu-link"
+            }
             params={params}
             to="/$owner/$projectName/discussions"
           >
             {t("menu.board")}
           </Link>
           <Link
-            className={activeMenu === "branches" ? "entity-menu-link is-active" : "entity-menu-link"}
+            className={
+              activeMenu === "branches" ? "entity-menu-link is-active" : "entity-menu-link"
+            }
             params={params}
             to="/$owner/$projectName/branches"
           >
@@ -362,7 +369,9 @@ export function ProjectShell({
         {project.viewerCanUpdate ? (
           <div className="entity-menu-admin">
             <Link
-              className={activeMenu === "settings" ? "entity-menu-link is-active" : "entity-menu-link"}
+              className={
+                activeMenu === "settings" ? "entity-menu-link is-active" : "entity-menu-link"
+              }
               params={params}
               to="/$owner/$projectName/settings"
             >
@@ -400,7 +409,9 @@ export function OrganizationShell({
   return (
     <section className="entity-shell organization-shell">
       <header className="entity-header">
-        <div className="entity-avatar">{organization.organizationName.slice(0, 1).toUpperCase()}</div>
+        <div className="entity-avatar">
+          {organization.organizationName.slice(0, 1).toUpperCase()}
+        </div>
         <div className="entity-copy">
           <p className="page-eyebrow">{t("app.group.eyebrow")}</p>
           <div className="entity-title-row">
@@ -408,11 +419,18 @@ export function OrganizationShell({
           </div>
           <p className="page-summary">{organization.description ?? t("app.group.noDescription")}</p>
         </div>
-        {organization.viewerCanUpdate ? (
+        {activeMenu === "home" || organization.viewerCanUpdate ? (
           <div className="page-actions">
-            <Link className="secondary-cta" params={params} to="/organizations/$organizationName/settings">
-              {t("app.group.settings")}
-            </Link>
+            {activeMenu === "home" ? <DefaultLandingAction /> : null}
+            {organization.viewerCanUpdate ? (
+              <Link
+                className="secondary-cta"
+                params={params}
+                to="/organizations/$organizationName/settings"
+              >
+                {t("app.group.settings")}
+              </Link>
+            ) : null}
           </div>
         ) : null}
       </header>
@@ -429,7 +447,9 @@ export function OrganizationShell({
         {organization.viewerCanUpdate ? (
           <div className="entity-menu-admin">
             <Link
-              className={activeMenu === "settings" ? "entity-menu-link is-active" : "entity-menu-link"}
+              className={
+                activeMenu === "settings" ? "entity-menu-link is-active" : "entity-menu-link"
+              }
               params={params}
               to="/organizations/$organizationName/settings"
             >

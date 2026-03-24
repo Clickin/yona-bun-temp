@@ -337,7 +337,9 @@ export const authRouter = t.router({
         throw new Error(authErrorMessage(result.code));
       }
 
-      return updateCurrentUserProfileOutputSchema.parse(buildAuthenticatedAppSession(result.user));
+      return updateCurrentUserProfileOutputSchema.parse(
+        buildAuthenticatedAppSession(result.user, currentSession.projection.defaultLandingPath),
+      );
     }),
   changeCurrentUserPassword: t.procedure
     .input(changeCurrentUserPasswordInputSchema)

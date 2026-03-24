@@ -1,5 +1,4 @@
 import { fileURLToPath, URL } from "node:url";
-import tsConfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -23,13 +22,8 @@ export default defineConfig({
         new URL("../../drizzle/sqlite/schema.ts", import.meta.url),
       ),
     },
+    tsconfigPaths: true,
   },
-  plugins: [
-    tsConfigPaths({
-      ignoreConfigErrors: true,
-      projects: ["./tsconfig.json"],
-    }),
-  ],
   test: {
     environment: "node",
     include: ["src/**/*.spec.ts"],

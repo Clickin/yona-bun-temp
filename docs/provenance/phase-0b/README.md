@@ -21,7 +21,9 @@ Canonical execution rules still live in [`SPEC.md`](/G:/programming/yona/SPEC.md
 - This batch also refreshes stale blocker wording after the bounded PR provenance exemplar and the bounded search provenance exemplar landed, while keeping the remaining blocker boundary explicit.
 - Evidence-backed landed slices already present in the repo:
   - project enrollment request/cancel is implemented in `packages/domain/src/enrollment-service.ts`, covered by `packages/domain/src/enrollment-service.spec.ts` and `apps/app/src/lib/enrollment-trpc.spec.ts`
+  - organization enrollment request/cancel is implemented through `packages/domain/src/enrollment-service.ts`, `packages/domain/src/enrollment-service.spec.ts`, and `apps/app/src/lib/enrollment-trpc.spec.ts`
   - workspace favorite/recent is implemented through `packages/domain/src/user-workspace-service.ts`, `packages/db/src/personal-workspace.spec.ts`, `apps/app/src/lib/me-trpc.spec.ts`, and `apps/app/src/routes/me.tsx`
+  - workspace default landing is implemented through `packages/domain/src/default-landing.ts`, `packages/domain/src/default-landing.spec.ts`, `packages/auth/src/app-service.ts`, and `apps/app/src/routes/_app.index.tsx`
 - remaining true blockers kept out of scope here:
   - org/project delete
   - organization enrollment request/cancel
@@ -36,4 +38,4 @@ Canonical execution rules still live in [`SPEC.md`](/G:/programming/yona/SPEC.md
 - Search items deferred to Phase 5: `issue_comment`, `posting_comment`, and `milestone` result types, broader review-search-condition behavior beyond internal `review_comment` results, type-specific result counts, and full three-dialect searchable-field coverage for the complete internal type set. Each is deferred because the current Phase 0B batch freezes only the minimal internal exemplar over `user`, `project`, `issue`, `posting`, and `review_comment`.
 - Search items deferred to Phase 6: `llms.txt`, AI datasource endpoints, and other AI-facing or machine-facing search routes. They are deferred because `AGENTS.md` reserves those surfaces for hardening rather than Phase 0B blocker reconciliation.
 
-- This directory keeps the wording bounded: it does not claim full Phase 0B exit, and the remaining open blocker named here is the default landing page alongside the separately deferred org enrollment/delete work.
+- This directory keeps the wording bounded: it still does not claim full Phase 0B exit, but the previously stale org-enrollment/default-landing blocker pair is now implemented while org/project delete remains separately deferred.

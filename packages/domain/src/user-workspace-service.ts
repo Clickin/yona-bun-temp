@@ -1,4 +1,6 @@
 import {
+  defaultLandingPreferenceInputSchema,
+  defaultLandingPreferenceSchema,
   personalNotificationsSchema,
   personalProjectEntrySchema,
   personalProjectFavoriteToggleResultSchema,
@@ -7,6 +9,8 @@ import {
   projectNotificationPreferenceSchema,
   userPublicProfileRefSchema,
   userPublicProfileSchema,
+  type DefaultLandingPreference,
+  type DefaultLandingPreferenceInput,
   type PersonalNotificationItem,
   type PersonalProjectEntry,
   type PersonalProjectFavoriteToggleResult,
@@ -20,19 +24,24 @@ import {
   listFavoriteProjectsForUser,
   listNotificationsForUser,
   listRecentProjectsForUser,
+  readDefaultLandingPathForUser,
   readUserPublicProfileByLoginId,
+  setDefaultLandingPathForUser,
   setProjectNotificationAllowed,
   toggleFavoriteProjectForUser,
   trackRecentProjectVisitForUser,
 } from "@yona/db";
 import { requireAuthenticatedActor } from "./actor-utils";
-import { DomainNotFoundError, type DomainActor } from "./errors";
+import { normalizeDefaultLandingPath } from "./default-landing";
+import { DomainNotFoundError, DomainValidationError, type DomainActor } from "./errors";
 
 export interface UserWorkspaceServiceDeps {
   listFavoriteProjectsForUser: typeof listFavoriteProjectsForUser;
   listNotificationsForUser: typeof listNotificationsForUser;
   listRecentProjectsForUser: typeof listRecentProjectsForUser;
+  readDefaultLandingPathForUser: typeof readDefaultLandingPathForUser;
   readUserPublicProfileByLoginId: typeof readUserPublicProfileByLoginId;
+  setDefaultLandingPathForUser: typeof setDefaultLandingPathForUser;
   setProjectNotificationAllowed: typeof setProjectNotificationAllowed;
   toggleFavoriteProjectForUser: typeof toggleFavoriteProjectForUser;
   trackRecentProjectVisitForUser: typeof trackRecentProjectVisitForUser;
@@ -42,7 +51,9 @@ const defaultDeps: UserWorkspaceServiceDeps = {
   listFavoriteProjectsForUser,
   listNotificationsForUser,
   listRecentProjectsForUser,
+  readDefaultLandingPathForUser,
   readUserPublicProfileByLoginId,
+  setDefaultLandingPathForUser,
   setProjectNotificationAllowed,
   toggleFavoriteProjectForUser,
   trackRecentProjectVisitForUser,
@@ -128,6 +139,34 @@ export async function updateProjectNotificationPreference(
   return projectNotificationPreferenceSchema.parse(
     await deps.setProjectNotificationAllowed(actor.actorId, parsedInput),
   );
+}
+
+export async function readMyDefaultLandingPreference(
+  actor: DomainActor,
+  deps: UserWorkspaceServiceDeps = defaultDeps,
+): Promise<DefaultLandingPreference> {
+  requireAuthenticatedActor(actor);
+
+  return defaultLandingPreferenceSchema.parse({
+    path: normalizeDefaultLandingPath(await deps.readDefaultLandingPathForUser(actor.actorId)),
+  });
+}
+
+export async function setMyDefaultLandingPreference(
+  actor: DomainActor,
+  input: DefaultLandingPreferenceInput,
+  deps: UserWorkspaceServiceDeps = defaultDeps,
+): Promise<DefaultLandingPreference> {
+  requireAuthenticatedActor(actor);
+  const parsedInput = defaultLandingPreferenceInputSchema.parse(input);
+  const normalizedPath = normalizeDefaultLandingPath(parsedInput.path);
+  if (!normalizedPath) {
+    throw new DomainValidationError("Default landing path is invalid.");
+  }
+
+  return defaultLandingPreferenceSchema.parse({
+    path: await deps.setDefaultLandingPathForUser(actor.actorId, normalizedPath),
+  });
 }
 
 export async function readPublicUserProfile(

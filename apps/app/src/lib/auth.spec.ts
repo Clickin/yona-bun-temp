@@ -5,6 +5,8 @@ import {
   buildProtectedRedirect,
   currentSessionQueryKey,
   resetCurrentSessionData,
+  resolveAuthenticatedHomePath,
+  resolvePostAuthRedirectPath,
   setCurrentSessionData,
 } from "./auth-shared";
 
@@ -13,6 +15,7 @@ describe("auth client helpers", () => {
     const queryClient = new QueryClient();
     const session = {
       actorId: 7,
+      defaultLandingPath: "/me",
       emailAddress: "door@example.com",
       isAnonymous: false,
       isConfirmed: true,
@@ -31,6 +34,7 @@ describe("auth client helpers", () => {
 
     setCurrentSessionData(queryClient, {
       actorId: 7,
+      defaultLandingPath: "/me",
       emailAddress: "door@example.com",
       isAnonymous: false,
       isConfirmed: true,
@@ -55,6 +59,7 @@ describe("auth client helpers", () => {
       buildProtectedRedirect(
         {
           actorId: 7,
+          defaultLandingPath: "/me",
           emailAddress: "door@example.com",
           isAnonymous: false,
           isConfirmed: true,
@@ -65,5 +70,27 @@ describe("auth client helpers", () => {
         "/protected",
       ),
     ).toBeNull();
+  });
+
+  it("resolves authenticated home and post-auth redirect targets", () => {
+    const session = {
+      actorId: 7,
+      defaultLandingPath: "/search?pageSize=20&scope=global&query=yona",
+      emailAddress: "door@example.com",
+      isAnonymous: false,
+      isConfirmed: true,
+      isSiteAdmin: false,
+      loginId: "door",
+      userLabel: "Door TTS",
+    };
+
+    expect(resolveAuthenticatedHomePath(session)).toBe(
+      "/search?pageSize=20&scope=global&query=yona",
+    );
+    expect(resolveAuthenticatedHomePath(buildAnonymousAppSession())).toBe("/me");
+    expect(resolvePostAuthRedirectPath(session, "/projects/new")).toBe(
+      "/search?pageSize=20&scope=global&query=yona",
+    );
+    expect(resolvePostAuthRedirectPath(session, "/users/doortts")).toBe("/users/doortts");
   });
 });

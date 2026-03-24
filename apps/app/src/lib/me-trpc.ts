@@ -1,4 +1,6 @@
 import {
+  defaultLandingPreferenceInputSchema,
+  defaultLandingPreferenceSchema,
   personalNotificationsSchema,
   personalProjectEntrySchema,
   personalProjectFavoriteToggleResultSchema,
@@ -13,8 +15,10 @@ import {
   readMyNotifications,
   readMyRecentProjects,
   readMySidebar,
+  readMyDefaultLandingPreference,
   readPublicUserProfile,
   recordRecentProjectVisit,
+  setMyDefaultLandingPreference,
   toggleFavoriteProject,
   updateProjectNotificationPreference,
 } from "@yona/domain";
@@ -63,6 +67,17 @@ export const meRouter = t.router({
       return rethrowDomainAsTrpc(error);
     }
   }),
+  readMyDefaultLandingPreference: t.procedure
+    .output(defaultLandingPreferenceSchema)
+    .query(async ({ ctx }) => {
+      try {
+        return defaultLandingPreferenceSchema.parse(
+          await readMyDefaultLandingPreference(await readDomainActor(ctx)),
+        );
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
+      }
+    }),
   toggleFavoriteProject: t.procedure
     .input(personalProjectEntrySchema)
     .output(personalProjectFavoriteToggleResultSchema)
@@ -94,6 +109,18 @@ export const meRouter = t.router({
       try {
         return projectNotificationPreferenceSchema.parse(
           await updateProjectNotificationPreference(await readDomainActor(ctx), input),
+        );
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
+      }
+    }),
+  setMyDefaultLandingPreference: t.procedure
+    .input(defaultLandingPreferenceInputSchema)
+    .output(defaultLandingPreferenceSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return defaultLandingPreferenceSchema.parse(
+          await setMyDefaultLandingPreference(await readDomainActor(ctx), input),
         );
       } catch (error) {
         return rethrowDomainAsTrpc(error);

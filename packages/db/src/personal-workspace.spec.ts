@@ -8,12 +8,15 @@ import {
   project,
   recentProject,
   userProjectNotification,
+  userSetting,
 } from "@drizzle/sqlite/schema";
 import {
   listFavoriteProjectsForUser,
   listNotificationsForUser,
   listRecentProjectsForUser,
+  readDefaultLandingPathForUser,
   readUserPublicProfileByLoginId,
+  setDefaultLandingPathForUser,
   setProjectNotificationAllowed,
   toggleFavoriteProjectForUser,
   trackRecentProjectVisitForUser,
@@ -202,5 +205,31 @@ describe("personal workspace helpers", () => {
 
     const recentRows = await db.select().from(recentProject).where(eq(recentProject.userId, 920));
     expect(recentRows).toHaveLength(1);
+  });
+
+  it("reads and upserts the default landing path", async () => {
+    await db.insert(n4user).values({
+      createdDate: new Date("2026-03-10T00:00:00.000Z"),
+      email: "landing@example.com",
+      id: 930,
+      isGuest: false,
+      lastStateModifiedDate: new Date("2026-03-10T00:00:00.000Z"),
+      loginId: "landing-user",
+      name: "Landing User",
+      token: null,
+    });
+
+    await expect(readDefaultLandingPathForUser(930, db as never)).resolves.toBeNull();
+
+    await expect(setDefaultLandingPathForUser(930, "/me", db as never)).resolves.toBe("/me");
+    await expect(readDefaultLandingPathForUser(930, db as never)).resolves.toBe("/me");
+
+    await expect(
+      setDefaultLandingPathForUser(930, "/search?pageSize=20&scope=global&query=yona", db as never),
+    ).resolves.toBe("/search?pageSize=20&scope=global&query=yona");
+
+    const rows = await db.select().from(userSetting).where(eq(userSetting.userId, 930));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.loginDefaultPage).toBe("/search?pageSize=20&scope=global&query=yona");
   });
 });

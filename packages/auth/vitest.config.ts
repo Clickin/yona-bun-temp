@@ -1,8 +1,11 @@
+import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vitest/config";
-import tsConfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-  plugins: [tsConfigPaths()],
+  root: fileURLToPath(new URL(".", import.meta.url)),
+  resolve: {
+    tsconfigPaths: true,
+  },
   test: {
     environment: "node",
     include: ["src/**/*.spec.ts"],

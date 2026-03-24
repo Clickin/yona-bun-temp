@@ -1,5 +1,6 @@
 export * from "./acl";
 export * from "./auth";
+export * from "./default-landing";
 export * from "./enrollment";
 export * from "./issue";
 export * from "./label";

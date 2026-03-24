@@ -25,10 +25,15 @@ import {
   findAuthUserByCredentialId,
   findAuthUserById,
   findAuthUserByIdentifier,
+  readDefaultLandingPathForUser,
   updateAuthUserPassword,
   updateAuthUserProfile,
 } from "@yona/db";
-import { buildAnonymousSession, resolvePasswordSignIn } from "@yona/domain";
+import {
+  buildAnonymousSession,
+  normalizeDefaultLandingPath,
+  resolvePasswordSignIn,
+} from "@yona/domain";
 import {
   createSession,
   deleteAllSessionsByUserId,
@@ -175,6 +180,9 @@ function clearFallbackResetTokensForUser(userId: number): void {
   }
 }
 
+async function resolveDefaultLandingPathForUser(userId: number): Promise<null | string> {
+  return normalizeDefaultLandingPath(await readDefaultLandingPathForUser(userId));
+}
 async function deletePersistedResetTokensForUser(userId: number): Promise<void> {
   try {
     const dbModule = await import("@yona/db");
@@ -217,14 +225,19 @@ async function deletePersistedResetTokensForUser(userId: number): Promise<void> 
 export function buildAnonymousAppSession(): AppSessionProjection {
   return {
     ...buildAnonymousSession(),
+    defaultLandingPath: null,
     emailAddress: null,
     userLabel: null,
   };
 }
 
-export function buildAuthenticatedAppSession(user: AuthUserSummary): AppSessionProjection {
+export function buildAuthenticatedAppSession(
+  user: AuthUserSummary,
+  defaultLandingPath: null | string = null,
+): AppSessionProjection {
   return {
     actorId: user.id,
+    defaultLandingPath,
     emailAddress: user.emailAddress,
     isAnonymous: false,
     isConfirmed: user.isConfirmed,
@@ -324,7 +337,7 @@ async function readFallbackCurrentSession(token: string): Promise<ResolvedCurren
 
   return {
     clearCookie: false,
-    projection: buildAuthenticatedAppSession(user),
+    projection: buildAuthenticatedAppSession(user, await resolveDefaultLandingPathForUser(user.id)),
     sessionRecord,
     token,
     user,
@@ -686,7 +699,10 @@ export async function readCurrentSession(
 
     return {
       clearCookie: false,
-      projection: buildAuthenticatedAppSession(user),
+      projection: buildAuthenticatedAppSession(
+        user,
+        await resolveDefaultLandingPathForUser(user.id),
+      ),
       sessionRecord,
       token,
       user,
@@ -715,7 +731,9 @@ export async function issueAppSession(
     });
 
     return {
-      projection: user ? buildAuthenticatedAppSession(user) : buildAnonymousAppSession(),
+      projection: user
+        ? buildAuthenticatedAppSession(user, await resolveDefaultLandingPathForUser(user.id))
+        : buildAnonymousAppSession(),
       session: {
         csrfToken: sessionRecord.csrfToken,
         expiresAt: sessionRecord.expiresAt,
@@ -730,7 +748,9 @@ export async function issueAppSession(
     });
 
     return {
-      projection: user ? buildAuthenticatedAppSession(user) : buildAnonymousAppSession(),
+      projection: user
+        ? buildAuthenticatedAppSession(user, await resolveDefaultLandingPathForUser(user.id))
+        : buildAnonymousAppSession(),
       session,
     };
   }

@@ -148,6 +148,16 @@ function MeSettingsRouteComponent() {
         {profileErrorMessage ? <p className="note error-note">{profileErrorMessage}</p> : null}
       </ContentCard>
 
+      <ContentCard title={t("app.settings.defaultLanding")}>
+        <div className="badge-row">
+          <span className="badge">{session.data.defaultLandingPath ?? "/me"}</span>
+        </div>
+        <p className="note">
+          {session.data.defaultLandingPath
+            ? t("app.settings.defaultLandingSaved")
+            : t("app.settings.defaultLandingFallback")}
+        </p>
+      </ContentCard>
       <div className="content-grid">
         <ContentCard title={t("app.settings.password")}>
           <form
@@ -171,12 +181,14 @@ function MeSettingsRouteComponent() {
                       return;
                     }
 
-                     setPasswordResultMessage(t("app.settings.passwordUpdated"));
+                    setPasswordResultMessage(t("app.settings.passwordUpdated"));
                     await router.navigate({
                       to: "/login",
                     });
                   } catch (error) {
-                    setPasswordErrorMessage(error instanceof Error ? error.message : t("app.settings.changePassword"));
+                    setPasswordErrorMessage(
+                      error instanceof Error ? error.message : t("app.settings.changePassword"),
+                    );
                   } finally {
                     setPasswordPending(false);
                   }
@@ -185,28 +197,30 @@ function MeSettingsRouteComponent() {
             }}
           >
             <label className="field">
-            <span>{t("app.settings.currentPassword")}</span>
+              <span>{t("app.settings.currentPassword")}</span>
               <input
                 autoComplete="current-password"
                 onChange={(event) => updatePasswordField("currentPassword", event.target.value)}
-              placeholder={t("app.settings.currentPassword")}
+                placeholder={t("app.settings.currentPassword")}
                 type="password"
                 value={passwordFormState.currentPassword}
               />
             </label>
             <label className="field">
-            <span>{t("user.newPassword")}</span>
+              <span>{t("user.newPassword")}</span>
               <input
                 autoComplete="new-password"
                 onChange={(event) => updatePasswordField("newPassword", event.target.value)}
-              placeholder={t("user.newPassword")}
+                placeholder={t("user.newPassword")}
                 type="password"
                 value={passwordFormState.newPassword}
               />
             </label>
             <div className="action-row">
               <button className="cta" type="submit">
-                {passwordPending ? t("app.settings.updatingPassword") : t("app.settings.changePassword")}
+                {passwordPending
+                  ? t("app.settings.updatingPassword")
+                  : t("app.settings.changePassword")}
               </button>
             </div>
           </form>
@@ -226,7 +240,7 @@ function MeSettingsRouteComponent() {
               React.startTransition(() => {
                 void (async () => {
                   try {
-                    const result = await updateProjectNotificationPreference({
+                    await updateProjectNotificationPreference({
                       data: {
                         allowed: formState.allowed,
                         notificationType: formState.notificationType,
@@ -238,7 +252,9 @@ function MeSettingsRouteComponent() {
                     setResultMessage(t("app.settings.preferenceSaved"));
                   } catch (error) {
                     setErrorMessage(
-                      error instanceof Error ? error.message : t("app.settings.preferenceSaveFailed"),
+                      error instanceof Error
+                        ? error.message
+                        : t("app.settings.preferenceSaveFailed"),
                     );
                   } finally {
                     setPending(false);

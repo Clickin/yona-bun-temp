@@ -8,7 +8,7 @@
 - Project visibility enforcement
 - Project enrollment request/cancel
 - Workspace recent and favorite slices
-- Workspace default landing remains out of scope
+- Workspace default landing slice
 
 ## Legacy Sources
 
@@ -40,7 +40,7 @@
 - Historical blocker wording became stale after the project enrollment and personal workspace slices landed in the repo.
 - Project enrollment is implemented and evidenced by `packages/domain/src/enrollment-service.ts`, `packages/domain/src/enrollment-service.spec.ts`, and `apps/app/src/lib/enrollment-trpc.spec.ts`.
 - Workspace favorite/recent is implemented and evidenced by `packages/domain/src/user-workspace-service.ts`, `packages/db/src/personal-workspace.spec.ts`, `apps/app/src/lib/me-trpc.spec.ts`, and `apps/app/src/routes/me.tsx`.
-- This reconciliation does not claim full Phase 0B exit. Organization enrollment and workspace default landing remain the true blockers in this project-slice view; the bounded PR and bounded search exemplars are already landed separately under their own provenance docs and are not open blockers here.
+- This reconciliation does not claim full Phase 0B exit. Organization enrollment and workspace default landing are now implemented in this project-slice view; the bounded PR and bounded search exemplars remain separate landed slices, and org/project delete stays deferred.
 
 ## Visibility Baseline For This Batch
 

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
+  readMyDefaultLandingPreferenceMock,
   readMyFavoritesMock,
   readMyNotificationsMock,
   readMyRecentProjectsMock,
@@ -8,9 +9,11 @@ const {
   readCurrentSessionMock,
   readPublicUserProfileMock,
   recordRecentProjectVisitMock,
+  setMyDefaultLandingPreferenceMock,
   toggleFavoriteProjectMock,
   updateProjectNotificationPreferenceMock,
 } = vi.hoisted(() => ({
+  readMyDefaultLandingPreferenceMock: vi.fn(),
   readMyFavoritesMock: vi.fn(),
   readMyNotificationsMock: vi.fn(),
   readMyRecentProjectsMock: vi.fn(),
@@ -18,6 +21,7 @@ const {
   readCurrentSessionMock: vi.fn(),
   readPublicUserProfileMock: vi.fn(),
   recordRecentProjectVisitMock: vi.fn(),
+  setMyDefaultLandingPreferenceMock: vi.fn(),
   toggleFavoriteProjectMock: vi.fn(),
   updateProjectNotificationPreferenceMock: vi.fn(),
 }));
@@ -26,12 +30,14 @@ vi.mock("@yona/domain", async () => {
   const actual = await vi.importActual<typeof import("@yona/domain")>("@yona/domain");
   return {
     ...actual,
+    readMyDefaultLandingPreference: readMyDefaultLandingPreferenceMock,
     readMyFavorites: readMyFavoritesMock,
     readMyNotifications: readMyNotificationsMock,
     readMyRecentProjects: readMyRecentProjectsMock,
     readMySidebar: readMySidebarMock,
     readPublicUserProfile: readPublicUserProfileMock,
     recordRecentProjectVisit: recordRecentProjectVisitMock,
+    setMyDefaultLandingPreference: setMyDefaultLandingPreferenceMock,
     toggleFavoriteProject: toggleFavoriteProjectMock,
     updateProjectNotificationPreference: updateProjectNotificationPreferenceMock,
   };
@@ -67,6 +73,7 @@ describe("me tRPC", () => {
       clearCookie: false,
       projection: {
         actorId: 2,
+        defaultLandingPath: null,
         emailAddress: "yobi@example.com",
         isAnonymous: false,
         isConfirmed: true,
@@ -93,10 +100,13 @@ describe("me tRPC", () => {
     });
   });
 
-  it("reads sidebar and profile projections", async () => {
+  it("reads sidebar, default landing, and profile projections", async () => {
     readMySidebarMock.mockResolvedValue({
       favorites: [{ ownerName: "yona", projectName: "yona" }],
       recentProjects: [{ ownerName: "yona", projectName: "yona" }],
+    });
+    readMyDefaultLandingPreferenceMock.mockResolvedValue({
+      path: "/me",
     });
     readPublicUserProfileMock.mockResolvedValue({
       joinedAt: null,
@@ -111,6 +121,10 @@ describe("me tRPC", () => {
       recentProjects: [{ ownerName: "yona", projectName: "yona" }],
     });
 
+    await expect(caller.readMyDefaultLandingPreference()).resolves.toEqual({
+      path: "/me",
+    });
+
     await expect(caller.readPublicUserProfile({ loginId: "yobi" })).resolves.toEqual({
       joinedAt: null,
       loginId: "yobi",
@@ -118,7 +132,7 @@ describe("me tRPC", () => {
     });
   });
 
-  it("executes favorite/recent/notification mutations", async () => {
+  it("executes favorite/recent/default-landing/notification mutations", async () => {
     toggleFavoriteProjectMock.mockResolvedValue({
       favorited: true,
       ownerName: "yona",
@@ -127,6 +141,9 @@ describe("me tRPC", () => {
     recordRecentProjectVisitMock.mockResolvedValue({
       ownerName: "yona",
       projectName: "yona",
+    });
+    setMyDefaultLandingPreferenceMock.mockResolvedValue({
+      path: "/search?pageSize=20&scope=global&query=yona",
     });
     updateProjectNotificationPreferenceMock.mockResolvedValue({
       allowed: true,
@@ -146,6 +163,11 @@ describe("me tRPC", () => {
     await expect(
       caller.recordRecentProjectVisit({ ownerName: "yona", projectName: "yona" }),
     ).resolves.toEqual({ ownerName: "yona", projectName: "yona" });
+    await expect(
+      caller.setMyDefaultLandingPreference({ path: "/search?pageSize=20&scope=global&query=yona" }),
+    ).resolves.toEqual({
+      path: "/search?pageSize=20&scope=global&query=yona",
+    });
     await expect(
       caller.updateProjectNotificationPreference({
         allowed: true,

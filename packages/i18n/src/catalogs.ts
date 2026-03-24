@@ -7,7 +7,8 @@ export const defaultLocale: Locale = "en";
 const enCatalog = {
   "app.name": "Yona",
   "app.description": "Web-based platform for collaborative software development",
-  "app.meta.description": "Yona preserves the legacy layout and information architecture in the canonical TanStack Start runtime.",
+  "app.meta.description":
+    "Yona preserves the legacy layout and information architecture in the canonical TanStack Start runtime.",
   "app.brandCopy": "Project hosting with issues, code, posts, and search.",
   "app.nav.global": "Global",
   "app.nav.home": "Home",
@@ -43,7 +44,8 @@ const enCatalog = {
   "app.auth.requestReset": "Confirm",
   "app.auth.requestingReset": "Preparing reset...",
   "app.auth.resetInstructionsSent": "Mail has been sent.",
-  "app.auth.resetResponseGeneric": "If the account exists, reset instructions will be sent by e-mail.",
+  "app.auth.resetResponseGeneric":
+    "If the account exists, reset instructions will be sent by e-mail.",
   "app.auth.reset.description": "Reset password for Yona",
   "app.auth.resetHeading": "Reset password",
   "app.auth.applyingReset": "Applying reset...",
@@ -71,7 +73,8 @@ const enCatalog = {
   "app.profile.joined": "Joined {0}",
   "app.profile.summary": "Profile Summary",
   "app.profile.currentAvailability": "Current Availability",
-  "app.profile.migrationNote": "Public identity basics are available here while the fuller activity tabs continue to migrate from legacy Yona.",
+  "app.profile.migrationNote":
+    "Public identity basics are available here while the fuller activity tabs continue to migrate from legacy Yona.",
   "app.project.eyebrow": "Project",
   "app.project.create.description": "Create new project",
   "app.project.requiredFields": "Required Fields",
@@ -230,6 +233,11 @@ const enCatalog = {
   "app.settings.updatingPassword": "Updating password...",
   "app.settings.passwordUpdated": "Password updated. Please sign in again.",
   "app.settings.projectNotifications": "Project Notifications",
+  "app.settings.defaultLanding": "Default Landing",
+  "app.settings.setDefaultLanding": "Set as default landing",
+  "app.settings.defaultLandingSaved": "This page is saved as your default landing.",
+  "app.settings.defaultLandingFallback":
+    "No page is saved yet. The workspace overview (/me) is the current fallback.",
   "app.settings.notificationType": "Notification Type",
   "app.settings.allowed": "Allowed",
   "app.settings.savePreference": "Save Preference",
@@ -289,15 +297,17 @@ const enCatalog = {
   "project.public": "PUBLIC",
   "project.public.notice": "Anonymous users are able to access the project.",
   "project.protected": "GROUP PUBLIC",
-  "project.protected.notice": "Users in the group and also users who have been explicitly granted access are able to access the project.",
+  "project.protected.notice":
+    "Users in the group and also users who have been explicitly granted access are able to access the project.",
   "project.private": "PRIVATE",
-  "project.private.notice": "Project access must be granted explicitly for each user, but basic information (name, description, etc.) can be exposed to public.",
+  "project.private.notice":
+    "Project access must be granted explicitly for each user, but basic information (name, description, etc.) can be exposed to public.",
   "project.create": "Create a project",
   "organization.name.placeholder": "input group name",
   "organization.description.placeholder": "input group's description",
   "organization.name.alert": "Enter the group name in alphanumerical or symbol characters(_-.)",
   "organization.create": "Create Group",
-  "title.logout": "Log out"
+  "title.logout": "Log out",
 } as const;
 
 export type MessageKey = keyof typeof enCatalog;
@@ -306,7 +316,8 @@ export type MessageCatalog = { [Key in MessageKey]: string };
 const koCatalog: MessageCatalog = {
   "app.name": "Yona",
   "app.description": "21세기 소프트웨어 개발 플랫폼",
-  "app.meta.description": "Yona는 canonical TanStack Start runtime에서도 기존 레이아웃과 정보 구조를 유지합니다.",
+  "app.meta.description":
+    "Yona는 canonical TanStack Start runtime에서도 기존 레이아웃과 정보 구조를 유지합니다.",
   "app.brandCopy": "이슈, 코드, 게시판, 검색을 갖춘 프로젝트 호스팅.",
   "app.nav.global": "전역",
   "app.nav.home": "홈",
@@ -370,7 +381,8 @@ const koCatalog: MessageCatalog = {
   "app.profile.joined": "가입일 {0}",
   "app.profile.summary": "프로필 요약",
   "app.profile.currentAvailability": "현재 상태",
-  "app.profile.migrationNote": "legacy Yona의 전체 활동 탭이 이전되는 동안 여기서는 공개 프로필 기본 정보만 제공합니다.",
+  "app.profile.migrationNote":
+    "legacy Yona의 전체 활동 탭이 이전되는 동안 여기서는 공개 프로필 기본 정보만 제공합니다.",
   "app.project.eyebrow": "프로젝트",
   "app.project.create.description": "새 프로젝트 시작",
   "app.project.requiredFields": "필수 항목",
@@ -462,7 +474,8 @@ const koCatalog: MessageCatalog = {
   "app.group.eyebrow": "그룹",
   "app.group.create.description": "새 그룹 만들기",
   "app.group.beforeCreate": "생성 전에",
-  "app.group.beforeCreateHelp": "그룹 이름은 영문, 한글, 숫자 및 일부 기호(_-.)만 사용할 수 있습니다.",
+  "app.group.beforeCreateHelp":
+    "그룹 이름은 영문, 한글, 숫자 및 일부 기호(_-.)만 사용할 수 있습니다.",
   "app.group.creating": "생성 중...",
   "app.group.name": "그룹 이름",
   "app.group.description": "설명",
@@ -487,7 +500,8 @@ const koCatalog: MessageCatalog = {
   "app.search.typeFilters": "유형 필터",
   "app.search.queryHelp": "검색어를 입력하세요.",
   "app.search.scopeHelp.organization": "그룹 안에서 검색하려면 그룹 이름을 입력하세요.",
-  "app.search.scopeHelp.project": "프로젝트 안에서 검색하려면 소유자와 프로젝트 이름을 모두 입력하세요.",
+  "app.search.scopeHelp.project":
+    "프로젝트 안에서 검색하려면 소유자와 프로젝트 이름을 모두 입력하세요.",
   "app.search.organization": "그룹",
   "app.search.owner": "소유자",
   "app.search.project": "프로젝트",
@@ -529,6 +543,11 @@ const koCatalog: MessageCatalog = {
   "app.settings.updatingPassword": "비밀번호 변경 중...",
   "app.settings.passwordUpdated": "비밀번호가 변경되었습니다. 다시 로그인해 주세요.",
   "app.settings.projectNotifications": "프로젝트 알림",
+  "app.settings.defaultLanding": "기본 랜딩 페이지",
+  "app.settings.setDefaultLanding": "현재 페이지를 기본 랜딩으로 저장",
+  "app.settings.defaultLandingSaved": "이 페이지가 기본 랜딩으로 저장되어 있습니다.",
+  "app.settings.defaultLandingFallback":
+    "아직 저장된 기본 랜딩이 없습니다. 현재 fallback은 워크스페이스 개요(/me)입니다.",
   "app.settings.notificationType": "알림 유형",
   "app.settings.allowed": "허용",
   "app.settings.savePreference": "설정 저장",
@@ -582,24 +601,28 @@ const koCatalog: MessageCatalog = {
   "menu.admin": "프로젝트 설정",
   "project.owner": "프로젝트 소유자",
   "project.name": "프로젝트 이름",
-  "project.name.placeholder": "프로젝트 이름은 영문, 한글, 숫자 및 일부 기호(_-.)만 사용할 수 있습니다",
+  "project.name.placeholder":
+    "프로젝트 이름은 영문, 한글, 숫자 및 일부 기호(_-.)만 사용할 수 있습니다",
   "project.description": "설명",
   "project.shareOption": "공개 설정",
   "project.public": "공개",
-  "project.public.notice": "모든 사람이 인증절차 없이 접근할 수 있습니다. 일부 기능은 로그인이 필요할 수 있습니다.",
+  "project.public.notice":
+    "모든 사람이 인증절차 없이 접근할 수 있습니다. 일부 기능은 로그인이 필요할 수 있습니다.",
   "project.protected": "그룹 공개",
-  "project.protected.notice": "그룹에 속한 사람들과 프로젝트 멤버로 등록한 사람들만 접근할 수 있습니다.",
+  "project.protected.notice":
+    "그룹에 속한 사람들과 프로젝트 멤버로 등록한 사람들만 접근할 수 있습니다.",
   "project.private": "비공개",
-  "project.private.notice": "멤버로 등록한 사람만 접근할 수 있습니다. 단, 프로젝트 이름, 설명, 로고 등은 모든 사용자가 볼 수 있습니다.",
+  "project.private.notice":
+    "멤버로 등록한 사람만 접근할 수 있습니다. 단, 프로젝트 이름, 설명, 로고 등은 모든 사용자가 볼 수 있습니다.",
   "project.create": "프로젝트 생성",
   "organization.name.placeholder": "그룹 이름을 입력해주세요.",
   "organization.description.placeholder": "그룹 설명을 입력해주세요",
   "organization.name.alert": "그룹 이름은 영문, 한글, 숫자 및 일부 기호(_-.)만 사용할 수 있습니다",
   "organization.create": "그룹 만들기",
-  "title.logout": "로그아웃"
+  "title.logout": "로그아웃",
 };
 
 export const messageCatalogs = {
   en: enCatalog,
-  "ko-KR": koCatalog
+  "ko-KR": koCatalog,
 } as const satisfies Record<Locale, MessageCatalog>;

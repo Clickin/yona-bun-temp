@@ -2,8 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "lib": ["DOM", "ES2022"],
-    "types": []
+    "lib": ["DOM", "ES2022"]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.ts"]
 }
