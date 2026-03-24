@@ -1,0 +1,14 @@
+packages/db/src\migrations.spec.ts:81:  it("adds bounded search projection storage and SQLite external-content backfill flow for all dialects", () => {
+packages/db/src\migrations.spec.ts:102:    expect(SQLITE_SEARCH_DOCUMENT_SYNC_MODE).toBe("external-content");
+packages/db/src\migrations.spec.ts:104:    expect(SQLITE_SEARCH_DOCUMENT_BOOTSTRAP_MODE).toContain("backfill");
+packages/db/src\migrations.spec.ts:106:    for (const triggerName of SQLITE_SEARCH_DOCUMENT_SYNC_TRIGGERS) {
+packages/db/src\migrations.spec.ts:107:      expect(sqliteMigrationSql).toContain(`CREATE TRIGGER \"${triggerName}\"`);
+packages/db/src\search-projection.ts:26:export const SQLITE_SEARCH_DOCUMENT_SYNC_MODE = "external-content";
+packages/db/src\search-projection.ts:27:export const SQLITE_SEARCH_DOCUMENT_BOOTSTRAP_MODE = "backfill-rebuild";
+packages/db/src\sqlite.spec.ts:179:  it("creates explicit FTS5 external-content sync infrastructure for the search projection", async () => {
+packages/db/src\sqlite.spec.ts:186:    const triggerRows = await db.$client`
+packages/db/src\sqlite.spec.ts:189:      WHERE type = 'trigger'
+packages/db/src\sqlite.spec.ts:195:    expect(SQLITE_SEARCH_DOCUMENT_SYNC_MODE).toBe("external-content");
+packages/db/src\sqlite.spec.ts:198:    expect(triggerRows.map((row: any) => row.name)).toEqual([...SQLITE_SEARCH_DOCUMENT_SYNC_TRIGGERS]);
+packages/db/src\sqlite.spec.ts:201:  it("keeps the SQLite search projection FTS table in sync through triggers and backfill bootstrap", async () => {
+packages/db/src\sqlite.spec.ts:218:    expect(SQLITE_SEARCH_DOCUMENT_BOOTSTRAP_MODE).toContain("backfill");

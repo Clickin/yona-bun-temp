@@ -1,14 +1,17 @@
 import * as React from "react";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
   HeadContent,
-  Link,
   Outlet,
   Scripts,
   createRootRouteWithContext,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { AppAuthCaller } from "@app/lib/auth-client";
+import { I18nProvider, useI18n } from "@app/lib/i18n-react";
+import { readCurrentLocale } from "@app/lib/locale";
+import { currentSessionQueryOptions } from "@app/lib/queries";
+import { translateMessage } from "@yona/i18n";
 import appCss from "../styles/app.css?url";
 
 interface AppRouterContext {
@@ -17,89 +20,73 @@ interface AppRouterContext {
 }
 
 export const Route = createRootRouteWithContext<AppRouterContext>()({
+  loader: async ({ context }) => {
+    const [, locale] = await Promise.all([
+      context.queryClient.ensureQueryData(currentSessionQueryOptions(context.authCaller)),
+      readCurrentLocale(),
+    ]);
+
+    return locale;
+  },
   head: () => ({
-    meta: [
-      {
-        title: "Yona App Shell",
-      },
-      {
-        name: "description",
-        content: "Minimal TanStack Start shell for the Yona rewrite.",
-      },
-    ],
     links: appCss ? [{ rel: "stylesheet", href: appCss }] : [],
   }),
   component: RootRouteComponent,
-  notFoundComponent: () => (
-    <RootDocument>
-      <div className="app-frame">
-        <div className="hero-card">
-          <p className="kicker">Not Found</p>
-          <h1>This route is not part of the shell.</h1>
-        </div>
-      </div>
-    </RootDocument>
-  ),
+  notFoundComponent: NotFoundRouteComponent,
 });
 
 function RootRouteComponent() {
   return (
-    <RootDocument>
-      <div className="app-frame">
-        <div className="hero-card">
-          <div className="hero-copy">
-            <p className="kicker">Wave W2</p>
-            <h1>Canonical app auth now lives in TanStack Start.</h1>
-            <p className="lead">
-              The active runtime is `apps/app`: tRPC owns internal auth flows, and server routes
-              reserve canonical HTTP auth surfaces.
-            </p>
-          </div>
-          <nav className="shell-nav">
-            <Link to="/" activeProps={{ className: "nav-pill active" }} className="nav-pill">
-              Home
-            </Link>
-            <Link
-              to="/protected"
-              activeProps={{ className: "nav-pill active" }}
-              className="nav-pill"
-            >
-              Protected Route
-            </Link>
-            <Link to="/login" activeProps={{ className: "nav-pill active" }} className="nav-pill">
-              Login
-            </Link>
-            <Link
-              to="/register"
-              activeProps={{ className: "nav-pill active" }}
-              className="nav-pill"
-            >
-              Register
-            </Link>
-            <Link
-              to="/forgot-password"
-              activeProps={{ className: "nav-pill active" }}
-              className="nav-pill"
-            >
-              Reset
-            </Link>
-            <Link to="/me" activeProps={{ className: "nav-pill active" }} className="nav-pill">
-              My Workspace
-            </Link>
-          </nav>
-        </div>
-        <Outlet />
-      </div>
+    <AppDocument>
+      <Outlet />
       <TanStackRouterDevtools position="bottom-left" />
-    </RootDocument>
+    </AppDocument>
   );
 }
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function NotFoundRouteComponent() {
   return (
-    <html lang="en">
+    <AppDocument>
+      <NotFoundPage />
+    </AppDocument>
+  );
+}
+
+function NotFoundPage() {
+  const { t } = useI18n();
+
+  return (
+    <div className="app-shell">
+      <main className="app-page not-found-page">
+        <p className="page-eyebrow">{t("app.notFound.eyebrow")}</p>
+        <h1>{t("app.notFound.title")}</h1>
+        <p className="page-summary">{t("app.notFound.summary")}</p>
+      </main>
+    </div>
+  );
+}
+
+function AppDocument({ children }: { children: React.ReactNode }) {
+  const { locale } = Route.useLoaderData();
+
+  return (
+    <I18nProvider locale={locale}>
+      <RootDocument locale={locale}>{children}</RootDocument>
+    </I18nProvider>
+  );
+}
+
+function RootDocument({ children, locale }: { children: React.ReactNode; locale: string }) {
+  React.useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
+  return (
+    <html lang={locale}>
       <head>
         <meta charSet="utf-8" />
+        <title>{translateMessage(locale, "app.name")}</title>
+        <meta name="description" content={translateMessage(locale, "app.meta.description")} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <HeadContent />
       </head>

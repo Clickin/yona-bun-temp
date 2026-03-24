@@ -37,6 +37,8 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
     "@testcontainers/mysql": "^10.0.0",
     "@testcontainers/postgresql": "^10.0.0",
     "bun": "file:tools/bun-package",
@@ -45,7 +47,11 @@
     "husky": "^9.1.7",
     "oxfmt": "^0.35.0",
     "oxlint": "^1.50.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "testcontainers": "^10.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.0.18"
   }
 }

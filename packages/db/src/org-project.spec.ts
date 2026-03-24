@@ -13,12 +13,15 @@ import {
 } from "@drizzle/sqlite/schema";
 import {
   createEnrollmentRequest,
+  createOrganizationEnrollmentRequest,
   createProjectRecord,
   deleteEnrollmentRequest,
+  deleteOrganizationEnrollmentRequest,
   organizationNameExists,
   projectIdentifierExists,
   readEnrollmentRequest,
   readOrganizationByName,
+  readOrganizationEnrollmentRequest,
   readOrganizationMembers,
   readProjectByOwnerAndName,
   readProjectMembers,
@@ -210,6 +213,47 @@ describe("organization and project helpers", () => {
 
     await expect(readEnrollmentRequest(402, 401, db as never)).resolves.toBeNull();
   });
+  it("creates, reads, and deletes organization enrollment requests idempotently", async () => {
+    await db.insert(n4user).values({
+      createdDate: new Date(0),
+      email: "org-enroller@example.com",
+      id: 425,
+      isGuest: false,
+      lastStateModifiedDate: new Date(0),
+      loginId: "org-enroller",
+      name: "Org Enroller",
+      token: null,
+    });
+    await db.insert(organization).values({
+      descr: "organization enrollment",
+      id: 426,
+      name: "org-enrollment",
+    });
+
+    await expect(createOrganizationEnrollmentRequest(426, 425, db as never)).resolves.toEqual({
+      organizationId: 426,
+      userId: 425,
+    });
+    await expect(createOrganizationEnrollmentRequest(426, 425, db as never)).resolves.toEqual({
+      organizationId: 426,
+      userId: 425,
+    });
+    await expect(readOrganizationEnrollmentRequest(426, 425, db as never)).resolves.toEqual({
+      organizationId: 426,
+      userId: 425,
+    });
+
+    const requests = await db
+      .select()
+      .from(userEnrolledOrganization)
+      .where(eq(userEnrolledOrganization.organizationId, 426));
+    expect(requests).toHaveLength(1);
+
+    await deleteOrganizationEnrollmentRequest(426, 425, db as never);
+    await deleteOrganizationEnrollmentRequest(426, 425, db as never);
+
+    await expect(readOrganizationEnrollmentRequest(426, 425, db as never)).resolves.toBeNull();
+  });
 
   it("reads project members together with pending enrollment requests", async () => {
     await db.insert(n4user).values([
@@ -385,3 +429,4 @@ describe("organization and project helpers", () => {
     });
   });
 });
+

@@ -1,0 +1,14 @@
+Date: 2026-03-14
+Runtime: `http://127.0.0.1:3002/`
+
+Representative PR setup performed through the existing app UI:
+- Registered user `yobi` with `yobi@example.com`.
+- Created public project `yobi/yona` from `/projects/new`.
+- Created PR `#1 Runtime PR smoke check` from `/yobi/yona/pulls`.
+
+Verified pages:
+- `http://127.0.0.1:3002/yobi/yona/pulls` renders `Pull Requests - yobi/yona`, the create form, and `#1 Runtime PR smoke check (open)` with HTTP 200.
+- `http://127.0.0.1:3002/yobi/yona/pulls/1` renders the real detail page for PR `#1` with title, body, author `yobi`, branch badge `feature/runtime-smoke -> main`, and the `Close Pull Request` button with HTTP 200.
+
+Boundary note:
+- After the code fix, hard reloads on PR routes no longer pull `packages/db/src/index.ts` or browser-external `node:fs` into the client request graph.

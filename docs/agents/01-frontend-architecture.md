@@ -36,6 +36,10 @@
 ## 화면 구조 원칙
 
 - legacy Yona의 정보 구조와 사용자 행위 의미를 유지한다.
+- `apps/app`에서 이미 구현된 frontend screen은 `yona-original`의 layout과 information architecture를 기본값으로 보존해야 하며, 의도적 차이가 있으면 deviation을 명시적으로 기록한다.
+- screen-level UI copy, label, CTA, section title도 `yona-original` template/message wording을 우선 사용한다. 새 copy를 임의로 modernize하거나 요약하지 않는다.
+- legacy template HTML을 React로 옮길 때는 reusable shell/section/form/menu component 조합으로 재구성한다. parity를 핑계로 screen마다 1회성 markup을 복제하지 않는다.
+- branding delta는 logo, color palette, typography token, 동등한 design token 수준까지만 허용하며, major region 배치, menu 위치, primary action, permission-driven visibility를 임의로 바꾸면 안 된다.
 - issue detail, PR detail, organization overview, project dashboard는 streaming SSR을 우선 적용한다.
 - markdown 기반 resource는 human-readable UI와 machine-readable surface가 공존하도록 설계한다.
 

@@ -1,0 +1,25 @@
+Command: `bun run --cwd apps/app test:unit && bun run check`
+Date: 2026-03-14
+Status: PASS
+
+Verification summary:
+- `bun run --cwd apps/app test:unit`: 29 test files passed, 100 tests passed.
+- `bun run check`: `verify:agents` passed, `lint:imports` passed, and `bun run --cwd apps/app check` completed with `tsc --noEmit` green.
+- `lsp_diagnostics` on `packages/db/src/index.ts` and `apps/app/src/lib/auth-shared.ts`: no diagnostics.
+
+Bun-native runtime fix summary:
+- `packages/db/src/index.ts` now imports the actual Drizzle `relations` map exports for MySQL/PostgreSQL/SQLite instead of the module namespace object.
+- Direct Bun probe of `getDb()` now succeeds instead of throwing `undefined is not an object (evaluating 'relations[relation.name].table')`.
+- `apps/app/src/lib/auth-shared.ts` no longer imports `buildAnonymousSession` from `@yona/domain`; the anonymous app-session projection is now built locally in the client-safe helper.
+
+Live browser smoke summary against `http://127.0.0.1:3002/`:
+- `http://127.0.0.1:3002/search` loads cleanly and shows the blank-state prompt `Enter a keyword to search the bounded internal surface.`
+- `http://127.0.0.1:3002/search?pageSize=20&query=alpha&scope=global` loads cleanly and shows a genuine bounded empty state: `Returned: 0`, `Total: 0`, `No results match this bounded search request.`
+- Browser console on both search URLs is clean; no `node:fs` externalization message remains.
+- Network reloads on the search page no longer pull `packages/domain/src/index.ts`, `packages/db/src/index.ts`, or `@id/__vite-browser-external:node:fs` into the browser path.
+
+Representative PR live QA summary:
+- The live app SQLite runtime started with no project rows, so the representative `yobi/yona` smoke target was created through the existing app flows: register `yobi`, create public project `yona`, then create PR `#1`.
+- `http://127.0.0.1:3002/yobi/yona/pulls` now loads the real PR list page without 500 and renders `#1 Runtime PR smoke check (open)`.
+- `http://127.0.0.1:3002/yobi/yona/pulls/1` now loads the real PR detail page without 500 and renders the PR title, body, branches, author, and `Close Pull Request` action.
+- The focused PR live-QA notes are captured in `.sisyphus/evidence/task-12-pr-live-qa.txt`.

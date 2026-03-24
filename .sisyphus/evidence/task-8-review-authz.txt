@@ -1,0 +1,9 @@
+2026-03-13 Task 8 bounded review-thread authorization evidence
+
+- `rg -n "forbidden|unauthorized|private project" packages/domain/src apps/app/src/lib | rg "review|thread"`
+  - No matches
+  - Expected for this slice because review-thread access reuses shared project-read authorization wording (`Project read is not allowed.`) instead of review-specific forbidden/unauthorized/private-project strings.
+- Authorization still gates results before read return:
+  - `packages/domain/src/pull-request-service.spec.ts` keeps anonymous/private-project review-thread reads on `DomainPermissionError`
+  - `apps/app/src/lib/pull-request-trpc.spec.ts` maps that denial to `UNAUTHORIZED`
+  - `packages/domain/src/pull-request-service.ts` calls project read authorization before invoking `listPullRequestReviewThreadsByProject`

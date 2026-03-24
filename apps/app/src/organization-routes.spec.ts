@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { OrganizationNewRoute } from "@app/routes/organizations/new";
-import { OrganizationSettingsRoute } from "@app/routes/organizations/$organizationName/settings";
+import { OrganizationNewRoute } from "@app/routes/_app.organizations.new";
+import { OrganizationSettingsRoute } from "@app/routes/_app.organizations.$organizationName.settings";
 
 function anonymousSession() {
   return {

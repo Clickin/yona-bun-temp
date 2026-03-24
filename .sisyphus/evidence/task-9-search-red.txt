@@ -1,0 +1,41 @@
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90mG:/programming/yona/packages/contracts[39m
+
+ [31m❯[39m src/search.spec.ts [2m([22m[2m6 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 8[2mms[22m[39m
+[31m     [31m×[31m maps the single legacy snippet example from SearchResultTests.java[39m[32m 2[2mms[22m[39m
+[31m     [31m×[31m maps the overlapping legacy snippet example from SearchResultTests.java[39m[32m 0[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/search.spec.ts[2m > [22msearch contracts[2m > [22mmaps the single legacy snippet example from SearchResultTests.java
+[31m[1mError[22m: Search snippet helper is not implemented yet.[39m
+[36m [2m❯[22m makeSearchSnippets src/search.ts:[2m170:9[22m[39m
+    [90m168|[39m
+    [90m169|[39m export function makeSearchSnippets(_contents: string, _keyword: string…
+    [90m170|[39m   [35mthrow[39m [35mnew[39m [33mError[39m([32m"Search snippet helper is not implemented yet."[39m)[33m;[39m
+    [90m   |[39m         [31m^[39m
+    [90m171|[39m }
+    [90m172|[39m
+[90m [2m❯[22m src/search.spec.ts:[2m222:12[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/search.spec.ts[2m > [22msearch contracts[2m > [22mmaps the overlapping legacy snippet example from SearchResultTests.java
+[31m[1mError[22m: Search snippet helper is not implemented yet.[39m
+[36m [2m❯[22m makeSearchSnippets src/search.ts:[2m170:9[22m[39m
+    [90m168|[39m
+    [90m169|[39m export function makeSearchSnippets(_contents: string, _keyword: string…
+    [90m170|[39m   [35mthrow[39m [35mnew[39m [33mError[39m([32m"Search snippet helper is not implemented yet."[39m)[33m;[39m
+    [90m   |[39m         [31m^[39m
+    [90m171|[39m }
+    [90m172|[39m
+[90m [2m❯[22m src/search.spec.ts:[2m229:12[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m4 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 22:12:14
+[2m   Duration [22m 919ms[2m (transform 54ms, setup 0ms, import 746ms, tests 8ms, environment 0ms)[22m
+

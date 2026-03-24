@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { enrollmentMutationResultSchema, enrollmentRequestRefSchema } from "./enrollment";
+import {
+  enrollmentMutationResultSchema,
+  enrollmentRequestRefSchema,
+  organizationEnrollmentRequestRefSchema,
+} from "./enrollment";
 
 describe("enrollment contracts", () => {
   it("normalizes enrollment request identifiers", () => {
@@ -12,6 +16,24 @@ describe("enrollment contracts", () => {
       ownerName: "yobi",
       projectName: "projectYobi",
     });
+  });
+
+  it("normalizes organization enrollment identifiers", () => {
+    expect(
+      organizationEnrollmentRequestRefSchema.parse({
+        organizationName: "  weblabs  ",
+      }),
+    ).toEqual({
+      organizationName: "weblabs",
+    });
+  });
+
+  it("rejects invalid organization enrollment identifiers", () => {
+    expect(() =>
+      organizationEnrollmentRequestRefSchema.parse({
+        organizationName: "..",
+      }),
+    ).toThrow();
   });
 
   it("parses the typed mutation success payload", () => {

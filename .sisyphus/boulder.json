@@ -1,8 +1,10 @@
 {
-  "active_plan": "/Users/senghyunjo/github/yona-bun-temp/.sisyphus/plans/monorepo-sessions-bunsql-multidialect.md",
-  "started_at": "2026-03-01T23:32:18.020Z",
-  "session_ids": ["ses_35441243dffet3Xzab5RNnU2YW"],
-  "plan_name": "monorepo-sessions-bunsql-multidialect",
+  "active_plan": "G:\\programming\\yona\\.sisyphus\\plans\\phase-0b-blocker-reconciliation.md",
+  "started_at": "2026-03-13T12:22:05.932Z",
+  "session_ids": [
+    "ses_318da6acfffe6rzaF4ONMytbM0"
+  ],
+  "plan_name": "phase-0b-blocker-reconciliation",
   "agent": "atlas",
-  "worktree_path": "/Users/senghyunjo/github/yona-bun-temp"
+  "worktree_path": "G:\\programming\\yona-phase-0b-blocker-reconciliation"
 }

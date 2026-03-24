@@ -1,0 +1,92 @@
+packages/contracts/src/search.ts:3:import { organizationNameSchema } from "./org";
+packages/contracts/src/search.ts:4:import { projectNameSchema, projectOwnerNameSchema } from "./project";
+packages/contracts/src/search.ts:6:export const boundedSearchScopeValues = ["global", "organization", "project"] as const;
+packages/contracts/src/search.ts:12:export const boundedSearchTypeValues = ["user", "project", "issue", "posting", "review_comment"] as const;
+packages/contracts/src/search.ts:18:export const deferredSearchTypeValues = ["issue_comment", "posting_comment", "milestone"] as const;
+packages/contracts/src/search.ts:52:export const globalSearchInputSchema = searchInputBaseSchema.extend({
+packages/contracts/src/search.ts:53:  scope: z.literal("global"),
+packages/contracts/src/search.ts:56:export type GlobalSearchInput = z.infer<typeof globalSearchInputSchema>;
+packages/contracts/src/search.ts:58:export const organizationSearchInputSchema = searchInputBaseSchema.extend({
+packages/contracts/src/search.ts:59:  organizationName: organizationNameSchema,
+packages/contracts/src/search.ts:60:  scope: z.literal("organization"),
+packages/contracts/src/search.ts:63:export type OrganizationSearchInput = z.infer<typeof organizationSearchInputSchema>;
+packages/contracts/src/search.ts:65:export const projectSearchInputSchema = searchInputBaseSchema.extend({
+packages/contracts/src/search.ts:66:  ownerName: projectOwnerNameSchema,
+packages/contracts/src/search.ts:67:  projectName: projectNameSchema,
+packages/contracts/src/search.ts:68:  scope: z.literal("project"),
+packages/contracts/src/search.ts:71:export type ProjectSearchInput = z.infer<typeof projectSearchInputSchema>;
+packages/contracts/src/search.ts:74:  globalSearchInputSchema,
+packages/contracts/src/search.ts:75:  organizationSearchInputSchema,
+packages/contracts/src/search.ts:76:  projectSearchInputSchema,
+packages/contracts/src/search.ts:95:export const projectSearchResultSchema = z
+packages/contracts/src/search.ts:97:    ownerName: projectOwnerNameSchema,
+packages/contracts/src/search.ts:98:    projectName: projectNameSchema,
+packages/contracts/src/search.ts:101:    type: z.literal("project"),
+packages/contracts/src/search.ts:105:export type ProjectSearchResult = z.infer<typeof projectSearchResultSchema>;
+packages/contracts/src/search.ts:110:    ownerName: projectOwnerNameSchema,
+packages/contracts/src/search.ts:111:    projectName: projectNameSchema,
+packages/contracts/src/search.ts:123:    ownerName: projectOwnerNameSchema,
+packages/contracts/src/search.ts:125:    projectName: projectNameSchema,
+packages/contracts/src/search.ts:137:    ownerName: projectOwnerNameSchema,
+packages/contracts/src/search.ts:138:    projectName: projectNameSchema,
+packages/contracts/src/search.ts:142:    type: z.literal("review_comment"),
+packages/contracts/src/search.ts:150:  projectSearchResultSchema,
+packages/contracts/src/search.spec.ts:6:  globalSearchInputSchema,
+packages/contracts/src/search.spec.ts:8:  organizationSearchInputSchema,
+packages/contracts/src/search.spec.ts:9:  projectSearchInputSchema,
+packages/contracts/src/search.spec.ts:15:  it("keeps the bounded scope surface limited to global, organization, and project", () => {
+packages/contracts/src/search.spec.ts:16:    expect(boundedSearchScopeValues).toEqual(["global", "organization", "project"]);
+packages/contracts/src/search.spec.ts:19:      globalSearchInputSchema.parse({
+packages/contracts/src/search.spec.ts:21:        query: "  project issue  ",
+packages/contracts/src/search.spec.ts:22:        scope: "global",
+packages/contracts/src/search.spec.ts:23:        types: ["project", "issue"],
+packages/contracts/src/search.spec.ts:27:      query: "project issue",
+packages/contracts/src/search.spec.ts:28:      scope: "global",
+packages/contracts/src/search.spec.ts:29:      types: ["project", "issue"],
+packages/contracts/src/search.spec.ts:33:      organizationSearchInputSchema.parse({
+packages/contracts/src/search.spec.ts:35:        organizationName: "  labs  ",
+packages/contracts/src/search.spec.ts:38:        scope: "organization",
+packages/contracts/src/search.spec.ts:39:        types: ["review_comment"],
+packages/contracts/src/search.spec.ts:43:      organizationName: "labs",
+packages/contracts/src/search.spec.ts:46:      scope: "organization",
+packages/contracts/src/search.spec.ts:47:      types: ["review_comment"],
+packages/contracts/src/search.spec.ts:51:      projectSearchInputSchema.parse({
+packages/contracts/src/search.spec.ts:52:        cursor: "  project-cursor  ",
+packages/contracts/src/search.spec.ts:55:        projectName: "  projectYobi  ",
+packages/contracts/src/search.spec.ts:57:        scope: "project",
+packages/contracts/src/search.spec.ts:61:      cursor: "project-cursor",
+packages/contracts/src/search.spec.ts:64:      projectName: "projectYobi",
+packages/contracts/src/search.spec.ts:66:      scope: "project",
+packages/contracts/src/search.spec.ts:72:    expect(boundedSearchTypeValues).toEqual(["user", "project", "issue", "posting", "review_comment"]);
+packages/contracts/src/search.spec.ts:73:    expect(deferredSearchTypeValues).toEqual(["issue_comment", "posting_comment", "milestone"]);
+packages/contracts/src/search.spec.ts:79:        scope: "global",
+packages/contracts/src/search.spec.ts:80:        types: ["issue_comment"],
+packages/contracts/src/search.spec.ts:88:        scope: "global",
+packages/contracts/src/search.spec.ts:89:        types: ["milestone"],
+packages/contracts/src/search.spec.ts:94:  it("keeps boolean-query operators and AI-facing payloads out of the bounded input surface", () => {
+packages/contracts/src/search.spec.ts:100:        scope: "global",
+packages/contracts/src/search.spec.ts:109:        scope: "global",
+packages/contracts/src/search.spec.ts:124:            scope: "global",
+packages/contracts/src/search.spec.ts:131:            projectName: "projectYobi",
+packages/contracts/src/search.spec.ts:132:            scope: "organization",
+packages/contracts/src/search.spec.ts:133:            snippets: ["protected project"],
+packages/contracts/src/search.spec.ts:134:            type: "project",
+packages/contracts/src/search.spec.ts:139:            projectName: "projectYobi",
+packages/contracts/src/search.spec.ts:140:            scope: "project",
+packages/contracts/src/search.spec.ts:148:            projectName: "projectYobi",
+packages/contracts/src/search.spec.ts:149:            scope: "project",
+packages/contracts/src/search.spec.ts:156:            projectName: "projectYobi",
+packages/contracts/src/search.spec.ts:158:            scope: "project",
+packages/contracts/src/search.spec.ts:160:            type: "review_comment",
+packages/contracts/src/search.spec.ts:174:          scope: "global",
+packages/contracts/src/search.spec.ts:181:          projectName: "projectYobi",
+packages/contracts/src/search.spec.ts:182:          scope: "organization",
+packages/contracts/src/search.spec.ts:183:          snippets: ["protected project"],
+packages/contracts/src/search.spec.ts:184:          type: "project",
+packages/contracts/src/search.spec.ts:189:          projectName: "projectYobi",
+packages/contracts/src/search.spec.ts:190:          scope: "project",
+packages/contracts/src/search.spec.ts:198:          projectName: "projectYobi",
+packages/contracts/src/search.spec.ts:199:          scope: "project",
+packages/contracts/src/search.spec.ts:206:          projectName: "projectYobi",
+packages/contracts/src/search.spec.ts:208:          scope: "project",
+packages/contracts/src/search.spec.ts:210:          type: "review_comment",

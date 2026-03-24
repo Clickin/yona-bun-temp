@@ -73,6 +73,10 @@ Yona는 `TanStack Start + React + Bun` 기반의 단일 런타임 애플리케�
 - 라우팅 기준선: `TanStack Router`
 - 스타일링 기준선: `Tailwind CSS`
 - 공통 UI는 `packages/ui`에서 제공한다.
+- `apps/app`에서 이미 구현된 frontend screen은 `yona-original`의 layout과 information architecture를 기본값으로 보존해야 하며, 의도적 차이가 있으면 deviation을 명시적으로 기록한다.
+- screen-level UI copy와 label, CTA, section title도 가능하면 `yona-original` template/message wording을 그대로 사용한다. 새 문구를 임의로 재작성하지 않는다.
+- legacy template HTML은 필요하면 React component로 직접 번역해도 되지만, 결과 ownership은 reusable shell/section/form/menu component 조합으로 남겨야 한다. template를 그대로 붙여넣는 1회성 JSX 덩어리를 장기 baseline으로 두지 않는다.
+- branding delta는 logo, color palette, typography token, 동등한 design token 수준까지만 허용하며, major region 배치, menu 위치, primary action, permission-driven visibility를 임의로 바꾸면 안 된다.
 
 ### 3.3 백엔드 인터페이스 모델
 

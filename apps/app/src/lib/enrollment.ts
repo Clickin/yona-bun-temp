@@ -1,5 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { enrollmentMutationResultSchema, enrollmentRequestRefSchema } from "@yona/contracts";
+import {
+  enrollmentMutationResultSchema,
+  enrollmentRequestRefSchema,
+  organizationEnrollmentRequestRefSchema,
+} from "@yona/contracts";
 
 export const enrollProject = createServerFn({ method: "POST" })
   .inputValidator(enrollmentRequestRefSchema)
@@ -16,5 +20,23 @@ export const cancelEnrollProject = createServerFn({ method: "POST" })
     const { createServerEnrollmentCaller } = await import("./enrollment-trpc.server");
     return enrollmentMutationResultSchema.parse(
       await createServerEnrollmentCaller().cancelEnrollProject(data),
+    );
+  });
+
+export const enrollOrganization = createServerFn({ method: "POST" })
+  .inputValidator(organizationEnrollmentRequestRefSchema)
+  .handler(async ({ data }) => {
+    const { createServerEnrollmentCaller } = await import("./enrollment-trpc.server");
+    return enrollmentMutationResultSchema.parse(
+      await createServerEnrollmentCaller().enrollOrganization(data),
+    );
+  });
+
+export const cancelEnrollOrganization = createServerFn({ method: "POST" })
+  .inputValidator(organizationEnrollmentRequestRefSchema)
+  .handler(async ({ data }) => {
+    const { createServerEnrollmentCaller } = await import("./enrollment-trpc.server");
+    return enrollmentMutationResultSchema.parse(
+      await createServerEnrollmentCaller().cancelEnrollOrganization(data),
     );
   });

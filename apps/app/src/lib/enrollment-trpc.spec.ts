@@ -1,7 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { cancelEnrollProjectMock, enrollProjectMock, readCurrentSessionMock } = vi.hoisted(() => ({
+const {
+  cancelEnrollOrganizationMock,
+  cancelEnrollProjectMock,
+  enrollOrganizationMock,
+  enrollProjectMock,
+  readCurrentSessionMock,
+} = vi.hoisted(() => ({
+  cancelEnrollOrganizationMock: vi.fn(),
   cancelEnrollProjectMock: vi.fn(),
+  enrollOrganizationMock: vi.fn(),
   enrollProjectMock: vi.fn(),
   readCurrentSessionMock: vi.fn(),
 }));
@@ -10,7 +18,9 @@ vi.mock("@yona/domain", async () => {
   const actual = await vi.importActual<typeof import("@yona/domain")>("@yona/domain");
   return {
     ...actual,
+    cancelEnrollOrganization: cancelEnrollOrganizationMock,
     cancelEnrollProject: cancelEnrollProjectMock,
+    enrollOrganization: enrollOrganizationMock,
     enrollProject: enrollProjectMock,
   };
 });
@@ -136,6 +146,33 @@ describe("enrollment tRPC", () => {
       caller.cancelEnrollProject({
         ownerName: "yobi",
         projectName: "projectYobi",
+      }),
+    ).resolves.toEqual({
+      ok: true,
+    });
+  });
+
+  it("enrolls and cancels organization enrollment requests through the domain service", async () => {
+    enrollOrganizationMock.mockResolvedValueOnce({
+      ok: true,
+    });
+    cancelEnrollOrganizationMock.mockResolvedValueOnce({
+      ok: true,
+    });
+
+    const caller = createEnrollmentCaller(createContext("session-token"));
+
+    await expect(
+      caller.enrollOrganization({
+        organizationName: "weblabs",
+      }),
+    ).resolves.toEqual({
+      ok: true,
+    });
+
+    await expect(
+      caller.cancelEnrollOrganization({
+        organizationName: "weblabs",
       }),
     ).resolves.toEqual({
       ok: true,

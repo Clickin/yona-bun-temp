@@ -1,0 +1,20 @@
+2026-03-14 refreshed bounded search helper verification
+
+Current bounded search state in code:
+- `packages/contracts/src/search.ts` now generates snippets with case-insensitive keyword matching while preserving original-text excerpts.
+- `packages/db/src/search.ts` now uses dialect-native FTS infrastructure for ranking and filtering: PostgreSQL `plainto_tsquery` plus `ts_rank`, MySQL `MATCH ... AGAINST`, and SQLite FTS5 `MATCH` plus `bm25`.
+- The bounded result surface remains limited to `user`, `project`, `issue`, `posting`, and `review_comment` across `global`, `organization`, and `project` scopes.
+
+Focused verification:
+- Command: `bunx vitest run --config packages/contracts/vitest.config.ts packages/contracts/src/search.spec.ts`
+  - PASS, 1 file, 7 tests
+- Command: `bun test src/search.spec.ts`
+  - PASS, 1 file, 4 tests
+- Command: `bunx vitest run --config packages/domain/vitest.config.ts packages/domain/src/search-service.spec.ts`
+  - PASS, 1 file, 3 tests
+- App-layer bounded search evidence remains in `.sisyphus/evidence/task-12-app-search.txt`.
+
+Reviewer note:
+- This file supersedes the older pre-T8 note that mentioned an unrelated PR review-thread failure in the wider domain suite.
+- Treat the bounded search helper slice as currently green for the focused contract, DB, and domain surfaces above.
+- Do not read this evidence as a claim of full internal search parity. Broader type coverage and full parity remain deferred to Phase 5, and AI-facing search remains Phase 6 work.

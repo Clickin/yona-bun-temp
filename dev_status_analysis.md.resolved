@@ -1,0 +1,243 @@
+# Yona Repository 개발 상태 분석 및 다음 작업 추천
+
+## 현재 상태 요약
+
+Phase 계획 기준으로 **Phase 0A/0B + Phase 1 초기 진입** 상태.
+
+---
+
+## 구현 완료 영역
+
+### ✅ Phase 0A — 기반 재정비 (완료)
+
+| 영역 | 파일/상태 |
+|------|-----------|
+| TanStack Start scaffold | `apps/app` 부팅, route tree 생성 완료 |
+| Query/SSR wiring | `__root.tsx`, `router.tsx` |
+| Route protection | `protected.tsx` — `beforeLoad` 기반 |
+| Better Auth 통합 | `packages/auth/src/better-auth.ts`, `app-service.ts` |
+| In-memory session store | `packages/auth/src/in-memory-session-store.ts` |
+| CSRF, rate-limit | `packages/auth/src/csrf.ts`, `rate-limit.ts` |
+| request-auth resolver | `packages/auth/src/request-auth.ts` |
+| tRPC/serverFunction 컨벤션 | `apps/app/src/lib/auth-trpc.ts`, `organization-trpc.ts` 등 |
+| Asset gateway baseline | `api/assets/` route, `lib/asset-delivery.ts` |
+| Package 재구조화 진행중 | `packages/{auth,contracts,db,domain,vcs}` 생성됨 |
+
+---
+
+### ✅ Phase 0B — 레거시 번역 골격 (완료)
+
+| 영역 | 파일 |
+|------|------|
+| Legacy provenance 문서 | `docs/agents/10-legacy-provenance-baseline.md` |
+| Provenance 디렉터리 | `docs/provenance/` (6개 파일) |
+| Phase plan | `docs/agents/06-phase-plan.md` |
+| LLM 온보딩 체크리스트 | `docs/agents/09-llm-onboarding-checklist.md` |
+
+---
+
+### 🟡 Phase 1 — 신원과 핵심 소유권 (부분 완료)
+
+#### 완료된 부분
+
+| 영역 | 파일 |
+|------|------|
+| **Auth UI routes** | `login.tsx`, `register.tsx`, `forgot-password.tsx`, `reset-password.tsx` |
+| **Auth server routes** | `api/auth/session.ts`, `api/auth/$.ts` (catch-all), OAuth callback |
+| **Auth tRPC procedures** | `lib/auth-trpc.ts` — login, register, logout, password change |
+| **Organization service** | `packages/domain/src/organization-service.ts` + spec |
+| **Project service** | `packages/domain/src/project-service.ts` + spec |
+| **Enrollment service** | `packages/domain/src/enrollment-service.ts` + spec |
+| **Project/Org authorization** | `project-authorization.ts`, `organization-service.ts` |
+| **Issue authorization** | `packages/domain/src/issue-authorization.ts` |
+| **Repository authorization** | `packages/domain/src/repository-authorization.ts` |
+| **Asset authorization** | `packages/domain/src/asset-authorization.ts` |
+| **Organization routes (UI)** | `routes/organizations/$organizationName/`, `routes/organizations/new.tsx` |
+| **Project routes (UI)** | `routes/projects/` 존재 |
+| **DB: org-project schema** | `packages/db/src/org-project.ts` (25KB) — 풍부한 스키마 |
+| **DB: auth-users schema** | `packages/db/src/auth-users.ts` |
+| **DB: attachment-assets** | `packages/db/src/attachment-assets.ts` |
+| **DB: repository-access** | `packages/db/src/repository-access.ts` |
+| **Contracts: auth, org, project, repo** | `packages/contracts/src/` |
+| **Organization tRPC** | `lib/organization-trpc.ts`, `enrollment-trpc.ts` |
+| **Project tRPC** | `lib/project-trpc.ts` |
+| **API token route** | `api/me/token.ts` |
+
+#### ⚠️ Phase 1 미완성 부분
+
+| 영역 | 상태 |
+|------|------|
+| `/me`, `/me/settings` UI route | 미구현 (UI 없음) |
+| `/users/$loginId` public profile | 미구현 |
+| 사용자 즐겨찾기/최근 방문 | DB 스키마 및 tRPC 미구현 |
+| 알림 설정 | 미구현 |
+| 사이드바/알림 피드 API | `api/me/` — token만 있고 sidebar/notifications/favorites/recent 없음 |
+| Avatar/logo upload flow | asset upload + binding 미구현 |
+
+---
+
+### ✅ VCS/Git Backend (Phase 3 선행 구현됨)
+
+| 영역 | 파일 |
+|------|------|
+| Git executable | `packages/vcs/src/executable.ts` |
+| Smart HTTP backend | `packages/vcs/src/http-backend.ts` |
+| Git mutation | `packages/vcs/src/mutation.ts` |
+| Repository provision | `packages/vcs/src/provision.ts` |
+| Audit logging | `packages/vcs/src/audit.ts` |
+| Repo API routes | `api/repos/$repoId/bootstrap`, `files`, `inline-edit`, `smart-http` |
+| Repo tRPC | `lib/repo-trpc.ts`, `lib/repo-http.ts` |
+
+---
+
+### ❌ 미구현 영역 (Phase 2–6)
+
+| Phase | 영역 |
+|-------|------|
+| Phase 2 | Issue CRUD, IssueComment, Label, Milestone, watch/vote/share, 첨부파일 |
+| Phase 2 | Asset upload/finalize (`POST /api/uploads`, `POST /api/uploads/:uploadId/finalize`) |
+| Phase 3 | Repository Browser UI, commit history UI, branch list UI |
+| Phase 3 | Raw file route, commit comments/discussion thread |
+| Phase 4 | Pull Request 전체, 리뷰어, 리뷰 스레드, 병합 |
+| Phase 5 | Search (global/org/project), Board/Discussion, Notification, Integration |
+| Phase 5 | Inbound mailbox, email threading |
+| Phase 6 | Site Admin, Migration tool, llms.txt, AI datasource |
+
+---
+
+## 다음 개발 대상 추천
+
+### 우선순위 A — Phase 1 완결 (순차 필요)
+
+Phase 1이 완전히 완료되어야 Phase 2가 블로킹 없이 시작됨.
+
+#### 🔴 A-1: 사용자 개인 작업공간 UI + API (순차)
+
+**이유**: auth flow는 있으나 personal workspace surface가 전무. `/me`, `/me/settings`, `/users/$loginId` route 없음.
+
+작업 범위:
+- `routes/me.tsx` (개인 대시보드)
+- `routes/me/settings.tsx` (프로필, 이메일, 비밀번호 변경 UI)
+- `routes/users/$loginId.tsx` (공개 프로필)
+- `api/me/sidebar.ts`, `api/me/notifications.ts`, `api/me/favorites.ts`, `api/me/recent.ts` server route
+- `packages/domain`에 `FavoriteService`, `RecentVisitService` 추가
+- `packages/db`에 `user_favorties`, `recent_project_visit` 등 스키마 추가
+- tRPC: 즐겨찾기 토글, 최근 방문 기록, 알림 설정 변경
+
+레거시 근거: `UserAppTest.java`, `RecentlyVisitedProjectsTest.java`
+
+---
+
+#### 🔴 A-2: Avatar / Logo Asset Upload Flow (순차)
+
+**이유**: asset authorization은 구현되어 있으나, upload → bind 흐름이 없어 Phase 1의 avatar/logo 기능이 블로킹됨.
+
+작업 범위:
+- `POST /api/uploads` — 임시 업로드 시작
+- `POST /api/uploads/:uploadId/finalize` — resource binding
+- `packages/domain`에 `UploadSessionService`, `AssetBindingService` 추가
+- `packages/db`의 `Attachment`, `UploadSession`, `BlobRef`, `AssetBinding` 스키마 확인/완성
+- local filesystem blob storage adapter
+
+레거시 근거: `AttachmentTest.java`, `AttachmentApp.java`
+
+---
+
+### 우선순위 B — Phase 2 시작 (병렬 작업 가능)
+
+A-1, A-2 완료 후 또는 별도 작업자가 병렬로 시작 가능한 항목들.
+
+> [!NOTE]
+> B-1 ~ B-3은 서로 독립적이므로 **병렬 작업 가능**.
+
+#### 🟡 B-1: Issue Domain (병렬 가능 ✅)
+
+**이유**: `packages/domain/src/issue-authorization.ts`만 있고, Issue 자체의 CRUD/lifecycle이 없음.
+
+작업 범위:
+- `packages/domain/src/issue-service.ts` — CRUD, lifecycle, participant
+- `packages/db/src/issues.ts` — Issue, IssueComment, IssueEvent, IssueLabel, IssueWatcher, IssueVote 스키마
+- `packages/contracts/src/issue.ts` — Zod schema, DTO
+- `lib/issue-trpc.ts` — tRPC procedures
+- `routes/projects/$owner/$projectSlug/issues/` — 목록/상세 UI route
+- `api/` 없이 순수 tRPC + serverFunction adapter
+
+레거시 근거: `IssueAppTest.java`, `IssueTest.java`, `WatchTest.java`, `MilestoneTest.java`
+
+---
+
+#### 🟡 B-2: Label / Milestone Domain (병렬 가능 ✅)
+
+**이유**: Issue의 metadata component로 Issue와 독립적으로 스키마/도메인 설계 가능.
+
+작업 범위:
+- `packages/db/src/labels-milestones.ts` — Label, LabelCategory(exclusive rule), Milestone 스키마
+- `packages/domain/src/label-service.ts`, `milestone-service.ts`
+- `packages/contracts/src/label.ts`, `milestone.ts`
+- tRPC procedures for label/milestone CRUD
+
+레거시 근거: `MilestoneTest.java`, `IssueAppTest.java` (label sections)
+
+---
+
+#### 🟡 B-3: Repository Browser UI (병렬 가능 ✅)
+
+**이유**: VCS backend(`packages/vcs`)는 완전히 구현됨. tRPC(`lib/repo-trpc.ts`)도 존재. UI 연결만 남음.
+
+작업 범위:
+- `routes/projects/$owner/$projectSlug/code/` — branch/파일 트리 UI
+- `routes/projects/$owner/$projectSlug/commit/$oid` — 커밋 상세 UI
+- `routes/projects/$owner/$projectSlug/branches` — 브랜치 목록 UI
+- TanStack Query를 통한 repo-trpc 호출 wiring
+- Streaming SSR 적용 (SPEC 7.5)
+
+레거시 근거: `GitRepositoryTest.java`, `RepositoryServiceTest.java`
+
+---
+
+### 우선순위 C — Phase 2 후속 (B 완료 후)
+
+> [!NOTE]
+> C-1과 C-2는 상호 독립적이므로 **병렬 작업 가능**.
+
+#### 🟠 C-1: Attachment (첨부파일) full flow (A-2 완료 후)
+
+Issue/Board posting에 첨부파일 연결. A-2 (upload flow) 완료 후 시작.
+
+#### 🟠 C-2: Board / Discussion domain (B-1과 병렬 가능 ✅)
+
+Posting, PostingComment, PostingLabel, PostingWatcher 도메인 및 UI.
+
+---
+
+### 우선순위 D — Phase 3–4 (B-3 이후)
+
+- Pull Request lifecycle (Phase 4) — VCS가 준비되어 있어 순서대로 진행
+- Commit comments / code discussion threads (Phase 3 나머지)
+
+---
+
+## 병렬 작업 정리표
+
+| Wave | Task | 의존성 | 병렬 여부 |
+|------|------|--------|-----------|
+| Wave 1 | A-1 사용자 개인 작업공간 | 없음 | ✅ A-2와 병렬 가능 |
+| Wave 1 | A-2 Asset Upload Flow | 없음 | ✅ A-1과 병렬 가능 |
+| Wave 2 | B-1 Issue Domain | A-1 완료 권장 | ✅ B-2, B-3과 병렬 |
+| Wave 2 | B-2 Label/Milestone Domain | 없음 | ✅ B-1, B-3과 병렬 |
+| Wave 2 | B-3 Repository Browser UI | 없음 | ✅ B-1, B-2와 병렬 |
+| Wave 3 | C-1 Attachment full flow | A-2 완료 필요 | ✅ C-2와 병렬 |
+| Wave 3 | C-2 Board/Discussion domain | 없음 | ✅ C-1과 병렬 |
+| Wave 4 | D-1 PR lifecycle | B-3, Wave 3 완료 후 | ❌ 순차 |
+
+---
+
+## 주의 사항
+
+> [!IMPORTANT]
+> 모든 작업은 **failing Red test 먼저** 원칙을 지켜야 한다 (`SPEC.md` §17, `AGENTS.md` Execution Rules).
+> 새 schema/query 작성 시 **3개 dialect(PG, MySQL, SQLite)를 동시에 고려**해야 한다.
+> `packages/api`, `packages/core`, `packages/infra`에 새 장기 ownership을 추가하지 않는다.
+
+> [!WARNING]
+> `tasks.json`의 기존 task (T-001~T-005)는 agentctl orchestration 관련 작업으로, 애플리케이션 기능과 무관하다. 새 feature task는 별도 관리 체계를 사용하거나 tasks.json 포맷을 확장해야 한다.

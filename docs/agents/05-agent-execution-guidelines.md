@@ -16,6 +16,10 @@
 - `apps/web`, `packages/api`, `packages/core`, `packages/infra`에는 extraction 또는 compatibility shim 외의 새 ownership을 추가하지 않는다.
 - app layer는 orchestration만 하고 domain invariant를 가지지 않는다.
 - loader, `beforeLoad`, component, `serverFunction` adapter는 DB client를 직접 호출하지 않고 `tRPC` backend boundary를 통해서만 domain/db로 진입한다.
+- `apps/app`에서 이미 구현된 frontend screen은 `yona-original`의 layout과 information architecture를 기본값으로 보존해야 하며, 의도적 차이가 있으면 deviation을 명시적으로 기록한다.
+- screen-level UI copy, label, CTA, section title도 `yona-original` template/message wording을 기본값으로 사용한다.
+- legacy template를 React로 옮길 때는 reusable shell/section/form/menu component 조합으로 분해해서 남긴다. parity를 이유로 screen별 static HTML clone을 늘리지 않는다.
+- branding delta는 logo, color palette, typography token, 동등한 design token 수준까지만 허용하며, major region 배치, menu 위치, primary action, permission-driven visibility를 임의로 바꾸면 안 된다.
 
 ## DB 작업 규칙
 

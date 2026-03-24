@@ -1,0 +1,19 @@
+2026-03-14 refreshed note for task 5 bounded PR evidence
+
+- This file replaces the obsolete repo-root `No test files found` trace that predated the package-local Vitest root fix.
+- The original artifact was not the intended Red assertion set for task 5. It only captured command resolution failure before the bounded PR specs could run.
+- The bounded PR red-to-green history is now verified in the current repo by the landed bounded behavior and the passing focused suites below.
+
+Current bounded PR state in code:
+- `packages/contracts/src/pull-request.ts` keeps read-side `merged` support in `pullRequestStateSchema` but bounds `pullRequestStateUpdateInputSchema` to `open` and `closed` only.
+- The bounded domain transition guard is present in `packages/domain/src/pull-request-service.ts`, so reopen-on-open is rejected while not-found and authorization outcomes stay distinct.
+
+Current focused green verification:
+- Command: `bunx vitest run --config packages/domain/vitest.config.ts packages/domain/src/pull-request-service.spec.ts`
+  - PASS, 1 file, 9 tests
+- Command: `bunx vitest run --config apps/app/vite.config.ts apps/app/src/lib/pull-request-trpc.spec.ts`
+  - PASS, 1 file, 8 tests
+
+Reviewer note:
+- Treat task 5 as a verified bounded PR red-to-green slice whose current repo state is green.
+- Do not read this evidence as a claim of full PR or review parity. Merge, reviewer lifecycle, diff composition, and broader review flows remain deferred to Phase 4.

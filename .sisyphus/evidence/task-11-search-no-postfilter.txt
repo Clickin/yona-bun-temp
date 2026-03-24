@@ -1,0 +1,10 @@
+2026-03-13 T11 bounded search no-postfilter check
+
+- Command:
+  - `rg -n "filter\(|map\(|slice\(" packages/db/src packages/domain/src | rg "search"`
+- Result:
+  - no matches
+
+- Search implementation note:
+  - `packages/db/src/search.ts` performs scope filtering, permission filtering, ranking, counts, ordering, and pagination in SQL against `search_document`
+  - Type shaping and snippet formatting happen after the SQL-limited result set is returned

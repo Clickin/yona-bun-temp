@@ -1,0 +1,15 @@
+2026-03-13 Task 8 bounded review-thread green verification
+
+- `bun run --cwd packages/contracts test && bunx vitest run --config packages/domain/vitest.config.ts packages/domain/src/pull-request-service.spec.ts && bun run --cwd apps/app test:unit`
+  - PASS
+- `bun run --cwd apps/app check`
+  - PASS
+- `bun run --cwd apps/app build`
+  - PASS
+- Zero LSP diagnostics on touched TypeScript files:
+  - `packages/contracts/src/pull-request.ts`
+  - `packages/contracts/src/pull-request.spec.ts`
+  - `packages/db/src/pull-requests.ts`
+  - `packages/db/src/index.ts`
+  - `packages/domain/src/pull-request-service.ts`
+  - `apps/app/src/lib/pull-request-trpc.ts`

@@ -3,7 +3,9 @@ import {
   DomainConflictError,
   DomainNotFoundError,
   DomainPermissionError,
+  cancelEnrollOrganization,
   cancelEnrollProject,
+  enrollOrganization,
   enrollProject,
 } from "./enrollment-service";
 
@@ -31,6 +33,22 @@ function createGuestAuthorization() {
       isOrganizationMember: false,
       isProjectManager: false,
       isProjectMember: false,
+      isSiteAdmin: false,
+    },
+  };
+}
+
+function createOrganizationGuestAuthorization() {
+  return {
+    organization: {
+      createdAt: new Date("2026-03-09T00:00:00.000Z"),
+      description: "We build labs",
+      id: 41,
+      organizationName: "weblabs",
+    },
+    viewer: {
+      isOrganizationAdmin: false,
+      isOrganizationMember: false,
       isSiteAdmin: false,
     },
   };
@@ -235,5 +253,134 @@ describe("enrollment service", () => {
     ).rejects.toBeInstanceOf(DomainPermissionError);
 
     expect(deps.readProjectAuthorization).not.toHaveBeenCalled();
+  });
+
+  it("allows guests to enroll into an existing organization", async () => {
+    const deps = {
+      createEnrollmentRequest: vi.fn(),
+      createOrganizationEnrollmentRequest: vi.fn().mockResolvedValue({
+        organizationId: 41,
+        userId: 6,
+      }),
+      deleteEnrollmentRequest: vi.fn(),
+      deleteOrganizationEnrollmentRequest: vi.fn(),
+      readOrganizationAuthorization: vi.fn().mockResolvedValue(createOrganizationGuestAuthorization()),
+      readProjectAuthorization: vi.fn(),
+    };
+
+    await expect(
+      enrollOrganization(
+        authenticatedActor,
+        {
+          organizationName: "weblabs",
+        },
+        deps,
+      ),
+    ).resolves.toEqual({
+      ok: true,
+    });
+
+    expect(deps.createOrganizationEnrollmentRequest).toHaveBeenCalledWith(41, 6);
+  });
+
+  it("rejects organization enroll when the actor is already an organization member", async () => {
+    const deps = {
+      createEnrollmentRequest: vi.fn(),
+      createOrganizationEnrollmentRequest: vi.fn(),
+      deleteEnrollmentRequest: vi.fn(),
+      deleteOrganizationEnrollmentRequest: vi.fn(),
+      readOrganizationAuthorization: vi.fn().mockResolvedValue({
+        ...createOrganizationGuestAuthorization(),
+        viewer: {
+          ...createOrganizationGuestAuthorization().viewer,
+          isOrganizationMember: true,
+        },
+      }),
+      readProjectAuthorization: vi.fn(),
+    };
+
+    await expect(
+      enrollOrganization(
+        authenticatedActor,
+        {
+          organizationName: "weblabs",
+        },
+        deps,
+      ),
+    ).rejects.toBeInstanceOf(DomainConflictError);
+  });
+
+  it("returns not found when the organization does not exist during enroll", async () => {
+    const deps = {
+      createEnrollmentRequest: vi.fn(),
+      createOrganizationEnrollmentRequest: vi.fn(),
+      deleteEnrollmentRequest: vi.fn(),
+      deleteOrganizationEnrollmentRequest: vi.fn(),
+      readOrganizationAuthorization: vi.fn().mockResolvedValue(null),
+      readProjectAuthorization: vi.fn(),
+    };
+
+    await expect(
+      enrollOrganization(
+        authenticatedActor,
+        {
+          organizationName: "missing-org",
+        },
+        deps,
+      ),
+    ).rejects.toBeInstanceOf(DomainNotFoundError);
+  });
+
+  it("allows guests to cancel organization enrollment requests", async () => {
+    const deps = {
+      createEnrollmentRequest: vi.fn(),
+      createOrganizationEnrollmentRequest: vi.fn(),
+      deleteEnrollmentRequest: vi.fn(),
+      deleteOrganizationEnrollmentRequest: vi.fn().mockResolvedValue(undefined),
+      readOrganizationAuthorization: vi.fn().mockResolvedValue(createOrganizationGuestAuthorization()),
+      readProjectAuthorization: vi.fn(),
+    };
+
+    await expect(
+      cancelEnrollOrganization(
+        authenticatedActor,
+        {
+          organizationName: "weblabs",
+        },
+        deps,
+      ),
+    ).resolves.toEqual({
+      ok: true,
+    });
+
+    expect(deps.deleteOrganizationEnrollmentRequest).toHaveBeenCalledWith(41, 6);
+  });
+
+  it("rejects anonymous actors before reading organization authorization", async () => {
+    const deps = {
+      createEnrollmentRequest: vi.fn(),
+      createOrganizationEnrollmentRequest: vi.fn(),
+      deleteEnrollmentRequest: vi.fn(),
+      deleteOrganizationEnrollmentRequest: vi.fn(),
+      readOrganizationAuthorization: vi.fn(),
+      readProjectAuthorization: vi.fn(),
+    };
+
+    await expect(
+      enrollOrganization(
+        {
+          actorId: null,
+          isAnonymous: true,
+          isSiteAdmin: false,
+          loginId: null,
+        },
+        {
+          organizationName: "weblabs",
+        },
+        deps,
+      ),
+    ).rejects.toBeInstanceOf(DomainPermissionError);
+
+    expect(deps.readOrganizationAuthorization).not.toHaveBeenCalled();
   });
 });

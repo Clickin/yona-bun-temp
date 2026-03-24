@@ -1,0 +1,50 @@
+# Implementation Plan: Addressing Remaining Code Review Issues
+
+Based on the [code_review.md.resolved](file:///g:/programming/yona/code_review.md.resolved) and an analysis of the current codebase, several security issues (SEC-1, SEC-3, SEC-4) have already been fixed by a previous iteration. However, architectural duplicates and QA issues remain, along with missing MIME type validation.
+
+## User Review Required
+
+Please review the proposed architectural extractions. Once approved, I will proceed with the changes.
+
+## Proposed Changes
+
+### Configuration / Contracts Layer
+#### [MODIFY] [packages/contracts/src/auth.ts](file:///g:/programming/yona/packages/contracts/src/auth.ts)
+- **[QA-1]**: Update `changeCurrentUserPasswordOutputSchema` to include an error union mirroring `signInWithPasswordResultSchema`, resolving the inconsistency in schema definitions.
+
+### Domain Layer (Architecture Fixes)
+#### [NEW] `packages/domain/src/actor-utils.ts` (or similar shared module)
+- **[ARCH-1]**: Extract and export the `requireAuthenticatedActor(actor: DomainActor)` function.
+
+#### [MODIFY] [packages/domain/src/project-authorization.ts](file:///g:/programming/yona/packages/domain/src/project-authorization.ts)
+- **[ARCH-2]**: Add reusable helpers `requireProjectReadAuthorization` and `requireProjectWriteAuthorization`.
+
+#### [MODIFY] Domain Services
+- [issue-service.ts](file:///g:/programming/yona/packages/domain/src/issue-service.ts), [posting-service.ts](file:///g:/programming/yona/packages/domain/src/posting-service.ts), [pull-request-service.ts](file:///g:/programming/yona/packages/domain/src/pull-request-service.ts), [upload-session-service.ts](file:///g:/programming/yona/packages/domain/src/upload-session-service.ts), [asset-binding-service.ts](file:///g:/programming/yona/packages/domain/src/asset-binding-service.ts), [user-workspace-service.ts](file:///g:/programming/yona/packages/domain/src/user-workspace-service.ts), [label-service.ts](file:///g:/programming/yona/packages/domain/src/label-service.ts), [milestone-service.ts](file:///g:/programming/yona/packages/domain/src/milestone-service.ts), [organization-service.ts](file:///g:/programming/yona/packages/domain/src/organization-service.ts), etc.
+- Remove the duplicated `requireAuthenticatedActor` and `requireProjectRead/WriteAuthorization` functions.
+- Import and use the shared utilities from `actor-utils.ts` and `project-authorization.ts`.
+- **[QA-2]**: In [issue-service.ts](file:///g:/programming/yona/packages/domain/src/issue-service.ts) and [posting-service.ts](file:///g:/programming/yona/packages/domain/src/posting-service.ts), query the user's actual display name (or extend [DomainActor](file:///g:/programming/yona/apps/app/src/routes/api/uploads.ts#10-18) to include `name`) to populate `authorName` rather than using `loginId`.
+
+### App Route / API Layer
+#### [MODIFY] [apps/app/src/routes/api/uploads.ts](file:///g:/programming/yona/apps/app/src/routes/api/uploads.ts)
+- **[SEC-2]**: Add a strict `ALLOWED_MIME_TYPES` validation check during upload. Reject uploads with 415 Unsupported Media Type if they do not match the allowlist.
+
+#### [MODIFY] [apps/app/src/lib/server-request-auth.ts](file:///g:/programming/yona/apps/app/src/lib/server-request-auth.ts) (or shared server utility)
+- **[ARCH-3]**: Extract the [toDomainActor](file:///g:/programming/yona/apps/app/src/routes/api/uploads.ts#10-18) function. Remove duplicates from [uploads.ts](file:///g:/programming/yona/apps/app/src/routes/api/uploads.ts) and [finalize.ts](file:///g:/programming/yona/apps/app/src/routes/api/uploads/$uploadId/finalize.ts).
+- Update [uploads.ts](file:///g:/programming/yona/apps/app/src/routes/api/uploads.ts) and [finalize.ts](file:///g:/programming/yona/apps/app/src/routes/api/uploads/$uploadId/finalize.ts) to use the shared [toDomainActor](file:///g:/programming/yona/apps/app/src/routes/api/uploads.ts#10-18).
+
+### Tests
+#### [MODIFY] [apps/app/src/routes/api/-uploads.spec.ts](file:///g:/programming/yona/apps/app/src/routes/api/-uploads.spec.ts)
+- **[QA-3]**: Mock `node:fs/promises` (`writeFile`, `mkdir`) to prevent tests from writing actual files to the filesystem.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- Run `bun test` in `apps/app` and `packages/domain` to ensure the extraction didn't break functionality.
+- Run `bun test packages/contracts` to verify the modified Zod schema.
+- Write/update tests in `uploads.spec.ts` to verify the new MIME type restriction and the filesystem mock.
+
+### Manual Verification
+- None required; automated test suite covers the domain service and API route logic.

@@ -1,0 +1,7 @@
+2026-03-14 doc sync refresh
+
+- Updated `docs/provenance/phase-0b/README.md` to stop listing bounded PR/search exemplar implementation as open blockers.
+- Updated `docs/provenance/phase-0b/project.md` to keep project-slice blockers limited to organization enrollment and workspace default landing.
+- Updated `docs/provenance/phase-0b/legacy-test-inventory.md` to mark bounded PR and bounded search exemplars as landed while keeping fuller PR/search parity deferred to later phases.
+- Updated `.sisyphus/notepads/phase-0b-blocker-reconciliation/decisions.md` with the bounded PR transition, dialect-native FTS, and case-insensitive snippet decisions.
+- Updated `.sisyphus/notepads/phase-0b-blocker-reconciliation/learnings.md` with the implementation findings from the final-wave fix.

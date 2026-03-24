@@ -3,6 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import { buildProtectedRedirect } from "@app/lib/auth";
 import { setCurrentSessionData } from "@app/lib/auth-shared";
+import { useTranslate } from "@app/lib/i18n-react";
 import { currentSessionQueryOptions, protectedShellQueryOptions } from "@app/lib/queries";
 
 export const Route = createFileRoute("/protected")({
@@ -31,6 +32,7 @@ function ProtectedRouteComponent() {
   const queryClient = router.options.context.queryClient;
   const session = useSuspenseQuery(currentSessionQueryOptions(authCaller));
   const [isSigningOut, setIsSigningOut] = React.useState(false);
+  const t = useTranslate();
 
   const handleSignOut = () => {
     setIsSigningOut(true);
@@ -55,9 +57,9 @@ function ProtectedRouteComponent() {
           projection.
         </p>
         <div className="badge-row">
-          <span className="badge">Actor: {session.data.userLabel}</span>
+          <span className="badge">{t("app.project.actor", session.data.userLabel ?? session.data.loginId ?? "-")}</span>
           <span className="badge">
-            {session.data.isSiteAdmin ? "Site admin" : "Standard member"}
+            {session.data.isSiteAdmin ? t("app.project.siteAdmin") : t("app.project.standardMember")}
           </span>
         </div>
       </article>
@@ -67,10 +69,10 @@ function ProtectedRouteComponent() {
         </article>
       ))}
       <article className="secret-panel">
-        <strong>Session mutation</strong>
+        <strong>{t("app.project.sessionMutation")}</strong>
         <div className="action-row">
           <button className="secondary-cta" onClick={handleSignOut} type="button">
-            {isSigningOut ? "Signing out..." : "Clear Session"}
+            {isSigningOut ? t("app.project.signingOut") : t("app.project.clearSession")}
           </button>
         </div>
       </article>

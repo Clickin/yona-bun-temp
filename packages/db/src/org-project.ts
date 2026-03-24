@@ -48,6 +48,11 @@ export interface OrganizationMemberDirectoryRecord {
   members: OrganizationMemberRecord[];
 }
 
+export interface OrganizationEnrollmentRequestRecord {
+  organizationId: number;
+  userId: number;
+}
+
 export interface EnrollmentRequestRecord {
   projectId: number;
   userId: number;
@@ -819,6 +824,79 @@ export async function updateProjectRecord(
   });
 }
 
+export async function readOrganizationEnrollmentRequest(
+  organizationId: number,
+  userId: number,
+  db = getDb(),
+): Promise<OrganizationEnrollmentRequestRecord | null> {
+  const schema = getDbSchema(db);
+  const [row] = await (db as any)
+    .select({
+      organizationId: schema.userEnrolledOrganization.organizationId,
+      userId: schema.userEnrolledOrganization.userId,
+    })
+    .from(schema.userEnrolledOrganization)
+    .where(
+      and(
+        eq(schema.userEnrolledOrganization.organizationId, organizationId),
+        eq(schema.userEnrolledOrganization.userId, userId),
+      ),
+    )
+    .limit(1);
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    organizationId: row.organizationId,
+    userId: row.userId,
+  };
+}
+
+export async function createOrganizationEnrollmentRequest(
+  organizationId: number,
+  userId: number,
+  db = getDb(),
+): Promise<OrganizationEnrollmentRequestRecord> {
+  const schema = getDbSchema(db);
+
+  return (db as any).transaction(async (tx: DatabaseType) => {
+    const existing = await readOrganizationEnrollmentRequest(organizationId, userId, tx);
+    if (existing) {
+      return existing;
+    }
+
+    await (tx as any).insert(schema.userEnrolledOrganization).values({
+      organizationId,
+      userId,
+    });
+
+    const created = await readOrganizationEnrollmentRequest(organizationId, userId, tx);
+    if (!created) {
+      throw new Error("Failed to load newly created organization enrollment request.");
+    }
+
+    return created;
+  });
+}
+
+export async function deleteOrganizationEnrollmentRequest(
+  organizationId: number,
+  userId: number,
+  db = getDb(),
+): Promise<void> {
+  const schema = getDbSchema(db);
+
+  await (db as any)
+    .delete(schema.userEnrolledOrganization)
+    .where(
+      and(
+        eq(schema.userEnrolledOrganization.organizationId, organizationId),
+        eq(schema.userEnrolledOrganization.userId, userId),
+      ),
+    );
+}
 export async function readEnrollmentRequest(
   projectId: number,
   userId: number,
@@ -955,3 +1033,4 @@ export async function readProjectMembers(
     members: members.map((row: { mapped: ProjectMemberRecord }) => row.mapped),
   };
 }
+

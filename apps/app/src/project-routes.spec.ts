@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { ProjectSettingsRoute } from "@app/routes/$owner/$projectName/settings";
-import { ProjectNewRoute } from "@app/routes/projects/new";
+import { ProjectSettingsRoute } from "@app/routes/_app.$owner.$projectName.settings";
+import { ProjectNewRoute } from "@app/routes/_app.projects.new";
 
 function anonymousSession() {
   return {

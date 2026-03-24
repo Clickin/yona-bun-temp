@@ -14,15 +14,16 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.0",
-    "@tanstack/react-router": "^1.147.0",
-    "@tanstack/react-router-devtools": "^1.147.0",
-    "@tanstack/react-router-ssr-query": "^1.147.0",
-    "@tanstack/react-start": "^1.147.0",
+    "@tanstack/react-router": "^1.167.0",
+    "@tanstack/react-router-devtools": "^1.166.7",
+    "@tanstack/react-router-ssr-query": "^1.166.7",
+    "@tanstack/react-start": "^1.166.11",
     "@trpc/server": "^11.7.1",
     "@yona/auth": "workspace:*",
     "@yona/contracts": "workspace:*",
     "@yona/db": "workspace:*",
     "@yona/domain": "workspace:*",
+    "@yona/i18n": "workspace:*",
     "@yona/integrations": "workspace:*",
     "@yona/vcs": "workspace:*",
     "react": "^19.0.0",
@@ -34,10 +35,9 @@
     "@types/node": "^24.6.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
-    "@vitejs/plugin-react": "^5.1.0",
+    "@vitejs/plugin-react": "^6.0.1",
     "typescript": "^5.9.3",
-    "vite": "^7.3.1",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.0.18"
+    "vite": "^8.0.0",
+    "vitest": "^4.1.0"
   }
 }

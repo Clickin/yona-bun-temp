@@ -2,14 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@app/lib/shell-data", () => ({
   getPublicShellData: vi.fn(async () => ({
-    headline: "Yona Canonical App",
-    summary:
-      "TanStack Start, Router, Query, and server functions now own the primary Yona application runtime.",
-    workstreams: [
-      "server functions own internal auth mutations",
-      "server routes expose canonical HTTP auth surfaces",
-      "protected routes read the session projection before render",
-    ],
+    workstreams: ["projects", "groups", "search"],
   })),
   getProtectedShellData: vi.fn(async () => ({
     title: "Protected Workspace",
@@ -90,6 +83,12 @@ vi.mock("@app/lib/auth", () => ({
   })),
 }));
 
+vi.mock("@app/lib/locale", () => ({
+  readCurrentLocale: vi.fn(async () => ({
+    locale: "en",
+  })),
+}));
+
 import { RouterProvider, createMemoryHistory } from "@tanstack/react-router";
 import { renderToString } from "react-dom/server";
 import { getRouter } from "@app/router";
@@ -103,8 +102,35 @@ describe("TanStack Start app shell", () => {
     await router.load();
     const html = renderToString(<RouterProvider router={router} />);
 
-    expect(html).toContain("Yona Canonical App");
-    expect(html).toContain("server functions own internal auth mutations");
+    expect(html).toContain("Yona");
+    expect(html).toContain("Create new project");
+    expect(html).toContain("New Group");
+  });
+
+  it("preserves the current route search when building locale switch links inside the app layout", async () => {
+    const router = getRouter({
+      history: createMemoryHistory({ initialEntries: ["/search?pageSize=20&scope=global"] }),
+    });
+
+    await router.load();
+    const html = renderToString(<RouterProvider router={router} />);
+
+    expect(html).toContain("Language");
+    expect(html).toContain('href="/search?pageSize=20&amp;scope=global&amp;lang=en"');
+    expect(html).toContain('href="/search?pageSize=20&amp;scope=global&amp;lang=ko-KR"');
+  });
+
+  it("keeps auth routes outside the shared app layout", async () => {
+    const router = getRouter({
+      history: createMemoryHistory({ initialEntries: ["/login?redirect=%2Fme"] }),
+    });
+
+    await router.load();
+    const html = renderToString(<RouterProvider router={router} />);
+
+    expect(html).not.toContain("Language");
+    expect(html).not.toContain("app-navbar");
+    expect(html).toContain("Log in to Yona");
   });
 
   it("creates a fresh query client for each router instance", () => {

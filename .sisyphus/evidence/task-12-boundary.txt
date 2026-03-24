@@ -1,0 +1,13 @@
+Command: `rg -n "from \"@yona/db\"|from '@yona/db'" apps/app/src`
+Date: 2026-03-13
+
+Exact broad grep output:
+apps/app/src\routes\api\repos\$repoId\smart-http\$.ts:3:import { loadRepositoryAccessFacts } from "@yona/db";
+apps/app/src\routes\api\projects\$owner\$projectName\repo-id.ts:3:import { readProjectAuthorization } from "@yona/db";
+apps/app/src\lib\asset-delivery.ts:14:} from "@yona/db";
+apps/app/src\lib\repo-trpc.ts:17:import { loadRepositoryAccessFacts } from "@yona/db";
+
+Search-specific boundary note:
+- `rg -n "@yona/db" apps/app/src --glob "*search*.{ts,tsx}"` returned no matches.
+- The new bounded search app files (`apps/app/src/lib/search.ts`, `apps/app/src/lib/search-trpc.ts`, `apps/app/src/lib/search-trpc.server.ts`, `apps/app/src/routes/search.tsx`) do not import `@yona/db` directly.
+- `apps/app/src/routeTree.gen.ts` has no `/api/search` registration, so the search-specific app flow no longer depends on an unregistered route transport.

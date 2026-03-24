@@ -258,9 +258,11 @@ export {
 } from "./search-projection";
 export {
   createEnrollmentRequest,
+  createOrganizationEnrollmentRequest,
   createOrganizationRecord,
   createProjectRecord,
   deleteEnrollmentRequest,
+  deleteOrganizationEnrollmentRequest,
   grantOrganizationAdmin,
   grantProjectManager,
   organizationNameExists,
@@ -268,6 +270,7 @@ export {
   readEnrollmentRequest,
   readOrganizationAuthorization,
   readOrganizationByName,
+  readOrganizationEnrollmentRequest,
   readOrganizationMembers,
   readProjectAuthorization,
   readProjectByOwnerAndName,
@@ -277,6 +280,7 @@ export {
   userLoginIdExists,
   type EnrollmentRequestRecord,
   type OrganizationAuthorizationRecord,
+  type OrganizationEnrollmentRequestRecord,
   type OrganizationEnrollmentRequestSummaryRecord,
   type OrganizationMemberDirectoryRecord,
   type OrganizationMemberRecord,
@@ -288,3 +292,4 @@ export {
   type ProjectRecord,
 } from "./org-project";
 export { getDbSchema, type RuntimeDbSchema } from "./runtime-schema";
+
