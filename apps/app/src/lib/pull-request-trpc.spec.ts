@@ -3,6 +3,7 @@ import { DomainNotFoundError, DomainPermissionError, DomainValidationError } fro
 
 const {
   createPullRequestMock,
+  listPullRequestReviewCountsMock,
   listPullRequestReviewThreadsMock,
   listPullRequestsMock,
   readCurrentSessionMock,
@@ -10,6 +11,7 @@ const {
   updatePullRequestStateMock,
 } = vi.hoisted(() => ({
   createPullRequestMock: vi.fn(),
+  listPullRequestReviewCountsMock: vi.fn(),
   listPullRequestReviewThreadsMock: vi.fn(),
   listPullRequestsMock: vi.fn(),
   readCurrentSessionMock: vi.fn(),
@@ -22,6 +24,7 @@ vi.mock("@yona/domain", async () => {
   return {
     ...actual,
     createPullRequest: createPullRequestMock,
+    readPullRequestReviewCounts: listPullRequestReviewCountsMock,
     listPullRequestReviewThreads: listPullRequestReviewThreadsMock,
     listPullRequests: listPullRequestsMock,
     readPullRequestDetail: readPullRequestDetailMock,
@@ -126,6 +129,7 @@ function reviewThreadFixture(threadId: string, overrides: Partial<Record<string,
     lastCommentAt: null,
     participants: ["admin", "laziel"],
     path: "/app/controllers/IssueApp.java",
+    replyCount: 1,
     projectName: "yona",
     state: "open",
     text: "Comment #1 : 111",
@@ -140,6 +144,14 @@ function expectListPullRequestReviewThreads(caller: ReturnType<typeof createPull
   expect(reviewThreadCaller).toBeTypeOf("function");
 
   return reviewThreadCaller as (input: Record<string, unknown>) => Promise<unknown>;
+}
+
+function expectReadPullRequestReviewCounts(caller: ReturnType<typeof createPullRequestCaller>) {
+  const countCaller = (caller as Record<string, unknown>).readPullRequestReviewCounts;
+
+  expect(countCaller).toBeTypeOf("function");
+
+  return countCaller as (input: Record<string, unknown>) => Promise<unknown>;
 }
 
 describe("pull request tRPC PR transition provenance: docs/provenance/phase-0b/pull-request-review.md", () => {
@@ -418,6 +430,86 @@ describe("pull request tRPC PR transition provenance: docs/provenance/phase-0b/p
         filter: "controllers",
         ownerName: "yobi",
         participantLoginId: "doortts",
+        projectName: "yona",
+        state: "open",
+      },
+    );
+  });
+
+  it("forwards review-thread sort fields and exposes review count summaries", async () => {
+    listPullRequestReviewThreadsMock.mockResolvedValueOnce([
+      reviewThreadFixture("thread-open-comment", {
+        participants: ["admin", "yobi"],
+        replyCount: 2,
+      }),
+    ]);
+    listPullRequestReviewCountsMock.mockResolvedValueOnce({
+      all: 4,
+      closed: 1,
+      createdByYou: 2,
+      involvingYou: 3,
+      open: 3,
+    });
+    const caller = createPullRequestCaller(createContext("session-token"));
+    const listReviewThreads = expectListPullRequestReviewThreads(caller);
+    const readReviewCounts = expectReadPullRequestReviewCounts(caller);
+
+    await expect(
+      listReviewThreads({
+        filter: "controllers",
+        orderBy: "createdDate",
+        orderDir: "asc",
+        ownerName: "yobi",
+        projectName: "yona",
+        state: "open",
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        replyCount: 2,
+        threadId: "thread-open-comment",
+      }),
+    ]);
+
+    expect(listPullRequestReviewThreadsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorId: 2,
+        loginId: "yobi",
+      }),
+      {
+        filter: "controllers",
+        orderBy: "createdDate",
+        orderDir: "asc",
+        ownerName: "yobi",
+        projectName: "yona",
+        state: "open",
+      },
+    );
+
+    await expect(
+      readReviewCounts({
+        authorLoginId: "admin",
+        filter: "controllers",
+        ownerName: "yobi",
+        projectName: "yona",
+        state: "open",
+      }),
+    ).resolves.toEqual({
+      all: 4,
+      closed: 1,
+      createdByYou: 2,
+      involvingYou: 3,
+      open: 3,
+    });
+
+    expect(listPullRequestReviewCountsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorId: 2,
+        loginId: "yobi",
+      }),
+      {
+        authorLoginId: "admin",
+        filter: "controllers",
+        ownerName: "yobi",
         projectName: "yona",
         state: "open",
       },

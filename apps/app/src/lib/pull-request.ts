@@ -3,6 +3,9 @@ import {
   pullRequestCreateInputSchema,
   pullRequestDetailSchema,
   pullRequestRefSchema,
+  pullRequestReviewCountsSchema,
+  pullRequestReviewThreadFilterInputSchema,
+  pullRequestReviewThreadSchema,
   pullRequestStateUpdateInputSchema,
   pullRequestSummarySchema,
   projectRefSchema,
@@ -15,6 +18,24 @@ export const listPullRequests = createServerFn({ method: "GET" })
     return pullRequestSummarySchema
       .array()
       .parse(await createServerPullRequestCaller().listPullRequests(data));
+  });
+
+export const listPullRequestReviewThreads = createServerFn({ method: "GET" })
+  .inputValidator(pullRequestReviewThreadFilterInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerPullRequestCaller } = await import("./pull-request-trpc.server");
+    return pullRequestReviewThreadSchema
+      .array()
+      .parse(await createServerPullRequestCaller().listPullRequestReviewThreads(data));
+  });
+
+export const readPullRequestReviewCounts = createServerFn({ method: "GET" })
+  .inputValidator(pullRequestReviewThreadFilterInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerPullRequestCaller } = await import("./pull-request-trpc.server");
+    return pullRequestReviewCountsSchema.parse(
+      await createServerPullRequestCaller().readPullRequestReviewCounts(data),
+    );
   });
 
 export const readPullRequestDetail = createServerFn({ method: "GET" })

@@ -2,6 +2,7 @@ import {
   pullRequestCreateInputSchema,
   pullRequestDetailSchema,
   pullRequestRefSchema,
+  pullRequestReviewCountsSchema,
   pullRequestReviewThreadFilterInputSchema,
   pullRequestReviewThreadSchema,
   pullRequestStateUpdateInputSchema,
@@ -9,6 +10,7 @@ import {
   type PullRequestCreateInput,
   type PullRequestDetail,
   type PullRequestRef,
+  type PullRequestReviewCounts,
   type PullRequestReviewThread,
   type PullRequestReviewThreadFilterInput,
   type PullRequestStateUpdateInput,
@@ -20,6 +22,7 @@ import {
   listPullRequestsByProject,
   readProjectAuthorization,
   readPullRequestByProjectAndNumber,
+  readPullRequestReviewCountsByProject,
   updatePullRequestStateByProjectAndNumber,
 } from "@yona/db";
 import { requireAuthenticatedActor } from "./actor-utils";
@@ -35,6 +38,7 @@ export interface PullRequestServiceDeps {
   listPullRequestsByProject: typeof listPullRequestsByProject;
   readProjectAuthorization: typeof readProjectAuthorization;
   readPullRequestByProjectAndNumber: typeof readPullRequestByProjectAndNumber;
+  readPullRequestReviewCountsByProject: typeof readPullRequestReviewCountsByProject;
   updatePullRequestStateByProjectAndNumber: typeof updatePullRequestStateByProjectAndNumber;
 }
 
@@ -44,6 +48,7 @@ const defaultDeps: PullRequestServiceDeps = {
   listPullRequestsByProject,
   readProjectAuthorization,
   readPullRequestByProjectAndNumber,
+  readPullRequestReviewCountsByProject,
   updatePullRequestStateByProjectAndNumber,
 };
 
@@ -129,12 +134,35 @@ export async function readPullRequestReviewThreads(
       await deps.listPullRequestReviewThreadsByProject({
         authorLoginId: parsedInput.authorLoginId,
         filter: parsedInput.filter,
+        orderBy: parsedInput.orderBy,
+        orderDir: parsedInput.orderDir,
         participantLoginId: parsedInput.participantLoginId,
         projectId: authorization.project.id,
         projectName: authorization.project.projectName,
         state: parsedInput.state,
       })
     ).filter((thread) => matchesReviewThreadFilter(thread, parsedInput)),
+  );
+}
+
+export async function readPullRequestReviewCounts(
+  actor: DomainActor,
+  input: PullRequestReviewThreadFilterInput,
+  deps: PullRequestServiceDeps = defaultDeps,
+): Promise<PullRequestReviewCounts> {
+  requireAuthenticatedActor(actor);
+  const parsedInput = pullRequestReviewThreadFilterInputSchema.parse(input);
+  const authorization = await requireProjectReadAuthorization(actor, parsedInput, deps);
+
+  return pullRequestReviewCountsSchema.parse(
+    await deps.readPullRequestReviewCountsByProject({
+      authorLoginId: parsedInput.authorLoginId,
+      currentLoginId: actor.loginId,
+      filter: parsedInput.filter,
+      participantLoginId: parsedInput.participantLoginId,
+      projectId: authorization.project.id,
+      state: parsedInput.state,
+    }),
   );
 }
 

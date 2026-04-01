@@ -160,12 +160,25 @@ export function __resetDbForTests(): void {
 }
 
 export {
+  assignIssueRecord,
+  readUserRecordByLoginId,
+  unassignIssueRecord,
+  assignIssueByProjectAndNumber,
   createIssueCommentRecord,
   createIssueRecord,
   listIssuesByProject,
   readIssueByProjectAndNumber,
   readIssueIdByProjectAndNumber,
+  unassignIssueByProjectAndNumber,
+  unvoteIssueByProjectAndNumber,
+  unvoteIssueRecord,
   updateIssueStateByProjectAndNumber,
+  unwatchIssueByProjectAndNumber,
+  unwatchIssueRecord,
+  voteIssueByProjectAndNumber,
+  voteIssueRecord,
+  watchIssueByProjectAndNumber,
+  watchIssueRecord,
 } from "./issues";
 export {
   createPostingCommentRecord,
@@ -179,6 +192,7 @@ export {
   listPullRequestReviewThreadsByProject,
   listPullRequestsByProject,
   readPullRequestByProjectAndNumber,
+  readPullRequestReviewCountsByProject,
   updatePullRequestStateByProjectAndNumber,
 } from "./pull-requests";
 export {

@@ -44,6 +44,7 @@ import { Route as AppOrganizationsOrganizationNameSettingsRouteImport } from './
 import { Route as AppOwnerProjectNameSettingsRouteImport } from './routes/_app.$owner.$projectName.settings'
 import { Route as AppOwnerProjectNameCodeRouteImport } from './routes/_app.$owner.$projectName.code'
 import { Route as AppOwnerProjectNameBranchesRouteImport } from './routes/_app.$owner.$projectName.branches'
+import { Route as AppOwnerProjectNameReviewsIndexRouteImport } from './routes/_app.$owner.$projectName.reviews.index'
 import { Route as AppOwnerProjectNamePullsIndexRouteImport } from './routes/_app.$owner.$projectName.pulls.index'
 import { Route as AppOwnerProjectNameIssuesIndexRouteImport } from './routes/_app.$owner.$projectName.issues.index'
 import { Route as AppOwnerProjectNameDiscussionsIndexRouteImport } from './routes/_app.$owner.$projectName.discussions.index'
@@ -238,6 +239,12 @@ const AppOwnerProjectNameBranchesRoute =
     path: '/$owner/$projectName/branches',
     getParentRoute: () => AppRoute,
   } as any)
+const AppOwnerProjectNameReviewsIndexRoute =
+  AppOwnerProjectNameReviewsIndexRouteImport.update({
+    id: '/$owner/$projectName/reviews/',
+    path: '/$owner/$projectName/reviews/',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppOwnerProjectNamePullsIndexRoute =
   AppOwnerProjectNamePullsIndexRouteImport.update({
     id: '/$owner/$projectName/pulls/',
@@ -351,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/$owner/$projectName/discussions/': typeof AppOwnerProjectNameDiscussionsIndexRoute
   '/$owner/$projectName/issues/': typeof AppOwnerProjectNameIssuesIndexRoute
   '/$owner/$projectName/pulls/': typeof AppOwnerProjectNamePullsIndexRoute
+  '/$owner/$projectName/reviews/': typeof AppOwnerProjectNameReviewsIndexRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
@@ -398,6 +406,7 @@ export interface FileRoutesByTo {
   '/$owner/$projectName/discussions': typeof AppOwnerProjectNameDiscussionsIndexRoute
   '/$owner/$projectName/issues': typeof AppOwnerProjectNameIssuesIndexRoute
   '/$owner/$projectName/pulls': typeof AppOwnerProjectNamePullsIndexRoute
+  '/$owner/$projectName/reviews': typeof AppOwnerProjectNameReviewsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -447,6 +456,7 @@ export interface FileRoutesById {
   '/_app/$owner/$projectName/discussions/': typeof AppOwnerProjectNameDiscussionsIndexRoute
   '/_app/$owner/$projectName/issues/': typeof AppOwnerProjectNameIssuesIndexRoute
   '/_app/$owner/$projectName/pulls/': typeof AppOwnerProjectNamePullsIndexRoute
+  '/_app/$owner/$projectName/reviews/': typeof AppOwnerProjectNameReviewsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -496,6 +506,7 @@ export interface FileRouteTypes {
     | '/$owner/$projectName/discussions/'
     | '/$owner/$projectName/issues/'
     | '/$owner/$projectName/pulls/'
+    | '/$owner/$projectName/reviews/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -543,6 +554,7 @@ export interface FileRouteTypes {
     | '/$owner/$projectName/discussions'
     | '/$owner/$projectName/issues'
     | '/$owner/$projectName/pulls'
+    | '/$owner/$projectName/reviews'
   id:
     | '__root__'
     | '/_app'
@@ -591,6 +603,7 @@ export interface FileRouteTypes {
     | '/_app/$owner/$projectName/discussions/'
     | '/_app/$owner/$projectName/issues/'
     | '/_app/$owner/$projectName/pulls/'
+    | '/_app/$owner/$projectName/reviews/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -866,6 +879,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOwnerProjectNameBranchesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/$owner/$projectName/reviews/': {
+      id: '/_app/$owner/$projectName/reviews/'
+      path: '/$owner/$projectName/reviews'
+      fullPath: '/$owner/$projectName/reviews/'
+      preLoaderRoute: typeof AppOwnerProjectNameReviewsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/$owner/$projectName/pulls/': {
       id: '/_app/$owner/$projectName/pulls/'
       path: '/$owner/$projectName/pulls'
@@ -976,6 +996,7 @@ interface AppRouteChildren {
   AppOwnerProjectNameDiscussionsIndexRoute: typeof AppOwnerProjectNameDiscussionsIndexRoute
   AppOwnerProjectNameIssuesIndexRoute: typeof AppOwnerProjectNameIssuesIndexRoute
   AppOwnerProjectNamePullsIndexRoute: typeof AppOwnerProjectNamePullsIndexRoute
+  AppOwnerProjectNameReviewsIndexRoute: typeof AppOwnerProjectNameReviewsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -1004,6 +1025,7 @@ const AppRouteChildren: AppRouteChildren = {
     AppOwnerProjectNameDiscussionsIndexRoute,
   AppOwnerProjectNameIssuesIndexRoute: AppOwnerProjectNameIssuesIndexRoute,
   AppOwnerProjectNamePullsIndexRoute: AppOwnerProjectNamePullsIndexRoute,
+  AppOwnerProjectNameReviewsIndexRoute: AppOwnerProjectNameReviewsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

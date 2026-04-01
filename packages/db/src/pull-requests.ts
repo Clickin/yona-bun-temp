@@ -1,8 +1,11 @@
 import { and, asc, desc, eq, exists, inArray, max, or, sql } from "drizzle-orm";
 import type {
   PullRequestDetail,
+  PullRequestReviewCounts,
   PullRequestReviewThread,
   PullRequestReviewThreadFilterInput,
+  PullRequestReviewThreadOrderBy,
+  PullRequestReviewThreadOrderDir,
   PullRequestReviewThreadState,
   PullRequestState,
   PullRequestSummary,
@@ -244,31 +247,71 @@ export async function createPullRequestRecord(
   return inserted.pullRequestNumber;
 }
 
-export async function listPullRequestReviewThreadsByProject(
-  input: {
-    projectId: number;
-    projectName: string;
-  } & Pick<
-    PullRequestReviewThreadFilterInput,
-    "authorLoginId" | "filter" | "participantLoginId" | "state"
-  >,
-  db: DatabaseType = getDb(),
-): Promise<PullRequestReviewThread[]> {
-  const schema = getDbSchema(db);
+const DEFAULT_REVIEW_ORDER_BY: PullRequestReviewThreadOrderBy = "createdDate";
+const DEFAULT_REVIEW_ORDER_DIR: PullRequestReviewThreadOrderDir = "desc";
+
+type PullRequestReviewThreadListInput = {
+  projectId: number;
+  projectName: string;
+} & Pick<
+  PullRequestReviewThreadFilterInput,
+  "authorLoginId" | "filter" | "orderBy" | "orderDir" | "participantLoginId" | "state"
+>;
+
+type PullRequestReviewThreadCountInput = Pick<
+  PullRequestReviewThreadFilterInput,
+  "authorLoginId" | "filter" | "participantLoginId" | "state"
+> & {
+  currentLoginId: string;
+  projectId: number;
+};
+
+type PullRequestReviewThreadPredicateInput = Pick<
+  PullRequestReviewThreadFilterInput,
+  "authorLoginId" | "filter" | "participantLoginId" | "state"
+> & {
+  projectId: number;
+};
+
+type PullRequestReviewThreadPredicateOverrides = Partial<
+  Pick<PullRequestReviewThreadFilterInput, "authorLoginId" | "participantLoginId" | "state">
+>;
+
+function resolveReviewOverride<T extends keyof PullRequestReviewThreadPredicateOverrides>(
+  overrides: PullRequestReviewThreadPredicateOverrides,
+  key: T,
+  fallback: PullRequestReviewThreadPredicateInput[T],
+) {
+  return Object.prototype.hasOwnProperty.call(overrides, key) ? overrides[key] : fallback;
+}
+
+function createPullRequestReviewThreadPredicates(
+  input: PullRequestReviewThreadPredicateInput,
+  schema: ReturnType<typeof getDbSchema>,
+  db: DatabaseType,
+  overrides: PullRequestReviewThreadPredicateOverrides = {},
+) {
   const predicates = [
     eq(schema.commentThread.projectId, input.projectId),
     sql`${schema.commentThread.pullRequestId} is not null`,
   ];
+  const state = resolveReviewOverride(overrides, "state", input.state);
+  const authorLoginId = resolveReviewOverride(overrides, "authorLoginId", input.authorLoginId);
+  const participantLoginId = resolveReviewOverride(
+    overrides,
+    "participantLoginId",
+    input.participantLoginId,
+  );
 
-  if (input.state) {
-    predicates.push(sql`lower(coalesce(${schema.commentThread.state}, '')) = ${input.state}`);
+  if (state) {
+    predicates.push(sql`lower(coalesce(${schema.commentThread.state}, '')) = ${state}`);
   }
 
-  if (input.authorLoginId) {
-    predicates.push(eq(schema.commentThread.authorLoginId, input.authorLoginId));
+  if (authorLoginId) {
+    predicates.push(eq(schema.commentThread.authorLoginId, authorLoginId));
   }
 
-  if (input.participantLoginId) {
+  if (participantLoginId) {
     predicates.push(
       exists(
         (db as any)
@@ -278,7 +321,7 @@ export async function listPullRequestReviewThreadsByProject(
           .where(
             and(
               eq(schema.commentThreadN4user.commentThreadId, schema.commentThread.id),
-              eq(schema.n4user.loginId, input.participantLoginId),
+              eq(schema.n4user.loginId, participantLoginId),
             ),
           ),
       ),
@@ -305,6 +348,88 @@ export async function listPullRequestReviewThreadsByProject(
     );
   }
 
+  return predicates;
+}
+
+function createPullRequestReviewThreadOrdering(
+  input: Pick<PullRequestReviewThreadFilterInput, "orderBy" | "orderDir">,
+  schema: ReturnType<typeof getDbSchema>,
+) {
+  const orderBy = input.orderBy ?? DEFAULT_REVIEW_ORDER_BY;
+  const orderDir = input.orderDir ?? DEFAULT_REVIEW_ORDER_DIR;
+  if (orderBy !== "createdDate" || orderDir === "desc") {
+    return [desc(schema.commentThread.createdDate), desc(schema.commentThread.id)] as const;
+  }
+
+  return [asc(schema.commentThread.createdDate), asc(schema.commentThread.id)] as const;
+}
+
+async function countPullRequestReviewThreadsByProject(
+  input: PullRequestReviewThreadPredicateInput,
+  db: DatabaseType,
+  overrides: PullRequestReviewThreadPredicateOverrides = {},
+): Promise<number> {
+  const schema = getDbSchema(db);
+  const predicates = createPullRequestReviewThreadPredicates(input, schema, db, overrides);
+  const [row] = await (db as any)
+    .select({ total: sql<number>`count(*)` })
+    .from(schema.commentThread)
+    .where(and(...predicates));
+
+  const total = Number(row?.total ?? 0);
+  return Number.isFinite(total) && total >= 0 ? total : 0;
+}
+
+export async function readPullRequestReviewCountsByProject(
+  input: PullRequestReviewThreadCountInput,
+  db: DatabaseType = getDb(),
+): Promise<PullRequestReviewCounts> {
+  const baseInput: PullRequestReviewThreadPredicateInput = {
+    authorLoginId: input.authorLoginId,
+    filter: input.filter,
+    participantLoginId: input.participantLoginId,
+    projectId: input.projectId,
+    state: input.state,
+  };
+
+  const [all, involvingYou, createdByYou, open, closed] = await Promise.all([
+    countPullRequestReviewThreadsByProject(baseInput, db, {
+      authorLoginId: undefined,
+      participantLoginId: undefined,
+    }),
+    countPullRequestReviewThreadsByProject(baseInput, db, {
+      authorLoginId: undefined,
+      participantLoginId: input.currentLoginId,
+    }),
+    countPullRequestReviewThreadsByProject(baseInput, db, {
+      authorLoginId: input.currentLoginId,
+      participantLoginId: undefined,
+    }),
+    countPullRequestReviewThreadsByProject(baseInput, db, {
+      state: "open",
+    }),
+    countPullRequestReviewThreadsByProject(baseInput, db, {
+      state: "closed",
+    }),
+  ]);
+
+  return {
+    all,
+    closed,
+    createdByYou,
+    involvingYou,
+    open,
+  } satisfies PullRequestReviewCounts;
+}
+
+export async function listPullRequestReviewThreadsByProject(
+  input: PullRequestReviewThreadListInput,
+  db: DatabaseType = getDb(),
+): Promise<PullRequestReviewThread[]> {
+  const schema = getDbSchema(db);
+  const predicates = createPullRequestReviewThreadPredicates(input, schema, db);
+  const ordering = createPullRequestReviewThreadOrdering(input, schema);
+
   const threadRows = await (db as any)
     .select({
       authorLoginId: schema.commentThread.authorLoginId,
@@ -317,7 +442,7 @@ export async function listPullRequestReviewThreadsByProject(
     })
     .from(schema.commentThread)
     .where(and(...predicates))
-    .orderBy(desc(schema.commentThread.createdDate), desc(schema.commentThread.id));
+    .orderBy(...ordering);
 
   if (threadRows.length === 0) {
     return [];
@@ -427,6 +552,7 @@ export async function listPullRequestReviewThreadsByProject(
         participants: participantsByThreadId.get(threadId) ?? [],
         path: normalizeNullableText(row.path),
         projectName: input.projectName,
+        replyCount: Math.max(comments.length - 1, 0),
         state,
         text,
         threadId: String(threadId),

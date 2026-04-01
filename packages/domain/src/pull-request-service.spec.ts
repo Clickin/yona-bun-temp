@@ -4,6 +4,7 @@ import {
   createPullRequest,
   listPullRequests,
   readPullRequestDetail,
+  readPullRequestReviewCounts,
   updatePullRequestState,
 } from "./pull-request-service";
 import { DomainNotFoundError, DomainPermissionError, DomainValidationError } from "./errors";
@@ -81,6 +82,7 @@ function reviewThreadFixture(threadId: string, overrides: Partial<Record<string,
     lastCommentAt: null,
     participants: ["admin", "laziel"],
     path: "/app/controllers/IssueApp.java",
+    replyCount: 1,
     projectName: "project-yona",
     state: "open",
     text: "Comment #1 : 111",
@@ -96,6 +98,19 @@ function expectReadPullRequestReviewThreads() {
   expect(readPullRequestReviewThreads).toBeTypeOf("function");
 
   return readPullRequestReviewThreads as (
+    actor: Parameters<typeof listPullRequests>[0],
+    input: Record<string, unknown>,
+    deps: Record<string, unknown>,
+  ) => Promise<unknown>;
+}
+
+function expectReadPullRequestReviewCounts() {
+  const readReviewCounts = (pullRequestService as Record<string, unknown>)
+    .readPullRequestReviewCounts;
+
+  expect(readReviewCounts).toBeTypeOf("function");
+
+  return readReviewCounts as (
     actor: Parameters<typeof listPullRequests>[0],
     input: Record<string, unknown>,
     deps: Record<string, unknown>,
@@ -459,5 +474,120 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
         threadId: "thread-open-comment",
       }),
     ]);
+  });
+
+  it("forwards review-thread sort fields and derives count summaries for the authenticated user", async () => {
+    const deps = {
+      listPullRequestReviewThreadsByProject: vi.fn().mockResolvedValue([
+        reviewThreadFixture("thread-open-comment", {
+          authorLoginId: "admin",
+          commitId: "commit-111",
+          participants: ["admin", "doortts"],
+          path: "/app/controllers/IssueApp.java",
+          replyCount: 2,
+          state: "open",
+          text: "Comment #1 : 111",
+        }),
+      ]),
+      readProjectAuthorization: vi.fn().mockResolvedValue(createAuthorizedProjectAuthorization()),
+      readPullRequestReviewCountsByProject: vi.fn().mockResolvedValue({
+        all: 2,
+        closed: 0,
+        createdByYou: 1,
+        involvingYou: 2,
+        open: 1,
+      }),
+    };
+    const readPullRequestReviewThreads = expectReadPullRequestReviewThreads();
+
+    await expect(
+      readPullRequestReviewThreads(
+        authenticatedActor,
+        {
+          filter: "111",
+          orderBy: "createdDate",
+          orderDir: "asc",
+          ownerName: "yona",
+          projectName: "project-yona",
+          state: "open",
+        },
+        deps,
+      ),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        replyCount: 2,
+        text: "Comment #1 : 111",
+        threadId: "thread-open-comment",
+      }),
+    ]);
+
+    expect(deps.listPullRequestReviewThreadsByProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filter: "111",
+        orderBy: "createdDate",
+        orderDir: "asc",
+        projectId: 11,
+        projectName: "project-yona",
+        state: "open",
+      }),
+    );
+
+    await expect(
+      readPullRequestReviewCounts(
+        authenticatedActor,
+        {
+          authorLoginId: "admin",
+          filter: "111",
+          ownerName: "yona",
+          projectName: "project-yona",
+          state: "open",
+        },
+        deps,
+      ),
+    ).resolves.toEqual({
+      all: 2,
+      closed: 0,
+      createdByYou: 1,
+      involvingYou: 2,
+      open: 1,
+    });
+
+    expect(deps.readPullRequestReviewCountsByProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorLoginId: "admin",
+        currentLoginId: "doortts",
+        filter: "111",
+        projectId: 11,
+        state: "open",
+      }),
+    );
+  });
+
+  it("rejects review counts for anonymous actors before reading authorization", async () => {
+    const deps = {
+      readProjectAuthorization: vi.fn(),
+      readPullRequestReviewCountsByProject: vi.fn(),
+    };
+    const readReviewCounts = expectReadPullRequestReviewCounts();
+
+    await expect(
+      readReviewCounts(
+        {
+          actorId: null,
+          isAnonymous: true,
+          isSiteAdmin: false,
+          loginId: null,
+        },
+        {
+          ownerName: "yona",
+          projectName: "project-yona",
+          state: "open",
+        },
+        deps,
+      ),
+    ).rejects.toBeInstanceOf(DomainPermissionError);
+
+    expect(deps.readProjectAuthorization).not.toHaveBeenCalled();
+    expect(deps.readPullRequestReviewCountsByProject).not.toHaveBeenCalled();
   });
 });

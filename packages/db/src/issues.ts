@@ -891,7 +891,7 @@ export async function readIssueByProjectAndNumber(
     ownerName,
     projectName,
     state: issueStateFromRaw(issueRow.state ?? null),
-    timeline: [...timelineComments, ...timelineEvents].toSorted(compareTimelineItems),
+    timeline: [...timelineComments, ...timelineEvents].sort(compareTimelineItems),
     title,
     voterCount: participation.voterCount,
     watcherCount: participation.watcherCount,

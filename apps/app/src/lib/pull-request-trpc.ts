@@ -2,6 +2,7 @@ import {
   pullRequestCreateInputSchema,
   pullRequestDetailSchema,
   pullRequestRefSchema,
+  pullRequestReviewCountsSchema,
   pullRequestReviewThreadFilterInputSchema,
   pullRequestReviewThreadSchema,
   pullRequestStateUpdateInputSchema,
@@ -15,6 +16,7 @@ import {
   listPullRequests,
   listPullRequestReviewThreads,
   readPullRequestDetail,
+  readPullRequestReviewCounts,
   updatePullRequestState,
 } from "@yona/domain";
 import {
@@ -87,6 +89,18 @@ export const pullRequestRouter = t.router({
           .array()
           .parse(await listPullRequestReviewThreads(await readDomainActor(ctx), input));
         return threads.filter((thread) => matchesReviewThreadFilter(thread, input));
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
+      }
+    }),
+  readPullRequestReviewCounts: t.procedure
+    .input(pullRequestReviewThreadFilterInputSchema)
+    .output(pullRequestReviewCountsSchema)
+    .query(async ({ ctx, input }) => {
+      try {
+        return pullRequestReviewCountsSchema.parse(
+          await readPullRequestReviewCounts(await readDomainActor(ctx), input),
+        );
       } catch (error) {
         return rethrowDomainAsTrpc(error);
       }

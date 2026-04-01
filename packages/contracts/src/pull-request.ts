@@ -6,9 +6,13 @@ export const pullRequestNumberSchema = z.number().int().positive();
 export const pullRequestStateSchema = z.enum(["closed", "merged", "open"]);
 export const pullRequestStateTransitionSchema = z.enum(["closed", "open"]);
 export const pullRequestReviewThreadStateSchema = z.enum(["closed", "open"]);
+export const pullRequestReviewThreadOrderBySchema = z.enum(["createdDate"]);
+export const pullRequestReviewThreadOrderDirSchema = z.enum(["asc", "desc"]);
 
 export type PullRequestState = z.infer<typeof pullRequestStateSchema>;
 export type PullRequestReviewThreadState = z.infer<typeof pullRequestReviewThreadStateSchema>;
+export type PullRequestReviewThreadOrderBy = z.infer<typeof pullRequestReviewThreadOrderBySchema>;
+export type PullRequestReviewThreadOrderDir = z.infer<typeof pullRequestReviewThreadOrderDirSchema>;
 
 export const pullRequestRefSchema = projectRefSchema
   .extend({
@@ -66,6 +70,8 @@ export const pullRequestReviewThreadFilterInputSchema = projectRefSchema
   .extend({
     authorLoginId: authLoginIdSchema.optional(),
     filter: z.string().trim().min(1).max(255).optional(),
+    orderBy: pullRequestReviewThreadOrderBySchema.optional(),
+    orderDir: pullRequestReviewThreadOrderDirSchema.optional(),
     participantLoginId: authLoginIdSchema.optional(),
     state: pullRequestReviewThreadStateSchema.optional(),
   })
@@ -85,6 +91,7 @@ export const pullRequestReviewThreadSchema = z
     participants: authLoginIdSchema.array(),
     path: z.string().trim().min(1).nullable(),
     projectName: z.string().trim().min(1),
+    replyCount: z.number().int().min(0),
     state: pullRequestReviewThreadStateSchema,
     text: z.string().trim().min(1),
     threadId: z.string().trim().min(1),
@@ -92,3 +99,15 @@ export const pullRequestReviewThreadSchema = z
   .strict();
 
 export type PullRequestReviewThread = z.infer<typeof pullRequestReviewThreadSchema>;
+
+export const pullRequestReviewCountsSchema = z
+  .object({
+    all: z.number().int().min(0),
+    closed: z.number().int().min(0),
+    createdByYou: z.number().int().min(0),
+    involvingYou: z.number().int().min(0),
+    open: z.number().int().min(0),
+  })
+  .strict();
+
+export type PullRequestReviewCounts = z.infer<typeof pullRequestReviewCountsSchema>;

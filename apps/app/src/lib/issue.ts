@@ -1,11 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
+  issueAssignInputSchema,
   issueCommentCreateInputSchema,
   issueDetailSchema,
   issueRefSchema,
   issueStateUpdateInputSchema,
   issueSummarySchema,
   projectRefSchema,
+  issueUnassignInputSchema,
+  issueUnvoteInputSchema,
+  issueUnwatchInputSchema,
+  issueVoteInputSchema,
+  issueWatchInputSchema,
 } from "@yona/contracts";
 
 const issueCreateInputSchema = projectRefSchema
@@ -48,4 +54,46 @@ export const updateIssueState = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { createServerIssueCaller } = await import("./issue-trpc.server");
     return issueDetailSchema.parse(await createServerIssueCaller().updateIssueState(data));
+  });
+
+export const watchIssue = createServerFn({ method: "POST" })
+  .inputValidator(issueWatchInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerIssueCaller } = await import("./issue-trpc.server");
+    return issueDetailSchema.parse(await createServerIssueCaller().watchIssue(data));
+  });
+
+export const unwatchIssue = createServerFn({ method: "POST" })
+  .inputValidator(issueUnwatchInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerIssueCaller } = await import("./issue-trpc.server");
+    return issueDetailSchema.parse(await createServerIssueCaller().unwatchIssue(data));
+  });
+
+export const voteIssue = createServerFn({ method: "POST" })
+  .inputValidator(issueVoteInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerIssueCaller } = await import("./issue-trpc.server");
+    return issueDetailSchema.parse(await createServerIssueCaller().voteIssue(data));
+  });
+
+export const unvoteIssue = createServerFn({ method: "POST" })
+  .inputValidator(issueUnvoteInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerIssueCaller } = await import("./issue-trpc.server");
+    return issueDetailSchema.parse(await createServerIssueCaller().unvoteIssue(data));
+  });
+
+export const assignIssue = createServerFn({ method: "POST" })
+  .inputValidator(issueAssignInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerIssueCaller } = await import("./issue-trpc.server");
+    return issueDetailSchema.parse(await createServerIssueCaller().assignIssue(data));
+  });
+
+export const unassignIssue = createServerFn({ method: "POST" })
+  .inputValidator(issueUnassignInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerIssueCaller } = await import("./issue-trpc.server");
+    return issueDetailSchema.parse(await createServerIssueCaller().unassignIssue(data));
   });

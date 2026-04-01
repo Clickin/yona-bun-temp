@@ -266,6 +266,7 @@ type ProjectMenuKey =
   | "home"
   | "issues"
   | "pulls"
+  | "reviews"
   | "settings";
 
 export function ProjectShell({
@@ -355,6 +356,13 @@ export function ProjectShell({
             to="/$owner/$projectName/discussions"
           >
             {t("menu.board")}
+          </Link>
+          <Link
+            className={activeMenu === "reviews" ? "entity-menu-link is-active" : "entity-menu-link"}
+            params={params}
+            to="/$owner/$projectName/reviews"
+          >
+            {t("menu.review")}
           </Link>
           <Link
             className={
