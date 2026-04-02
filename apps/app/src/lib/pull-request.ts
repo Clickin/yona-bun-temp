@@ -2,10 +2,18 @@ import { createServerFn } from "@tanstack/react-start";
 import {
   pullRequestCreateInputSchema,
   pullRequestDetailSchema,
+  pullRequestMergeInputSchema,
+  pullRequestMergeOutputSchema,
+  pullRequestMergePreviewInputSchema,
+  pullRequestMergePreviewOutputSchema,
   pullRequestRefSchema,
+  pullRequestReviewCommentCreateInputSchema,
+  pullRequestReviewCommentDeleteInputSchema,
+  pullRequestReviewCommentDeleteOutputSchema,
   pullRequestReviewCountsSchema,
   pullRequestReviewThreadFilterInputSchema,
   pullRequestReviewThreadSchema,
+  pullRequestReviewThreadStateUpdateInputSchema,
   pullRequestStateUpdateInputSchema,
   pullRequestSummarySchema,
   projectRefSchema,
@@ -56,11 +64,56 @@ export const createPullRequest = createServerFn({ method: "POST" })
     );
   });
 
+export const createPullRequestReviewComment = createServerFn({ method: "POST" })
+  .inputValidator(pullRequestReviewCommentCreateInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerPullRequestCaller } = await import("./pull-request-trpc.server");
+    return pullRequestReviewThreadSchema.parse(
+      await createServerPullRequestCaller().createPullRequestReviewComment(data),
+    );
+  });
+
+export const deletePullRequestReviewComment = createServerFn({ method: "POST" })
+  .inputValidator(pullRequestReviewCommentDeleteInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerPullRequestCaller } = await import("./pull-request-trpc.server");
+    return pullRequestReviewCommentDeleteOutputSchema.parse(
+      await createServerPullRequestCaller().deletePullRequestReviewComment(data),
+    );
+  });
+
 export const updatePullRequestState = createServerFn({ method: "POST" })
   .inputValidator(pullRequestStateUpdateInputSchema)
   .handler(async ({ data }) => {
     const { createServerPullRequestCaller } = await import("./pull-request-trpc.server");
     return pullRequestDetailSchema.parse(
       await createServerPullRequestCaller().updatePullRequestState(data),
+    );
+  });
+
+export const updatePullRequestReviewThreadState = createServerFn({ method: "POST" })
+  .inputValidator(pullRequestReviewThreadStateUpdateInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerPullRequestCaller } = await import("./pull-request-trpc.server");
+    return pullRequestReviewThreadSchema.parse(
+      await createServerPullRequestCaller().updatePullRequestReviewThreadState(data),
+    );
+  });
+
+export const previewPullRequestMerge = createServerFn({ method: "GET" })
+  .inputValidator(pullRequestMergePreviewInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerPullRequestCaller } = await import("./pull-request-trpc.server");
+    return pullRequestMergePreviewOutputSchema.parse(
+      await createServerPullRequestCaller().previewPullRequestMerge(data),
+    );
+  });
+
+export const mergePullRequest = createServerFn({ method: "POST" })
+  .inputValidator(pullRequestMergeInputSchema)
+  .handler(async ({ data }) => {
+    const { createServerPullRequestCaller } = await import("./pull-request-trpc.server");
+    return pullRequestMergeOutputSchema.parse(
+      await createServerPullRequestCaller().mergePullRequest(data),
     );
   });

@@ -8,6 +8,7 @@ import type { DomainActor } from "@yona/domain";
 
 export interface DomainActorInput {
   actorId: null | number;
+  emailAddress?: null | string;
   isAnonymous: boolean;
   isSiteAdmin: boolean;
   loginId: null | string;
@@ -60,6 +61,7 @@ export async function resolveServerRequestPrincipal(request: Request) {
 export function createDomainActor(input: DomainActorInput): DomainActor {
   return {
     actorId: input.actorId,
+    emailAddress: input.emailAddress ?? null,
     isAnonymous: input.isAnonymous,
     isSiteAdmin: input.isSiteAdmin,
     loginId: input.loginId,
@@ -70,6 +72,7 @@ export function createDomainActor(input: DomainActorInput): DomainActor {
 export function toDomainActor(principal: Pick<ResolvedRequestPrincipal, "user">): DomainActor {
   return createDomainActor({
     actorId: principal.user?.id ?? null,
+    emailAddress: principal.user?.emailAddress ?? null,
     isAnonymous: !principal.user,
     isSiteAdmin: Boolean(principal.user?.isSiteAdmin),
     loginId: principal.user?.loginId ?? null,

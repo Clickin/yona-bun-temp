@@ -17,6 +17,24 @@ export interface GitMutationAuditRecord {
   message: string;
 }
 
+export interface PullRequestMergeAuditRecord {
+  timestamp: string;
+  requestId: string;
+  action: "pull-request-merge" | "pull-request-merge-conflict" | "pull-request-merge-db-mismatch";
+  repositoryId: string;
+  targetBranch: string;
+  sourceBranch: string;
+  actorId: string;
+  actorName: string;
+  actorEmail: string;
+  actorIp: string;
+  targetHeadOid: string;
+  sourceHeadOid: string;
+  mergeCommitOid?: string;
+  conflictedFiles?: string[];
+  message: string;
+}
+
 function getAuditMaxBytes(): number {
   const parsed = Number.parseInt(process.env.YONA_GIT_AUDIT_MAX_BYTES ?? "", 10);
   if (Number.isFinite(parsed) && parsed > 0) {
@@ -73,6 +91,16 @@ async function rotateAuditIfNeeded(filePath: string, incomingLength: number): Pr
 export async function appendGitMutationAuditLog(
   filePath: string,
   record: GitMutationAuditRecord,
+): Promise<void> {
+  const entry = `${JSON.stringify(record)}\n`;
+  await mkdir(dirname(filePath), { recursive: true });
+  await rotateAuditIfNeeded(filePath, Buffer.byteLength(entry, "utf-8"));
+  await appendFile(filePath, entry, "utf-8");
+}
+
+export async function appendPullRequestMergeAuditLog(
+  filePath: string,
+  record: PullRequestMergeAuditRecord,
 ): Promise<void> {
   const entry = `${JSON.stringify(record)}\n`;
   await mkdir(dirname(filePath), { recursive: true });

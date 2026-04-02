@@ -188,12 +188,23 @@ export {
   readPostingIdByProjectAndNumber,
 } from "./postings";
 export {
+  createPullRequestReviewComment,
   createPullRequestRecord,
+  deletePullRequestReviewComment,
+  listPullRequestReviewThreadsByPullRequest,
   listPullRequestReviewThreadsByProject,
   listPullRequestsByProject,
   readPullRequestByProjectAndNumber,
+  readPullRequestRecordByProjectAndNumber,
+  readPullRequestReviewComment,
   readPullRequestReviewCountsByProject,
+  readPullRequestReviewThread,
+  updatePullRequestMergeStateByProjectAndNumber,
+  updatePullRequestReviewThreadState,
   updatePullRequestStateByProjectAndNumber,
+  type PullRequestRecord,
+  type PullRequestReviewCommentRecord,
+  type PullRequestReviewThreadRecord,
 } from "./pull-requests";
 export {
   createIssueLabelRecord,

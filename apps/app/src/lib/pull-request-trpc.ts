@@ -1,10 +1,18 @@
 import {
   pullRequestCreateInputSchema,
   pullRequestDetailSchema,
+  pullRequestMergeInputSchema,
+  pullRequestMergeOutputSchema,
+  pullRequestMergePreviewInputSchema,
+  pullRequestMergePreviewOutputSchema,
   pullRequestRefSchema,
+  pullRequestReviewCommentCreateInputSchema,
+  pullRequestReviewCommentDeleteInputSchema,
+  pullRequestReviewCommentDeleteOutputSchema,
   pullRequestReviewCountsSchema,
   pullRequestReviewThreadFilterInputSchema,
   pullRequestReviewThreadSchema,
+  pullRequestReviewThreadStateUpdateInputSchema,
   pullRequestStateUpdateInputSchema,
   pullRequestSummarySchema,
   projectRefSchema,
@@ -13,10 +21,15 @@ import {
 } from "@yona/contracts";
 import {
   createPullRequest,
+  createPullRequestReviewComment,
+  deletePullRequestReviewComment,
   listPullRequests,
   listPullRequestReviewThreads,
+  mergePullRequest,
+  previewPullRequestMerge,
   readPullRequestDetail,
   readPullRequestReviewCounts,
+  updatePullRequestReviewThreadState,
   updatePullRequestState,
 } from "@yona/domain";
 import {
@@ -68,6 +81,30 @@ export const pullRequestRouter = t.router({
         return rethrowDomainAsTrpc(error);
       }
     }),
+  createPullRequestReviewComment: t.procedure
+    .input(pullRequestReviewCommentCreateInputSchema)
+    .output(pullRequestReviewThreadSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return pullRequestReviewThreadSchema.parse(
+          await createPullRequestReviewComment(await readDomainActor(ctx), input),
+        );
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
+      }
+    }),
+  deletePullRequestReviewComment: t.procedure
+    .input(pullRequestReviewCommentDeleteInputSchema)
+    .output(pullRequestReviewCommentDeleteOutputSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return pullRequestReviewCommentDeleteOutputSchema.parse(
+          await deletePullRequestReviewComment(await readDomainActor(ctx), input),
+        );
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
+      }
+    }),
   listPullRequests: t.procedure
     .input(projectRefSchema)
     .output(pullRequestSummarySchema.array())
@@ -112,6 +149,42 @@ export const pullRequestRouter = t.router({
       try {
         return pullRequestDetailSchema.parse(
           await readPullRequestDetail(await readDomainActor(ctx), input),
+        );
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
+      }
+    }),
+  previewPullRequestMerge: t.procedure
+    .input(pullRequestMergePreviewInputSchema)
+    .output(pullRequestMergePreviewOutputSchema)
+    .query(async ({ ctx, input }) => {
+      try {
+        return pullRequestMergePreviewOutputSchema.parse(
+          await previewPullRequestMerge(await readDomainActor(ctx), input),
+        );
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
+      }
+    }),
+  mergePullRequest: t.procedure
+    .input(pullRequestMergeInputSchema)
+    .output(pullRequestMergeOutputSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return pullRequestMergeOutputSchema.parse(
+          await mergePullRequest(await readDomainActor(ctx), input),
+        );
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
+      }
+    }),
+  updatePullRequestReviewThreadState: t.procedure
+    .input(pullRequestReviewThreadStateUpdateInputSchema)
+    .output(pullRequestReviewThreadSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return pullRequestReviewThreadSchema.parse(
+          await updatePullRequestReviewThreadState(await readDomainActor(ctx), input),
         );
       } catch (error) {
         return rethrowDomainAsTrpc(error);

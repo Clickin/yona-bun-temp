@@ -44,6 +44,7 @@ export async function readDomainActor(ctx: AppResourceProcedureContext): Promise
 
   return createDomainActor({
     actorId: currentSession.projection.actorId,
+    emailAddress: currentSession.projection.emailAddress,
     isAnonymous: currentSession.projection.isAnonymous,
     isSiteAdmin: currentSession.projection.isSiteAdmin,
     loginId: currentSession.projection.loginId,
