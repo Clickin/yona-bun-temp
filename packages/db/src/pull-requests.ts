@@ -1,7 +1,10 @@
 import { and, asc, desc, eq, exists, inArray, max, or, sql } from "drizzle-orm";
 import type {
   PullRequestDetail,
+  PullRequestReviewComment,
+  PullRequestReviewCommentDeleteOutput,
   PullRequestReviewCounts,
+  PullRequestReviewSummary,
   PullRequestReviewThread,
   PullRequestReviewThreadFilterInput,
   PullRequestReviewThreadOrderBy,
@@ -41,6 +44,14 @@ function normalizeThreadState(value: null | string): null | PullRequestReviewThr
   }
 
   return null;
+}
+
+function parsePositiveIntId(value: number): null | number {
+  return Number.isInteger(value) && value > 0 ? value : null;
+}
+
+function toNullableDbString(value: null | string | undefined): null | string {
+  return value === undefined ? null : value;
 }
 
 function createContainsPredicate(column: unknown, value: string) {
@@ -144,6 +155,7 @@ export async function readPullRequestByProjectAndNumber(
       contributorName: schema.n4user.name,
       createdAt: schema.pullRequest.created,
       fromBranch: schema.pullRequest.fromBranch,
+      id: schema.pullRequest.id,
       pullRequestNumber: schema.pullRequest.number,
       state: schema.pullRequest.state,
       title: schema.pullRequest.title,
@@ -163,11 +175,39 @@ export async function readPullRequestByProjectAndNumber(
     return null;
   }
 
+  const pullRequestId = parsePositiveIntId(row.id ?? 0);
+  if (pullRequestId === null) {
+    return null;
+  }
+
+  const [threadSummaryRows, reviewerCountRows] = await Promise.all([
+    (db as any)
+      .select({
+        closedThreadCount: sql<number>`sum(case when lower(coalesce(${schema.commentThread.state}, '')) = 'closed' then 1 else 0 end)`,
+        openThreadCount: sql<number>`sum(case when lower(coalesce(${schema.commentThread.state}, '')) = 'open' then 1 else 0 end)`,
+      })
+      .from(schema.commentThread)
+      .where(eq(schema.commentThread.pullRequestId, pullRequestId)),
+    (db as any)
+      .select({
+        reviewerCount: sql<number>`count(*)`,
+      })
+      .from(schema.pullRequestReviewers)
+      .where(eq(schema.pullRequestReviewers.pullRequestId, pullRequestId)),
+  ]);
+  const threadSummaryRow = threadSummaryRows[0];
+  const reviewerCountRow = reviewerCountRows[0];
+
   const title = normalizeNullableText(row.title);
   const contributorLoginId = normalizeNullableText(row.contributorLoginId);
   const contributorName = normalizeNullableText(row.contributorName);
   const fromBranch = normalizeNullableText(row.fromBranch);
   const toBranch = normalizeNullableText(row.toBranch);
+  const reviewSummary = {
+    closedThreadCount: Number(threadSummaryRow?.closedThreadCount ?? 0),
+    openThreadCount: Number(threadSummaryRow?.openThreadCount ?? 0),
+    reviewerCount: Number(reviewerCountRow?.reviewerCount ?? 0),
+  } satisfies PullRequestReviewSummary;
   if (
     !title ||
     !contributorLoginId ||
@@ -175,7 +215,13 @@ export async function readPullRequestByProjectAndNumber(
     !fromBranch ||
     !toBranch ||
     !Number.isInteger(row.pullRequestNumber) ||
-    row.pullRequestNumber <= 0
+    row.pullRequestNumber <= 0 ||
+    !Number.isFinite(reviewSummary.closedThreadCount) ||
+    reviewSummary.closedThreadCount < 0 ||
+    !Number.isFinite(reviewSummary.openThreadCount) ||
+    reviewSummary.openThreadCount < 0 ||
+    !Number.isFinite(reviewSummary.reviewerCount) ||
+    reviewSummary.reviewerCount < 0
   ) {
     return null;
   }
@@ -189,6 +235,7 @@ export async function readPullRequestByProjectAndNumber(
     ownerName,
     projectName,
     pullRequestNumber: row.pullRequestNumber,
+    reviewSummary,
     state: pullRequestStateFromRaw(row.state ?? null),
     title,
     toBranch,
@@ -253,6 +300,7 @@ const DEFAULT_REVIEW_ORDER_DIR: PullRequestReviewThreadOrderDir = "desc";
 type PullRequestReviewThreadListInput = {
   projectId: number;
   projectName: string;
+  pullRequestId?: number;
 } & Pick<
   PullRequestReviewThreadFilterInput,
   "authorLoginId" | "filter" | "orderBy" | "orderDir" | "participantLoginId" | "state"
@@ -271,6 +319,7 @@ type PullRequestReviewThreadPredicateInput = Pick<
   "authorLoginId" | "filter" | "participantLoginId" | "state"
 > & {
   projectId: number;
+  pullRequestId?: number;
 };
 
 type PullRequestReviewThreadPredicateOverrides = Partial<
@@ -291,10 +340,12 @@ function createPullRequestReviewThreadPredicates(
   db: DatabaseType,
   overrides: PullRequestReviewThreadPredicateOverrides = {},
 ) {
-  const predicates = [
-    eq(schema.commentThread.projectId, input.projectId),
-    sql`${schema.commentThread.pullRequestId} is not null`,
-  ];
+  const predicates = [eq(schema.commentThread.projectId, input.projectId)];
+  if (input.pullRequestId !== undefined) {
+    predicates.push(eq(schema.commentThread.pullRequestId, input.pullRequestId));
+  } else {
+    predicates.push(sql`${schema.commentThread.pullRequestId} is not null`);
+  }
   const state = resolveReviewOverride(overrides, "state", input.state);
   const authorLoginId = resolveReviewOverride(overrides, "authorLoginId", input.authorLoginId);
   const participantLoginId = resolveReviewOverride(
@@ -460,6 +511,9 @@ export async function listPullRequestReviewThreadsByProject(
 
   const commentRows = await (db as any)
     .select({
+      authorLoginId: schema.reviewComment.authorLoginId,
+      authorName: schema.reviewComment.authorName,
+      commentId: schema.reviewComment.id,
       createdAt: schema.reviewComment.createdDate,
       text: schema.reviewComment.contents,
       threadId: schema.reviewComment.threadId,
@@ -482,21 +536,28 @@ export async function listPullRequestReviewThreadsByProject(
     .where(inArray(schema.commentThreadN4user.commentThreadId, threadIds))
     .orderBy(asc(schema.commentThreadN4user.commentThreadId), asc(schema.n4user.loginId));
 
-  const commentsByThreadId = new Map<
-    number,
-    Array<{ createdAt: Date | null | string; text: null | string }>
-  >();
+  const commentsByThreadId = new Map<number, PullRequestReviewComment[]>();
   for (const row of commentRows as Array<any>) {
     const threadId = row.threadId;
+    const commentId = parsePositiveIntId(row.commentId ?? 0);
+    const authorLoginId = normalizeNullableText(row.authorLoginId);
+    const authorName = normalizeNullableText(row.authorName);
+    const contents = normalizeNullableText(row.text);
     if (!Number.isInteger(threadId) || threadId <= 0) {
+      continue;
+    }
+    if (commentId === null || !authorLoginId || !authorName || !contents) {
       continue;
     }
 
     const entries = commentsByThreadId.get(threadId) ?? [];
     entries.push({
+      authorLoginId,
+      authorName,
+      commentId,
+      contents,
       createdAt: row.createdAt,
-      text: row.text,
-    });
+    } satisfies PullRequestReviewComment);
     commentsByThreadId.set(threadId, entries);
   }
 
@@ -526,8 +587,10 @@ export async function listPullRequestReviewThreadsByProject(
       }
 
       const comments = commentsByThreadId.get(threadId) ?? [];
-      const firstComment = comments.find((comment) => normalizeNullableText(comment.text) !== null);
-      const text = normalizeNullableText(firstComment?.text ?? null);
+      const firstComment = comments.find(
+        (comment) => normalizeNullableText(comment.contents) !== null,
+      );
+      const text = normalizeNullableText(firstComment?.contents ?? null);
       if (!text) {
         return null;
       }
@@ -546,6 +609,7 @@ export async function listPullRequestReviewThreadsByProject(
       return {
         authorLoginId,
         authorName,
+        comments,
         commitId: normalizeNullableText(row.commitId),
         createdAt: normalizeNullableDate(row.createdAt),
         lastCommentAt,
@@ -561,6 +625,401 @@ export async function listPullRequestReviewThreadsByProject(
     .filter((row: PullRequestReviewThread | null): row is PullRequestReviewThread => row !== null);
 }
 
+export async function listPullRequestReviewThreadsByPullRequest(
+  input: PullRequestReviewThreadListInput & { pullRequestId: number },
+  db: DatabaseType = getDb(),
+): Promise<PullRequestReviewThread[]> {
+  return listPullRequestReviewThreadsByProject(input, db);
+}
+
+export interface PullRequestRecord {
+  fromBranch: string;
+  fromProjectId: number;
+  id: number;
+  isConflict: boolean;
+  isMerging: boolean;
+  mergedCommitIdFrom: null | string;
+  mergedCommitIdTo: null | string;
+  pullRequestNumber: number;
+  state: PullRequestState;
+  toBranch: string;
+  toProjectId: number;
+}
+
+export interface PullRequestReviewThreadRecord {
+  authorId: null | number;
+  projectId: number;
+  pullRequestId: number;
+  state: PullRequestReviewThreadState;
+  threadId: number;
+}
+
+export interface PullRequestReviewCommentRecord {
+  authorId: null | number;
+  commentId: number;
+  projectId: number;
+  pullRequestId: number;
+  threadAuthorId: null | number;
+  threadId: number;
+}
+
+export async function readPullRequestRecordByProjectAndNumber(
+  projectId: number,
+  pullRequestNumber: number,
+  db: DatabaseType = getDb(),
+): Promise<PullRequestRecord | null> {
+  const schema = getDbSchema(db);
+  const [row] = await (db as any)
+    .select({
+      fromBranch: schema.pullRequest.fromBranch,
+      fromProjectId: schema.pullRequest.fromProjectId,
+      id: schema.pullRequest.id,
+      isConflict: schema.pullRequest.isConflict,
+      isMerging: schema.pullRequest.isMerging,
+      mergedCommitIdFrom: schema.pullRequest.mergedCommitIdFrom,
+      mergedCommitIdTo: schema.pullRequest.mergedCommitIdTo,
+      pullRequestNumber: schema.pullRequest.number,
+      state: schema.pullRequest.state,
+      toBranch: schema.pullRequest.toBranch,
+      toProjectId: schema.pullRequest.toProjectId,
+    })
+    .from(schema.pullRequest)
+    .where(
+      and(
+        eq(schema.pullRequest.toProjectId, projectId),
+        eq(schema.pullRequest.number, pullRequestNumber),
+      ),
+    )
+    .limit(1);
+
+  const id = parsePositiveIntId(row?.id ?? 0);
+  const fromProjectId = parsePositiveIntId(row?.fromProjectId ?? 0);
+  const toProjectId = parsePositiveIntId(row?.toProjectId ?? 0);
+  const number = parsePositiveIntId(row?.pullRequestNumber ?? 0);
+  const fromBranch = normalizeNullableText(row?.fromBranch ?? null);
+  const toBranch = normalizeNullableText(row?.toBranch ?? null);
+  if (
+    !row ||
+    id === null ||
+    fromProjectId === null ||
+    toProjectId === null ||
+    number === null ||
+    !fromBranch ||
+    !toBranch
+  ) {
+    return null;
+  }
+
+  return {
+    fromBranch,
+    fromProjectId,
+    id,
+    isConflict: Boolean(row.isConflict),
+    isMerging: Boolean(row.isMerging),
+    mergedCommitIdFrom: normalizeNullableText(row.mergedCommitIdFrom),
+    mergedCommitIdTo: normalizeNullableText(row.mergedCommitIdTo),
+    pullRequestNumber: number,
+    state: pullRequestStateFromRaw(row.state ?? null),
+    toBranch,
+    toProjectId,
+  } satisfies PullRequestRecord;
+}
+
+export async function readPullRequestReviewThread(
+  input: {
+    projectId: number;
+    pullRequestId: number;
+    threadId: number;
+  },
+  db: DatabaseType = getDb(),
+): Promise<null | PullRequestReviewThreadRecord> {
+  const parsedThreadId = parsePositiveIntId(input.threadId);
+  if (parsedThreadId === null) {
+    return null;
+  }
+
+  const schema = getDbSchema(db);
+  const [row] = await (db as any)
+    .select({
+      authorId: schema.commentThread.authorId,
+      projectId: schema.commentThread.projectId,
+      pullRequestId: schema.commentThread.pullRequestId,
+      state: schema.commentThread.state,
+      threadId: schema.commentThread.id,
+    })
+    .from(schema.commentThread)
+    .where(
+      and(
+        eq(schema.commentThread.id, parsedThreadId),
+        eq(schema.commentThread.projectId, input.projectId),
+        eq(schema.commentThread.pullRequestId, input.pullRequestId),
+      ),
+    )
+    .limit(1);
+
+  const projectId = parsePositiveIntId(row?.projectId ?? 0);
+  const pullRequestId = parsePositiveIntId(row?.pullRequestId ?? 0);
+  const state = normalizeThreadState(row?.state ?? null);
+  if (!row || projectId === null || pullRequestId === null || state === null) {
+    return null;
+  }
+
+  return {
+    authorId: typeof row.authorId === "number" ? row.authorId : null,
+    projectId,
+    pullRequestId,
+    state,
+    threadId: parsedThreadId,
+  };
+}
+
+export async function readPullRequestReviewComment(
+  input: {
+    commentId: number;
+    projectId: number;
+    pullRequestId: number;
+  },
+  db: DatabaseType = getDb(),
+): Promise<null | PullRequestReviewCommentRecord> {
+  const parsedCommentId = parsePositiveIntId(input.commentId);
+  if (parsedCommentId === null) {
+    return null;
+  }
+
+  const schema = getDbSchema(db);
+  const [row] = await (db as any)
+    .select({
+      authorId: schema.reviewComment.authorId,
+      commentId: schema.reviewComment.id,
+      projectId: schema.commentThread.projectId,
+      pullRequestId: schema.commentThread.pullRequestId,
+      threadAuthorId: schema.commentThread.authorId,
+      threadId: schema.commentThread.id,
+    })
+    .from(schema.reviewComment)
+    .innerJoin(schema.commentThread, eq(schema.reviewComment.threadId, schema.commentThread.id))
+    .where(
+      and(
+        eq(schema.reviewComment.id, parsedCommentId),
+        eq(schema.commentThread.projectId, input.projectId),
+        eq(schema.commentThread.pullRequestId, input.pullRequestId),
+      ),
+    )
+    .limit(1);
+
+  const projectId = parsePositiveIntId(row?.projectId ?? 0);
+  const pullRequestId = parsePositiveIntId(row?.pullRequestId ?? 0);
+  const threadId = parsePositiveIntId(row?.threadId ?? 0);
+  if (
+    !row ||
+    projectId === null ||
+    pullRequestId === null ||
+    threadId === null ||
+    !Number.isInteger(row.commentId) ||
+    row.commentId <= 0
+  ) {
+    return null;
+  }
+
+  return {
+    authorId: typeof row.authorId === "number" ? row.authorId : null,
+    commentId: row.commentId,
+    projectId,
+    pullRequestId,
+    threadAuthorId: typeof row.threadAuthorId === "number" ? row.threadAuthorId : null,
+    threadId,
+  };
+}
+
+export async function createPullRequestReviewComment(
+  input: {
+    authorId: number;
+    authorLoginId: string;
+    authorName: string;
+    commitId?: string;
+    contents: string;
+    path?: string;
+    projectId: number;
+    pullRequestId: number;
+    range?: {
+      endColumn: number;
+      endLine: number;
+      endSide: "A" | "B";
+      path: string;
+      startColumn: number;
+      startLine: number;
+      startSide: "A" | "B";
+    };
+    threadId?: number;
+  },
+  projectName: string,
+  db: DatabaseType = getDb(),
+): Promise<PullRequestReviewThread> {
+  const schema = getDbSchema(db);
+  const now = new Date();
+  let threadId = input.threadId ?? null;
+
+  if (threadId !== null) {
+    const existingThread = await readPullRequestReviewThread(
+      {
+        projectId: input.projectId,
+        pullRequestId: input.pullRequestId,
+        threadId,
+      },
+      db,
+    );
+    if (!existingThread) {
+      throw new Error("Pull request review thread not found.");
+    }
+  } else {
+    const [insertedThread] = await (db as any)
+      .insert(schema.commentThread)
+      .values({
+        authorId: input.authorId,
+        authorLoginId: input.authorLoginId,
+        authorName: input.authorName,
+        commitId: toNullableDbString(input.commitId),
+        createdDate: now,
+        dtype: input.range ? "CodeCommentThread" : "NonRangedCodeCommentThread",
+        endColumn: input.range?.endColumn ?? null,
+        endLine: input.range?.endLine ?? null,
+        endSide: toNullableDbString(input.range?.endSide),
+        path: toNullableDbString(input.range?.path ?? input.path),
+        projectId: input.projectId,
+        pullRequestId: input.pullRequestId,
+        startColumn: input.range?.startColumn ?? null,
+        startLine: input.range?.startLine ?? null,
+        startSide: toNullableDbString(input.range?.startSide),
+        state: "open",
+      })
+      .returning({
+        threadId: schema.commentThread.id,
+      });
+
+    threadId = parsePositiveIntId(insertedThread?.threadId ?? 0);
+    if (threadId === null) {
+      throw new Error("Failed to create pull request review thread.");
+    }
+  }
+
+  await (db as any).insert(schema.reviewComment).values({
+    authorId: input.authorId,
+    authorLoginId: input.authorLoginId,
+    authorName: input.authorName,
+    contents: input.contents,
+    createdDate: now,
+    threadId,
+  });
+
+  const [thread] = await listPullRequestReviewThreadsByPullRequest(
+    {
+      projectId: input.projectId,
+      projectName,
+      pullRequestId: input.pullRequestId,
+    },
+    db,
+  ).then((threads) =>
+    threads.filter((candidateThread) => candidateThread.threadId === String(threadId)),
+  );
+
+  if (!thread) {
+    throw new Error("Failed to read pull request review thread.");
+  }
+
+  return thread;
+}
+
+export async function updatePullRequestReviewThreadState(
+  input: {
+    projectId: number;
+    projectName: string;
+    pullRequestId: number;
+    state: PullRequestReviewThreadState;
+    threadId: number;
+  },
+  db: DatabaseType = getDb(),
+): Promise<PullRequestReviewThread> {
+  const parsedThreadId = parsePositiveIntId(input.threadId);
+  if (parsedThreadId === null) {
+    throw new Error("Invalid pull request review thread id.");
+  }
+
+  const schema = getDbSchema(db);
+  await (db as any)
+    .update(schema.commentThread)
+    .set({
+      state: input.state,
+    })
+    .where(
+      and(
+        eq(schema.commentThread.id, parsedThreadId),
+        eq(schema.commentThread.projectId, input.projectId),
+        eq(schema.commentThread.pullRequestId, input.pullRequestId),
+      ),
+    );
+
+  const [thread] = await listPullRequestReviewThreadsByPullRequest(
+    {
+      projectId: input.projectId,
+      projectName: input.projectName,
+      pullRequestId: input.pullRequestId,
+    },
+    db,
+  ).then((threads) =>
+    threads.filter((candidateThread) => candidateThread.threadId === String(parsedThreadId)),
+  );
+
+  if (!thread) {
+    throw new Error("Pull request review thread not found.");
+  }
+
+  return thread;
+}
+
+export async function deletePullRequestReviewComment(
+  input: {
+    commentId: number;
+    projectId: number;
+    pullRequestId: number;
+  },
+  db: DatabaseType = getDb(),
+): Promise<PullRequestReviewCommentDeleteOutput> {
+  const comment = await readPullRequestReviewComment(input, db);
+  if (!comment) {
+    throw new Error("Pull request review comment not found.");
+  }
+
+  const schema = getDbSchema(db);
+  await (db as any)
+    .delete(schema.reviewComment)
+    .where(eq(schema.reviewComment.id, comment.commentId));
+
+  const [remainingCountRow] = await (db as any)
+    .select({
+      total: sql<number>`count(*)`,
+    })
+    .from(schema.reviewComment)
+    .where(eq(schema.reviewComment.threadId, comment.threadId));
+
+  const remainingComments = Number(remainingCountRow?.total ?? 0);
+  if (!Number.isFinite(remainingComments) || remainingComments <= 0) {
+    await (db as any)
+      .delete(schema.commentThread)
+      .where(eq(schema.commentThread.id, comment.threadId));
+    return {
+      deletedCommentId: comment.commentId,
+      threadDeleted: true,
+      threadId: comment.threadId,
+    };
+  }
+
+  return {
+    deletedCommentId: comment.commentId,
+    threadDeleted: false,
+    threadId: comment.threadId,
+  };
+}
+
 export async function updatePullRequestStateByProjectAndNumber(
   input: {
     projectId: number;
@@ -574,6 +1033,34 @@ export async function updatePullRequestStateByProjectAndNumber(
     .update(schema.pullRequest)
     .set({
       state: pullRequestStateToRaw(input.state),
+      updated: new Date(),
+    })
+    .where(
+      and(
+        eq(schema.pullRequest.toProjectId, input.projectId),
+        eq(schema.pullRequest.number, input.pullRequestNumber),
+      ),
+    );
+}
+
+export async function updatePullRequestMergeStateByProjectAndNumber(
+  input: {
+    mergedCommitIdFrom: string;
+    mergedCommitIdTo: string;
+    projectId: number;
+    pullRequestNumber: number;
+  },
+  db: DatabaseType = getDb(),
+): Promise<void> {
+  const schema = getDbSchema(db);
+  await (db as any)
+    .update(schema.pullRequest)
+    .set({
+      isConflict: false,
+      isMerging: false,
+      mergedCommitIdFrom: input.mergedCommitIdFrom,
+      mergedCommitIdTo: input.mergedCommitIdTo,
+      state: pullRequestStateToRaw("merged"),
       updated: new Date(),
     })
     .where(

@@ -2,12 +2,20 @@ import { describe, expect, it, vi } from "vitest";
 import * as pullRequestService from "./pull-request-service";
 import {
   createPullRequest,
+  createPullRequestReviewComment,
+  deletePullRequestReviewComment,
   listPullRequests,
+  mergePullRequest,
+  previewPullRequestMerge,
   readPullRequestDetail,
   readPullRequestReviewCounts,
+  updatePullRequestReviewThreadState,
   updatePullRequestState,
 } from "./pull-request-service";
 import { DomainNotFoundError, DomainPermissionError, DomainValidationError } from "./errors";
+
+const mockFn = <T extends (...args: unknown[]) => unknown = (...args: unknown[]) => unknown>() =>
+  vi.fn<T>();
 
 const authenticatedActor = {
   actorId: 7,
@@ -57,6 +65,11 @@ function createPullRequestDetail(state: "closed" | "open") {
     ownerName: "yona",
     projectName: "project-yona",
     pullRequestNumber: 5,
+    reviewSummary: {
+      closedThreadCount: 0,
+      openThreadCount: 1,
+      reviewerCount: 0,
+    },
     state,
     title: "Add PR baseline",
     toBranch: "main",
@@ -77,6 +90,22 @@ function reviewThreadFixture(threadId: string, overrides: Partial<Record<string,
   return {
     authorLoginId: "admin",
     authorName: "Admin",
+    comments: [
+      {
+        authorLoginId: "admin",
+        authorName: "Admin",
+        commentId: 51,
+        contents: "Comment #1 : 111",
+        createdAt: null,
+      },
+      {
+        authorLoginId: "laziel",
+        authorName: "Laziel",
+        commentId: 52,
+        contents: "reply",
+        createdAt: null,
+      },
+    ],
     commitId: "commit-111",
     createdAt: null,
     lastCommentAt: null,
@@ -87,6 +116,23 @@ function reviewThreadFixture(threadId: string, overrides: Partial<Record<string,
     state: "open",
     text: "Comment #1 : 111",
     threadId,
+    ...overrides,
+  };
+}
+
+function createPullRequestRecord(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    fromBranch: "feature/demo-ready",
+    fromProjectId: 11,
+    id: 41,
+    isConflict: false,
+    isMerging: false,
+    mergedCommitIdFrom: null,
+    mergedCommitIdTo: null,
+    pullRequestNumber: 5,
+    state: "open",
+    toBranch: "main",
+    toProjectId: 11,
     ...overrides,
   };
 }
@@ -120,9 +166,9 @@ function expectReadPullRequestReviewCounts() {
 describe("pull request service PR transition provenance: docs/provenance/phase-0b/pull-request-review.md", () => {
   it("lists, reads, creates, and updates pull requests", async () => {
     const deps = {
-      createPullRequestRecord: vi.fn().mockResolvedValue(5),
-      listPullRequestReviewThreadsByProject: vi.fn(),
-      listPullRequestsByProject: vi.fn().mockResolvedValue([
+      createPullRequestRecord: mockFn().mockResolvedValue(5),
+      listPullRequestReviewThreadsByProject: mockFn(),
+      listPullRequestsByProject: mockFn().mockResolvedValue([
         {
           contributorLoginId: "doortts",
           contributorName: "Door TTS",
@@ -136,14 +182,13 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
           toBranch: "main",
         },
       ]),
-      readProjectAuthorization: vi.fn().mockResolvedValue(createAuthorizedProjectAuthorization()),
-      readPullRequestByProjectAndNumber: vi
-        .fn()
+      readProjectAuthorization: mockFn().mockResolvedValue(createAuthorizedProjectAuthorization()),
+      readPullRequestByProjectAndNumber: mockFn()
         .mockResolvedValueOnce(createPullRequestDetail("open"))
         .mockResolvedValueOnce(createPullRequestDetail("open"))
         .mockResolvedValueOnce(createPullRequestDetail("open"))
         .mockResolvedValueOnce(createPullRequestDetail("closed")),
-      updatePullRequestStateByProjectAndNumber: vi.fn().mockResolvedValue(undefined),
+      updatePullRequestStateByProjectAndNumber: mockFn().mockResolvedValue(undefined),
     };
 
     await expect(
@@ -188,12 +233,12 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
 
   it("rejects anonymous transition attempts before reading authorization", async () => {
     const deps = {
-      createPullRequestRecord: vi.fn(),
-      listPullRequestReviewThreadsByProject: vi.fn(),
-      listPullRequestsByProject: vi.fn(),
-      readProjectAuthorization: vi.fn(),
-      readPullRequestByProjectAndNumber: vi.fn(),
-      updatePullRequestStateByProjectAndNumber: vi.fn(),
+      createPullRequestRecord: mockFn(),
+      listPullRequestReviewThreadsByProject: mockFn(),
+      listPullRequestsByProject: mockFn(),
+      readProjectAuthorization: mockFn(),
+      readPullRequestByProjectAndNumber: mockFn(),
+      updatePullRequestStateByProjectAndNumber: mockFn(),
     };
 
     await expect(
@@ -219,12 +264,12 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
 
   it("returns not found when the pull request does not exist during close", async () => {
     const deps = {
-      createPullRequestRecord: vi.fn(),
-      listPullRequestReviewThreadsByProject: vi.fn(),
-      listPullRequestsByProject: vi.fn(),
-      readProjectAuthorization: vi.fn().mockResolvedValue(createAuthorizedProjectAuthorization()),
-      readPullRequestByProjectAndNumber: vi.fn().mockResolvedValue(null),
-      updatePullRequestStateByProjectAndNumber: vi.fn().mockResolvedValue(undefined),
+      createPullRequestRecord: mockFn(),
+      listPullRequestReviewThreadsByProject: mockFn(),
+      listPullRequestsByProject: mockFn(),
+      readProjectAuthorization: mockFn().mockResolvedValue(createAuthorizedProjectAuthorization()),
+      readPullRequestByProjectAndNumber: mockFn().mockResolvedValue(null),
+      updatePullRequestStateByProjectAndNumber: mockFn().mockResolvedValue(undefined),
     };
 
     await expect(
@@ -243,12 +288,12 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
 
   it("rejects close when the actor lacks transition permission", async () => {
     const deps = {
-      createPullRequestRecord: vi.fn(),
-      listPullRequestReviewThreadsByProject: vi.fn(),
-      listPullRequestsByProject: vi.fn(),
-      readProjectAuthorization: vi.fn().mockResolvedValue(createReadOnlyProjectAuthorization()),
-      readPullRequestByProjectAndNumber: vi.fn(),
-      updatePullRequestStateByProjectAndNumber: vi.fn(),
+      createPullRequestRecord: mockFn(),
+      listPullRequestReviewThreadsByProject: mockFn(),
+      listPullRequestsByProject: mockFn(),
+      readProjectAuthorization: mockFn().mockResolvedValue(createReadOnlyProjectAuthorization()),
+      readPullRequestByProjectAndNumber: mockFn(),
+      updatePullRequestStateByProjectAndNumber: mockFn(),
     };
 
     await expect(
@@ -269,17 +314,16 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
 
   it("closes and reopens pull requests for authorized actors", async () => {
     const deps = {
-      createPullRequestRecord: vi.fn(),
-      listPullRequestReviewThreadsByProject: vi.fn(),
-      listPullRequestsByProject: vi.fn(),
-      readProjectAuthorization: vi.fn().mockResolvedValue(createAuthorizedProjectAuthorization()),
-      readPullRequestByProjectAndNumber: vi
-        .fn()
+      createPullRequestRecord: mockFn(),
+      listPullRequestReviewThreadsByProject: mockFn(),
+      listPullRequestsByProject: mockFn(),
+      readProjectAuthorization: mockFn().mockResolvedValue(createAuthorizedProjectAuthorization()),
+      readPullRequestByProjectAndNumber: mockFn()
         .mockResolvedValueOnce(createPullRequestDetail("open"))
         .mockResolvedValueOnce(createPullRequestDetail("closed"))
         .mockResolvedValueOnce(createPullRequestDetail("closed"))
         .mockResolvedValueOnce(createPullRequestDetail("open")),
-      updatePullRequestStateByProjectAndNumber: vi.fn().mockResolvedValue(undefined),
+      updatePullRequestStateByProjectAndNumber: mockFn().mockResolvedValue(undefined),
     };
 
     await expect(
@@ -322,12 +366,14 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
 
   it("rejects reopen when the pull request is already open", async () => {
     const deps = {
-      createPullRequestRecord: vi.fn(),
-      listPullRequestReviewThreadsByProject: vi.fn(),
-      listPullRequestsByProject: vi.fn(),
-      readProjectAuthorization: vi.fn().mockResolvedValue(createAuthorizedProjectAuthorization()),
-      readPullRequestByProjectAndNumber: vi.fn().mockResolvedValue(createPullRequestDetail("open")),
-      updatePullRequestStateByProjectAndNumber: vi.fn().mockResolvedValue(undefined),
+      createPullRequestRecord: mockFn(),
+      listPullRequestReviewThreadsByProject: mockFn(),
+      listPullRequestsByProject: mockFn(),
+      readProjectAuthorization: mockFn().mockResolvedValue(createAuthorizedProjectAuthorization()),
+      readPullRequestByProjectAndNumber: mockFn().mockResolvedValue(
+        createPullRequestDetail("open"),
+      ),
+      updatePullRequestStateByProjectAndNumber: mockFn().mockResolvedValue(undefined),
     };
 
     await expect(
@@ -348,12 +394,12 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
 
   it("rejects merged transition input before authorization or persistence", async () => {
     const deps = {
-      createPullRequestRecord: vi.fn(),
-      listPullRequestReviewThreadsByProject: vi.fn(),
-      listPullRequestsByProject: vi.fn(),
-      readProjectAuthorization: vi.fn(),
-      readPullRequestByProjectAndNumber: vi.fn(),
-      updatePullRequestStateByProjectAndNumber: vi.fn(),
+      createPullRequestRecord: mockFn(),
+      listPullRequestReviewThreadsByProject: mockFn(),
+      listPullRequestsByProject: mockFn(),
+      readProjectAuthorization: mockFn(),
+      readPullRequestByProjectAndNumber: mockFn(),
+      updatePullRequestStateByProjectAndNumber: mockFn(),
     };
 
     await expect(
@@ -381,8 +427,8 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
       loginId: null,
     };
     const deps = {
-      listPullRequestReviewThreadsByProject: vi.fn(),
-      readProjectAuthorization: vi.fn().mockResolvedValue(createPrivateProjectAuthorization()),
+      listPullRequestReviewThreadsByProject: mockFn(),
+      readProjectAuthorization: mockFn().mockResolvedValue(createPrivateProjectAuthorization()),
     };
     const readPullRequestReviewThreads = expectReadPullRequestReviewThreads();
 
@@ -403,7 +449,7 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
 
   it("filters 13.7 PR review-thread reads by legacy state, text, commit/path, author, and participant dimensions", async () => {
     const deps = {
-      listPullRequestReviewThreadsByProject: vi.fn().mockResolvedValue([
+      listPullRequestReviewThreadsByProject: mockFn().mockResolvedValue([
         reviewThreadFixture("thread-open-comment", {
           authorLoginId: "admin",
           commitId: "commit-111",
@@ -429,7 +475,7 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
           text: "Comment #3",
         }),
       ]),
-      readProjectAuthorization: vi.fn().mockResolvedValue(createAuthorizedProjectAuthorization()),
+      readProjectAuthorization: mockFn().mockResolvedValue(createAuthorizedProjectAuthorization()),
     };
     const readPullRequestReviewThreads = expectReadPullRequestReviewThreads();
 
@@ -478,7 +524,7 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
 
   it("forwards review-thread sort fields and derives count summaries for the authenticated user", async () => {
     const deps = {
-      listPullRequestReviewThreadsByProject: vi.fn().mockResolvedValue([
+      listPullRequestReviewThreadsByProject: mockFn().mockResolvedValue([
         reviewThreadFixture("thread-open-comment", {
           authorLoginId: "admin",
           commitId: "commit-111",
@@ -489,8 +535,8 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
           text: "Comment #1 : 111",
         }),
       ]),
-      readProjectAuthorization: vi.fn().mockResolvedValue(createAuthorizedProjectAuthorization()),
-      readPullRequestReviewCountsByProject: vi.fn().mockResolvedValue({
+      readProjectAuthorization: mockFn().mockResolvedValue(createAuthorizedProjectAuthorization()),
+      readPullRequestReviewCountsByProject: mockFn().mockResolvedValue({
         all: 2,
         closed: 0,
         createdByYou: 1,
@@ -565,8 +611,8 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
 
   it("rejects review counts for anonymous actors before reading authorization", async () => {
     const deps = {
-      readProjectAuthorization: vi.fn(),
-      readPullRequestReviewCountsByProject: vi.fn(),
+      readProjectAuthorization: mockFn(),
+      readPullRequestReviewCountsByProject: mockFn(),
     };
     const readReviewCounts = expectReadPullRequestReviewCounts();
 
@@ -589,5 +635,242 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
 
     expect(deps.readProjectAuthorization).not.toHaveBeenCalled();
     expect(deps.readPullRequestReviewCountsByProject).not.toHaveBeenCalled();
+  });
+
+  it("creates PR-bound review comments for project members and separates them from 13.6 commit discussions", async () => {
+    const deps = {
+      createPullRequestReviewComment: mockFn().mockResolvedValue(
+        reviewThreadFixture("41", {
+          commitId: "abc123",
+          threadId: "41",
+        }),
+      ),
+      readProjectAuthorization: mockFn().mockResolvedValue(createAuthorizedProjectAuthorization()),
+      readPullRequestRecordByProjectAndNumber:
+        mockFn().mockResolvedValue(createPullRequestRecord()),
+    };
+
+    await expect(
+      createPullRequestReviewComment(
+        authenticatedActor,
+        {
+          commitId: "abc123",
+          contents: "Please rename this method.",
+          ownerName: "yona",
+          projectName: "project-yona",
+          pullRequestNumber: 5,
+        },
+        deps as never,
+      ),
+    ).resolves.toMatchObject({
+      commitId: "abc123",
+      threadId: "41",
+    });
+
+    expect(deps.createPullRequestReviewComment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorId: 7,
+        authorLoginId: "doortts",
+        contents: "Please rename this method.",
+        projectId: 11,
+        pullRequestId: 41,
+      }),
+      "project-yona",
+    );
+  });
+
+  it("deletes the last PR review comment and reports thread cleanup", async () => {
+    const deps = {
+      deletePullRequestReviewComment: mockFn().mockResolvedValue({
+        deletedCommentId: 77,
+        threadDeleted: true,
+        threadId: 41,
+      }),
+      readProjectAuthorization: mockFn().mockResolvedValue(createReadOnlyProjectAuthorization()),
+      readPullRequestRecordByProjectAndNumber:
+        mockFn().mockResolvedValue(createPullRequestRecord()),
+      readPullRequestReviewComment: mockFn().mockResolvedValue({
+        authorId: 7,
+        commentId: 77,
+        projectId: 11,
+        pullRequestId: 41,
+        threadAuthorId: 99,
+        threadId: 41,
+      }),
+    };
+
+    await expect(
+      deletePullRequestReviewComment(
+        authenticatedActor,
+        {
+          commentId: 77,
+          ownerName: "yona",
+          projectName: "project-yona",
+          pullRequestNumber: 5,
+        },
+        deps as never,
+      ),
+    ).resolves.toEqual({
+      deletedCommentId: 77,
+      threadDeleted: true,
+      threadId: 41,
+    });
+  });
+
+  it("allows PR thread authors to close their own review threads", async () => {
+    const deps = {
+      readProjectAuthorization: mockFn().mockResolvedValue(createReadOnlyProjectAuthorization()),
+      readPullRequestRecordByProjectAndNumber:
+        mockFn().mockResolvedValue(createPullRequestRecord()),
+      readPullRequestReviewThread: mockFn().mockResolvedValue({
+        authorId: 7,
+        projectId: 11,
+        pullRequestId: 41,
+        state: "open",
+        threadId: 41,
+      }),
+      updatePullRequestReviewThreadState: mockFn().mockResolvedValue(
+        reviewThreadFixture("41", { state: "closed" }),
+      ),
+    };
+
+    await expect(
+      updatePullRequestReviewThreadState(
+        authenticatedActor,
+        {
+          ownerName: "yona",
+          projectName: "project-yona",
+          pullRequestNumber: 5,
+          state: "closed",
+          threadId: 41,
+        },
+        deps as never,
+      ),
+    ).resolves.toMatchObject({
+      state: "closed",
+      threadId: "41",
+    });
+  });
+
+  it("previews merge conflicts without mutating PR state and rejects unsupported cross-project PRs", async () => {
+    const baseDeps = {
+      getRefOid: mockFn().mockResolvedValue("oid-1"),
+      getRepositoryRoot: mockFn().mockReturnValue("/repo-root"),
+      previewPullRequestMerge: mockFn().mockResolvedValue({
+        conflictedFiles: ["src/conflicted.ts"],
+        mergeTreeOid: "a".repeat(40),
+        mergeable: false,
+        sourceHeadOid: "source-oid",
+        targetHeadOid: "target-oid",
+      }),
+      readProjectAuthorization: mockFn().mockResolvedValue(createAuthorizedProjectAuthorization()),
+      readPullRequestRecordByProjectAndNumber:
+        mockFn().mockResolvedValue(createPullRequestRecord()),
+      resolveRepositoryPath: mockFn().mockReturnValue("/repo-root/11"),
+    };
+
+    await expect(
+      previewPullRequestMerge(
+        authenticatedActor,
+        {
+          ownerName: "yona",
+          projectName: "project-yona",
+          pullRequestNumber: 5,
+        },
+        baseDeps as never,
+      ),
+    ).resolves.toEqual({
+      blockedReason: "merge-conflict",
+      conflictedFiles: ["src/conflicted.ts"],
+      mergeable: false,
+    });
+
+    await expect(
+      previewPullRequestMerge(
+        authenticatedActor,
+        {
+          ownerName: "yona",
+          projectName: "project-yona",
+          pullRequestNumber: 5,
+        },
+        {
+          ...baseDeps,
+          readPullRequestRecordByProjectAndNumber: mockFn().mockResolvedValue(
+            createPullRequestRecord({ fromProjectId: 99 }),
+          ),
+        } as never,
+      ),
+    ).rejects.toBeInstanceOf(DomainValidationError);
+  });
+
+  it("keeps merge authorization separate from project write auth and records git/db mismatch after a successful merge", async () => {
+    const auditHook = mockFn().mockResolvedValue(undefined);
+    const performMerge = mockFn().mockResolvedValue({
+      conflicted: false,
+      conflictedFiles: [],
+      mergeCommitOid: "f".repeat(40),
+      requestId: "req-1",
+      sourceHeadOid: "source-oid",
+      targetHeadOid: "target-oid",
+    });
+
+    await expect(
+      mergePullRequest(
+        authenticatedActor,
+        {
+          ownerName: "yona",
+          projectName: "project-yona",
+          pullRequestNumber: 5,
+        },
+        {
+          appendPullRequestMergeAuditLog: auditHook,
+          getGitAuditLogPath: mockFn().mockReturnValue("/audit/git.jsonl"),
+          getRefOid: mockFn().mockResolvedValue("oid-1"),
+          getRepositoryRoot: mockFn().mockReturnValue("/repo-root"),
+          performPullRequestMerge: performMerge,
+          readProjectAuthorization: mockFn().mockResolvedValue(
+            createAuthorizedProjectAuthorization(),
+          ),
+          readPullRequestRecordByProjectAndNumber:
+            mockFn().mockResolvedValue(createPullRequestRecord()),
+          resolveRepositoryPath: mockFn().mockReturnValue("/repo-root/11"),
+          updatePullRequestMergeStateByProjectAndNumber: mockFn().mockRejectedValue(
+            new Error("db mismatch"),
+          ),
+        } as never,
+      ),
+    ).rejects.toThrow("db mismatch");
+
+    expect(performMerge).toHaveBeenCalled();
+    expect(auditHook).toHaveBeenCalledWith(
+      "/audit/git.jsonl",
+      expect.objectContaining({
+        action: "pull-request-merge-db-mismatch",
+        repositoryId: "11",
+      }),
+    );
+
+    await expect(
+      mergePullRequest(
+        authenticatedActor,
+        {
+          ownerName: "yona",
+          projectName: "project-yona",
+          pullRequestNumber: 5,
+        },
+        {
+          getRefOid: mockFn(),
+          getRepositoryRoot: mockFn(),
+          performPullRequestMerge: mockFn(),
+          readProjectAuthorization: mockFn().mockResolvedValue(
+            createReadOnlyProjectAuthorization(),
+          ),
+          readPullRequestRecordByProjectAndNumber:
+            mockFn().mockResolvedValue(createPullRequestRecord()),
+          resolveRepositoryPath: mockFn(),
+          updatePullRequestMergeStateByProjectAndNumber: mockFn(),
+        } as never,
+      ),
+    ).rejects.toBeInstanceOf(DomainPermissionError);
   });
 });

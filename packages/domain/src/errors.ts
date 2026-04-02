@@ -1,5 +1,6 @@
 export interface DomainActor {
   actorId: null | number;
+  emailAddress?: null | string;
   isAnonymous: boolean;
   isSiteAdmin: boolean;
   loginId: null | string;
