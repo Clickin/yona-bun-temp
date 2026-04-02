@@ -236,6 +236,16 @@ export {
   type AttachmentProjectMembershipTarget,
   type AttachmentTemporaryBindingRecord,
 } from "./attachment-assets";
+export {
+  createRepositoryCommitDiscussionComment,
+  deleteRepositoryCommitDiscussionComment,
+  listRepositoryCommitDiscussionThreads,
+  readRepositoryCommitDiscussionComment,
+  readRepositoryCommitDiscussionThread,
+  updateRepositoryCommitDiscussionThreadState,
+  type RepositoryCommitDiscussionCommentRecord,
+  type RepositoryCommitDiscussionThreadRecord,
+} from "./repository-discussion";
 export { loadRepositoryAccessFacts, type RepositoryAccessFactsRecord } from "./repository-access";
 export {
   listFavoriteProjectsForUser,

@@ -15,6 +15,7 @@ export * from "./pull-request-service";
 export * from "./project-authorization";
 export * from "./project-service";
 export * from "./repository-authorization";
+export * from "./repository-discussion-service";
 export * from "./search-service";
 export * from "./upload-session-service";
 export * from "./user-workspace-service";

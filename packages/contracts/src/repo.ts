@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { authDisplayNameSchema, authLoginIdSchema } from "./auth";
 
 export const repositoryIdSchema = z.string().trim().min(1, "Repository id is required.");
 
@@ -158,3 +159,149 @@ export const inlineEditRepositoryOutputSchema = z
   .strict();
 
 export type InlineEditRepositoryOutput = z.infer<typeof inlineEditRepositoryOutputSchema>;
+
+export const repositoryCommitDiscussionThreadStateSchema = z.enum(["closed", "open"]);
+
+export type RepositoryCommitDiscussionThreadState = z.infer<
+  typeof repositoryCommitDiscussionThreadStateSchema
+>;
+
+export const repositoryCommitDiscussionThreadTypeSchema = z.enum(["non_ranged", "ranged"]);
+
+export type RepositoryCommitDiscussionThreadType = z.infer<
+  typeof repositoryCommitDiscussionThreadTypeSchema
+>;
+
+export const repositoryCommitDiscussionCodeRangeSchema = z
+  .object({
+    endColumn: z.number().int().min(0),
+    endLine: z.number().int().positive(),
+    endSide: z.enum(["A", "B"]),
+    path: repositoryFilePathSchema,
+    startColumn: z.number().int().min(0),
+    startLine: z.number().int().positive(),
+    startSide: z.enum(["A", "B"]),
+  })
+  .strict();
+
+export type RepositoryCommitDiscussionCodeRange = z.infer<
+  typeof repositoryCommitDiscussionCodeRangeSchema
+>;
+
+export const repositoryCommitDiscussionCommentSchema = z
+  .object({
+    authorLoginId: authLoginIdSchema,
+    authorName: authDisplayNameSchema,
+    commentId: z.number().int().positive(),
+    createdAt: z.date().nullable(),
+    contents: z.string().trim().min(1),
+  })
+  .strict();
+
+export type RepositoryCommitDiscussionComment = z.infer<
+  typeof repositoryCommitDiscussionCommentSchema
+>;
+
+export const repositoryCommitDiscussionThreadSchema = z
+  .object({
+    authorLoginId: authLoginIdSchema,
+    authorName: authDisplayNameSchema,
+    comments: repositoryCommitDiscussionCommentSchema.array(),
+    commitId: repositoryOidSchema,
+    createdAt: z.date().nullable(),
+    path: repositoryFilePathSchema.nullable(),
+    prevCommitId: repositoryOidSchema.nullable(),
+    range: repositoryCommitDiscussionCodeRangeSchema.nullable(),
+    state: repositoryCommitDiscussionThreadStateSchema,
+    threadId: z.number().int().positive(),
+    threadType: repositoryCommitDiscussionThreadTypeSchema,
+  })
+  .strict();
+
+export type RepositoryCommitDiscussionThread = z.infer<
+  typeof repositoryCommitDiscussionThreadSchema
+>;
+
+export const listRepositoryCommitDiscussionThreadsInputSchema = z
+  .object({
+    oid: repositoryOidSchema,
+    repoId: repositoryIdSchema,
+    state: repositoryCommitDiscussionThreadStateSchema.optional(),
+  })
+  .strict();
+
+export type ListRepositoryCommitDiscussionThreadsInput = z.infer<
+  typeof listRepositoryCommitDiscussionThreadsInputSchema
+>;
+
+export const listRepositoryCommitDiscussionThreadsOutputSchema =
+  repositoryCommitDiscussionThreadSchema.array();
+
+export type ListRepositoryCommitDiscussionThreadsOutput = z.infer<
+  typeof listRepositoryCommitDiscussionThreadsOutputSchema
+>;
+
+export const createRepositoryCommitDiscussionCommentInputSchema = z
+  .object({
+    contents: z.string().trim().min(1).max(10000),
+    oid: repositoryOidSchema,
+    range: repositoryCommitDiscussionCodeRangeSchema.optional(),
+    repoId: repositoryIdSchema,
+    threadId: z.number().int().positive().optional(),
+  })
+  .strict();
+
+export type CreateRepositoryCommitDiscussionCommentInput = z.infer<
+  typeof createRepositoryCommitDiscussionCommentInputSchema
+>;
+
+export const createRepositoryCommitDiscussionCommentOutputSchema =
+  repositoryCommitDiscussionThreadSchema;
+
+export type CreateRepositoryCommitDiscussionCommentOutput = z.infer<
+  typeof createRepositoryCommitDiscussionCommentOutputSchema
+>;
+
+export const deleteRepositoryCommitDiscussionCommentInputSchema = z
+  .object({
+    commentId: z.number().int().positive(),
+    oid: repositoryOidSchema,
+    repoId: repositoryIdSchema,
+  })
+  .strict();
+
+export type DeleteRepositoryCommitDiscussionCommentInput = z.infer<
+  typeof deleteRepositoryCommitDiscussionCommentInputSchema
+>;
+
+export const deleteRepositoryCommitDiscussionCommentOutputSchema = z
+  .object({
+    deletedCommentId: z.number().int().positive(),
+    threadDeleted: z.boolean(),
+    threadId: z.number().int().positive(),
+  })
+  .strict();
+
+export type DeleteRepositoryCommitDiscussionCommentOutput = z.infer<
+  typeof deleteRepositoryCommitDiscussionCommentOutputSchema
+>;
+
+export const updateRepositoryCommitDiscussionThreadStateInputSchema = z
+  .object({
+    oid: repositoryOidSchema,
+    repoId: repositoryIdSchema,
+    state: repositoryCommitDiscussionThreadStateSchema,
+    threadId: z.number().int().positive(),
+  })
+  .strict();
+
+export type UpdateRepositoryCommitDiscussionThreadStateInput = z.infer<
+  typeof updateRepositoryCommitDiscussionThreadStateInputSchema
+>;
+
+export const updateRepositoryCommitDiscussionThreadStateOutputSchema =
+  repositoryCommitDiscussionThreadSchema;
+
+export type UpdateRepositoryCommitDiscussionThreadStateOutput = z.infer<
+  typeof updateRepositoryCommitDiscussionThreadStateOutputSchema
+>;

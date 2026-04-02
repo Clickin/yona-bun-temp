@@ -7,7 +7,7 @@ import {
   project,
   pullRequest,
   reviewComment,
-} from "../../../drizzle/sqlite/schema";
+} from "@drizzle/sqlite/schema";
 import {
   listPullRequestReviewThreadsByProject,
   readPullRequestReviewCountsByProject,

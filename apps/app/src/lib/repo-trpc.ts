@@ -3,8 +3,14 @@ import superjson from "superjson";
 import {
   bootstrapRepositoryInputSchema,
   bootstrapRepositoryOutputSchema,
+  createRepositoryCommitDiscussionCommentInputSchema,
+  createRepositoryCommitDiscussionCommentOutputSchema,
+  deleteRepositoryCommitDiscussionCommentInputSchema,
+  deleteRepositoryCommitDiscussionCommentOutputSchema,
   inlineEditRepositoryInputSchema,
   inlineEditRepositoryOutputSchema,
+  listRepositoryCommitDiscussionThreadsInputSchema,
+  listRepositoryCommitDiscussionThreadsOutputSchema,
   listRepositoryBranchesInputSchema,
   listRepositoryBranchesOutputSchema,
   listRepositoryCommitsInputSchema,
@@ -13,9 +19,23 @@ import {
   readRepositoryCommitOutputSchema,
   readRepositoryFileInputSchema,
   readRepositoryFileOutputSchema,
+  updateRepositoryCommitDiscussionThreadStateInputSchema,
+  updateRepositoryCommitDiscussionThreadStateOutputSchema,
 } from "@yona/contracts";
 import { loadRepositoryAccessFacts } from "@yona/db";
-import { authorizeRepositoryAccess, type RepositoryPermission } from "@yona/domain";
+import {
+  authorizeRepositoryAccess,
+  createRepositoryCommitDiscussionComment,
+  deleteRepositoryCommitDiscussionComment,
+  DomainConflictError,
+  DomainNotFoundError,
+  DomainPermissionError,
+  DomainValidationError,
+  listRepositoryCommitDiscussionThreads,
+  type DomainActor,
+  type RepositoryPermission,
+  updateRepositoryCommitDiscussionThreadState,
+} from "@yona/domain";
 import {
   AuthorizationError,
   ConflictError,
@@ -44,6 +64,48 @@ function throwRepositoryAuthError(principal: ResolvedRequestPrincipal): never {
   throw new TRPCError({
     code: principal.isAuthenticated ? "FORBIDDEN" : "UNAUTHORIZED",
   });
+}
+
+function createRepoDomainActor(principal: ResolvedRequestPrincipal): DomainActor {
+  return {
+    actorId: principal.user?.id ?? null,
+    isAnonymous: !principal.isAuthenticated,
+    isSiteAdmin: principal.user?.isSiteAdmin ?? false,
+    loginId: principal.user?.loginId ?? null,
+    name: principal.user?.name ?? null,
+  };
+}
+
+function rethrowDomainAsTrpc(error: unknown): never {
+  if (error instanceof DomainConflictError) {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: error.message,
+    });
+  }
+
+  if (error instanceof DomainNotFoundError) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: error.message,
+    });
+  }
+
+  if (error instanceof DomainPermissionError) {
+    throw new TRPCError({
+      code: error.requiresAuthentication ? "UNAUTHORIZED" : "FORBIDDEN",
+      message: error.message,
+    });
+  }
+
+  if (error instanceof DomainValidationError) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: error.message,
+    });
+  }
+
+  throw error;
 }
 
 export async function authorizeRepositoryRequest(
@@ -111,6 +173,38 @@ function parseTabSeparatedRows(output: string): string[][] {
     .map((line) => line.split("\t"));
 }
 
+async function ensureRepositoryCommitExists(
+  principal: ResolvedRequestPrincipal,
+  repoId: string,
+  oid: string,
+) {
+  const { facts } = await authorizeRepositoryRequest(principal, repoId, "read");
+  if (!facts.isGitRepository) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Commit not found.",
+    });
+  }
+
+  await ensureYonaDataDirectories();
+  const repoPath = resolveRepositoryPath(getRepositoryRoot(), repoId);
+
+  try {
+    await runGit(["rev-parse", "--verify", `${oid}^{commit}`], {
+      cwd: repoPath,
+    });
+  } catch (error) {
+    if (error instanceof GitCommandError) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Commit not found.",
+      });
+    }
+
+    throw error;
+  }
+}
+
 export const repoRouter = t.router({
   bootstrapRepository: t.procedure
     .input(bootstrapRepositoryInputSchema)
@@ -118,6 +212,38 @@ export const repoRouter = t.router({
     .mutation(async ({ ctx, input }) => {
       await authorizeRepositoryRequest(ctx.principal, input.repoId, "admin");
       return bootstrapRepositoryOutputSchema.parse(await provisionRepository(input.repoId));
+    }),
+  createRepositoryCommitDiscussionComment: t.procedure
+    .input(createRepositoryCommitDiscussionCommentInputSchema)
+    .output(createRepositoryCommitDiscussionCommentOutputSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        await ensureRepositoryCommitExists(ctx.principal, input.repoId, input.oid);
+        return createRepositoryCommitDiscussionCommentOutputSchema.parse(
+          await createRepositoryCommitDiscussionComment(
+            createRepoDomainActor(ctx.principal),
+            input,
+          ),
+        );
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
+      }
+    }),
+  deleteRepositoryCommitDiscussionComment: t.procedure
+    .input(deleteRepositoryCommitDiscussionCommentInputSchema)
+    .output(deleteRepositoryCommitDiscussionCommentOutputSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        await ensureRepositoryCommitExists(ctx.principal, input.repoId, input.oid);
+        return deleteRepositoryCommitDiscussionCommentOutputSchema.parse(
+          await deleteRepositoryCommitDiscussionComment(
+            createRepoDomainActor(ctx.principal),
+            input,
+          ),
+        );
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
+      }
     }),
   inlineEditRepository: t.procedure
     .input(inlineEditRepositoryInputSchema)
@@ -217,6 +343,19 @@ export const repoRouter = t.router({
         throw error;
       }
     }),
+  listRepositoryCommitDiscussionThreads: t.procedure
+    .input(listRepositoryCommitDiscussionThreadsInputSchema)
+    .output(listRepositoryCommitDiscussionThreadsOutputSchema)
+    .query(async ({ ctx, input }) => {
+      try {
+        await ensureRepositoryCommitExists(ctx.principal, input.repoId, input.oid);
+        return listRepositoryCommitDiscussionThreadsOutputSchema.parse(
+          await listRepositoryCommitDiscussionThreads(createRepoDomainActor(ctx.principal), input),
+        );
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
+      }
+    }),
   listRepositoryCommits: t.procedure
     .input(listRepositoryCommitsInputSchema)
     .output(listRepositoryCommitsOutputSchema)
@@ -292,6 +431,22 @@ export const repoRouter = t.router({
           });
         }
         throw error;
+      }
+    }),
+  updateRepositoryCommitDiscussionThreadState: t.procedure
+    .input(updateRepositoryCommitDiscussionThreadStateInputSchema)
+    .output(updateRepositoryCommitDiscussionThreadStateOutputSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        await ensureRepositoryCommitExists(ctx.principal, input.repoId, input.oid);
+        return updateRepositoryCommitDiscussionThreadStateOutputSchema.parse(
+          await updateRepositoryCommitDiscussionThreadState(
+            createRepoDomainActor(ctx.principal),
+            input,
+          ),
+        );
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
       }
     }),
 });
