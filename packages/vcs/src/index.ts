@@ -24,7 +24,12 @@ export {
   getRepositoryRoot,
   getYonaDataRoot,
 } from "./config";
-export { appendGitMutationAuditLog, type GitMutationAuditRecord } from "./audit";
+export {
+  appendGitMutationAuditLog,
+  appendPullRequestMergeAuditLog,
+  type GitMutationAuditRecord,
+  type PullRequestMergeAuditRecord,
+} from "./audit";
 export { withRepositoryWriteLock } from "./locks";
 export {
   AuthorizationError,
@@ -33,6 +38,14 @@ export {
   readRepositoryFile,
   type InlineEditMutationInput,
 } from "./mutation";
+export {
+  performPullRequestMerge,
+  previewPullRequestMerge,
+  type PullRequestMergeInput,
+  type PullRequestMergePreviewInput,
+  type PullRequestMergePreviewResult,
+  type PullRequestMergeResult,
+} from "./pull-request-merge";
 export {
   canDirectWriteBranch,
   getProtectedBranches,

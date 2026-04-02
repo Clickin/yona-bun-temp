@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "@yona/contracts": "workspace:*",
-    "@yona/db": "workspace:*"
+    "@yona/db": "workspace:*",
+    "@yona/vcs": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

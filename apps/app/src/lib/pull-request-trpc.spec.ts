@@ -1,22 +1,35 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DomainNotFoundError, DomainPermissionError, DomainValidationError } from "@yona/domain";
 
+const mockFn = <T extends (...args: unknown[]) => unknown = (...args: unknown[]) => unknown>() =>
+  vi.fn<T>();
+
 const {
   createPullRequestMock,
+  createPullRequestReviewCommentMock,
+  deletePullRequestReviewCommentMock,
   listPullRequestReviewCountsMock,
   listPullRequestReviewThreadsMock,
   listPullRequestsMock,
+  mergePullRequestMock,
+  previewPullRequestMergeMock,
   readCurrentSessionMock,
   readPullRequestDetailMock,
+  updatePullRequestReviewThreadStateMock,
   updatePullRequestStateMock,
 } = vi.hoisted(() => ({
-  createPullRequestMock: vi.fn(),
-  listPullRequestReviewCountsMock: vi.fn(),
-  listPullRequestReviewThreadsMock: vi.fn(),
-  listPullRequestsMock: vi.fn(),
-  readCurrentSessionMock: vi.fn(),
-  readPullRequestDetailMock: vi.fn(),
-  updatePullRequestStateMock: vi.fn(),
+  createPullRequestMock: mockFn(),
+  createPullRequestReviewCommentMock: mockFn(),
+  deletePullRequestReviewCommentMock: mockFn(),
+  listPullRequestReviewCountsMock: mockFn(),
+  listPullRequestReviewThreadsMock: mockFn(),
+  listPullRequestsMock: mockFn(),
+  mergePullRequestMock: mockFn(),
+  previewPullRequestMergeMock: mockFn(),
+  readCurrentSessionMock: mockFn(),
+  readPullRequestDetailMock: mockFn(),
+  updatePullRequestReviewThreadStateMock: mockFn(),
+  updatePullRequestStateMock: mockFn(),
 }));
 
 vi.mock("@yona/domain", async () => {
@@ -24,10 +37,15 @@ vi.mock("@yona/domain", async () => {
   return {
     ...actual,
     createPullRequest: createPullRequestMock,
+    createPullRequestReviewComment: createPullRequestReviewCommentMock,
+    deletePullRequestReviewComment: deletePullRequestReviewCommentMock,
     readPullRequestReviewCounts: listPullRequestReviewCountsMock,
     listPullRequestReviewThreads: listPullRequestReviewThreadsMock,
     listPullRequests: listPullRequestsMock,
+    mergePullRequest: mergePullRequestMock,
+    previewPullRequestMerge: previewPullRequestMergeMock,
     readPullRequestDetail: readPullRequestDetailMock,
+    updatePullRequestReviewThreadState: updatePullRequestReviewThreadStateMock,
     updatePullRequestState: updatePullRequestStateMock,
   };
 });
@@ -49,9 +67,9 @@ function createContext(cookieValue?: string) {
   }
 
   return {
-    deleteCookie: vi.fn(),
+    deleteCookie: mockFn(),
     getCookie: (name: string) => cookies.get(name),
-    setResponseStatus: vi.fn(),
+    setResponseStatus: mockFn(),
   };
 }
 
@@ -114,6 +132,11 @@ function createPullRequestDetail(state: "closed" | "open") {
     ownerName: "yobi",
     projectName: "yona",
     pullRequestNumber: 1,
+    reviewSummary: {
+      closedThreadCount: 0,
+      openThreadCount: 1,
+      reviewerCount: 0,
+    },
     state,
     title: "Hello",
     toBranch: "main",
@@ -124,6 +147,15 @@ function reviewThreadFixture(threadId: string, overrides: Partial<Record<string,
   return {
     authorLoginId: "admin",
     authorName: "Admin",
+    comments: [
+      {
+        authorLoginId: "admin",
+        authorName: "Admin",
+        commentId: 71,
+        contents: "Comment #1 : 111",
+        createdAt: null,
+      },
+    ],
     commitId: "commit-111",
     createdAt: null,
     lastCommentAt: null,
@@ -185,6 +217,11 @@ describe("pull request tRPC PR transition provenance: docs/provenance/phase-0b/p
       ownerName: "yobi",
       projectName: "yona",
       pullRequestNumber: 1,
+      reviewSummary: {
+        closedThreadCount: 0,
+        openThreadCount: 1,
+        reviewerCount: 0,
+      },
       state: "open",
       title: "Hello",
       toBranch: "main",
@@ -199,6 +236,11 @@ describe("pull request tRPC PR transition provenance: docs/provenance/phase-0b/p
       ownerName: "yobi",
       projectName: "yona",
       pullRequestNumber: 1,
+      reviewSummary: {
+        closedThreadCount: 0,
+        openThreadCount: 1,
+        reviewerCount: 0,
+      },
       state: "open",
       title: "Hello",
       toBranch: "main",
@@ -213,6 +255,11 @@ describe("pull request tRPC PR transition provenance: docs/provenance/phase-0b/p
       ownerName: "yobi",
       projectName: "yona",
       pullRequestNumber: 1,
+      reviewSummary: {
+        closedThreadCount: 0,
+        openThreadCount: 1,
+        reviewerCount: 0,
+      },
       state: "closed",
       title: "Hello",
       toBranch: "main",
@@ -514,5 +561,113 @@ describe("pull request tRPC PR transition provenance: docs/provenance/phase-0b/p
         state: "open",
       },
     );
+  });
+
+  it("creates and mutates PR-bound review threads through dedicated procedures", async () => {
+    createPullRequestReviewCommentMock.mockResolvedValueOnce(
+      reviewThreadFixture("thread-pr-review", {
+        commitId: "abc123",
+        threadId: "thread-pr-review",
+      }),
+    );
+    updatePullRequestReviewThreadStateMock.mockResolvedValueOnce(
+      reviewThreadFixture("thread-pr-review", {
+        state: "closed",
+        threadId: "thread-pr-review",
+      }),
+    );
+    deletePullRequestReviewCommentMock.mockResolvedValueOnce({
+      deletedCommentId: 71,
+      threadDeleted: false,
+      threadId: 12,
+    });
+
+    const caller = createPullRequestCaller(createContext("session-token")) as unknown as Record<
+      string,
+      (input: Record<string, unknown>) => Promise<unknown>
+    >;
+
+    await expect(
+      caller.createPullRequestReviewComment({
+        commitId: "abc123",
+        contents: "Please rename this method.",
+        ownerName: "yobi",
+        projectName: "yona",
+        pullRequestNumber: 1,
+      }),
+    ).resolves.toMatchObject({
+      commitId: "abc123",
+      threadId: "thread-pr-review",
+    });
+
+    await expect(
+      caller.updatePullRequestReviewThreadState({
+        ownerName: "yobi",
+        projectName: "yona",
+        pullRequestNumber: 1,
+        state: "closed",
+        threadId: 12,
+      }),
+    ).resolves.toMatchObject({
+      state: "closed",
+      threadId: "thread-pr-review",
+    });
+
+    await expect(
+      caller.deletePullRequestReviewComment({
+        commentId: 71,
+        ownerName: "yobi",
+        projectName: "yona",
+        pullRequestNumber: 1,
+      }),
+    ).resolves.toEqual({
+      deletedCommentId: 71,
+      threadDeleted: false,
+      threadId: 12,
+    });
+  });
+
+  it("previews and executes pull-request merges through dedicated procedures", async () => {
+    previewPullRequestMergeMock.mockResolvedValueOnce({
+      blockedReason: null,
+      conflictedFiles: [],
+      mergeable: true,
+    });
+    mergePullRequestMock.mockResolvedValueOnce({
+      conflicted: false,
+      conflictedFiles: [],
+      merged: true,
+      mergedPullRequestState: "merged",
+    });
+
+    const caller = createPullRequestCaller(createContext("session-token")) as unknown as Record<
+      string,
+      (input: Record<string, unknown>) => Promise<unknown>
+    >;
+
+    await expect(
+      caller.previewPullRequestMerge({
+        ownerName: "yobi",
+        projectName: "yona",
+        pullRequestNumber: 1,
+      }),
+    ).resolves.toEqual({
+      blockedReason: null,
+      conflictedFiles: [],
+      mergeable: true,
+    });
+
+    await expect(
+      caller.mergePullRequest({
+        ownerName: "yobi",
+        projectName: "yona",
+        pullRequestNumber: 1,
+      }),
+    ).resolves.toEqual({
+      conflicted: false,
+      conflictedFiles: [],
+      merged: true,
+      mergedPullRequestState: "merged",
+    });
   });
 });

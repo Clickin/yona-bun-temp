@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/bun-sql";
 import {
   commentThread,
@@ -6,11 +7,17 @@ import {
   n4user,
   project,
   pullRequest,
+  pullRequestReviewers,
   reviewComment,
 } from "@drizzle/sqlite/schema";
 import {
+  createPullRequestReviewComment,
+  deletePullRequestReviewComment,
   listPullRequestReviewThreadsByProject,
+  readPullRequestByProjectAndNumber,
   readPullRequestReviewCountsByProject,
+  updatePullRequestMergeStateByProjectAndNumber,
+  updatePullRequestReviewThreadState,
 } from "./pull-requests";
 import { applySqliteMigrations } from "./test-helpers";
 import { setupSQLiteTestDatabase } from "./test-utils/database";
@@ -441,6 +448,251 @@ describe("pull request review-thread helpers", () => {
       createdByYou: 1,
       involvingYou: 2,
       open: 1,
+    });
+  });
+
+  it("creates, updates, and deletes PR-bound review comments with delete-last-comment cleanup", async () => {
+    await db.insert(n4user).values([
+      {
+        createdDate: new Date(0),
+        email: "author@example.com",
+        id: 4101,
+        isGuest: false,
+        lastStateModifiedDate: new Date(0),
+        loginId: "author",
+        name: "Author",
+        token: null,
+      },
+      {
+        createdDate: new Date(0),
+        email: "reviewer@example.com",
+        id: 4102,
+        isGuest: false,
+        lastStateModifiedDate: new Date(0),
+        loginId: "reviewer",
+        name: "Reviewer",
+        token: null,
+      },
+    ]);
+    await db.insert(project).values({
+      id: 4201,
+      name: "pr-review-write",
+      overview: "overview",
+      owner: "yona",
+      projectScope: "public",
+      vcs: "GIT",
+    });
+    await db.insert(pullRequest).values({
+      contributorId: 4101,
+      fromProjectId: 4201,
+      id: 4301,
+      number: 1,
+      receiverId: 4102,
+      state: 0,
+      title: "PR review write",
+      toProjectId: 4201,
+    });
+
+    const createdThread = await createPullRequestReviewComment(
+      {
+        authorId: 4101,
+        authorLoginId: "author",
+        authorName: "Author",
+        commitId: "abc123",
+        contents: "Initial review comment",
+        projectId: 4201,
+        pullRequestId: 4301,
+      },
+      "pr-review-write",
+      db,
+    );
+    expect(createdThread.comments).toHaveLength(1);
+    expect(createdThread.replyCount).toBe(0);
+
+    const repliedThread = await createPullRequestReviewComment(
+      {
+        authorId: 4102,
+        authorLoginId: "reviewer",
+        authorName: "Reviewer",
+        contents: "Reply comment",
+        projectId: 4201,
+        pullRequestId: 4301,
+        threadId: Number(createdThread.threadId),
+      },
+      "pr-review-write",
+      db,
+    );
+    expect(repliedThread.comments).toHaveLength(2);
+    expect(repliedThread.replyCount).toBe(1);
+
+    const closedThread = await updatePullRequestReviewThreadState(
+      {
+        projectId: 4201,
+        projectName: "pr-review-write",
+        pullRequestId: 4301,
+        state: "closed",
+        threadId: Number(createdThread.threadId),
+      },
+      db,
+    );
+    expect(closedThread.state).toBe("closed");
+
+    const deletedReply = await deletePullRequestReviewComment(
+      {
+        commentId: repliedThread.comments[1]!.commentId,
+        projectId: 4201,
+        pullRequestId: 4301,
+      },
+      db,
+    );
+    expect(deletedReply).toEqual({
+      deletedCommentId: repliedThread.comments[1]!.commentId,
+      threadDeleted: false,
+      threadId: Number(createdThread.threadId),
+    });
+
+    const deletedLast = await deletePullRequestReviewComment(
+      {
+        commentId: createdThread.comments[0]!.commentId,
+        projectId: 4201,
+        pullRequestId: 4301,
+      },
+      db,
+    );
+    expect(deletedLast).toEqual({
+      deletedCommentId: createdThread.comments[0]!.commentId,
+      threadDeleted: true,
+      threadId: Number(createdThread.threadId),
+    });
+
+    expect(
+      await (db as any)
+        .select({ total: commentThread.id })
+        .from(commentThread)
+        .where(eq(commentThread.pullRequestId, 4301)),
+    ).toHaveLength(0);
+  });
+
+  it("reads lightweight review summary and persists merged PR metadata separately from merge preview", async () => {
+    await db.insert(n4user).values([
+      {
+        createdDate: new Date(0),
+        email: "merger@example.com",
+        id: 5101,
+        isGuest: false,
+        lastStateModifiedDate: new Date(0),
+        loginId: "merger",
+        name: "Merger",
+        token: null,
+      },
+      {
+        createdDate: new Date(0),
+        email: "receiver@example.com",
+        id: 5102,
+        isGuest: false,
+        lastStateModifiedDate: new Date(0),
+        loginId: "receiver",
+        name: "Receiver",
+        token: null,
+      },
+    ]);
+    await db.insert(project).values({
+      id: 5201,
+      name: "pr-merge-summary",
+      overview: "overview",
+      owner: "yona",
+      projectScope: "public",
+      vcs: "GIT",
+    });
+    await db.insert(pullRequest).values({
+      contributorId: 5101,
+      fromBranch: "feature/demo-ready",
+      fromProjectId: 5201,
+      id: 5301,
+      number: 7,
+      receiverId: 5102,
+      state: 0,
+      title: "PR merge summary",
+      toBranch: "main",
+      toProjectId: 5201,
+    });
+    await db.insert(commentThread).values([
+      {
+        authorId: 5101,
+        authorLoginId: "merger",
+        authorName: "Merger",
+        commitId: "oid-open",
+        createdDate: new Date("2026-04-01T00:00:00.000Z"),
+        dtype: "NonRangedCodeCommentThread",
+        id: 5401,
+        projectId: 5201,
+        pullRequestId: 5301,
+        state: "open",
+      },
+      {
+        authorId: 5102,
+        authorLoginId: "receiver",
+        authorName: "Receiver",
+        commitId: "oid-closed",
+        createdDate: new Date("2026-04-01T01:00:00.000Z"),
+        dtype: "NonRangedCodeCommentThread",
+        id: 5402,
+        projectId: 5201,
+        pullRequestId: 5301,
+        state: "closed",
+      },
+    ]);
+    await db.insert(reviewComment).values([
+      {
+        authorId: 5101,
+        authorLoginId: "merger",
+        authorName: "Merger",
+        contents: "open comment",
+        createdDate: new Date("2026-04-01T00:00:00.000Z"),
+        id: 5501,
+        threadId: 5401,
+      },
+      {
+        authorId: 5102,
+        authorLoginId: "receiver",
+        authorName: "Receiver",
+        contents: "closed comment",
+        createdDate: new Date("2026-04-01T01:00:00.000Z"),
+        id: 5502,
+        threadId: 5402,
+      },
+    ]);
+    await db.insert(pullRequestReviewers).values([
+      { pullRequestId: 5301, userId: 5101 },
+      { pullRequestId: 5301, userId: 5102 },
+    ]);
+
+    await expect(
+      readPullRequestByProjectAndNumber(5201, 7, "yona", "pr-merge-summary", db),
+    ).resolves.toMatchObject({
+      pullRequestNumber: 7,
+      reviewSummary: {
+        closedThreadCount: 1,
+        openThreadCount: 1,
+        reviewerCount: 2,
+      },
+      state: "open",
+    });
+
+    await updatePullRequestMergeStateByProjectAndNumber(
+      {
+        mergedCommitIdFrom: "base-oid",
+        mergedCommitIdTo: "merge-oid",
+        projectId: 5201,
+        pullRequestNumber: 7,
+      },
+      db,
+    );
+
+    await expect(
+      readPullRequestByProjectAndNumber(5201, 7, "yona", "pr-merge-summary", db),
+    ).resolves.toMatchObject({
+      state: "merged",
     });
   });
 });
