@@ -1,0 +1,91 @@
+{
+  "active_context": [
+    {
+      "order": 3,
+      "path": "_index.md",
+      "tokens": 653,
+      "type": "summary"
+    },
+    {
+      "order": 2,
+      "path": "migration/_index.md",
+      "tokens": 798,
+      "type": "summary"
+    },
+    {
+      "order": 2,
+      "path": "project_updates/_index.md",
+      "tokens": 399,
+      "type": "summary"
+    },
+    {
+      "importance": 50,
+      "path": "migration/context.md",
+      "tokens": 127,
+      "type": "context"
+    },
+    {
+      "importance": 50,
+      "path": "migration/legacy_provenance_baseline/context.md",
+      "tokens": 105,
+      "type": "context"
+    },
+    {
+      "importance": 50,
+      "path": "migration/legacy_provenance_baseline/legacy_provenance_baseline.md",
+      "tokens": 556,
+      "type": "context"
+    },
+    {
+      "importance": 50,
+      "path": "migration/phase_0b_provenance/context.md",
+      "tokens": 96,
+      "type": "context"
+    },
+    {
+      "importance": 50,
+      "path": "migration/phase_0b_provenance/phase_0b_provenance_home.md",
+      "tokens": 603,
+      "type": "context"
+    },
+    {
+      "importance": 50,
+      "path": "migration/phase_plan_overview/context.md",
+      "tokens": 138,
+      "type": "context"
+    },
+    {
+      "importance": 50,
+      "path": "migration/phase_plan_overview/phase_plan_overview.md",
+      "tokens": 652,
+      "type": "context"
+    },
+    {
+      "importance": 50,
+      "path": "project_updates/context.md",
+      "tokens": 132,
+      "type": "context"
+    },
+    {
+      "importance": 50,
+      "path": "project_updates/logs/context.md",
+      "tokens": 107,
+      "type": "context"
+    },
+    {
+      "importance": 50,
+      "path": "project_updates/logs/omx_turns_highlights.md",
+      "tokens": 617,
+      "type": "context"
+    }
+  ],
+  "generated_at": "2026-04-04T09:33:51.829Z",
+  "lane_tokens": {
+    "contexts": 3133,
+    "stubs": 0,
+    "summaries": 1850
+  },
+  "source_fingerprint": "2ad150ea69998a937b068f53f262432e3b0feff593c6846c2f02b3ec3c3dc709",
+  "total_tokens": 4983,
+  "version": 1
+}
