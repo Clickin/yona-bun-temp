@@ -10,7 +10,7 @@ Canonical execution rules still live in [`SPEC.md`](/G:/programming/yona/SPEC.md
 - [`organization.md`](/G:/programming/yona/docs/provenance/phase-0b/organization.md): organization create/read/update provenance and deviations.
 - [`project.md`](/G:/programming/yona/docs/provenance/phase-0b/project.md): project create/read/update, visibility, and recent-visit provenance.
 - [`issue.md`](/G:/programming/yona/docs/provenance/phase-0b/issue.md): first issue edit-authorization exemplar only.
-- [`pull-request-review.md`](/G:/programming/yona/docs/provenance/phase-0b/pull-request-review.md): bounded PR open/close/reopen and review-thread list/filter provenance only.
+- [`pull-request-review.md`](/G:/programming/yona/docs/provenance/phase-0b/pull-request-review.md): bounded same-project PR merge/review entry slice for open/close/reopen, PR-bound review write/list/filter, and merge preview/execute provenance.
 - [`search.md`](/G:/programming/yona/docs/provenance/phase-0b/search.md): bounded internal search exemplar for `global`, `organization`, and `project` scopes, with API-level parity only.
 - [`fixture-strategy.md`](/G:/programming/yona/docs/provenance/phase-0b/fixture-strategy.md): canonical TS fixture names and factory mapping from `conf/test-data.yml`.
 
@@ -28,13 +28,13 @@ Canonical execution rules still live in [`SPEC.md`](/G:/programming/yona/SPEC.md
   - org/project delete
   - organization enrollment request/cancel
   - workspace default landing page implementation, while favorite/recent are already implemented
-- Full PR/review parity remains Phase 4 work, because `SPEC.md:1297` includes merge behavior, reviewer rules, richer review lifecycle, and PR detail composition that are intentionally larger than the bounded Phase 0B exemplar.
+- Full PR/review parity remains Phase 4 work, because `SPEC.md:1297` still includes cross-project or fork merge behavior, reviewer rules, stale-thread meaning, richer review lifecycle, source-branch cleanup, and full PR detail composition beyond the bounded same-project entry slice.
 - Full internal search parity remains Phase 5 work, because `SPEC.md:1359` includes the broader multi-type search surface, type-specific coverage, and three-dialect field/filter parity that are intentionally larger than the bounded Phase 0B exemplar.
 - AI-facing search surfaces remain Phase 6 hardening work, not a Phase 0B or Phase 5 exit condition.
 
 ## Explicit Deferred Items
 
-- PR items deferred to Phase 4: merge acceptance and merge-conflict outcomes, reviewer threshold and assignment lifecycle, full review comment create/edit/delete flows, stale-thread meaning, PR detail or diff composition, source-branch cleanup or restore, fork or clone workflow, and PR event timeline translation. Each is deferred because the current Phase 0B batch freezes only open/close/reopen authorization plus review-thread read and filter semantics.
+- PR items deferred to Phase 4: cross-project or fork merge acceptance, reviewer threshold and assignment lifecycle, review comment edit flows, stale-thread meaning, full PR detail or diff composition, source-branch cleanup or restore, fork or clone workflow, and PR event timeline translation. Each is deferred because the current Phase 0B batch freezes only a bounded same-project merge/review entry slice.
 - Search items deferred to Phase 5: `issue_comment`, `posting_comment`, and `milestone` result types, broader review-search-condition behavior beyond internal `review_comment` results, type-specific result counts, and full three-dialect searchable-field coverage for the complete internal type set. Each is deferred because the current Phase 0B batch freezes only the minimal internal exemplar over `user`, `project`, `issue`, `posting`, and `review_comment`.
 - Search items deferred to Phase 6: `llms.txt`, AI datasource endpoints, and other AI-facing or machine-facing search routes. They are deferred because `AGENTS.md` reserves those surfaces for hardening rather than Phase 0B blocker reconciliation.
 
