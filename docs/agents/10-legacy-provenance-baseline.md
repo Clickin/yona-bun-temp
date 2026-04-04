@@ -32,7 +32,7 @@
 - ACL: project visibility and write denial matrix from `AccessControlTest`.
 - Issue: watcher/voter/assignee propagation and edit authorization from `IssueTest` and `IssueAppTest`.
 - Project: enrollment request/cancel and recent workspace semantics from `EnrollProjectAppTest` and `RecentlyVisitedProjectsTest`.
-- PR: open/close/reopen and unauthorized transition denial from `PullRequestAppTest` and `PullRequestTest`.
+- PR: open/close/reopen, same-project merge entry, and PR-bound review write/list state semantics from `PullRequestAppTest`, `PullRequestTest`, `ReviewCommentTest`, `CommentThreadTest`, and `ReviewThreadAppTest`.
 - Git: inline edit conflict and smart HTTP auth from `RepositoryServiceTest` and `GitRepositoryTest`.
 - Search: permission-filtered result set from `SearchTests`, `SearchResultTests`, and `AccessControlTest`.
 
@@ -63,20 +63,20 @@
   - workspace recent/favorite surface: `packages/domain/src/user-workspace-service.ts`, `packages/db/src/personal-workspace.spec.ts`, `apps/app/src/lib/me-trpc.spec.ts`, `apps/app/src/routes/me.tsx`
   - workspace default landing surface: `packages/domain/src/default-landing.ts`, `packages/domain/src/default-landing.spec.ts`, `packages/auth/src/app-service.ts`, `apps/app/src/routes/_app.index.tsx`
 - Bounded PR and review-thread exemplar evidence now exists for these landed slices:
-  - PR open/close/reopen plus review-thread read/filter: `packages/contracts/src/pull-request.spec.ts`, `packages/domain/src/pull-request-service.spec.ts`, `apps/app/src/lib/pull-request-trpc.spec.ts`
+  - PR open/close/reopen plus same-project merge preview/execute, PR-bound review write/list/filter, and PR-thread close/reopen: `packages/contracts/src/pull-request.spec.ts`, `packages/domain/src/pull-request-service.spec.ts`, `apps/app/src/lib/pull-request-trpc.spec.ts`, `apps/app/src/routes/-pull-request-detail-parity.spec.tsx`, `packages/vcs/src/pull-request-merge.spec.ts`
 - Bounded internal search exemplar evidence now exists for these landed slices:
   - internal `global` / `organization` / `project` search over `user`, `project`, `issue`, `posting`, and `review_comment`: `packages/contracts/src/search.spec.ts`, `packages/db/src/search.spec.ts`, `packages/domain/src/search-service.spec.ts`, `apps/app/src/lib/search.spec.ts`, `apps/app/src/lib/search-trpc.spec.ts`
 - remaining true blockers for full 0B exit are:
   - organization enrollment request/cancel implementation
   - workspace default landing page implementation, while favorite/recent are already implemented
-- Full PR/review parity stays in Phase 4, because `SPEC.md:1297` still owns merge semantics, reviewer rules, stale-thread meaning, richer review lifecycle, and full PR composition beyond the bounded exemplar.
+- Full PR/review parity stays in Phase 4, because `SPEC.md:1297` still owns cross-project or fork merge semantics, reviewer rules, stale-thread meaning, richer review lifecycle, source-branch cleanup, and full PR composition beyond the bounded same-project entry slice.
 - Full internal search parity stays in Phase 5, because `SPEC.md:1359` still owns the broader multi-type surface, type-specific filtering and counts, and complete three-dialect search coverage beyond the bounded exemplar.
 - AI-facing search endpoints stay in Phase 6, because `AGENTS.md` marks `llms.txt` and AI datasource work as hardening scope rather than a Phase 0B or Phase 5 blocker.
-- In short, bounded PR/search exemplar implementation is now evidence-backed, org enrollment and workspace default landing are landed in this repo state, while full PR parity stays deferred to Phase 4 and full internal search parity stays deferred to Phase 5.
+- In short, a bounded same-project PR merge/review entry slice and the bounded search exemplar are now evidence-backed, org enrollment and workspace default landing are landed in this repo state, while full PR parity stays deferred to Phase 4 and full internal search parity stays deferred to Phase 5.
 
 ## Explicit Deferred Items
 
-- Phase 4 PR or review deferrals: merge acceptance and merge-conflict handling, reviewer threshold and assignment lifecycle, review comment create/edit/delete flows, stale-thread meaning, PR detail and diff composition, source-branch cleanup or restore, fork or clone workflow, and PR event timeline translation. These are deferred because the current Phase 0B provenance freeze is intentionally narrower than `SPEC.md:1297`.
+- Phase 4 PR or review deferrals: cross-project or fork merge acceptance, reviewer threshold and assignment lifecycle, review comment edit flows, stale-thread meaning, PR detail and diff composition, source-branch cleanup or restore, fork or clone workflow, and PR event timeline translation. These are deferred because the current Phase 0B provenance freeze is intentionally narrower than `SPEC.md:1297`.
 - Phase 5 search deferrals: `issue_comment`, `posting_comment`, `milestone`, broader review-search-condition behavior beyond internal `review_comment`, type-specific result counts, and full field-coverage parity across PostgreSQL, MySQL or MariaDB, and SQLite for the complete internal type set. These are deferred because the current Phase 0B provenance freeze is intentionally narrower than `SPEC.md:1359`.
 - Phase 6 search deferrals: `llms.txt`, AI datasource endpoints, and other AI-facing search surfaces. These are deferred because the fixed phase plan keeps them in hardening scope rather than feature-parity scope.
 
