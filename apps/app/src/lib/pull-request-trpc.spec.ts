@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DomainNotFoundError, DomainPermissionError, DomainValidationError } from "@yona/domain";
 
-const mockFn = <T extends (...args: unknown[]) => unknown = (...args: unknown[]) => unknown>() =>
-  vi.fn<T>();
-
 const {
   createPullRequestMock,
   createPullRequestReviewCommentMock,
@@ -18,18 +15,18 @@ const {
   updatePullRequestReviewThreadStateMock,
   updatePullRequestStateMock,
 } = vi.hoisted(() => ({
-  createPullRequestMock: mockFn(),
-  createPullRequestReviewCommentMock: mockFn(),
-  deletePullRequestReviewCommentMock: mockFn(),
-  listPullRequestReviewCountsMock: mockFn(),
-  listPullRequestReviewThreadsMock: mockFn(),
-  listPullRequestsMock: mockFn(),
-  mergePullRequestMock: mockFn(),
-  previewPullRequestMergeMock: mockFn(),
-  readCurrentSessionMock: mockFn(),
-  readPullRequestDetailMock: mockFn(),
-  updatePullRequestReviewThreadStateMock: mockFn(),
-  updatePullRequestStateMock: mockFn(),
+  createPullRequestMock: vi.fn(),
+  createPullRequestReviewCommentMock: vi.fn(),
+  deletePullRequestReviewCommentMock: vi.fn(),
+  listPullRequestReviewCountsMock: vi.fn(),
+  listPullRequestReviewThreadsMock: vi.fn(),
+  listPullRequestsMock: vi.fn(),
+  mergePullRequestMock: vi.fn(),
+  previewPullRequestMergeMock: vi.fn(),
+  readCurrentSessionMock: vi.fn(),
+  readPullRequestDetailMock: vi.fn(),
+  updatePullRequestReviewThreadStateMock: vi.fn(),
+  updatePullRequestStateMock: vi.fn(),
 }));
 
 vi.mock("@yona/domain", async () => {
@@ -67,9 +64,9 @@ function createContext(cookieValue?: string) {
   }
 
   return {
-    deleteCookie: mockFn(),
+    deleteCookie: vi.fn(),
     getCookie: (name: string) => cookies.get(name),
-    setResponseStatus: mockFn(),
+    setResponseStatus: vi.fn(),
   };
 }
 
