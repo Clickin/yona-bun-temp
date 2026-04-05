@@ -5,6 +5,8 @@ import {
   deleteRepositoryCommitDiscussionCommentOutputSchema,
   listRepositoryCommitDiscussionThreadsInputSchema,
   listRepositoryCommitDiscussionThreadsOutputSchema,
+  repositoryCommitDiscussionCapabilitiesInputSchema,
+  repositoryCommitDiscussionCapabilitiesOutputSchema,
   updateRepositoryCommitDiscussionThreadStateInputSchema,
   updateRepositoryCommitDiscussionThreadStateOutputSchema,
   type CreateRepositoryCommitDiscussionCommentInput,
@@ -13,6 +15,8 @@ import {
   type DeleteRepositoryCommitDiscussionCommentOutput,
   type ListRepositoryCommitDiscussionThreadsInput,
   type ListRepositoryCommitDiscussionThreadsOutput,
+  type RepositoryCommitDiscussionCapabilitiesInput,
+  type RepositoryCommitDiscussionCapabilitiesOutput,
   type UpdateRepositoryCommitDiscussionThreadStateInput,
   type UpdateRepositoryCommitDiscussionThreadStateOutput,
 } from "@yona/contracts";
@@ -139,6 +143,20 @@ export async function listRepositoryCommitDiscussionThreads(
       state: parsedInput.state,
     }),
   );
+}
+
+export async function readRepositoryCommitDiscussionCapabilities(
+  actor: DomainActor,
+  input: RepositoryCommitDiscussionCapabilitiesInput,
+  deps: RepositoryDiscussionServiceDeps = defaultDeps,
+): Promise<RepositoryCommitDiscussionCapabilitiesOutput> {
+  const parsedInput = repositoryCommitDiscussionCapabilitiesInputSchema.parse(input);
+  const facts = await requireRepositoryDiscussionFacts(actor, parsedInput.repoId, deps);
+
+  return repositoryCommitDiscussionCapabilitiesOutputSchema.parse({
+    canCreate: canCreateCommitDiscussion(actor, facts),
+    canManage: canManageCommitDiscussion(actor, facts),
+  });
 }
 
 export async function createRepositoryCommitDiscussionComment(

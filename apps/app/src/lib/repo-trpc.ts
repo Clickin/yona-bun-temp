@@ -15,6 +15,8 @@ import {
   listRepositoryBranchesOutputSchema,
   listRepositoryCommitsInputSchema,
   listRepositoryCommitsOutputSchema,
+  repositoryCommitDiscussionCapabilitiesInputSchema,
+  repositoryCommitDiscussionCapabilitiesOutputSchema,
   readRepositoryCommitInputSchema,
   readRepositoryCommitOutputSchema,
   readRepositoryFileInputSchema,
@@ -32,6 +34,7 @@ import {
   DomainPermissionError,
   DomainValidationError,
   listRepositoryCommitDiscussionThreads,
+  readRepositoryCommitDiscussionCapabilities,
   type DomainActor,
   type RepositoryPermission,
   updateRepositoryCommitDiscussionThreadState,
@@ -212,6 +215,18 @@ export const repoRouter = t.router({
     .mutation(async ({ ctx, input }) => {
       await authorizeRepositoryRequest(ctx.principal, input.repoId, "admin");
       return bootstrapRepositoryOutputSchema.parse(await provisionRepository(input.repoId));
+    }),
+  readRepositoryCommitDiscussionCapabilities: t.procedure
+    .input(repositoryCommitDiscussionCapabilitiesInputSchema)
+    .output(repositoryCommitDiscussionCapabilitiesOutputSchema)
+    .query(async ({ ctx, input }) => {
+      try {
+        return repositoryCommitDiscussionCapabilitiesOutputSchema.parse(
+          await readRepositoryCommitDiscussionCapabilities(createRepoDomainActor(ctx.principal), input),
+        );
+      } catch (error) {
+        return rethrowDomainAsTrpc(error);
+      }
     }),
   createRepositoryCommitDiscussionComment: t.procedure
     .input(createRepositoryCommitDiscussionCommentInputSchema)

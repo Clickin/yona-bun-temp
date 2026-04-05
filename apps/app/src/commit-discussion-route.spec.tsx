@@ -74,6 +74,7 @@ describe("commit discussion section", () => {
             },
           ]}
           viewerCanCreate
+          viewerCanManage={false}
         />
       </I18nProvider>,
     );
@@ -129,12 +130,64 @@ describe("commit discussion section", () => {
             },
           ]}
           viewerCanCreate={false}
+          viewerCanManage={false}
         />
       </I18nProvider>,
     );
 
     expect(html).not.toContain("Delete Comment");
     expect(html).not.toContain("Close Thread");
+    expect(html).not.toContain("Reply to thread");
+    expect(html).not.toContain("New commit discussion");
+  });
+
+  it("shows moderation controls without create or reply affordances for managers", () => {
+    const html = renderToString(
+      <I18nProvider locale="en">
+        <CommitDiscussionSection
+          createPending={false}
+          currentLoginId={null}
+          deletePendingCommentId={null}
+          errorMessage={null}
+          onCloseOrReopenThread={vi.fn<() => Promise<void>>(async () => {})}
+          onCreateThread={vi.fn<
+            (input: { contents: string; range?: Record<string, unknown> }) => Promise<void>
+          >(async () => {})}
+          onDeleteComment={vi.fn<(commentId: number) => Promise<void>>(async () => {})}
+          onReply={vi.fn<(threadId: number, contents: string) => Promise<void>>(async () => {})}
+          replyPendingThreadId={null}
+          threadPendingId={null}
+          threads={[
+            {
+              authorLoginId: "door",
+              authorName: "Door TTS",
+              comments: [
+                {
+                  authorLoginId: "door",
+                  authorName: "Door TTS",
+                  commentId: 91,
+                  contents: "First comment",
+                  createdAt: new Date("2026-04-01T00:00:00.000Z"),
+                },
+              ],
+              commitId: "abc123",
+              createdAt: new Date("2026-04-01T00:00:00.000Z"),
+              path: null,
+              prevCommitId: null,
+              range: null,
+              state: "open",
+              threadId: 90,
+              threadType: "non_ranged",
+            },
+          ]}
+          viewerCanCreate={false}
+          viewerCanManage
+        />
+      </I18nProvider>,
+    );
+
+    expect(html).toContain("Delete Comment");
+    expect(html).toContain("Close Thread");
     expect(html).not.toContain("Reply to thread");
     expect(html).not.toContain("New commit discussion");
   });

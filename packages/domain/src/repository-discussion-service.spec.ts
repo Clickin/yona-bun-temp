@@ -3,6 +3,7 @@ import {
   createRepositoryCommitDiscussionComment,
   deleteRepositoryCommitDiscussionComment,
   listRepositoryCommitDiscussionThreads,
+  readRepositoryCommitDiscussionCapabilities,
   updateRepositoryCommitDiscussionThreadState,
 } from "./repository-discussion-service";
 import { DomainNotFoundError, DomainPermissionError, DomainValidationError } from "./errors";
@@ -59,6 +60,50 @@ function discussionThread(overrides: Partial<Record<string, unknown>> = {}) {
 }
 
 describe("repository discussion service", () => {
+  it("returns create/manage capabilities for repository discussion viewers", async () => {
+    const deps = {
+      createRepositoryCommitDiscussionComment: mockFn(),
+      deleteRepositoryCommitDiscussionComment: mockFn(),
+      listRepositoryCommitDiscussionThreads: mockFn(),
+      loadRepositoryAccessFacts: mockFn()
+        .mockResolvedValueOnce(publicNonmemberFacts())
+        .mockResolvedValueOnce({
+          ...publicNonmemberFacts(),
+          isProjectManager: true,
+          isProjectMember: true,
+        }),
+      readRepositoryCommitDiscussionComment: mockFn(),
+      readRepositoryCommitDiscussionThread: mockFn(),
+      updateRepositoryCommitDiscussionThreadState: mockFn(),
+    };
+
+    await expect(
+      readRepositoryCommitDiscussionCapabilities(
+        authenticatedActor,
+        {
+          repoId: "1001",
+        },
+        deps,
+      ),
+    ).resolves.toEqual({
+      canCreate: true,
+      canManage: false,
+    });
+
+    await expect(
+      readRepositoryCommitDiscussionCapabilities(
+        authenticatedActor,
+        {
+          repoId: "1001",
+        },
+        deps,
+      ),
+    ).resolves.toEqual({
+      canCreate: true,
+      canManage: true,
+    });
+  });
+
   it("allows authenticated public nonmembers to create top-level commit discussions", async () => {
     const deps = {
       createRepositoryCommitDiscussionComment: mockFn().mockResolvedValue(discussionThread()),

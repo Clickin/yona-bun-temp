@@ -80,6 +80,14 @@ function expectDeleteRepositoryCommitDiscussionComment(
   return procedure as (input: Record<string, unknown>) => Promise<unknown>;
 }
 
+function expectReadRepositoryCommitDiscussionCapabilities(
+  caller: ReturnType<typeof createRepoCaller>,
+) {
+  const procedure = (caller as Record<string, unknown>).readRepositoryCommitDiscussionCapabilities;
+  expect(procedure).toBeTypeOf("function");
+  return procedure as (input: Record<string, unknown>) => Promise<unknown>;
+}
+
 function expectUpdateRepositoryCommitDiscussionThreadState(
   caller: ReturnType<typeof createRepoCaller>,
 ) {
@@ -318,6 +326,40 @@ describe("repo tRPC", () => {
       state: "open",
       threadId: 8001,
     });
+  });
+
+  it("reads commit-discussion capabilities without invoking mutation paths", async () => {
+    loadRepositoryAccessFactsMock.mockResolvedValueOnce({
+      isAnonymous: false,
+      isCodeAccessibleMemberOnly: false,
+      isGitRepository: true,
+      isOrganizationAdmin: false,
+      isOrganizationMember: false,
+      isProjectManager: false,
+      isProjectMember: false,
+      isSiteAdmin: false,
+      projectId: 1001,
+      projectScope: "public",
+    });
+
+    const readCapabilities = expectReadRepositoryCommitDiscussionCapabilities(
+      createRepoCaller({
+        principal: authenticatedPrincipal(),
+      }),
+    );
+
+    await expect(
+      readCapabilities({
+        repoId: "1001",
+      }),
+    ).resolves.toEqual({
+      canCreate: true,
+      canManage: false,
+    });
+
+    expect(createRepositoryCommitDiscussionCommentMock).not.toHaveBeenCalled();
+    expect(deleteRepositoryCommitDiscussionCommentMock).not.toHaveBeenCalled();
+    expect(updateRepositoryCommitDiscussionThreadStateMock).not.toHaveBeenCalled();
   });
 
   it("denies anonymous commit discussion creation even on public repositories", async () => {

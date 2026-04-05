@@ -241,6 +241,27 @@ export type ListRepositoryCommitDiscussionThreadsOutput = z.infer<
   typeof listRepositoryCommitDiscussionThreadsOutputSchema
 >;
 
+export const repositoryCommitDiscussionCapabilitiesInputSchema = z
+  .object({
+    repoId: repositoryIdSchema,
+  })
+  .strict();
+
+export type RepositoryCommitDiscussionCapabilitiesInput = z.infer<
+  typeof repositoryCommitDiscussionCapabilitiesInputSchema
+>;
+
+export const repositoryCommitDiscussionCapabilitiesOutputSchema = z
+  .object({
+    canCreate: z.boolean(),
+    canManage: z.boolean(),
+  })
+  .strict();
+
+export type RepositoryCommitDiscussionCapabilitiesOutput = z.infer<
+  typeof repositoryCommitDiscussionCapabilitiesOutputSchema
+>;
+
 export const createRepositoryCommitDiscussionCommentInputSchema = z
   .object({
     contents: z.string().trim().min(1).max(10000),

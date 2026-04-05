@@ -7,6 +7,8 @@ import {
   deleteRepositoryCommitDiscussionCommentOutputSchema,
   listRepositoryCommitDiscussionThreadsInputSchema,
   listRepositoryCommitDiscussionThreadsOutputSchema,
+  repositoryCommitDiscussionCapabilitiesInputSchema,
+  repositoryCommitDiscussionCapabilitiesOutputSchema,
   updateRepositoryCommitDiscussionThreadStateInputSchema,
   updateRepositoryCommitDiscussionThreadStateOutputSchema,
 } from "@yona/contracts";
@@ -27,6 +29,14 @@ export const listRepositoryCommitDiscussionThreads = createServerFn({ method: "G
   .handler(async ({ data }) => {
     return listRepositoryCommitDiscussionThreadsOutputSchema.parse(
       await (await createServerRepoCaller()).listRepositoryCommitDiscussionThreads(data),
+    );
+  });
+
+export const readRepositoryCommitDiscussionCapabilities = createServerFn({ method: "GET" })
+  .inputValidator(repositoryCommitDiscussionCapabilitiesInputSchema)
+  .handler(async ({ data }) => {
+    return repositoryCommitDiscussionCapabilitiesOutputSchema.parse(
+      await (await createServerRepoCaller()).readRepositoryCommitDiscussionCapabilities(data),
     );
   });
 

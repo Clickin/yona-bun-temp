@@ -9,6 +9,7 @@ import {
   createRepositoryCommitDiscussionComment,
   deleteRepositoryCommitDiscussionComment,
   listRepositoryCommitDiscussionThreads,
+  readRepositoryCommitDiscussionCapabilities,
   updateRepositoryCommitDiscussionThreadState,
 } from "@app/lib/repo-discussion";
 import { readProjectRepositoryId, readRepositoryCommitDetail } from "@app/lib/repo-browser";
@@ -74,6 +75,16 @@ function ProjectCommitDetailRouteComponent() {
     queryFn: () => readCurrentSession(),
     queryKey: ["auth", "session", "commit-discussion"],
   });
+  const capabilityQuery = useQuery({
+    enabled: isClient && Boolean(repoIdQuery.data),
+    queryFn: () =>
+      readRepositoryCommitDiscussionCapabilities({
+        data: {
+          repoId: repoIdQuery.data!,
+        },
+      }),
+    queryKey: ["repo-browser", "commit-discussion-capabilities", repoIdQuery.data],
+  });
 
   const refreshDiscussion = async () => {
     await discussionQuery.refetch();
@@ -125,7 +136,11 @@ function ProjectCommitDetailRouteComponent() {
               ? discussionQuery.error instanceof Error
                 ? discussionQuery.error.message
                 : String(discussionQuery.error)
-              : null)
+              : capabilityQuery.error
+                ? capabilityQuery.error instanceof Error
+                  ? capabilityQuery.error.message
+                  : String(capabilityQuery.error)
+                : null)
           }
           onCloseOrReopenThread={async (thread) => {
             if (!repoIdQuery.data) {
@@ -253,7 +268,8 @@ function ProjectCommitDetailRouteComponent() {
           replyPendingThreadId={replyPendingThreadId}
           threadPendingId={threadPendingId}
           threads={discussionQuery.data ?? []}
-          viewerCanCreate={Boolean(sessionQuery.data && !sessionQuery.data.isAnonymous)}
+          viewerCanCreate={capabilityQuery.data?.canCreate ?? false}
+          viewerCanManage={capabilityQuery.data?.canManage ?? false}
         />
       ) : null}
     </ProjectShell>
@@ -273,6 +289,7 @@ export function CommitDiscussionSection({
   threadPendingId,
   threads,
   viewerCanCreate,
+  viewerCanManage,
 }: {
   createPending: boolean;
   currentLoginId: null | string;
@@ -289,6 +306,7 @@ export function CommitDiscussionSection({
   threadPendingId: null | number;
   threads: RepositoryCommitDiscussionThread[];
   viewerCanCreate: boolean;
+  viewerCanManage: boolean;
 }) {
   const [createFormError, setCreateFormError] = React.useState<null | string>(null);
   const [newComment, setNewComment] = React.useState("");
@@ -495,7 +513,7 @@ export function CommitDiscussionSection({
                   </p>
                   <p className="note">{comment.contents}</p>
                   <div className="action-row">
-                    {currentLoginId === comment.authorLoginId ? (
+                    {viewerCanManage || currentLoginId === comment.authorLoginId ? (
                       <button
                         className="secondary-cta"
                         disabled={deletePendingCommentId === comment.commentId}
@@ -512,7 +530,7 @@ export function CommitDiscussionSection({
               </div>
             ))}
 
-            {currentLoginId === thread.authorLoginId ? (
+            {viewerCanManage || currentLoginId === thread.authorLoginId ? (
               <div className="action-row">
                 <button
                   className="secondary-cta"
