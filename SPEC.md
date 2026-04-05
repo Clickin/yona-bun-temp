@@ -1,4 +1,4 @@
-# Yona TS Fullstack Rebuild SPEC
+# Yona Go + React Rebuild SPEC
 
 Status: Canonical Draft v1
 Date: 2026-03-07
@@ -6,7 +6,7 @@ Language: Korean-first, English identifiers
 
 ## 1. 문서 목적
 
-이 문서는 Yona를 TypeScript 풀스택 제품으로 재구축하기 위한 canonical execution spec이다.
+이 문서는 Yona를 Go backend + React frontend 제품으로 재구축하기 위한 canonical execution spec이다.
 
 이 문서는 다음 조건을 만족해야 한다.
 
@@ -25,18 +25,28 @@ Language: Korean-first, English identifiers
 - 마이그레이션 전략
 - 테스트와 완료 기준
 
+## 1.5 변환 원칙
+
+이 프로젝트는 기술적 혁신 프로젝트가 아니라 **기능 동등성(Functional Parity) 변환 프로젝트**다. `AGENTS.md`의 변환 원칙이 이 문서의 모든 섹션에 우선한다.
+
+- 레거시 Yona가 제공하는 **동일한 기능**을 동일한 UX로 구현한다.
+- 1:1 기술적 대응이 아닌, 사용자 관점에서 **동일한 기능과 경험**을 제공하는 것이 목표다.
+- 새로운 아키텍처 패턴, 구조, 추상화를 제안하지 않는다. 변환 완료 이후에만 개선을 검토한다.
+- UI 화면, 기능, 레이블, 동선은 `yona-original`을 기준으로 구현한다.
+- "최소 구조"의 범위는 이 문서 Section 3의 고정 결정에 명시된 구조로 한정한다.
+
 ## 2. 요약
 
-Yona는 `TanStack Start + React + Bun` 기반의 단일 런타임 애플리케이션으로 재구축한다. canonical app model은 다음과 같다.
+Yona는 `Go + React + TanStack Router + TanStack Query` 기반의 단일 배포 단위 애플리케이션으로 재구축한다. canonical app model은 다음과 같다.
 
-- `TanStack Start + TanStack Router + TanStack Query`
-- 내부 앱용 읽기/변경의 canonical backend boundary는 in-process `tRPC`
-- TanStack Start `serverFunction`은 app-facing thin adapter로만 사용
-- `Date` 등 non-plain-JSON 타입은 app-internal RPC boundary에서 `superjson`으로 직렬화
-- 외부 소비자 또는 프로토콜 endpoint는 server routes
+- frontend baseline은 `React + TanStack Router + TanStack Query` SPA
+- frontend build output은 Go binary에 static embed 하거나 동일한 배포 단위에서 함께 제공
+- app-facing read/mutation의 canonical backend boundary는 Go HTTP/RPC endpoint
+- 현재 TS `tRPC` procedure 이름과 input/output shape는 migration input으로 사용
+- 가능한 경우 frontend call site 보존을 위해 tRPC-compatible Go adapter를 우선 검토
+- 외부 소비자 또는 프로토콜 endpoint는 Go HTTP routes
 - user-uploaded asset은 prebundled static asset이 아니라 Yona-controlled asset route로 제공
-- 인증 프레임워크는 `Better Auth` 우선
-- 권한, ACL, 감사 로그, 핵심 도메인 규칙은 Yona가 직접 소유
+- 인증, 권한, ACL, 감사 로그, 핵심 도메인 규칙은 Yona가 직접 소유
 - `PostgreSQL`, `MySQL/MariaDB`, `SQLite` 동시 지원
 - Git backend는 시스템 `git` executable
 - SVN backend는 시스템 `svn` executable
@@ -52,25 +62,33 @@ Yona는 `TanStack Start + React + Bun` 기반의 단일 런타임 애플리케�
 - in-memory session store
 - git executable backend
 
-재개발은 레거시 Yona의 행위 의미를 보존하면서도, TanStack 중심 full-stack architecture로 재정렬되어야 한다. 기본 구현 기준은 Hono가 아니라 TanStack Start + in-process `tRPC` + server route다. `serverFunction`은 transport shell이고 business read/mutation은 `tRPC` procedure가 담당한다.
-현재 `apps/app`의 `serverFunction` 예제 코드는 pre-migration shell로 간주하며, 문서 기준선과의 차이는 후속 구현 작업에서 해소한다.
+재개발은 레거시 Yona의 행위 의미를 보존하면서도, Go backend + React SPA architecture로 재정렬되어야 한다. 현재 `apps/app`과 `packages/*`의 TS backend logic은 target baseline이 아니라 migration source material이다.
+
+중요:
+
+- 이 문서의 Section 3, Section 5, Section 7이 현재 canonical target architecture다.
+- 이 문서 아래쪽에 남아 있는 `TanStack Start`, `tRPC`, `serverFunction`, `Better Auth`, `Bun.SQL`, TS backend package ownership 관련 세부 문구는 현재 PoC에서 추출한 migration source material일 수 있다.
+- 아래 세부 섹션이 Section 3, Section 5, Section 7과 충돌하면 Section 3, Section 5, Section 7이 우선한다.
 
 ## 3. 고정 결정
 
 ### 3.1 제품과 범위
 
-- 목표: 장기적으로 레거시 Yona 전면 parity를 달성한다.
+- 목표: 레거시 Yona의 기능을 동일한 UX로 변환 구현한다. 새로운 구조 제안이 아닌 기능 동등성이 유일한 목표다.
 - 범위 bar: issue tracker 축소판이 아니라 legacy Yona parity를 기준으로 한다.
+- 변환 완료 전에는 아키텍처 개선, 새로운 패턴 도입, 레거시에 없는 기능 추가를 금지한다.
+- 변환 완료 기준은 Section 19 Definition of Done을 따른다.
 - 전달 방식: foundation 제약이 강한 vertical slice 방식으로 진행한다.
-- 런타임: Bun only
-- 배포: 일반 Bun 실행, `bun compile` SFX, Docker를 모두 지원한다.
+- 런타임: Go backend + React SPA
+- 배포: OS별 단일 실행 파일(SFX), Docker, Kubernetes를 모두 지원한다.
 
 ### 3.2 프런트엔드와 풀스택 프레임워크
 
-- 최종 UI/SSR 기준선: `TanStack Start`
+- 최종 UI 기준선: `React` SPA
 - UI 라이브러리: `React`
 - 데이터 캐시/로딩 기준선: `TanStack Query`
 - 라우팅 기준선: `TanStack Router`
+- 번들링/개발 서버 기준선: `Vite`
 - 스타일링 기준선: `Tailwind CSS`
 - 공통 UI는 `packages/ui`에서 제공한다.
 - `apps/app`에서 이미 구현된 frontend screen은 `yona-original`의 layout과 information architecture를 기본값으로 보존해야 하며, 의도적 차이가 있으면 deviation을 명시적으로 기록한다.
@@ -80,17 +98,20 @@ Yona는 `TanStack Start + React + Bun` 기반의 단일 런타임 애플리케�
 
 ### 3.3 백엔드 인터페이스 모델
 
-- 내부 앱 action/backend boundary: in-process `tRPC`
-- TanStack Start `serverFunction`: app-facing thin adapter shell
-- app-internal transformer: `superjson`
-- 외부 HTTP/protocol endpoint: TanStack Start server routes
-- `Hono`: target architecture에서 제외한다.
+- 내부 앱 action/backend boundary: Go HTTP/RPC endpoint
+- 현재 TS `tRPC` procedure 경계는 migration source material이다.
+- frontend call site 보존이 가능하면 tRPC-compatible Go adapter를 우선 검토한다.
+- `github.com/befabri/trpcgo`는 compatibility spike 후보로 본다.
+- `github.com/trpc-group/trpc-go`는 강한 Go RPC framework이지만 현재 TS `@trpc/client`의 drop-in replacement로 가정하지 않는다.
+- 외부 HTTP/protocol endpoint: Go HTTP routes
+- `Hono`와 `TanStack Start serverFunction`은 target architecture에서 제외한다.
 
 ### 3.4 인증과 세션
 
-- 우선 auth framework: `Better Auth`
+- 인증과 세션은 Yona가 직접 소유한다.
+- `Better Auth`는 target architecture에서 제외한다.
 - DB session persistence는 금지한다.
-- 기본 session storage는 in-memory다.
+- 기본 session storage는 secure cookie 또는 in-memory다.
 - 향후 Redis/Valkey secondary storage는 같은 추상화 뒤에 붙일 수 있다.
 - ACL, resource permission, audit logging, admin flow는 Yona가 직접 소유한다.
 
@@ -99,18 +120,20 @@ Yona는 `TanStack Start + React + Bun` 기반의 단일 런타임 애플리케�
 - Git backend: system `git` executable
 - SVN backend: system `svn` executable
 - FFI 기반 Git/SVN 연동은 범위 밖이다.
+- Go 구현도 `Gitea`/`Forgejo`와 같은 executable pattern을 따른다.
+- `Masterminds/vcs`는 multi-VCS abstraction 참고 자료로 활용할 수 있지만, Yona의 timeout/env whitelist/audit 정책이 source of truth다.
 
 ### 3.6 데이터베이스
 
 - 지원 엔진: PostgreSQL, MySQL/MariaDB, SQLite
-- 런타임 DB access: `Bun.SQL + Drizzle`
+- 런타임 DB access baseline: Go `database/sql` + `uptrace/bun`
 - 모든 dialect 간 schema parity는 필수다.
 
 ### 3.7 File / Asset Delivery
 
 - user-uploaded resource는 bundle/static 디렉터리에 포함하지 않는다.
 - canonical delivery path는 Yona-controlled server route다.
-- 실제 바이트는 Bun route handler가 `Bun.file()` 또는 storage adapter를 통해 스트리밍한다.
+- 실제 바이트는 Go HTTP handler 또는 storage adapter를 통해 스트리밍한다.
 - phase 1 blob storage baseline은 local filesystem이며, 향후 object storage는 같은 추상화 뒤에 붙일 수 있다.
 - asset ACL, cache header, content disposition은 Yona가 직접 통제한다.
 
@@ -246,15 +269,18 @@ legacy suite 활용 기준:
 주요 경로:
 
 - [`apps/app`](/G:/programming/yona/apps/app)
-- [`packages/api`](/G:/programming/yona/packages/api)
-- [`packages/core`](/G:/programming/yona/packages/core)
-- [`packages/infra`](/G:/programming/yona/packages/infra)
+- [`packages/auth`](/G:/programming/yona/packages/auth)
+- [`packages/db`](/G:/programming/yona/packages/db)
+- [`packages/domain`](/G:/programming/yona/packages/domain)
+- [`packages/integrations`](/G:/programming/yona/packages/integrations)
+- [`packages/vcs`](/G:/programming/yona/packages/vcs)
 - [`drizzle`](/G:/programming/yona/drizzle)
 
 현재 이미 구현된 영역:
 
-- TanStack Start 기반 UI shell과 server route
-- request-scoped session/token/basic auth resolver
+- React/TanStack 기반 화면과 route composition
+- app-facing `tRPC` surface
+- request-scoped auth/session helper
 - in-memory session store
 - git executable backend
 - smart HTTP handling
@@ -262,118 +288,94 @@ legacy suite 활용 기준:
 
 주요 현재 구현 참조:
 
-- [`apps/app/src/lib/auth-trpc.server.ts`](/G:/programming/yona/apps/app/src/lib/auth-trpc.server.ts)
-- [`apps/app/src/lib/server-request-auth.ts`](/G:/programming/yona/apps/app/src/lib/server-request-auth.ts)
-- [`packages/auth/src/request-auth.ts`](/G:/programming/yona/packages/auth/src/request-auth.ts)
-- [`packages/infra/src/session/in-memory-session-store.ts`](/G:/programming/yona/packages/infra/src/session/in-memory-session-store.ts)
+- [`apps/app/src/lib/auth-trpc.ts`](/G:/programming/yona/apps/app/src/lib/auth-trpc.ts)
+- [`apps/app/src/lib/project-trpc.ts`](/G:/programming/yona/apps/app/src/lib/project-trpc.ts)
+- [`apps/app/src/lib/issue-trpc.ts`](/G:/programming/yona/apps/app/src/lib/issue-trpc.ts)
+- [`apps/app/src/lib/pull-request-trpc.ts`](/G:/programming/yona/apps/app/src/lib/pull-request-trpc.ts)
+- [`apps/app/src/lib/repo-trpc.ts`](/G:/programming/yona/apps/app/src/lib/repo-trpc.ts)
 - [`packages/infra/src/git/executable.ts`](/G:/programming/yona/packages/infra/src/git/executable.ts)
-- [`packages/api/src/repos/repo-app.ts`](/G:/programming/yona/packages/api/src/repos/repo-app.ts)
 - [`packages/db/src/repository-access.ts`](/G:/programming/yona/packages/db/src/repository-access.ts)
-- [`docs/workflow/HANDOFF-GIT-EXEC-BACKEND-2026-03-01.md`](/G:/programming/yona/docs/workflow/HANDOFF-GIT-EXEC-BACKEND-2026-03-01.md)
-- [`docs/agents/00-goals-and-fixed-decisions.md`](/G:/programming/yona/docs/agents/00-goals-and-fixed-decisions.md)
-- [`docs/agents/04-architecture-guardrails.md`](/G:/programming/yona/docs/agents/04-architecture-guardrails.md)
 
 ## 4.4 재사용과 전환 매트릭스
 
-| Current asset                   | Decision               | Notes                                                                                    |
-| ------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------- |
-| legacy SvelteKit page semantics | Partial reuse          | UX copy, test intent, auth field contract는 재사용했고 runtime 자체는 workspace에서 제거 |
-| Hono auth app                   | Interface-only reuse   | validation, CSRF, rate-limit, audit semantics는 재사용하고 transport는 폐기              |
-| `packages/core` port            | Reuse                  | `SessionStore`, `VcsService`, DB provider 패턴은 계속 유효                               |
-| `packages/infra` git backend    | Reuse                  | 현재 저장소에서 가장 강한 자산                                                           |
-| in-memory session store         | Reuse                  | Better Auth secondary storage 또는 Yona auth session ownership으로 연결                  |
-| Drizzle schema/migration        | Reuse with restructure | `packages/db`로 이동, parity test 유지                                                   |
-| Hono repo endpoint              | Partial reuse          | TanStack server route로 재표현                                                           |
-| SvelteKit route test            | Partial reuse          | TanStack route/server-function test로 번역                                               |
+| Current asset                  | Decision                 | Notes                                                                                    |
+| ------------------------------ | ------------------------ | ---------------------------------------------------------------------------------------- |
+| current React screen semantics | Reuse                    | layout, UI copy, query usage, route composition은 재사용 가치가 크다                     |
+| current TS `tRPC` surface      | Reuse as migration input | procedure naming, input/output shape, auth/error mapping을 Go translation input으로 사용 |
+| `packages/infra` git backend   | Strong reuse target      | Go executable pattern으로 재표현할 때 가장 강한 source material                          |
+| in-memory session store        | Partial reuse            | secure cookie/in-memory session ownership 설계의 참고 자료                               |
+| Drizzle schema/migration       | Reuse with rewrite       | schema intent와 dialect test는 재사용, query/runtime은 Go로 재작성                       |
 
 ## 5. 목표 모노레포 구조
 
 ```text
 apps/
-  app/                  # TanStack Start application
-  migrator-h2/          # H2 -> SQLite Java CLI
+  app/                  # React SPA frontend
+  migrator-h2/          # H2 -> SQLite migration CLI
+
+cmd/
+  yona/                 # Go server entrypoint
+
+internal/
+  auth/                 # auth/session, OAuth, password reset, root-admin bootstrap
+  db/                   # schema, migration, query layer, dialect abstraction
+  domain/               # domain service, use case, ACL, invariant
+  httpapi/              # app-facing HTTP/RPC handlers, protocol routes, asset routes
+  integrations/         # integration provider contract, adapter, delivery runtime
+  search/               # bounded search logic
+  vcs/                  # Git/SVN executable adapter와 protocol support
 
 packages/
-  auth/                 # Better Auth integration, secondary storage, auth bridge
-  contracts/            # Zod schema, DTO, error code
-  db/                   # Drizzle schema, migration, query helper, parity test
-  domain/               # Domain service, use case, ACL, invariant
-  integrations/         # Integration provider contract, SDK adapter, optional delivery runtime
+  contracts/            # generated/frontend-consumed contract helpers
   i18n/                 # Message catalog, translation key, public text resource
   ui/                   # Shared React UI
-  vcs/                  # Git/SVN adapter와 protocol support
 ```
 
-현재 패키지의 target mapping:
+현재 TS backend package는 target ownership이 아니라 migration source material이다.
 
-- `packages/core` -> `packages/domain`, `packages/contracts`
-- `packages/infra` -> `packages/vcs`, `packages/db`, `packages/auth`
-- `packages/api` -> transport package로는 제거하고 logic를 `packages/domain`, `packages/auth`, `packages/vcs`, `packages/integrations`로 이동
-- `apps/web` -> `apps/app`으로 교체 완료
-
-## 6. Import Convention
+## 6. Import / Boundary Convention
 
 고정 규칙:
 
-- package 간 import는 `@yona/*`
-- app 내부 import는 `@app/*`
-- migration 기간 동안 schema/config import는 `@drizzle/*` 허용
+- frontend package import는 `@yona/*`, `@app/*`를 계속 사용한다.
+- client code가 Go-only backend implementation을 직접 알면 안 된다.
+- frontend는 generated contract/client 계층만 통해 backend를 호출한다.
 - 깊은 상대경로(`../../../`) 금지
-- client code가 server-only module을 import하면 안 된다.
-
-migration 기간 alias:
-
-- `@yona/auth`
-- `@yona/contracts`
-- `@yona/db`
-- `@yona/domain`
-- `@yona/integrations`
-- `@yona/i18n`
-- `@yona/ui`
-- `@yona/vcs`
 
 ## 7. 아키텍처 개요
 
 ## 7.1 애플리케이션 모델
 
-canonical app은 다음 요소를 가진 단일 TanStack Start 애플리케이션이다.
+canonical app은 다음 요소를 가진 단일 Go deployable이다.
 
-- UI와 internal route composition을 위한 route tree
-- 내부 business operation을 위한 `tRPC` router/procedure/caller/context
-- app-facing adapter shell로서의 TanStack Start `serverFunction`
-- public/protocol-oriented endpoint를 위한 server route
-- request별로 생성되는 `QueryClient`
-- auth/session projection, `QueryClient`, `tRPC` caller를 담는 root route context
+- static embed 가능한 React frontend build output
+- app-facing HTTP/RPC handler
+- public/protocol-oriented Go HTTP route
+- asset/VCS/integration/AI endpoint
+- auth/session, domain, DB, VCS, integration ownership을 가진 Go internal package
 
 이 구조의 의미는 다음과 같다.
 
-- frontend SPA와 backend service를 별도 프로세스로 쪼개지 않는다.
-- SSR, data loading, mutation, auth, protocol endpoint가 하나의 deployable app 안에 존재한다.
-- 오래 사는 infra concern은 package로 분리한다.
+- frontend와 backend는 경계상 분리되지만, 최종 배포는 하나의 artifact로 묶을 수 있다.
+- frontend build와 backend runtime을 독립적으로 진화시킬 수 있다.
+- on-prem SFX와 Docker/Kubernetes 운영을 동시에 만족시킬 수 있다.
 
-## 7.2 In-process tRPC를 internal backend baseline으로 두는 이유
-
-baseline이 `tRPC`인 이유:
-
-- browser와 SSR이 동일한 backend boundary를 공유할 수 있음
-- procedure/caller/context 구성이 transport와 business logic를 분리함
-- `superjson` transformer로 `Date` 같은 non-plain-JSON 타입을 안정적으로 왕복시킬 수 있음
-- TanStack Query와 caller 기반 SSR wiring을 결합할 수 있음
-- 단일 런타임 안에서 backend를 분리한 것과 같은 유지보수 경계를 확보함
+## 7.2 Frontend / Backend Boundary
 
 canonical rule:
 
-- 내부 application read/mutation은 `tRPC` procedure를 canonical entry로 사용
-- 완전한 HTTP semantics가 필요한 경우만 server route
-- TanStack Start `serverFunction`은 slug/adapter shell로만 사용하고 직접 DB client나 domain rule을 호출하지 않음
-- route loader, `beforeLoad`, component, `serverFunction` adapter는 DB client를 직접 import/call하지 않음
-- SSR, preload, mutation orchestration은 `tRPC` caller 또는 그 위의 thin query integration만 사용
+- frontend read/mutation은 Go HTTP/RPC endpoint를 canonical entry로 사용한다.
+- current TS `tRPC` procedure 이름과 input/output shape는 migration input이다.
+- frontend call site를 덜 흔들 수 있으면 tRPC-compatible Go adapter를 우선 검토한다.
+- `github.com/befabri/trpcgo`는 호환성 spike 후보로 본다.
+- `github.com/trpc-group/trpc-go`는 별도 Go RPC framework로 본다.
 
-## 7.3 Server Route가 여전히 필수인 이유
+## 7.3 Go HTTP Route가 필수인 이유
 
-다음 endpoint는 UI RPC로 모델링하면 안 된다.
+다음 endpoint는 app-facing RPC와 별도 HTTP route로 모델링해야 한다.
 
 - Git smart HTTP
+- SVN route
 - webhook ingress
 - OAuth 제공자 callback
 - file download / raw content route
@@ -383,85 +385,40 @@ canonical rule:
 - `llms.txt`
 - AI datasource endpoint
 
-이런 endpoint는 manual HTTP control이 가능한 명시적 server route로 구현해야 한다.
+## 7.4 Frontend Query 통합 규칙
 
-## 7.4 TanStack Query 통합 규칙
+- frontend data authority는 TanStack Query다.
+- route loader와 component는 backend implementation이 아니라 generated contract/client만 호출한다.
+- current query key와 invalidation semantics는 가능한 한 보존한다.
+- backend transport가 바뀌어도 화면 구조와 UX intent는 유지한다.
 
-애플리케이션은 TanStack Router + Query integration pattern을 강제한다.
+## 7.5 배포 모델
 
-- request마다 fresh `QueryClient` 생성
-- router context에 `queryClient`와 `tRPC` caller 주입
-- `setupRouterSsrQueryIntegration` 사용
-- `defaultPreloadStaleTime: 0` 설정
-- cache의 단일 authoritative source는 TanStack Query
-- route loader는 `ensureQueryData` 역할만 수행
-- critical data는 component에서 `useSuspenseQuery`
-- first render 이후 불러와도 되는 secondary data만 `useQuery`
-- route loader, `beforeLoad`, component는 DB client가 아니라 `tRPC` caller/query helper를 사용한다.
-- `serverFunction` adapter는 transport entry만 담당하고 cache hydration 또는 mutation orchestration 앞에서 `tRPC` procedure에 위임한다.
-- app-internal RPC는 `superjson`을 기본 transformer로 사용하되, raw HTTP/server route는 명시적 JSON/binary/header contract를 유지한다.
-- session-aware route라고 해서 SSR을 강제하지 않는다. route 목적에 따라 `ssr: true`, `ssr: 'data-only'`, `ssr: false`를 선택한다.
-- `ssr: true`는 SEO, above-the-fold content, 첫 요청의 빠른 의미 전달이 필요한 화면에 사용한다.
-- `ssr: 'data-only'`는 session/cookie 기반 gate와 초기 데이터 준비는 서버에서 하되, component 렌더링은 클라이언트에서만 하려는 화면에 사용한다.
-- `ssr: false`는 순수 앱 화면, SEO 비중이 낮고 hydration 이후 query 중심으로 충분한 화면에 사용한다.
-
-이 항목은 권고가 아니라 아키텍처 강제 조건이다.
-
-## 7.5 Streaming SSR 규칙
-
-Streaming SSR은 선택 사항이 아니라 설계 기준에 포함한다.
-
-- route loader에서 above-the-fold critical data만 await
-- non-critical data는 prefetch만 시작하고 TTFB를 막지 않음
-- 느린 secondary panel은 `Suspense` boundary로 분리
-- `Suspense`는 feature-scoped error boundary와 함께 사용
-
-Streaming SSR 우선 적용 화면:
-
-- project home dashboard
-- issue detail
-- PR detail
-- organization overview
+- frontend dist는 Go binary에 embed 하거나 동일 배포 단위에서 함께 제공한다.
+- on-prem 설치는 OS별 단일 실행 파일을 우선한다.
+- main site는 Docker/Kubernetes 운영을 우선한다.
 
 ## 8. 인증과 권한
 
 ## 8.1 Auth ownership model
 
-인증과 권한은 의도적으로 분리한다.
-
-Better Auth가 맡는 것:
-
-- provider handshake orchestration
-- auth request lifecycle helper
-- cookie/auth middleware primitive
-- adapter integration
+인증과 권한은 Yona가 직접 소유한다.
 
 Yona가 직접 맡는 것:
 
 - canonical user model
-- canonical credential/linked-account model
+- credential / linked-account model
+- cookie/session ownership
 - site/org/project/resource ACL
 - audit 로그
 - admin password reset policy
 - project membership와 role semantics
 - 모든 domain action의 permission check
 
-## 8.2 Better Auth 채택 전략
+## 8.2 Transition note
 
-우선 구현 경로:
-
-1. Better Auth를 primary authentication framework로 사용
-2. 공식 Drizzle adapter가 Yona table과 무리 없이 매핑되면 그것을 우선 사용
-3. schema mapping이 부족할 때만 custom adapter 도입
-4. session persistence는 DB 대신 in-memory secondary storage 사용
-
-canonical identity table 가정:
-
-- `n4user`
-- `user_credential`
-- `linked_account`
-
-Better Auth의 내부 표현이 이 table에 자연스럽게 매핑되지 않으면, `packages/db`에 auth-specific table을 추가할 수 있다. 다만 domain identity root는 계속 `n4user`로 둔다.
+- 현재 문서의 이후 feature-specific 세부 섹션에 남아 있는 `TanStack Start`, `tRPC`, `serverFunction`, `Better Auth`, TS backend package ownership 관련 문구는 target baseline이 아니라 migration source material일 수 있다.
+- feature semantics는 유지하되, transport/ownership/runtime은 Go 기준으로 재해석한다.
 
 ## 8.3 Session 전략
 
@@ -487,13 +444,13 @@ session 요구사항:
 
 ## 8.4 Route protection
 
-보호된 UI route는 route 또는 layout boundary의 `beforeLoad`로 보호한다.
+보호된 UI route는 frontend route guard와 backend auth middleware의 조합으로 보호한다.
 
 역할 분리 원칙:
 
-- session 조회, redirect, cookie/session rotation, transport-level response shape는 `beforeLoad`, `serverFunction`, server route가 담당한다.
-- resource/action 권한 판단은 `tRPC` procedure와 `packages/domain` ACL/policy가 담당한다.
-- `beforeLoad` 또는 `serverFunction`에서 coarse authn gate를 두는 것은 허용하지만, feature-specific ACL source of truth를 app layer에 두지 않는다.
+- session 조회, redirect, cookie/session rotation, transport-level response shape는 frontend guard와 Go HTTP route가 담당한다.
+- resource/action 권한 판단은 Go domain/service와 route middleware가 담당한다.
+- coarse authn gate를 frontend에 둘 수는 있지만, feature-specific ACL source of truth를 frontend에 두지 않는다.
 
 canonical route group:
 
@@ -705,7 +662,7 @@ auth-related data model이 지원해야 하는 것:
 우선 방향:
 
 - `n4user`, `user_credential`, `linked_account` 유지
-- Better Auth adapter 동작을 가능하면 이 table에 매핑
+- Go auth/session implementation이 이 table과 자연스럽게 맞도록 유지
 
 이 방식이 지나치게 억지스러우면 adapter-specific auth table을 추가하되, domain user identity의 중심은 계속 `n4user`다.
 
@@ -714,6 +671,12 @@ auth-related data model이 지원해야 하는 것:
 ## 11.1 Git
 
 Git은 반드시 system executable 기반으로 구현한다.
+
+구현 방향:
+
+- Go에서도 `Gitea`/`Forgejo`처럼 executable pattern을 유지한다.
+- Git library/FFI를 canonical baseline으로 두지 않는다.
+- `Masterminds/vcs`는 multi-VCS wrapper 참고 자료로만 사용한다.
 
 허용 git operation 예시:
 
@@ -741,6 +704,12 @@ Git은 반드시 system executable 기반으로 구현한다.
 ## 11.2 SVN
 
 SVN은 system `svn` executable 기반으로 유지한다.
+
+구현 방향:
+
+- Git과 동일한 subprocess safety 원칙을 적용한다.
+- 가능한 경우 Git과 공통 timeout/env whitelist/error normalization 레이어를 공유한다.
+- `Masterminds/vcs`는 SVN abstraction 참고 자료로만 사용한다.
 
 허용 SVN operation 예시:
 
@@ -823,7 +792,7 @@ phase deliverable 예시:
 
 ### 목표
 
-레거시 인증 흐름과 사용자별 작업공간 surface를 TanStack Start + Better Auth 기반으로 재구성하되, Yona 고유 의미와 세션 제약을 유지한다.
+레거시 인증 흐름과 사용자별 작업공간 surface를 Go backend + React frontend 기준으로 재구성하되, Yona 고유 의미와 세션 제약을 유지한다.
 
 ### 레거시 의도
 
@@ -858,13 +827,13 @@ phase deliverable 예시:
   - `/me`
   - `/me/settings`
   - `/users/$loginId`
-- authenticated area는 `beforeLoad`로 보호
-- `packages/auth`에 Better Auth integration package 구성
-- in-memory 기반 보조 저장소 또는 Yona 소유 세션 abstraction 사용
-- 로그인, 가입, 로그아웃, 현재 세션, 로컬 자격 증명 변경은 `tRPC` procedure + thin `serverFunction` adapter로 구성
-- 추가 이메일, 즐겨찾기/최근 방문, 알림 설정, API 토큰, 기본 랜딩 페이지 변경은 `tRPC` procedure + thin `serverFunction` adapter로 구성
-- OAuth callback 등 명시적 HTTP endpoint는 server route
-- 사이드바/알림 피드/사용자 대시보드 읽기 모델은 route loader + query-backed `tRPC` caller로 구성
+- authenticated area는 frontend route guard와 backend auth middleware로 보호
+- `internal/auth`에 Yona-owned auth/session 구현
+- secure cookie 또는 in-memory 기반 세션 abstraction 사용
+- 로그인, 가입, 로그아웃, 현재 세션, 로컬 자격 증명 변경은 Go handler/API contract로 구성
+- 추가 이메일, 즐겨찾기/최근 방문, 알림 설정, API 토큰, 기본 랜딩 페이지 변경은 Go handler/API contract로 구성
+- OAuth callback 등 명시적 HTTP endpoint는 Go route
+- 사이드바/알림 피드/사용자 대시보드 읽기 모델은 frontend query + Go API로 구성
 
 ### 공개 surface
 
@@ -1626,23 +1595,33 @@ provider-specific note:
 
 ## 15.1 `apps/app`
 
-`apps/app`은 `apps/web`를 대체하며 다음을 소유한다.
+`apps/app`은 React SPA frontend를 소유한다.
 
-- TanStack Start route tree
-- router setup
+소유 범위:
+
+- route tree
 - query integration
-- root context wiring
-- `tRPC` router/context/caller/adapter wiring
-- server route
-- app composition
+- 화면 composition
+- generated contract/client consumption
+- i18n와 shared UI 조합
 
 다음은 소유하지 않는다.
 
 - domain logic
 - raw DB schema
-- VCS process logic
+- backend process logic
+- VCS subprocess policy
 
-## 15.2 `packages/domain`
+## 15.2 `cmd/yona`
+
+소유 범위:
+
+- Go server entrypoint
+- config loading
+- static embed wiring
+- process startup / shutdown
+
+## 15.3 `internal/domain`
 
 소유 범위:
 
@@ -1651,36 +1630,43 @@ provider-specific note:
 - ACL decision
 - cross-feature invariant
 
-## 15.3 `packages/contracts`
+## 15.4 `packages/contracts`
 
 소유 범위:
 
-- Zod schema
+- generated/frontend-consumed contract helper
 - DTO
 - error code
-- `tRPC` procedure input/output schema
-- route/server-function shared contract
-- `superjson`-safe contract shape
+- client-side validation helper
 
-## 15.4 `packages/db`
+## 15.5 `internal/db`
 
 소유 범위:
 
-- Drizzle schema
+- schema
 - migration definition
 - parity test
-- DB-specific query helper
+- `uptrace/bun` query layer
 
-## 15.5 `packages/auth`
+## 15.6 `internal/auth`
 
 소유 범위:
 
-- Better Auth integration
-- adapter bridge
-- session secondary storage
+- auth/session implementation
+- OAuth bridge
+- password reset / root-admin bootstrap
 - auth middleware helper
 
-## 15.6 `packages/integrations`
+## 15.7 `internal/httpapi`
+
+소유 범위:
+
+- app-facing HTTP/RPC handler
+- asset route
+- protocol route
+- webhook / callback route
+
+## 15.8 `internal/integrations`
 
 소유 범위:
 
@@ -1690,7 +1676,7 @@ provider-specific note:
 - inbound verification helper
 - integration health check
 
-## 15.7 `packages/vcs`
+## 15.9 `internal/vcs`
 
 소유 범위:
 
@@ -1704,18 +1690,15 @@ provider-specific note:
 
 ## 16.1 Type safety
 
-- `strict`
-- `noImplicitAny`
-- `exactOptionalPropertyTypes`
-- `any` 금지
-- 모든 external input은 Zod 또는 동등한 schema validation 적용
+- Go는 명시적 type와 compile-time check를 기본으로 한다.
+- frontend TypeScript는 `strict`를 유지한다.
+- 모든 external input은 Go-side validation과 frontend validation helper 중 하나 이상으로 검증한다.
 
 ## 16.2 Security
 
 - mutation에 대한 CSRF protection
-- `tRPC` procedure, thin `serverFunction` adapter, protected route에 auth middleware
-- route loader, `beforeLoad`, component, `serverFunction` adapter에서 DB client 직접 import/call 금지
-- session이 필요한 페이지도 SPA navigation을 유지할 수 있어야 하며, session 존재만으로 full SSR을 강제하지 않는다.
+- frontend는 backend implementation detail이나 DB client를 직접 알지 않는다.
+- protected route와 API route에 auth middleware를 둔다.
 - secure cookie setting
 - VCS/file route의 path traversal 방지
 - asset route의 ACL, content disposition, cache policy 직접 통제
@@ -1724,19 +1707,19 @@ provider-specific note:
 
 ## 16.3 Performance
 
-- detail-heavy route에 streaming SSR 적용
-- loader + query cache 기반 prefetch
-- router cache와 query cache의 이중 authoritative state 금지
+- on-prem 단일 서버 기준에서 메모리 예산을 적극적으로 절감한다.
+- frontend는 query cache를 authoritative source로 사용한다.
+- backend는 low-overhead Go runtime과 efficient DB/VCS path를 우선한다.
 
 ## 16.4 Deployment
 
-- dev/prod 모두 single Bun process
-- `bun compile` SFX 지원
-- Docker multi-stage build 지원
+- dev/prod 모두 single Go process
+- OS별 SFX 지원
+- Docker multi-stage build 및 Kubernetes 운영 지원
 
 ## 17. 테스트 전략
 
-테스트는 behavior-first이면서 legacy-provenance-first로 구성한다. 새 기능은 AI가 처음부터 테스트를 추측해 작성하는 방식이 아니라, `yona-original`의 대응 test/controller/model을 먼저 읽고 intent를 추출한 뒤 failing Red test를 작성하고 Green 구현으로 이어간다. Java test를 1:1 포팅하지는 않지만, 레거시가 검증한 행위 의미는 반드시 현대 TS 테스트로 번역한다. legacy build/test runtime을 실제로 재현해 실행하는 것은 선택 사항이며, 필수 조건은 legacy source를 읽고 semantic intent를 추출하는 것이다.
+테스트는 behavior-first이면서 legacy-provenance-first로 구성한다. 새 기능은 AI가 처음부터 테스트를 추측해 작성하는 방식이 아니라, `yona-original`의 대응 test/controller/model을 먼저 읽고 intent를 추출한 뒤 failing Red test를 작성하고 Green 구현으로 이어간다. Java test를 1:1 포팅하지는 않지만, 레거시가 검증한 행위 의미는 반드시 현대 Go/React 테스트로 번역한다. legacy build/test runtime을 실제로 재현해 실행하는 것은 선택 사항이며, 필수 조건은 legacy source를 읽고 semantic intent를 추출하는 것이다.
 
 ### 17.1 Legacy intent source of truth
 
@@ -1771,7 +1754,7 @@ provider-specific note:
 
 계층 매핑 규칙:
 
-- Play controller test -> `tRPC` procedure test + `serverFunction` adapter test 또는 server route test
+- Play controller test -> Go handler/API contract test 또는 server route test
 - model test -> domain test
 - `AccessControlTest` 류 -> domain ACL test + route authorization test
 - `playRepository` test -> route/protocol integration test
@@ -1785,7 +1768,8 @@ provider-specific note:
 - extracted intent summary
 - translation target layer
 - intentionally dropped semantics
-- newly introduced TS-only semantics
+- current TS source material path
+- newly introduced Go/React-only semantics
 
 권장 템플릿:
 
@@ -1804,8 +1788,7 @@ Intent:
 Modern translation:
 
 - domain permission test
-- `tRPC` procedure authorization test
-- `serverFunction` adapter authorization test
+- Go handler/API contract test
 - route response test
 
 Deviation:
@@ -1829,7 +1812,7 @@ Deviation:
 - 첨부파일 binding lifecycle
 - integration event envelope canonicalization
 
-### 17.5 tRPC procedure / serverFunction adapter test
+### 17.5 Go handler / API contract test
 
 검증 대상:
 
@@ -1842,8 +1825,8 @@ Deviation:
 - upload finalize/bind flow
 - 커밋 댓글와 thread state mutation
 - integration config mutation
-- legacy controller outcome의 typed `tRPC` translation
-- thin `serverFunction` adapter의 slug/redirect/transport shell 동작
+- legacy controller outcome의 typed Go translation
+- route path, auth, redirect/error transport shell 동작
 
 ### 17.6 Server route test
 
@@ -1918,13 +1901,13 @@ Deviation:
 
 산출물:
 
-- `apps/app` scaffold with TanStack Start
-- Query integration과 SSR wiring
-- route protection model
-- package restructuring 적용
-- Better Auth + in-memory secondary storage spike
-- asset route / storage abstraction baseline
-- `tRPC`/`serverFunction`/server route convention 확립
+- `apps/app` React SPA baseline 정리
+- `cmd/yona` Go server scaffold
+- frontend dist embed baseline
+- auth/session baseline
+- `uptrace/bun` + 3개 DB baseline
+- asset/VCS route baseline
+- current TS `tRPC` surface inventory
 - legacy test inventory table 작성
 - feature-to-legacy-test mapping baseline 작성
 - legacy provenance 템플릿과 translation 규칙 확정
@@ -1933,11 +1916,10 @@ Deviation:
 
 완료 기준:
 
-- TanStack app이 부팅된다.
-- protected route가 동작한다.
-- query hydration이 동작한다.
-- auth spike가 검증된다.
-- asset gateway baseline이 검증된다.
+- frontend build output을 Go에서 서빙할 수 있다.
+- Go app이 부팅된다.
+- auth/session spike가 검증된다.
+- asset/VCS baseline이 검증된다.
 - 최소 auth/ACL/issue/project/PR/git/search 각 1개 이상 translation exemplar가 존재한다.
 - implementer가 테스트 계층을 임의로 정하지 않아도 되도록 mapping rule이 문서화된다.
 
@@ -2037,34 +2019,33 @@ Deviation:
 
 아래 조건이 모두 참일 때에만 재개발이 완료된 것으로 본다.
 
-- strict TypeScript가 `any` 없이 통과한다.
+- Go build와 frontend build가 모두 통과한다.
 - 핵심 기능이 route/domain/E2E test로 검증된다.
 - 핵심 기능별 legacy provenance와 Red-Green trace가 남는다.
 - PostgreSQL, MySQL/MariaDB, SQLite 지원이 모두 확인된다.
-- Better Auth integration이 in-memory session policy를 깨지 않고 동작한다.
+- Yona-owned auth/session이 DB session policy를 깨지 않고 동작한다.
 - user workspace parity(favorite/recent/preference/token/default landing page)가 ACL과 함께 동작한다.
-- 현재 git executable backend가 TanStack route로 이관된다.
+- git executable backend와 svn executable backend가 Go route로 이관된다.
 - commit discussion과 generic thread lifecycle이 PR state machine과 별도 owner 아래 보존된다.
 - user-uploaded asset delivery가 Yona ACL 아래에서 동작한다.
 - integration provider contract와 built-in provider baseline이 검증된다.
 - outbound mail과 inbound mailbox reply behavior가 문서화되고 검증된다.
-- full-stack TanStack Query SSR integration이 유일한 cache authority로 동작한다.
+- frontend dist embed 기반 SFX와 Docker/Kubernetes 배포가 문서화되고 동작한다.
 - `llms.txt`와 AI datasource endpoint가 존재하고 ACL을 지킨다.
-- Bun normal deployment, SFX, Docker build가 문서화되고 동작한다.
 
 ## 20. 주요 리스크와 대응
 
-### Better Auth adapter mismatch
+### tRPC compatibility spike mismatch
 
 Risk:
 
-- Better Auth가 Yona legacy-oriented identity table에 자연스럽게 매핑되지 않을 수 있다.
+- current TS `tRPC` surface를 Go로 옮길 때 호환성 layer가 current frontend call site를 충분히 보존하지 못할 수 있다.
 
 Mitigation:
 
-- 공식 Drizzle adapter 우선 시도
-- 부족하면 custom adapter로 보완
-- 그래도 맞지 않으면 auth persistence table을 분리하고 domain user에 bridge
+- current `*-trpc.ts` surface inventory를 먼저 동결
+- `befabri/trpcgo`로 compatibility spike 수행
+- 실패 시 custom HTTP/JSON contract + generated TS client로 전환
 
 ### In-memory session 운영 한계
 
@@ -2079,17 +2060,17 @@ Mitigation:
 - storage abstraction을 명시적으로 유지
 - future Redis/Valkey secondary storage 확장을 대비
 
-### serverFunction adapter의 backend boundary 우회 위험
+### frontend/backend boundary drift 위험
 
 Risk:
 
-- loader, component, `serverFunction` adapter가 편의상 DB client를 직접 호출하면서 `tRPC` backend boundary를 우회할 수 있다.
+- current frontend migration 과정에서 화면이 직접 backend implementation detail을 알게 될 수 있다.
 
 Mitigation:
 
-- internal read/mutation canonical entry를 `tRPC` procedure로 고정
-- route loader, `beforeLoad`, component, `serverFunction` adapter의 direct DB call 금지를 문서와 리뷰 체크리스트에 반영
-- thin adapter가 transport shell 역할만 하는지 테스트와 code review에서 확인
+- frontend는 generated contract/client만 통하도록 강제
+- direct DB call과 backend internal coupling 금지
+- TS surface inventory와 Go contract test를 함께 유지
 
 ### superjson boundary drift
 
@@ -2128,27 +2109,26 @@ Mitigation:
 
 ## 21. 참고 자료
 
-TanStack 및 Better Auth 참고 자료:
+Go / React 참고 자료:
 
-- TanStack Start overview: https://tanstack.com/start/latest/docs/framework/react/overview
-- TanStack Start auth guide: https://tanstack.com/start/latest/docs/framework/react/guide/authentication
-- TanStack Start `with-trpc` example: https://tanstack.com/start/latest/docs/framework/react/examples/with-trpc
-- tRPC docs: https://trpc.io/docs/
-- superjson: https://github.com/flightcontrolhq/superjson
-- TanStack Start basic React Query example: https://tanstack.com/start/latest/docs/framework/react/examples/start-basic-react-query
-- TanStack Start basic Auth.js example: https://tanstack.com/start/latest/docs/framework/react/examples/start-basic-authjs
-- TanStack Start LLMO guide: https://tanstack.com/start/latest/docs/framework/react/guide/llmo
-- Better Auth home: https://www.better-auth.com/
-- Better Auth adapters overview: https://www.better-auth.com/docs/adapters/overview
-- Better Auth Drizzle adapter: https://www.better-auth.com/docs/adapters/drizzle
-- Better Auth secondary storage: https://www.better-auth.com/docs/concepts/database#secondary-storage
+- TanStack Router: https://tanstack.com/router
+- TanStack Query: https://tanstack.com/query
+- Vite: https://vite.dev/
+- uptrace bun: https://bun.uptrace.dev/
+- uptrace bun README: https://github.com/uptrace/bun
+- trpcgo README: https://raw.githubusercontent.com/befabri/trpcgo/main/README.md
+- trpc-group/trpc-go README: https://raw.githubusercontent.com/trpc-group/trpc-go/main/README.md
+- Gitea docs: https://docs.gitea.com/
+- Forgejo docs: https://forgejo.org/docs/
+- Masterminds/vcs README: https://raw.githubusercontent.com/Masterminds/vcs/master/README.md
+- Go cross-compiling: https://go.dev/wiki/WindowsCrossCompiling
 
 로컬 저장소 참고 자료:
 
 - [`docs/agents/00-goals-and-fixed-decisions.md`](/G:/programming/yona/docs/agents/00-goals-and-fixed-decisions.md)
 - [`docs/agents/04-architecture-guardrails.md`](/G:/programming/yona/docs/agents/04-architecture-guardrails.md)
 - [`docs/workflow/HANDOFF-GIT-EXEC-BACKEND-2026-03-01.md`](/G:/programming/yona/docs/workflow/HANDOFF-GIT-EXEC-BACKEND-2026-03-01.md)
-- [`apps/app/src/lib/auth-trpc.server.ts`](/G:/programming/yona/apps/app/src/lib/auth-trpc.server.ts)
+- [`apps/app/src/lib/auth-trpc.ts`](/G:/programming/yona/apps/app/src/lib/auth-trpc.ts)
 - [`packages/infra/src/git/executable.ts`](/G:/programming/yona/packages/infra/src/git/executable.ts)
 - [`packages/infra/src/session/in-memory-session-store.ts`](/G:/programming/yona/packages/infra/src/session/in-memory-session-store.ts)
 - [`yona-original/conf/routes`](/G:/programming/yona/yona-original/conf/routes)

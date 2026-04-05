@@ -1,40 +1,41 @@
 # 06) Phase 계획
 
-## Phase 0A: 기반 재정비
+## Phase 0A: 아키텍처 리셋
 
 산출물:
 
-- `apps/app` TanStack Start scaffold
-- Query integration과 SSR wiring
-- route protection baseline
-- package restructuring 시작
-- Better Auth + session abstraction spike
-- asset gateway baseline
-- `tRPC` / `serverFunction` / server route convention 고정
+- `apps/app`를 React SPA 기준으로 정리
+- `cmd/yona` Go server scaffold
+- static embed 배포 baseline
+- Go auth/session baseline
+- Go DB baseline (`uptrace/bun`)과 3개 DB 연결 검증
+- VCS executable baseline 고정
+- current TS `tRPC` surface inventory
 
 완료 기준:
 
-- TanStack app이 부팅된다.
-- protected route가 동작한다.
-- query hydration이 검증된다.
-- auth/session spike가 작동한다.
-- asset route baseline이 검증된다.
+- frontend build output을 Go에서 서빙할 수 있다.
+- Go app이 부팅된다.
+- SQLite/PG/MySQL 최소 연결이 검증된다.
+- auth/session baseline이 작동한다.
+- asset/VCS route baseline이 검증된다.
 
-## Phase 0B: 레거시 번역 골격
+## Phase 0B: 레거시 + TS 번역 골격
 
 산출물:
 
 - legacy test inventory table
+- current TS backend surface inventory
 - feature-to-legacy-test mapping baseline
+- feature-to-current-TS-surface mapping baseline
 - provenance template
 - auth/ACL/issue/project/PR/git/search exemplar translation
-- `conf/test-data.yml` 기반 fixture/seeding 전략
 
 완료 기준:
 
-- implementer가 대응 legacy source를 바로 찾을 수 있다.
+- implementer가 대응 legacy source와 current TS source를 바로 찾을 수 있다.
 - 최소 exemplar set이 Red -> Green trace를 가진다.
-- 테스트 계층 선택 규칙이 문서화된다.
+- TS -> Go translation rule이 문서화된다.
 
 ## Phase 1: 신원과 핵심 소유권
 
@@ -53,6 +54,7 @@
 - 마일스톤
 - 첨부파일
 - watch/vote/share
+- markdown authoring과 authoritative render baseline
 
 ## Phase 3: 저장소와 VCS
 
@@ -61,6 +63,7 @@
 - 인라인 편집
 - 커밋 토론 / 스레드 생명주기
 - smart HTTP
+- SVN baseline
 
 ## Phase 4: 풀 리퀘스트와 리뷰
 
@@ -85,6 +88,7 @@
 - `llms.txt`
 - AI datasource endpoint
 - 배포 하드닝
+- parity 이후 `live markdown preview`
 
 ## Phase Gate 규칙
 
