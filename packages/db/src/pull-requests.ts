@@ -312,6 +312,7 @@ type PullRequestReviewThreadCountInput = Pick<
 > & {
   currentLoginId: string;
   projectId: number;
+  pullRequestId?: number;
 };
 
 type PullRequestReviewThreadPredicateInput = Pick<
@@ -440,6 +441,7 @@ export async function readPullRequestReviewCountsByProject(
     filter: input.filter,
     participantLoginId: input.participantLoginId,
     projectId: input.projectId,
+    pullRequestId: input.pullRequestId,
     state: input.state,
   };
 
@@ -1033,6 +1035,57 @@ export async function updatePullRequestStateByProjectAndNumber(
     .update(schema.pullRequest)
     .set({
       state: pullRequestStateToRaw(input.state),
+      updated: new Date(),
+    })
+    .where(
+      and(
+        eq(schema.pullRequest.toProjectId, input.projectId),
+        eq(schema.pullRequest.number, input.pullRequestNumber),
+      ),
+    );
+}
+
+export async function acquirePullRequestMergeLeaseByProjectAndNumber(
+  input: {
+    projectId: number;
+    pullRequestNumber: number;
+  },
+  db: DatabaseType = getDb(),
+): Promise<boolean> {
+  const schema = getDbSchema(db);
+  const result = await (db as any)
+    .update(schema.pullRequest)
+    .set({
+      isMerging: true,
+      updated: new Date(),
+    })
+    .where(
+      and(
+        eq(schema.pullRequest.toProjectId, input.projectId),
+        eq(schema.pullRequest.number, input.pullRequestNumber),
+        eq(schema.pullRequest.state, pullRequestStateToRaw("open")),
+        eq(schema.pullRequest.isMerging, false),
+      ),
+    )
+    .returning({
+      id: schema.pullRequest.id,
+    });
+
+  return Array.isArray(result) && result.length === 1;
+}
+
+export async function releasePullRequestMergeLeaseByProjectAndNumber(
+  input: {
+    projectId: number;
+    pullRequestNumber: number;
+  },
+  db: DatabaseType = getDb(),
+): Promise<void> {
+  const schema = getDbSchema(db);
+  await (db as any)
+    .update(schema.pullRequest)
+    .set({
+      isMerging: false,
       updated: new Date(),
     })
     .where(

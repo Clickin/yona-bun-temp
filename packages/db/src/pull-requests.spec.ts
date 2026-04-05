@@ -11,11 +11,13 @@ import {
   reviewComment,
 } from "@drizzle/sqlite/schema";
 import {
+  acquirePullRequestMergeLeaseByProjectAndNumber,
   createPullRequestReviewComment,
   deletePullRequestReviewComment,
   listPullRequestReviewThreadsByProject,
   readPullRequestByProjectAndNumber,
   readPullRequestReviewCountsByProject,
+  releasePullRequestMergeLeaseByProjectAndNumber,
   updatePullRequestMergeStateByProjectAndNumber,
   updatePullRequestReviewThreadState,
 } from "./pull-requests";
@@ -573,6 +575,125 @@ describe("pull request review-thread helpers", () => {
     ).toHaveLength(0);
   });
 
+  it("scopes review counts to a single PR when pullRequestId is supplied", async () => {
+    await db.insert(n4user).values([
+      {
+        createdDate: new Date(0),
+        email: "scope-admin@example.com",
+        id: 6101,
+        isGuest: false,
+        lastStateModifiedDate: new Date(0),
+        loginId: "scope-admin",
+        name: "Scope Admin",
+        token: null,
+      },
+      {
+        createdDate: new Date(0),
+        email: "scope-user@example.com",
+        id: 6102,
+        isGuest: false,
+        lastStateModifiedDate: new Date(0),
+        loginId: "scope-user",
+        name: "Scope User",
+        token: null,
+      },
+    ]);
+    await db.insert(project).values({
+      id: 6201,
+      name: "review-count-scope",
+      overview: "overview",
+      owner: "yona",
+      projectScope: "public",
+      vcs: "GIT",
+    });
+    await db.insert(pullRequest).values([
+      {
+        contributorId: 6101,
+        fromProjectId: 6201,
+        id: 6301,
+        number: 1,
+        receiverId: 6102,
+        state: 0,
+        title: "Scoped PR 1",
+        toProjectId: 6201,
+      },
+      {
+        contributorId: 6102,
+        fromProjectId: 6201,
+        id: 6302,
+        number: 2,
+        receiverId: 6101,
+        state: 0,
+        title: "Scoped PR 2",
+        toProjectId: 6201,
+      },
+    ]);
+    await db.insert(commentThread).values([
+      {
+        authorId: 6101,
+        authorLoginId: "scope-admin",
+        authorName: "Scope Admin",
+        commitId: "scope-1",
+        createdDate: new Date("2026-03-21T01:00:00.000Z"),
+        dtype: "NonRangedCodeCommentThread",
+        id: 6401,
+        projectId: 6201,
+        pullRequestId: 6301,
+        state: "open",
+      },
+      {
+        authorId: 6102,
+        authorLoginId: "scope-user",
+        authorName: "Scope User",
+        commitId: "scope-2",
+        createdDate: new Date("2026-03-21T02:00:00.000Z"),
+        dtype: "NonRangedCodeCommentThread",
+        id: 6402,
+        projectId: 6201,
+        pullRequestId: 6302,
+        state: "closed",
+      },
+    ]);
+    await db.insert(reviewComment).values([
+      {
+        authorId: 6101,
+        authorLoginId: "scope-admin",
+        authorName: "Scope Admin",
+        contents: "scope comment 1",
+        createdDate: new Date("2026-03-21T01:00:00.000Z"),
+        id: 6501,
+        threadId: 6401,
+      },
+      {
+        authorId: 6102,
+        authorLoginId: "scope-user",
+        authorName: "Scope User",
+        contents: "scope comment 2",
+        createdDate: new Date("2026-03-21T02:00:00.000Z"),
+        id: 6502,
+        threadId: 6402,
+      },
+    ]);
+
+    await expect(
+      readPullRequestReviewCountsByProject(
+        {
+          currentLoginId: "scope-user",
+          projectId: 6201,
+          pullRequestId: 6301,
+          state: "open",
+        } as never,
+        db,
+      ),
+    ).resolves.toEqual({
+      all: 1,
+      closed: 0,
+      createdByYou: 0,
+      involvingYou: 0,
+      open: 1,
+    });
+  });
+
   it("reads lightweight review summary and persists merged PR metadata separately from merge preview", async () => {
     await db.insert(n4user).values([
       {
@@ -693,6 +814,74 @@ describe("pull request review-thread helpers", () => {
       readPullRequestByProjectAndNumber(5201, 7, "yona", "pr-merge-summary", db),
     ).resolves.toMatchObject({
       state: "merged",
+    });
+  });
+
+  it("acquires and releases merge leases without mutating PR state", async () => {
+    await db.insert(n4user).values({
+      createdDate: new Date(0),
+      email: "lease@example.com",
+      id: 7101,
+      isGuest: false,
+      lastStateModifiedDate: new Date(0),
+      loginId: "lease-user",
+      name: "Lease User",
+      token: null,
+    });
+    await db.insert(project).values({
+      id: 7201,
+      name: "merge-lease",
+      overview: "overview",
+      owner: "yona",
+      projectScope: "public",
+      vcs: "GIT",
+    });
+    await db.insert(pullRequest).values({
+      contributorId: 7101,
+      fromBranch: "feature/lease",
+      fromProjectId: 7201,
+      id: 7301,
+      isMerging: false,
+      number: 9,
+      receiverId: 7101,
+      state: 0,
+      title: "Lease PR",
+      toBranch: "main",
+      toProjectId: 7201,
+    });
+
+    await expect(
+      acquirePullRequestMergeLeaseByProjectAndNumber(
+        {
+          projectId: 7201,
+          pullRequestNumber: 9,
+        },
+        db,
+      ),
+    ).resolves.toBe(true);
+
+    await expect(
+      acquirePullRequestMergeLeaseByProjectAndNumber(
+        {
+          projectId: 7201,
+          pullRequestNumber: 9,
+        },
+        db,
+      ),
+    ).resolves.toBe(false);
+
+    await releasePullRequestMergeLeaseByProjectAndNumber(
+      {
+        projectId: 7201,
+        pullRequestNumber: 9,
+      },
+      db,
+    );
+
+    await expect(
+      readPullRequestByProjectAndNumber(7201, 9, "yona", "merge-lease", db),
+    ).resolves.toMatchObject({
+      state: "open",
     });
   });
 });

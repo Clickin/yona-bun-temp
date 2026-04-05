@@ -32,6 +32,7 @@ import {
   type PullRequestSummary,
 } from "@yona/contracts";
 import {
+  acquirePullRequestMergeLeaseByProjectAndNumber,
   createPullRequestRecord,
   createPullRequestReviewComment as createPullRequestReviewCommentRecord,
   deletePullRequestReviewComment as deletePullRequestReviewCommentRecord,
@@ -44,6 +45,7 @@ import {
   readPullRequestReviewComment,
   readPullRequestReviewCountsByProject,
   readPullRequestReviewThread,
+  releasePullRequestMergeLeaseByProjectAndNumber,
   updatePullRequestMergeStateByProjectAndNumber,
   updatePullRequestReviewThreadState as updatePullRequestReviewThreadStateRecord,
   updatePullRequestStateByProjectAndNumber,
@@ -76,6 +78,7 @@ type ProjectAuthorization =
     : never;
 
 export interface PullRequestServiceDeps {
+  acquirePullRequestMergeLeaseByProjectAndNumber: typeof acquirePullRequestMergeLeaseByProjectAndNumber;
   appendPullRequestMergeAuditLog: typeof appendPullRequestMergeAuditLog;
   createPullRequestRecord: typeof createPullRequestRecord;
   createPullRequestReviewComment: typeof createPullRequestReviewCommentRecord;
@@ -94,6 +97,7 @@ export interface PullRequestServiceDeps {
   readPullRequestReviewComment: typeof readPullRequestReviewComment;
   readPullRequestReviewCountsByProject: typeof readPullRequestReviewCountsByProject;
   readPullRequestReviewThread: typeof readPullRequestReviewThread;
+  releasePullRequestMergeLeaseByProjectAndNumber: typeof releasePullRequestMergeLeaseByProjectAndNumber;
   resolveRepositoryPath: typeof resolveRepositoryPath;
   updatePullRequestMergeStateByProjectAndNumber: typeof updatePullRequestMergeStateByProjectAndNumber;
   updatePullRequestReviewThreadState: typeof updatePullRequestReviewThreadStateRecord;
@@ -101,6 +105,7 @@ export interface PullRequestServiceDeps {
 }
 
 const defaultDeps: PullRequestServiceDeps = {
+  acquirePullRequestMergeLeaseByProjectAndNumber,
   appendPullRequestMergeAuditLog,
   createPullRequestRecord,
   createPullRequestReviewComment: createPullRequestReviewCommentRecord,
@@ -119,6 +124,7 @@ const defaultDeps: PullRequestServiceDeps = {
   readPullRequestReviewComment,
   readPullRequestReviewCountsByProject,
   readPullRequestReviewThread,
+  releasePullRequestMergeLeaseByProjectAndNumber,
   resolveRepositoryPath,
   updatePullRequestMergeStateByProjectAndNumber,
   updatePullRequestReviewThreadState: updatePullRequestReviewThreadStateRecord,
@@ -356,6 +362,16 @@ export async function readPullRequestReviewCounts(
   requireAuthenticatedActor(actor);
   const parsedInput = pullRequestReviewThreadFilterInputSchema.parse(input);
   const authorization = await requireProjectReadAuthorization(actor, parsedInput, deps);
+  const pullRequestId =
+    parsedInput.pullRequestNumber !== undefined
+      ? (
+          await readRequiredPullRequestRecord(
+            authorization.project.id,
+            parsedInput.pullRequestNumber,
+            deps,
+          )
+        ).id
+      : undefined;
 
   return pullRequestReviewCountsSchema.parse(
     await deps.readPullRequestReviewCountsByProject({
@@ -364,6 +380,7 @@ export async function readPullRequestReviewCounts(
       filter: parsedInput.filter,
       participantLoginId: parsedInput.participantLoginId,
       projectId: authorization.project.id,
+      pullRequestId,
       state: parsedInput.state,
     }),
   );
@@ -597,22 +614,43 @@ export async function mergePullRequest(
     throw new DomainValidationError("Pull request is already merging.");
   }
 
+  const leaseAcquired = await deps.acquirePullRequestMergeLeaseByProjectAndNumber({
+    projectId: authorization.project.id,
+    pullRequestNumber: parsedInput.pullRequestNumber,
+  });
+  if (!leaseAcquired) {
+    throw new DomainValidationError("Pull request is already merging.");
+  }
+
   const repositoryId = String(authorization.project.id);
   const repoPath = deps.resolveRepositoryPath(deps.getRepositoryRoot(), repositoryId);
-  await ensurePullRequestBranchesExist(repoPath, pullRequest, deps);
-
   const mergeMessage = buildPullRequestMergeMessage(pullRequest);
   const mergeActor = createPullRequestMergeActor(actor);
-  const mergeResult = await deps.performPullRequestMerge({
-    actor: mergeActor,
-    message: mergeMessage,
-    repoPath,
-    repositoryId,
-    sourceBranch: pullRequest.fromBranch,
-    targetBranch: pullRequest.toBranch,
-  });
+  let mergeResult;
+  try {
+    await ensurePullRequestBranchesExist(repoPath, pullRequest, deps);
+
+    mergeResult = await deps.performPullRequestMerge({
+      actor: mergeActor,
+      message: mergeMessage,
+      repoPath,
+      repositoryId,
+      sourceBranch: pullRequest.fromBranch,
+      targetBranch: pullRequest.toBranch,
+    });
+  } catch (error) {
+    await deps.releasePullRequestMergeLeaseByProjectAndNumber({
+      projectId: authorization.project.id,
+      pullRequestNumber: parsedInput.pullRequestNumber,
+    });
+    throw error;
+  }
 
   if (mergeResult.conflicted || !mergeResult.mergeCommitOid) {
+    await deps.releasePullRequestMergeLeaseByProjectAndNumber({
+      projectId: authorization.project.id,
+      pullRequestNumber: parsedInput.pullRequestNumber,
+    });
     return pullRequestMergeOutputSchema.parse({
       conflicted: true,
       conflictedFiles: mergeResult.conflictedFiles,

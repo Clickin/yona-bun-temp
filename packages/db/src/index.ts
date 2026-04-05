@@ -188,6 +188,7 @@ export {
   readPostingIdByProjectAndNumber,
 } from "./postings";
 export {
+  acquirePullRequestMergeLeaseByProjectAndNumber,
   createPullRequestReviewComment,
   createPullRequestRecord,
   deletePullRequestReviewComment,
@@ -199,6 +200,7 @@ export {
   readPullRequestReviewComment,
   readPullRequestReviewCountsByProject,
   readPullRequestReviewThread,
+  releasePullRequestMergeLeaseByProjectAndNumber,
   updatePullRequestMergeStateByProjectAndNumber,
   updatePullRequestReviewThreadState,
   updatePullRequestStateByProjectAndNumber,

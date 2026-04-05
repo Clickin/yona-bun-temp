@@ -560,6 +560,46 @@ describe("pull request tRPC PR transition provenance: docs/provenance/phase-0b/p
     );
   });
 
+  it("forwards pullRequestNumber to scoped review count reads", async () => {
+    listPullRequestReviewCountsMock.mockResolvedValueOnce({
+      all: 1,
+      closed: 0,
+      createdByYou: 0,
+      involvingYou: 1,
+      open: 1,
+    });
+    const caller = createPullRequestCaller(createContext("session-token"));
+    const readReviewCounts = expectReadPullRequestReviewCounts(caller);
+
+    await expect(
+      readReviewCounts({
+        ownerName: "yobi",
+        projectName: "yona",
+        pullRequestNumber: 1,
+        state: "open",
+      }),
+    ).resolves.toEqual({
+      all: 1,
+      closed: 0,
+      createdByYou: 0,
+      involvingYou: 1,
+      open: 1,
+    });
+
+    expect(listPullRequestReviewCountsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorId: 2,
+        loginId: "yobi",
+      }),
+      expect.objectContaining({
+        ownerName: "yobi",
+        projectName: "yona",
+        pullRequestNumber: 1,
+        state: "open",
+      }),
+    );
+  });
+
   it("creates and mutates PR-bound review threads through dedicated procedures", async () => {
     createPullRequestReviewCommentMock.mockResolvedValueOnce(
       reviewThreadFixture("thread-pr-review", {
@@ -665,6 +705,58 @@ describe("pull request tRPC PR transition provenance: docs/provenance/phase-0b/p
       conflictedFiles: [],
       merged: true,
       mergedPullRequestState: "merged",
+    });
+  });
+
+  it("maps already-merging merge attempts to BAD_REQUEST", async () => {
+    mergePullRequestMock.mockRejectedValueOnce(
+      new DomainValidationError("Pull request is already merging."),
+    );
+
+    await expect(
+      createPullRequestCaller(createContext("session-token")).mergePullRequest({
+        ownerName: "yobi",
+        projectName: "yona",
+        pullRequestNumber: 1,
+      }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+  });
+
+  it("returns conflicted merge results without throwing", async () => {
+    mergePullRequestMock.mockResolvedValueOnce({
+      conflicted: true,
+      conflictedFiles: ["src/conflicted.ts"],
+      merged: false,
+      mergedPullRequestState: "open",
+    });
+
+    await expect(
+      createPullRequestCaller(createContext("session-token")).mergePullRequest({
+        ownerName: "yobi",
+        projectName: "yona",
+        pullRequestNumber: 1,
+      }),
+    ).resolves.toEqual({
+      conflicted: true,
+      conflictedFiles: ["src/conflicted.ts"],
+      merged: false,
+      mergedPullRequestState: "open",
+    });
+  });
+
+  it("surfaces merge db mismatch failures as INTERNAL_SERVER_ERROR", async () => {
+    mergePullRequestMock.mockRejectedValueOnce(new Error("db mismatch"));
+
+    await expect(
+      createPullRequestCaller(createContext("session-token")).mergePullRequest({
+        ownerName: "yobi",
+        projectName: "yona",
+        pullRequestNumber: 1,
+      }),
+    ).rejects.toMatchObject({
+      code: "INTERNAL_SERVER_ERROR",
     });
   });
 });

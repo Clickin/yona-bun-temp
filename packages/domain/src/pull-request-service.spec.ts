@@ -609,6 +609,50 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
     );
   });
 
+  it("resolves pullRequestId before reading scoped review counts", async () => {
+    const deps = {
+      readProjectAuthorization: mockFn().mockResolvedValue(createAuthorizedProjectAuthorization()),
+      readPullRequestRecordByProjectAndNumber:
+        mockFn().mockResolvedValue(createPullRequestRecord({ id: 41 })),
+      readPullRequestReviewCountsByProject: mockFn().mockResolvedValue({
+        all: 1,
+        closed: 0,
+        createdByYou: 0,
+        involvingYou: 1,
+        open: 1,
+      }),
+    };
+
+    await expect(
+      readPullRequestReviewCounts(
+        authenticatedActor,
+        {
+          ownerName: "yona",
+          projectName: "project-yona",
+          pullRequestNumber: 5,
+          state: "open",
+        },
+        deps as never,
+      ),
+    ).resolves.toEqual({
+      all: 1,
+      closed: 0,
+      createdByYou: 0,
+      involvingYou: 1,
+      open: 1,
+    });
+
+    expect(deps.readPullRequestRecordByProjectAndNumber).toHaveBeenCalledWith(11, 5);
+    expect(deps.readPullRequestReviewCountsByProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        currentLoginId: "doortts",
+        projectId: 11,
+        pullRequestId: 41,
+        state: "open",
+      }),
+    );
+  });
+
   it("rejects review counts for anonymous actors before reading authorization", async () => {
     const deps = {
       readProjectAuthorization: mockFn(),
@@ -803,6 +847,104 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
     ).rejects.toBeInstanceOf(DomainValidationError);
   });
 
+  it("rejects merge when the lease cannot be acquired", async () => {
+    const deps = {
+      acquirePullRequestMergeLeaseByProjectAndNumber: mockFn().mockResolvedValue(false),
+      readProjectAuthorization: mockFn().mockResolvedValue(createAuthorizedProjectAuthorization()),
+      readPullRequestRecordByProjectAndNumber:
+        mockFn().mockResolvedValue(createPullRequestRecord()),
+    };
+
+    await expect(
+      mergePullRequest(
+        authenticatedActor,
+        {
+          ownerName: "yona",
+          projectName: "project-yona",
+          pullRequestNumber: 5,
+        },
+        deps as never,
+      ),
+    ).rejects.toThrow("Pull request is already merging.");
+  });
+
+  it("releases the merge lease when branch checks fail before git merge", async () => {
+    const releaseLease = mockFn().mockResolvedValue(undefined);
+    const deps = {
+      acquirePullRequestMergeLeaseByProjectAndNumber: mockFn().mockResolvedValue(true),
+      getRefOid: mockFn().mockRejectedValue(new Error("missing ref")),
+      getRepositoryRoot: mockFn().mockReturnValue("/repo-root"),
+      readProjectAuthorization: mockFn().mockResolvedValue(createAuthorizedProjectAuthorization()),
+      readPullRequestRecordByProjectAndNumber:
+        mockFn().mockResolvedValue(createPullRequestRecord()),
+      releasePullRequestMergeLeaseByProjectAndNumber: releaseLease,
+      resolveRepositoryPath: mockFn().mockReturnValue("/repo-root/11"),
+    };
+
+    await expect(
+      mergePullRequest(
+        authenticatedActor,
+        {
+          ownerName: "yona",
+          projectName: "project-yona",
+          pullRequestNumber: 5,
+        },
+        deps as never,
+      ),
+    ).rejects.toBeInstanceOf(DomainValidationError);
+
+    expect(releaseLease).toHaveBeenCalledWith({
+      projectId: 11,
+      pullRequestNumber: 5,
+    });
+  });
+
+  it("releases the merge lease when git merge reports a conflict", async () => {
+    const releaseLease = mockFn().mockResolvedValue(undefined);
+    const deps = {
+      acquirePullRequestMergeLeaseByProjectAndNumber: mockFn().mockResolvedValue(true),
+      getRefOid: mockFn().mockResolvedValue("oid-1"),
+      getRepositoryRoot: mockFn().mockReturnValue("/repo-root"),
+      performPullRequestMerge: mockFn().mockResolvedValue({
+        conflicted: true,
+        conflictedFiles: ["src/conflicted.ts"],
+        mergeCommitOid: null,
+        requestId: "req-2",
+        sourceHeadOid: "source-oid",
+        targetHeadOid: "target-oid",
+      }),
+      readProjectAuthorization: mockFn().mockResolvedValue(createAuthorizedProjectAuthorization()),
+      readPullRequestRecordByProjectAndNumber:
+        mockFn().mockResolvedValue(createPullRequestRecord()),
+      releasePullRequestMergeLeaseByProjectAndNumber: releaseLease,
+      resolveRepositoryPath: mockFn().mockReturnValue("/repo-root/11"),
+      updatePullRequestMergeStateByProjectAndNumber: mockFn(),
+    };
+
+    await expect(
+      mergePullRequest(
+        authenticatedActor,
+        {
+          ownerName: "yona",
+          projectName: "project-yona",
+          pullRequestNumber: 5,
+        },
+        deps as never,
+      ),
+    ).resolves.toEqual({
+      conflicted: true,
+      conflictedFiles: ["src/conflicted.ts"],
+      merged: false,
+      mergedPullRequestState: "open",
+    });
+
+    expect(releaseLease).toHaveBeenCalledWith({
+      projectId: 11,
+      pullRequestNumber: 5,
+    });
+    expect(deps.updatePullRequestMergeStateByProjectAndNumber).not.toHaveBeenCalled();
+  });
+
   it("keeps merge authorization separate from project write auth and records git/db mismatch after a successful merge", async () => {
     const auditHook = mockFn().mockResolvedValue(undefined);
     const performMerge = mockFn().mockResolvedValue({
@@ -823,6 +965,7 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
           pullRequestNumber: 5,
         },
         {
+          acquirePullRequestMergeLeaseByProjectAndNumber: mockFn().mockResolvedValue(true),
           appendPullRequestMergeAuditLog: auditHook,
           getGitAuditLogPath: mockFn().mockReturnValue("/audit/git.jsonl"),
           getRefOid: mockFn().mockResolvedValue("oid-1"),
@@ -833,6 +976,7 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
           ),
           readPullRequestRecordByProjectAndNumber:
             mockFn().mockResolvedValue(createPullRequestRecord()),
+          releasePullRequestMergeLeaseByProjectAndNumber: mockFn(),
           resolveRepositoryPath: mockFn().mockReturnValue("/repo-root/11"),
           updatePullRequestMergeStateByProjectAndNumber: mockFn().mockRejectedValue(
             new Error("db mismatch"),
@@ -859,6 +1003,7 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
           pullRequestNumber: 5,
         },
         {
+          acquirePullRequestMergeLeaseByProjectAndNumber: mockFn(),
           getRefOid: mockFn(),
           getRepositoryRoot: mockFn(),
           performPullRequestMerge: mockFn(),
@@ -867,6 +1012,7 @@ describe("pull request service PR transition provenance: docs/provenance/phase-0
           ),
           readPullRequestRecordByProjectAndNumber:
             mockFn().mockResolvedValue(createPullRequestRecord()),
+          releasePullRequestMergeLeaseByProjectAndNumber: mockFn(),
           resolveRepositoryPath: mockFn(),
           updatePullRequestMergeStateByProjectAndNumber: mockFn(),
         } as never,
