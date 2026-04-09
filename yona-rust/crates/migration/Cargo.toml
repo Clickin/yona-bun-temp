@@ -1,0 +1,15 @@
+[package]
+name = "yona-rust-pilot-migration"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+sea-orm.workspace = true
+sea-orm-migration.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+yona-rust-persistence = { path = "../persistence" }
+
+[dev-dependencies]
+tokio.workspace = true

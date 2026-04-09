@@ -1,0 +1,7 @@
+[package]
+name = "yona-rust-vcs"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]

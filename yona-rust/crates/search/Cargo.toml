@@ -1,0 +1,7 @@
+[package]
+name = "yona-rust-search"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]

@@ -1,0 +1,5245 @@
+{
+  "source": {
+    "canonicalEntityTree": "yona-rust/crates/persistence/src",
+    "supportingReference": "drizzle/* latest cumulative migrations",
+    "excludedTables": []
+  },
+  "tables": [
+    {
+      "module": "assignee",
+      "name": "assignee",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Issue",
+          "attributes": ["has_many = \"super::issue::Entity\""]
+        },
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "attachment",
+      "name": "attachment",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "hash",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "container_type",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "mime_type",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "size",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "container_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "created_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "owner_login_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": []
+    },
+    {
+      "module": "comment_thread",
+      "name": "comment_thread",
+      "columns": [
+        {
+          "name": "dtype",
+          "type": "String",
+          "nullable": false,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "author_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_login_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "state",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "created_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "pull_request_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "prev_commit_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "commit_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "path",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "start_side",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "start_line",
+          "type": "Option<i32>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "start_column",
+          "type": "Option<i32>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "end_side",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "end_line",
+          "type": "Option<i32>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "end_column",
+          "type": "Option<i32>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "CommentThreadN4user",
+          "attributes": ["has_many = \"super::comment_thread_n4user::Entity\""]
+        },
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "PullRequest",
+          "attributes": [
+            "belongs_to = \"super::pull_request::Entity\", from = \"Column::PullRequestId\", to = \"super::pull_request::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "ReviewComment",
+          "attributes": ["has_many = \"super::review_comment::Entity\""]
+        }
+      ]
+    },
+    {
+      "module": "comment_thread_n4user",
+      "name": "comment_thread_n4user",
+      "columns": [
+        {
+          "name": "comment_thread_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        },
+        {
+          "name": "n4user_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        }
+      ],
+      "relations": [
+        {
+          "name": "CommentThread",
+          "attributes": [
+            "belongs_to = \"super::comment_thread::Entity\", from = \"Column::CommentThreadId\", to = \"super::comment_thread::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::N4userId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "commit_comment",
+      "name": "commit_comment",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "path",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "line",
+          "type": "Option<i32>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "side",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "contents",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "created_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_login_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "commit_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "email",
+      "name": "email",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "email",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_email_email_valid\""]
+        },
+        {
+          "name": "valid",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_email_email_valid\""]
+        },
+        {
+          "name": "token",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "favorite_issue",
+      "name": "favorite_issue",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_favorite_issue_user_id_issue_id_1\""]
+        },
+        {
+          "name": "issue_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_favorite_issue_user_id_issue_id_1\""]
+        }
+      ],
+      "relations": [
+        {
+          "name": "Issue",
+          "attributes": [
+            "belongs_to = \"super::issue::Entity\", from = \"Column::IssueId\", to = \"super::issue::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        },
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "favorite_organization",
+      "name": "favorite_organization",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_favorite_organization_user_id_organization_id_1\""]
+        },
+        {
+          "name": "organization_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_favorite_organization_user_id_organization_id_1\""]
+        },
+        {
+          "name": "organization_name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        },
+        {
+          "name": "Organization",
+          "attributes": [
+            "belongs_to = \"super::organization::Entity\", from = \"Column::OrganizationId\", to = \"super::organization::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "favorite_project",
+      "name": "favorite_project",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_favorite_project_user_id_project_id_1\""]
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_favorite_project_user_id_project_id_1\""]
+        },
+        {
+          "name": "owner",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "project_name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        },
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "issue",
+      "name": "issue",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "title",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "body",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "created_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "updated_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_login_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_issue_1\""]
+        },
+        {
+          "name": "number",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_issue_1\""]
+        },
+        {
+          "name": "num_of_comments",
+          "type": "Option<i32>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "state",
+          "type": "Option<i32>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "due_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "milestone_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "assignee_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "history",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "parent_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "weight",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "updated_by_author_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "is_draft",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Assignee",
+          "attributes": [
+            "belongs_to = \"super::assignee::Entity\", from = \"Column::AssigneeId\", to = \"super::assignee::Column::Id\", on_update = \"Cascade\", on_delete = \"SetNull\""
+          ]
+        },
+        {
+          "name": "FavoriteIssue",
+          "attributes": ["has_many = \"super::favorite_issue::Entity\""]
+        },
+        {
+          "name": "SelfRef",
+          "attributes": [
+            "belongs_to = \"Entity\", from = \"Column::ParentId\", to = \"Column::Id\", on_update = \"Restrict\", on_delete = \"SetNull\""
+          ]
+        },
+        {
+          "name": "IssueComment",
+          "attributes": ["has_many = \"super::issue_comment::Entity\""]
+        },
+        {
+          "name": "IssueEvent",
+          "attributes": ["has_many = \"super::issue_event::Entity\""]
+        },
+        {
+          "name": "IssueIssueLabel",
+          "attributes": ["has_many = \"super::issue_issue_label::Entity\""]
+        },
+        {
+          "name": "IssueSharer",
+          "attributes": ["has_many = \"super::issue_sharer::Entity\""]
+        },
+        {
+          "name": "IssueVoter",
+          "attributes": ["has_many = \"super::issue_voter::Entity\""]
+        },
+        {
+          "name": "Milestone",
+          "attributes": [
+            "belongs_to = \"super::milestone::Entity\", from = \"Column::MilestoneId\", to = \"super::milestone::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Cascade\", on_delete = \"Cascade\""
+          ]
+        },
+        {
+          "name": "RecentIssue",
+          "attributes": ["has_many = \"super::recent_issue::Entity\""]
+        }
+      ]
+    },
+    {
+      "module": "issue_comment",
+      "name": "issue_comment",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "contents",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "created_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_login_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "issue_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "project_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "parent_comment_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Issue",
+          "attributes": [
+            "belongs_to = \"super::issue::Entity\", from = \"Column::IssueId\", to = \"super::issue::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "SelfRef",
+          "attributes": [
+            "belongs_to = \"Entity\", from = \"Column::ParentCommentId\", to = \"Column::Id\", on_update = \"Restrict\", on_delete = \"SetNull\""
+          ]
+        },
+        {
+          "name": "IssueCommentVoter",
+          "attributes": ["has_many = \"super::issue_comment_voter::Entity\""]
+        }
+      ]
+    },
+    {
+      "module": "issue_comment_voter",
+      "name": "issue_comment_voter",
+      "columns": [
+        {
+          "name": "issue_comment_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        },
+        {
+          "name": "user_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        }
+      ],
+      "relations": [
+        {
+          "name": "IssueComment",
+          "attributes": [
+            "belongs_to = \"super::issue_comment::Entity\", from = \"Column::IssueCommentId\", to = \"super::issue_comment::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "issue_event",
+      "name": "issue_event",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "created",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "sender_login_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "sender_email",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "issue_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "event_type",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "old_value",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "new_value",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        }
+      ],
+      "relations": [
+        {
+          "name": "Issue",
+          "attributes": [
+            "belongs_to = \"super::issue::Entity\", from = \"Column::IssueId\", to = \"super::issue::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "issue_issue_label",
+      "name": "issue_issue_label",
+      "columns": [
+        {
+          "name": "issue_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        },
+        {
+          "name": "issue_label_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        }
+      ],
+      "relations": [
+        {
+          "name": "Issue",
+          "attributes": [
+            "belongs_to = \"super::issue::Entity\", from = \"Column::IssueId\", to = \"super::issue::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "IssueLabel",
+          "attributes": [
+            "belongs_to = \"super::issue_label::Entity\", from = \"Column::IssueLabelId\", to = \"super::issue_label::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "issue_label",
+      "name": "issue_label",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "category_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "color",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "IssueIssueLabel",
+          "attributes": ["has_many = \"super::issue_issue_label::Entity\""]
+        },
+        {
+          "name": "IssueLabelCategory",
+          "attributes": [
+            "belongs_to = \"super::issue_label_category::Entity\", from = \"Column::CategoryId\", to = \"super::issue_label_category::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "PostingIssueLabel",
+          "attributes": ["has_many = \"super::posting_issue_label::Entity\""]
+        },
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "issue_label_category",
+      "name": "issue_label_category",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "is_exclusive",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "IssueLabel",
+          "attributes": ["has_many = \"super::issue_label::Entity\""]
+        },
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "issue_sharer",
+      "name": "issue_sharer",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "created",
+          "type": "Option<Date>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "login_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "issue_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Issue",
+          "attributes": [
+            "belongs_to = \"super::issue::Entity\", from = \"Column::IssueId\", to = \"super::issue::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        },
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "issue_voter",
+      "name": "issue_voter",
+      "columns": [
+        {
+          "name": "issue_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        },
+        {
+          "name": "user_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        }
+      ],
+      "relations": [
+        {
+          "name": "Issue",
+          "attributes": [
+            "belongs_to = \"super::issue::Entity\", from = \"Column::IssueId\", to = \"super::issue::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "label",
+      "name": "label",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "category",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_label_1\""]
+        },
+        {
+          "name": "name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_label_1\""]
+        }
+      ],
+      "relations": [
+        {
+          "name": "ProjectLabel",
+          "attributes": ["has_many = \"super::project_label::Entity\""]
+        }
+      ]
+    },
+    {
+      "module": "linked_account",
+      "name": "linked_account",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_credential_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "provider_user_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "provider_key",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "provider_display_name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "avatar_url",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "password",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "access_token",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "refresh_token",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "id_token",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "access_token_expires_at",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "refresh_token_expires_at",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "scope",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "created_at",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "updated_at",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "UserCredential",
+          "attributes": [
+            "belongs_to = \"super::user_credential::Entity\", from = \"Column::UserCredentialId\", to = \"super::user_credential::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "mention",
+      "name": "mention",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "resource_type",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "resource_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "milestone",
+      "name": "milestone",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "title",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_milestone_1\""]
+        },
+        {
+          "name": "due_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "contents",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "state",
+          "type": "Option<i32>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_milestone_1\""]
+        }
+      ],
+      "relations": [
+        {
+          "name": "Issue",
+          "attributes": ["has_many = \"super::issue::Entity\""]
+        },
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "n4user",
+      "name": "n4user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "login_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique"]
+        },
+        {
+          "name": "password",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "password_salt",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "email",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "remember_me",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "state",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "last_state_modified_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "created_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "lang",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "token",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique"]
+        },
+        {
+          "name": "is_guest",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "english_name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Assignee",
+          "attributes": ["has_many = \"super::assignee::Entity\""]
+        },
+        {
+          "name": "CommentThreadN4user",
+          "attributes": ["has_many = \"super::comment_thread_n4user::Entity\""]
+        },
+        {
+          "name": "Email",
+          "attributes": ["has_many = \"super::email::Entity\""]
+        },
+        {
+          "name": "FavoriteIssue",
+          "attributes": ["has_many = \"super::favorite_issue::Entity\""]
+        },
+        {
+          "name": "FavoriteOrganization",
+          "attributes": ["has_many = \"super::favorite_organization::Entity\""]
+        },
+        {
+          "name": "FavoriteProject",
+          "attributes": ["has_many = \"super::favorite_project::Entity\""]
+        },
+        {
+          "name": "IssueCommentVoter",
+          "attributes": ["has_many = \"super::issue_comment_voter::Entity\""]
+        },
+        {
+          "name": "IssueSharer",
+          "attributes": ["has_many = \"super::issue_sharer::Entity\""]
+        },
+        {
+          "name": "IssueVoter",
+          "attributes": ["has_many = \"super::issue_voter::Entity\""]
+        },
+        {
+          "name": "Mention",
+          "attributes": ["has_many = \"super::mention::Entity\""]
+        },
+        {
+          "name": "NotificationEventN4user",
+          "attributes": ["has_many = \"super::notification_event_n4user::Entity\""]
+        },
+        {
+          "name": "OrganizationUser",
+          "attributes": ["has_many = \"super::organization_user::Entity\""]
+        },
+        {
+          "name": "ProjectTransfer",
+          "attributes": ["has_many = \"super::project_transfer::Entity\""]
+        },
+        {
+          "name": "ProjectUser",
+          "attributes": ["has_many = \"super::project_user::Entity\""]
+        },
+        {
+          "name": "PullRequestReviewers",
+          "attributes": ["has_many = \"super::pull_request_reviewers::Entity\""]
+        },
+        {
+          "name": "RecentIssue",
+          "attributes": ["has_many = \"super::recent_issue::Entity\""]
+        },
+        {
+          "name": "RecentlyVisitedProjects",
+          "attributes": ["has_many = \"super::recently_visited_projects::Entity\""]
+        },
+        {
+          "name": "SiteAdmin",
+          "attributes": ["has_many = \"super::site_admin::Entity\""]
+        },
+        {
+          "name": "Unwatch",
+          "attributes": ["has_many = \"super::unwatch::Entity\""]
+        },
+        {
+          "name": "UserCredential",
+          "attributes": ["has_many = \"super::user_credential::Entity\""]
+        },
+        {
+          "name": "UserEnrolledOrganization",
+          "attributes": ["has_many = \"super::user_enrolled_organization::Entity\""]
+        },
+        {
+          "name": "UserEnrolledProject",
+          "attributes": ["has_many = \"super::user_enrolled_project::Entity\""]
+        },
+        {
+          "name": "UserProjectNotification",
+          "attributes": ["has_many = \"super::user_project_notification::Entity\""]
+        },
+        {
+          "name": "UserSetting",
+          "attributes": ["has_many = \"super::user_setting::Entity\""]
+        },
+        {
+          "name": "UserVerification",
+          "attributes": ["has_many = \"super::user_verification::Entity\""]
+        },
+        {
+          "name": "Watch",
+          "attributes": ["has_many = \"super::watch::Entity\""]
+        }
+      ]
+    },
+    {
+      "module": "notification_event",
+      "name": "notification_event",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "title",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "sender_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "created",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "resource_type",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "resource_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "event_type",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "old_value",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "new_value",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        }
+      ],
+      "relations": [
+        {
+          "name": "NotificationEventN4user",
+          "attributes": ["has_many = \"super::notification_event_n4user::Entity\""]
+        },
+        {
+          "name": "NotificationMail",
+          "attributes": ["has_many = \"super::notification_mail::Entity\""]
+        }
+      ]
+    },
+    {
+      "module": "notification_event_n4user",
+      "name": "notification_event_n4user",
+      "columns": [
+        {
+          "name": "notification_event_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        },
+        {
+          "name": "n4user_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::N4userId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "NotificationEvent",
+          "attributes": [
+            "belongs_to = \"super::notification_event::Entity\", from = \"Column::NotificationEventId\", to = \"super::notification_event::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "notification_mail",
+      "name": "notification_mail",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "notification_event_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "NotificationEvent",
+          "attributes": [
+            "belongs_to = \"super::notification_event::Entity\", from = \"Column::NotificationEventId\", to = \"super::notification_event::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "organization",
+      "name": "organization",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "created",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "descr",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "FavoriteOrganization",
+          "attributes": ["has_many = \"super::favorite_organization::Entity\""]
+        },
+        {
+          "name": "OrganizationUser",
+          "attributes": ["has_many = \"super::organization_user::Entity\""]
+        },
+        {
+          "name": "Project",
+          "attributes": ["has_many = \"super::project::Entity\""]
+        },
+        {
+          "name": "UserEnrolledOrganization",
+          "attributes": ["has_many = \"super::user_enrolled_organization::Entity\""]
+        }
+      ]
+    },
+    {
+      "module": "organization_user",
+      "name": "organization_user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "organization_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "role_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "Organization",
+          "attributes": [
+            "belongs_to = \"super::organization::Entity\", from = \"Column::OrganizationId\", to = \"super::organization::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "Role",
+          "attributes": [
+            "belongs_to = \"super::role::Entity\", from = \"Column::RoleId\", to = \"super::role::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "original_email",
+      "name": "original_email",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "message_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique"]
+        },
+        {
+          "name": "resource_type",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_original_email_1\""]
+        },
+        {
+          "name": "resource_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_original_email_1\""]
+        },
+        {
+          "name": "handled_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": []
+    },
+    {
+      "module": "play_evolutions",
+      "name": "play_evolutions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i32",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        },
+        {
+          "name": "hash",
+          "type": "String",
+          "nullable": false,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "applied_at",
+          "type": "DateTimeUtc",
+          "nullable": false,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "apply_script",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["column_type = \"Text\", nullable"]
+        },
+        {
+          "name": "revert_script",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["column_type = \"Text\", nullable"]
+        },
+        {
+          "name": "state",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "last_problem",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["column_type = \"Text\", nullable"]
+        }
+      ],
+      "relations": []
+    },
+    {
+      "module": "posting",
+      "name": "posting",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "title",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "body",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "created_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "updated_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_login_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_posting_1\""]
+        },
+        {
+          "name": "number",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_posting_1\""]
+        },
+        {
+          "name": "num_of_comments",
+          "type": "Option<i32>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "notice",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "readme",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "history",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "parent_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "updated_by_author_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "SelfRef",
+          "attributes": [
+            "belongs_to = \"Entity\", from = \"Column::ParentId\", to = \"Column::Id\", on_update = \"Restrict\", on_delete = \"SetNull\""
+          ]
+        },
+        {
+          "name": "PostingComment",
+          "attributes": ["has_many = \"super::posting_comment::Entity\""]
+        },
+        {
+          "name": "PostingIssueLabel",
+          "attributes": ["has_many = \"super::posting_issue_label::Entity\""]
+        },
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "posting_comment",
+      "name": "posting_comment",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "contents",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "created_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_login_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "posting_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "project_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "parent_comment_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Posting",
+          "attributes": [
+            "belongs_to = \"super::posting::Entity\", from = \"Column::PostingId\", to = \"super::posting::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "SelfRef",
+          "attributes": [
+            "belongs_to = \"Entity\", from = \"Column::ParentCommentId\", to = \"Column::Id\", on_update = \"Restrict\", on_delete = \"SetNull\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "posting_issue_label",
+      "name": "posting_issue_label",
+      "columns": [
+        {
+          "name": "posting_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        },
+        {
+          "name": "issue_label_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        }
+      ],
+      "relations": [
+        {
+          "name": "IssueLabel",
+          "attributes": [
+            "belongs_to = \"super::issue_label::Entity\", from = \"Column::IssueLabelId\", to = \"super::issue_label::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "Posting",
+          "attributes": [
+            "belongs_to = \"super::posting::Entity\", from = \"Column::PostingId\", to = \"super::posting::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "project",
+      "name": "project",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "overview",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "vcs",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "siteurl",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "owner",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "created_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "last_issue_number",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "last_posting_number",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "original_project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "last_pushed_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "default_reviewer_count",
+          "type": "Option<i32>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "is_using_reviewer_count",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "organization_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "project_scope",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "previous_owner_login_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "previous_name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "previous_name_changed_time",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "is_code_accessible_member_only",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Assignee",
+          "attributes": ["has_many = \"super::assignee::Entity\""]
+        },
+        {
+          "name": "CommentThread",
+          "attributes": ["has_many = \"super::comment_thread::Entity\""]
+        },
+        {
+          "name": "CommitComment",
+          "attributes": ["has_many = \"super::commit_comment::Entity\""]
+        },
+        {
+          "name": "FavoriteProject",
+          "attributes": ["has_many = \"super::favorite_project::Entity\""]
+        },
+        {
+          "name": "Issue",
+          "attributes": ["has_many = \"super::issue::Entity\""]
+        },
+        {
+          "name": "IssueLabel",
+          "attributes": ["has_many = \"super::issue_label::Entity\""]
+        },
+        {
+          "name": "IssueLabelCategory",
+          "attributes": ["has_many = \"super::issue_label_category::Entity\""]
+        },
+        {
+          "name": "Milestone",
+          "attributes": ["has_many = \"super::milestone::Entity\""]
+        },
+        {
+          "name": "Organization",
+          "attributes": [
+            "belongs_to = \"super::organization::Entity\", from = \"Column::OrganizationId\", to = \"super::organization::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "Posting",
+          "attributes": ["has_many = \"super::posting::Entity\""]
+        },
+        {
+          "name": "SelfRef",
+          "attributes": [
+            "belongs_to = \"Entity\", from = \"Column::OriginalProjectId\", to = \"Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "ProjectLabel",
+          "attributes": ["has_many = \"super::project_label::Entity\""]
+        },
+        {
+          "name": "ProjectMenuSetting",
+          "attributes": ["has_many = \"super::project_menu_setting::Entity\""]
+        },
+        {
+          "name": "ProjectPushedBranch",
+          "attributes": ["has_many = \"super::project_pushed_branch::Entity\""]
+        },
+        {
+          "name": "ProjectTransfer",
+          "attributes": ["has_many = \"super::project_transfer::Entity\""]
+        },
+        {
+          "name": "ProjectUser",
+          "attributes": ["has_many = \"super::project_user::Entity\""]
+        },
+        {
+          "name": "ProjectVisitation",
+          "attributes": ["has_many = \"super::project_visitation::Entity\""]
+        },
+        {
+          "name": "RecentProject",
+          "attributes": ["has_many = \"super::recent_project::Entity\""]
+        },
+        {
+          "name": "TitleHead",
+          "attributes": ["has_many = \"super::title_head::Entity\""]
+        },
+        {
+          "name": "UserEnrolledProject",
+          "attributes": ["has_many = \"super::user_enrolled_project::Entity\""]
+        },
+        {
+          "name": "UserProjectNotification",
+          "attributes": ["has_many = \"super::user_project_notification::Entity\""]
+        },
+        {
+          "name": "Webhook",
+          "attributes": ["has_many = \"super::webhook::Entity\""]
+        }
+      ]
+    },
+    {
+      "module": "project_label",
+      "name": "project_label",
+      "columns": [
+        {
+          "name": "project_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        },
+        {
+          "name": "label_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        }
+      ],
+      "relations": [
+        {
+          "name": "Label",
+          "attributes": [
+            "belongs_to = \"super::label::Entity\", from = \"Column::LabelId\", to = \"super::label::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "project_menu_setting",
+      "name": "project_menu_setting",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "code",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "issue",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "pull_request",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "review",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "milestone",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "board",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "project_pushed_branch",
+      "name": "project_pushed_branch",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "pushed_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "project_transfer",
+      "name": "project_transfer",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "sender_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "destination",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "requested",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "confirm_key",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "accepted",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "new_project_name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::SenderId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "project_user",
+      "name": "project_user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "role_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "Role",
+          "attributes": [
+            "belongs_to = \"super::role::Entity\", from = \"Column::RoleId\", to = \"super::role::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "project_visitation",
+      "name": "project_visitation",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_project_visitation_1\""]
+        },
+        {
+          "name": "recently_visited_projects_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_project_visitation_1\""]
+        },
+        {
+          "name": "visited",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Cascade\", on_delete = \"Cascade\""
+          ]
+        },
+        {
+          "name": "RecentlyVisitedProjects",
+          "attributes": [
+            "belongs_to = \"super::recently_visited_projects::Entity\", from = \"Column::RecentlyVisitedProjectsId\", to = \"super::recently_visited_projects::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "property",
+      "name": "property",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "value",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": []
+    },
+    {
+      "module": "pull_request",
+      "name": "pull_request",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "title",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "body",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "to_project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "from_project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "to_branch",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "from_branch",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "contributor_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "receiver_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "created",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "updated",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "received",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "state",
+          "type": "Option<i32>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "is_conflict",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "is_merging",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "last_commit_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "merged_commit_id_from",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "merged_commit_id_to",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "number",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "CommentThread",
+          "attributes": ["has_many = \"super::comment_thread::Entity\""]
+        },
+        {
+          "name": "N4user2",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::ContributorId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "N4user1",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::ReceiverId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "Project2",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::FromProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "Project1",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ToProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "PullRequestCommit",
+          "attributes": ["has_many = \"super::pull_request_commit::Entity\""]
+        },
+        {
+          "name": "PullRequestEvent",
+          "attributes": ["has_many = \"super::pull_request_event::Entity\""]
+        },
+        {
+          "name": "PullRequestReviewers",
+          "attributes": ["has_many = \"super::pull_request_reviewers::Entity\""]
+        }
+      ]
+    },
+    {
+      "module": "pull_request_commit",
+      "name": "pull_request_commit",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "pull_request_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "commit_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "created",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "commit_message",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "commit_short_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_email",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "state",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "PullRequest",
+          "attributes": [
+            "belongs_to = \"super::pull_request::Entity\", from = \"Column::PullRequestId\", to = \"super::pull_request::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "pull_request_event",
+      "name": "pull_request_event",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "sender_login_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "pull_request_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "event_type",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "created",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "old_value",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "new_value",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        }
+      ],
+      "relations": [
+        {
+          "name": "PullRequest",
+          "attributes": [
+            "belongs_to = \"super::pull_request::Entity\", from = \"Column::PullRequestId\", to = \"super::pull_request::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "pull_request_reviewers",
+      "name": "pull_request_reviewers",
+      "columns": [
+        {
+          "name": "pull_request_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        },
+        {
+          "name": "user_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "PullRequest",
+          "attributes": [
+            "belongs_to = \"super::pull_request::Entity\", from = \"Column::PullRequestId\", to = \"super::pull_request::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "recent_issue",
+      "name": "recent_issue",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_recent_issue_user_id_posting_id_1\""]
+        },
+        {
+          "name": "issue_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_recent_issue_user_id_issue_id_1\""]
+        },
+        {
+          "name": "posting_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_recent_issue_user_id_posting_id_1\""]
+        },
+        {
+          "name": "title",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "url",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "created_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Issue",
+          "attributes": [
+            "belongs_to = \"super::issue::Entity\", from = \"Column::IssueId\", to = \"super::issue::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        },
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "recent_project",
+      "name": "recent_project",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_recent_project_1\""]
+        },
+        {
+          "name": "owner",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_recent_project_1\""]
+        },
+        {
+          "name": "project_name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Cascade\", on_delete = \"Cascade\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "recently_visited_projects",
+      "name": "recently_visited_projects",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "ProjectVisitation",
+          "attributes": ["has_many = \"super::project_visitation::Entity\""]
+        }
+      ]
+    },
+    {
+      "module": "review_comment",
+      "name": "review_comment",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "contents",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": true,
+          "unique": false,
+          "attributes": [
+            "ignore, column_type = \"custom(\\\"LONGTEXT\\\")\", select_as = \"text\", nullable"
+          ]
+        },
+        {
+          "name": "created_date",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_login_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "author_name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "thread_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "CommentThread",
+          "attributes": [
+            "belongs_to = \"super::comment_thread::Entity\", from = \"Column::ThreadId\", to = \"super::comment_thread::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "role",
+      "name": "role",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "active",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "OrganizationUser",
+          "attributes": ["has_many = \"super::organization_user::Entity\""]
+        },
+        {
+          "name": "ProjectUser",
+          "attributes": ["has_many = \"super::project_user::Entity\""]
+        }
+      ]
+    },
+    {
+      "module": "site_admin",
+      "name": "site_admin",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "admin_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::AdminId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "title_head",
+      "name": "title_head",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "head_keyword",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "frequency",
+          "type": "Option<i32>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "unwatch",
+      "name": "unwatch",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "resource_type",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "resource_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "user_credential",
+      "name": "user_credential",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "login_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "email",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "name",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "active",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "email_validated",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "image",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "created_at",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "updated_at",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "LinkedAccount",
+          "attributes": ["has_many = \"super::linked_account::Entity\""]
+        },
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "user_enrolled_organization",
+      "name": "user_enrolled_organization",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        },
+        {
+          "name": "organization_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "Organization",
+          "attributes": [
+            "belongs_to = \"super::organization::Entity\", from = \"Column::OrganizationId\", to = \"super::organization::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "user_enrolled_project",
+      "name": "user_enrolled_project",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        },
+        {
+          "name": "project_id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key, auto_increment = false"]
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "user_project_notification",
+      "name": "user_project_notification",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_user_project_notification_1\""]
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_user_project_notification_1\""]
+        },
+        {
+          "name": "notification_type",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": true,
+          "attributes": ["unique_key = \"uq_user_project_notification_1\""]
+        },
+        {
+          "name": "allowed",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "user_setting",
+      "name": "user_setting",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "login_default_page",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "user_verification",
+      "name": "user_verification",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "login_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "verification_code",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "timestamp",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "watch",
+      "name": "watch",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "user_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "resource_type",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "resource_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "N4user",
+          "attributes": [
+            "belongs_to = \"super::n4user::Entity\", from = \"Column::UserId\", to = \"super::n4user::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        }
+      ]
+    },
+    {
+      "module": "webhook",
+      "name": "webhook",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "project_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "payload_url",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "secret",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "created_at",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "git_push",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "webhook_type",
+          "type": "Option<i8>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Project",
+          "attributes": [
+            "belongs_to = \"super::project::Entity\", from = \"Column::ProjectId\", to = \"super::project::Column::Id\", on_update = \"Restrict\", on_delete = \"Restrict\""
+          ]
+        },
+        {
+          "name": "WebhookThread",
+          "attributes": ["has_many = \"super::webhook_thread::Entity\""]
+        }
+      ]
+    },
+    {
+      "module": "webhook_thread",
+      "name": "webhook_thread",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "webhook_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "resource_type",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "resource_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "thread_id",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "created_at",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Webhook",
+          "attributes": [
+            "belongs_to = \"super::webhook::Entity\", from = \"Column::WebhookId\", to = \"super::webhook::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
+        }
+      ]
+    }
+  ]
+}

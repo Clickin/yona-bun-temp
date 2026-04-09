@@ -1,0 +1,256 @@
+syntax = "proto3";
+
+package yona.pilot.v1;
+
+option go_package = "yona.local/yona/internal/gen/yona/pilot/v1;pilotv1";
+
+service PilotService {
+  rpc ReadCurrentSession(ReadCurrentSessionRequest) returns (ReadCurrentSessionResponse) {}
+  rpc ReadAuthUiCapabilities(ReadAuthUiCapabilitiesRequest) returns (ReadAuthUiCapabilitiesResponse) {}
+  rpc SignInWithPassword(SignInWithPasswordRequest) returns (ReadCurrentSessionResponse) {}
+  rpc RegisterWithPassword(RegisterWithPasswordRequest) returns (ReadCurrentSessionResponse) {}
+  rpc SignOut(SignOutRequest) returns (ReadCurrentSessionResponse) {}
+  rpc ReadWorkspaceOverview(ReadWorkspaceOverviewRequest) returns (ReadWorkspaceOverviewResponse) {}
+  rpc SetDefaultLandingPath(SetDefaultLandingPathRequest) returns (ReadWorkspaceOverviewResponse) {}
+  rpc CreateOrganization(CreateOrganizationRequest) returns (OrganizationDetail) {}
+  rpc ReadOrganizationDetail(ReadOrganizationDetailRequest) returns (OrganizationDetail) {}
+  rpc ReadOrganizationSettings(ReadOrganizationSettingsRequest) returns (OrganizationDetail) {}
+  rpc ReadOrganizationMembers(ReadOrganizationMembersRequest) returns (ReadOrganizationMembersResponse) {}
+  rpc UpdateOrganization(UpdateOrganizationRequest) returns (OrganizationDetail) {}
+  rpc CreateProject(CreateProjectRequest) returns (ProjectDetail) {}
+  rpc ReadProjectDetail(ReadProjectDetailRequest) returns (ProjectDetail) {}
+  rpc ReadProjectSettings(ReadProjectSettingsRequest) returns (ProjectDetail) {}
+  rpc ReadProjectMembers(ReadProjectMembersRequest) returns (ReadProjectMembersResponse) {}
+  rpc UpdateProject(UpdateProjectRequest) returns (ProjectDetail) {}
+  rpc EnrollProject(EnrollProjectRequest) returns (EnrollmentMutationResult) {}
+  rpc CancelEnrollProject(CancelEnrollProjectRequest) returns (EnrollmentMutationResult) {}
+  rpc ToggleFavoriteProject(ToggleFavoriteProjectRequest) returns (ToggleFavoriteProjectResponse) {}
+  rpc RecordRecentProjectVisit(RecordRecentProjectVisitRequest) returns (RecordRecentProjectVisitResponse) {}
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) {}
+  rpc ReadIssueDetail(ReadIssueDetailRequest) returns (ReadIssueDetailResponse) {}
+  rpc UpdateIssueState(UpdateIssueStateRequest) returns (ReadIssueDetailResponse) {}
+}
+
+message ReadCurrentSessionRequest {}
+
+message ReadAuthUiCapabilitiesRequest {}
+
+message ReadCurrentSessionResponse {
+  bool is_anonymous = 1;
+  int64 actor_id = 2;
+  string login_id = 3;
+  string user_label = 4;
+  string email_address = 5;
+  bool is_confirmed = 6;
+  bool is_site_admin = 7;
+  string default_landing_path = 8;
+}
+
+message ReadAuthUiCapabilitiesResponse {
+  bool email_verification_enabled = 1;
+  repeated string enabled_social_providers = 2;
+  bool signup_require_confirm = 3;
+  bool social_login_only = 4;
+}
+
+message SignInWithPasswordRequest {
+  string identifier = 1;
+  string password = 2;
+  bool remember_me = 3;
+}
+
+message RegisterWithPasswordRequest {
+  string login_id = 1;
+  string name = 2;
+  string email_address = 3;
+  string password = 4;
+  string retyped_password = 5;
+}
+
+message SignOutRequest {}
+
+message ListProjectsRequest {}
+
+message ProjectListItem {
+  string owner_name = 1;
+  string project_name = 2;
+  string overview = 3;
+  string project_scope = 4;
+}
+
+message ListProjectsResponse {
+  repeated ProjectListItem items = 1;
+}
+
+message ReadWorkspaceOverviewRequest {}
+
+message ReadWorkspaceOverviewResponse {
+  ReadCurrentSessionResponse session = 1;
+  string default_landing_path = 2;
+  repeated ProjectListItem favorite_projects = 3;
+  repeated ProjectListItem recent_projects = 4;
+}
+
+message SetDefaultLandingPathRequest {
+  string path = 1;
+}
+
+message CreateOrganizationRequest {
+  string organization_name = 1;
+  string description = 2;
+}
+
+message ReadOrganizationDetailRequest {
+  string organization_name = 1;
+}
+
+message ReadOrganizationSettingsRequest {
+  string organization_name = 1;
+}
+
+message ReadOrganizationMembersRequest {
+  string organization_name = 1;
+}
+
+message UpdateOrganizationRequest {
+  string current_organization_name = 1;
+  string organization_name = 2;
+  string description = 3;
+}
+
+message OrganizationDetail {
+  string organization_name = 1;
+  string description = 2;
+  bool viewer_can_update = 3;
+}
+
+message OrganizationMember {
+  string login_id = 1;
+  string user_label = 2;
+  string role = 3;
+}
+
+message OrganizationEnrollmentRequest {
+  string login_id = 1;
+  string user_label = 2;
+}
+
+message ReadOrganizationMembersResponse {
+  repeated OrganizationMember members = 1;
+  repeated OrganizationEnrollmentRequest enrollment_requests = 2;
+}
+
+message CreateProjectRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  string overview = 3;
+  string project_scope = 4;
+}
+
+message ReadProjectDetailRequest {
+  string owner_name = 1;
+  string project_name = 2;
+}
+
+message ReadProjectSettingsRequest {
+  string owner_name = 1;
+  string project_name = 2;
+}
+
+message ReadProjectMembersRequest {
+  string owner_name = 1;
+  string project_name = 2;
+}
+
+message UpdateProjectRequest {
+  string current_owner_name = 1;
+  string current_project_name = 2;
+  string owner_name = 3;
+  string project_name = 4;
+  string overview = 5;
+  string project_scope = 6;
+}
+
+message ProjectDetail {
+  string owner_name = 1;
+  string project_name = 2;
+  string organization_name = 3;
+  string overview = 4;
+  string project_scope = 5;
+  bool viewer_can_update = 6;
+  bool viewer_can_enroll = 7;
+  bool enrollment_requested = 8;
+  bool is_favorited = 9;
+}
+
+message ProjectMember {
+  string login_id = 1;
+  string user_label = 2;
+  string role = 3;
+}
+
+message ProjectEnrollmentRequest {
+  string login_id = 1;
+  string user_label = 2;
+}
+
+message ReadProjectMembersResponse {
+  repeated ProjectMember members = 1;
+  repeated ProjectEnrollmentRequest enrollment_requests = 2;
+}
+
+message EnrollProjectRequest {
+  string owner_name = 1;
+  string project_name = 2;
+}
+
+message CancelEnrollProjectRequest {
+  string owner_name = 1;
+  string project_name = 2;
+}
+
+message EnrollmentMutationResult {
+  bool ok = 1;
+}
+
+message ToggleFavoriteProjectRequest {
+  string owner_name = 1;
+  string project_name = 2;
+}
+
+message ToggleFavoriteProjectResponse {
+  string owner_name = 1;
+  string project_name = 2;
+  bool favorited = 3;
+}
+
+message RecordRecentProjectVisitRequest {
+  string owner_name = 1;
+  string project_name = 2;
+}
+
+message RecordRecentProjectVisitResponse {
+  string owner_name = 1;
+  string project_name = 2;
+}
+
+message ReadIssueDetailRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+}
+
+message UpdateIssueStateRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+  string state = 4;
+}
+
+message ReadIssueDetailResponse {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+  string title = 4;
+  string state = 5;
+}

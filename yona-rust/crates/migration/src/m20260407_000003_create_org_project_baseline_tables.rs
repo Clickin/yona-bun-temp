@@ -1,0 +1,310 @@
+use sea_orm_migration::prelude::*;
+
+#[derive(DeriveMigrationName)]
+pub struct Migration;
+
+#[async_trait::async_trait]
+impl MigrationTrait for Migration {
+    async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager
+            .create_table(
+                Table::create()
+                    .table(Organizations::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Organizations::Id)
+                            .big_integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(Organizations::OrganizationName)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(Organizations::OrganizationNameNormalized)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(Organizations::Description).text().null())
+                    .index(
+                        Index::create()
+                            .name("ux-organizations-name-normalized")
+                            .col(Organizations::OrganizationNameNormalized)
+                            .unique(),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(OrganizationMemberships::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(OrganizationMemberships::OrganizationId)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(OrganizationMemberships::UserId)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(OrganizationMemberships::Role).string().not_null())
+                    .primary_key(
+                        Index::create()
+                            .name("pk-organization-memberships")
+                            .col(OrganizationMemberships::OrganizationId)
+                            .col(OrganizationMemberships::UserId),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .drop_table(Table::drop().table(Projects::Table).to_owned())
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(Projects::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Projects::Id)
+                            .big_integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(Projects::OrganizationId).big_integer().null())
+                    .col(ColumnDef::new(Projects::OwnerName).string().not_null())
+                    .col(
+                        ColumnDef::new(Projects::OwnerNameNormalized)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(Projects::ProjectName).string().not_null())
+                    .col(
+                        ColumnDef::new(Projects::ProjectNameNormalized)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(Projects::Overview).text().null())
+                    .col(ColumnDef::new(Projects::ProjectScope).string().not_null())
+                    .index(
+                        Index::create()
+                            .name("ux-projects-owner-project-normalized")
+                            .col(Projects::OwnerNameNormalized)
+                            .col(Projects::ProjectNameNormalized)
+                            .unique(),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(ProjectMemberships::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(ProjectMemberships::ProjectId)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ProjectMemberships::UserId)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(ProjectMemberships::Role).string().not_null())
+                    .primary_key(
+                        Index::create()
+                            .name("pk-project-memberships")
+                            .col(ProjectMemberships::ProjectId)
+                            .col(ProjectMemberships::UserId),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(ProjectEnrollmentRequests::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(ProjectEnrollmentRequests::ProjectId)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ProjectEnrollmentRequests::UserId)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .primary_key(
+                        Index::create()
+                            .name("pk-project-enrollment-requests")
+                            .col(ProjectEnrollmentRequests::ProjectId)
+                            .col(ProjectEnrollmentRequests::UserId),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(FavoriteProjects::Table)
+                    .if_not_exists()
+                    .col(ColumnDef::new(FavoriteProjects::UserId).big_integer().not_null())
+                    .col(
+                        ColumnDef::new(FavoriteProjects::ProjectId)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .primary_key(
+                        Index::create()
+                            .name("pk-favorite-projects")
+                            .col(FavoriteProjects::UserId)
+                            .col(FavoriteProjects::ProjectId),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(RecentProjects::Table)
+                    .if_not_exists()
+                    .col(ColumnDef::new(RecentProjects::UserId).big_integer().not_null())
+                    .col(
+                        ColumnDef::new(RecentProjects::ProjectId)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(RecentProjects::VisitedAt).big_integer().not_null())
+                    .primary_key(
+                        Index::create()
+                            .name("pk-recent-projects")
+                            .col(RecentProjects::UserId)
+                            .col(RecentProjects::ProjectId),
+                    )
+                    .to_owned(),
+            )
+            .await
+    }
+
+    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager
+            .drop_table(Table::drop().table(RecentProjects::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(FavoriteProjects::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(
+                Table::drop()
+                    .table(ProjectEnrollmentRequests::Table)
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(Table::drop().table(ProjectMemberships::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(Projects::Table).to_owned())
+            .await?;
+        manager
+            .create_table(
+                Table::create()
+                    .table(Projects::Table)
+                    .if_not_exists()
+                    .col(ColumnDef::new(Projects::OwnerName).string().not_null())
+                    .col(ColumnDef::new(Projects::ProjectName).string().not_null())
+                    .col(ColumnDef::new(Projects::Overview).text().null())
+                    .col(ColumnDef::new(Projects::ProjectScope).string().not_null())
+                    .primary_key(
+                        Index::create()
+                            .name("pk-projects")
+                            .col(Projects::OwnerName)
+                            .col(Projects::ProjectName),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+        manager
+            .drop_table(Table::drop().table(OrganizationMemberships::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(Organizations::Table).to_owned())
+            .await
+    }
+}
+
+#[derive(DeriveIden)]
+enum Organizations {
+    Table,
+    Id,
+    OrganizationName,
+    OrganizationNameNormalized,
+    Description,
+}
+
+#[derive(DeriveIden)]
+enum OrganizationMemberships {
+    Table,
+    OrganizationId,
+    UserId,
+    Role,
+}
+
+#[derive(DeriveIden)]
+enum Projects {
+    Table,
+    Id,
+    OrganizationId,
+    OwnerName,
+    OwnerNameNormalized,
+    ProjectName,
+    ProjectNameNormalized,
+    Overview,
+    ProjectScope,
+}
+
+#[derive(DeriveIden)]
+enum ProjectMemberships {
+    Table,
+    ProjectId,
+    UserId,
+    Role,
+}
+
+#[derive(DeriveIden)]
+enum ProjectEnrollmentRequests {
+    Table,
+    ProjectId,
+    UserId,
+}
+
+#[derive(DeriveIden)]
+enum FavoriteProjects {
+    Table,
+    UserId,
+    ProjectId,
+}
+
+#[derive(DeriveIden)]
+enum RecentProjects {
+    Table,
+    UserId,
+    ProjectId,
+    VisitedAt,
+}
