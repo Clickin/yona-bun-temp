@@ -186,6 +186,18 @@ impl AppRepository {
         Ok(projects)
     }
 
+    pub async fn list_organizations(&self) -> Result<Vec<OrganizationRecord>, DbErr> {
+        let rows = organization::Entity::find()
+            .order_by_asc(organization::Column::Name)
+            .all(&self.db)
+            .await?;
+
+        Ok(rows
+            .into_iter()
+            .filter_map(|row| self.organization_record_from_model(row))
+            .collect())
+    }
+
     pub async fn read_issue_detail(
         &self,
         owner_name: &str,

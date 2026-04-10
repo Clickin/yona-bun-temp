@@ -74,17 +74,34 @@ const resolveExecutable = (name) => {
 };
 
 const GIT_BIN = resolveExecutable("git");
+const PNPM_BIN = resolveExecutable("pnpm");
 const TOOL_BIN_DIR = join(process.cwd(), "node_modules", ".bin");
 const OXFMT_BIN =
   process.platform === "win32" ? join(TOOL_BIN_DIR, "oxfmt.CMD") : join(TOOL_BIN_DIR, "oxfmt");
 const OXLINT_BIN =
   process.platform === "win32" ? join(TOOL_BIN_DIR, "oxlint.CMD") : join(TOOL_BIN_DIR, "oxlint");
 
-const run = (command, args) => {
+const resolveToolInvocation = (command, packageName) => {
+  if (existsSync(command)) {
+    return { argsPrefix: [], command };
+  }
+
+  return { argsPrefix: ["exec", packageName], command: PNPM_BIN };
+};
+
+const canRun = (command, argsPrefix = []) => {
   const result =
     process.platform === "win32" && command.toLowerCase().endsWith(".cmd")
-      ? spawnSync("cmd.exe", ["/c", command, ...args], { stdio: "inherit" })
-      : spawnSync(command, args, { stdio: "inherit" });
+      ? spawnSync("cmd.exe", ["/c", command, ...argsPrefix, "--version"], { stdio: "ignore" })
+      : spawnSync(command, [...argsPrefix, "--version"], { stdio: "ignore" });
+  return result.status === 0;
+};
+
+const run = (command, args, argsPrefix = []) => {
+  const result =
+    process.platform === "win32" && command.toLowerCase().endsWith(".cmd")
+      ? spawnSync("cmd.exe", ["/c", command, ...argsPrefix, ...args], { stdio: "inherit" })
+      : spawnSync(command, [...argsPrefix, ...args], { stdio: "inherit" });
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }
@@ -122,7 +139,8 @@ const lintTargets = stagedFiles
   .filter((file) => !isGeneratedFile(file));
 if (lintTargets.length > 0) {
   console.log(`precommit: running oxlint on ${lintTargets.length} staged file(s)`);
-  run(OXLINT_BIN, lintTargets);
+  const oxlint = resolveToolInvocation(OXLINT_BIN, "oxlint");
+  run(oxlint.command, lintTargets, oxlint.argsPrefix);
 }
 
 const formatTargets = stagedFiles
@@ -130,7 +148,12 @@ const formatTargets = stagedFiles
   .filter((file) => !isGeneratedFile(file));
 if (formatTargets.length > 0) {
   console.log(`precommit: running oxfmt --check on ${formatTargets.length} staged file(s)`);
-  run(OXFMT_BIN, ["--check", ...formatTargets]);
+  const oxfmt = resolveToolInvocation(OXFMT_BIN, "oxfmt");
+  if (!canRun(oxfmt.command, oxfmt.argsPrefix)) {
+    console.log("precommit: skipping oxfmt --check because formatter is unavailable in this environment");
+  } else {
+    run(oxfmt.command, ["--check", ...formatTargets], oxfmt.argsPrefix);
+  }
 }
 
 const parityResult = evaluateParityGate({

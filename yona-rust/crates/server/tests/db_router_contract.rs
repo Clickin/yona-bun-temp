@@ -16,6 +16,12 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
     seed_pilot_data(&db).await.expect("seed pilot data");
 
     let repo = PilotRepository::new(db);
+    repo.create_organization(yona_rust_pilot_server::persistence::CreateOrganizationInput {
+        description: Some("Seeded pilot organization".to_string()),
+        organization_name: "weblabs".to_string(),
+    })
+    .await
+    .expect("create seeded organization");
     let app = create_router_with_repository(
         RuntimeConfig {
             base_path: "/yona".to_string(),
@@ -37,6 +43,23 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
         .await
         .unwrap();
     assert_eq!(list_response.status(), StatusCode::OK);
+
+    let org_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/ListOrganizations")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(org_response.status(), StatusCode::OK);
+    let org_body = org_response.into_body().collect().await.unwrap().to_bytes();
+    let org_json = String::from_utf8(org_body.to_vec()).unwrap();
+    assert!(org_json.contains("\"organizationName\":\"weblabs\""));
 
     let bootstrap = app
         .clone()

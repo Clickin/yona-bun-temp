@@ -119,6 +119,32 @@ async fn list_projects_works_over_connect_json() {
 }
 
 #[tokio::test]
+async fn list_organizations_works_over_connect_json() {
+    let app = create_router(RuntimeConfig {
+        base_path: "/yona".to_string(),
+        public_origin: String::new(),
+    });
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/ListOrganizations")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let json = String::from_utf8(body.to_vec()).unwrap();
+    assert!(json.contains("\"organizationName\":\"pilot\""));
+    assert!(json.contains("\"description\":\"Pilot organization directory route"));
+}
+
+#[tokio::test]
 async fn read_issue_detail_applies_the_go_pilot_status_contract() {
     let app = create_router(RuntimeConfig {
         base_path: "/yona".to_string(),

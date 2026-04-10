@@ -1678,6 +1678,48 @@ impl PilotService for PilotServiceImpl {
         ))
     }
 
+    async fn list_organizations(
+        &self,
+        ctx: Context,
+        _request: OwnedView<ListOrganizationsRequestView<'static>>,
+    ) -> Result<(ListOrganizationsResponse, Context), ConnectError> {
+        if let PilotBackend::Repository(repository) = &self.backend {
+            let items = repository
+                .list_organizations()
+                .await
+                .map_err(|error| {
+                    ConnectError::new(connectrpc::ErrorCode::Internal, error.to_string())
+                })?
+                .into_iter()
+                .map(|item| OrganizationListItem {
+                    organization_name: item.organization_name,
+                    description: item.description.unwrap_or_default(),
+                    ..Default::default()
+                })
+                .collect();
+
+            return Ok((
+                ListOrganizationsResponse {
+                    items,
+                    ..Default::default()
+                },
+                ctx,
+            ));
+        }
+
+        Ok((
+            ListOrganizationsResponse {
+                items: vec![OrganizationListItem {
+                    organization_name: "pilot".to_string(),
+                    description: "Pilot organization directory route foundation".to_string(),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
     async fn read_issue_detail(
         &self,
         ctx: Context,

@@ -36,6 +36,7 @@ const NON_IMPLEMENTATION_PREFIXES = [
   "internal/",
   "packages/",
   "proto/",
+  "yona-rust/frontend/src/gen/",
 ];
 
 const NON_IMPLEMENTATION_FILES = new Set([
@@ -52,6 +53,7 @@ const NON_IMPLEMENTATION_FILES = new Set([
   "buf.gen.yaml",
   "go.mod",
   "go.sum",
+  "yona-rust/frontend/playwright.config.ts",
 ]);
 
 const TEST_FILE_PATTERN = /(^tests\/)|(\/tests\/)|(\.spec\.)|(\.test\.)/i;
@@ -260,7 +262,9 @@ const DOMAIN_BUCKETS = [
     status: "partial",
     implementationPatterns: [
       /^yona-rust\/(?:\.gitignore|Cargo\.lock|Cargo\.toml|README\.md|buf(?:\.gen)?\.yaml)$/i,
+      /^yona-rust\/frontend\/(?:README\.md|package\.json|pnpm-lock\.yaml|index\.html|tsconfig\.json|vite\.config\.ts)$/i,
       /^yona-rust\/crates\/(?:server|domain|search|vcs)\//i,
+      /^yona-rust\/frontend\/src\/(?:App|main|route-table|runtime-config)\.tsx?$/i,
       /^yona-rust\/reports\//i,
       /^yona-rust\/scripts\//i,
     ],

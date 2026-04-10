@@ -1,0 +1,60 @@
+:root {
+  color: #111827;
+  background: #f5f1e8;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+body {
+  margin: 0;
+}
+
+.app-shell {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 64px 24px 80px;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  font-size: 0.875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7c2d12;
+}
+
+h1 {
+  margin: 0 0 16px;
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  line-height: 0.95;
+}
+
+.lede {
+  margin: 0 0 32px;
+  max-width: 52ch;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.runtime-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.runtime-grid div {
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(17, 24, 39, 0.12);
+}
+
+.runtime-grid dt {
+  margin-bottom: 6px;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7c2d12;
+}
+
+.runtime-grid dd {
+  margin: 0;
+  font-family: "Courier New", monospace;
+}

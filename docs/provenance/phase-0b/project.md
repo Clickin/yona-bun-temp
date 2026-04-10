@@ -2,13 +2,11 @@
 
 ## Scope
 
-- Project create
-- Project detail read
-- Project update
+- Public project directory route foundation
+- Project create, read, update
 - Project visibility enforcement
 - Project enrollment request/cancel
-- Workspace recent and favorite slices
-- Workspace default landing slice
+- Workspace recent/favorite/default landing semantics
 
 ## Legacy Sources
 
@@ -18,47 +16,45 @@
 - `yona-original/test/models/RecentlyVisitedProjectsTest.java`
 - `yona-original/test/controllers/WatchProjectAppTest.java`
 - `yona-original/app/controllers/ProjectApp.java`
-- `yona-original/conf/routes`
+
+## Current Baseline And Canonical Target
+
+- current mixed-code reference: `frontend/legacy-start/src/lib/project-trpc.ts`, `frontend/legacy-start/src/lib/enrollment-trpc.ts`, `frontend/legacy-start/src/lib/me-trpc.ts`, `packages/domain/*project*`, `packages/db/*project*`
+- canonical implementation path: `yona-rust/`
+- canonical owner path:
+  - `yona-rust/frontend`
+  - `yona-rust/crates/server`
+  - `yona-rust/crates/domain`
+  - `yona-rust/crates/persistence`
 
 ## Extracted Intent
 
-| Legacy source                                           | Intent                                                                                                                                                                                    | Modern translation                                                                                                                                              |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ProjectTest.create`                                    | project create persists `name`, `overview`, `projectScope`, `vcs`, and a derived `siteurl`                                                                                                | `packages/db` helper + domain create service                                                                                                                    |
-| `ProjectTest.findByNameAndOwner` and `Project.exists`   | public routing keys are owner name plus project name                                                                                                                                      | `packages/contracts` identifier DTOs + `packages/db` lookup helper                                                                                              |
-| `ProjectTest.projectNameChangeable`                     | rename stays owner-scoped; duplicate project names under the same owner are rejected                                                                                                      | `packages/db` conflict helper + domain update service                                                                                                           |
-| `ProjectApp.newProject`                                 | create under your own user namespace is allowed; create under an org namespace requires org-admin authority; duplicate owner or name combinations reject; creator becomes project manager | domain create service + app tRPC mutation                                                                                                                       |
-| `ProjectApp.project`                                    | detail read is permission filtered and records a recent visit                                                                                                                             | domain detail resolution + thin route loader                                                                                                                    |
-| `ProjectApp.projectOverviewUpdate`                      | a manager-level actor can update overview content                                                                                                                                         | domain update service + app tRPC mutation                                                                                                                       |
-| `ProjectApp.settingProject`                             | settings update can rename the project slug and keeps update permission narrow                                                                                                            | domain update service + app tRPC mutation                                                                                                                       |
-| `ProjectAppTest` search cases                           | public projects remain visible to broad readers; private projects remain hidden from outsiders but visible to authorized actors                                                           | domain read matrix + app tRPC query                                                                                                                             |
-| `EnrollProjectAppTest`                                  | enrollment request and cancel stay guest-only, return not-found for missing projects, and stay idempotent                                                                                 | `packages/domain/src/enrollment-service.ts`, `packages/domain/src/enrollment-service.spec.ts`, `apps/app/src/lib/enrollment-trpc.spec.ts`                       |
-| `RecentlyVisitedProjectsTest` and `WatchProjectAppTest` | recent visits are deduped per user, sorted by latest visit, and favorite toggles remain personal workspace behavior                                                                       | `packages/domain/src/user-workspace-service.ts`, `packages/db/src/personal-workspace.spec.ts`, `apps/app/src/lib/me-trpc.spec.ts`, `apps/app/src/routes/me.tsx` |
+| Legacy source | Intent | Rust translation target |
+| --- | --- | --- |
+| `ProjectTest.create` | project create persists identity, overview, scope, VCS, and derived site URL semantics | `yona-rust/crates/persistence` repository helper + `yona-rust/crates/domain` create service |
+| `ProjectTest.findByNameAndOwner` and `Project.exists` | public routing keys are owner plus project name | identifiers in `yona-rust/proto` plus lookup helper in `yona-rust/crates/persistence` |
+| `ProjectApp.projects` and `project/list.scala.html` | `/projects` is a public, searchable, paginated directory entry surface and must not fall back to an unsupported route | `yona-rust/frontend` route shell + `PilotService.ListProjects` query + browser smoke |
+| `ProjectTest.projectNameChangeable` | rename stays owner-scoped and duplicate project names reject under the same owner | `yona-rust/crates/persistence` conflict helper + `yona-rust/crates/domain` update service |
+| `ProjectApp.newProject` | create under personal owner is allowed; org owner create requires org-admin authority | `yona-rust/crates/domain` create service + `yona-rust/crates/server` mutation contract test |
+| `ProjectApp.project` | detail read is permission filtered and records recent visit semantics | `yona-rust/crates/domain` detail resolution + `yona-rust/frontend` route/UI test |
+| `ProjectApp.projectOverviewUpdate` | manager-level actor can update overview content | `yona-rust/crates/domain` update service + `yona-rust/crates/server` mutation contract test |
+| `ProjectAppTest` visibility cases | public/protected/private visibility gates readable discovery | `yona-rust/crates/domain` read matrix + `yona-rust/crates/server` query contract test |
+| `EnrollProjectAppTest` | enrollment request and cancel stay guest-only, not-found for missing projects, idempotent | `yona-rust/crates/domain` enrollment service + `yona-rust/crates/server` mutation contract test |
+| `RecentlyVisitedProjectsTest` and `WatchProjectAppTest` | recent visits dedupe/reorder and favorites remain workspace-local behavior | `yona-rust/crates/domain` workspace service + `yona-rust/crates/persistence` workspace repo + `yona-rust/frontend` route/UI test |
 
-## Current Reconciliation
+## Explicit Gaps
 
-- Historical blocker wording became stale after the project enrollment and personal workspace slices landed in the repo.
-- Project enrollment is implemented and evidenced by `packages/domain/src/enrollment-service.ts`, `packages/domain/src/enrollment-service.spec.ts`, and `apps/app/src/lib/enrollment-trpc.spec.ts`.
-- Workspace favorite/recent is implemented and evidenced by `packages/domain/src/user-workspace-service.ts`, `packages/db/src/personal-workspace.spec.ts`, `apps/app/src/lib/me-trpc.spec.ts`, and `apps/app/src/routes/me.tsx`.
-- This reconciliation does not claim full Phase 0B exit. Organization enrollment and workspace default landing are now implemented in this project-slice view; the bounded PR and bounded search exemplars remain separate landed slices, and org/project delete stays deferred.
+- delete project
+- project transfer
+- org enrollment management
+- full workspace settings and default landing UX parity
+- project member management beyond read-only summary
+- project watchers, webhooks, change VCS, statistics
 
-## Visibility Baseline For This Batch
+이 항목들은 후속 follow-up과 provenance gap으로 계속 남는다.
 
-- `public`: readable by anonymous and authenticated outsiders
-- `protected`: readable by project members and organization members, anonymous outsiders denied
-- `private`: readable by project members, project managers, organization admins, and site admins, outsiders denied
-- Update permission remains narrower than read permission and is reserved for project managers, organization admins on org-owned projects, and site admins
+## R0-3 Delivery Note
 
-## Route Deviation
-
-- Legacy creation and settings pages used `/projectform`, `/:user/:project/settingform`, and `/:user/:project/setting`.
-- This batch intentionally normalizes them to `/projects/new`, `/$owner/$projectName`, and `/$owner/$projectName/settings`.
-- The path shape changes, but the owner-based routing semantics do not.
-
-## Out Of Scope
-
-- Delete project
-- Project transfer between owners
-- Organization enrollment request/cancel
-- Workspace default landing page implementation
-- Repository rename and menu-setting side effects beyond the minimal owner and identifier slice
+- `R0-3` now covers project create/detail/settings, visibility-aware read, guest-only enrollment request/cancel, read-only member summary, and workspace favorite/recent linkage in `yona-rust/`.
+- The Wave 0 route-foundation slice also mounts the public `/projects` directory in `yona-rust/frontend` with route-parity tests and a shell-routing Playwright smoke pack.
+- Project detail read records recent visits for authenticated viewers, and `/me` now reflects favorite/recent project state through `ReadWorkspaceOverview`.
