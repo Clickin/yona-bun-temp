@@ -66,9 +66,26 @@ export interface WorkspaceOverviewViewModel {
 }
 
 export interface OrganizationDetailViewModel {
+  adminMembers?: Array<{ avatarUrl: string; loginId: string; role: string; userLabel: string }>;
   description: string;
+  memberMembers?: Array<{ avatarUrl: string; loginId: string; role: string; userLabel: string }>;
   organizationName: string;
+  viewerCanCreateProject?: boolean;
   viewerCanUpdate: boolean;
+  visibleProjects?: Array<{
+    createdLabel: string;
+    isWatching: boolean;
+    lastPushedLabel: string;
+    logoUrl: string;
+    memberCount: number;
+    originOwnerName: string;
+    originProjectName: string;
+    overview: string;
+    ownerName: string;
+    projectName: string;
+    projectScope: string;
+    watchCount: number;
+  }>;
 }
 
 export interface OrganizationMembersViewModel {
@@ -77,15 +94,47 @@ export interface OrganizationMembersViewModel {
 }
 
 export interface ProjectDetailViewModel {
+  backgroundUrl?: string;
+  boardCount?: number;
+  cloneUrl?: string;
+  codeMemberOnly?: boolean;
+  currentMilestone?: {
+    closedIssueCount: number;
+    completionPercent: number;
+    dueDateLabel: string;
+    openIssueCount: number;
+    title: string;
+  };
+  defaultTab?: string;
   enrollmentRequested: boolean;
   isFavorited: boolean;
+  isForked?: boolean;
+  isWatching?: boolean;
+  logoUrl?: string;
+  memberCount?: number;
+  members?: Array<{ avatarUrl: string; loginId: string; role: string; userLabel: string }>;
+  openIssueCount?: number;
+  openPullRequestCount?: number;
   organizationName: string;
+  originOwnerName?: string;
+  originProjectName?: string;
   overview: string;
+  overviewEditable?: boolean;
   ownerName: string;
   projectName: string;
   projectScope: string;
+  reviewCount?: number;
+  showAdmin?: boolean;
+  showBoard?: boolean;
+  showCode?: boolean;
+  showIssue?: boolean;
+  showMilestone?: boolean;
+  showPullRequest?: boolean;
+  showReview?: boolean;
   viewerCanEnroll: boolean;
   viewerCanUpdate: boolean;
+  viewerCanWatch?: boolean;
+  watchCount?: number;
 }
 
 export interface ProjectMembersViewModel {

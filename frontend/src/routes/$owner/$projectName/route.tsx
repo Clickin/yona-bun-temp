@@ -3,11 +3,13 @@ import { Outlet, createFileRoute } from "@tanstack/react-router";
 import {
   cancelEnrollProject,
   enrollProject,
-  readProjectDetail,
+  readProjectContainer,
   toggleFavoriteProject,
+  toggleProjectWatch,
+  updateProjectOverview,
 } from "../../../auth-workspace-client";
 import { useAppRuntime } from "../../../app-runtime-context";
-import { toProjectDetailView } from "../../../app-view-models";
+import { toProjectContainerView } from "../../../app-view-models";
 import { ProjectDetailPage } from "../../-project-views";
 
 export const Route = createFileRoute("/$owner/$projectName")({
@@ -21,14 +23,19 @@ function ProjectLayoutRouteComponent() {
 export function ProjectDetailRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { csrfToken, currentSession, refreshWorkspace, runtimeConfig, setErrorMessage } = useAppRuntime();
-  const [detail, setDetail] = React.useState<ReturnType<typeof toProjectDetailView> | null>(null);
+  const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(null);
+
+  const refreshContainer = React.useCallback(async (nextOwnerName: string, nextProjectName: string) => {
+    const nextDetail = await readProjectContainer(runtimeConfig, nextOwnerName, nextProjectName);
+    setDetail(toProjectContainerView(nextDetail));
+  }, [runtimeConfig]);
 
   React.useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const nextDetail = await readProjectDetail(runtimeConfig, owner, projectName);
+      const nextDetail = await readProjectContainer(runtimeConfig, owner, projectName);
       if (!cancelled) {
-        setDetail(toProjectDetailView(nextDetail));
+        setDetail(toProjectContainerView(nextDetail));
       }
     })();
     return () => {
@@ -39,12 +46,11 @@ export function ProjectDetailRouteComponent() {
   return (
     <ProjectDetailPage
       detail={detail}
-      members={null}
+      runtimeConfig={runtimeConfig}
       onCancelEnrollProject={async (nextOwnerName, nextProjectName) => {
         try {
           await cancelEnrollProject(runtimeConfig, csrfToken, nextOwnerName, nextProjectName);
-          const nextDetail = await readProjectDetail(runtimeConfig, nextOwnerName, nextProjectName);
-          setDetail(toProjectDetailView(nextDetail));
+          await refreshContainer(nextOwnerName, nextProjectName);
           if (currentSession && !currentSession.isAnonymous) {
             await refreshWorkspace(currentSession);
           }
@@ -55,8 +61,7 @@ export function ProjectDetailRouteComponent() {
       onEnrollProject={async (nextOwnerName, nextProjectName) => {
         try {
           await enrollProject(runtimeConfig, csrfToken, nextOwnerName, nextProjectName);
-          const nextDetail = await readProjectDetail(runtimeConfig, nextOwnerName, nextProjectName);
-          setDetail(toProjectDetailView(nextDetail));
+          await refreshContainer(nextOwnerName, nextProjectName);
           if (currentSession && !currentSession.isAnonymous) {
             await refreshWorkspace(currentSession);
           }
@@ -67,13 +72,38 @@ export function ProjectDetailRouteComponent() {
       onToggleFavoriteProject={async (nextOwnerName, nextProjectName) => {
         try {
           await toggleFavoriteProject(runtimeConfig, csrfToken, nextOwnerName, nextProjectName);
-          const nextDetail = await readProjectDetail(runtimeConfig, nextOwnerName, nextProjectName);
-          setDetail(toProjectDetailView(nextDetail));
+          await refreshContainer(nextOwnerName, nextProjectName);
           if (currentSession && !currentSession.isAnonymous) {
             await refreshWorkspace(currentSession);
           }
         } catch (error) {
           setErrorMessage(error instanceof Error ? error.message : "Toggle favorite failed.");
+        }
+      }}
+      onToggleProjectWatch={async (nextOwnerName, nextProjectName, watching) => {
+        try {
+          const nextDetail = await toggleProjectWatch(
+            runtimeConfig,
+            csrfToken,
+            nextOwnerName,
+            nextProjectName,
+            watching,
+          );
+          setDetail(toProjectContainerView(nextDetail));
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : "Toggle watch failed.");
+        }
+      }}
+      onUpdateProjectOverview={async (nextOwnerName, nextProjectName, overview) => {
+        try {
+          const nextDetail = await updateProjectOverview(runtimeConfig, csrfToken, {
+            overview,
+            ownerName: nextOwnerName,
+            projectName: nextProjectName,
+          });
+          setDetail(toProjectContainerView(nextDetail));
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : "Update overview failed.");
         }
       }}
     />

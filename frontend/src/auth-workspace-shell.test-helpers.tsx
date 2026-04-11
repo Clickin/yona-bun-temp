@@ -149,15 +149,19 @@ export function renderOrganizationDirectory(
 
 export function renderOrganizationDetail(
   detail: OrganizationDetailViewModel | null,
-  members: OrganizationMembersViewModel | null = null,
+  _members: OrganizationMembersViewModel | null = null,
 ): string {
-  return renderToString(<OrganizationDetailPage detail={detail} members={members} />);
+  return renderToString(
+    <OrganizationDetailPage detail={detail} runtimeConfig={testRuntimeConfig} />,
+  );
 }
 
 export function renderOrganizationSettings(
   detail: OrganizationDetailViewModel | null,
 ): string {
-  return renderToString(<OrganizationSettingsPage detail={detail} />);
+  return renderToString(
+    <OrganizationSettingsPage detail={detail} runtimeConfig={testRuntimeConfig} />,
+  );
 }
 
 export function renderOrganizationNew(): string {
@@ -166,13 +170,17 @@ export function renderOrganizationNew(): string {
 
 export function renderProjectDetail(
   detail: ProjectDetailViewModel | null,
-  members: ProjectMembersViewModel | null = null,
+  _members: ProjectMembersViewModel | null = null,
 ): string {
-  return renderToString(<ProjectDetailPage detail={detail} members={members} />);
+  return renderToString(
+    <ProjectDetailPage detail={detail} runtimeConfig={testRuntimeConfig} />,
+  );
 }
 
 export function renderProjectSettings(detail: ProjectDetailViewModel | null): string {
-  return renderToString(<ProjectSettingsPage detail={detail} />);
+  return renderToString(
+    <ProjectSettingsPage detail={detail} runtimeConfig={testRuntimeConfig} />,
+  );
 }
 
 export function renderProjectNew(): string {
