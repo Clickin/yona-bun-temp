@@ -37,4 +37,20 @@ Yona는 legacy Yona의 기능과 UX parity를 목표로 재구성 중인 워크�
   - Phase 2 issue lifecycle 진입
 - 위 항목의 현재 근거는 [`docs/provenance/core-parity-audit.md`](/G:/programming/yona/docs/provenance/core-parity-audit.md), [`docs/provenance/phase-0b/organization.md`](/G:/programming/yona/docs/provenance/phase-0b/organization.md), [`docs/plans/2026-04-11-wave-2b-organization-follow-up.md`](/G:/programming/yona/docs/plans/2026-04-11-wave-2b-organization-follow-up.md)에 남긴다.
 
+## Live-reload Dev Startup
+
+- prerequisites:
+  - `cargo install cargo-watch`
+  - `pnpm install` from repo root (`frontend/` is included through the root workspace)
+- default local dev from repo root:
+  - `pnpm dev`
+- default manual test entrypoints:
+  - frontend: `http://127.0.0.1:3101/`
+  - backend session bootstrap: `http://127.0.0.1:8089/api/auth/session`
+- optional mounted-base-path smoke run:
+  - `pnpm dev:mounted`
+  - entrypoints: `http://127.0.0.1:3101/yona/`, `http://127.0.0.1:8089/yona/api/auth/session`
+- legacy Yona supported configurable context roots via `application.context`; mounted mode stays available for parity smoke coverage, but root mount is the default local dev path.
+- dev startup persists data in `.yona-data/dev.db` and only seeds pilot data on the first boot.
+
 

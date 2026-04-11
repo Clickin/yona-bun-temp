@@ -48,6 +48,9 @@ const NON_IMPLEMENTATION_FILES = new Set([
   "SPEC.md",
   "buf.yaml",
   "buf.gen.yaml",
+  "package.json",
+  "pnpm-lock.yaml",
+  "pnpm-workspace.yaml",
   "frontend/README.md",
   "frontend/index.html",
   "frontend/package.json",
@@ -271,6 +274,7 @@ const DOMAIN_BUCKETS = [
     ],
     testKeywords: [
       "runtime_config",
+      "runtime-config",
       "auth",
       "project",
       "sqlite",

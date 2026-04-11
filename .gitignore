@@ -9,6 +9,7 @@ node_modules
 .wrangler
 /target/
 /apps/app/dist
+/frontend/dist/
 
 # Yona runtime data
 .yona-data/

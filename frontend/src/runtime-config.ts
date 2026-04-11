@@ -5,6 +5,16 @@ export interface RuntimeConfig {
 }
 
 declare global {
+  interface ImportMetaEnv {
+    readonly VITE_YONA_API_BASE_URL?: string;
+    readonly VITE_YONA_BASE_PATH?: string;
+    readonly VITE_YONA_RPC_BASE_URL?: string;
+  }
+
+  interface ImportMeta {
+    readonly env: ImportMetaEnv;
+  }
+
   interface Window {
     __YONA_RUNTIME_CONFIG__?: Partial<RuntimeConfig>;
   }
@@ -33,12 +43,24 @@ export function resolveRuntimeConfig(
   };
 }
 
+function readViteRuntimeConfig(): Partial<RuntimeConfig> {
+  return {
+    apiBaseUrl: import.meta.env.VITE_YONA_API_BASE_URL ?? process.env.VITE_YONA_API_BASE_URL,
+    basePath: import.meta.env.VITE_YONA_BASE_PATH ?? process.env.VITE_YONA_BASE_PATH,
+    rpcBaseUrl: import.meta.env.VITE_YONA_RPC_BASE_URL ?? process.env.VITE_YONA_RPC_BASE_URL,
+  };
+}
+
 export function readRuntimeConfig(): RuntimeConfig {
   if (typeof window === "undefined") {
-    return resolveRuntimeConfig();
+    return resolveRuntimeConfig(readViteRuntimeConfig());
   }
 
-  return resolveRuntimeConfig(window.__YONA_RUNTIME_CONFIG__ ?? {});
+  if (window.__YONA_RUNTIME_CONFIG__) {
+    return resolveRuntimeConfig(window.__YONA_RUNTIME_CONFIG__);
+  }
+
+  return resolveRuntimeConfig(readViteRuntimeConfig());
 }
 
 export function joinBasePath(basePath: string, leaf: string): string {

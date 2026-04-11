@@ -51,6 +51,9 @@ test("ignores repo tooling and bootstrap files that do not define parity semanti
   const result = runGate([
     ".gitignore",
     ".husky/pre-commit",
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
     "frontend/package.json",
     "frontend/pnpm-lock.yaml",
     "frontend/index.html",
@@ -137,6 +140,17 @@ test("blocks implementation paths that are not mapped to any parity capability",
   assert.equal(result.verdict, "block");
   assert.equal(shouldBlockForStrictGate(result), true);
   assert.match(result.summary, /No legacy parity mapping/);
+});
+
+test("passes runtime foundation config changes when spec and provenance updates land together", () => {
+  const result = runGate([
+    "frontend/src/runtime-config.ts",
+    "frontend/src/runtime-config.spec.ts",
+    "docs/provenance/core-parity-audit.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
 });
 
 test("treats wave-0 route-foundation files as mapped canonical work", () => {
