@@ -25,6 +25,7 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+frontend/src/routeTree.gen.ts
 # Playwright
 test-results
 
