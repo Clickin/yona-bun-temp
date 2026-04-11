@@ -3,9 +3,9 @@ import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
-const mountedBasePath = "/yona";
-const frontendOrigin = "http://127.0.0.1:3101";
-const backendOrigin = "http://127.0.0.1:8089";
+const mountedBasePath = process.env.YONA_DEV_BASE_PATH ?? "/yona";
+const frontendOrigin = process.env.YONA_E2E_FRONTEND_ORIGIN ?? "http://127.0.0.1:3101";
+const backendOrigin = process.env.YONA_E2E_BACKEND_ORIGIN ?? "http://127.0.0.1:8089";
 
 export default defineConfig({
   testDir: "./tests",
@@ -20,26 +20,18 @@ export default defineConfig({
     {
       command: "node ../scripts/run-dev-backend-once.mjs",
       cwd: currentDirectory,
-      env: {
-        ...process.env,
-        YONA_DEV_BASE_PATH: mountedBasePath,
-        YONA_DEV_PUBLIC_ORIGIN: frontendOrigin,
-      },
-      reuseExistingServer: true,
+      env: process.env,
+      reuseExistingServer: false,
       timeout: 60_000,
       url: `${backendOrigin}${mountedBasePath}/api/auth/session`,
     },
     {
-      command: "pnpm dev",
+      command: "node ../scripts/run-e2e-frontend.mjs",
       cwd: currentDirectory,
-      env: {
-        ...process.env,
-        VITE_YONA_BASE_PATH: mountedBasePath,
-        YONA_DEV_BACKEND_TARGET: backendOrigin,
-      },
-      reuseExistingServer: true,
+      env: process.env,
+      reuseExistingServer: false,
       timeout: 60_000,
-      url: `${frontendOrigin}${mountedBasePath}/`,
+      url: process.env.YONA_E2E_FRONTEND_URL ?? `${frontendOrigin}${mountedBasePath}/`,
     },
   ],
 });

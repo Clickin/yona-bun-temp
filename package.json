@@ -8,6 +8,6 @@
     "dev:backend": "node scripts/dev-backend.mjs",
     "dev:frontend": "pnpm --dir frontend dev",
     "dev:mounted": "node scripts/dev-mounted.mjs",
-    "test:dev-scripts": "node --test scripts/dev-config.spec.mjs"
+    "test:dev-scripts": "node --test scripts/dev-config.spec.mjs scripts/playwright-e2e-runtime.spec.mjs"
   }
 }

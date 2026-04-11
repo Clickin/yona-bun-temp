@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
     } else {
         create_router_with_repository(config, repository)
     };
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:8089").await?;
+    let listener = tokio::net::TcpListener::bind(&startup.bind_addr).await?;
     axum::serve(listener, app).await?;
     Ok(())
 }

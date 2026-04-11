@@ -59,6 +59,7 @@ asset_root = "C:/assets"
     assert_eq!(config.seed_pilot, true);
     assert_eq!(config.use_embedded_assets, true);
     assert_eq!(config.asset_root.as_deref(), Some("C:/assets"));
+    assert_eq!(config.bind_addr, "127.0.0.1:8089");
 }
 
 #[test]
@@ -73,6 +74,7 @@ public_origin = "https://example.com"
 database_url = "mysql://db"
 schema_policy = "adopt"
 seed_pilot = false
+bind_addr = "127.0.0.1:19089"
 "#,
     )
     .expect("write config");
@@ -97,6 +99,7 @@ seed_pilot = false
                 "validate_only".to_string(),
             ),
             ("YONA_SEED_PILOT".to_string(), "1".to_string()),
+            ("YONA_BIND_ADDR".to_string(), "127.0.0.1:29089".to_string()),
         ]),
         dir.path(),
     )
@@ -107,6 +110,7 @@ seed_pilot = false
     assert_eq!(config.database_url, "sqlite::memory:");
     assert_eq!(config.schema_policy, RuntimeSchemaPolicy::ValidateOnly);
     assert_eq!(config.seed_pilot, true);
+    assert_eq!(config.bind_addr, "127.0.0.1:29089");
 }
 
 #[test]

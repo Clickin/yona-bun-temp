@@ -66,6 +66,7 @@
 
 - `frontend` route foundation now resolves legacy home, canonical auth GET surfaces, public directories, search, site admin, and anchored org/project deep links through the file-route tree under `src/routes/**`.
 - Local repo-root dev startup now defaults to `/` while keeping explicit `/yona` mounted smoke coverage available; this follows legacy Yona's configurable `application.context` intent instead of hard-coding a subdirectory mount for every local run.
+- Mounted reverse-proxy Playwright verification now runs against per-run isolated frontend/backend ports and a per-run sqlite runtime directory so concurrent E2E executions do not share dev-server state.
 - `pnpm --dir frontend check` is green.
 - `pnpm --dir frontend test` is green, including `src/route-parity.spec.tsx`.
 - `pnpm --dir frontend build` is green.

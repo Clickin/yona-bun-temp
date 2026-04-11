@@ -10,6 +10,7 @@ use crate::RuntimeConfig;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StartupConfig {
     pub asset_root: Option<String>,
+    pub bind_addr: String,
     pub database_url: String,
     pub runtime: RuntimeConfig,
     pub schema_policy: RuntimeSchemaPolicy,
@@ -21,6 +22,7 @@ pub struct StartupConfig {
 struct StartupConfigFile {
     asset_root: Option<String>,
     base_path: Option<String>,
+    bind_addr: Option<String>,
     database_url: Option<String>,
     public_origin: Option<String>,
     schema_policy: Option<String>,
@@ -44,6 +46,11 @@ pub fn load_startup_config(
         .cloned()
         .or(file.public_origin)
         .unwrap_or_default();
+    let bind_addr = env
+        .get("YONA_BIND_ADDR")
+        .cloned()
+        .or(file.bind_addr)
+        .unwrap_or_else(|| "127.0.0.1:8089".to_string());
     let database_url = env
         .get("YONA_DATABASE_URL")
         .cloned()
@@ -68,6 +75,7 @@ pub fn load_startup_config(
 
     Ok(StartupConfig {
         asset_root,
+        bind_addr,
         database_url,
         runtime: RuntimeConfig {
             base_path,

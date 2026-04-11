@@ -6,7 +6,9 @@ import { normalizeBasePath } from "./dev-config.mjs";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDirectory, "..");
-const runtimeDirectory = path.join(repoRoot, ".yona-data");
+const runtimeDirectory = process.env.YONA_DEV_RUNTIME_DIR
+  ? path.resolve(process.env.YONA_DEV_RUNTIME_DIR)
+  : path.join(repoRoot, ".yona-data");
 const configPath = path.join(runtimeDirectory, "dev.toml");
 const databasePath = path.join(runtimeDirectory, "dev.db");
 const basePath = normalizeBasePath(process.env.YONA_DEV_BASE_PATH);
@@ -16,9 +18,14 @@ fs.mkdirSync(runtimeDirectory, { recursive: true });
 const shouldSeed = !fs.existsSync(databasePath) || fs.statSync(databasePath).size === 0;
 fs.closeSync(fs.openSync(databasePath, "a"));
 
+const relativeDatabasePath = path.relative(repoRoot, databasePath).replace(/\\/g, "/");
+const normalizedDatabasePath = relativeDatabasePath.startsWith(".")
+  ? relativeDatabasePath
+  : `./${relativeDatabasePath}`;
+
 const config = [
   `base_path = ${JSON.stringify(basePath)}`,
-  'database_url = "sqlite://./.yona-data/dev.db?mode=rwc"',
+  `database_url = ${JSON.stringify(`sqlite://${normalizedDatabasePath}?mode=rwc`)}`,
   `public_origin = ${JSON.stringify(publicOrigin)}`,
   'schema_policy = "up"',
   `seed_pilot = ${shouldSeed ? "true" : "false"}`,
