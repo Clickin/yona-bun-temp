@@ -1279,6 +1279,16 @@ impl PilotService for PilotServiceImpl {
         Ok((current_session_response_from_user(&user, None), ctx))
     }
 
+    async fn verify_user(
+        &self,
+        _ctx: Context,
+        _request: OwnedView<VerifyUserRequestView<'static>>,
+    ) -> Result<(VerifyUserResponse, Context), ConnectError> {
+        Err(ConnectError::unimplemented(
+            "verify user is not implemented",
+        ))
+    }
+
     async fn sign_out(
         &self,
         mut ctx: Context,

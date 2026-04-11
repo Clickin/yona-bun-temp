@@ -25,6 +25,11 @@ export const signInWithPassword = PilotService.method.signInWithPassword;
 export const registerWithPassword = PilotService.method.registerWithPassword;
 
 /**
+ * @generated from rpc yona.pilot.v1.PilotService.VerifyUser
+ */
+export const verifyUser = PilotService.method.verifyUser;
+
+/**
  * @generated from rpc yona.pilot.v1.PilotService.SignOut
  */
 export const signOut = PilotService.method.signOut;

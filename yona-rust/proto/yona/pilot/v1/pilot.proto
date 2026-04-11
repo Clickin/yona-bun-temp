@@ -9,6 +9,7 @@ service PilotService {
   rpc ReadAuthUiCapabilities(ReadAuthUiCapabilitiesRequest) returns (ReadAuthUiCapabilitiesResponse) {}
   rpc SignInWithPassword(SignInWithPasswordRequest) returns (ReadCurrentSessionResponse) {}
   rpc RegisterWithPassword(RegisterWithPasswordRequest) returns (ReadCurrentSessionResponse) {}
+  rpc VerifyUser(VerifyUserRequest) returns (VerifyUserResponse) {}
   rpc SignOut(SignOutRequest) returns (ReadCurrentSessionResponse) {}
   rpc ReadWorkspaceOverview(ReadWorkspaceOverviewRequest) returns (ReadWorkspaceOverviewResponse) {}
   rpc SetDefaultLandingPath(SetDefaultLandingPathRequest) returns (ReadWorkspaceOverviewResponse) {}
@@ -77,6 +78,15 @@ message RegisterWithPasswordRequest {
   string retyped_password = 5;
 }
 
+message VerifyUserRequest {
+  string login_id = 1;
+  string verification_code = 2;
+}
+
+message VerifyUserResponse {
+  string login_id = 1;
+}
+
 message SignOutRequest {}
 
 message ListProjectsRequest {}
@@ -133,6 +143,7 @@ message WorkspaceProfile {
   bool is_blocked = 6;
   string since_label = 7;
   repeated string connected_social_providers = 8;
+  string avatar_url = 9;
 }
 
 message WorkspaceIssueItem {
@@ -192,6 +203,7 @@ message SetDefaultLandingPathRequest {
 message UpdateProfileRequest {
   string name = 1;
   string email = 2;
+  string avatar_attachment_id = 3;
 }
 
 message ChangePasswordRequest {
