@@ -1,4 +1,5 @@
 use crate::repo_types::{
+    AttachmentRecord,
     AppUserInput, AppUserRecord, CreateOrganizationInput, CreateProjectInput, CreateUserInput,
     IssueRecord, OrganizationAuthorizationRecord, OrganizationMemberDirectoryRecord,
     OrganizationMemberRecord, OrganizationRecord, OrganizationViewerRecord,
@@ -11,7 +12,7 @@ use crate::repo_types::{
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
-    assignee, comment_thread, email, favorite_project, issue, linked_account, n4user, organization,
+    assignee, attachment, comment_thread, email, favorite_project, issue, linked_account, n4user, organization,
     organization_user, project, project_user, pull_request, recent_project, role, site_admin,
     user_credential, user_enrolled_project, user_verification,
     user_project_notification, user_setting, watch,
@@ -94,6 +95,11 @@ const WORKSPACE_NOTIFICATION_TYPES: &[(&str, &str)] = &[
     ),
 ];
 
+const PASSWORD_RESET_VERIFICATION_PREFIX: &str = "password-reset:";
+const SIGNUP_VERIFICATION_PREFIX: &str = "signup:";
+const USER_ATTACHMENT_CONTAINER: &str = "USER";
+const USER_AVATAR_ATTACHMENT_CONTAINER: &str = "USER_AVATAR";
+
 fn workspace_notification_enabled_by_default(event_type: &str) -> bool {
     !matches!(event_type, "NEW_COMMENT")
 }
@@ -104,6 +110,10 @@ fn random_workspace_token() -> String {
         .take(32)
         .map(char::from)
         .collect()
+}
+
+fn prefixed_verification_code(prefix: &str) -> String {
+    format!("{prefix}{}", random_workspace_token())
 }
 
 fn current_datetime() -> DateTime {
@@ -1387,35 +1397,77 @@ impl AppRepository {
         Ok(())
     }
 
+    pub async fn mark_user_confirmed(&self, user_id: i64) -> Result<AppUserRecord, DbErr> {
+        let Some(model) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+            return Err(DbErr::Custom("User not found.".to_string()));
+        };
+        let mut active = n4user::ActiveModel::from(model);
+        active.state = Set(user_state_from_confirmed(true));
+        let updated = active.update(&self.db).await?;
+        self.app_user_record_from_model(updated).await
+    }
+
     pub async fn create_password_reset_verification_for_user(
         &self,
         user_id: i64,
         login_id: &str,
     ) -> Result<String, DbErr> {
-        let code = random_workspace_token();
-        let existing = user_verification::Entity::find()
+        let code = prefixed_verification_code(PASSWORD_RESET_VERIFICATION_PREFIX);
+        let rows = user_verification::Entity::find()
             .filter(user_verification::Column::UserId.eq(Some(user_id)))
-            .one(&self.db)
+            .all(&self.db)
             .await?;
-
-        if let Some(existing) = existing {
-            let mut active = user_verification::ActiveModel::from(existing);
-            active.login_id = Set(Some(login_id.to_string()));
-            active.verification_code = Set(Some(code.clone()));
-            active.timestamp = Set(Some(current_timestamp_millis()));
-            active.update(&self.db).await?;
-        } else {
-            user_verification::ActiveModel {
-                id: NotSet,
-                user_id: Set(Some(user_id)),
-                login_id: Set(Some(login_id.to_string())),
-                verification_code: Set(Some(code.clone())),
-                timestamp: Set(Some(current_timestamp_millis())),
-            }
-            .insert(&self.db)
-            .await?;
+        for row in rows.into_iter().filter(|row| {
+            row.verification_code
+                .as_deref()
+                .unwrap_or_default()
+                .starts_with(PASSWORD_RESET_VERIFICATION_PREFIX)
+        }) {
+            user_verification::Entity::delete_by_id(row.id)
+                .exec(&self.db)
+                .await?;
         }
+        user_verification::ActiveModel {
+            id: NotSet,
+            user_id: Set(Some(user_id)),
+            login_id: Set(Some(login_id.to_string())),
+            verification_code: Set(Some(code.clone())),
+            timestamp: Set(Some(current_timestamp_millis())),
+        }
+        .insert(&self.db)
+        .await?;
+        Ok(code)
+    }
 
+    pub async fn create_signup_verification_for_user(
+        &self,
+        user_id: i64,
+        login_id: &str,
+    ) -> Result<String, DbErr> {
+        let code = prefixed_verification_code(SIGNUP_VERIFICATION_PREFIX);
+        let rows = user_verification::Entity::find()
+            .filter(user_verification::Column::UserId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?;
+        for row in rows.into_iter().filter(|row| {
+            row.verification_code
+                .as_deref()
+                .unwrap_or_default()
+                .starts_with(SIGNUP_VERIFICATION_PREFIX)
+        }) {
+            user_verification::Entity::delete_by_id(row.id)
+                .exec(&self.db)
+                .await?;
+        }
+        user_verification::ActiveModel {
+            id: NotSet,
+            user_id: Set(Some(user_id)),
+            login_id: Set(Some(login_id.to_string())),
+            verification_code: Set(Some(code.clone())),
+            timestamp: Set(Some(current_timestamp_millis())),
+        }
+        .insert(&self.db)
+        .await?;
         Ok(code)
     }
 
@@ -1429,6 +1481,14 @@ impl AppRepository {
             .await? else {
             return Ok(None);
         };
+        if !verification
+            .verification_code
+            .as_deref()
+            .unwrap_or_default()
+            .starts_with(PASSWORD_RESET_VERIFICATION_PREFIX)
+        {
+            return Ok(None);
+        }
 
         let age_millis = current_timestamp_millis() - verification.timestamp.unwrap_or_default();
         if age_millis > 60 * 60 * 1000 {
@@ -1438,6 +1498,37 @@ impl AppRepository {
             return Ok(None);
         }
 
+        Ok(verification.user_id)
+    }
+
+    pub async fn find_valid_signup_verification_user_id(
+        &self,
+        login_id: &str,
+        verification_code: &str,
+    ) -> Result<Option<i64>, DbErr> {
+        let normalized_login_id = normalize_identity(login_id);
+        let Some(verification) = user_verification::Entity::find()
+            .filter(user_verification::Column::LoginId.eq(Some(normalized_login_id)))
+            .filter(user_verification::Column::VerificationCode.eq(Some(verification_code.to_string())))
+            .one(&self.db)
+            .await? else {
+            return Ok(None);
+        };
+        if !verification
+            .verification_code
+            .as_deref()
+            .unwrap_or_default()
+            .starts_with(SIGNUP_VERIFICATION_PREFIX)
+        {
+            return Ok(None);
+        }
+        let age_millis = current_timestamp_millis() - verification.timestamp.unwrap_or_default();
+        if age_millis > 24 * 60 * 60 * 1000 {
+            user_verification::Entity::delete_by_id(verification.id)
+                .exec(&self.db)
+                .await?;
+            return Ok(None);
+        }
         Ok(verification.user_id)
     }
 
@@ -1455,6 +1546,140 @@ impl AppRepository {
                 .await?;
         }
         Ok(())
+    }
+
+    pub async fn delete_signup_verification(
+        &self,
+        verification_code: &str,
+    ) -> Result<(), DbErr> {
+        let rows = user_verification::Entity::find()
+            .filter(user_verification::Column::VerificationCode.eq(Some(verification_code.to_string())))
+            .all(&self.db)
+            .await?;
+        for row in rows.into_iter().filter(|row| {
+            row.verification_code
+                .as_deref()
+                .unwrap_or_default()
+                .starts_with(SIGNUP_VERIFICATION_PREFIX)
+        }) {
+            user_verification::Entity::delete_by_id(row.id)
+                .exec(&self.db)
+                .await?;
+        }
+        Ok(())
+    }
+
+    pub async fn create_user_attachment_upload(
+        &self,
+        user_id: i64,
+        login_id: &str,
+        file_name: &str,
+        mime_type: &str,
+        size: i64,
+        hash: &str,
+    ) -> Result<AttachmentRecord, DbErr> {
+        let created = attachment::ActiveModel {
+            id: NotSet,
+            name: Set(Some(file_name.to_string())),
+            hash: Set(Some(hash.to_string())),
+            container_type: Set(Some(USER_ATTACHMENT_CONTAINER.to_string())),
+            mime_type: Set(Some(mime_type.to_string())),
+            size: Set(Some(size)),
+            container_id: Set(user_id),
+            created_date: Set(Some(current_datetime())),
+            owner_login_id: Set(Some(login_id.to_string())),
+        }
+        .insert(&self.db)
+        .await?;
+        Ok(AttachmentRecord {
+            container_id: created.container_id,
+            container_type: created.container_type.unwrap_or_default(),
+            hash: created.hash.unwrap_or_default(),
+            id: created.id,
+            mime_type: created.mime_type.unwrap_or_default(),
+            name: created.name.unwrap_or_default(),
+            owner_login_id: created.owner_login_id.unwrap_or_default(),
+            size: created.size.unwrap_or_default(),
+        })
+    }
+
+    pub async fn read_attachment_by_id(
+        &self,
+        attachment_id: i64,
+    ) -> Result<Option<AttachmentRecord>, DbErr> {
+        let Some(model) = attachment::Entity::find_by_id(attachment_id).one(&self.db).await? else {
+            return Ok(None);
+        };
+        Ok(Some(AttachmentRecord {
+            container_id: model.container_id,
+            container_type: model.container_type.unwrap_or_default(),
+            hash: model.hash.unwrap_or_default(),
+            id: model.id,
+            mime_type: model.mime_type.unwrap_or_default(),
+            name: model.name.unwrap_or_default(),
+            owner_login_id: model.owner_login_id.unwrap_or_default(),
+            size: model.size.unwrap_or_default(),
+        }))
+    }
+
+    pub async fn read_avatar_attachment_for_user(
+        &self,
+        user_id: i64,
+    ) -> Result<Option<AttachmentRecord>, DbErr> {
+        let Some(model) = attachment::Entity::find()
+            .filter(attachment::Column::ContainerType.eq(Some(USER_AVATAR_ATTACHMENT_CONTAINER.to_string())))
+            .filter(attachment::Column::ContainerId.eq(user_id))
+            .order_by_desc(attachment::Column::Id)
+            .one(&self.db)
+            .await? else {
+            return Ok(None);
+        };
+        Ok(Some(AttachmentRecord {
+            container_id: model.container_id,
+            container_type: model.container_type.unwrap_or_default(),
+            hash: model.hash.unwrap_or_default(),
+            id: model.id,
+            mime_type: model.mime_type.unwrap_or_default(),
+            name: model.name.unwrap_or_default(),
+            owner_login_id: model.owner_login_id.unwrap_or_default(),
+            size: model.size.unwrap_or_default(),
+        }))
+    }
+
+    pub async fn promote_avatar_attachment_for_user(
+        &self,
+        user_id: i64,
+        attachment_id: i64,
+    ) -> Result<Option<AttachmentRecord>, DbErr> {
+        let Some(model) = attachment::Entity::find_by_id(attachment_id).one(&self.db).await? else {
+            return Ok(None);
+        };
+        if model.container_id != user_id
+            || model.container_type.as_deref() != Some(USER_ATTACHMENT_CONTAINER)
+        {
+            return Ok(None);
+        }
+        let previous_rows = attachment::Entity::find()
+            .filter(attachment::Column::ContainerType.eq(Some(USER_AVATAR_ATTACHMENT_CONTAINER.to_string())))
+            .filter(attachment::Column::ContainerId.eq(user_id))
+            .all(&self.db)
+            .await?;
+        for row in previous_rows {
+            attachment::Entity::delete_by_id(row.id).exec(&self.db).await?;
+        }
+        let mut active = attachment::ActiveModel::from(model);
+        active.container_type = Set(Some(USER_AVATAR_ATTACHMENT_CONTAINER.to_string()));
+        let updated = active.update(&self.db).await?;
+        Ok(Some(AttachmentRecord {
+            container_id: updated.container_id,
+            container_type: updated.container_type.unwrap_or_default(),
+            hash: updated.hash.unwrap_or_default(),
+            id: updated.id,
+            mime_type: updated.mime_type.unwrap_or_default(),
+            name: updated.name.unwrap_or_default(),
+            owner_login_id: updated.owner_login_id.unwrap_or_default(),
+            size: updated.size.unwrap_or_default(),
+        }))
     }
 
     pub async fn read_project_by_id(&self, project_id: i64) -> Result<Option<ProjectRecord>, DbErr> {
@@ -1559,6 +1784,23 @@ impl AppRepository {
         active.token = Set(Some(random_workspace_token()));
         active.update(&self.db).await?;
         Ok(())
+    }
+
+    pub async fn read_workspace_email_token_for_user(
+        &self,
+        user_id: i64,
+        email_id: i64,
+    ) -> Result<Option<(String, String)>, DbErr> {
+        let Some(model) = email::Entity::find_by_id(email_id).one(&self.db).await? else {
+            return Ok(None);
+        };
+        if model.user_id != Some(user_id) {
+            return Ok(None);
+        }
+        match (model.email, model.token) {
+            (Some(address), Some(token)) => Ok(Some((address, token))),
+            _ => Ok(None),
+        }
     }
 
     pub async fn confirm_workspace_email_for_user(

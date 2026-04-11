@@ -2,7 +2,7 @@ pub mod persistence;
 pub mod runtime_config;
 pub mod session;
 
-use axum::extract::Form;
+use axum::extract::{Form, Multipart};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::routing::{get, post};
@@ -12,7 +12,8 @@ use bcrypt::{hash, verify, DEFAULT_COST};
 use buffa::view::OwnedView;
 use connectrpc::{ConnectError, Context};
 use http::header::SET_COOKIE;
-use http::HeaderValue;
+use http::{HeaderValue, StatusCode};
+use md5::{Digest, Md5};
 use runtime_config::normalize_base_path;
 use serde::Serialize;
 use session::{SessionConfig, SessionManager};
@@ -21,6 +22,7 @@ use std::{collections::HashMap, path::PathBuf, vec};
 
 use generated::yona::pilot::v1::*;
 use persistence::PilotRepository;
+use yona_rust_integrations::{deliver, OutboundMail};
 use yona_rust_domain::{
     authorize_project_access, can_create_organization_project, can_create_personal_project,
     can_request_project_enrollment, can_update_organization, is_valid_organization_name,
@@ -99,13 +101,16 @@ pub fn create_router_with_repository_and_embedded_assets(
 
 fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode) -> Router {
     let base_path = normalize_base_path(&config.base_path);
+    let public_origin = default_public_origin(&config.public_origin);
     let session_manager = SessionManager::new(SessionConfig {
         cookie_path: base_path.clone(),
-        public_origin: config.public_origin,
+        public_origin: public_origin.clone(),
     });
     let route_backend = backend.clone();
     let browser_runtime = BrowserRuntimeConfig::from_base_path(&base_path);
     let connect_router = Arc::new(PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin: public_origin.clone(),
         session_manager: session_manager.clone(),
         backend,
     })
@@ -114,14 +119,21 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let lost_password_session_manager = session_manager.clone();
     let lost_password_backend = route_backend.clone();
     let lost_password_base_path = base_path.clone();
+    let lost_password_public_origin = public_origin.clone();
     let reset_password_backend = route_backend.clone();
     let reset_password_base_path = base_path.clone();
     let send_validation_session_manager = session_manager.clone();
     let send_validation_backend = route_backend.clone();
     let send_validation_base_path = base_path.clone();
+    let send_validation_public_origin = public_origin.clone();
     let confirm_email_session_manager = session_manager.clone();
     let confirm_email_backend = route_backend.clone();
     let confirm_email_base_path = base_path.clone();
+    let file_session_manager = session_manager.clone();
+    let file_backend = route_backend.clone();
+    let file_base_path = base_path.clone();
+    let file_read_session_manager = session_manager.clone();
+    let file_read_backend = route_backend.clone();
 
     let mut base_router = Router::new()
         .route(
@@ -142,6 +154,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         lost_password_session_manager.clone(),
                         lost_password_backend.clone(),
                         lost_password_base_path.clone(),
+                        lost_password_public_origin.clone(),
                     )
                     .await
                 }
@@ -171,6 +184,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         send_validation_session_manager.clone(),
                         send_validation_backend.clone(),
                         send_validation_base_path.clone(),
+                        send_validation_public_origin.clone(),
                     )
                     .await
                 }
@@ -187,6 +201,35 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         confirm_email_session_manager.clone(),
                         confirm_email_backend.clone(),
                         confirm_email_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/files",
+            post(move |headers: HeaderMap, multipart: Multipart| {
+                async move {
+                    upload_file(
+                        headers,
+                        multipart,
+                        file_session_manager.clone(),
+                        file_backend.clone(),
+                        file_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/files/{id}",
+            get(move |headers: HeaderMap, Path(id): Path<i64>| {
+                async move {
+                    get_uploaded_file(
+                        headers,
+                        id,
+                        file_read_session_manager.clone(),
+                        file_read_backend.clone(),
                     )
                     .await
                 }
@@ -327,12 +370,132 @@ fn base_path_href(base_path: &str, path: &str) -> String {
     }
 }
 
+fn default_public_origin(configured: &str) -> String {
+    let candidate = if configured.trim().is_empty() {
+        std::env::var("YONA_PUBLIC_ORIGIN")
+            .ok()
+            .filter(|value| !value.trim().is_empty())
+            .unwrap_or_else(|| "http://localhost:3001".to_string())
+    } else {
+        configured.trim().to_string()
+    };
+    candidate.trim_end_matches('/').to_string()
+}
+
+fn absolute_app_url(public_origin: &str, base_path: &str, path: &str) -> String {
+    format!("{public_origin}{}", base_path_href(base_path, path))
+}
+
+fn default_smtp_from() -> String {
+    std::env::var("SMTP_FROM")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "noreply@yona.local".to_string())
+}
+
+fn gravatar_url(email_address: &str) -> String {
+    let normalized = normalize_identifier(email_address);
+    let mut hasher = Md5::new();
+    hasher.update(normalized.as_bytes());
+    format!(
+        "https://www.gravatar.com/avatar/{:x}?s=256&d=identicon",
+        hasher.finalize()
+    )
+}
+
+fn uploaded_files_root() -> PathBuf {
+    let base = std::env::var("YONA_DATA")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(".yona-data"));
+    base.join("uploads")
+}
+
+fn uploaded_file_path(hash: &str) -> PathBuf {
+    uploaded_files_root().join(hash)
+}
+
+fn random_storage_token() -> String {
+    use base64::Engine;
+    use rand::RngCore;
+
+    let mut bytes = [0_u8; 32];
+    rand::thread_rng().fill_bytes(&mut bytes);
+    base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes)
+}
+
+fn send_signup_verification_mail(
+    to: &str,
+    login_id: &str,
+    verification_code: &str,
+    public_origin: &str,
+    base_path: &str,
+) -> Result<(), ConnectError> {
+    let verify_url = absolute_app_url(
+        public_origin,
+        base_path,
+        &format!("/verify/{login_id}/{verification_code}"),
+    );
+    deliver(OutboundMail {
+        body: format!(
+            "User verification\n\nClick this link to verify email:\n{verify_url}\n"
+        ),
+        from: default_smtp_from(),
+        subject: "New Sign-up Confirm".to_string(),
+        to: to.to_string(),
+    })
+    .map_err(internal_error)
+}
+
+fn send_password_reset_mail(
+    to: &str,
+    verification_code: &str,
+    public_origin: &str,
+    base_path: &str,
+) -> Result<(), ConnectError> {
+    let reset_url = absolute_app_url(
+        public_origin,
+        base_path,
+        &format!("/resetPassword?s={verification_code}"),
+    );
+    deliver(OutboundMail {
+        body: format!("Password reset request\n\nOpen this link to reset your password:\n{reset_url}\n"),
+        from: default_smtp_from(),
+        subject: "Password reset request".to_string(),
+        to: to.to_string(),
+    })
+    .map_err(internal_error)
+}
+
+fn send_workspace_email_validation_mail(
+    to: &str,
+    email_id: i64,
+    token: &str,
+    public_origin: &str,
+    base_path: &str,
+) -> Result<(), ConnectError> {
+    let confirm_url = absolute_app_url(
+        public_origin,
+        base_path,
+        &format!("/user/email/confirm/{email_id}/{token}"),
+    );
+    deliver(OutboundMail {
+        body: format!("Validation email\n\nConfirm this email address:\n{confirm_url}\n"),
+        from: default_smtp_from(),
+        subject: "Validation email".to_string(),
+        to: to.to_string(),
+    })
+    .map_err(internal_error)
+}
+
 async fn direct_request_reset_password_email(
     headers: HeaderMap,
     form: HashMap<String, String>,
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    public_origin: String,
 ) -> Response {
     let session = session_manager.ensure_anonymous_session(&headers);
     let redirect_path = match &backend {
@@ -347,9 +510,17 @@ async fn direct_request_reset_password_email(
                 .flatten()
             {
                 Some(user) if normalize_identifier(&user.email_address) == email_address => {
-                    let _ = repository
+                    if let Ok(code) = repository
                         .create_password_reset_verification_for_user(user.id, &user.login_id)
-                        .await;
+                        .await
+                    {
+                        let _ = send_password_reset_mail(
+                            &user.email_address,
+                            &code,
+                            &public_origin,
+                            &base_path,
+                        );
+                    }
                     "/lostPassword?requested=1"
                 }
                 _ => "/lostPassword?error=invalid",
@@ -425,6 +596,7 @@ async fn direct_send_workspace_email_validation(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    public_origin: String,
 ) -> Response {
     let login_redirect = base_path_href(&base_path, "/users/loginform?redirectUrl=%2Fuser%2Feditform%2Femails");
     let Some(session) = session_manager.read_session_from_headers(&headers) else {
@@ -453,6 +625,18 @@ async fn direct_send_workspace_email_validation(
                 .await
                 .is_ok()
             {
+                if let Ok(Some((address, token))) = repository
+                    .read_workspace_email_token_for_user(user_id, email_id)
+                    .await
+                {
+                    let _ = send_workspace_email_validation_mail(
+                        &address,
+                        email_id,
+                        &token,
+                        &public_origin,
+                        &base_path,
+                    );
+                }
                 "/user/editform/emails?validation=sent"
             } else {
                 "/user/editform/emails?validation=error"
@@ -518,6 +702,8 @@ async fn direct_confirm_workspace_email(
 
 #[derive(Clone)]
 struct PilotServiceImpl {
+    base_path: String,
+    public_origin: String,
     session_manager: SessionManager,
     backend: PilotBackend,
 }
@@ -827,8 +1013,12 @@ fn watched_project_notifications_from_record(
     }
 }
 
-fn workspace_profile_from_record(record: &persistence::WorkspaceProfileRecord) -> WorkspaceProfile {
+fn workspace_profile_from_record(
+    record: &persistence::WorkspaceProfileRecord,
+    avatar_url: String,
+) -> WorkspaceProfile {
     WorkspaceProfile {
+        avatar_url,
         connected_social_providers: record.connected_social_providers.clone(),
         display_name: record.display_name.clone(),
         english_name: record.english_name.clone(),
@@ -839,6 +1029,148 @@ fn workspace_profile_from_record(record: &persistence::WorkspaceProfileRecord) -
         since_label: record.since_label.clone(),
         ..Default::default()
     }
+}
+
+#[derive(Serialize)]
+struct UploadFileResponse {
+    id: i64,
+    #[serde(rename = "mimeType")]
+    mime_type: String,
+    name: String,
+    size: i64,
+    url: String,
+}
+
+async fn upload_file(
+    headers: HeaderMap,
+    mut multipart: Multipart,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
+    if !session_manager.validate_csrf(&headers, &session) {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    let Some(user_id) = session.user_id else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
+    let PilotBackend::Repository(repository) = &backend else {
+        return StatusCode::NOT_IMPLEMENTED.into_response();
+    };
+    let Ok(Some(user)) = repository.find_user_by_id(user_id).await else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
+
+    while let Ok(Some(field)) = multipart.next_field().await {
+        if field.name() != Some("filePath") {
+            continue;
+        }
+        let file_name = field
+            .file_name()
+            .map(ToString::to_string)
+            .filter(|value| !value.trim().is_empty())
+            .unwrap_or_else(|| "upload.bin".to_string());
+        let mime_type = field
+            .content_type()
+            .map(ToString::to_string)
+            .unwrap_or_else(|| "application/octet-stream".to_string());
+        if !mime_type.starts_with("image/") {
+            return StatusCode::BAD_REQUEST.into_response();
+        }
+        let Ok(bytes) = field.bytes().await else {
+            return StatusCode::BAD_REQUEST.into_response();
+        };
+        if bytes.len() > 1024 * 1000 {
+            return StatusCode::BAD_REQUEST.into_response();
+        }
+        let hash = random_storage_token();
+        let path = uploaded_file_path(&hash);
+        if let Some(parent) = path.parent() {
+            if std::fs::create_dir_all(parent).is_err() {
+                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            }
+        }
+        if std::fs::write(&path, &bytes).is_err() {
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+        let Ok(attachment) = repository
+            .create_user_attachment_upload(
+                user.id,
+                &user.login_id,
+                &file_name,
+                &mime_type,
+                bytes.len() as i64,
+                &hash,
+            )
+            .await
+        else {
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        };
+
+        let response = UploadFileResponse {
+            id: attachment.id,
+            mime_type,
+            name: file_name,
+            size: bytes.len() as i64,
+            url: base_path_href(&base_path, &format!("/files/{}", attachment.id)),
+        };
+        return (StatusCode::CREATED, Json(response)).into_response();
+    }
+
+    StatusCode::BAD_REQUEST.into_response()
+}
+
+async fn get_uploaded_file(
+    headers: HeaderMap,
+    attachment_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return StatusCode::NOT_IMPLEMENTED.into_response();
+    };
+    let Ok(Some(attachment)) = repository.read_attachment_by_id(attachment_id).await else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let is_avatar = attachment.container_type == "USER_AVATAR";
+    if !is_avatar {
+        let Some(session) = session_manager.read_session_from_headers(&headers) else {
+            return StatusCode::FORBIDDEN.into_response();
+        };
+        let Some(user_id) = session.user_id else {
+            return StatusCode::FORBIDDEN.into_response();
+        };
+        if attachment.container_type != "USER" || attachment.container_id != user_id {
+            return StatusCode::FORBIDDEN.into_response();
+        }
+    }
+    let Ok(bytes) = std::fs::read(uploaded_file_path(&attachment.hash)) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    (
+        [(http::header::CONTENT_TYPE, attachment.mime_type)],
+        bytes,
+    )
+        .into_response()
+}
+
+async fn workspace_avatar_url(
+    repository: &PilotRepository,
+    user_id: i64,
+    email_address: &str,
+    base_path: &str,
+) -> Result<String, ConnectError> {
+    if let Some(attachment) = repository
+        .read_avatar_attachment_for_user(user_id)
+        .await
+        .map_err(internal_error)?
+    {
+        return Ok(base_path_href(base_path, &format!("/files/{}", attachment.id)));
+    }
+    Ok(gravatar_url(email_address))
 }
 
 fn workspace_issue_item_from_record(
@@ -927,6 +1259,7 @@ async fn load_workspace_settings_data(
 async fn load_workspace_dashboard_data(
     repository: &PilotRepository,
     user_id: i64,
+    base_path: &str,
 ) -> Result<
     (
         Option<WorkspaceProfile>,
@@ -937,12 +1270,23 @@ async fn load_workspace_dashboard_data(
     ConnectError,
 > {
     let days_ago = u64::from(WORKSPACE_DAYS_AGO);
-    let profile = repository
+    let profile = match repository
         .read_workspace_profile_for_user(user_id)
         .await
         .map_err(internal_error)?
-        .as_ref()
-        .map(workspace_profile_from_record);
+    {
+        Some(record) => Some(workspace_profile_from_record(
+            &record,
+            workspace_avatar_url(
+                repository,
+                user_id,
+                &record.primary_email_address,
+                base_path,
+            )
+            .await?,
+        )),
+        None => None,
+    };
     let issue_items = filter_workspace_issue_items_by_read_acl(
         repository,
         user_id,
@@ -1057,6 +1401,7 @@ async fn workspace_project_read_allowed(
 async fn build_workspace_overview_response(
     repository: &PilotRepository,
     session: &session::Session,
+    base_path: &str,
 ) -> Result<ReadWorkspaceOverviewResponse, ConnectError> {
     let Some(user_id) = session.user_id else {
         return Err(ConnectError::unauthenticated(
@@ -1078,7 +1423,7 @@ async fn build_workspace_overview_response(
     let (api_token, emails, watched_projects) =
         load_workspace_settings_data(repository, user_id).await?;
     let (profile, issue_items, pull_request_items, member_projects) =
-        load_workspace_dashboard_data(repository, user_id).await?;
+        load_workspace_dashboard_data(repository, user_id, base_path).await?;
 
     Ok(ReadWorkspaceOverviewResponse {
         api_token,
@@ -1189,6 +1534,11 @@ impl PilotService for PilotServiceImpl {
                 "Invalid login ID, email, or password.",
             ));
         }
+        if confirmation_session_required() && !user.is_confirmed {
+            return Err(ConnectError::unauthenticated(
+                "Invalid login ID, email, or password.",
+            ));
+        }
 
         let authenticated_session = self
             .session_manager
@@ -1218,6 +1568,7 @@ impl PilotService for PilotServiceImpl {
             ));
         };
 
+        let capabilities = fixed_auth_ui_capabilities();
         let login_id = normalize_identifier(request.login_id);
         let email_address = normalize_identifier(request.email_address);
         if login_id.is_empty() {
@@ -1267,6 +1618,20 @@ impl PilotService for PilotServiceImpl {
             .await
             .map_err(internal_error)?;
 
+        if capabilities.email_verification_enabled {
+            let verification_code = repository
+                .create_signup_verification_for_user(user.id, &user.login_id)
+                .await
+                .map_err(internal_error)?;
+            send_signup_verification_mail(
+                &user.email_address,
+                &user.login_id,
+                &verification_code,
+                &self.public_origin,
+                &self.base_path,
+            )?;
+        }
+
         if confirmation_session_required() {
             return Ok((anonymous_current_session_response(), ctx));
         }
@@ -1281,11 +1646,35 @@ impl PilotService for PilotServiceImpl {
 
     async fn verify_user(
         &self,
-        _ctx: Context,
-        _request: OwnedView<VerifyUserRequestView<'static>>,
+        ctx: Context,
+        request: OwnedView<VerifyUserRequestView<'static>>,
     ) -> Result<(VerifyUserResponse, Context), ConnectError> {
-        Err(ConnectError::unimplemented(
-            "verify user is not implemented",
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "auth requires repository backend",
+            ));
+        };
+        let Some(user_id) = repository
+            .find_valid_signup_verification_user_id(request.login_id, request.verification_code)
+            .await
+            .map_err(internal_error)?
+        else {
+            return Err(ConnectError::not_found("Invalid verification"));
+        };
+        let user = repository
+            .mark_user_confirmed(user_id)
+            .await
+            .map_err(internal_error)?;
+        repository
+            .delete_signup_verification(request.verification_code)
+            .await
+            .map_err(internal_error)?;
+        Ok((
+            VerifyUserResponse {
+                login_id: user.login_id,
+                ..Default::default()
+            },
+            ctx,
         ))
     }
 
@@ -1316,7 +1705,7 @@ impl PilotService for PilotServiceImpl {
                 "workspace requires repository backend",
             ));
         };
-        Ok((build_workspace_overview_response(repository, &session).await?, ctx))
+        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
     }
 
     async fn set_default_landing_path(
@@ -1347,7 +1736,7 @@ impl PilotService for PilotServiceImpl {
             .await
             .map_err(internal_error)?;
 
-        Ok((build_workspace_overview_response(repository, &session).await?, ctx))
+        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
     }
 
     async fn update_profile(
@@ -1370,11 +1759,31 @@ impl PilotService for PilotServiceImpl {
         if request.name.trim().is_empty() {
             return Err(workspace_invalid_argument("Name is required."));
         }
+        if !request.avatar_attachment_id.trim().is_empty() {
+            let attachment_id = request
+                .avatar_attachment_id
+                .trim()
+                .parse::<i64>()
+                .map_err(|_| workspace_invalid_argument("Avatar attachment id is invalid."))?;
+            let Some(attachment) = repository
+                .promote_avatar_attachment_for_user(user_id, attachment_id)
+                .await
+                .map_err(|error| workspace_invalid_argument(error.to_string()))?
+            else {
+                return Err(workspace_invalid_argument("Avatar attachment is invalid."));
+            };
+            if !attachment.mime_type.starts_with("image/") {
+                return Err(workspace_invalid_argument("Only image files are allowed."));
+            }
+            if attachment.size > 1024 * 1000 {
+                return Err(workspace_invalid_argument("Images should be less than 1MB in size."));
+            }
+        }
         repository
             .update_profile_for_user(user_id, &request.name, &request.email)
             .await
             .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((build_workspace_overview_response(repository, &session).await?, ctx))
+        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
     }
 
     async fn change_password(
@@ -1447,7 +1856,7 @@ impl PilotService for PilotServiceImpl {
             .clear_recent_projects_for_user(user_id)
             .await
             .map_err(internal_error)?;
-        Ok((build_workspace_overview_response(repository, &session).await?, ctx))
+        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
     }
 
     async fn add_workspace_email(
@@ -1471,7 +1880,7 @@ impl PilotService for PilotServiceImpl {
             .add_workspace_email_for_user(user_id, &request.email)
             .await
             .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((build_workspace_overview_response(repository, &session).await?, ctx))
+        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
     }
 
     async fn delete_workspace_email(
@@ -1499,7 +1908,7 @@ impl PilotService for PilotServiceImpl {
             .delete_workspace_email_for_user(user_id, email_id)
             .await
             .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((build_workspace_overview_response(repository, &session).await?, ctx))
+        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
     }
 
     async fn send_workspace_email_validation(
@@ -1527,7 +1936,7 @@ impl PilotService for PilotServiceImpl {
             .send_workspace_email_validation_for_user(user_id, email_id)
             .await
             .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((build_workspace_overview_response(repository, &session).await?, ctx))
+        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
     }
 
     async fn set_main_workspace_email(
@@ -1555,7 +1964,7 @@ impl PilotService for PilotServiceImpl {
             .set_main_workspace_email_for_user(user_id, email_id)
             .await
             .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((build_workspace_overview_response(repository, &session).await?, ctx))
+        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
     }
 
     async fn reset_api_token(
@@ -1579,7 +1988,7 @@ impl PilotService for PilotServiceImpl {
             .reset_api_token_for_user(user_id)
             .await
             .map_err(internal_error)?;
-        Ok((build_workspace_overview_response(repository, &session).await?, ctx))
+        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
     }
 
     async fn toggle_workspace_notification(
@@ -1640,7 +2049,7 @@ impl PilotService for PilotServiceImpl {
             .toggle_workspace_notification_for_user(user_id, project_id, &request.event_type)
             .await
             .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((build_workspace_overview_response(repository, &session).await?, ctx))
+        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
     }
 
     async fn create_organization(
