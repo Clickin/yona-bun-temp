@@ -1,7 +1,9 @@
 import * as React from "react";
 import { prefixBasePath, type RuntimeConfig } from "./runtime-config";
 import {
+  type AuthUiCapabilitiesViewModel,
   AuthWorkspaceShell,
+  resolveAuthRedirectPath,
   type OrganizationDirectoryViewModel,
   type OrganizationDetailViewModel,
   type OrganizationMembersViewModel,
@@ -18,6 +20,7 @@ import {
   enrollProject,
   listOrganizations,
   listProjects,
+  readAuthUiCapabilities,
   readCurrentSession,
   readOrganizationDetail,
   readOrganizationMembers,
@@ -46,13 +49,29 @@ interface AppProps {
 
 function toWorkspaceOverview(session: Awaited<ReturnType<typeof readCurrentSession>>, overview: Awaited<ReturnType<typeof readWorkspaceOverview>>): WorkspaceOverviewViewModel {
   return {
+    apiToken: overview.apiToken,
     defaultLandingPath: overview.defaultLandingPath,
+    emails: overview.emails.map((email) => ({
+      emailAddress: email.emailAddress,
+      id: email.id,
+      valid: email.valid,
+    })),
     favoriteProjects: overview.favoriteProjects.map((project) => ({
       ownerName: project.ownerName,
       projectName: project.projectName,
     })),
     recentProjects: overview.recentProjects.map((project) => ({
       ownerName: project.ownerName,
+      projectName: project.projectName,
+    })),
+    watchedProjects: overview.watchedProjects.map((project) => ({
+      notifications: project.notifications.map((notification) => ({
+        enabled: notification.enabled,
+        eventType: notification.eventType,
+        label: notification.label,
+      })),
+      ownerName: project.ownerName,
+      projectId: project.projectId,
       projectName: project.projectName,
     })),
     session: {
@@ -72,6 +91,16 @@ function toOrganizationDetailView(detail: Awaited<ReturnType<typeof readOrganiza
     description: detail.description,
     organizationName: detail.organizationName,
     viewerCanUpdate: detail.viewerCanUpdate,
+  };
+}
+
+function toAuthUiCapabilitiesView(
+  response: Awaited<ReturnType<typeof readAuthUiCapabilities>>,
+): AuthUiCapabilitiesViewModel {
+  return {
+    emailVerificationEnabled: response.emailVerificationEnabled,
+    signupRequireConfirm: response.signupRequireConfirm,
+    socialLoginOnly: response.socialLoginOnly,
   };
 }
 
@@ -154,6 +183,7 @@ export function App({ runtimeConfig }: AppProps) {
         }),
   );
   const [workspaceOverview, setWorkspaceOverview] = React.useState<WorkspaceOverviewViewModel | null>(null);
+  const [authUiCapabilities, setAuthUiCapabilities] = React.useState<AuthUiCapabilitiesViewModel | null>(null);
   const [organizationDirectory, setOrganizationDirectory] = React.useState<OrganizationDirectoryViewModel | null>(null);
   const [currentSession, setCurrentSession] = React.useState<Awaited<ReturnType<typeof readCurrentSession>> | null>(null);
   const [organizationDetail, setOrganizationDetail] = React.useState<OrganizationDetailViewModel | null>(null);
@@ -179,6 +209,27 @@ export function App({ runtimeConfig }: AppProps) {
     }
   }
 
+  function loginRouteForRedirect(targetHref: string): AppRoute {
+    return {
+      kind: "login",
+      href: `/users/loginform?redirectUrl=${encodeURIComponent(targetHref)}`,
+    };
+  }
+
+  function requiresAuthenticatedSession(route: AppRoute): boolean {
+    switch (route.kind) {
+      case "me":
+      case "workspace-settings":
+      case "organization-new":
+      case "organization-settings":
+      case "project-new":
+      case "project-settings":
+        return true;
+      default:
+        return false;
+    }
+  }
+
   async function refreshWorkspace(session: Awaited<ReturnType<typeof readCurrentSession>>) {
     if (session.isAnonymous) {
       setWorkspaceOverview(null);
@@ -195,6 +246,11 @@ export function App({ runtimeConfig }: AppProps) {
     setProjectDirectory(null);
     setProjectDetail(null);
     setProjectMembers(null);
+
+    if (requiresAuthenticatedSession(nextRoute) && (!session || session.isAnonymous)) {
+      navigateInternal(loginRouteForRedirect(nextRoute.href), "replace");
+      return;
+    }
 
     switch (nextRoute.kind) {
       case "public-projects": {
@@ -221,10 +277,6 @@ export function App({ runtimeConfig }: AppProps) {
         break;
       }
       case "organization-settings": {
-        if (!session || session.isAnonymous) {
-          navigateInternal({ kind: "login", href: "/users/loginform" }, "replace");
-          return;
-        }
         const detail = await readOrganizationSettings(runtimeConfig, nextRoute.organizationName);
         const members = await readOrganizationMembers(runtimeConfig, nextRoute.organizationName);
         setOrganizationDetail(toOrganizationDetailView(detail));
@@ -248,10 +300,6 @@ export function App({ runtimeConfig }: AppProps) {
         break;
       }
       case "project-settings": {
-        if (!session || session.isAnonymous) {
-          navigateInternal({ kind: "login", href: "/users/loginform" }, "replace");
-          return;
-        }
         const detail = await readProjectSettings(runtimeConfig, nextRoute.ownerName, nextRoute.projectName);
         const members = await readProjectMembers(runtimeConfig, nextRoute.ownerName, nextRoute.projectName);
         setProjectDetail(toProjectDetailView(detail));
@@ -299,6 +347,11 @@ export function App({ runtimeConfig }: AppProps) {
         if (cancelled) {
           return;
         }
+        const capabilities = await readAuthUiCapabilities(runtimeConfig);
+        if (cancelled) {
+          return;
+        }
+        setAuthUiCapabilities(toAuthUiCapabilitiesView(capabilities));
         setCurrentSession(session);
         await refreshWorkspace(session);
         if (!cancelled) {
@@ -362,7 +415,9 @@ export function App({ runtimeConfig }: AppProps) {
 
   return (
     <AuthWorkspaceShell
+      bootstrapping={currentSession === null}
       route={route}
+      authUiCapabilities={authUiCapabilities}
       errorMessage={errorMessage}
       organizationDirectory={organizationDirectory}
       onCancelEnrollProject={async (ownerName, projectName) => {
@@ -444,8 +499,10 @@ export function App({ runtimeConfig }: AppProps) {
           const session = await registerWithPassword(runtimeConfig, csrfToken, input);
           setCurrentSession(session);
           await refreshWorkspace(session);
+          const searchParams =
+            typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
           const nextHref = resolvePostAuthHref(
-            typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("redirect"),
+            resolveAuthRedirectPath(searchParams),
             session.defaultLandingPath,
           );
           const navigation = resolveNavigationTargetWithBasePath(nextHref, runtimeConfig.basePath);
@@ -482,8 +539,10 @@ export function App({ runtimeConfig }: AppProps) {
           const session = await signInWithPassword(runtimeConfig, csrfToken, input);
           setCurrentSession(session);
           await refreshWorkspace(session);
+          const searchParams =
+            typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
           const nextHref = resolvePostAuthHref(
-            typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("redirect"),
+            resolveAuthRedirectPath(searchParams),
             session.defaultLandingPath,
           );
           const navigation = resolveNavigationTargetWithBasePath(nextHref, runtimeConfig.basePath);

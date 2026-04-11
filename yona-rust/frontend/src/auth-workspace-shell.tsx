@@ -1,11 +1,19 @@
 import * as React from "react";
-import type { AppRoute } from "./auth-workspace-client";
+import { resolveCurrentPath, type AppRoute } from "./auth-workspace-client";
 import { prefixBasePath, type RuntimeConfig } from "./runtime-config";
 
 export interface WorkspaceOverviewViewModel {
+  apiToken?: string;
   defaultLandingPath: string;
+  emails?: Array<{ emailAddress: string; id: string; valid: boolean }>;
   favoriteProjects: Array<{ ownerName: string; projectName: string }>;
   recentProjects: Array<{ ownerName: string; projectName: string }>;
+  watchedProjects?: Array<{
+    notifications: Array<{ enabled: boolean; eventType: string; label: string }>;
+    ownerName: string;
+    projectId: string;
+    projectName: string;
+  }>;
   session: {
     defaultLandingPath: string;
     emailAddress: string;
@@ -45,6 +53,12 @@ export interface ProjectMembersViewModel {
   members: Array<{ loginId: string; role: string; userLabel: string }>;
 }
 
+export interface AuthUiCapabilitiesViewModel {
+  emailVerificationEnabled: boolean;
+  signupRequireConfirm: boolean;
+  socialLoginOnly: boolean;
+}
+
 export interface ProjectDirectoryViewModel {
   items: Array<{
     ownerName: string;
@@ -62,8 +76,10 @@ export interface OrganizationDirectoryViewModel {
 }
 
 export interface AuthWorkspaceShellProps {
+  bootstrapping?: boolean;
   route: AppRoute;
   runtimeConfig: RuntimeConfig;
+  authUiCapabilities?: AuthUiCapabilitiesViewModel | null;
   workspaceOverview: WorkspaceOverviewViewModel | null;
   organizationDirectory?: OrganizationDirectoryViewModel | null;
   organizationDetail?: OrganizationDetailViewModel | null;
@@ -119,6 +135,26 @@ export function resolvePostAuthHref(
   return redirectPath ?? savedDefaultLandingPath ?? "/me";
 }
 
+export function resolveAuthRedirectPath(
+  searchParams: URLSearchParams | null | undefined,
+): null | string {
+  if (!searchParams) {
+    return null;
+  }
+
+  const candidate = searchParams.get("redirectUrl") ?? searchParams.get("redirect");
+  if (!candidate) {
+    return null;
+  }
+
+  const trimmed = candidate.trim();
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) {
+    return null;
+  }
+
+  return resolveCurrentPath(trimmed).kind === "external" ? null : trimmed;
+}
+
 function readSearchParams(href: string): URLSearchParams {
   return new URL(href, "http://yona.local").searchParams;
 }
@@ -168,6 +204,20 @@ function appHref(runtimeConfig: RuntimeConfig, href: string): string {
   return prefixBasePath(runtimeConfig.basePath, href);
 }
 
+function requiresAuthenticatedSession(route: AppRoute): boolean {
+  switch (route.kind) {
+    case "me":
+    case "workspace-settings":
+    case "organization-new":
+    case "organization-settings":
+    case "project-new":
+    case "project-settings":
+      return true;
+    default:
+      return false;
+  }
+}
+
 function Section({
   title,
   children,
@@ -181,12 +231,16 @@ function Section({
 }
 
 function LoginShell({
+  authUiCapabilities,
   onSignIn,
   pending,
+  routeHref,
   runtimeConfig,
 }: {
+  authUiCapabilities?: AuthUiCapabilitiesViewModel | null;
   onSignIn?: AuthWorkspaceShellProps["onSignIn"];
   pending?: boolean;
+  routeHref: string;
   runtimeConfig: RuntimeConfig;
 }) {
   const [formState, setFormState] = React.useState({
@@ -194,70 +248,87 @@ function LoginShell({
     password: "",
     rememberMe: true,
   });
+  const redirectUrl = resolveAuthRedirectPath(readSearchParams(routeHref));
+  const canRenderLocalForm = authUiCapabilities !== null && !authUiCapabilities?.socialLoginOnly;
 
   return (
     <main className="app-shell">
       <p className="eyebrow">Yona Rust Auth</p>
       <h1>Login for Yona</h1>
       <p className="lede">All-in-one software development platform.</p>
-      <form
-        className="runtime-grid"
-        onSubmit={(event) => {
-          event.preventDefault();
-          onSignIn?.(formState);
-        }}
-      >
-        <label>
-          <span>Login ID or email</span>
-          <input
-            autoComplete="off"
-            name="loginIdOrEmail"
-            onChange={(event) =>
-              setFormState((current) => ({ ...current, identifier: event.target.value }))
-            }
-            placeholder="Login ID or email"
-            type="text"
-            value={formState.identifier}
-          />
-        </label>
-        <label>
-          <span>Password</span>
-          <input
-            name="password"
-            onChange={(event) =>
-              setFormState((current) => ({ ...current, password: event.target.value }))
-            }
-            type="password"
-            value={formState.password}
-          />
-        </label>
-        <label>
-          <input
-            checked={formState.rememberMe}
-            name="rememberMe"
-            onChange={(event) =>
-              setFormState((current) => ({ ...current, rememberMe: event.target.checked }))
-            }
-            type="checkbox"
-          />
-          <span>Remember me</span>
-        </label>
-        <button type="submit">{pending ? "Logging in..." : "Login"}</button>
-      </form>
-      <div className="runtime-grid">
-        <div>
-          <a href={appHref(runtimeConfig, "/lostPassword")}>Forgot password</a>
-        </div>
-      </div>
+      {authUiCapabilities?.emailVerificationEnabled ? (
+        <p className="lede">Confirmation mail will be sent.</p>
+      ) : null}
+      {authUiCapabilities?.socialLoginOnly ? (
+        <p className="lede">Social login only</p>
+      ) : null}
+      {canRenderLocalForm ? (
+        <>
+          <form
+            action={appHref(runtimeConfig, "/users/login")}
+            className="runtime-grid"
+            method="post"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onSignIn?.(formState);
+            }}
+          >
+            <label>
+              <span>Login ID or email</span>
+              <input
+                autoComplete="off"
+                name="loginIdOrEmail"
+                onChange={(event) =>
+                  setFormState((current) => ({ ...current, identifier: event.target.value }))
+                }
+                placeholder="Login ID or email"
+                type="text"
+              value={formState.identifier}
+            />
+            </label>
+            <input name="redirectUrl" type="hidden" value={redirectUrl ?? ""} />
+            <label>
+              <span>Password</span>
+              <input
+                name="password"
+                onChange={(event) =>
+                  setFormState((current) => ({ ...current, password: event.target.value }))
+                }
+                type="password"
+                value={formState.password}
+              />
+            </label>
+            <label>
+              <input
+                checked={formState.rememberMe}
+                name="rememberMe"
+                onChange={(event) =>
+                  setFormState((current) => ({ ...current, rememberMe: event.target.checked }))
+                }
+                type="checkbox"
+              />
+              <span>Remember me</span>
+            </label>
+            <button type="submit">{pending ? "Logging in..." : "Login"}</button>
+          </form>
+          <div className="runtime-grid">
+            <div>
+              <a href={appHref(runtimeConfig, "/lostPassword")}>Forgot password</a>
+            </div>
+          </div>
+        </>
+      ) : null}
     </main>
   );
 }
 
 function RegisterShell({
+  authUiCapabilities,
   onRegister,
   pending,
   runtimeConfig,
 }: {
+  authUiCapabilities?: AuthUiCapabilitiesViewModel | null;
   onRegister?: AuthWorkspaceShellProps["onRegister"];
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
@@ -274,23 +345,35 @@ function RegisterShell({
     <main className="app-shell">
       <p className="eyebrow">Yona Rust Auth</p>
       <h1>Sign Up for Yona</h1>
-      <form
-        className="runtime-grid"
-        onSubmit={(event) => {
-          event.preventDefault();
-          onRegister?.(formState);
-        }}
-      >
-        <label><span>Login ID</span><input name="loginId" type="text" value={formState.loginId} onChange={(event) => setFormState((current) => ({ ...current, loginId: event.target.value }))} /></label>
-        <label><span>Name</span><input name="name" type="text" value={formState.name} onChange={(event) => setFormState((current) => ({ ...current, name: event.target.value }))} /></label>
-        <label><span>Email</span><input name="emailAddress" type="email" value={formState.emailAddress} onChange={(event) => setFormState((current) => ({ ...current, emailAddress: event.target.value }))} /></label>
-        <label><span>Password</span><input name="password" type="password" value={formState.password} onChange={(event) => setFormState((current) => ({ ...current, password: event.target.value }))} /></label>
-        <label><span>Retype password</span><input name="retypedPassword" type="password" value={formState.retypedPassword} onChange={(event) => setFormState((current) => ({ ...current, retypedPassword: event.target.value }))} /></label>
-        <button type="submit">{pending ? "Signing up..." : "Sign up"}</button>
-      </form>
-      <p className="lede">
-        Already signed up? <a className="go-login" href={appHref(runtimeConfig, "/users/loginform")}>Login</a>
-      </p>
+      {authUiCapabilities?.signupRequireConfirm ? (
+        <p className="lede">Sign up requires confirmation.</p>
+      ) : null}
+      {authUiCapabilities?.socialLoginOnly ? (
+        <p className="lede">Social login only</p>
+      ) : null}
+      {authUiCapabilities !== null && !authUiCapabilities?.socialLoginOnly ? (
+        <>
+          <form
+            action={appHref(runtimeConfig, "/users/signup")}
+            className="runtime-grid"
+            method="post"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onRegister?.(formState);
+            }}
+          >
+            <label><span>Login ID</span><input name="loginId" type="text" value={formState.loginId} onChange={(event) => setFormState((current) => ({ ...current, loginId: event.target.value }))} /></label>
+            <label><span>Name</span><input name="name" type="text" value={formState.name} onChange={(event) => setFormState((current) => ({ ...current, name: event.target.value }))} /></label>
+            <label><span>Email</span><input name="emailAddress" type="email" value={formState.emailAddress} onChange={(event) => setFormState((current) => ({ ...current, emailAddress: event.target.value }))} /></label>
+            <label><span>Password</span><input name="password" type="password" value={formState.password} onChange={(event) => setFormState((current) => ({ ...current, password: event.target.value }))} /></label>
+            <label><span>Retype password</span><input name="retypedPassword" type="password" value={formState.retypedPassword} onChange={(event) => setFormState((current) => ({ ...current, retypedPassword: event.target.value }))} /></label>
+            <button type="submit">{pending ? "Signing up..." : "Sign up"}</button>
+          </form>
+          <p className="lede">
+            Already signed up? <a className="go-login" href={appHref(runtimeConfig, "/users/loginform")}>Login</a>
+          </p>
+        </>
+      ) : null}
     </main>
   );
 }
@@ -372,15 +455,18 @@ function WorkspaceShell(props: {
     loginId: "anonymous",
     userLabel: "Anonymous",
   };
+  const emails = props.workspaceOverview?.emails ?? [];
   const defaultLandingPath = props.workspaceOverview?.defaultLandingPath ?? "/me";
   const favoriteProjects = props.workspaceOverview?.favoriteProjects ?? [];
   const recentProjects = props.workspaceOverview?.recentProjects ?? [];
+  const watchedProjects = props.workspaceOverview?.watchedProjects ?? [];
   const [nextDefaultLandingPath, setNextDefaultLandingPath] = React.useState(defaultLandingPath);
 
   return (
     <main className="app-shell">
       <p className="eyebrow">Yona Rust Workspace</p>
       <h1>{session.userLabel || session.loginId}</h1>
+      {session.isSiteAdmin ? <p className="lede">SITE ADMIN</p> : null}
       <ul className="nav nav-tabs">
         <li><a href="#issues">Issues</a></li>
         <li><a href="#pullRequests">Pull Requests</a></li>
@@ -398,6 +484,8 @@ function WorkspaceShell(props: {
         <div><dt>email</dt><dd>{session.emailAddress}</dd></div>
         <div><dt>default landing</dt><dd>{defaultLandingPath}</dd></div>
         <div><dt>basePath</dt><dd>{props.runtimeConfig.basePath}</dd></div>
+        <div><dt>linked emails</dt><dd>{emails.length}</dd></div>
+        <div><dt>watched projects</dt><dd>{watchedProjects.length}</dd></div>
       </dl>
       <Section title="Default landing">
         <form
@@ -445,27 +533,47 @@ function WorkspaceSettingsShell(props: {
     loginId: "anonymous",
     userLabel: "Anonymous",
   };
+  const apiToken = props.workspaceOverview?.apiToken ?? "";
+  const emails = props.workspaceOverview?.emails ?? [];
+  const watchedProjects = props.workspaceOverview?.watchedProjects ?? [];
 
   let sectionBody: React.ReactNode;
   switch (props.section) {
     case "profile":
       sectionBody = (
-        <form className="runtime-grid">
-          <label>
-            <span>Name</span>
-            <input defaultValue={session.userLabel} name="name" type="text" />
-          </label>
-          <label>
-            <span>Email</span>
-            <input defaultValue={session.emailAddress} name="emailAddress" type="email" />
-          </label>
-          <button type="submit">{props.pending ? "Saving..." : "Edit Profile"}</button>
-        </form>
+        <>
+          <form action={appHref(props.runtimeConfig, "/user/edit")} className="runtime-grid" method="post">
+            <label>
+              <span>Login ID</span>
+              <input defaultValue={session.loginId} name="loginId" readOnly type="text" />
+            </label>
+            <label>
+              <span>Name</span>
+              <input defaultValue={session.userLabel} name="name" type="text" />
+            </label>
+            <label>
+              <span>Email</span>
+              <input defaultValue={session.emailAddress} name="email" type="email" />
+            </label>
+            <label>
+              <span>Avatar</span>
+              <input accept="image/*" name="filePath" type="file" />
+            </label>
+            <button type="submit">{props.pending ? "Saving..." : "Edit Profile"}</button>
+          </form>
+          <form action={appHref(props.runtimeConfig, "/user/resetVisitedList")} method="post">
+            <button type="submit">Reset visited project list</button>
+          </form>
+        </>
       );
       break;
     case "password":
       sectionBody = (
-        <form className="runtime-grid">
+        <form
+          action={appHref(props.runtimeConfig, "/user/resetPassword")}
+          className="runtime-grid"
+          method="post"
+        >
           <label><span>Current Password</span><input name="currentPassword" type="password" /></label>
           <label><span>New Password</span><input name="password" type="password" /></label>
           <label><span>Retype password</span><input name="retypedPassword" type="password" /></label>
@@ -478,29 +586,120 @@ function WorkspaceSettingsShell(props: {
         <section className="runtime-grid">
           <div>
             <strong>Watched Projects</strong>
-            <p>Notification preferences for watched projects will be restored here.</p>
           </div>
+          {watchedProjects.length === 0 ? (
+            <p>No watched projects yet.</p>
+          ) : (
+            <>
+              <ul className="unstyled lst-stacked span3 mr20" id="notification-projects">
+                {watchedProjects.map((project, index) => (
+                  <li className={index === 0 ? "active" : undefined} key={project.projectId}>
+                    <a href={`#${project.projectId}`}>{`${project.ownerName} / ${project.projectName}`}</a>
+                  </li>
+                ))}
+              </ul>
+              <div className="tab-content">
+                {watchedProjects.map((project, index) => (
+                  <div className={`tab-pane ${index === 0 ? "active" : ""}`} id={project.projectId} key={project.projectId}>
+                    <table className="table table-striped table-bordered">
+                      <tbody>
+                        {project.notifications.map((notification) => (
+                          <tr key={`${project.projectId}-${notification.eventType}`}>
+                            <th>{notification.label}</th>
+                            <td>
+                              <div className="switch" data-off-label="Off" data-on-label="On">
+                                <input
+                                  checked={notification.enabled}
+                                  className="notiUpdate"
+                                  data-href={appHref(
+                                    props.runtimeConfig,
+                                    `/noti/toggle/${project.projectId}/${notification.eventType}`,
+                                  )}
+                                  data-toggle="switch"
+                                  readOnly
+                                  type="checkbox"
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </section>
       );
       break;
     case "emails":
       sectionBody = (
         <section className="runtime-grid">
+          <form action={appHref(props.runtimeConfig, "/user/email")} className="runtime-grid" method="post">
+            <label>
+              <span>Email</span>
+              <input name="email" placeholder="New email" type="email" />
+            </label>
+            <button type="submit">Add</button>
+          </form>
+          <p>
+            Main email receives account mail.
+            <br />
+            Sub emails can be promoted after validation.
+          </p>
           <div>
-            <strong>Emails</strong>
+            <strong>Main Email</strong>
             <p>{session.emailAddress}</p>
           </div>
+          {emails.map((email) => (
+            <div className="runtime-grid" key={email.id}>
+              <strong>{email.emailAddress}</strong>
+              <div>
+                <button
+                  data-request-method="delete"
+                  data-request-uri={appHref(props.runtimeConfig, `/user/email/delete/${email.id}`)}
+                  type="button"
+                >
+                  Delete
+                </button>
+                {email.valid ? (
+                  <a
+                    data-request-method="put"
+                    href={appHref(props.runtimeConfig, `/user/email/setAsMain/${email.id}`)}
+                  >
+                    Set as main
+                  </a>
+                ) : (
+                  <a
+                    data-request-method="post"
+                    href={appHref(
+                      props.runtimeConfig,
+                      `/user/email/sendValidationEmail/${email.id}`,
+                    )}
+                  >
+                    Send validation mail
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
         </section>
       );
       break;
     case "token":
       sectionBody = (
-        <section className="runtime-grid">
-          <div>
-            <strong>Token</strong>
-            <p>Token management surface is mounted for Wave 1 parity follow-up.</p>
-          </div>
-        </section>
+        <form
+          action={appHref(props.runtimeConfig, "/user/editform/token_reset")}
+          className="runtime-grid"
+          method="post"
+        >
+          <label>
+            <span>Token</span>
+            <input name="name" readOnly type="text" value={apiToken} />
+          </label>
+          <button type="submit">Recreate Token</button>
+        </form>
       );
       break;
   }
@@ -954,6 +1153,10 @@ function LegacyPlaceholderShell({ route }: { route: AppRoute }) {
 }
 
 export function AuthWorkspaceShell(props: AuthWorkspaceShellProps) {
+  if (props.bootstrapping && requiresAuthenticatedSession(props.route)) {
+    return <main className="app-shell"><h1>Loading...</h1></main>;
+  }
+
   let content: React.ReactNode;
   switch (props.route.kind) {
     case "public-home":
@@ -978,10 +1181,25 @@ export function AuthWorkspaceShell(props: AuthWorkspaceShellProps) {
       );
       break;
     case "login":
-      content = <LoginShell onSignIn={props.onSignIn} pending={props.pending} runtimeConfig={props.runtimeConfig} />;
+      content = (
+        <LoginShell
+          authUiCapabilities={props.authUiCapabilities}
+          onSignIn={props.onSignIn}
+          pending={props.pending}
+          routeHref={props.route.href}
+          runtimeConfig={props.runtimeConfig}
+        />
+      );
       break;
     case "register":
-      content = <RegisterShell onRegister={props.onRegister} pending={props.pending} runtimeConfig={props.runtimeConfig} />;
+      content = (
+        <RegisterShell
+          authUiCapabilities={props.authUiCapabilities}
+          onRegister={props.onRegister}
+          pending={props.pending}
+          runtimeConfig={props.runtimeConfig}
+        />
+      );
       break;
     case "lost-password":
       content = <LostPasswordShell runtimeConfig={props.runtimeConfig} />;

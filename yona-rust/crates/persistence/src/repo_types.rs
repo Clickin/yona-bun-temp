@@ -152,6 +152,28 @@ pub struct ProjectListEntry {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WorkspaceNotificationPreferenceRecord {
+    pub enabled: bool,
+    pub event_type: String,
+    pub label: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WatchedProjectNotificationsRecord {
+    pub notifications: Vec<WorkspaceNotificationPreferenceRecord>,
+    pub owner_name: String,
+    pub project_id: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WorkspaceEmailRecord {
+    pub email_address: String,
+    pub id: String,
+    pub valid: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ToggleFavoriteProjectResult {
     pub favorited: bool,
     pub owner_name: String,

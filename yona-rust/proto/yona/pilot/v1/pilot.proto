@@ -96,11 +96,33 @@ message ListOrganizationsResponse {
 
 message ReadWorkspaceOverviewRequest {}
 
+message WorkspaceNotificationPreference {
+  string event_type = 1;
+  string label = 2;
+  bool enabled = 3;
+}
+
+message WatchedProjectNotifications {
+  string project_id = 1;
+  string owner_name = 2;
+  string project_name = 3;
+  repeated WorkspaceNotificationPreference notifications = 4;
+}
+
+message WorkspaceEmail {
+  string id = 1;
+  string email_address = 2;
+  bool valid = 3;
+}
+
 message ReadWorkspaceOverviewResponse {
   ReadCurrentSessionResponse session = 1;
   string default_landing_path = 2;
   repeated ProjectListItem favorite_projects = 3;
   repeated ProjectListItem recent_projects = 4;
+  repeated WatchedProjectNotifications watched_projects = 5;
+  repeated WorkspaceEmail emails = 6;
+  string api_token = 7;
 }
 
 message SetDefaultLandingPathRequest {

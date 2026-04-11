@@ -328,11 +328,17 @@ impl BrowserRuntimeConfig {
 }
 
 fn fixed_auth_ui_capabilities() -> ReadAuthUiCapabilitiesResponse {
+    fn parse_bool_env(name: &str) -> bool {
+        std::env::var(name)
+            .map(|value| matches!(value.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+            .unwrap_or(false)
+    }
+
     ReadAuthUiCapabilitiesResponse {
-        email_verification_enabled: false,
+        email_verification_enabled: parse_bool_env("YONA_AUTH_EMAIL_VERIFICATION_ENABLED"),
         enabled_social_providers: vec![],
-        signup_require_confirm: false,
-        social_login_only: false,
+        signup_require_confirm: parse_bool_env("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM"),
+        social_login_only: parse_bool_env("YONA_AUTH_SOCIAL_LOGIN_ONLY"),
         ..Default::default()
     }
 }
@@ -493,6 +499,42 @@ fn workspace_project_item_from_entry(item: &persistence::ProjectListEntry) -> Pr
     }
 }
 
+fn workspace_email_from_record(record: &persistence::WorkspaceEmailRecord) -> WorkspaceEmail {
+    WorkspaceEmail {
+        email_address: record.email_address.clone(),
+        id: record.id.clone(),
+        valid: record.valid,
+        ..Default::default()
+    }
+}
+
+fn workspace_notification_from_record(
+    record: &persistence::WorkspaceNotificationPreferenceRecord,
+) -> WorkspaceNotificationPreference {
+    WorkspaceNotificationPreference {
+        enabled: record.enabled,
+        event_type: record.event_type.clone(),
+        label: record.label.clone(),
+        ..Default::default()
+    }
+}
+
+fn watched_project_notifications_from_record(
+    record: &persistence::WatchedProjectNotificationsRecord,
+) -> WatchedProjectNotifications {
+    WatchedProjectNotifications {
+        notifications: record
+            .notifications
+            .iter()
+            .map(workspace_notification_from_record)
+            .collect(),
+        owner_name: record.owner_name.clone(),
+        project_id: record.project_id.clone(),
+        project_name: record.project_name.clone(),
+        ..Default::default()
+    }
+}
+
 async fn load_workspace_project_lists(
     repository: &PilotRepository,
     user_id: i64,
@@ -513,6 +555,33 @@ async fn load_workspace_project_lists(
         .collect();
 
     Ok((favorite_projects, recent_projects))
+}
+
+async fn load_workspace_settings_data(
+    repository: &PilotRepository,
+    user_id: i64,
+) -> Result<(String, Vec<WorkspaceEmail>, Vec<WatchedProjectNotifications>), ConnectError> {
+    let api_token = repository
+        .read_api_token_for_user(user_id)
+        .await
+        .map_err(internal_error)?
+        .unwrap_or_default();
+    let emails = repository
+        .list_workspace_emails_for_user(user_id)
+        .await
+        .map_err(internal_error)?
+        .iter()
+        .map(workspace_email_from_record)
+        .collect();
+    let watched_projects = repository
+        .list_watched_project_notifications_for_user(user_id)
+        .await
+        .map_err(internal_error)?
+        .iter()
+        .map(watched_project_notifications_from_record)
+        .collect();
+
+    Ok((api_token, emails, watched_projects))
 }
 
 fn organization_detail_from_record(
@@ -721,13 +790,18 @@ impl PilotService for PilotServiceImpl {
         };
         let (favorite_projects, recent_projects) =
             load_workspace_project_lists(repository, user_id).await?;
+        let (api_token, emails, watched_projects) =
+            load_workspace_settings_data(repository, user_id).await?;
 
         Ok((
             ReadWorkspaceOverviewResponse {
+                api_token,
                 default_landing_path: response.default_landing_path.clone(),
+                emails,
                 favorite_projects,
                 recent_projects,
                 session: Some(response).into(),
+                watched_projects,
                 ..Default::default()
             },
             ctx,
@@ -765,12 +839,17 @@ impl PilotService for PilotServiceImpl {
         let updated = resolve_current_session_response(&self.backend, Some(&session)).await?;
         let (favorite_projects, recent_projects) =
             load_workspace_project_lists(repository, user_id).await?;
+        let (api_token, emails, watched_projects) =
+            load_workspace_settings_data(repository, user_id).await?;
         Ok((
             ReadWorkspaceOverviewResponse {
+                api_token,
                 default_landing_path: updated.default_landing_path.clone(),
+                emails,
                 favorite_projects,
                 recent_projects,
                 session: Some(updated).into(),
+                watched_projects,
                 ..Default::default()
             },
             ctx,

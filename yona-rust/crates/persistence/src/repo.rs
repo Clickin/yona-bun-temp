@@ -5,10 +5,13 @@ use crate::repo_types::{
     ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord, ProjectListEntry,
     ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectRecord, ProjectViewerRecord,
     ToggleFavoriteProjectResult, UpdateOrganizationInput, UpdateProjectInput,
+    WatchedProjectNotificationsRecord, WorkspaceEmailRecord,
+    WorkspaceNotificationPreferenceRecord,
 };
 use crate::{
-    favorite_project, issue, n4user, organization, organization_user, project, project_user,
-    recent_project, role, site_admin, user_enrolled_project, user_setting,
+    email, favorite_project, issue, n4user, organization, organization_user, project,
+    project_user, recent_project, role, site_admin, user_enrolled_project,
+    user_project_notification, user_setting, watch,
 };
 use sea_orm::{
     sea_query::Expr, ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait,
@@ -42,6 +45,49 @@ fn issue_state_to_raw(value: &str) -> i32 {
     } else {
         1
     }
+}
+
+const WORKSPACE_NOTIFICATION_TYPES: &[(&str, &str)] = &[
+    ("NEW_ISSUE", "New issue"),
+    ("NEW_POSTING", "New post"),
+    ("NEW_PULL_REQUEST", "New pull request"),
+    ("ISSUE_STATE_CHANGED", "Issue state changed"),
+    ("ISSUE_ASSIGNEE_CHANGED", "Issue assignee changed"),
+    ("PULL_REQUEST_STATE_CHANGED", "Pull request state changed"),
+    ("NEW_COMMENT", "New comment"),
+    ("NEW_REVIEW_COMMENT", "New simple comment"),
+    ("MEMBER_ENROLL_REQUEST", "Member enroll request"),
+    ("PULL_REQUEST_MERGED", "Pull request merged"),
+    ("ISSUE_REFERRED_FROM_COMMIT", "Issue referred from commit"),
+    ("PULL_REQUEST_COMMIT_CHANGED", "Pull request commit changed"),
+    ("NEW_COMMIT", "New commit"),
+    (
+        "PULL_REQUEST_REVIEW_STATE_CHANGED",
+        "Pull request review action changed",
+    ),
+    ("ISSUE_REFERRED_FROM_PULL_REQUEST", "Issue referred from pull request"),
+    ("ISSUE_BODY_CHANGED", "Issue body changed"),
+    ("REVIEW_THREAD_STATE_CHANGED", "Review state changed"),
+    (
+        "ORGANIZATION_MEMBER_ENROLL_REQUEST",
+        "Organization member enroll request",
+    ),
+    ("COMMENT_UPDATED", "Comment updated"),
+    ("ISSUE_MOVED", "Issue moved"),
+    ("ISSUE_SHARER_CHANGED", "Issue sharer changed"),
+    ("ISSUE_LABEL_CHANGED", "Issue label changed"),
+    ("ISSUE_MILESTONE_CHANGED", "Milestone changed"),
+    ("POSTING_BODY_CHANGED", "Posting body changed"),
+    ("RESOURCE_DELETED", "Resource deleted"),
+    ("MEMBER_ENROLL_ACCEPT", "Member enroll accept"),
+    (
+        "ORGANIZATION_MEMBER_ENROLL_ACCEPT",
+        "Organization member enroll accept",
+    ),
+];
+
+fn workspace_notification_enabled_by_default(event_type: &str) -> bool {
+    !matches!(event_type, "NEW_COMMENT")
 }
 
 fn issue_state_from_raw(value: Option<i32>) -> String {
@@ -917,6 +963,100 @@ impl AppRepository {
             }
         }
         Ok(projects)
+    }
+
+    pub async fn list_workspace_emails_for_user(
+        &self,
+        user_id: i64,
+    ) -> Result<Vec<WorkspaceEmailRecord>, DbErr> {
+        let rows = email::Entity::find()
+            .filter(email::Column::UserId.eq(Some(user_id)))
+            .order_by_asc(email::Column::Id)
+            .all(&self.db)
+            .await?;
+
+        Ok(rows
+            .into_iter()
+            .filter_map(|row| {
+                Some(WorkspaceEmailRecord {
+                    email_address: row.email?,
+                    id: row.id.to_string(),
+                    valid: row.valid.unwrap_or_default() != 0,
+                })
+            })
+            .collect())
+    }
+
+    pub async fn read_api_token_for_user(&self, user_id: i64) -> Result<Option<String>, DbErr> {
+        Ok(n4user::Entity::find_by_id(user_id)
+            .one(&self.db)
+            .await?
+            .and_then(|row| row.token))
+    }
+
+    pub async fn list_watched_project_notifications_for_user(
+        &self,
+        user_id: i64,
+    ) -> Result<Vec<WatchedProjectNotificationsRecord>, DbErr> {
+        let watched_rows = watch::Entity::find()
+            .filter(watch::Column::UserId.eq(Some(user_id)))
+            .filter(watch::Column::ResourceType.eq(Some("PROJECT".to_string())))
+            .order_by_desc(watch::Column::Id)
+            .all(&self.db)
+            .await?;
+
+        let mut watched_projects = Vec::new();
+        for watch_row in watched_rows {
+            let Some(project_id) = watch_row
+                .resource_id
+                .as_deref()
+                .and_then(|value| value.parse::<i64>().ok())
+            else {
+                continue;
+            };
+            let Some(project_row) = project::Entity::find_by_id(project_id).one(&self.db).await? else {
+                continue;
+            };
+            let (Some(owner_name), Some(project_name)) =
+                (project_row.owner.clone(), project_row.name.clone())
+            else {
+                continue;
+            };
+
+            let overrides = user_project_notification::Entity::find()
+                .filter(user_project_notification::Column::UserId.eq(Some(user_id)))
+                .filter(user_project_notification::Column::ProjectId.eq(Some(project_id)))
+                .all(&self.db)
+                .await?;
+
+            let notifications = WORKSPACE_NOTIFICATION_TYPES
+                .iter()
+                .map(|(event_type, label)| {
+                    let enabled = overrides
+                        .iter()
+                        .find(|row| {
+                            row.notification_type.as_deref() == Some(*event_type)
+                        })
+                        .map(|row| row.allowed.unwrap_or(1) != 0)
+                        .unwrap_or_else(|| workspace_notification_enabled_by_default(event_type));
+
+                    WorkspaceNotificationPreferenceRecord {
+                        enabled,
+                        event_type: (*event_type).to_string(),
+                        label: (*label).to_string(),
+                    }
+                })
+                .collect();
+
+            watched_projects.push(WatchedProjectNotificationsRecord {
+                notifications,
+                owner_name,
+                project_id: project_id.to_string(),
+                project_name,
+            });
+        }
+
+        Ok(watched_projects)
     }
 
     pub async fn read_default_landing_path(&self, user_id: i64) -> Result<Option<String>, DbErr> {
