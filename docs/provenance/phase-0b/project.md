@@ -56,5 +56,5 @@
 ## R0-3 Delivery Note
 
 - `R0-3` now covers project create/detail/settings, visibility-aware read, guest-only enrollment request/cancel, read-only member summary, and workspace favorite/recent linkage in `yona-rust/`.
-- The Wave 0 route-foundation slice also mounts the public `/projects` directory in `yona-rust/frontend` with route-parity tests and a shell-routing Playwright smoke pack.
+- The Wave 0 route-foundation slice also mounts the public `/projects` directory in `yona-rust/frontend` through file routes under `src/routes/projects/**`, with route-parity tests and a shell-routing Playwright smoke pack.
 - Project detail read records recent visits for authenticated viewers, and `/me` now reflects favorite/recent project state through `ReadWorkspaceOverview`.

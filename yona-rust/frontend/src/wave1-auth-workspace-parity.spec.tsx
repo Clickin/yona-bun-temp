@@ -1,143 +1,102 @@
-import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { AuthWorkspaceShell } from "./auth-workspace-shell";
-import type { RuntimeConfig } from "./runtime-config";
-
-const runtimeConfig: RuntimeConfig = {
-  apiBaseUrl: "/yona/api",
-  basePath: "/yona",
-  rpcBaseUrl: "/yona/rpc",
-};
+import {
+  renderLogin,
+  renderLostPassword,
+  renderRegister,
+  renderResetPassword,
+  renderWorkspace,
+  renderWorkspaceSettings,
+} from "./auth-workspace-shell.test-helpers";
 
 describe("wave 1 auth and workspace parity", () => {
   it("renders legacy auth links and password-reset request fields", () => {
-    const loginHtml = renderToString(
-      <AuthWorkspaceShell
-        route={{ kind: "login", href: "/users/loginform" }}
-        runtimeConfig={runtimeConfig}
-        workspaceOverview={null}
-      />,
-    );
+    const loginHtml = renderLogin({ routeHref: "/users/loginform" });
     expect(loginHtml).toContain('action="/yona/users/login"');
     expect(loginHtml).toContain('href="/yona/lostPassword"');
 
-    const registerHtml = renderToString(
-      <AuthWorkspaceShell
-        route={{ kind: "register", href: "/users/signupform" }}
-        runtimeConfig={runtimeConfig}
-        workspaceOverview={null}
-      />,
-    );
+    const registerHtml = renderRegister({
+      authUiCapabilities: {
+        emailVerificationEnabled: false,
+        signupRequireConfirm: false,
+        socialLoginOnly: false,
+      },
+    });
     expect(registerHtml).toContain('action="/yona/users/signup"');
     expect(registerHtml).toContain('href="/yona/users/loginform"');
 
-    const lostPasswordHtml = renderToString(
-      <AuthWorkspaceShell
-        route={{ kind: "lost-password", href: "/lostPassword" }}
-        runtimeConfig={runtimeConfig}
-        workspaceOverview={null}
-      />,
-    );
+    const lostPasswordHtml = renderLostPassword("/lostPassword");
     expect(lostPasswordHtml).toContain('action="/yona/lostPassword"');
     expect(lostPasswordHtml).toContain('name="loginId"');
     expect(lostPasswordHtml).toContain('name="emailAddress"');
     expect(lostPasswordHtml).toContain(">Confirm<");
 
-    const resetPasswordHtml = renderToString(
-      <AuthWorkspaceShell
-        route={{ kind: "reset-password", href: "/resetPassword" }}
-        runtimeConfig={runtimeConfig}
-        workspaceOverview={null}
-      />,
-    );
+    const resetPasswordHtml = renderResetPassword("/resetPassword");
     expect(resetPasswordHtml).toContain('action="/yona/resetPassword"');
     expect(resetPasswordHtml).toContain('name="hashString"');
     expect(resetPasswordHtml).toContain(">Confirm<");
   });
 
   it("renders password-reset and email-validation status messaging from query params", () => {
-    const lostPasswordHtml = renderToString(
-      <AuthWorkspaceShell
-        route={{ kind: "lost-password", href: "/lostPassword?requested=1" }}
-        runtimeConfig={runtimeConfig}
-        workspaceOverview={null}
-      />,
-    );
+    const lostPasswordHtml = renderLostPassword("/lostPassword?requested=1");
     expect(lostPasswordHtml).toContain("Password reset request was accepted.");
 
-    const loginHtml = renderToString(
-      <AuthWorkspaceShell
-        route={{ kind: "login", href: "/users/loginform?password=reset" }}
-        runtimeConfig={runtimeConfig}
-        workspaceOverview={null}
-      />,
-    );
+    const loginHtml = renderLogin({ routeHref: "/users/loginform?password=reset" });
     expect(loginHtml).toContain("Login with your new password.");
 
-    const emailHtml = renderToString(
-      <AuthWorkspaceShell
-        route={{ kind: "workspace-settings", href: "/user/editform/emails?validation=sent", section: "emails" } as any}
-        runtimeConfig={runtimeConfig}
-        workspaceOverview={{
+    const emailHtml = renderWorkspaceSettings(
+      "emails",
+      "/user/editform/emails?validation=sent",
+      {
+        defaultLandingPath: "/me",
+        emails: [{ emailAddress: "pending@example.com", id: "3", valid: false }],
+        favoriteProjects: [],
+        recentProjects: [],
+        session: {
           defaultLandingPath: "/me",
-          emails: [{ emailAddress: "pending@example.com", id: "3", valid: false }],
-          favoriteProjects: [],
-          recentProjects: [],
-          session: {
-            defaultLandingPath: "/me",
-            emailAddress: "door@example.com",
-            isAnonymous: false,
-            isConfirmed: true,
-            isSiteAdmin: false,
-            loginId: "door",
-            userLabel: "Door",
-          },
-        }}
-      />,
+          emailAddress: "door@example.com",
+          isAnonymous: false,
+          isConfirmed: true,
+          isSiteAdmin: false,
+          loginId: "door",
+          userLabel: "Door",
+        },
+      },
     );
     expect(emailHtml).toContain("Validation request was accepted.");
     expect(emailHtml).toContain('action="/yona/user/email/sendValidationEmail/3"');
 
-    const invalidConfirmHtml = renderToString(
-      <AuthWorkspaceShell
-        route={{ kind: "workspace-settings", href: "/user/editform/emails?confirmed=invalid&validation=error", section: "emails" } as any}
-        runtimeConfig={runtimeConfig}
-        workspaceOverview={{
+    const invalidConfirmHtml = renderWorkspaceSettings(
+      "emails",
+      "/user/editform/emails?confirmed=invalid&validation=error",
+      {
+        defaultLandingPath: "/me",
+        emails: [{ emailAddress: "pending@example.com", id: "3", valid: false }],
+        favoriteProjects: [],
+        recentProjects: [],
+        session: {
           defaultLandingPath: "/me",
-          emails: [{ emailAddress: "pending@example.com", id: "3", valid: false }],
-          favoriteProjects: [],
-          recentProjects: [],
-          session: {
-            defaultLandingPath: "/me",
-            emailAddress: "door@example.com",
-            isAnonymous: false,
-            isConfirmed: true,
-            isSiteAdmin: false,
-            loginId: "door",
-            userLabel: "Door",
-          },
-        }}
-      />,
+          emailAddress: "door@example.com",
+          isAnonymous: false,
+          isConfirmed: true,
+          isSiteAdmin: false,
+          loginId: "door",
+          userLabel: "Door",
+        },
+      },
     );
     expect(invalidConfirmHtml).toContain("Validation request failed.");
     expect(invalidConfirmHtml).toContain("Invalid email confirmation link.");
   });
 
   it("renders capability-driven auth help messaging", () => {
-    const socialLoginHtml = renderToString(
-      <AuthWorkspaceShell
-        {...({
-          authUiCapabilities: {
-            emailVerificationEnabled: false,
-            signupRequireConfirm: false,
-            socialLoginOnly: true,
-          },
-          route: { kind: "login", href: "/users/loginform" },
-          runtimeConfig,
-          workspaceOverview: null,
-        } as any)}
-      />,
-    );
+    const socialLoginHtml = renderLogin({
+      authUiCapabilities: {
+        emailVerificationEnabled: false,
+        signupRequireConfirm: false,
+        socialLoginOnly: true,
+      },
+      routeHref: "/users/loginform",
+    });
 
     expect(socialLoginHtml).toContain("Social login only");
     expect(socialLoginHtml).not.toContain('name="loginIdOrEmail"');
@@ -145,86 +104,80 @@ describe("wave 1 auth and workspace parity", () => {
   });
 
   it("renders the legacy /me user card and dashboard streams", () => {
-    const html = renderToString(
-      <AuthWorkspaceShell
-        route={{ kind: "me", href: "/me" }}
-        runtimeConfig={runtimeConfig}
-        workspaceOverview={{
-          defaultLandingPath: "/me",
-          daysAgo: 14,
-          favoriteProjects: [],
-          issueItems: [
-            {
-              assigneeLabel: "Door",
-              authorLabel: "Door",
-              commentCount: 3,
-              issueNumber: 7,
-              ownerName: "admin",
-              projectName: "projectYobi",
-              state: "open",
-              title: "Fix login redirect",
-              updatedLabel: "2026-04-09",
-            },
-            {
-              assigneeLabel: "",
-              authorLabel: "Door",
-              commentCount: 0,
-              issueNumber: 3,
-              ownerName: "admin",
-              projectName: "projectYobi",
-              state: "closed",
-              title: "Close the stale issue",
-              updatedLabel: "2026-04-08",
-            },
-          ],
-          memberProjects: [
-            {
-              createdLabel: "2026-04-01",
-              lastPushedLabel: "2026-04-10",
-              memberCount: 4,
-              ownerName: "admin",
-              overview: "Yona project",
-              projectName: "projectYobi",
-              projectScope: "public",
-              watchCount: 2,
-            },
-          ],
-          profile: {
-            connectedSocialProviders: ["github", "google"],
-            displayName: "Door",
-            englishName: "Door English",
-            isBlocked: false,
-            isSiteAdmin: true,
-            loginId: "door",
-            primaryEmailAddress: "door@example.com",
-            sinceLabel: "Apr 11, 2026",
-          },
-          pullRequestItems: [
-            {
-              commentCount: 2,
-              contributorLabel: "Door",
-              ownerName: "admin",
-              projectName: "projectYobi",
-              pullRequestNumber: 4,
-              receiverLabel: "Admin",
-              state: "open",
-              title: "Review queue",
-              updatedLabel: "2026-04-10",
-            },
-          ],
-          recentProjects: [],
-          session: {
-            defaultLandingPath: "/me",
-            emailAddress: "door@example.com",
-            isAnonymous: false,
-            isConfirmed: true,
-            isSiteAdmin: false,
-            loginId: "door",
-            userLabel: "Door",
-          },
-        } as any}
-      />,
-    );
+    const html = renderWorkspace({
+      defaultLandingPath: "/me",
+      daysAgo: 14,
+      favoriteProjects: [],
+      issueItems: [
+        {
+          assigneeLabel: "Door",
+          authorLabel: "Door",
+          commentCount: 3,
+          issueNumber: 7,
+          ownerName: "admin",
+          projectName: "projectYobi",
+          state: "open",
+          title: "Fix login redirect",
+          updatedLabel: "2026-04-09",
+        },
+        {
+          assigneeLabel: "",
+          authorLabel: "Door",
+          commentCount: 0,
+          issueNumber: 3,
+          ownerName: "admin",
+          projectName: "projectYobi",
+          state: "closed",
+          title: "Close the stale issue",
+          updatedLabel: "2026-04-08",
+        },
+      ],
+      memberProjects: [
+        {
+          createdLabel: "2026-04-01",
+          lastPushedLabel: "2026-04-10",
+          memberCount: 4,
+          ownerName: "admin",
+          overview: "Yona project",
+          projectName: "projectYobi",
+          projectScope: "public",
+          watchCount: 2,
+        },
+      ],
+      profile: {
+        connectedSocialProviders: ["github", "google"],
+        displayName: "Door",
+        englishName: "Door English",
+        isBlocked: false,
+        isSiteAdmin: true,
+        loginId: "door",
+        primaryEmailAddress: "door@example.com",
+        sinceLabel: "Apr 11, 2026",
+      },
+      pullRequestItems: [
+        {
+          commentCount: 2,
+          contributorLabel: "Door",
+          ownerName: "admin",
+          projectName: "projectYobi",
+          pullRequestNumber: 4,
+          receiverLabel: "Admin",
+          state: "open",
+          title: "Review queue",
+          updatedLabel: "2026-04-10",
+        },
+      ],
+      recentProjects: [],
+      session: {
+        defaultLandingPath: "/me",
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
+      },
+    });
 
     expect(html).toContain("whoami-wrap");
     expect(html).toContain("Door English");
@@ -257,40 +210,34 @@ describe("wave 1 auth and workspace parity", () => {
   });
 
   it("renders legacy empty states for the /me dashboard streams", () => {
-    const html = renderToString(
-      <AuthWorkspaceShell
-        route={{ kind: "me", href: "/me" }}
-        runtimeConfig={runtimeConfig}
-        workspaceOverview={{
-          daysAgo: 14,
-          defaultLandingPath: "/me",
-          favoriteProjects: [],
-          issueItems: [],
-          memberProjects: [],
-          profile: {
-            connectedSocialProviders: [],
-            displayName: "Door",
-            englishName: "",
-            isBlocked: false,
-            isSiteAdmin: false,
-            loginId: "door",
-            primaryEmailAddress: "door@example.com",
-            sinceLabel: "",
-          },
-          pullRequestItems: [],
-          recentProjects: [],
-          session: {
-            defaultLandingPath: "/me",
-            emailAddress: "door@example.com",
-            isAnonymous: false,
-            isConfirmed: true,
-            isSiteAdmin: false,
-            loginId: "door",
-            userLabel: "Door",
-          },
-        }}
-      />,
-    );
+    const html = renderWorkspace({
+      daysAgo: 14,
+      defaultLandingPath: "/me",
+      favoriteProjects: [],
+      issueItems: [],
+      memberProjects: [],
+      profile: {
+        connectedSocialProviders: [],
+        displayName: "Door",
+        englishName: "",
+        isBlocked: false,
+        isSiteAdmin: false,
+        loginId: "door",
+        primaryEmailAddress: "door@example.com",
+        sinceLabel: "",
+      },
+      pullRequestItems: [],
+      recentProjects: [],
+      session: {
+        defaultLandingPath: "/me",
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
+      },
+    });
 
     expect(html).toContain("No issues found in the last 14 days.");
     expect(html).toContain("Pull Requests <span");
@@ -298,25 +245,23 @@ describe("wave 1 auth and workspace parity", () => {
   });
 
   it("renders workspace settings deep links with section-specific bodies", () => {
-    const profileHtml = renderToString(
-      <AuthWorkspaceShell
-        route={{ kind: "workspace-settings", href: "/user/editform", section: "profile" } as any}
-        runtimeConfig={runtimeConfig}
-        workspaceOverview={{
+    const profileHtml = renderWorkspaceSettings(
+      "profile",
+      "/user/editform",
+      {
+        defaultLandingPath: "/me",
+        favoriteProjects: [],
+        recentProjects: [],
+        session: {
           defaultLandingPath: "/me",
-          favoriteProjects: [],
-          recentProjects: [],
-          session: {
-            defaultLandingPath: "/me",
-            emailAddress: "door@example.com",
-            isAnonymous: false,
-            isConfirmed: true,
-            isSiteAdmin: false,
-            loginId: "door",
-            userLabel: "Door",
-          },
-        }}
-      />,
+          emailAddress: "door@example.com",
+          isAnonymous: false,
+          isConfirmed: true,
+          isSiteAdmin: false,
+          loginId: "door",
+          userLabel: "Door",
+        },
+      },
     );
     expect(profileHtml).toContain("Account Settings");
     expect(profileHtml).toContain('action="/yona/user/edit"');
@@ -326,38 +271,36 @@ describe("wave 1 auth and workspace parity", () => {
     expect(profileHtml).toContain('action="/yona/user/resetVisitedList"');
     expect(profileHtml).toContain("Reset visited project list");
 
-    const notificationsHtml = renderToString(
-      <AuthWorkspaceShell
-        route={{ kind: "workspace-settings", href: "/user/editform/notifications", section: "notifications" } as any}
-        runtimeConfig={runtimeConfig}
-        workspaceOverview={{
-          apiToken: "door-token",
-          defaultLandingPath: "/me",
-          emails: [],
-          favoriteProjects: [],
-          recentProjects: [],
-          watchedProjects: [
-            {
-              notifications: [
-                { enabled: true, eventType: "NEW_ISSUE", label: "New issue" },
-                { enabled: false, eventType: "NEW_COMMENT", label: "New comment" },
-              ],
-              ownerName: "admin",
-              projectId: "1",
-              projectName: "projectYobi",
-            },
-          ],
-          session: {
-            defaultLandingPath: "/me",
-            emailAddress: "door@example.com",
-            isAnonymous: false,
-            isConfirmed: true,
-            isSiteAdmin: false,
-            loginId: "door",
-            userLabel: "Door",
+    const notificationsHtml = renderWorkspaceSettings(
+      "notifications",
+      "/user/editform/notifications",
+      {
+        apiToken: "door-token",
+        defaultLandingPath: "/me",
+        emails: [],
+        favoriteProjects: [],
+        recentProjects: [],
+        watchedProjects: [
+          {
+            notifications: [
+              { enabled: true, eventType: "NEW_ISSUE", label: "New issue" },
+              { enabled: false, eventType: "NEW_COMMENT", label: "New comment" },
+            ],
+            ownerName: "admin",
+            projectId: "1",
+            projectName: "projectYobi",
           },
-        }}
-      />,
+        ],
+        session: {
+          defaultLandingPath: "/me",
+          emailAddress: "door@example.com",
+          isAnonymous: false,
+          isConfirmed: true,
+          isSiteAdmin: false,
+          loginId: "door",
+          userLabel: "Door",
+        },
+      },
     );
     expect(notificationsHtml).toContain("Notifications");
     expect(notificationsHtml).toContain("Watched Projects");
@@ -366,31 +309,29 @@ describe("wave 1 auth and workspace parity", () => {
     expect(notificationsHtml).toContain("New issue");
     expect(notificationsHtml).toContain("New comment");
 
-    const emailsHtml = renderToString(
-      <AuthWorkspaceShell
-        route={{ kind: "workspace-settings", href: "/user/editform/emails", section: "emails" } as any}
-        runtimeConfig={runtimeConfig}
-        workspaceOverview={{
-          apiToken: "door-token",
+    const emailsHtml = renderWorkspaceSettings(
+      "emails",
+      "/user/editform/emails",
+      {
+        apiToken: "door-token",
+        defaultLandingPath: "/me",
+        emails: [
+          { emailAddress: "alt@example.com", id: "2", valid: true },
+          { emailAddress: "pending@example.com", id: "3", valid: false },
+        ],
+        favoriteProjects: [],
+        recentProjects: [],
+        watchedProjects: [],
+        session: {
           defaultLandingPath: "/me",
-          emails: [
-            { emailAddress: "alt@example.com", id: "2", valid: true },
-            { emailAddress: "pending@example.com", id: "3", valid: false },
-          ],
-          favoriteProjects: [],
-          recentProjects: [],
-          watchedProjects: [],
-          session: {
-            defaultLandingPath: "/me",
-            emailAddress: "door@example.com",
-            isAnonymous: false,
-            isConfirmed: true,
-            isSiteAdmin: false,
-            loginId: "door",
-            userLabel: "Door",
-          },
-        }}
-      />,
+          emailAddress: "door@example.com",
+          isAnonymous: false,
+          isConfirmed: true,
+          isSiteAdmin: false,
+          loginId: "door",
+          userLabel: "Door",
+        },
+      },
     );
     expect(emailsHtml).toContain('action="/yona/user/email"');
     expect(emailsHtml).toContain('name="email"');
@@ -403,28 +344,26 @@ describe("wave 1 auth and workspace parity", () => {
     expect(emailsHtml).toContain("pending@example.com");
     expect(emailsHtml).toContain("Validation required");
 
-    const tokenHtml = renderToString(
-      <AuthWorkspaceShell
-        route={{ kind: "workspace-settings", href: "/user/editform/token", section: "token" } as any}
-        runtimeConfig={runtimeConfig}
-        workspaceOverview={{
-          apiToken: "door-token",
+    const tokenHtml = renderWorkspaceSettings(
+      "token",
+      "/user/editform/token",
+      {
+        apiToken: "door-token",
+        defaultLandingPath: "/me",
+        emails: [],
+        favoriteProjects: [],
+        recentProjects: [],
+        watchedProjects: [],
+        session: {
           defaultLandingPath: "/me",
-          emails: [],
-          favoriteProjects: [],
-          recentProjects: [],
-          watchedProjects: [],
-          session: {
-            defaultLandingPath: "/me",
-            emailAddress: "door@example.com",
-            isAnonymous: false,
-            isConfirmed: true,
-            isSiteAdmin: false,
-            loginId: "door",
-            userLabel: "Door",
-          },
-        }}
-      />,
+          emailAddress: "door@example.com",
+          isAnonymous: false,
+          isConfirmed: true,
+          isSiteAdmin: false,
+          loginId: "door",
+          userLabel: "Door",
+        },
+      },
     );
     expect(tokenHtml).toContain('action="/yona/user/editform/token_reset"');
     expect(tokenHtml).toContain('name="name"');

@@ -19,6 +19,7 @@
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-query": "^2.2.0",
     "@connectrpc/connect-web": "^2.1.1",
+    "@tanstack/react-router": "^1.167.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -27,6 +28,8 @@
     "@bufbuild/protoc-gen-es": "^2.11.0",
     "@connectrpc/protoc-gen-connect-query": "^2.2.0",
     "@playwright/test": "^1.59.1",
+    "@tanstack/router-plugin": "^1.166.9",
+    "@types/node": "^24.6.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^6.0.1",

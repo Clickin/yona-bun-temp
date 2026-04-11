@@ -46,5 +46,5 @@
 ## R0-3 Delivery Note
 
 - `R0-3` now covers organization create, public detail read, settings read/update, and read-only member summary in `yona-rust/proto`, `yona-rust/crates/server`, `yona-rust/crates/persistence`, and `yona-rust/frontend`.
-- The Wave 0 route-foundation slice also mounts the public `/orgs` directory in `yona-rust/frontend` and loads it through additive `PilotService.ListOrganizations`.
+- The Wave 0 route-foundation slice also mounts the public `/orgs` directory in `yona-rust/frontend` through file routes under `src/routes/orgs/**` and loads it through additive `PilotService.ListOrganizations`.
 - Remaining gap after this packet: org enrollment request/cancel, member add/edit/delete, delete, and org PR listing stay deferred.

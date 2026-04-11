@@ -47,12 +47,6 @@ import {
   type RecordRecentProjectVisitResponse,
   type ToggleFavoriteProjectResponse,
 } from "./gen/yona/pilot/v1/pilot_pb";
-import {
-  resolveCurrentPath,
-  routeDocumentTitle,
-  routeHref,
-  type AppRoute,
-} from "./route-table";
 import type { RuntimeConfig } from "./runtime-config";
 
 export interface SessionBootstrapPayload {
@@ -477,6 +471,3 @@ export async function recordRecentProjectVisit(
     { headers: { "x-csrf-token": csrfToken } },
   );
 }
-
-export { resolveCurrentPath, routeDocumentTitle, routeHref };
-export type { AppRoute };

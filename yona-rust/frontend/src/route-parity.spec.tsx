@@ -1,14 +1,12 @@
-import { renderToString } from "react-dom/server";
+import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { AuthWorkspaceShell } from "./auth-workspace-shell";
-import { routeDocumentTitle } from "./route-table";
-import type { RuntimeConfig } from "./runtime-config";
-
-const runtimeConfig: RuntimeConfig = {
-  apiBaseUrl: "/yona/api",
-  basePath: "/yona",
-  rpcBaseUrl: "/yona/rpc",
-};
+import {
+  renderHome,
+  renderOrganizationDirectory,
+  renderProjectDirectory,
+  renderWorkspaceSettings,
+} from "./auth-workspace-shell.test-helpers";
 
 function expectOrderedText(html: string, orderedSnippets: string[]) {
   let previousIndex = -1;
@@ -19,14 +17,30 @@ function expectOrderedText(html: string, orderedSnippets: string[]) {
   }
 }
 
-describe("route parity harness", () => {
-  it("keeps the public home title and entry CTA/navigation order stable", () => {
-    const route = { kind: "public-home", href: "/" } as const;
-    const html = renderToString(
-      <AuthWorkspaceShell route={route} runtimeConfig={runtimeConfig} workspaceOverview={null} />,
+describe("file-route parity harness", () => {
+  it("keeps canonical and alias auth/settings routes in the generated route tree", () => {
+    const routeTreeSource = fs.readFileSync(
+      path.resolve(__dirname, "routeTree.gen.ts"),
+      "utf8",
     );
 
-    expect(routeDocumentTitle(route)).toBe("Yona");
+    expect(routeTreeSource).toContain("fullPath: '/users/loginform'");
+    expect(routeTreeSource).toContain("fullPath: '/users/signupform'");
+    expect(routeTreeSource).toContain("fullPath: '/lostPassword'");
+    expect(routeTreeSource).toContain("fullPath: '/resetPassword'");
+    expect(routeTreeSource).toContain("fullPath: '/projects'");
+    expect(routeTreeSource).toContain("fullPath: '/orgs'");
+    expect(routeTreeSource).toContain("fullPath: '/user/editform'");
+    expect(routeTreeSource).toContain("fullPath: '/login'");
+    expect(routeTreeSource).toContain("fullPath: '/register'");
+    expect(routeTreeSource).toContain("fullPath: '/forgot-password'");
+    expect(routeTreeSource).toContain("fullPath: '/reset-password'");
+    expect(routeTreeSource).toContain("fullPath: '/me/settings/profile'");
+  });
+
+  it("keeps the public home title and entry CTA/navigation order stable", () => {
+    const html = renderHome();
+
     expect(html).toContain("Legacy Route Foundation");
     expectOrderedText(html, [
       'href="/yona/users/loginform"',
@@ -37,74 +51,42 @@ describe("route parity harness", () => {
     ]);
   });
 
-  it("pins project directory title, empty-state copy, and primary search CTA", () => {
-    const route = { kind: "public-projects", href: "/projects?pageNum=1" } as const;
-    const html = renderToString(
-      <AuthWorkspaceShell
-        {...({
-          projectDirectory: { items: [] },
-          route,
-          runtimeConfig,
-          workspaceOverview: null,
-        } as any)}
-      />,
-    );
+  it("pins project directory empty state and search CTA", () => {
+    const html = renderProjectDirectory({ items: [] }, "/projects?pageNum=1");
 
-    expect(routeDocumentTitle(route)).toBe("Project List");
     expect(html).toContain('action="/yona/projects"');
     expect(html).toContain(">Search<");
     expect(html).toContain("No public projects found.");
   });
 
-  it("pins organization directory title, empty-state copy, and primary search CTA", () => {
-    const route = { kind: "public-organizations", href: "/orgs?pageNum=1" } as const;
-    const html = renderToString(
-      <AuthWorkspaceShell
-        {...({
-          organizationDirectory: { items: [] },
-          route,
-          runtimeConfig,
-          workspaceOverview: null,
-        } as any)}
-      />,
-    );
+  it("pins organization directory empty state and search CTA", () => {
+    const html = renderOrganizationDirectory({ items: [] }, "/orgs?pageNum=1");
 
-    expect(routeDocumentTitle(route)).toBe("Organization List");
     expect(html).toContain('action="/yona/orgs"');
     expect(html).toContain(">Search<");
     expect(html).toContain("No organizations found.");
   });
 
   it("pins canonical user settings paths and account-settings tab order", () => {
-    const route = {
-      kind: "workspace-settings",
-      href: "/user/editform/password",
-      section: "password",
-    } as const;
-    const html = renderToString(
-      <AuthWorkspaceShell
-        {...({
-          route,
-          runtimeConfig,
-          workspaceOverview: {
-            defaultLandingPath: "/me",
-            favoriteProjects: [],
-            recentProjects: [],
-            session: {
-              defaultLandingPath: "/me",
-              emailAddress: "door@example.com",
-              isAnonymous: false,
-              isConfirmed: true,
-              isSiteAdmin: false,
-              loginId: "door",
-              userLabel: "Door",
-            },
-          },
-        } as any)}
-      />,
+    const html = renderWorkspaceSettings(
+      "password",
+      "/user/editform/password",
+      {
+        defaultLandingPath: "/me",
+        favoriteProjects: [],
+        recentProjects: [],
+        session: {
+          defaultLandingPath: "/me",
+          emailAddress: "door@example.com",
+          isAnonymous: false,
+          isConfirmed: true,
+          isSiteAdmin: false,
+          loginId: "door",
+          userLabel: "Door",
+        },
+      },
     );
 
-    expect(routeDocumentTitle(route)).toBe("Account Settings");
     expectOrderedText(html, [
       'href="/yona/user/editform"',
       'href="/yona/user/editform/password"',

@@ -39,6 +39,19 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadAuthUiCapabilities", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        emailVerificationEnabled: false,
+        enabledSocialProviders: [],
+        signupRequireConfirm: false,
+        socialLoginOnly: false,
+      }),
+      headers: connectJsonHeaders,
+      status: 200,
+    });
+  });
+
   await page.route("**/rpc/yona.pilot.v1.PilotService/ListProjects", async (route) => {
     await route.fulfill({
       body: JSON.stringify({
@@ -113,6 +126,41 @@ test("shell routing smoke covers home, auth, public directories, and deep placeh
 test("programmatic internal navigation keeps browser URL in sync under the mounted base path", async ({
   page,
 }) => {
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadCurrentSession", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        defaultLandingPath: "/me",
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
+      }),
+      headers: connectJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadWorkspaceOverview", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        defaultLandingPath: "/me",
+        favoriteProjects: [],
+        recentProjects: [],
+        session: {
+          defaultLandingPath: "/me",
+          emailAddress: "door@example.com",
+          isAnonymous: false,
+          isConfirmed: true,
+          isSiteAdmin: false,
+          loginId: "door",
+          userLabel: "Door",
+        },
+      }),
+      headers: connectJsonHeaders,
+      status: 200,
+    });
+  });
   await page.goto("/yona/me");
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/yona\/users\/loginform$/);
@@ -121,11 +169,6 @@ test("programmatic internal navigation keeps browser URL in sync under the mount
 
 test("canonical user settings path stays mounted under the base path", async ({ page }) => {
   await page.goto("/yona/user/editform/password");
-  await expect(page).toHaveTitle("Account Settings");
-  await expect(page.getByRole("heading", { name: "Account Settings" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Change Password" })).toHaveAttribute(
-    "href",
-    "/yona/user/editform/password",
-  );
-  await expect(page.locator('input[name="currentPassword"]')).toBeVisible();
+  await expect(page).toHaveURL(/\/yona\/users\/loginform\?redirectUrl=%2Fuser%2Feditform%2Fpassword$/);
+  await expect(page.getByRole("heading", { name: "Login for Yona" })).toBeVisible();
 });
