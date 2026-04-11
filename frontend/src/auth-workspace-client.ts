@@ -3,12 +3,18 @@ import { createConnectTransport } from "@connectrpc/connect-web";
 import type { MessageInitShape } from "@bufbuild/protobuf";
 import { create } from "@bufbuild/protobuf";
 import {
+  AcceptOrganizationEnrollmentRequestSchema,
+  AddOrganizationMemberRequestSchema,
   AddWorkspaceEmailRequestSchema,
   ChangePasswordRequestSchema,
+  CancelEnrollOrganizationRequestSchema,
   CancelEnrollProjectRequestSchema,
   CreateOrganizationRequestSchema,
   CreateProjectRequestSchema,
+  DeleteOrganizationMemberRequestSchema,
+  DeleteOrganizationRequestSchema,
   DeleteWorkspaceEmailRequestSchema,
+  EnrollOrganizationRequestSchema,
   EnrollProjectRequestSchema,
   ListOrganizationsRequestSchema,
   ListProjectsRequestSchema,
@@ -17,6 +23,8 @@ import {
   ResetVisitedProjectsRequestSchema,
   ReadAuthUiCapabilitiesRequestSchema,
   ReadCurrentSessionRequestSchema,
+  LeaveOrganizationRequestSchema,
+  ReadOrganizationAdminRequestSchema,
   ReadOrganizationContainerRequestSchema,
   ReadOrganizationDetailRequestSchema,
   ReadOrganizationMembersRequestSchema,
@@ -36,13 +44,16 @@ import {
   ToggleWorkspaceNotificationRequestSchema,
   ToggleFavoriteProjectRequestSchema,
   ToggleProjectWatchRequestSchema,
+  UpdateOrganizationMemberRoleRequestSchema,
   UpdateProfileRequestSchema,
   UpdateOrganizationRequestSchema,
   UpdateProjectRequestSchema,
   UpdateProjectOverviewRequestSchema,
   VerifyUserRequestSchema,
+  type OrganizationAdminView,
   type OrganizationContainer,
   type OrganizationDetail,
+  type OrganizationRedirectResult,
   type ListOrganizationsResponse,
   type ListProjectsResponse,
   type ProjectContainer,
@@ -411,6 +422,16 @@ export async function readOrganizationDetail(
   );
 }
 
+export async function readOrganizationAdmin(
+  runtimeConfig: RuntimeConfig,
+  organizationName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<OrganizationAdminView> {
+  return createPilotClient(runtimeConfig, fetchImpl).readOrganizationAdmin(
+    create(ReadOrganizationAdminRequestSchema, { organizationName }),
+  );
+}
+
 export async function readOrganizationContainer(
   runtimeConfig: RuntimeConfig,
   organizationName: string,
@@ -449,6 +470,102 @@ export async function updateOrganization(
 ): Promise<OrganizationDetail> {
   return createPilotClient(runtimeConfig, fetchImpl).updateOrganization(
     create(UpdateOrganizationRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function addOrganizationMember(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof AddOrganizationMemberRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<OrganizationAdminView> {
+  return createPilotClient(runtimeConfig, fetchImpl).addOrganizationMember(
+    create(AddOrganizationMemberRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function updateOrganizationMemberRole(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof UpdateOrganizationMemberRoleRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<OrganizationAdminView> {
+  return createPilotClient(runtimeConfig, fetchImpl).updateOrganizationMemberRole(
+    create(UpdateOrganizationMemberRoleRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function deleteOrganizationMember(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof DeleteOrganizationMemberRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<OrganizationAdminView> {
+  return createPilotClient(runtimeConfig, fetchImpl).deleteOrganizationMember(
+    create(DeleteOrganizationMemberRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function acceptOrganizationEnrollment(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof AcceptOrganizationEnrollmentRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<OrganizationAdminView> {
+  return createPilotClient(runtimeConfig, fetchImpl).acceptOrganizationEnrollment(
+    create(AcceptOrganizationEnrollmentRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function enrollOrganization(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  organizationName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<OrganizationContainer> {
+  return createPilotClient(runtimeConfig, fetchImpl).enrollOrganization(
+    create(EnrollOrganizationRequestSchema, { organizationName }),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function cancelEnrollOrganization(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  organizationName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<OrganizationContainer> {
+  return createPilotClient(runtimeConfig, fetchImpl).cancelEnrollOrganization(
+    create(CancelEnrollOrganizationRequestSchema, { organizationName }),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function leaveOrganization(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  organizationName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<OrganizationRedirectResult> {
+  return createPilotClient(runtimeConfig, fetchImpl).leaveOrganization(
+    create(LeaveOrganizationRequestSchema, { organizationName }),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function deleteOrganization(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  organizationName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<OrganizationRedirectResult> {
+  return createPilotClient(runtimeConfig, fetchImpl).deleteOrganization(
+    create(DeleteOrganizationRequestSchema, { organizationName }),
     { headers: { "x-csrf-token": csrfToken } },
   );
 }

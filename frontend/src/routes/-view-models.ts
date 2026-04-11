@@ -68,9 +68,12 @@ export interface WorkspaceOverviewViewModel {
 export interface OrganizationDetailViewModel {
   adminMembers?: Array<{ avatarUrl: string; loginId: string; role: string; userLabel: string }>;
   description: string;
+  enrollmentRequested?: boolean;
   memberMembers?: Array<{ avatarUrl: string; loginId: string; role: string; userLabel: string }>;
   organizationName: string;
   viewerCanCreateProject?: boolean;
+  viewerCanEnroll?: boolean;
+  viewerCanLeave?: boolean;
   viewerCanUpdate: boolean;
   visibleProjects?: Array<{
     createdLabel: string;
@@ -91,6 +94,26 @@ export interface OrganizationDetailViewModel {
 export interface OrganizationMembersViewModel {
   enrollmentRequests: Array<{ loginId: string; userLabel: string }>;
   members: Array<{ loginId: string; role: string; userLabel: string }>;
+}
+
+export interface OrganizationAdminViewModel {
+  deleteAllowed: boolean;
+  enrollmentRequests: Array<{
+    avatarUrl: string;
+    loginId: string;
+    userId: string;
+    userLabel: string;
+  }>;
+  members: Array<{
+    avatarUrl: string;
+    loginId: string;
+    role: string;
+    userId: string;
+    userLabel: string;
+  }>;
+  organizationName: string;
+  roleOptions: Array<{ label: string; role: string }>;
+  viewerCanUpdate: boolean;
 }
 
 export interface ProjectDetailViewModel {

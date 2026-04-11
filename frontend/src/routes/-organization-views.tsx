@@ -1,6 +1,6 @@
 import * as React from "react";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import type { OrganizationDetailViewModel } from "./-view-models";
+import type { OrganizationAdminViewModel, OrganizationDetailViewModel } from "./-view-models";
 
 function buildOrganizationHref(
   runtimeConfig: RuntimeConfig,
@@ -23,22 +23,41 @@ function OrganizationMenu(props: {
   return (
     <nav aria-label="Organization menu">
       <a href={buildOrganizationHref(runtimeConfig, detail.organizationName)}>
-        Organization home
+        Group Home
       </a>
       <a href={buildOrganizationHref(runtimeConfig, detail.organizationName, "issues")}>
-        Issues
+        Issue
       </a>
       <a href={buildOrganizationHref(runtimeConfig, detail.organizationName, "boards")}>
-        Boards
+        Board
       </a>
       <a href={buildOrganizationHref(runtimeConfig, detail.organizationName, "pullrequests")}>
-        Pull requests
+        Pull request
       </a>
       {detail.viewerCanUpdate ? (
         <a href={buildOrganizationHref(runtimeConfig, detail.organizationName, "settingform")}>
           Settings
         </a>
       ) : null}
+    </nav>
+  );
+}
+
+function OrganizationSettingsSubMenu(props: {
+  organizationName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  return (
+    <nav aria-label="Organization settings menu">
+      <a href={buildOrganizationHref(props.runtimeConfig, props.organizationName, "settingform")}>
+        Setting
+      </a>
+      <a href={buildOrganizationHref(props.runtimeConfig, props.organizationName, "members")}>
+        Members
+      </a>
+      <a href={buildOrganizationHref(props.runtimeConfig, props.organizationName, "deleteForm")}>
+        Group Delete
+      </a>
     </nav>
   );
 }
@@ -59,6 +78,56 @@ function OrganizationMemberBubble(props: {
       </ul>
     </section>
   );
+}
+
+function OrganizationMembershipActions(props: {
+  detail: OrganizationDetailViewModel;
+  onCancelEnrollOrganization?: (organizationName: string) => void;
+  onEnrollOrganization?: (organizationName: string) => void;
+  onLeaveOrganization?: (organizationName: string) => void;
+}) {
+  const { detail } = props;
+
+  if (detail.viewerCanEnroll) {
+    return (
+      <section>
+        <h2>Member enrollment request</h2>
+        <p>
+          {detail.enrollmentRequested
+            ? "You can be a member if the members of this group accept this request."
+            : "Admins of this group can check your enrollment request."}
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            if (detail.enrollmentRequested) {
+              props.onCancelEnrollOrganization?.(detail.organizationName);
+              return;
+            }
+            props.onEnrollOrganization?.(detail.organizationName);
+          }}
+        >
+          {detail.enrollmentRequested ? "Cancel sign-up request" : "Send sign-up request"}
+        </button>
+      </section>
+    );
+  }
+
+  if (detail.viewerCanLeave) {
+    return (
+      <section>
+        <h2>Membership</h2>
+        <button
+          type="button"
+          onClick={() => props.onLeaveOrganization?.(detail.organizationName)}
+        >
+          Leave the group
+        </button>
+      </section>
+    );
+  }
+
+  return null;
 }
 
 export function OrganizationNewPage(props: {
@@ -120,13 +189,19 @@ export function OrganizationNewPage(props: {
 export function OrganizationDetailPage(props: {
   detail: OrganizationDetailViewModel | null | undefined;
   runtimeConfig: RuntimeConfig;
+  onCancelEnrollOrganization?: (organizationName: string) => void;
+  onEnrollOrganization?: (organizationName: string) => void;
+  onLeaveOrganization?: (organizationName: string) => void;
 }) {
   const detail = props.detail ?? {
     adminMembers: [],
     description: "",
+    enrollmentRequested: false,
     memberMembers: [],
     organizationName: "",
     viewerCanCreateProject: false,
+    viewerCanEnroll: false,
+    viewerCanLeave: false,
     viewerCanUpdate: false,
     visibleProjects: [],
   };
@@ -136,6 +211,12 @@ export function OrganizationDetailPage(props: {
       <p className="eyebrow">Yona Rust Organization</p>
       <h1>{detail.organizationName || "Organization"}</h1>
       <OrganizationMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <OrganizationMembershipActions
+        detail={detail}
+        onCancelEnrollOrganization={props.onCancelEnrollOrganization}
+        onEnrollOrganization={props.onEnrollOrganization}
+        onLeaveOrganization={props.onLeaveOrganization}
+      />
       <section>
         <h2>Description</h2>
         <p>{detail.description || "No description yet."}</p>
@@ -184,10 +265,10 @@ export function OrganizationDetailPage(props: {
         </ul>
       </section>
       {detail.adminMembers?.length ? (
-        <OrganizationMemberBubble members={detail.adminMembers} title="Org admins" />
+        <OrganizationMemberBubble members={detail.adminMembers} title="Group Manager" />
       ) : null}
       {detail.memberMembers?.length ? (
-        <OrganizationMemberBubble members={detail.memberMembers} title="Org members" />
+        <OrganizationMemberBubble members={detail.memberMembers} title="Group Member" />
       ) : null}
     </main>
   );
@@ -225,8 +306,12 @@ export function OrganizationSettingsPage(props: {
   return (
     <main className="app-shell">
       <p className="eyebrow">Yona Rust Organization</p>
-      <h1>Organization settings</h1>
+      <h1>Group Setting</h1>
       <OrganizationMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <OrganizationSettingsSubMenu
+        organizationName={detail.organizationName}
+        runtimeConfig={props.runtimeConfig}
+      />
       <form
         className="runtime-grid"
         onSubmit={(event) => {
@@ -265,6 +350,148 @@ export function OrganizationSettingsPage(props: {
           {props.pending ? "Saving..." : "Save organization"}
         </button>
       </form>
+    </main>
+  );
+}
+
+export function OrganizationMembersPage(props: {
+  detail: OrganizationAdminViewModel | null | undefined;
+  pending?: boolean;
+  runtimeConfig: RuntimeConfig;
+  onAcceptEnrollment?: (organizationName: string, userId: string) => void;
+  onAddMember?: (organizationName: string, loginId: string) => void;
+  onDeleteMember?: (organizationName: string, userId: string) => void;
+  onUpdateMemberRole?: (organizationName: string, userId: string, role: string) => void;
+}) {
+  const detail = props.detail ?? {
+    deleteAllowed: false,
+    enrollmentRequests: [],
+    members: [],
+    organizationName: "",
+    roleOptions: [],
+    viewerCanUpdate: false,
+  };
+  const [loginId, setLoginId] = React.useState("");
+
+  return (
+    <main className="app-shell">
+      <p className="eyebrow">Yona Rust Organization</p>
+      <h1>Members</h1>
+      <OrganizationSettingsSubMenu
+        organizationName={detail.organizationName}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <form
+        className="runtime-grid"
+        onSubmit={(event) => {
+          event.preventDefault();
+          props.onAddMember?.(detail.organizationName, loginId);
+        }}
+      >
+        <label>
+          <span>Add member</span>
+          <input
+            name="loginId"
+            placeholder="Add a new member..."
+            type="text"
+            value={loginId}
+            onChange={(event) => setLoginId(event.target.value)}
+          />
+        </label>
+        <button type="submit">{props.pending ? "Adding..." : "Add"}</button>
+      </form>
+      <ul>
+        {detail.members.map((member) => (
+          <li key={member.userId}>
+            <strong>{member.userLabel}</strong> @{member.loginId}
+            <div>
+              {detail.roleOptions.map((roleOption) => (
+                <button
+                  key={`${member.userId}-${roleOption.role}`}
+                  type="button"
+                  onClick={() =>
+                    props.onUpdateMemberRole?.(
+                      detail.organizationName,
+                      member.userId,
+                      roleOption.role,
+                    )
+                  }
+                >
+                  {roleOption.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => props.onDeleteMember?.(detail.organizationName, member.userId)}
+              >
+                Delete
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <section>
+        <h2>Delete a group member</h2>
+        <p>Are you sure this user should leave this group?</p>
+      </section>
+      {detail.enrollmentRequests.length > 0 ? (
+        <section>
+          <h2>Enrollment requests</h2>
+          <ul>
+            {detail.enrollmentRequests.map((request) => (
+              <li key={request.userId}>
+                <strong>{request.userLabel}</strong> @{request.loginId}
+                <button
+                  type="button"
+                  onClick={() =>
+                    props.onAcceptEnrollment?.(detail.organizationName, request.userId)
+                  }
+                >
+                  Add
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </main>
+  );
+}
+
+export function OrganizationDeletePage(props: {
+  detail: OrganizationAdminViewModel | null | undefined;
+  pending?: boolean;
+  runtimeConfig: RuntimeConfig;
+  onDeleteOrganization?: (organizationName: string) => void;
+}) {
+  const detail = props.detail ?? {
+    deleteAllowed: false,
+    enrollmentRequests: [],
+    members: [],
+    organizationName: "",
+    roleOptions: [],
+    viewerCanUpdate: false,
+  };
+
+  return (
+    <main className="app-shell">
+      <p className="eyebrow">Yona Rust Organization</p>
+      <h1>Group Delete</h1>
+      <OrganizationSettingsSubMenu
+        organizationName={detail.organizationName}
+        runtimeConfig={props.runtimeConfig}
+      />
+      <section>
+        <button
+          type="button"
+          disabled={!detail.deleteAllowed || props.pending}
+          onClick={() => props.onDeleteOrganization?.(detail.organizationName)}
+        >
+          {props.pending ? "Deleting..." : "Delete This Group"}
+        </button>
+        <p>Do you want to delete this group?</p>
+        <p>Are you sure you want to delete this group?</p>
+      </section>
     </main>
   );
 }

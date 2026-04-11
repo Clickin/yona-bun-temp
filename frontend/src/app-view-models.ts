@@ -1,4 +1,5 @@
 import type {
+  OrganizationAdminViewModel,
   OrganizationDirectoryViewModel,
   OrganizationDetailViewModel,
   OrganizationMembersViewModel,
@@ -11,6 +12,7 @@ import type {
 import {
   readAuthUiCapabilities,
   readCurrentSession,
+  readOrganizationAdmin,
   readOrganizationContainer,
   readOrganizationDetail,
   readOrganizationMembers,
@@ -131,6 +133,7 @@ export function toOrganizationContainerView(
       userLabel: member.userLabel,
     })),
     description: detail.description,
+    enrollmentRequested: detail.enrollmentRequested,
     memberMembers: detail.memberMembers.map((member) => ({
       avatarUrl: member.avatarUrl,
       loginId: member.loginId,
@@ -139,6 +142,8 @@ export function toOrganizationContainerView(
     })),
     organizationName: detail.organizationName,
     viewerCanCreateProject: detail.viewerCanCreateProject,
+    viewerCanEnroll: detail.viewerCanEnroll,
+    viewerCanLeave: detail.viewerCanLeave,
     viewerCanUpdate: detail.viewerCanUpdate,
     visibleProjects: detail.visibleProjects.map((project) => ({
       createdLabel: project.createdLabel,
@@ -154,6 +159,33 @@ export function toOrganizationContainerView(
       projectScope: project.projectScope,
       watchCount: project.watchCount,
     })),
+  };
+}
+
+export function toOrganizationAdminView(
+  detail: Awaited<ReturnType<typeof readOrganizationAdmin>>,
+): OrganizationAdminViewModel {
+  return {
+    deleteAllowed: detail.deleteAllowed,
+    enrollmentRequests: detail.enrollmentRequests.map((item) => ({
+      avatarUrl: item.avatarUrl,
+      loginId: item.loginId,
+      userId: item.userId.toString(),
+      userLabel: item.userLabel,
+    })),
+    members: detail.members.map((item) => ({
+      avatarUrl: item.avatarUrl,
+      loginId: item.loginId,
+      role: item.role,
+      userId: item.userId.toString(),
+      userLabel: item.userLabel,
+    })),
+    organizationName: detail.organizationName,
+    roleOptions: detail.roleOptions.map((item) => ({
+      label: item.label,
+      role: item.role,
+    })),
+    viewerCanUpdate: detail.viewerCanUpdate,
   };
 }
 

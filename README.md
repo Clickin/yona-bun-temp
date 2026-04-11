@@ -29,4 +29,12 @@ Yona는 legacy Yona의 기능과 UX parity를 목표로 재구성 중인 워크�
 - `reference/mixed-code/**`는 reference-only migration material로 읽고, 새 canonical ownership은 repo root에 둔다.
 - 일부 기능 누락은 허용되지만 반드시 `deferred`, `gap`, `deviation`으로 기록한다.
 
+## Current Deferred Scope Snapshot
+
+- organization Wave 2B 이후에도 다음 항목은 `deferred` 또는 active `gap`으로 남아 있다.
+  - `/organizations/:org/issues|boards|pullrequests` 실제 listing body 복원
+  - project admin/watchers/webhooks/transfer/change VCS/statistics/delete surface
+  - Phase 2 issue lifecycle 진입
+- 위 항목의 현재 근거는 [`docs/provenance/core-parity-audit.md`](/G:/programming/yona/docs/provenance/core-parity-audit.md), [`docs/provenance/phase-0b/organization.md`](/G:/programming/yona/docs/provenance/phase-0b/organization.md), [`docs/plans/2026-04-11-wave-2b-organization-follow-up.md`](/G:/programming/yona/docs/plans/2026-04-11-wave-2b-organization-follow-up.md)에 남긴다.
+
 

@@ -6,7 +6,11 @@
 - Organization create
 - Organization detail read
 - Organization update
-- Out of scope: delete, membership management, pull-request listing
+- Organization home CTA matrix
+- Organization members / deleteForm admin surface
+- Organization member add/edit/delete
+- Organization enroll / cancel enroll / leave / delete
+- Out of scope: organization issue/board/pull-request listing body
 
 ## Legacy Sources
 
@@ -40,11 +44,12 @@
 ## Intentional Deviations
 
 - Legacy Play routes used `/organizations/:organizationName/settingform` and `/organizations/:organizationName/setting`.
-- A Rust/React implementation may normalize the concrete path, but create-as-admin, duplicate detection, rename semantics, and update authorization must not drift.
-- `R0-3` only exposes organization member summaries to actors with update authority. Full public member management and org enrollment remain deferred.
+- The current Rust/React canonical path keeps legacy `settingform`, `members`, and `deleteForm` deep links, but the surrounding implementation uses Connect RPC + file routes rather than Play forms and jQuery modals.
+- Organization issue/board/pull-request listing bodies remain a follow-up gap even though the deep-link placeholder routes stay mounted.
 
-## R0-3 Delivery Note
+## Wave 2B Delivery Note
 
-- `R0-3` now covers organization create, public detail read, settings read/update, and read-only member summary in `proto`, `crates/server`, `crates/persistence`, and `frontend`.
-- The Wave 0 route-foundation slice also mounts the public `/orgs` directory in `frontend` through file routes under `src/routes/orgs/**` and loads it through additive `PilotService.ListOrganizations`.
-- Remaining gap after this packet: org enrollment request/cancel, member add/edit/delete, delete, and org PR listing stay deferred.
+- Wave 2B now covers organization create, public detail read, settings read/update, home CTA matrix, members admin view, deleteForm admin view, member add/edit/delete, enrollment accept/request/cancel, leave, and delete guards in `proto`, `crates/server`, `crates/persistence`, and `frontend`.
+- The members view now restores legacy ordering semantics: org admins first, org members second, login-id ascending within each group, and pending enrollment requests in a separate ascending block.
+- Direct entry semantics now match legacy intent on the mounted React routes: anonymous viewers redirect to login with return-path, authenticated forbidden viewers receive a forbidden shell, and missing organizations receive a not-found shell.
+- Remaining gap after this packet: organization issue/board/pull-request listing body parity still stays deferred, and project admin/watchers/webhooks/transfer/change VCS/statistics/delete remain outside this packet.

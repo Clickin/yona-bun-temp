@@ -110,6 +110,11 @@ export const readOrganizationSettings = PilotService.method.readOrganizationSett
 export const readOrganizationMembers = PilotService.method.readOrganizationMembers;
 
 /**
+ * @generated from rpc yona.pilot.v1.PilotService.ReadOrganizationAdmin
+ */
+export const readOrganizationAdmin = PilotService.method.readOrganizationAdmin;
+
+/**
  * @generated from rpc yona.pilot.v1.PilotService.ReadOrganizationContainer
  */
 export const readOrganizationContainer = PilotService.method.readOrganizationContainer;
@@ -118,6 +123,46 @@ export const readOrganizationContainer = PilotService.method.readOrganizationCon
  * @generated from rpc yona.pilot.v1.PilotService.UpdateOrganization
  */
 export const updateOrganization = PilotService.method.updateOrganization;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.AddOrganizationMember
+ */
+export const addOrganizationMember = PilotService.method.addOrganizationMember;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.UpdateOrganizationMemberRole
+ */
+export const updateOrganizationMemberRole = PilotService.method.updateOrganizationMemberRole;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.DeleteOrganizationMember
+ */
+export const deleteOrganizationMember = PilotService.method.deleteOrganizationMember;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.AcceptOrganizationEnrollment
+ */
+export const acceptOrganizationEnrollment = PilotService.method.acceptOrganizationEnrollment;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.EnrollOrganization
+ */
+export const enrollOrganization = PilotService.method.enrollOrganization;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.CancelEnrollOrganization
+ */
+export const cancelEnrollOrganization = PilotService.method.cancelEnrollOrganization;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.LeaveOrganization
+ */
+export const leaveOrganization = PilotService.method.leaveOrganization;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.DeleteOrganization
+ */
+export const deleteOrganization = PilotService.method.deleteOrganization;
 
 /**
  * @generated from rpc yona.pilot.v1.PilotService.CreateProject

@@ -1,7 +1,7 @@
-use sea_orm::Database;
+use sea_orm::{ActiveModelTrait, Database, Set};
 use yona_rust_persistence::{
-    AppRepository, CreateOrganizationInput, CreateProjectInput, CreateUserInput,
-    UpdateOrganizationInput,
+    user_enrolled_organization, AppRepository, CreateOrganizationInput, CreateProjectInput,
+    CreateUserInput, UpdateOrganizationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 
@@ -153,4 +153,131 @@ async fn reads_project_members_enrollment_requests_and_workspace_project_lists()
         .await
         .expect("list recent");
     assert_eq!(recent.len(), 1);
+}
+
+#[tokio::test]
+async fn reads_organization_members_together_with_pending_enrollment_requests() {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+
+    let repo = AppRepository::new(db.clone());
+    let admin = repo
+        .create_user(CreateUserInput {
+            display_name: "A Admin".to_string(),
+            email_address: "org-admin@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "org-admin".to_string(),
+            password_hash: "hashed".to_string(),
+        })
+        .await
+        .expect("create admin");
+    let member = repo
+        .create_user(CreateUserInput {
+            display_name: "B Member".to_string(),
+            email_address: "org-member@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "org-member".to_string(),
+            password_hash: "hashed".to_string(),
+        })
+        .await
+        .expect("create member");
+    let pending = repo
+        .create_user(CreateUserInput {
+            display_name: "C Pending".to_string(),
+            email_address: "org-pending@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "org-pending".to_string(),
+            password_hash: "hashed".to_string(),
+        })
+        .await
+        .expect("create pending user");
+    let accepted = repo
+        .create_user(CreateUserInput {
+            display_name: "D Accepted".to_string(),
+            email_address: "org-accepted@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "org-accepted".to_string(),
+            password_hash: "hashed".to_string(),
+        })
+        .await
+        .expect("create accepted user");
+
+    let organization = repo
+        .create_organization(CreateOrganizationInput {
+            description: Some("member organization".to_string()),
+            organization_name: "member-org".to_string(),
+        })
+        .await
+        .expect("create organization");
+    repo.add_organization_membership(organization.id, admin.id, "org_admin")
+        .await
+        .expect("add org admin");
+    repo.add_organization_membership(organization.id, member.id, "org_member")
+        .await
+        .expect("add org member");
+    repo.add_organization_membership(organization.id, accepted.id, "org_member")
+        .await
+        .expect("add accepted org member");
+
+    user_enrolled_organization::ActiveModel {
+        user_id: Set(pending.id),
+        organization_id: Set(organization.id),
+    }
+    .insert(&db)
+    .await
+    .expect("insert pending enrollment request");
+    user_enrolled_organization::ActiveModel {
+        user_id: Set(accepted.id),
+        organization_id: Set(organization.id),
+    }
+    .insert(&db)
+    .await
+    .expect("insert accepted enrollment request row");
+
+    let directory = repo
+        .read_organization_members("member-org")
+        .await
+        .expect("read org members");
+
+    assert_eq!(
+        directory.enrollment_requests,
+        vec![yona_rust_persistence::OrganizationEnrollmentRequestRecord {
+            email_address: "org-pending@example.com".to_string(),
+            login_id: "org-pending".to_string(),
+            user_id: pending.id,
+            user_label: "C Pending".to_string(),
+        }]
+    );
+    assert_eq!(
+        directory.members,
+        vec![
+            yona_rust_persistence::OrganizationMemberRecord {
+                email_address: "org-admin@example.com".to_string(),
+                login_id: "org-admin".to_string(),
+                role: "org_admin".to_string(),
+                user_id: admin.id,
+                user_label: "A Admin".to_string(),
+            },
+            yona_rust_persistence::OrganizationMemberRecord {
+                email_address: "org-accepted@example.com".to_string(),
+                login_id: "org-accepted".to_string(),
+                role: "org_member".to_string(),
+                user_id: accepted.id,
+                user_label: "D Accepted".to_string(),
+            },
+            yona_rust_persistence::OrganizationMemberRecord {
+                email_address: "org-member@example.com".to_string(),
+                login_id: "org-member".to_string(),
+                role: "org_member".to_string(),
+                user_id: member.id,
+                user_label: "B Member".to_string(),
+            },
+        ]
+    );
 }

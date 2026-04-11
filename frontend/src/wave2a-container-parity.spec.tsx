@@ -45,8 +45,8 @@ describe("wave 2A container parity", () => {
     expect(html).toContain("Members: 4");
     expect(html).toContain("Watchers: 3");
     expect(html).toContain("Original: naver / legacyYobi");
-    expect(html).toContain("Org admins");
-    expect(html).toContain("Org members");
+    expect(html).toContain("Group Manager");
+    expect(html).toContain("Group Member");
     expect(html).toContain('href="/yona/organizations/weblabs/settingform"');
   });
 
@@ -62,8 +62,8 @@ describe("wave 2A container parity", () => {
     } as never);
 
     expect(html).not.toContain(">Create project<");
-    expect(html).not.toContain("Org admins");
-    expect(html).not.toContain("Org members");
+    expect(html).not.toContain("Group Manager");
+    expect(html).not.toContain("Group Member");
     expect(html).not.toContain("/settingform");
   });
 
@@ -141,11 +141,11 @@ describe("wave 2A container parity", () => {
       viewerCanCreateProject: true,
       viewerCanUpdate: true,
     } as never);
-    expect(organizationSettingsHtml).toContain("Organization settings");
-    expect(organizationSettingsHtml).toContain('href="/yona/organizations/weblabs"');
-    expect(organizationSettingsHtml).toContain('href="/yona/organizations/weblabs/issues"');
-    expect(organizationSettingsHtml).toContain('href="/yona/organizations/weblabs/boards"');
-    expect(organizationSettingsHtml).toContain('href="/yona/organizations/weblabs/pullrequests"');
+    expect(organizationSettingsHtml).toContain("Group Setting");
+    expect(organizationSettingsHtml).toContain(">Group Home<");
+    expect(organizationSettingsHtml).toContain(">Issue<");
+    expect(organizationSettingsHtml).toContain(">Board<");
+    expect(organizationSettingsHtml).toContain(">Pull request<");
 
     const projectSettingsHtml = renderProjectSettings({
       codeMemberOnly: true,

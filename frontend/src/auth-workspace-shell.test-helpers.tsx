@@ -18,7 +18,9 @@ import {
   WorkspaceSettingsPage,
 } from "./routes/-workspace-settings-view";
 import {
+  OrganizationDeletePage,
   OrganizationDetailPage,
+  OrganizationMembersPage,
   OrganizationNewPage,
   OrganizationSettingsPage,
 } from "./routes/-organization-views";
@@ -31,6 +33,7 @@ import { PlaceholderPage } from "./routes/-shared";
 import type {
   AuthUiCapabilitiesViewModel,
   OrganizationDirectoryViewModel,
+  OrganizationAdminViewModel,
   OrganizationDetailViewModel,
   OrganizationMembersViewModel,
   ProjectDetailViewModel,
@@ -166,6 +169,22 @@ export function renderOrganizationSettings(
 
 export function renderOrganizationNew(): string {
   return renderToString(<OrganizationNewPage />);
+}
+
+export function renderOrganizationMembersAdmin(
+  detail: OrganizationAdminViewModel | null,
+): string {
+  return renderToString(
+    <OrganizationMembersPage detail={detail} runtimeConfig={testRuntimeConfig} />,
+  );
+}
+
+export function renderOrganizationDelete(
+  detail: OrganizationAdminViewModel | null,
+): string {
+  return renderToString(
+    <OrganizationDeletePage detail={detail} runtimeConfig={testRuntimeConfig} />,
+  );
 }
 
 export function renderProjectDetail(

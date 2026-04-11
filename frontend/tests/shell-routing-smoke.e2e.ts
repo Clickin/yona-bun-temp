@@ -172,3 +172,82 @@ test("canonical user settings path stays mounted under the base path", async ({ 
   await expect(page).toHaveURL(/\/yona\/users\/loginform\?redirectUrl=%2Fuser%2Feditform%2Fpassword$/);
   await expect(page.getByRole("heading", { name: "Login for Yona" })).toBeVisible();
 });
+
+test("organization admin routes redirect anonymous viewers to login with a return path", async ({ page }) => {
+  await page.goto("/yona/organizations/weblabs/members");
+  await expect(page).toHaveURL(/\/yona\/users\/loginform\?redirectUrl=%2Forganizations%2Fweblabs%2Fmembers$/);
+  await expect(page.getByRole("heading", { name: "Login for Yona" })).toBeVisible();
+
+  await page.goto("/yona/organizations/weblabs/deleteForm");
+  await expect(page).toHaveURL(/\/yona\/users\/loginform\?redirectUrl=%2Forganizations%2Fweblabs%2FdeleteForm$/);
+  await expect(page.getByRole("heading", { name: "Login for Yona" })).toBeVisible();
+});
+
+test("organization admin routes render forbidden and not-found shells for authenticated viewers", async ({ page }) => {
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadCurrentSession", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        defaultLandingPath: "/me",
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
+      }),
+      headers: connectJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadWorkspaceOverview", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        defaultLandingPath: "/me",
+        favoriteProjects: [],
+        recentProjects: [],
+        session: {
+          defaultLandingPath: "/me",
+          emailAddress: "door@example.com",
+          isAnonymous: false,
+          isConfirmed: true,
+          isSiteAdmin: false,
+          loginId: "door",
+          userLabel: "Door",
+        },
+      }),
+      headers: connectJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadOrganizationAdmin", async (route) => {
+    if (route.request().postDataJSON()?.organizationName === "missinglabs") {
+      await route.fulfill({
+        body: JSON.stringify({
+          code: "not_found",
+          message: "organization not found",
+        }),
+        headers: connectJsonHeaders,
+        status: 404,
+      });
+      return;
+    }
+
+    await route.fulfill({
+      body: JSON.stringify({
+        code: "permission_denied",
+        message: "organization update is not allowed",
+      }),
+      headers: connectJsonHeaders,
+      status: 403,
+    });
+  });
+
+  await page.goto("/yona/organizations/weblabs/members");
+  await expect(page.getByRole("heading", { name: "Forbidden" })).toBeVisible();
+  await expect(page.getByText("/organizations/weblabs/members")).toBeVisible();
+
+  await page.goto("/yona/organizations/missinglabs/deleteForm");
+  await expect(page.getByRole("heading", { name: "Not found" })).toBeVisible();
+  await expect(page.getByText("/organizations/missinglabs/deleteForm")).toBeVisible();
+});

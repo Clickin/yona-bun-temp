@@ -1,8 +1,9 @@
 use crate::repo_types::{
     AttachmentRecord, AppUserInput, AppUserRecord, CreateOrganizationInput, CreateProjectInput,
     CreateUserInput, IssueRecord, OrganizationAuthorizationRecord,
-    OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationRecord,
-    OrganizationViewerRecord, ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord,
+    OrganizationEnrollmentRequestRecord, OrganizationMemberDirectoryRecord,
+    OrganizationMemberRecord, OrganizationRecord, OrganizationViewerRecord,
+    ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord,
     ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord,
     ProjectMenuSettingsRecord, ProjectMilestoneSummaryRecord, ProjectRecord,
     ProjectViewerRecord, ToggleFavoriteProjectResult, UpdateOrganizationInput,
@@ -12,10 +13,12 @@ use crate::repo_types::{
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
-    assignee, attachment, comment_thread, email, favorite_project, issue, linked_account,
+    assignee, attachment, comment_thread, email, favorite_organization, favorite_project,
+    issue, linked_account,
     milestone, n4user, organization, organization_user, posting, project, project_menu_setting,
     project_user, pull_request, recent_project, role, site_admin, user_credential,
-    user_enrolled_project, user_project_notification, user_setting, user_verification, watch,
+    user_enrolled_organization, user_enrolled_project, user_project_notification, user_setting,
+    user_verification, watch,
 };
 use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::{
@@ -538,6 +541,81 @@ impl AppRepository {
         Ok(())
     }
 
+    pub async fn delete_organization_membership(
+        &self,
+        organization_id: i64,
+        user_id: i64,
+    ) -> Result<(), DbErr> {
+        if let Some(existing) = organization_user::Entity::find()
+            .filter(organization_user::Column::OrganizationId.eq(Some(organization_id)))
+            .filter(organization_user::Column::UserId.eq(Some(user_id)))
+            .one(&self.db)
+            .await?
+        {
+            organization_user::Entity::delete_by_id(existing.id)
+                .exec(&self.db)
+                .await?;
+        }
+        Ok(())
+    }
+
+    pub async fn create_organization_enrollment_request(
+        &self,
+        organization_id: i64,
+        user_id: i64,
+    ) -> Result<(), DbErr> {
+        if user_enrolled_organization::Entity::find_by_id((user_id, organization_id))
+            .one(&self.db)
+            .await?
+            .is_none()
+        {
+            user_enrolled_organization::ActiveModel {
+                user_id: Set(user_id),
+                organization_id: Set(organization_id),
+            }
+            .insert(&self.db)
+            .await?;
+        }
+        Ok(())
+    }
+
+    pub async fn delete_organization_enrollment_request(
+        &self,
+        organization_id: i64,
+        user_id: i64,
+    ) -> Result<(), DbErr> {
+        user_enrolled_organization::Entity::delete_by_id((user_id, organization_id))
+            .exec(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn delete_organization_by_name(
+        &self,
+        organization_name: &str,
+    ) -> Result<bool, DbErr> {
+        let Some(organization) = self.read_organization_by_name(organization_name).await? else {
+            return Ok(false);
+        };
+
+        user_enrolled_organization::Entity::delete_many()
+            .filter(user_enrolled_organization::Column::OrganizationId.eq(organization.id))
+            .exec(&self.db)
+            .await?;
+        organization_user::Entity::delete_many()
+            .filter(organization_user::Column::OrganizationId.eq(Some(organization.id)))
+            .exec(&self.db)
+            .await?;
+        favorite_organization::Entity::delete_many()
+            .filter(favorite_organization::Column::OrganizationId.eq(Some(organization.id)))
+            .exec(&self.db)
+            .await?;
+        organization::Entity::delete_by_id(organization.id)
+            .exec(&self.db)
+            .await?;
+        Ok(true)
+    }
+
     pub async fn update_organization(
         &self,
         input: UpdateOrganizationInput,
@@ -696,6 +774,7 @@ impl AppRepository {
             is_organization_member: false,
             is_site_admin: false,
         };
+        let mut enrollment_requested = false;
 
         if let Some(actor_id) = actor_id {
             if let Some(user) = self.find_user_by_id(actor_id).await? {
@@ -713,11 +792,17 @@ impl AppRepository {
                 viewer.is_organization_member =
                     viewer.is_organization_admin || role_name == "org_member";
             }
+
+            enrollment_requested = user_enrolled_organization::Entity::find_by_id((actor_id, organization.id))
+                .one(&self.db)
+                .await?
+                .is_some();
         }
 
         Ok(Some(OrganizationAuthorizationRecord {
             organization,
             viewer,
+            enrollment_requested,
         }))
     }
 
@@ -737,6 +822,7 @@ impl AppRepository {
             .all(&self.db)
             .await?;
 
+        let mut member_user_ids = HashSet::new();
         let mut members = Vec::new();
         for membership in memberships {
             let Some(user_id) = membership.user_id else {
@@ -745,6 +831,7 @@ impl AppRepository {
             let Some(user) = self.find_user_by_id(user_id).await? else {
                 continue;
             };
+            member_user_ids.insert(user_id);
 
             members.push(OrganizationMemberRecord {
                 email_address: user.email_address,
@@ -763,8 +850,29 @@ impl AppRepository {
                 .then_with(|| left.login_id.cmp(&right.login_id))
         });
 
+        let requests = user_enrolled_organization::Entity::find()
+            .filter(user_enrolled_organization::Column::OrganizationId.eq(organization.id))
+            .all(&self.db)
+            .await?;
+        let mut enrollment_requests = Vec::new();
+        for request in requests {
+            if member_user_ids.contains(&request.user_id) {
+                continue;
+            }
+            let Some(user) = self.find_user_by_id(request.user_id).await? else {
+                continue;
+            };
+            enrollment_requests.push(OrganizationEnrollmentRequestRecord {
+                email_address: user.email_address,
+                login_id: user.login_id,
+                user_id: user.id,
+                user_label: user.display_name,
+            });
+        }
+        enrollment_requests.sort_by(|left, right| left.login_id.cmp(&right.login_id));
+
         Ok(OrganizationMemberDirectoryRecord {
-            enrollment_requests: vec![],
+            enrollment_requests,
             members,
         })
     }
