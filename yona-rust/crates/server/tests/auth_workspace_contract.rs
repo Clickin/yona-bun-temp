@@ -9,8 +9,9 @@ use sea_orm::{
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, SystemTime};
 use tower::ServiceExt;
+use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
-    assignee, comment_thread, email, issue, linked_account, n4user, project, pull_request, user_credential,
+    assignee, attachment, comment_thread, email, issue, linked_account, n4user, project, pull_request, user_credential,
     user_project_notification, user_verification, watch, AppRepository, CreateProjectInput,
 };
 use yona_rust_pilot_migration::Migrator;
@@ -184,9 +185,10 @@ async fn read_auth_ui_capabilities_reflects_runtime_env_flags() {
 #[tokio::test]
 async fn register_requires_confirmation_session_when_signup_confirm_or_email_verification_is_enabled() {
     let _guard = auth_env_lock().lock().unwrap();
+    clear_test_outbox();
     std::env::set_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM", "true");
 
-    let (app, _, _) = build_auth_router().await;
+    let (app, _, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let register = app
         .oneshot(
@@ -207,6 +209,54 @@ async fn register_requires_confirmation_session_when_signup_confirm_or_email_ver
     assert_eq!(register.status(), StatusCode::OK);
     let register_json = response_text(register).await;
     assert!(register_json.contains("\"isAnonymous\":true"));
+    assert!(user_verification::Entity::find().all(&db).await.unwrap().is_empty());
+    assert!(snapshot_test_outbox().is_empty());
+}
+
+#[tokio::test]
+async fn register_with_email_verification_creates_signup_verification_and_mail_delivery() {
+    let _guard = auth_env_lock().lock().unwrap();
+    clear_test_outbox();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::set_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED", "true");
+
+    let (app, _, db) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+    let register = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+
+    assert_eq!(register.status(), StatusCode::OK);
+    let register_json = response_text(register).await;
+    assert!(register_json.contains("\"isAnonymous\":true"));
+
+    let verifications = user_verification::Entity::find().all(&db).await.unwrap();
+    assert_eq!(verifications.len(), 1);
+    let verification = &verifications[0];
+    assert_eq!(verification.login_id.as_deref(), Some("door"));
+    assert!(verification
+        .verification_code
+        .as_deref()
+        .unwrap_or_default()
+        .starts_with("signup:"));
+
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].to, "door@example.com");
+    assert!(outbox[0].subject.contains("Sign-up"));
+    assert!(outbox[0].body.contains("/verify/door/"));
 }
 
 #[tokio::test]
@@ -371,6 +421,7 @@ async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
 #[tokio::test]
 async fn direct_lost_password_and_reset_password_routes_round_trip() {
     let _guard = auth_env_lock().lock().unwrap();
+    clear_test_outbox();
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -410,6 +461,11 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
             .and_then(|value| value.to_str().ok()),
         Some("/yona/lostPassword?requested=1")
     );
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].to, "door@example.com");
+    assert!(outbox[0].subject.contains("Password reset"));
+    assert!(outbox[0].body.contains("/resetPassword?s="));
 
     let verification = user_verification::Entity::find()
         .one(&db)
@@ -456,6 +512,7 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
 #[tokio::test]
 async fn direct_email_validation_send_and_confirm_routes_round_trip() {
     let _guard = auth_env_lock().lock().unwrap();
+    clear_test_outbox();
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -514,6 +571,11 @@ async fn direct_email_validation_send_and_confirm_routes_round_trip() {
             .and_then(|value| value.to_str().ok()),
         Some("/yona/user/editform/emails?validation=sent")
     );
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].to, "pending@example.com");
+    assert!(outbox[0].subject.contains("Validation"));
+    assert!(outbox[0].body.contains("/user/email/confirm/"));
 
     let email_after_send = email::Entity::find_by_id(email_before.id)
         .one(&db)
@@ -553,6 +615,132 @@ async fn direct_email_validation_send_and_confirm_routes_round_trip() {
         .unwrap()
         .expect("email after confirm");
     assert_eq!(email_after_confirm.valid, Some(1));
+}
+
+#[tokio::test]
+async fn verify_user_activates_pending_account_and_rejects_invalid_or_expired_links() {
+    let _guard = auth_env_lock().lock().unwrap();
+    clear_test_outbox();
+    std::env::set_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED", "true");
+    let (app, repository, db) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let invalid = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/VerifyUser")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(Body::from("{\"loginId\":\"door\",\"verificationCode\":\"signup:missing\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(invalid.status(), StatusCode::NOT_FOUND);
+
+    let verification = user_verification::Entity::find()
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("signup verification");
+    let verification_code = verification
+        .verification_code
+        .clone()
+        .expect("verification code");
+
+    let verify = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/VerifyUser")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(Body::from(format!(
+                    "{{\"loginId\":\"door\",\"verificationCode\":\"{verification_code}\"}}"
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(verify.status(), StatusCode::OK);
+    let verify_json = response_text(verify).await;
+    assert!(verify_json.contains("\"loginId\":\"door\""));
+    assert!(user_verification::Entity::find().all(&db).await.unwrap().is_empty());
+
+    let activated_user = repository
+        .find_user_by_identifier("door")
+        .await
+        .unwrap()
+        .expect("activated user");
+    assert!(activated_user.is_confirmed);
+
+    let sign_in = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/SignInWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"door\",\"password\":\"doorpass1\",\"rememberMe\":true}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(sign_in.status(), StatusCode::OK);
+
+    repository
+        .create_signup_verification_for_user(activated_user.id, "door")
+        .await
+        .unwrap();
+    let expired = user_verification::Entity::find()
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("expired verification");
+    let expired_code = expired.verification_code.clone().expect("expired code");
+    let mut expired_active = user_verification::ActiveModel::from(expired);
+    expired_active.timestamp = Set(Some(
+        DateTimeUtc::from(SystemTime::now() - Duration::from_secs(25 * 60 * 60))
+            .timestamp_millis(),
+    ));
+    expired_active.update(&db).await.unwrap();
+
+    let expired_response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/VerifyUser")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(Body::from(format!(
+                    "{{\"loginId\":\"door\",\"verificationCode\":\"{expired_code}\"}}"
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+    assert_eq!(expired_response.status(), StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
@@ -626,6 +814,43 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
     let updated_profile_json = response_text(updated_profile).await;
     assert!(updated_profile_json.contains("\"userLabel\":\"Door Updated\""));
     assert!(updated_profile_json.contains("\"emailAddress\":\"door-updated@example.com\""));
+    assert!(updated_profile_json.contains("\"avatarUrl\":\"https://www.gravatar.com/avatar/"));
+
+    let avatar_attachment = attachment::ActiveModel {
+        id: NotSet,
+        name: Set(Some("avatar.png".to_string())),
+        hash: Set(Some("avatar-upload-hash".to_string())),
+        container_type: Set(Some("USER".to_string())),
+        mime_type: Set(Some("image/png".to_string())),
+        size: Set(Some(256)),
+        container_id: Set(user.id),
+        created_date: Set(Some(DateTimeUtc::from(SystemTime::now()).naive_utc())),
+        owner_login_id: Set(Some("door".to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+
+    let updated_avatar = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/UpdateProfile")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(format!(
+                    "{{\"name\":\"Door Updated\",\"email\":\"door-updated@example.com\",\"avatarAttachmentId\":\"{}\"}}",
+                    avatar_attachment.id
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(updated_avatar.status(), StatusCode::OK);
+    let updated_avatar_json = response_text(updated_avatar).await;
+    assert!(updated_avatar_json.contains(&format!("\"avatarUrl\":\"/yona/files/{}\"", avatar_attachment.id)));
 
     let added_email = app
         .clone()
@@ -906,6 +1131,90 @@ async fn toggle_workspace_notification_preserves_missing_forbidden_and_unwatched
         .await
         .unwrap();
     assert_eq!(unwatched.status(), StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn update_profile_replaces_existing_avatar_attachment() {
+    let _guard = auth_env_lock().lock().unwrap();
+    let (app, repository, db) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let user = repository
+        .find_user_by_identifier("door")
+        .await
+        .unwrap()
+        .expect("registered user");
+    attachment::ActiveModel {
+        id: NotSet,
+        name: Set(Some("old-avatar.png".to_string())),
+        hash: Set(Some("old-avatar-hash".to_string())),
+        container_type: Set(Some("USER_AVATAR".to_string())),
+        mime_type: Set(Some("image/png".to_string())),
+        size: Set(Some(128)),
+        container_id: Set(user.id),
+        created_date: Set(Some(DateTimeUtc::from(SystemTime::now()).naive_utc())),
+        owner_login_id: Set(Some("door".to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let new_avatar = attachment::ActiveModel {
+        id: NotSet,
+        name: Set(Some("new-avatar.png".to_string())),
+        hash: Set(Some("new-avatar-hash".to_string())),
+        container_type: Set(Some("USER".to_string())),
+        mime_type: Set(Some("image/png".to_string())),
+        size: Set(Some(256)),
+        container_id: Set(user.id),
+        created_date: Set(Some(DateTimeUtc::from(SystemTime::now()).naive_utc())),
+        owner_login_id: Set(Some("door".to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+
+    let updated_avatar = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/UpdateProfile")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(format!(
+                    "{{\"name\":\"Door\",\"email\":\"door@example.com\",\"avatarAttachmentId\":\"{}\"}}",
+                    new_avatar.id
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(updated_avatar.status(), StatusCode::OK);
+
+    let avatar_rows = attachment::Entity::find()
+        .filter(attachment::Column::ContainerType.eq(Some("USER_AVATAR".to_string())))
+        .filter(attachment::Column::ContainerId.eq(user.id))
+        .all(&db)
+        .await
+        .unwrap();
+    assert_eq!(avatar_rows.len(), 1);
+    assert_eq!(avatar_rows[0].id, new_avatar.id);
 }
 
 #[tokio::test]

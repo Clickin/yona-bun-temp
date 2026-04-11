@@ -186,6 +186,18 @@ pub struct WorkspaceProfileRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AttachmentRecord {
+    pub container_id: i64,
+    pub container_type: String,
+    pub hash: String,
+    pub id: i64,
+    pub mime_type: String,
+    pub name: String,
+    pub owner_login_id: String,
+    pub size: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WorkspaceIssueListItemRecord {
     pub assignee_label: String,
     pub author_label: String,
