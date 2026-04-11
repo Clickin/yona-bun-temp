@@ -1,3 +1,5 @@
+use sea_orm::entity::prelude::DateTime;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AppUserRecord {
     pub id: i64,
@@ -81,8 +83,10 @@ pub struct OrganizationAuthorizationRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OrganizationMemberRecord {
+    pub email_address: String,
     pub login_id: String,
     pub role: String,
+    pub user_id: i64,
     pub user_label: String,
 }
 
@@ -100,7 +104,11 @@ pub struct OrganizationMemberDirectoryRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectRecord {
+    pub created_date: Option<DateTime>,
+    pub is_code_accessible_member_only: bool,
+    pub last_pushed_date: Option<DateTime>,
     pub id: i64,
+    pub original_project_id: Option<i64>,
     pub organization_id: Option<i64>,
     pub organization_name: Option<String>,
     pub owner_name: String,
@@ -128,8 +136,10 @@ pub struct ProjectAuthorizationRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectMemberRecord {
+    pub email_address: String,
     pub login_id: String,
     pub role: String,
+    pub user_id: i64,
     pub user_label: String,
 }
 
@@ -143,6 +153,25 @@ pub struct ProjectEnrollmentRequestRecord {
 pub struct ProjectMemberDirectoryRecord {
     pub enrollment_requests: Vec<ProjectEnrollmentRequestRecord>,
     pub members: Vec<ProjectMemberRecord>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectMenuSettingsRecord {
+    pub board: bool,
+    pub code: bool,
+    pub issue: bool,
+    pub milestone: bool,
+    pub pull_request: bool,
+    pub review: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectMilestoneSummaryRecord {
+    pub closed_issue_count: u32,
+    pub completion_percent: u32,
+    pub due_date_label: String,
+    pub open_issue_count: u32,
+    pub title: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

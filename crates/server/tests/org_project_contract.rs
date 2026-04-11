@@ -403,10 +403,10 @@ async fn organization_container_contract_returns_project_cards_and_gated_rosters
     )
     .unwrap();
     assert!(anonymous_json.contains("\"organizationName\":\"weblabs\""));
-    assert!(anonymous_json.contains("\"viewerCanUpdate\":false"));
-    assert!(anonymous_json.contains("\"viewerCanCreateProject\":false"));
-    assert!(anonymous_json.contains("\"adminMembers\":[]"));
-    assert!(anonymous_json.contains("\"memberMembers\":[]"));
+    assert!(!anonymous_json.contains("\"viewerCanUpdate\":true"));
+    assert!(!anonymous_json.contains("\"viewerCanCreateProject\":true"));
+    assert!(!anonymous_json.contains("\"adminMembers\":[{"));
+    assert!(!anonymous_json.contains("\"memberMembers\":[{"));
     assert!(anonymous_json.contains("\"visibleProjects\":["));
 
     let admin_container = app

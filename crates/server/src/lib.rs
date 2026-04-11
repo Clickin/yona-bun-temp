@@ -1481,6 +1481,377 @@ fn project_detail_from_record(
     }
 }
 
+fn project_read_allowed(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    is_anonymous: bool,
+) -> Result<bool, ConnectError> {
+    Ok(authorize_project_access(
+        &ProjectAccessFacts {
+            is_anonymous,
+            is_organization_admin: authorization.viewer.is_organization_admin,
+            is_organization_member: authorization.viewer.is_organization_member,
+            is_project_manager: authorization.viewer.is_project_manager,
+            is_project_member: authorization.viewer.is_project_member,
+            is_site_admin: authorization.viewer.is_site_admin,
+            project_scope: map_project_scope(&authorization.project.project_scope)?,
+        },
+        ProjectOperation::Read,
+    )
+    .allowed)
+}
+
+fn project_update_allowed(
+    authorization: &persistence::ProjectAuthorizationRecord,
+) -> Result<bool, ConnectError> {
+    Ok(authorize_project_access(
+        &ProjectAccessFacts {
+            is_anonymous: false,
+            is_organization_admin: authorization.viewer.is_organization_admin,
+            is_organization_member: authorization.viewer.is_organization_member,
+            is_project_manager: authorization.viewer.is_project_manager,
+            is_project_member: authorization.viewer.is_project_member,
+            is_site_admin: authorization.viewer.is_site_admin,
+            project_scope: map_project_scope(&authorization.project.project_scope)?,
+        },
+        ProjectOperation::Update,
+    )
+    .allowed)
+}
+
+fn format_project_date_label(value: Option<sea_orm::entity::prelude::DateTime>) -> String {
+    value
+        .map(|value| value.format("%Y-%m-%d").to_string())
+        .unwrap_or_default()
+}
+
+fn organization_member_summary_from_record(
+    record: &persistence::OrganizationMemberRecord,
+) -> OrganizationMemberSummary {
+    OrganizationMemberSummary {
+        avatar_url: gravatar_url(&record.email_address),
+        login_id: record.login_id.clone(),
+        role: record.role.clone(),
+        user_label: record.user_label.clone(),
+        ..Default::default()
+    }
+}
+
+fn project_member_summary_from_record(record: &persistence::ProjectMemberRecord) -> ProjectMemberSummary {
+    ProjectMemberSummary {
+        avatar_url: gravatar_url(&record.email_address),
+        login_id: record.login_id.clone(),
+        role: record.role.clone(),
+        user_label: record.user_label.clone(),
+        ..Default::default()
+    }
+}
+
+fn project_milestone_summary_from_record(
+    record: &persistence::ProjectMilestoneSummaryRecord,
+) -> ProjectMilestoneSummary {
+    ProjectMilestoneSummary {
+        closed_issue_count: record.closed_issue_count,
+        completion_percent: record.completion_percent,
+        due_date_label: record.due_date_label.clone(),
+        open_issue_count: record.open_issue_count,
+        title: record.title.clone(),
+        ..Default::default()
+    }
+}
+
+async fn resolve_project_origin(
+    repository: &PilotRepository,
+    project: &persistence::ProjectRecord,
+) -> Result<(String, String), ConnectError> {
+    let Some(origin_project_id) = project.original_project_id else {
+        return Ok((String::new(), String::new()));
+    };
+    let Some(origin_project) = repository
+        .read_project_by_id(origin_project_id)
+        .await
+        .map_err(internal_error)?
+    else {
+        return Ok((String::new(), String::new()));
+    };
+    Ok((origin_project.owner_name, origin_project.project_name))
+}
+
+fn project_code_menu_visible(authorization: &persistence::ProjectAuthorizationRecord, show_code: bool) -> bool {
+    show_code
+        && (!authorization.project.is_code_accessible_member_only
+            || authorization.viewer.is_project_member
+            || authorization.viewer.is_project_manager
+            || authorization.viewer.is_organization_admin
+            || authorization.viewer.is_site_admin)
+}
+
+async fn build_organization_container_response(
+    repository: &PilotRepository,
+    authorization: &persistence::OrganizationAuthorizationRecord,
+    actor_id: Option<i64>,
+) -> Result<OrganizationContainer, ConnectError> {
+    let can_view_roster = authorization.viewer.is_organization_member
+        || authorization.viewer.is_organization_admin
+        || authorization.viewer.is_site_admin;
+    let viewer_can_update = can_update_organization(
+        authorization.viewer.is_organization_admin,
+        authorization.viewer.is_site_admin,
+    );
+    let viewer_can_create_project =
+        can_create_organization_project(authorization.viewer.is_organization_admin)
+            || authorization.viewer.is_site_admin;
+
+    let directory = if can_view_roster {
+        Some(
+            repository
+                .read_organization_members(&authorization.organization.organization_name)
+                .await
+                .map_err(internal_error)?,
+        )
+    } else {
+        None
+    };
+
+    let projects = repository
+        .list_projects_for_organization(authorization.organization.id)
+        .await
+        .map_err(internal_error)?;
+    let mut visible_projects = Vec::new();
+    for project in projects {
+        let Some(project_authorization) = repository
+            .read_project_authorization(&project.owner_name, &project.project_name, actor_id)
+            .await
+            .map_err(internal_error)?
+        else {
+            continue;
+        };
+        if !project_read_allowed(&project_authorization, actor_id.is_none())? {
+            continue;
+        }
+        let (origin_owner_name, origin_project_name) =
+            resolve_project_origin(repository, &project_authorization.project).await?;
+        let is_watching = if let Some(user_id) = actor_id {
+            repository
+                .is_watching_project(user_id, project_authorization.project.id)
+                .await
+                .map_err(internal_error)?
+        } else {
+            false
+        };
+        visible_projects.push(OrganizationProjectCard {
+            created_label: format_project_date_label(project_authorization.project.created_date),
+            is_watching,
+            last_pushed_label: format_project_date_label(project_authorization.project.last_pushed_date),
+            logo_url: String::new(),
+            member_count: repository
+                .count_project_members(project_authorization.project.id)
+                .await
+                .map_err(internal_error)?,
+            origin_owner_name,
+            origin_project_name,
+            overview: project_authorization.project.overview.clone().unwrap_or_default(),
+            owner_name: project_authorization.project.owner_name.clone(),
+            project_name: project_authorization.project.project_name.clone(),
+            project_scope: project_authorization.project.project_scope.clone(),
+            watch_count: repository
+                .count_project_watchers(project_authorization.project.id)
+                .await
+                .map_err(internal_error)?,
+            ..Default::default()
+        });
+    }
+
+    let admin_members = directory
+        .as_ref()
+        .map(|directory| {
+            directory
+                .members
+                .iter()
+                .filter(|member| member.role == "org_admin")
+                .map(organization_member_summary_from_record)
+                .collect()
+        })
+        .unwrap_or_default();
+    let member_members = directory
+        .as_ref()
+        .map(|directory| {
+            directory
+                .members
+                .iter()
+                .filter(|member| member.role != "org_admin")
+                .map(organization_member_summary_from_record)
+                .collect()
+        })
+        .unwrap_or_default();
+
+    Ok(OrganizationContainer {
+        admin_members,
+        description: authorization.organization.description.clone().unwrap_or_default(),
+        member_members,
+        organization_name: authorization.organization.organization_name.clone(),
+        viewer_can_create_project,
+        viewer_can_update,
+        visible_projects,
+        ..Default::default()
+    })
+}
+
+async fn build_project_container_response(
+    repository: &PilotRepository,
+    public_origin: &str,
+    base_path: &str,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor_id: Option<i64>,
+) -> Result<ProjectContainer, ConnectError> {
+    let viewer_can_update = if actor_id.is_some() {
+        project_update_allowed(authorization)?
+    } else {
+        false
+    };
+    let viewer_can_enroll = can_request_project_enrollment(
+        actor_id.is_some(),
+        authorization.viewer.is_organization_admin,
+        authorization.viewer.is_organization_member,
+        authorization.viewer.is_project_manager,
+        authorization.viewer.is_project_member,
+        authorization.viewer.is_site_admin,
+    );
+    let viewer_can_watch = actor_id.is_some() && project_read_allowed(authorization, false)?;
+    let member_count = repository
+        .count_project_members(authorization.project.id)
+        .await
+        .map_err(internal_error)?;
+    let watch_count = repository
+        .count_project_watchers(authorization.project.id)
+        .await
+        .map_err(internal_error)?;
+    let menu_settings = repository
+        .read_project_menu_settings(authorization.project.id)
+        .await
+        .map_err(internal_error)?;
+    let show_code = project_code_menu_visible(authorization, menu_settings.code);
+    let show_pull_request = show_code && menu_settings.pull_request;
+    let show_review = show_code && menu_settings.review;
+    let show_issue = menu_settings.issue;
+    let show_milestone = menu_settings.milestone;
+    let show_board = menu_settings.board;
+    let show_admin = viewer_can_update;
+    let is_watching = if let Some(user_id) = actor_id {
+        repository
+            .is_watching_project(user_id, authorization.project.id)
+            .await
+            .map_err(internal_error)?
+    } else {
+        false
+    };
+    let project_directory = repository
+        .read_project_members(
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+        )
+        .await
+        .map_err(internal_error)?;
+    let members = project_directory
+        .members
+        .iter()
+        .map(project_member_summary_from_record)
+        .collect();
+    let current_milestone = if show_milestone {
+        repository
+            .read_current_milestone_for_project(authorization.project.id)
+            .await
+            .map_err(internal_error)?
+            .map(|record| project_milestone_summary_from_record(&record))
+            .into()
+    } else {
+        None.into()
+    };
+    let (origin_owner_name, origin_project_name) =
+        resolve_project_origin(repository, &authorization.project).await?;
+
+    Ok(ProjectContainer {
+        background_url: String::new(),
+        board_count: if show_board {
+            repository
+                .count_project_boards(authorization.project.id)
+                .await
+                .map_err(internal_error)?
+        } else {
+            0
+        },
+        clone_url: if show_code {
+            absolute_app_url(
+                public_origin,
+                base_path,
+                &format!(
+                    "/{}/{}.git",
+                    authorization.project.owner_name, authorization.project.project_name
+                ),
+            )
+        } else {
+            String::new()
+        },
+        code_member_only: authorization.project.is_code_accessible_member_only,
+        current_milestone,
+        default_tab: "readme".to_string(),
+        enrollment_requested: authorization.enrollment_requested,
+        is_favorited: authorization.is_favorited,
+        is_forked: authorization.project.original_project_id.is_some(),
+        is_watching,
+        logo_url: String::new(),
+        member_count,
+        members,
+        open_issue_count: if show_issue {
+            repository
+                .count_open_issues_for_project(authorization.project.id)
+                .await
+                .map_err(internal_error)?
+        } else {
+            0
+        },
+        open_pull_request_count: if show_pull_request {
+            repository
+                .count_open_pull_requests_for_project(authorization.project.id)
+                .await
+                .map_err(internal_error)?
+        } else {
+            0
+        },
+        organization_name: authorization
+            .project
+            .organization_name
+            .clone()
+            .unwrap_or_default(),
+        origin_owner_name,
+        origin_project_name,
+        overview: authorization.project.overview.clone().unwrap_or_default(),
+        overview_editable: viewer_can_update,
+        owner_name: authorization.project.owner_name.clone(),
+        project_name: authorization.project.project_name.clone(),
+        project_scope: authorization.project.project_scope.clone(),
+        review_count: if show_review {
+            repository
+                .count_project_reviews(authorization.project.id)
+                .await
+                .map_err(internal_error)?
+        } else {
+            0
+        },
+        show_admin,
+        show_board,
+        show_code,
+        show_issue,
+        show_milestone,
+        show_pull_request,
+        show_review,
+        viewer_can_enroll: viewer_can_enroll,
+        viewer_can_update: viewer_can_update,
+        viewer_can_watch,
+        watch_count,
+        ..Default::default()
+    })
+}
+
 impl PilotService for PilotServiceImpl {
     async fn read_current_session(
         &self,
@@ -2262,6 +2633,32 @@ impl PilotService for PilotServiceImpl {
         ))
     }
 
+    async fn read_organization_container(
+        &self,
+        ctx: Context,
+        request: OwnedView<ReadOrganizationContainerRequestView<'static>>,
+    ) -> Result<(OrganizationContainer, Context), ConnectError> {
+        let actor_id = self
+            .session_manager
+            .read_session_from_headers(&ctx.headers)
+            .and_then(|session| session.user_id);
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "organization requires repository backend",
+            ));
+        };
+        let authorization = repository
+            .read_organization_authorization(request.organization_name, actor_id)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+
+        Ok((
+            build_organization_container_response(repository, &authorization, actor_id).await?,
+            ctx,
+        ))
+    }
+
     async fn update_organization(
         &self,
         ctx: Context,
@@ -2610,6 +3007,170 @@ impl PilotService for PilotServiceImpl {
                     .collect(),
                 ..Default::default()
             },
+            ctx,
+        ))
+    }
+
+    async fn read_project_container(
+        &self,
+        ctx: Context,
+        request: OwnedView<ReadProjectContainerRequestView<'static>>,
+    ) -> Result<(ProjectContainer, Context), ConnectError> {
+        let actor_id = self
+            .session_manager
+            .read_session_from_headers(&ctx.headers)
+            .and_then(|session| session.user_id);
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "project requires repository backend",
+            ));
+        };
+        let authorization = repository
+            .read_project_authorization(request.owner_name, request.project_name, actor_id)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("project not found"))?;
+        if !project_read_allowed(&authorization, actor_id.is_none())? {
+            return if actor_id.is_none() {
+                Err(ConnectError::unauthenticated("project read is not allowed"))
+            } else {
+                Err(ConnectError::permission_denied(
+                    "project read is not allowed",
+                ))
+            };
+        }
+
+        if let Some(user_id) = actor_id {
+            repository
+                .record_recent_project_visit(user_id, request.owner_name, request.project_name)
+                .await
+                .map_err(internal_error)?;
+        }
+
+        Ok((
+            build_project_container_response(
+                repository,
+                &self.public_origin,
+                &self.base_path,
+                &authorization,
+                actor_id,
+            )
+            .await?,
+            ctx,
+        ))
+    }
+
+    async fn update_project_overview(
+        &self,
+        ctx: Context,
+        request: OwnedView<UpdateProjectOverviewRequestView<'static>>,
+    ) -> Result<(ProjectContainer, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let Some(user_id) = session.user_id else {
+            return Err(ConnectError::unauthenticated(
+                "missing authenticated session",
+            ));
+        };
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "project requires repository backend",
+            ));
+        };
+        if request.overview.len() > 255 {
+            return Err(ConnectError::invalid_argument("invalid project request"));
+        }
+
+        let authorization = repository
+            .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("project not found"))?;
+        if !project_update_allowed(&authorization)? {
+            return Err(ConnectError::permission_denied(
+                "project update is not allowed",
+            ));
+        }
+
+        repository
+            .update_project(persistence::UpdateProjectInput {
+                current_owner_name: authorization.project.owner_name.clone(),
+                current_project_name: authorization.project.project_name.clone(),
+                overview: Some(request.overview.trim().to_string()),
+                project_name: authorization.project.project_name.clone(),
+                project_scope: authorization.project.project_scope.clone(),
+            })
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("project not found"))?;
+
+        let refreshed = repository
+            .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("project not found"))?;
+
+        Ok((
+            build_project_container_response(
+                repository,
+                &self.public_origin,
+                &self.base_path,
+                &refreshed,
+                Some(user_id),
+            )
+            .await?,
+            ctx,
+        ))
+    }
+
+    async fn toggle_project_watch(
+        &self,
+        ctx: Context,
+        request: OwnedView<ToggleProjectWatchRequestView<'static>>,
+    ) -> Result<(ProjectContainer, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let Some(user_id) = session.user_id else {
+            return Err(ConnectError::unauthenticated(
+                "missing authenticated session",
+            ));
+        };
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "project requires repository backend",
+            ));
+        };
+        let authorization = repository
+            .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("project not found"))?;
+        if !project_read_allowed(&authorization, false)? {
+            return Err(ConnectError::permission_denied(
+                "project read is not allowed",
+            ));
+        }
+
+        repository
+            .set_project_watch(user_id, authorization.project.id, request.watching)
+            .await
+            .map_err(internal_error)?;
+
+        let refreshed = repository
+            .read_project_authorization(request.owner_name, request.project_name, Some(user_id))
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("project not found"))?;
+
+        Ok((
+            build_project_container_response(
+                repository,
+                &self.public_origin,
+                &self.base_path,
+                &refreshed,
+                Some(user_id),
+            )
+            .await?,
             ctx,
         ))
     }
