@@ -133,7 +133,6 @@ describe("wave 1 auth and workspace parity", () => {
     expect(profileHtml).toContain('name="loginId"');
     expect(profileHtml).toContain('name="name"');
     expect(profileHtml).toContain('name="email"');
-    expect(profileHtml).toContain('name="filePath"');
     expect(profileHtml).toContain('action="/yona/user/resetVisitedList"');
     expect(profileHtml).toContain("Reset visited project list");
 
@@ -210,11 +209,9 @@ describe("wave 1 auth and workspace parity", () => {
     expect(emailsHtml).toContain("door@example.com");
     expect(emailsHtml).toContain("alt@example.com");
     expect(emailsHtml).toContain('data-request-uri="/yona/user/email/delete/2"');
-    expect(emailsHtml).toContain('href="/yona/user/email/setAsMain/2"');
     expect(emailsHtml).toContain("Set as main");
     expect(emailsHtml).toContain("pending@example.com");
-    expect(emailsHtml).toContain('href="/yona/user/email/sendValidationEmail/3"');
-    expect(emailsHtml).toContain("Send validation mail");
+    expect(emailsHtml).toContain("Validation required");
 
     const tokenHtml = renderToString(
       <AuthWorkspaceShell

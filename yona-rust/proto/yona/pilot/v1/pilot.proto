@@ -12,6 +12,15 @@ service PilotService {
   rpc SignOut(SignOutRequest) returns (ReadCurrentSessionResponse) {}
   rpc ReadWorkspaceOverview(ReadWorkspaceOverviewRequest) returns (ReadWorkspaceOverviewResponse) {}
   rpc SetDefaultLandingPath(SetDefaultLandingPathRequest) returns (ReadWorkspaceOverviewResponse) {}
+  rpc UpdateProfile(UpdateProfileRequest) returns (ReadWorkspaceOverviewResponse) {}
+  rpc ChangePassword(ChangePasswordRequest) returns (ReadCurrentSessionResponse) {}
+  rpc ResetVisitedProjects(ResetVisitedProjectsRequest) returns (ReadWorkspaceOverviewResponse) {}
+  rpc AddWorkspaceEmail(AddWorkspaceEmailRequest) returns (ReadWorkspaceOverviewResponse) {}
+  rpc DeleteWorkspaceEmail(DeleteWorkspaceEmailRequest) returns (ReadWorkspaceOverviewResponse) {}
+  rpc SendWorkspaceEmailValidation(SendWorkspaceEmailValidationRequest) returns (ReadWorkspaceOverviewResponse) {}
+  rpc SetMainWorkspaceEmail(SetMainWorkspaceEmailRequest) returns (ReadWorkspaceOverviewResponse) {}
+  rpc ResetApiToken(ResetApiTokenRequest) returns (ReadWorkspaceOverviewResponse) {}
+  rpc ToggleWorkspaceNotification(ToggleWorkspaceNotificationRequest) returns (ReadWorkspaceOverviewResponse) {}
   rpc CreateOrganization(CreateOrganizationRequest) returns (OrganizationDetail) {}
   rpc ReadOrganizationDetail(ReadOrganizationDetailRequest) returns (OrganizationDetail) {}
   rpc ReadOrganizationSettings(ReadOrganizationSettingsRequest) returns (OrganizationDetail) {}
@@ -127,6 +136,43 @@ message ReadWorkspaceOverviewResponse {
 
 message SetDefaultLandingPathRequest {
   string path = 1;
+}
+
+message UpdateProfileRequest {
+  string name = 1;
+  string email = 2;
+}
+
+message ChangePasswordRequest {
+  string login_id = 1;
+  string old_password = 2;
+  string password = 3;
+  string retyped_password = 4;
+}
+
+message ResetVisitedProjectsRequest {}
+
+message AddWorkspaceEmailRequest {
+  string email = 1;
+}
+
+message DeleteWorkspaceEmailRequest {
+  string id = 1;
+}
+
+message SendWorkspaceEmailValidationRequest {
+  string id = 1;
+}
+
+message SetMainWorkspaceEmailRequest {
+  string id = 1;
+}
+
+message ResetApiTokenRequest {}
+
+message ToggleWorkspaceNotificationRequest {
+  string project_id = 1;
+  string event_type = 2;
 }
 
 message CreateOrganizationRequest {

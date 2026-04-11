@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file yona/pilot/v1/pilot.proto.
  */
 export const file_yona_pilot_v1_pilot: GenFile = /*@__PURE__*/
-  fileDesc("Chl5b25hL3BpbG90L3YxL3BpbG90LnByb3RvEg15b25hLnBpbG90LnYxIhsKGVJlYWRDdXJyZW50U2Vzc2lvblJlcXVlc3QiHwodUmVhZEF1dGhVaUNhcGFiaWxpdGllc1JlcXVlc3QizAEKGlJlYWRDdXJyZW50U2Vzc2lvblJlc3BvbnNlEhQKDGlzX2Fub255bW91cxgBIAEoCBIQCghhY3Rvcl9pZBgCIAEoAxIQCghsb2dpbl9pZBgDIAEoCRISCgp1c2VyX2xhYmVsGAQgASgJEhUKDWVtYWlsX2FkZHJlc3MYBSABKAkSFAoMaXNfY29uZmlybWVkGAYgASgIEhUKDWlzX3NpdGVfYWRtaW4YByABKAgSHAoUZGVmYXVsdF9sYW5kaW5nX3BhdGgYCCABKAkioQEKHlJlYWRBdXRoVWlDYXBhYmlsaXRpZXNSZXNwb25zZRIiChplbWFpbF92ZXJpZmljYXRpb25fZW5hYmxlZBgBIAEoCBIgChhlbmFibGVkX3NvY2lhbF9wcm92aWRlcnMYAiADKAkSHgoWc2lnbnVwX3JlcXVpcmVfY29uZmlybRgDIAEoCBIZChFzb2NpYWxfbG9naW5fb25seRgEIAEoCCJWChlTaWduSW5XaXRoUGFzc3dvcmRSZXF1ZXN0EhIKCmlkZW50aWZpZXIYASABKAkSEAoIcGFzc3dvcmQYAiABKAkSEwoLcmVtZW1iZXJfbWUYAyABKAgigAEKG1JlZ2lzdGVyV2l0aFBhc3N3b3JkUmVxdWVzdBIQCghsb2dpbl9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEhUKDWVtYWlsX2FkZHJlc3MYAyABKAkSEAoIcGFzc3dvcmQYBCABKAkSGAoQcmV0eXBlZF9wYXNzd29yZBgFIAEoCSIQCg5TaWduT3V0UmVxdWVzdCIVChNMaXN0UHJvamVjdHNSZXF1ZXN0ImQKD1Byb2plY3RMaXN0SXRlbRISCgpvd25lcl9uYW1lGAEgASgJEhQKDHByb2plY3RfbmFtZRgCIAEoCRIQCghvdmVydmlldxgDIAEoCRIVCg1wcm9qZWN0X3Njb3BlGAQgASgJIkUKFExpc3RQcm9qZWN0c1Jlc3BvbnNlEi0KBWl0ZW1zGAEgAygLMh4ueW9uYS5waWxvdC52MS5Qcm9qZWN0TGlzdEl0ZW0iGgoYTGlzdE9yZ2FuaXphdGlvbnNSZXF1ZXN0IkYKFE9yZ2FuaXphdGlvbkxpc3RJdGVtEhkKEW9yZ2FuaXphdGlvbl9uYW1lGAEgASgJEhMKC2Rlc2NyaXB0aW9uGAIgASgJIk8KGUxpc3RPcmdhbml6YXRpb25zUmVzcG9uc2USMgoFaXRlbXMYASADKAsyIy55b25hLnBpbG90LnYxLk9yZ2FuaXphdGlvbkxpc3RJdGVtIh4KHFJlYWRXb3Jrc3BhY2VPdmVydmlld1JlcXVlc3QiVQofV29ya3NwYWNlTm90aWZpY2F0aW9uUHJlZmVyZW5jZRISCgpldmVudF90eXBlGAEgASgJEg0KBWxhYmVsGAIgASgJEg8KB2VuYWJsZWQYAyABKAgiogEKG1dhdGNoZWRQcm9qZWN0Tm90aWZpY2F0aW9ucxISCgpwcm9qZWN0X2lkGAEgASgJEhIKCm93bmVyX25hbWUYAiABKAkSFAoMcHJvamVjdF9uYW1lGAMgASgJEkUKDW5vdGlmaWNhdGlvbnMYBCADKAsyLi55b25hLnBpbG90LnYxLldvcmtzcGFjZU5vdGlmaWNhdGlvblByZWZlcmVuY2UiQgoOV29ya3NwYWNlRW1haWwSCgoCaWQYASABKAkSFQoNZW1haWxfYWRkcmVzcxgCIAEoCRINCgV2YWxpZBgDIAEoCCL1AgodUmVhZFdvcmtzcGFjZU92ZXJ2aWV3UmVzcG9uc2USOgoHc2Vzc2lvbhgBIAEoCzIpLnlvbmEucGlsb3QudjEuUmVhZEN1cnJlbnRTZXNzaW9uUmVzcG9uc2USHAoUZGVmYXVsdF9sYW5kaW5nX3BhdGgYAiABKAkSOQoRZmF2b3JpdGVfcHJvamVjdHMYAyADKAsyHi55b25hLnBpbG90LnYxLlByb2plY3RMaXN0SXRlbRI3Cg9yZWNlbnRfcHJvamVjdHMYBCADKAsyHi55b25hLnBpbG90LnYxLlByb2plY3RMaXN0SXRlbRJEChB3YXRjaGVkX3Byb2plY3RzGAUgAygLMioueW9uYS5waWxvdC52MS5XYXRjaGVkUHJvamVjdE5vdGlmaWNhdGlvbnMSLQoGZW1haWxzGAYgAygLMh0ueW9uYS5waWxvdC52MS5Xb3Jrc3BhY2VFbWFpbBIRCglhcGlfdG9rZW4YByABKAkiLAocU2V0RGVmYXVsdExhbmRpbmdQYXRoUmVxdWVzdBIMCgRwYXRoGAEgASgJIksKGUNyZWF0ZU9yZ2FuaXphdGlvblJlcXVlc3QSGQoRb3JnYW5pemF0aW9uX25hbWUYASABKAkSEwoLZGVzY3JpcHRpb24YAiABKAkiOgodUmVhZE9yZ2FuaXphdGlvbkRldGFpbFJlcXVlc3QSGQoRb3JnYW5pemF0aW9uX25hbWUYASABKAkiPAofUmVhZE9yZ2FuaXphdGlvblNldHRpbmdzUmVxdWVzdBIZChFvcmdhbml6YXRpb25fbmFtZRgBIAEoCSI7Ch5SZWFkT3JnYW5pemF0aW9uTWVtYmVyc1JlcXVlc3QSGQoRb3JnYW5pemF0aW9uX25hbWUYASABKAkibgoZVXBkYXRlT3JnYW5pemF0aW9uUmVxdWVzdBIhChljdXJyZW50X29yZ2FuaXphdGlvbl9uYW1lGAEgASgJEhkKEW9yZ2FuaXphdGlvbl9uYW1lGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJIl8KEk9yZ2FuaXphdGlvbkRldGFpbBIZChFvcmdhbml6YXRpb25fbmFtZRgBIAEoCRITCgtkZXNjcmlwdGlvbhgCIAEoCRIZChF2aWV3ZXJfY2FuX3VwZGF0ZRgDIAEoCCJIChJPcmdhbml6YXRpb25NZW1iZXISEAoIbG9naW5faWQYASABKAkSEgoKdXNlcl9sYWJlbBgCIAEoCRIMCgRyb2xlGAMgASgJIkUKHU9yZ2FuaXphdGlvbkVucm9sbG1lbnRSZXF1ZXN0EhAKCGxvZ2luX2lkGAEgASgJEhIKCnVzZXJfbGFiZWwYAiABKAkioAEKH1JlYWRPcmdhbml6YXRpb25NZW1iZXJzUmVzcG9uc2USMgoHbWVtYmVycxgBIAMoCzIhLnlvbmEucGlsb3QudjEuT3JnYW5pemF0aW9uTWVtYmVyEkkKE2Vucm9sbG1lbnRfcmVxdWVzdHMYAiADKAsyLC55b25hLnBpbG90LnYxLk9yZ2FuaXphdGlvbkVucm9sbG1lbnRSZXF1ZXN0ImkKFENyZWF0ZVByb2plY3RSZXF1ZXN0EhIKCm93bmVyX25hbWUYASABKAkSFAoMcHJvamVjdF9uYW1lGAIgASgJEhAKCG92ZXJ2aWV3GAMgASgJEhUKDXByb2plY3Rfc2NvcGUYBCABKAkiRAoYUmVhZFByb2plY3REZXRhaWxSZXF1ZXN0EhIKCm93bmVyX25hbWUYASABKAkSFAoMcHJvamVjdF9uYW1lGAIgASgJIkYKGlJlYWRQcm9qZWN0U2V0dGluZ3NSZXF1ZXN0EhIKCm93bmVyX25hbWUYASABKAkSFAoMcHJvamVjdF9uYW1lGAIgASgJIkUKGVJlYWRQcm9qZWN0TWVtYmVyc1JlcXVlc3QSEgoKb3duZXJfbmFtZRgBIAEoCRIUCgxwcm9qZWN0X25hbWUYAiABKAkiowEKFFVwZGF0ZVByb2plY3RSZXF1ZXN0EhoKEmN1cnJlbnRfb3duZXJfbmFtZRgBIAEoCRIcChRjdXJyZW50X3Byb2plY3RfbmFtZRgCIAEoCRISCgpvd25lcl9uYW1lGAMgASgJEhQKDHByb2plY3RfbmFtZRgEIAEoCRIQCghvdmVydmlldxgFIAEoCRIVCg1wcm9qZWN0X3Njb3BlGAYgASgJIucBCg1Qcm9qZWN0RGV0YWlsEhIKCm93bmVyX25hbWUYASABKAkSFAoMcHJvamVjdF9uYW1lGAIgASgJEhkKEW9yZ2FuaXphdGlvbl9uYW1lGAMgASgJEhAKCG92ZXJ2aWV3GAQgASgJEhUKDXByb2plY3Rfc2NvcGUYBSABKAkSGQoRdmlld2VyX2Nhbl91cGRhdGUYBiABKAgSGQoRdmlld2VyX2Nhbl9lbnJvbGwYByABKAgSHAoUZW5yb2xsbWVudF9yZXF1ZXN0ZWQYCCABKAgSFAoMaXNfZmF2b3JpdGVkGAkgASgIIkMKDVByb2plY3RNZW1iZXISEAoIbG9naW5faWQYASABKAkSEgoKdXNlcl9sYWJlbBgCIAEoCRIMCgRyb2xlGAMgASgJIkAKGFByb2plY3RFbnJvbGxtZW50UmVxdWVzdBIQCghsb2dpbl9pZBgBIAEoCRISCgp1c2VyX2xhYmVsGAIgASgJIpEBChpSZWFkUHJvamVjdE1lbWJlcnNSZXNwb25zZRItCgdtZW1iZXJzGAEgAygLMhwueW9uYS5waWxvdC52MS5Qcm9qZWN0TWVtYmVyEkQKE2Vucm9sbG1lbnRfcmVxdWVzdHMYAiADKAsyJy55b25hLnBpbG90LnYxLlByb2plY3RFbnJvbGxtZW50UmVxdWVzdCJAChRFbnJvbGxQcm9qZWN0UmVxdWVzdBISCgpvd25lcl9uYW1lGAEgASgJEhQKDHByb2plY3RfbmFtZRgCIAEoCSJGChpDYW5jZWxFbnJvbGxQcm9qZWN0UmVxdWVzdBISCgpvd25lcl9uYW1lGAEgASgJEhQKDHByb2plY3RfbmFtZRgCIAEoCSImChhFbnJvbGxtZW50TXV0YXRpb25SZXN1bHQSCgoCb2sYASABKAgiSAocVG9nZ2xlRmF2b3JpdGVQcm9qZWN0UmVxdWVzdBISCgpvd25lcl9uYW1lGAEgASgJEhQKDHByb2plY3RfbmFtZRgCIAEoCSJcCh1Ub2dnbGVGYXZvcml0ZVByb2plY3RSZXNwb25zZRISCgpvd25lcl9uYW1lGAEgASgJEhQKDHByb2plY3RfbmFtZRgCIAEoCRIRCglmYXZvcml0ZWQYAyABKAgiSwofUmVjb3JkUmVjZW50UHJvamVjdFZpc2l0UmVxdWVzdBISCgpvd25lcl9uYW1lGAEgASgJEhQKDHByb2plY3RfbmFtZRgCIAEoCSJMCiBSZWNvcmRSZWNlbnRQcm9qZWN0VmlzaXRSZXNwb25zZRISCgpvd25lcl9uYW1lGAEgASgJEhQKDHByb2plY3RfbmFtZRgCIAEoCSJYChZSZWFkSXNzdWVEZXRhaWxSZXF1ZXN0EhIKCm93bmVyX25hbWUYASABKAkSFAoMcHJvamVjdF9uYW1lGAIgASgJEhQKDGlzc3VlX251bWJlchgDIAEoAyJoChdVcGRhdGVJc3N1ZVN0YXRlUmVxdWVzdBISCgpvd25lcl9uYW1lGAEgASgJEhQKDHByb2plY3RfbmFtZRgCIAEoCRIUCgxpc3N1ZV9udW1iZXIYAyABKAMSDQoFc3RhdGUYBCABKAkidwoXUmVhZElzc3VlRGV0YWlsUmVzcG9uc2USEgoKb3duZXJfbmFtZRgBIAEoCRIUCgxwcm9qZWN0X25hbWUYAiABKAkSFAoMaXNzdWVfbnVtYmVyGAMgASgDEg0KBXRpdGxlGAQgASgJEg0KBXN0YXRlGAUgASgJMuQUCgxQaWxvdFNlcnZpY2USawoSUmVhZEN1cnJlbnRTZXNzaW9uEigueW9uYS5waWxvdC52MS5SZWFkQ3VycmVudFNlc3Npb25SZXF1ZXN0GikueW9uYS5waWxvdC52MS5SZWFkQ3VycmVudFNlc3Npb25SZXNwb25zZSIAEncKFlJlYWRBdXRoVWlDYXBhYmlsaXRpZXMSLC55b25hLnBpbG90LnYxLlJlYWRBdXRoVWlDYXBhYmlsaXRpZXNSZXF1ZXN0Gi0ueW9uYS5waWxvdC52MS5SZWFkQXV0aFVpQ2FwYWJpbGl0aWVzUmVzcG9uc2UiABJrChJTaWduSW5XaXRoUGFzc3dvcmQSKC55b25hLnBpbG90LnYxLlNpZ25JbldpdGhQYXNzd29yZFJlcXVlc3QaKS55b25hLnBpbG90LnYxLlJlYWRDdXJyZW50U2Vzc2lvblJlc3BvbnNlIgASbwoUUmVnaXN0ZXJXaXRoUGFzc3dvcmQSKi55b25hLnBpbG90LnYxLlJlZ2lzdGVyV2l0aFBhc3N3b3JkUmVxdWVzdBopLnlvbmEucGlsb3QudjEuUmVhZEN1cnJlbnRTZXNzaW9uUmVzcG9uc2UiABJVCgdTaWduT3V0Eh0ueW9uYS5waWxvdC52MS5TaWduT3V0UmVxdWVzdBopLnlvbmEucGlsb3QudjEuUmVhZEN1cnJlbnRTZXNzaW9uUmVzcG9uc2UiABJ0ChVSZWFkV29ya3NwYWNlT3ZlcnZpZXcSKy55b25hLnBpbG90LnYxLlJlYWRXb3Jrc3BhY2VPdmVydmlld1JlcXVlc3QaLC55b25hLnBpbG90LnYxLlJlYWRXb3Jrc3BhY2VPdmVydmlld1Jlc3BvbnNlIgASdAoVU2V0RGVmYXVsdExhbmRpbmdQYXRoEisueW9uYS5waWxvdC52MS5TZXREZWZhdWx0TGFuZGluZ1BhdGhSZXF1ZXN0GiwueW9uYS5waWxvdC52MS5SZWFkV29ya3NwYWNlT3ZlcnZpZXdSZXNwb25zZSIAEmMKEkNyZWF0ZU9yZ2FuaXphdGlvbhIoLnlvbmEucGlsb3QudjEuQ3JlYXRlT3JnYW5pemF0aW9uUmVxdWVzdBohLnlvbmEucGlsb3QudjEuT3JnYW5pemF0aW9uRGV0YWlsIgASawoWUmVhZE9yZ2FuaXphdGlvbkRldGFpbBIsLnlvbmEucGlsb3QudjEuUmVhZE9yZ2FuaXphdGlvbkRldGFpbFJlcXVlc3QaIS55b25hLnBpbG90LnYxLk9yZ2FuaXphdGlvbkRldGFpbCIAEm8KGFJlYWRPcmdhbml6YXRpb25TZXR0aW5ncxIuLnlvbmEucGlsb3QudjEuUmVhZE9yZ2FuaXphdGlvblNldHRpbmdzUmVxdWVzdBohLnlvbmEucGlsb3QudjEuT3JnYW5pemF0aW9uRGV0YWlsIgASegoXUmVhZE9yZ2FuaXphdGlvbk1lbWJlcnMSLS55b25hLnBpbG90LnYxLlJlYWRPcmdhbml6YXRpb25NZW1iZXJzUmVxdWVzdBouLnlvbmEucGlsb3QudjEuUmVhZE9yZ2FuaXphdGlvbk1lbWJlcnNSZXNwb25zZSIAEmMKElVwZGF0ZU9yZ2FuaXphdGlvbhIoLnlvbmEucGlsb3QudjEuVXBkYXRlT3JnYW5pemF0aW9uUmVxdWVzdBohLnlvbmEucGlsb3QudjEuT3JnYW5pemF0aW9uRGV0YWlsIgASVAoNQ3JlYXRlUHJvamVjdBIjLnlvbmEucGlsb3QudjEuQ3JlYXRlUHJvamVjdFJlcXVlc3QaHC55b25hLnBpbG90LnYxLlByb2plY3REZXRhaWwiABJcChFSZWFkUHJvamVjdERldGFpbBInLnlvbmEucGlsb3QudjEuUmVhZFByb2plY3REZXRhaWxSZXF1ZXN0GhwueW9uYS5waWxvdC52MS5Qcm9qZWN0RGV0YWlsIgASYAoTUmVhZFByb2plY3RTZXR0aW5ncxIpLnlvbmEucGlsb3QudjEuUmVhZFByb2plY3RTZXR0aW5nc1JlcXVlc3QaHC55b25hLnBpbG90LnYxLlByb2plY3REZXRhaWwiABJrChJSZWFkUHJvamVjdE1lbWJlcnMSKC55b25hLnBpbG90LnYxLlJlYWRQcm9qZWN0TWVtYmVyc1JlcXVlc3QaKS55b25hLnBpbG90LnYxLlJlYWRQcm9qZWN0TWVtYmVyc1Jlc3BvbnNlIgASVAoNVXBkYXRlUHJvamVjdBIjLnlvbmEucGlsb3QudjEuVXBkYXRlUHJvamVjdFJlcXVlc3QaHC55b25hLnBpbG90LnYxLlByb2plY3REZXRhaWwiABJfCg1FbnJvbGxQcm9qZWN0EiMueW9uYS5waWxvdC52MS5FbnJvbGxQcm9qZWN0UmVxdWVzdBonLnlvbmEucGlsb3QudjEuRW5yb2xsbWVudE11dGF0aW9uUmVzdWx0IgASawoTQ2FuY2VsRW5yb2xsUHJvamVjdBIpLnlvbmEucGlsb3QudjEuQ2FuY2VsRW5yb2xsUHJvamVjdFJlcXVlc3QaJy55b25hLnBpbG90LnYxLkVucm9sbG1lbnRNdXRhdGlvblJlc3VsdCIAEnQKFVRvZ2dsZUZhdm9yaXRlUHJvamVjdBIrLnlvbmEucGlsb3QudjEuVG9nZ2xlRmF2b3JpdGVQcm9qZWN0UmVxdWVzdBosLnlvbmEucGlsb3QudjEuVG9nZ2xlRmF2b3JpdGVQcm9qZWN0UmVzcG9uc2UiABJ9ChhSZWNvcmRSZWNlbnRQcm9qZWN0VmlzaXQSLi55b25hLnBpbG90LnYxLlJlY29yZFJlY2VudFByb2plY3RWaXNpdFJlcXVlc3QaLy55b25hLnBpbG90LnYxLlJlY29yZFJlY2VudFByb2plY3RWaXNpdFJlc3BvbnNlIgASWQoMTGlzdFByb2plY3RzEiIueW9uYS5waWxvdC52MS5MaXN0UHJvamVjdHNSZXF1ZXN0GiMueW9uYS5waWxvdC52MS5MaXN0UHJvamVjdHNSZXNwb25zZSIAEmgKEUxpc3RPcmdhbml6YXRpb25zEicueW9uYS5waWxvdC52MS5MaXN0T3JnYW5pemF0aW9uc1JlcXVlc3QaKC55b25hLnBpbG90LnYxLkxpc3RPcmdhbml6YXRpb25zUmVzcG9uc2UiABJiCg9SZWFkSXNzdWVEZXRhaWwSJS55b25hLnBpbG90LnYxLlJlYWRJc3N1ZURldGFpbFJlcXVlc3QaJi55b25hLnBpbG90LnYxLlJlYWRJc3N1ZURldGFpbFJlc3BvbnNlIgASZAoQVXBkYXRlSXNzdWVTdGF0ZRImLnlvbmEucGlsb3QudjEuVXBkYXRlSXNzdWVTdGF0ZVJlcXVlc3QaJi55b25hLnBpbG90LnYxLlJlYWRJc3N1ZURldGFpbFJlc3BvbnNlIgBCNFoyeW9uYS5sb2NhbC95b25hL2ludGVybmFsL2dlbi95b25hL3BpbG90L3YxO3BpbG90djFiBnByb3RvMw");
+  fileDesc("Chl5b25hL3BpbG90L3YxL3BpbG90LnByb3RvEg15b25hLnBpbG90LnYxIhsKGVJlYWRDdXJyZW50U2Vzc2lvblJlcXVlc3QiHwodUmVhZEF1dGhVaUNhcGFiaWxpdGllc1JlcXVlc3QizAEKGlJlYWRDdXJyZW50U2Vzc2lvblJlc3BvbnNlEhQKDGlzX2Fub255bW91cxgBIAEoCBIQCghhY3Rvcl9pZBgCIAEoAxIQCghsb2dpbl9pZBgDIAEoCRISCgp1c2VyX2xhYmVsGAQgASgJEhUKDWVtYWlsX2FkZHJlc3MYBSABKAkSFAoMaXNfY29uZmlybWVkGAYgASgIEhUKDWlzX3NpdGVfYWRtaW4YByABKAgSHAoUZGVmYXVsdF9sYW5kaW5nX3BhdGgYCCABKAkioQEKHlJlYWRBdXRoVWlDYXBhYmlsaXRpZXNSZXNwb25zZRIiChplbWFpbF92ZXJpZmljYXRpb25fZW5hYmxlZBgBIAEoCBIgChhlbmFibGVkX3NvY2lhbF9wcm92aWRlcnMYAiADKAkSHgoWc2lnbnVwX3JlcXVpcmVfY29uZmlybRgDIAEoCBIZChFzb2NpYWxfbG9naW5fb25seRgEIAEoCCJWChlTaWduSW5XaXRoUGFzc3dvcmRSZXF1ZXN0EhIKCmlkZW50aWZpZXIYASABKAkSEAoIcGFzc3dvcmQYAiABKAkSEwoLcmVtZW1iZXJfbWUYAyABKAgigAEKG1JlZ2lzdGVyV2l0aFBhc3N3b3JkUmVxdWVzdBIQCghsb2dpbl9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEhUKDWVtYWlsX2FkZHJlc3MYAyABKAkSEAoIcGFzc3dvcmQYBCABKAkSGAoQcmV0eXBlZF9wYXNzd29yZBgFIAEoCSIQCg5TaWduT3V0UmVxdWVzdCIVChNMaXN0UHJvamVjdHNSZXF1ZXN0ImQKD1Byb2plY3RMaXN0SXRlbRISCgpvd25lcl9uYW1lGAEgASgJEhQKDHByb2plY3RfbmFtZRgCIAEoCRIQCghvdmVydmlldxgDIAEoCRIVCg1wcm9qZWN0X3Njb3BlGAQgASgJIkUKFExpc3RQcm9qZWN0c1Jlc3BvbnNlEi0KBWl0ZW1zGAEgAygLMh4ueW9uYS5waWxvdC52MS5Qcm9qZWN0TGlzdEl0ZW0iGgoYTGlzdE9yZ2FuaXphdGlvbnNSZXF1ZXN0IkYKFE9yZ2FuaXphdGlvbkxpc3RJdGVtEhkKEW9yZ2FuaXphdGlvbl9uYW1lGAEgASgJEhMKC2Rlc2NyaXB0aW9uGAIgASgJIk8KGUxpc3RPcmdhbml6YXRpb25zUmVzcG9uc2USMgoFaXRlbXMYASADKAsyIy55b25hLnBpbG90LnYxLk9yZ2FuaXphdGlvbkxpc3RJdGVtIh4KHFJlYWRXb3Jrc3BhY2VPdmVydmlld1JlcXVlc3QiVQofV29ya3NwYWNlTm90aWZpY2F0aW9uUHJlZmVyZW5jZRISCgpldmVudF90eXBlGAEgASgJEg0KBWxhYmVsGAIgASgJEg8KB2VuYWJsZWQYAyABKAgiogEKG1dhdGNoZWRQcm9qZWN0Tm90aWZpY2F0aW9ucxISCgpwcm9qZWN0X2lkGAEgASgJEhIKCm93bmVyX25hbWUYAiABKAkSFAoMcHJvamVjdF9uYW1lGAMgASgJEkUKDW5vdGlmaWNhdGlvbnMYBCADKAsyLi55b25hLnBpbG90LnYxLldvcmtzcGFjZU5vdGlmaWNhdGlvblByZWZlcmVuY2UiQgoOV29ya3NwYWNlRW1haWwSCgoCaWQYASABKAkSFQoNZW1haWxfYWRkcmVzcxgCIAEoCRINCgV2YWxpZBgDIAEoCCL1AgodUmVhZFdvcmtzcGFjZU92ZXJ2aWV3UmVzcG9uc2USOgoHc2Vzc2lvbhgBIAEoCzIpLnlvbmEucGlsb3QudjEuUmVhZEN1cnJlbnRTZXNzaW9uUmVzcG9uc2USHAoUZGVmYXVsdF9sYW5kaW5nX3BhdGgYAiABKAkSOQoRZmF2b3JpdGVfcHJvamVjdHMYAyADKAsyHi55b25hLnBpbG90LnYxLlByb2plY3RMaXN0SXRlbRI3Cg9yZWNlbnRfcHJvamVjdHMYBCADKAsyHi55b25hLnBpbG90LnYxLlByb2plY3RMaXN0SXRlbRJEChB3YXRjaGVkX3Byb2plY3RzGAUgAygLMioueW9uYS5waWxvdC52MS5XYXRjaGVkUHJvamVjdE5vdGlmaWNhdGlvbnMSLQoGZW1haWxzGAYgAygLMh0ueW9uYS5waWxvdC52MS5Xb3Jrc3BhY2VFbWFpbBIRCglhcGlfdG9rZW4YByABKAkiLAocU2V0RGVmYXVsdExhbmRpbmdQYXRoUmVxdWVzdBIMCgRwYXRoGAEgASgJIjMKFFVwZGF0ZVByb2ZpbGVSZXF1ZXN0EgwKBG5hbWUYASABKAkSDQoFZW1haWwYAiABKAkiawoVQ2hhbmdlUGFzc3dvcmRSZXF1ZXN0EhAKCGxvZ2luX2lkGAEgASgJEhQKDG9sZF9wYXNzd29yZBgCIAEoCRIQCghwYXNzd29yZBgDIAEoCRIYChByZXR5cGVkX3Bhc3N3b3JkGAQgASgJIh0KG1Jlc2V0VmlzaXRlZFByb2plY3RzUmVxdWVzdCIpChhBZGRXb3Jrc3BhY2VFbWFpbFJlcXVlc3QSDQoFZW1haWwYASABKAkiKQobRGVsZXRlV29ya3NwYWNlRW1haWxSZXF1ZXN0EgoKAmlkGAEgASgJIjEKI1NlbmRXb3Jrc3BhY2VFbWFpbFZhbGlkYXRpb25SZXF1ZXN0EgoKAmlkGAEgASgJIioKHFNldE1haW5Xb3Jrc3BhY2VFbWFpbFJlcXVlc3QSCgoCaWQYASABKAkiFgoUUmVzZXRBcGlUb2tlblJlcXVlc3QiTAoiVG9nZ2xlV29ya3NwYWNlTm90aWZpY2F0aW9uUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEhIKCmV2ZW50X3R5cGUYAiABKAkiSwoZQ3JlYXRlT3JnYW5pemF0aW9uUmVxdWVzdBIZChFvcmdhbml6YXRpb25fbmFtZRgBIAEoCRITCgtkZXNjcmlwdGlvbhgCIAEoCSI6Ch1SZWFkT3JnYW5pemF0aW9uRGV0YWlsUmVxdWVzdBIZChFvcmdhbml6YXRpb25fbmFtZRgBIAEoCSI8Ch9SZWFkT3JnYW5pemF0aW9uU2V0dGluZ3NSZXF1ZXN0EhkKEW9yZ2FuaXphdGlvbl9uYW1lGAEgASgJIjsKHlJlYWRPcmdhbml6YXRpb25NZW1iZXJzUmVxdWVzdBIZChFvcmdhbml6YXRpb25fbmFtZRgBIAEoCSJuChlVcGRhdGVPcmdhbml6YXRpb25SZXF1ZXN0EiEKGWN1cnJlbnRfb3JnYW5pemF0aW9uX25hbWUYASABKAkSGQoRb3JnYW5pemF0aW9uX25hbWUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkiXwoST3JnYW5pemF0aW9uRGV0YWlsEhkKEW9yZ2FuaXphdGlvbl9uYW1lGAEgASgJEhMKC2Rlc2NyaXB0aW9uGAIgASgJEhkKEXZpZXdlcl9jYW5fdXBkYXRlGAMgASgIIkgKEk9yZ2FuaXphdGlvbk1lbWJlchIQCghsb2dpbl9pZBgBIAEoCRISCgp1c2VyX2xhYmVsGAIgASgJEgwKBHJvbGUYAyABKAkiRQodT3JnYW5pemF0aW9uRW5yb2xsbWVudFJlcXVlc3QSEAoIbG9naW5faWQYASABKAkSEgoKdXNlcl9sYWJlbBgCIAEoCSKgAQofUmVhZE9yZ2FuaXphdGlvbk1lbWJlcnNSZXNwb25zZRIyCgdtZW1iZXJzGAEgAygLMiEueW9uYS5waWxvdC52MS5Pcmdhbml6YXRpb25NZW1iZXISSQoTZW5yb2xsbWVudF9yZXF1ZXN0cxgCIAMoCzIsLnlvbmEucGlsb3QudjEuT3JnYW5pemF0aW9uRW5yb2xsbWVudFJlcXVlc3QiaQoUQ3JlYXRlUHJvamVjdFJlcXVlc3QSEgoKb3duZXJfbmFtZRgBIAEoCRIUCgxwcm9qZWN0X25hbWUYAiABKAkSEAoIb3ZlcnZpZXcYAyABKAkSFQoNcHJvamVjdF9zY29wZRgEIAEoCSJEChhSZWFkUHJvamVjdERldGFpbFJlcXVlc3QSEgoKb3duZXJfbmFtZRgBIAEoCRIUCgxwcm9qZWN0X25hbWUYAiABKAkiRgoaUmVhZFByb2plY3RTZXR0aW5nc1JlcXVlc3QSEgoKb3duZXJfbmFtZRgBIAEoCRIUCgxwcm9qZWN0X25hbWUYAiABKAkiRQoZUmVhZFByb2plY3RNZW1iZXJzUmVxdWVzdBISCgpvd25lcl9uYW1lGAEgASgJEhQKDHByb2plY3RfbmFtZRgCIAEoCSKjAQoUVXBkYXRlUHJvamVjdFJlcXVlc3QSGgoSY3VycmVudF9vd25lcl9uYW1lGAEgASgJEhwKFGN1cnJlbnRfcHJvamVjdF9uYW1lGAIgASgJEhIKCm93bmVyX25hbWUYAyABKAkSFAoMcHJvamVjdF9uYW1lGAQgASgJEhAKCG92ZXJ2aWV3GAUgASgJEhUKDXByb2plY3Rfc2NvcGUYBiABKAki5wEKDVByb2plY3REZXRhaWwSEgoKb3duZXJfbmFtZRgBIAEoCRIUCgxwcm9qZWN0X25hbWUYAiABKAkSGQoRb3JnYW5pemF0aW9uX25hbWUYAyABKAkSEAoIb3ZlcnZpZXcYBCABKAkSFQoNcHJvamVjdF9zY29wZRgFIAEoCRIZChF2aWV3ZXJfY2FuX3VwZGF0ZRgGIAEoCBIZChF2aWV3ZXJfY2FuX2Vucm9sbBgHIAEoCBIcChRlbnJvbGxtZW50X3JlcXVlc3RlZBgIIAEoCBIUCgxpc19mYXZvcml0ZWQYCSABKAgiQwoNUHJvamVjdE1lbWJlchIQCghsb2dpbl9pZBgBIAEoCRISCgp1c2VyX2xhYmVsGAIgASgJEgwKBHJvbGUYAyABKAkiQAoYUHJvamVjdEVucm9sbG1lbnRSZXF1ZXN0EhAKCGxvZ2luX2lkGAEgASgJEhIKCnVzZXJfbGFiZWwYAiABKAkikQEKGlJlYWRQcm9qZWN0TWVtYmVyc1Jlc3BvbnNlEi0KB21lbWJlcnMYASADKAsyHC55b25hLnBpbG90LnYxLlByb2plY3RNZW1iZXISRAoTZW5yb2xsbWVudF9yZXF1ZXN0cxgCIAMoCzInLnlvbmEucGlsb3QudjEuUHJvamVjdEVucm9sbG1lbnRSZXF1ZXN0IkAKFEVucm9sbFByb2plY3RSZXF1ZXN0EhIKCm93bmVyX25hbWUYASABKAkSFAoMcHJvamVjdF9uYW1lGAIgASgJIkYKGkNhbmNlbEVucm9sbFByb2plY3RSZXF1ZXN0EhIKCm93bmVyX25hbWUYASABKAkSFAoMcHJvamVjdF9uYW1lGAIgASgJIiYKGEVucm9sbG1lbnRNdXRhdGlvblJlc3VsdBIKCgJvaxgBIAEoCCJIChxUb2dnbGVGYXZvcml0ZVByb2plY3RSZXF1ZXN0EhIKCm93bmVyX25hbWUYASABKAkSFAoMcHJvamVjdF9uYW1lGAIgASgJIlwKHVRvZ2dsZUZhdm9yaXRlUHJvamVjdFJlc3BvbnNlEhIKCm93bmVyX25hbWUYASABKAkSFAoMcHJvamVjdF9uYW1lGAIgASgJEhEKCWZhdm9yaXRlZBgDIAEoCCJLCh9SZWNvcmRSZWNlbnRQcm9qZWN0VmlzaXRSZXF1ZXN0EhIKCm93bmVyX25hbWUYASABKAkSFAoMcHJvamVjdF9uYW1lGAIgASgJIkwKIFJlY29yZFJlY2VudFByb2plY3RWaXNpdFJlc3BvbnNlEhIKCm93bmVyX25hbWUYASABKAkSFAoMcHJvamVjdF9uYW1lGAIgASgJIlgKFlJlYWRJc3N1ZURldGFpbFJlcXVlc3QSEgoKb3duZXJfbmFtZRgBIAEoCRIUCgxwcm9qZWN0X25hbWUYAiABKAkSFAoMaXNzdWVfbnVtYmVyGAMgASgDImgKF1VwZGF0ZUlzc3VlU3RhdGVSZXF1ZXN0EhIKCm93bmVyX25hbWUYASABKAkSFAoMcHJvamVjdF9uYW1lGAIgASgJEhQKDGlzc3VlX251bWJlchgDIAEoAxINCgVzdGF0ZRgEIAEoCSJ3ChdSZWFkSXNzdWVEZXRhaWxSZXNwb25zZRISCgpvd25lcl9uYW1lGAEgASgJEhQKDHByb2plY3RfbmFtZRgCIAEoCRIUCgxpc3N1ZV9udW1iZXIYAyABKAMSDQoFdGl0bGUYBCABKAkSDQoFc3RhdGUYBSABKAky6RwKDFBpbG90U2VydmljZRJrChJSZWFkQ3VycmVudFNlc3Npb24SKC55b25hLnBpbG90LnYxLlJlYWRDdXJyZW50U2Vzc2lvblJlcXVlc3QaKS55b25hLnBpbG90LnYxLlJlYWRDdXJyZW50U2Vzc2lvblJlc3BvbnNlIgASdwoWUmVhZEF1dGhVaUNhcGFiaWxpdGllcxIsLnlvbmEucGlsb3QudjEuUmVhZEF1dGhVaUNhcGFiaWxpdGllc1JlcXVlc3QaLS55b25hLnBpbG90LnYxLlJlYWRBdXRoVWlDYXBhYmlsaXRpZXNSZXNwb25zZSIAEmsKElNpZ25JbldpdGhQYXNzd29yZBIoLnlvbmEucGlsb3QudjEuU2lnbkluV2l0aFBhc3N3b3JkUmVxdWVzdBopLnlvbmEucGlsb3QudjEuUmVhZEN1cnJlbnRTZXNzaW9uUmVzcG9uc2UiABJvChRSZWdpc3RlcldpdGhQYXNzd29yZBIqLnlvbmEucGlsb3QudjEuUmVnaXN0ZXJXaXRoUGFzc3dvcmRSZXF1ZXN0GikueW9uYS5waWxvdC52MS5SZWFkQ3VycmVudFNlc3Npb25SZXNwb25zZSIAElUKB1NpZ25PdXQSHS55b25hLnBpbG90LnYxLlNpZ25PdXRSZXF1ZXN0GikueW9uYS5waWxvdC52MS5SZWFkQ3VycmVudFNlc3Npb25SZXNwb25zZSIAEnQKFVJlYWRXb3Jrc3BhY2VPdmVydmlldxIrLnlvbmEucGlsb3QudjEuUmVhZFdvcmtzcGFjZU92ZXJ2aWV3UmVxdWVzdBosLnlvbmEucGlsb3QudjEuUmVhZFdvcmtzcGFjZU92ZXJ2aWV3UmVzcG9uc2UiABJ0ChVTZXREZWZhdWx0TGFuZGluZ1BhdGgSKy55b25hLnBpbG90LnYxLlNldERlZmF1bHRMYW5kaW5nUGF0aFJlcXVlc3QaLC55b25hLnBpbG90LnYxLlJlYWRXb3Jrc3BhY2VPdmVydmlld1Jlc3BvbnNlIgASZAoNVXBkYXRlUHJvZmlsZRIjLnlvbmEucGlsb3QudjEuVXBkYXRlUHJvZmlsZVJlcXVlc3QaLC55b25hLnBpbG90LnYxLlJlYWRXb3Jrc3BhY2VPdmVydmlld1Jlc3BvbnNlIgASYwoOQ2hhbmdlUGFzc3dvcmQSJC55b25hLnBpbG90LnYxLkNoYW5nZVBhc3N3b3JkUmVxdWVzdBopLnlvbmEucGlsb3QudjEuUmVhZEN1cnJlbnRTZXNzaW9uUmVzcG9uc2UiABJyChRSZXNldFZpc2l0ZWRQcm9qZWN0cxIqLnlvbmEucGlsb3QudjEuUmVzZXRWaXNpdGVkUHJvamVjdHNSZXF1ZXN0GiwueW9uYS5waWxvdC52MS5SZWFkV29ya3NwYWNlT3ZlcnZpZXdSZXNwb25zZSIAEmwKEUFkZFdvcmtzcGFjZUVtYWlsEicueW9uYS5waWxvdC52MS5BZGRXb3Jrc3BhY2VFbWFpbFJlcXVlc3QaLC55b25hLnBpbG90LnYxLlJlYWRXb3Jrc3BhY2VPdmVydmlld1Jlc3BvbnNlIgAScgoURGVsZXRlV29ya3NwYWNlRW1haWwSKi55b25hLnBpbG90LnYxLkRlbGV0ZVdvcmtzcGFjZUVtYWlsUmVxdWVzdBosLnlvbmEucGlsb3QudjEuUmVhZFdvcmtzcGFjZU92ZXJ2aWV3UmVzcG9uc2UiABKCAQocU2VuZFdvcmtzcGFjZUVtYWlsVmFsaWRhdGlvbhIyLnlvbmEucGlsb3QudjEuU2VuZFdvcmtzcGFjZUVtYWlsVmFsaWRhdGlvblJlcXVlc3QaLC55b25hLnBpbG90LnYxLlJlYWRXb3Jrc3BhY2VPdmVydmlld1Jlc3BvbnNlIgASdAoVU2V0TWFpbldvcmtzcGFjZUVtYWlsEisueW9uYS5waWxvdC52MS5TZXRNYWluV29ya3NwYWNlRW1haWxSZXF1ZXN0GiwueW9uYS5waWxvdC52MS5SZWFkV29ya3NwYWNlT3ZlcnZpZXdSZXNwb25zZSIAEmQKDVJlc2V0QXBpVG9rZW4SIy55b25hLnBpbG90LnYxLlJlc2V0QXBpVG9rZW5SZXF1ZXN0GiwueW9uYS5waWxvdC52MS5SZWFkV29ya3NwYWNlT3ZlcnZpZXdSZXNwb25zZSIAEoABChtUb2dnbGVXb3Jrc3BhY2VOb3RpZmljYXRpb24SMS55b25hLnBpbG90LnYxLlRvZ2dsZVdvcmtzcGFjZU5vdGlmaWNhdGlvblJlcXVlc3QaLC55b25hLnBpbG90LnYxLlJlYWRXb3Jrc3BhY2VPdmVydmlld1Jlc3BvbnNlIgASYwoSQ3JlYXRlT3JnYW5pemF0aW9uEigueW9uYS5waWxvdC52MS5DcmVhdGVPcmdhbml6YXRpb25SZXF1ZXN0GiEueW9uYS5waWxvdC52MS5Pcmdhbml6YXRpb25EZXRhaWwiABJrChZSZWFkT3JnYW5pemF0aW9uRGV0YWlsEiwueW9uYS5waWxvdC52MS5SZWFkT3JnYW5pemF0aW9uRGV0YWlsUmVxdWVzdBohLnlvbmEucGlsb3QudjEuT3JnYW5pemF0aW9uRGV0YWlsIgASbwoYUmVhZE9yZ2FuaXphdGlvblNldHRpbmdzEi4ueW9uYS5waWxvdC52MS5SZWFkT3JnYW5pemF0aW9uU2V0dGluZ3NSZXF1ZXN0GiEueW9uYS5waWxvdC52MS5Pcmdhbml6YXRpb25EZXRhaWwiABJ6ChdSZWFkT3JnYW5pemF0aW9uTWVtYmVycxItLnlvbmEucGlsb3QudjEuUmVhZE9yZ2FuaXphdGlvbk1lbWJlcnNSZXF1ZXN0Gi4ueW9uYS5waWxvdC52MS5SZWFkT3JnYW5pemF0aW9uTWVtYmVyc1Jlc3BvbnNlIgASYwoSVXBkYXRlT3JnYW5pemF0aW9uEigueW9uYS5waWxvdC52MS5VcGRhdGVPcmdhbml6YXRpb25SZXF1ZXN0GiEueW9uYS5waWxvdC52MS5Pcmdhbml6YXRpb25EZXRhaWwiABJUCg1DcmVhdGVQcm9qZWN0EiMueW9uYS5waWxvdC52MS5DcmVhdGVQcm9qZWN0UmVxdWVzdBocLnlvbmEucGlsb3QudjEuUHJvamVjdERldGFpbCIAElwKEVJlYWRQcm9qZWN0RGV0YWlsEicueW9uYS5waWxvdC52MS5SZWFkUHJvamVjdERldGFpbFJlcXVlc3QaHC55b25hLnBpbG90LnYxLlByb2plY3REZXRhaWwiABJgChNSZWFkUHJvamVjdFNldHRpbmdzEikueW9uYS5waWxvdC52MS5SZWFkUHJvamVjdFNldHRpbmdzUmVxdWVzdBocLnlvbmEucGlsb3QudjEuUHJvamVjdERldGFpbCIAEmsKElJlYWRQcm9qZWN0TWVtYmVycxIoLnlvbmEucGlsb3QudjEuUmVhZFByb2plY3RNZW1iZXJzUmVxdWVzdBopLnlvbmEucGlsb3QudjEuUmVhZFByb2plY3RNZW1iZXJzUmVzcG9uc2UiABJUCg1VcGRhdGVQcm9qZWN0EiMueW9uYS5waWxvdC52MS5VcGRhdGVQcm9qZWN0UmVxdWVzdBocLnlvbmEucGlsb3QudjEuUHJvamVjdERldGFpbCIAEl8KDUVucm9sbFByb2plY3QSIy55b25hLnBpbG90LnYxLkVucm9sbFByb2plY3RSZXF1ZXN0GicueW9uYS5waWxvdC52MS5FbnJvbGxtZW50TXV0YXRpb25SZXN1bHQiABJrChNDYW5jZWxFbnJvbGxQcm9qZWN0EikueW9uYS5waWxvdC52MS5DYW5jZWxFbnJvbGxQcm9qZWN0UmVxdWVzdBonLnlvbmEucGlsb3QudjEuRW5yb2xsbWVudE11dGF0aW9uUmVzdWx0IgASdAoVVG9nZ2xlRmF2b3JpdGVQcm9qZWN0EisueW9uYS5waWxvdC52MS5Ub2dnbGVGYXZvcml0ZVByb2plY3RSZXF1ZXN0GiwueW9uYS5waWxvdC52MS5Ub2dnbGVGYXZvcml0ZVByb2plY3RSZXNwb25zZSIAEn0KGFJlY29yZFJlY2VudFByb2plY3RWaXNpdBIuLnlvbmEucGlsb3QudjEuUmVjb3JkUmVjZW50UHJvamVjdFZpc2l0UmVxdWVzdBovLnlvbmEucGlsb3QudjEuUmVjb3JkUmVjZW50UHJvamVjdFZpc2l0UmVzcG9uc2UiABJZCgxMaXN0UHJvamVjdHMSIi55b25hLnBpbG90LnYxLkxpc3RQcm9qZWN0c1JlcXVlc3QaIy55b25hLnBpbG90LnYxLkxpc3RQcm9qZWN0c1Jlc3BvbnNlIgASaAoRTGlzdE9yZ2FuaXphdGlvbnMSJy55b25hLnBpbG90LnYxLkxpc3RPcmdhbml6YXRpb25zUmVxdWVzdBooLnlvbmEucGlsb3QudjEuTGlzdE9yZ2FuaXphdGlvbnNSZXNwb25zZSIAEmIKD1JlYWRJc3N1ZURldGFpbBIlLnlvbmEucGlsb3QudjEuUmVhZElzc3VlRGV0YWlsUmVxdWVzdBomLnlvbmEucGlsb3QudjEuUmVhZElzc3VlRGV0YWlsUmVzcG9uc2UiABJkChBVcGRhdGVJc3N1ZVN0YXRlEiYueW9uYS5waWxvdC52MS5VcGRhdGVJc3N1ZVN0YXRlUmVxdWVzdBomLnlvbmEucGlsb3QudjEuUmVhZElzc3VlRGV0YWlsUmVzcG9uc2UiAEI0WjJ5b25hLmxvY2FsL3lvbmEvaW50ZXJuYWwvZ2VuL3lvbmEvcGlsb3QvdjE7cGlsb3R2MWIGcHJvdG8z");
 
 /**
  * @generated from message yona.pilot.v1.ReadCurrentSessionRequest
@@ -477,6 +477,176 @@ export const SetDefaultLandingPathRequestSchema: GenMessage<SetDefaultLandingPat
   messageDesc(file_yona_pilot_v1_pilot, 18);
 
 /**
+ * @generated from message yona.pilot.v1.UpdateProfileRequest
+ */
+export type UpdateProfileRequest = Message<"yona.pilot.v1.UpdateProfileRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string email = 2;
+   */
+  email: string;
+};
+
+/**
+ * Describes the message yona.pilot.v1.UpdateProfileRequest.
+ * Use `create(UpdateProfileRequestSchema)` to create a new message.
+ */
+export const UpdateProfileRequestSchema: GenMessage<UpdateProfileRequest> = /*@__PURE__*/
+  messageDesc(file_yona_pilot_v1_pilot, 19);
+
+/**
+ * @generated from message yona.pilot.v1.ChangePasswordRequest
+ */
+export type ChangePasswordRequest = Message<"yona.pilot.v1.ChangePasswordRequest"> & {
+  /**
+   * @generated from field: string login_id = 1;
+   */
+  loginId: string;
+
+  /**
+   * @generated from field: string old_password = 2;
+   */
+  oldPassword: string;
+
+  /**
+   * @generated from field: string password = 3;
+   */
+  password: string;
+
+  /**
+   * @generated from field: string retyped_password = 4;
+   */
+  retypedPassword: string;
+};
+
+/**
+ * Describes the message yona.pilot.v1.ChangePasswordRequest.
+ * Use `create(ChangePasswordRequestSchema)` to create a new message.
+ */
+export const ChangePasswordRequestSchema: GenMessage<ChangePasswordRequest> = /*@__PURE__*/
+  messageDesc(file_yona_pilot_v1_pilot, 20);
+
+/**
+ * @generated from message yona.pilot.v1.ResetVisitedProjectsRequest
+ */
+export type ResetVisitedProjectsRequest = Message<"yona.pilot.v1.ResetVisitedProjectsRequest"> & {
+};
+
+/**
+ * Describes the message yona.pilot.v1.ResetVisitedProjectsRequest.
+ * Use `create(ResetVisitedProjectsRequestSchema)` to create a new message.
+ */
+export const ResetVisitedProjectsRequestSchema: GenMessage<ResetVisitedProjectsRequest> = /*@__PURE__*/
+  messageDesc(file_yona_pilot_v1_pilot, 21);
+
+/**
+ * @generated from message yona.pilot.v1.AddWorkspaceEmailRequest
+ */
+export type AddWorkspaceEmailRequest = Message<"yona.pilot.v1.AddWorkspaceEmailRequest"> & {
+  /**
+   * @generated from field: string email = 1;
+   */
+  email: string;
+};
+
+/**
+ * Describes the message yona.pilot.v1.AddWorkspaceEmailRequest.
+ * Use `create(AddWorkspaceEmailRequestSchema)` to create a new message.
+ */
+export const AddWorkspaceEmailRequestSchema: GenMessage<AddWorkspaceEmailRequest> = /*@__PURE__*/
+  messageDesc(file_yona_pilot_v1_pilot, 22);
+
+/**
+ * @generated from message yona.pilot.v1.DeleteWorkspaceEmailRequest
+ */
+export type DeleteWorkspaceEmailRequest = Message<"yona.pilot.v1.DeleteWorkspaceEmailRequest"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message yona.pilot.v1.DeleteWorkspaceEmailRequest.
+ * Use `create(DeleteWorkspaceEmailRequestSchema)` to create a new message.
+ */
+export const DeleteWorkspaceEmailRequestSchema: GenMessage<DeleteWorkspaceEmailRequest> = /*@__PURE__*/
+  messageDesc(file_yona_pilot_v1_pilot, 23);
+
+/**
+ * @generated from message yona.pilot.v1.SendWorkspaceEmailValidationRequest
+ */
+export type SendWorkspaceEmailValidationRequest = Message<"yona.pilot.v1.SendWorkspaceEmailValidationRequest"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message yona.pilot.v1.SendWorkspaceEmailValidationRequest.
+ * Use `create(SendWorkspaceEmailValidationRequestSchema)` to create a new message.
+ */
+export const SendWorkspaceEmailValidationRequestSchema: GenMessage<SendWorkspaceEmailValidationRequest> = /*@__PURE__*/
+  messageDesc(file_yona_pilot_v1_pilot, 24);
+
+/**
+ * @generated from message yona.pilot.v1.SetMainWorkspaceEmailRequest
+ */
+export type SetMainWorkspaceEmailRequest = Message<"yona.pilot.v1.SetMainWorkspaceEmailRequest"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message yona.pilot.v1.SetMainWorkspaceEmailRequest.
+ * Use `create(SetMainWorkspaceEmailRequestSchema)` to create a new message.
+ */
+export const SetMainWorkspaceEmailRequestSchema: GenMessage<SetMainWorkspaceEmailRequest> = /*@__PURE__*/
+  messageDesc(file_yona_pilot_v1_pilot, 25);
+
+/**
+ * @generated from message yona.pilot.v1.ResetApiTokenRequest
+ */
+export type ResetApiTokenRequest = Message<"yona.pilot.v1.ResetApiTokenRequest"> & {
+};
+
+/**
+ * Describes the message yona.pilot.v1.ResetApiTokenRequest.
+ * Use `create(ResetApiTokenRequestSchema)` to create a new message.
+ */
+export const ResetApiTokenRequestSchema: GenMessage<ResetApiTokenRequest> = /*@__PURE__*/
+  messageDesc(file_yona_pilot_v1_pilot, 26);
+
+/**
+ * @generated from message yona.pilot.v1.ToggleWorkspaceNotificationRequest
+ */
+export type ToggleWorkspaceNotificationRequest = Message<"yona.pilot.v1.ToggleWorkspaceNotificationRequest"> & {
+  /**
+   * @generated from field: string project_id = 1;
+   */
+  projectId: string;
+
+  /**
+   * @generated from field: string event_type = 2;
+   */
+  eventType: string;
+};
+
+/**
+ * Describes the message yona.pilot.v1.ToggleWorkspaceNotificationRequest.
+ * Use `create(ToggleWorkspaceNotificationRequestSchema)` to create a new message.
+ */
+export const ToggleWorkspaceNotificationRequestSchema: GenMessage<ToggleWorkspaceNotificationRequest> = /*@__PURE__*/
+  messageDesc(file_yona_pilot_v1_pilot, 27);
+
+/**
  * @generated from message yona.pilot.v1.CreateOrganizationRequest
  */
 export type CreateOrganizationRequest = Message<"yona.pilot.v1.CreateOrganizationRequest"> & {
@@ -496,7 +666,7 @@ export type CreateOrganizationRequest = Message<"yona.pilot.v1.CreateOrganizatio
  * Use `create(CreateOrganizationRequestSchema)` to create a new message.
  */
 export const CreateOrganizationRequestSchema: GenMessage<CreateOrganizationRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 19);
+  messageDesc(file_yona_pilot_v1_pilot, 28);
 
 /**
  * @generated from message yona.pilot.v1.ReadOrganizationDetailRequest
@@ -513,7 +683,7 @@ export type ReadOrganizationDetailRequest = Message<"yona.pilot.v1.ReadOrganizat
  * Use `create(ReadOrganizationDetailRequestSchema)` to create a new message.
  */
 export const ReadOrganizationDetailRequestSchema: GenMessage<ReadOrganizationDetailRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 20);
+  messageDesc(file_yona_pilot_v1_pilot, 29);
 
 /**
  * @generated from message yona.pilot.v1.ReadOrganizationSettingsRequest
@@ -530,7 +700,7 @@ export type ReadOrganizationSettingsRequest = Message<"yona.pilot.v1.ReadOrganiz
  * Use `create(ReadOrganizationSettingsRequestSchema)` to create a new message.
  */
 export const ReadOrganizationSettingsRequestSchema: GenMessage<ReadOrganizationSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 21);
+  messageDesc(file_yona_pilot_v1_pilot, 30);
 
 /**
  * @generated from message yona.pilot.v1.ReadOrganizationMembersRequest
@@ -547,7 +717,7 @@ export type ReadOrganizationMembersRequest = Message<"yona.pilot.v1.ReadOrganiza
  * Use `create(ReadOrganizationMembersRequestSchema)` to create a new message.
  */
 export const ReadOrganizationMembersRequestSchema: GenMessage<ReadOrganizationMembersRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 22);
+  messageDesc(file_yona_pilot_v1_pilot, 31);
 
 /**
  * @generated from message yona.pilot.v1.UpdateOrganizationRequest
@@ -574,7 +744,7 @@ export type UpdateOrganizationRequest = Message<"yona.pilot.v1.UpdateOrganizatio
  * Use `create(UpdateOrganizationRequestSchema)` to create a new message.
  */
 export const UpdateOrganizationRequestSchema: GenMessage<UpdateOrganizationRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 23);
+  messageDesc(file_yona_pilot_v1_pilot, 32);
 
 /**
  * @generated from message yona.pilot.v1.OrganizationDetail
@@ -601,7 +771,7 @@ export type OrganizationDetail = Message<"yona.pilot.v1.OrganizationDetail"> & {
  * Use `create(OrganizationDetailSchema)` to create a new message.
  */
 export const OrganizationDetailSchema: GenMessage<OrganizationDetail> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 24);
+  messageDesc(file_yona_pilot_v1_pilot, 33);
 
 /**
  * @generated from message yona.pilot.v1.OrganizationMember
@@ -628,7 +798,7 @@ export type OrganizationMember = Message<"yona.pilot.v1.OrganizationMember"> & {
  * Use `create(OrganizationMemberSchema)` to create a new message.
  */
 export const OrganizationMemberSchema: GenMessage<OrganizationMember> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 25);
+  messageDesc(file_yona_pilot_v1_pilot, 34);
 
 /**
  * @generated from message yona.pilot.v1.OrganizationEnrollmentRequest
@@ -650,7 +820,7 @@ export type OrganizationEnrollmentRequest = Message<"yona.pilot.v1.OrganizationE
  * Use `create(OrganizationEnrollmentRequestSchema)` to create a new message.
  */
 export const OrganizationEnrollmentRequestSchema: GenMessage<OrganizationEnrollmentRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 26);
+  messageDesc(file_yona_pilot_v1_pilot, 35);
 
 /**
  * @generated from message yona.pilot.v1.ReadOrganizationMembersResponse
@@ -672,7 +842,7 @@ export type ReadOrganizationMembersResponse = Message<"yona.pilot.v1.ReadOrganiz
  * Use `create(ReadOrganizationMembersResponseSchema)` to create a new message.
  */
 export const ReadOrganizationMembersResponseSchema: GenMessage<ReadOrganizationMembersResponse> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 27);
+  messageDesc(file_yona_pilot_v1_pilot, 36);
 
 /**
  * @generated from message yona.pilot.v1.CreateProjectRequest
@@ -704,7 +874,7 @@ export type CreateProjectRequest = Message<"yona.pilot.v1.CreateProjectRequest">
  * Use `create(CreateProjectRequestSchema)` to create a new message.
  */
 export const CreateProjectRequestSchema: GenMessage<CreateProjectRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 28);
+  messageDesc(file_yona_pilot_v1_pilot, 37);
 
 /**
  * @generated from message yona.pilot.v1.ReadProjectDetailRequest
@@ -726,7 +896,7 @@ export type ReadProjectDetailRequest = Message<"yona.pilot.v1.ReadProjectDetailR
  * Use `create(ReadProjectDetailRequestSchema)` to create a new message.
  */
 export const ReadProjectDetailRequestSchema: GenMessage<ReadProjectDetailRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 29);
+  messageDesc(file_yona_pilot_v1_pilot, 38);
 
 /**
  * @generated from message yona.pilot.v1.ReadProjectSettingsRequest
@@ -748,7 +918,7 @@ export type ReadProjectSettingsRequest = Message<"yona.pilot.v1.ReadProjectSetti
  * Use `create(ReadProjectSettingsRequestSchema)` to create a new message.
  */
 export const ReadProjectSettingsRequestSchema: GenMessage<ReadProjectSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 30);
+  messageDesc(file_yona_pilot_v1_pilot, 39);
 
 /**
  * @generated from message yona.pilot.v1.ReadProjectMembersRequest
@@ -770,7 +940,7 @@ export type ReadProjectMembersRequest = Message<"yona.pilot.v1.ReadProjectMember
  * Use `create(ReadProjectMembersRequestSchema)` to create a new message.
  */
 export const ReadProjectMembersRequestSchema: GenMessage<ReadProjectMembersRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 31);
+  messageDesc(file_yona_pilot_v1_pilot, 40);
 
 /**
  * @generated from message yona.pilot.v1.UpdateProjectRequest
@@ -812,7 +982,7 @@ export type UpdateProjectRequest = Message<"yona.pilot.v1.UpdateProjectRequest">
  * Use `create(UpdateProjectRequestSchema)` to create a new message.
  */
 export const UpdateProjectRequestSchema: GenMessage<UpdateProjectRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 32);
+  messageDesc(file_yona_pilot_v1_pilot, 41);
 
 /**
  * @generated from message yona.pilot.v1.ProjectDetail
@@ -869,7 +1039,7 @@ export type ProjectDetail = Message<"yona.pilot.v1.ProjectDetail"> & {
  * Use `create(ProjectDetailSchema)` to create a new message.
  */
 export const ProjectDetailSchema: GenMessage<ProjectDetail> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 33);
+  messageDesc(file_yona_pilot_v1_pilot, 42);
 
 /**
  * @generated from message yona.pilot.v1.ProjectMember
@@ -896,7 +1066,7 @@ export type ProjectMember = Message<"yona.pilot.v1.ProjectMember"> & {
  * Use `create(ProjectMemberSchema)` to create a new message.
  */
 export const ProjectMemberSchema: GenMessage<ProjectMember> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 34);
+  messageDesc(file_yona_pilot_v1_pilot, 43);
 
 /**
  * @generated from message yona.pilot.v1.ProjectEnrollmentRequest
@@ -918,7 +1088,7 @@ export type ProjectEnrollmentRequest = Message<"yona.pilot.v1.ProjectEnrollmentR
  * Use `create(ProjectEnrollmentRequestSchema)` to create a new message.
  */
 export const ProjectEnrollmentRequestSchema: GenMessage<ProjectEnrollmentRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 35);
+  messageDesc(file_yona_pilot_v1_pilot, 44);
 
 /**
  * @generated from message yona.pilot.v1.ReadProjectMembersResponse
@@ -940,7 +1110,7 @@ export type ReadProjectMembersResponse = Message<"yona.pilot.v1.ReadProjectMembe
  * Use `create(ReadProjectMembersResponseSchema)` to create a new message.
  */
 export const ReadProjectMembersResponseSchema: GenMessage<ReadProjectMembersResponse> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 36);
+  messageDesc(file_yona_pilot_v1_pilot, 45);
 
 /**
  * @generated from message yona.pilot.v1.EnrollProjectRequest
@@ -962,7 +1132,7 @@ export type EnrollProjectRequest = Message<"yona.pilot.v1.EnrollProjectRequest">
  * Use `create(EnrollProjectRequestSchema)` to create a new message.
  */
 export const EnrollProjectRequestSchema: GenMessage<EnrollProjectRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 37);
+  messageDesc(file_yona_pilot_v1_pilot, 46);
 
 /**
  * @generated from message yona.pilot.v1.CancelEnrollProjectRequest
@@ -984,7 +1154,7 @@ export type CancelEnrollProjectRequest = Message<"yona.pilot.v1.CancelEnrollProj
  * Use `create(CancelEnrollProjectRequestSchema)` to create a new message.
  */
 export const CancelEnrollProjectRequestSchema: GenMessage<CancelEnrollProjectRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 38);
+  messageDesc(file_yona_pilot_v1_pilot, 47);
 
 /**
  * @generated from message yona.pilot.v1.EnrollmentMutationResult
@@ -1001,7 +1171,7 @@ export type EnrollmentMutationResult = Message<"yona.pilot.v1.EnrollmentMutation
  * Use `create(EnrollmentMutationResultSchema)` to create a new message.
  */
 export const EnrollmentMutationResultSchema: GenMessage<EnrollmentMutationResult> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 39);
+  messageDesc(file_yona_pilot_v1_pilot, 48);
 
 /**
  * @generated from message yona.pilot.v1.ToggleFavoriteProjectRequest
@@ -1023,7 +1193,7 @@ export type ToggleFavoriteProjectRequest = Message<"yona.pilot.v1.ToggleFavorite
  * Use `create(ToggleFavoriteProjectRequestSchema)` to create a new message.
  */
 export const ToggleFavoriteProjectRequestSchema: GenMessage<ToggleFavoriteProjectRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 40);
+  messageDesc(file_yona_pilot_v1_pilot, 49);
 
 /**
  * @generated from message yona.pilot.v1.ToggleFavoriteProjectResponse
@@ -1050,7 +1220,7 @@ export type ToggleFavoriteProjectResponse = Message<"yona.pilot.v1.ToggleFavorit
  * Use `create(ToggleFavoriteProjectResponseSchema)` to create a new message.
  */
 export const ToggleFavoriteProjectResponseSchema: GenMessage<ToggleFavoriteProjectResponse> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 41);
+  messageDesc(file_yona_pilot_v1_pilot, 50);
 
 /**
  * @generated from message yona.pilot.v1.RecordRecentProjectVisitRequest
@@ -1072,7 +1242,7 @@ export type RecordRecentProjectVisitRequest = Message<"yona.pilot.v1.RecordRecen
  * Use `create(RecordRecentProjectVisitRequestSchema)` to create a new message.
  */
 export const RecordRecentProjectVisitRequestSchema: GenMessage<RecordRecentProjectVisitRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 42);
+  messageDesc(file_yona_pilot_v1_pilot, 51);
 
 /**
  * @generated from message yona.pilot.v1.RecordRecentProjectVisitResponse
@@ -1094,7 +1264,7 @@ export type RecordRecentProjectVisitResponse = Message<"yona.pilot.v1.RecordRece
  * Use `create(RecordRecentProjectVisitResponseSchema)` to create a new message.
  */
 export const RecordRecentProjectVisitResponseSchema: GenMessage<RecordRecentProjectVisitResponse> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 43);
+  messageDesc(file_yona_pilot_v1_pilot, 52);
 
 /**
  * @generated from message yona.pilot.v1.ReadIssueDetailRequest
@@ -1121,7 +1291,7 @@ export type ReadIssueDetailRequest = Message<"yona.pilot.v1.ReadIssueDetailReque
  * Use `create(ReadIssueDetailRequestSchema)` to create a new message.
  */
 export const ReadIssueDetailRequestSchema: GenMessage<ReadIssueDetailRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 44);
+  messageDesc(file_yona_pilot_v1_pilot, 53);
 
 /**
  * @generated from message yona.pilot.v1.UpdateIssueStateRequest
@@ -1153,7 +1323,7 @@ export type UpdateIssueStateRequest = Message<"yona.pilot.v1.UpdateIssueStateReq
  * Use `create(UpdateIssueStateRequestSchema)` to create a new message.
  */
 export const UpdateIssueStateRequestSchema: GenMessage<UpdateIssueStateRequest> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 45);
+  messageDesc(file_yona_pilot_v1_pilot, 54);
 
 /**
  * @generated from message yona.pilot.v1.ReadIssueDetailResponse
@@ -1190,7 +1360,7 @@ export type ReadIssueDetailResponse = Message<"yona.pilot.v1.ReadIssueDetailResp
  * Use `create(ReadIssueDetailResponseSchema)` to create a new message.
  */
 export const ReadIssueDetailResponseSchema: GenMessage<ReadIssueDetailResponse> = /*@__PURE__*/
-  messageDesc(file_yona_pilot_v1_pilot, 46);
+  messageDesc(file_yona_pilot_v1_pilot, 55);
 
 /**
  * @generated from service yona.pilot.v1.PilotService
@@ -1250,6 +1420,78 @@ export const PilotService: GenService<{
   setDefaultLandingPath: {
     methodKind: "unary";
     input: typeof SetDefaultLandingPathRequestSchema;
+    output: typeof ReadWorkspaceOverviewResponseSchema;
+  },
+  /**
+   * @generated from rpc yona.pilot.v1.PilotService.UpdateProfile
+   */
+  updateProfile: {
+    methodKind: "unary";
+    input: typeof UpdateProfileRequestSchema;
+    output: typeof ReadWorkspaceOverviewResponseSchema;
+  },
+  /**
+   * @generated from rpc yona.pilot.v1.PilotService.ChangePassword
+   */
+  changePassword: {
+    methodKind: "unary";
+    input: typeof ChangePasswordRequestSchema;
+    output: typeof ReadCurrentSessionResponseSchema;
+  },
+  /**
+   * @generated from rpc yona.pilot.v1.PilotService.ResetVisitedProjects
+   */
+  resetVisitedProjects: {
+    methodKind: "unary";
+    input: typeof ResetVisitedProjectsRequestSchema;
+    output: typeof ReadWorkspaceOverviewResponseSchema;
+  },
+  /**
+   * @generated from rpc yona.pilot.v1.PilotService.AddWorkspaceEmail
+   */
+  addWorkspaceEmail: {
+    methodKind: "unary";
+    input: typeof AddWorkspaceEmailRequestSchema;
+    output: typeof ReadWorkspaceOverviewResponseSchema;
+  },
+  /**
+   * @generated from rpc yona.pilot.v1.PilotService.DeleteWorkspaceEmail
+   */
+  deleteWorkspaceEmail: {
+    methodKind: "unary";
+    input: typeof DeleteWorkspaceEmailRequestSchema;
+    output: typeof ReadWorkspaceOverviewResponseSchema;
+  },
+  /**
+   * @generated from rpc yona.pilot.v1.PilotService.SendWorkspaceEmailValidation
+   */
+  sendWorkspaceEmailValidation: {
+    methodKind: "unary";
+    input: typeof SendWorkspaceEmailValidationRequestSchema;
+    output: typeof ReadWorkspaceOverviewResponseSchema;
+  },
+  /**
+   * @generated from rpc yona.pilot.v1.PilotService.SetMainWorkspaceEmail
+   */
+  setMainWorkspaceEmail: {
+    methodKind: "unary";
+    input: typeof SetMainWorkspaceEmailRequestSchema;
+    output: typeof ReadWorkspaceOverviewResponseSchema;
+  },
+  /**
+   * @generated from rpc yona.pilot.v1.PilotService.ResetApiToken
+   */
+  resetApiToken: {
+    methodKind: "unary";
+    input: typeof ResetApiTokenRequestSchema;
+    output: typeof ReadWorkspaceOverviewResponseSchema;
+  },
+  /**
+   * @generated from rpc yona.pilot.v1.PilotService.ToggleWorkspaceNotification
+   */
+  toggleWorkspaceNotification: {
+    methodKind: "unary";
+    input: typeof ToggleWorkspaceNotificationRequestSchema;
     output: typeof ReadWorkspaceOverviewResponseSchema;
   },
   /**

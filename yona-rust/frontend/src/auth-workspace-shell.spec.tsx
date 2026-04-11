@@ -1,6 +1,10 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { AuthWorkspaceShell, resolvePostAuthHref } from "./auth-workspace-shell";
+import {
+  AuthWorkspaceShell,
+  resolveAuthRedirectPath,
+  resolvePostAuthHref,
+} from "./auth-workspace-shell";
 import type { RuntimeConfig } from "./runtime-config";
 
 const runtimeConfig: RuntimeConfig = {
@@ -12,7 +16,7 @@ const runtimeConfig: RuntimeConfig = {
 describe("AuthWorkspaceShell", () => {
   it("renders the canonical login shell with legacy field names and recovery link", () => {
     const html = renderToString(
-      <AuthWorkspaceShell route={{ kind: "login", href: "/users/loginform" }} runtimeConfig={runtimeConfig} workspaceOverview={null} />,
+      <AuthWorkspaceShell route={{ kind: "login", href: "/users/loginform?redirectUrl=/admin/projectYobi/issue/1" }} runtimeConfig={runtimeConfig} workspaceOverview={null} />,
     );
 
     expect(html).toContain("Login for Yona");
@@ -20,6 +24,10 @@ describe("AuthWorkspaceShell", () => {
     expect(html).toContain("placeholder=\"Login ID or email\"");
     expect(html).toContain("name=\"password\"");
     expect(html).toContain("name=\"rememberMe\"");
+    expect(html).toContain("method=\"post\"");
+    expect(html).toContain("action=\"/yona/users/login\"");
+    expect(html).toContain("name=\"redirectUrl\"");
+    expect(html).toContain("value=\"/admin/projectYobi/issue/1\"");
     expect(html).toContain(">Login<");
     expect(html).toContain("href=\"/yona/lostPassword\"");
   });
@@ -40,6 +48,8 @@ describe("AuthWorkspaceShell", () => {
     expect(html).toContain("name=\"password\"");
     expect(html).toContain(">Retype password<");
     expect(html).toContain("name=\"retypedPassword\"");
+    expect(html).toContain("method=\"post\"");
+    expect(html).toContain("action=\"/yona/users/signup\"");
     expect(html).toContain(">Sign up<");
     expect(html).toContain("href=\"/yona/users/loginform\"");
   });
@@ -53,6 +63,7 @@ describe("AuthWorkspaceShell", () => {
       />,
     );
     expect(lostPasswordHtml).toContain("Reset Password for Yona");
+    expect(lostPasswordHtml).toContain("action=\"/yona/lostPassword\"");
     expect(lostPasswordHtml).toContain("name=\"loginId\"");
     expect(lostPasswordHtml).toContain("name=\"emailAddress\"");
     expect(lostPasswordHtml).toContain(">Confirm<");
@@ -65,9 +76,116 @@ describe("AuthWorkspaceShell", () => {
       />,
     );
     expect(resetPasswordHtml).toContain("Reset Password for Yona");
+    expect(resetPasswordHtml).toContain("action=\"/yona/resetPassword\"");
     expect(resetPasswordHtml).toContain("name=\"password\"");
     expect(resetPasswordHtml).toContain("name=\"retypedPassword\"");
     expect(resetPasswordHtml).toContain(">Confirm<");
+  });
+
+  it("renders auth capability help copy when email verification or signup confirmation is enabled", () => {
+    const loginHtml = renderToString(
+      <AuthWorkspaceShell
+        {...({
+          authUiCapabilities: {
+            emailVerificationEnabled: true,
+            signupRequireConfirm: false,
+            socialLoginOnly: false,
+          },
+          route: { kind: "login", href: "/users/loginform" },
+          runtimeConfig,
+          workspaceOverview: null,
+        } as any)}
+      />,
+    );
+    expect(loginHtml).toContain("Confirmation mail will be sent");
+
+    const registerHtml = renderToString(
+      <AuthWorkspaceShell
+        {...({
+          authUiCapabilities: {
+            emailVerificationEnabled: false,
+            signupRequireConfirm: true,
+            socialLoginOnly: false,
+          },
+          route: { kind: "register", href: "/users/signupform" },
+          runtimeConfig,
+          workspaceOverview: null,
+        } as any)}
+      />,
+    );
+    expect(registerHtml).toContain("Sign up requires confirmation");
+  });
+
+  it("hides local auth forms when social-login-only mode is enabled", () => {
+    const loginHtml = renderToString(
+      <AuthWorkspaceShell
+        {...({
+          authUiCapabilities: {
+            emailVerificationEnabled: false,
+            signupRequireConfirm: false,
+            socialLoginOnly: true,
+          },
+          route: { kind: "login", href: "/users/loginform" },
+          runtimeConfig,
+          workspaceOverview: null,
+        } as any)}
+      />,
+    );
+    expect(loginHtml).toContain("Social login only");
+    expect(loginHtml).not.toContain('name="loginIdOrEmail"');
+    expect(loginHtml).not.toContain('name="password"');
+
+    const registerHtml = renderToString(
+      <AuthWorkspaceShell
+        {...({
+          authUiCapabilities: {
+            emailVerificationEnabled: false,
+            signupRequireConfirm: false,
+            socialLoginOnly: true,
+          },
+          route: { kind: "register", href: "/users/signupform" },
+          runtimeConfig,
+          workspaceOverview: null,
+        } as any)}
+      />,
+    );
+    expect(registerHtml).toContain("Social login only");
+    expect(registerHtml).not.toContain('name="loginId"');
+    expect(registerHtml).not.toContain('name="emailAddress"');
+    expect(registerHtml).not.toContain('name="password"');
+  });
+
+  it("does not render local auth forms before auth capabilities resolve", () => {
+    const loginHtml = renderToString(
+      <AuthWorkspaceShell
+        {...({
+          authUiCapabilities: null,
+          route: { kind: "login", href: "/users/loginform" },
+          runtimeConfig,
+          workspaceOverview: null,
+        } as any)}
+      />,
+    );
+
+    expect(loginHtml).not.toContain('name="loginIdOrEmail"');
+    expect(loginHtml).not.toContain('name="password"');
+  });
+
+  it("renders a loading shell instead of protected workspace settings during bootstrap", () => {
+    const html = renderToString(
+      <AuthWorkspaceShell
+        {...({
+          bootstrapping: true,
+          route: { kind: "workspace-settings", href: "/user/editform/password", section: "password" },
+          runtimeConfig,
+          workspaceOverview: null,
+        } as any)}
+      />,
+    );
+
+    expect(html).toContain("Loading...");
+    expect(html).not.toContain("Account Settings");
+    expect(html).not.toContain('name="currentPassword"');
   });
 
   it("renders the /me shell with default landing and workspace lists", () => {
@@ -235,6 +353,10 @@ describe("AuthWorkspaceShell", () => {
     expect(html).toContain('href="/yona/user/editform/notifications"');
     expect(html).toContain('href="/yona/user/editform/emails"');
     expect(html).toContain('href="/yona/user/editform/token"');
+    expect(html).toContain('action="/yona/user/resetPassword"');
+    expect(html).toContain('name="oldPassword"');
+    expect(html).toContain('name="loginId"');
+    expect(html).toContain('href="/yona/lostPassword"');
     expect(html).toContain("Change Password");
   });
 
@@ -269,5 +391,29 @@ describe("resolvePostAuthHref", () => {
       "/search?pageSize=20&scope=global",
     );
     expect(resolvePostAuthHref(null, null)).toBe("/me");
+  });
+});
+
+describe("resolveAuthRedirectPath", () => {
+  it("prefers redirectUrl, then redirect, then null", () => {
+    expect(
+      resolveAuthRedirectPath(new URLSearchParams("redirectUrl=%2Fadmin%2FprojectYobi")),
+    ).toBe("/admin/projectYobi");
+    expect(
+      resolveAuthRedirectPath(new URLSearchParams("redirect=%2Fsearch%3Fscope%3Dglobal")),
+    ).toBe("/search?scope=global");
+    expect(resolveAuthRedirectPath(new URLSearchParams(""))).toBeNull();
+  });
+
+  it("rejects external or unsupported redirect targets", () => {
+    expect(
+      resolveAuthRedirectPath(new URLSearchParams("redirectUrl=https%3A%2F%2Fevil.example")),
+    ).toBeNull();
+    expect(
+      resolveAuthRedirectPath(new URLSearchParams("redirectUrl=%2F%2Fevil.example")),
+    ).toBeNull();
+    expect(
+      resolveAuthRedirectPath(new URLSearchParams("redirectUrl=%2Ftotally-unsupported")),
+    ).toBeNull();
   });
 });

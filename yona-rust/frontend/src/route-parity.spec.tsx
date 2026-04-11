@@ -112,8 +112,10 @@ describe("route parity harness", () => {
       'href="/yona/user/editform/emails"',
       'href="/yona/user/editform/token"',
     ]);
-    expect(html).toContain('name="currentPassword"');
+    expect(html).toContain('name="oldPassword"');
+    expect(html).toContain('name="loginId"');
     expect(html).toContain('name="password"');
     expect(html).toContain('name="retypedPassword"');
+    expect(html).toContain('href="/yona/lostPassword"');
   });
 });

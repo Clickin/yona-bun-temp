@@ -14,9 +14,12 @@ import {
   type WorkspaceOverviewViewModel,
 } from "./auth-workspace-shell";
 import {
+  addWorkspaceEmail,
+  changePassword,
   cancelEnrollProject,
   createOrganization,
   createProject,
+  deleteWorkspaceEmail,
   enrollProject,
   listOrganizations,
   listProjects,
@@ -30,13 +33,19 @@ import {
   readProjectSettings,
   readSessionBootstrap,
   readWorkspaceOverview,
+  resetApiToken,
+  resetVisitedProjects,
   registerWithPassword,
   routeDocumentTitle,
   resolveCurrentPath,
+  sendWorkspaceEmailValidation,
+  setMainWorkspaceEmail,
   setDefaultLandingPath,
   signInWithPassword,
   signOut,
+  toggleWorkspaceNotification,
   toggleFavoriteProject,
+  updateProfile,
   updateOrganization,
   updateProject,
   type AppRoute,
@@ -236,6 +245,14 @@ export function App({ runtimeConfig }: AppProps) {
       return;
     }
     const overview = await readWorkspaceOverview(runtimeConfig);
+    setWorkspaceOverview(toWorkspaceOverview(session, overview));
+  }
+
+  async function syncWorkspaceFromOverview(
+    overview: Awaited<ReturnType<typeof readWorkspaceOverview>>,
+  ) {
+    const session = await readCurrentSession(runtimeConfig);
+    setCurrentSession(session);
     setWorkspaceOverview(toWorkspaceOverview(session, overview));
   }
 
@@ -518,14 +535,132 @@ export function App({ runtimeConfig }: AppProps) {
           setPending(false);
         }
       }}
+      onUpdateProfile={async (input) => {
+        setPending(true);
+        setErrorMessage(null);
+        try {
+          const overview = await updateProfile(runtimeConfig, csrfToken, input);
+          await syncWorkspaceFromOverview(overview);
+          navigateInternal({ kind: "me", href: "/me" }, "replace");
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : "Update profile failed.");
+        } finally {
+          setPending(false);
+        }
+      }}
+      onChangePassword={async (input) => {
+        setPending(true);
+        setErrorMessage(null);
+        try {
+          const session = await changePassword(runtimeConfig, csrfToken, input);
+          setCurrentSession(session);
+          setWorkspaceOverview(null);
+          navigateInternal({ kind: "login", href: "/users/loginform" }, "replace");
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : "Change password failed.");
+        } finally {
+          setPending(false);
+        }
+      }}
+      onResetVisitedProjects={async () => {
+        setPending(true);
+        setErrorMessage(null);
+        try {
+          const overview = await resetVisitedProjects(runtimeConfig, csrfToken);
+          await syncWorkspaceFromOverview(overview);
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : "Reset recent projects failed.");
+        } finally {
+          setPending(false);
+        }
+      }}
+      onAddWorkspaceEmail={async (email) => {
+        setPending(true);
+        setErrorMessage(null);
+        try {
+          const overview = await addWorkspaceEmail(runtimeConfig, csrfToken, email);
+          await syncWorkspaceFromOverview(overview);
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : "Add email failed.");
+        } finally {
+          setPending(false);
+        }
+      }}
+      onDeleteWorkspaceEmail={async (id) => {
+        setPending(true);
+        setErrorMessage(null);
+        try {
+          const overview = await deleteWorkspaceEmail(runtimeConfig, csrfToken, id);
+          await syncWorkspaceFromOverview(overview);
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : "Delete email failed.");
+        } finally {
+          setPending(false);
+        }
+      }}
+      onSendWorkspaceEmailValidation={async (id) => {
+        setPending(true);
+        setErrorMessage(null);
+        try {
+          const overview = await sendWorkspaceEmailValidation(runtimeConfig, csrfToken, id);
+          await syncWorkspaceFromOverview(overview);
+        } catch (error) {
+          setErrorMessage(
+            error instanceof Error ? error.message : "Send validation mail failed.",
+          );
+        } finally {
+          setPending(false);
+        }
+      }}
+      onSetMainWorkspaceEmail={async (id) => {
+        setPending(true);
+        setErrorMessage(null);
+        try {
+          const overview = await setMainWorkspaceEmail(runtimeConfig, csrfToken, id);
+          await syncWorkspaceFromOverview(overview);
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : "Set main email failed.");
+        } finally {
+          setPending(false);
+        }
+      }}
+      onResetApiToken={async () => {
+        setPending(true);
+        setErrorMessage(null);
+        try {
+          const overview = await resetApiToken(runtimeConfig, csrfToken);
+          await syncWorkspaceFromOverview(overview);
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : "Reset token failed.");
+        } finally {
+          setPending(false);
+        }
+      }}
+      onToggleWorkspaceNotification={async (projectId, eventType) => {
+        setPending(true);
+        setErrorMessage(null);
+        try {
+          const overview = await toggleWorkspaceNotification(
+            runtimeConfig,
+            csrfToken,
+            projectId,
+            eventType,
+          );
+          await syncWorkspaceFromOverview(overview);
+        } catch (error) {
+          setErrorMessage(
+            error instanceof Error ? error.message : "Toggle notification failed.",
+          );
+        } finally {
+          setPending(false);
+        }
+      }}
       onSetDefaultLandingPath={async (path) => {
         setPending(true);
         setErrorMessage(null);
         try {
           const overview = await setDefaultLandingPath(runtimeConfig, csrfToken, path);
-          if (currentSession) {
-            setWorkspaceOverview(toWorkspaceOverview(currentSession, overview));
-          }
+          await syncWorkspaceFromOverview(overview);
         } catch (error) {
           setErrorMessage(error instanceof Error ? error.message : "Save failed.");
         } finally {

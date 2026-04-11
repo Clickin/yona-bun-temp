@@ -1,7 +1,10 @@
 use axum::body::Body;
 use http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;
-use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, EntityTrait, NotSet, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet,
+    QueryFilter, Set,
+};
 use std::sync::{Mutex, OnceLock};
 use tower::ServiceExt;
 use yona_rust_persistence::{
@@ -322,6 +325,353 @@ async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
     let sign_in_json = response_text(sign_in).await;
     assert!(sign_in_json.contains("\"code\":\"unauthenticated\""));
     assert!(sign_in_json.contains("Invalid login ID, email, or password."));
+}
+
+#[tokio::test]
+async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
+    let (app, repository, db) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let user = repository
+        .find_user_by_identifier("door")
+        .await
+        .unwrap()
+        .expect("registered user");
+    let project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "admin".to_string(),
+            overview: Some("Yona project".to_string()),
+            project_name: "projectYobi".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+    watch::ActiveModel {
+        id: NotSet,
+        user_id: Set(Some(user.id)),
+        resource_type: Set(Some("PROJECT".to_string())),
+        resource_id: Set(Some(project.id.to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    repository
+        .record_recent_project_visit(user.id, "admin", "projectYobi")
+        .await
+        .unwrap();
+
+    let updated_profile = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/UpdateProfile")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"name\":\"Door Updated\",\"email\":\"door-updated@example.com\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(updated_profile.status(), StatusCode::OK);
+    let updated_profile_json = response_text(updated_profile).await;
+    assert!(updated_profile_json.contains("\"userLabel\":\"Door Updated\""));
+    assert!(updated_profile_json.contains("\"emailAddress\":\"door-updated@example.com\""));
+
+    let added_email = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/AddWorkspaceEmail")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"email\":\"alt@example.com\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(added_email.status(), StatusCode::OK);
+    let added_email_json = response_text(added_email).await;
+    assert!(added_email_json.contains("\"emailAddress\":\"alt@example.com\""));
+
+    let alt_email = email::Entity::find()
+        .filter(email::Column::UserId.eq(Some(user.id)))
+        .filter(email::Column::Email.eq(Some("alt@example.com".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("alt email");
+
+    let validation_sent = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/SendWorkspaceEmailValidation")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(format!("{{\"id\":\"{}\"}}", alt_email.id)))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(validation_sent.status(), StatusCode::OK);
+
+    let mut alt_email_active =
+        email::ActiveModel::from(email::Entity::find_by_id(alt_email.id).one(&db).await.unwrap().unwrap());
+    alt_email_active.valid = Set(Some(1));
+    alt_email_active.update(&db).await.unwrap();
+
+    let set_main = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/SetMainWorkspaceEmail")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(format!("{{\"id\":\"{}\"}}", alt_email.id)))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(set_main.status(), StatusCode::OK);
+    let set_main_json = response_text(set_main).await;
+    assert!(set_main_json.contains("\"emailAddress\":\"alt@example.com\""));
+
+    let reset_token = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/ResetApiToken")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(reset_token.status(), StatusCode::OK);
+    let reset_token_json = response_text(reset_token).await;
+    assert!(reset_token_json.contains("\"apiToken\":\""));
+
+    let toggled_notification = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/ToggleWorkspaceNotification")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(format!(
+                    "{{\"projectId\":\"{}\",\"eventType\":\"NEW_COMMENT\"}}",
+                    project.id
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(toggled_notification.status(), StatusCode::OK);
+    let toggled_notification_json = response_text(toggled_notification).await;
+    assert!(toggled_notification_json.contains("\"eventType\":\"NEW_COMMENT\""));
+    assert!(toggled_notification_json.contains("\"enabled\":true"));
+
+    let reset_visited = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/ResetVisitedProjects")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(reset_visited.status(), StatusCode::OK);
+    let reset_visited_json = response_text(reset_visited).await;
+    assert!(!reset_visited_json.contains("\"recentProjects\":[{\""));
+
+    let delete_old_main = email::Entity::find()
+        .filter(email::Column::UserId.eq(Some(user.id)))
+        .filter(email::Column::Email.eq(Some("door-updated@example.com".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("old main email row");
+    let deleted_email = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/DeleteWorkspaceEmail")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(format!("{{\"id\":\"{}\"}}", delete_old_main.id)))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(deleted_email.status(), StatusCode::OK);
+
+    let changed_password = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/ChangePassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"oldPassword\":\"doorpass1\",\"password\":\"doorpass2\",\"retypedPassword\":\"doorpass2\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(changed_password.status(), StatusCode::OK);
+    let changed_password_json = response_text(changed_password).await;
+    assert!(changed_password_json.contains("\"isAnonymous\":true"));
+
+    let sign_in_new_password = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/SignInWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"door\",\"password\":\"doorpass2\",\"rememberMe\":true}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(sign_in_new_password.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn toggle_workspace_notification_preserves_missing_forbidden_and_unwatched_statuses() {
+    let (app, repository, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let public_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "admin".to_string(),
+            overview: Some("Public".to_string()),
+            project_name: "publicProject".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+    let private_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "admin".to_string(),
+            overview: Some("Private".to_string()),
+            project_name: "privateProject".to_string(),
+            project_scope: "private".to_string(),
+        })
+        .await
+        .unwrap();
+
+    let missing = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/ToggleWorkspaceNotification")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"projectId\":\"99999\",\"eventType\":\"NEW_ISSUE\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(missing.status(), StatusCode::NOT_FOUND);
+
+    let forbidden = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/ToggleWorkspaceNotification")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(format!(
+                    "{{\"projectId\":\"{}\",\"eventType\":\"NEW_ISSUE\"}}",
+                    private_project.id
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let unwatched = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/ToggleWorkspaceNotification")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(format!(
+                    "{{\"projectId\":\"{}\",\"eventType\":\"NEW_ISSUE\"}}",
+                    public_project.id
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unwatched.status(), StatusCode::BAD_REQUEST);
 }
 
 #[tokio::test]

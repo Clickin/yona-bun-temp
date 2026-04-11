@@ -95,6 +95,20 @@ export interface AuthWorkspaceShellProps {
     password: string;
     retypedPassword: string;
   }) => void;
+  onUpdateProfile?: (input: { email: string; name: string }) => void;
+  onChangePassword?: (input: {
+    loginId: string;
+    oldPassword: string;
+    password: string;
+    retypedPassword: string;
+  }) => void;
+  onResetVisitedProjects?: () => void;
+  onAddWorkspaceEmail?: (email: string) => void;
+  onDeleteWorkspaceEmail?: (id: string) => void;
+  onSendWorkspaceEmailValidation?: (id: string) => void;
+  onSetMainWorkspaceEmail?: (id: string) => void;
+  onResetApiToken?: () => void;
+  onToggleWorkspaceNotification?: (projectId: string, eventType: string) => void;
   onSetDefaultLandingPath?: (path: string) => void;
   onSignIn?: (input: {
     identifier: string;
@@ -519,6 +533,15 @@ function WorkspaceShell(props: {
 }
 
 function WorkspaceSettingsShell(props: {
+  onAddWorkspaceEmail?: AuthWorkspaceShellProps["onAddWorkspaceEmail"];
+  onChangePassword?: AuthWorkspaceShellProps["onChangePassword"];
+  onDeleteWorkspaceEmail?: AuthWorkspaceShellProps["onDeleteWorkspaceEmail"];
+  onResetApiToken?: AuthWorkspaceShellProps["onResetApiToken"];
+  onResetVisitedProjects?: AuthWorkspaceShellProps["onResetVisitedProjects"];
+  onSendWorkspaceEmailValidation?: AuthWorkspaceShellProps["onSendWorkspaceEmailValidation"];
+  onSetMainWorkspaceEmail?: AuthWorkspaceShellProps["onSetMainWorkspaceEmail"];
+  onToggleWorkspaceNotification?: AuthWorkspaceShellProps["onToggleWorkspaceNotification"];
+  onUpdateProfile?: AuthWorkspaceShellProps["onUpdateProfile"];
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
   section: "emails" | "notifications" | "password" | "profile" | "token";
@@ -542,7 +565,19 @@ function WorkspaceSettingsShell(props: {
     case "profile":
       sectionBody = (
         <>
-          <form action={appHref(props.runtimeConfig, "/user/edit")} className="runtime-grid" method="post">
+          <form
+            action={appHref(props.runtimeConfig, "/user/edit")}
+            className="runtime-grid"
+            method="post"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              props.onUpdateProfile?.({
+                email: String(formData.get("email") ?? ""),
+                name: String(formData.get("name") ?? ""),
+              });
+            }}
+          >
             <label>
               <span>Login ID</span>
               <input defaultValue={session.loginId} name="loginId" readOnly type="text" />
@@ -555,13 +590,16 @@ function WorkspaceSettingsShell(props: {
               <span>Email</span>
               <input defaultValue={session.emailAddress} name="email" type="email" />
             </label>
-            <label>
-              <span>Avatar</span>
-              <input accept="image/*" name="filePath" type="file" />
-            </label>
             <button type="submit">{props.pending ? "Saving..." : "Edit Profile"}</button>
           </form>
-          <form action={appHref(props.runtimeConfig, "/user/resetVisitedList")} method="post">
+          <form
+            action={appHref(props.runtimeConfig, "/user/resetVisitedList")}
+            method="post"
+            onSubmit={(event) => {
+              event.preventDefault();
+              props.onResetVisitedProjects?.();
+            }}
+          >
             <button type="submit">Reset visited project list</button>
           </form>
         </>
@@ -573,11 +611,23 @@ function WorkspaceSettingsShell(props: {
           action={appHref(props.runtimeConfig, "/user/resetPassword")}
           className="runtime-grid"
           method="post"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const formData = new FormData(event.currentTarget);
+            props.onChangePassword?.({
+              loginId: String(formData.get("loginId") ?? ""),
+              oldPassword: String(formData.get("oldPassword") ?? ""),
+              password: String(formData.get("password") ?? ""),
+              retypedPassword: String(formData.get("retypedPassword") ?? ""),
+            });
+          }}
         >
-          <label><span>Current Password</span><input name="currentPassword" type="password" /></label>
+          <input name="loginId" type="hidden" value={session.loginId} />
+          <label><span>Current Password</span><input name="oldPassword" type="password" /></label>
           <label><span>New Password</span><input name="password" type="password" /></label>
           <label><span>Retype password</span><input name="retypedPassword" type="password" /></label>
           <button type="submit">{props.pending ? "Saving..." : "Change Password"}</button>
+          <a href={appHref(props.runtimeConfig, "/lostPassword")}>Reset password by email</a>
         </form>
       );
       break;
@@ -616,7 +666,12 @@ function WorkspaceSettingsShell(props: {
                                     `/noti/toggle/${project.projectId}/${notification.eventType}`,
                                   )}
                                   data-toggle="switch"
-                                  readOnly
+                                  onChange={() =>
+                                    props.onToggleWorkspaceNotification?.(
+                                      project.projectId,
+                                      notification.eventType,
+                                    )
+                                  }
                                   type="checkbox"
                                 />
                               </div>
@@ -636,7 +691,16 @@ function WorkspaceSettingsShell(props: {
     case "emails":
       sectionBody = (
         <section className="runtime-grid">
-          <form action={appHref(props.runtimeConfig, "/user/email")} className="runtime-grid" method="post">
+          <form
+            action={appHref(props.runtimeConfig, "/user/email")}
+            className="runtime-grid"
+            method="post"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              props.onAddWorkspaceEmail?.(String(formData.get("email") ?? ""));
+            }}
+          >
             <label>
               <span>Email</span>
               <input name="email" placeholder="New email" type="email" />
@@ -659,27 +723,21 @@ function WorkspaceSettingsShell(props: {
                 <button
                   data-request-method="delete"
                   data-request-uri={appHref(props.runtimeConfig, `/user/email/delete/${email.id}`)}
+                  onClick={() => props.onDeleteWorkspaceEmail?.(email.id)}
                   type="button"
                 >
                   Delete
                 </button>
                 {email.valid ? (
-                  <a
+                  <button
                     data-request-method="put"
-                    href={appHref(props.runtimeConfig, `/user/email/setAsMain/${email.id}`)}
+                    onClick={() => props.onSetMainWorkspaceEmail?.(email.id)}
+                    type="button"
                   >
                     Set as main
-                  </a>
+                  </button>
                 ) : (
-                  <a
-                    data-request-method="post"
-                    href={appHref(
-                      props.runtimeConfig,
-                      `/user/email/sendValidationEmail/${email.id}`,
-                    )}
-                  >
-                    Send validation mail
-                  </a>
+                  <span>Validation required</span>
                 )}
               </div>
             </div>
@@ -693,6 +751,10 @@ function WorkspaceSettingsShell(props: {
           action={appHref(props.runtimeConfig, "/user/editform/token_reset")}
           className="runtime-grid"
           method="post"
+          onSubmit={(event) => {
+            event.preventDefault();
+            props.onResetApiToken?.();
+          }}
         >
           <label>
             <span>Token</span>
@@ -1213,6 +1275,15 @@ export function AuthWorkspaceShell(props: AuthWorkspaceShellProps) {
     case "workspace-settings":
       content = (
         <WorkspaceSettingsShell
+          onAddWorkspaceEmail={props.onAddWorkspaceEmail}
+          onChangePassword={props.onChangePassword}
+          onDeleteWorkspaceEmail={props.onDeleteWorkspaceEmail}
+          onResetApiToken={props.onResetApiToken}
+          onResetVisitedProjects={props.onResetVisitedProjects}
+          onSendWorkspaceEmailValidation={props.onSendWorkspaceEmailValidation}
+          onSetMainWorkspaceEmail={props.onSetMainWorkspaceEmail}
+          onToggleWorkspaceNotification={props.onToggleWorkspaceNotification}
+          onUpdateProfile={props.onUpdateProfile}
           pending={props.pending}
           runtimeConfig={props.runtimeConfig}
           section={props.route.section}

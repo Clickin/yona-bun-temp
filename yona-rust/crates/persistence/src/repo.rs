@@ -13,6 +13,7 @@ use crate::{
     project_user, recent_project, role, site_admin, user_enrolled_project,
     user_project_notification, user_setting, watch,
 };
+use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::{
     sea_query::Expr, ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait,
     FromQueryResult, NotSet, QueryFilter, QueryOrder, QuerySelect, Set,
@@ -88,6 +89,26 @@ const WORKSPACE_NOTIFICATION_TYPES: &[(&str, &str)] = &[
 
 fn workspace_notification_enabled_by_default(event_type: &str) -> bool {
     !matches!(event_type, "NEW_COMMENT")
+}
+
+fn random_workspace_token() -> String {
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(32)
+        .map(char::from)
+        .collect()
+}
+
+fn looks_like_email_address(value: &str) -> bool {
+    let trimmed = value.trim();
+    let Some((local, domain)) = trimmed.split_once('@') else {
+        return false;
+    };
+    !local.is_empty()
+        && !domain.is_empty()
+        && !domain.starts_with('.')
+        && !domain.ends_with('.')
+        && domain.contains('.')
 }
 
 fn issue_state_from_raw(value: Option<i32>) -> String {
@@ -994,6 +1015,220 @@ impl AppRepository {
             .and_then(|row| row.token))
     }
 
+    pub async fn reset_api_token_for_user(&self, user_id: i64) -> Result<String, DbErr> {
+        let Some(model) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+            return Err(DbErr::Custom("User not found.".to_string()));
+        };
+        let token = random_workspace_token();
+        let mut active = n4user::ActiveModel::from(model);
+        active.token = Set(Some(token.clone()));
+        active.update(&self.db).await?;
+        Ok(token)
+    }
+
+    pub async fn update_profile_for_user(
+        &self,
+        user_id: i64,
+        name: &str,
+        email_address: &str,
+    ) -> Result<AppUserRecord, DbErr> {
+        let Some(model) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+            return Err(DbErr::Custom("User not found.".to_string()));
+        };
+        let normalized_email = normalize_identity(email_address);
+        if normalized_email.is_empty() {
+            return Err(DbErr::Custom("Email address is required.".to_string()));
+        }
+        if !looks_like_email_address(&normalized_email) {
+            return Err(DbErr::Custom("Email address is invalid.".to_string()));
+        }
+
+        let duplicate_email = n4user::Entity::find()
+            .filter(n4user::Column::Id.ne(user_id))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .any(|row| {
+                normalize_optional(row.email.as_deref()).as_deref() == Some(normalized_email.as_str())
+            });
+        if duplicate_email {
+            return Err(DbErr::Custom("Email address is already in use.".to_string()));
+        }
+        let duplicate_valid_secondary = email::Entity::find()
+            .filter(email::Column::Email.eq(Some(normalized_email.clone())))
+            .filter(email::Column::Valid.eq(Some(1)))
+            .one(&self.db)
+            .await?;
+        if duplicate_valid_secondary.is_some() {
+            return Err(DbErr::Custom("Email address is already in use.".to_string()));
+        }
+
+        let mut active = n4user::ActiveModel::from(model);
+        active.name = Set(Some(name.trim().to_string()));
+        active.email = Set(Some(normalized_email));
+        let updated = active.update(&self.db).await?;
+        self.app_user_record_from_model(updated).await
+    }
+
+    pub async fn update_password_hash_for_user(
+        &self,
+        user_id: i64,
+        password_hash: &str,
+    ) -> Result<(), DbErr> {
+        let Some(model) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+            return Err(DbErr::Custom("User not found.".to_string()));
+        };
+        let mut active = n4user::ActiveModel::from(model);
+        active.password = Set(Some(password_hash.to_string()));
+        active.update(&self.db).await?;
+        Ok(())
+    }
+
+    pub async fn read_project_by_id(&self, project_id: i64) -> Result<Option<ProjectRecord>, DbErr> {
+        let row = project::Entity::find_by_id(project_id).one(&self.db).await?;
+        let Some(row) = row else {
+            return Ok(None);
+        };
+        self.project_record_from_model(row).await
+    }
+
+    pub async fn is_watching_project(&self, user_id: i64, project_id: i64) -> Result<bool, DbErr> {
+        Ok(watch::Entity::find()
+            .filter(watch::Column::UserId.eq(Some(user_id)))
+            .filter(watch::Column::ResourceType.eq(Some("PROJECT".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(project_id.to_string())))
+            .one(&self.db)
+            .await?
+            .is_some())
+    }
+
+    pub async fn clear_recent_projects_for_user(&self, user_id: i64) -> Result<(), DbErr> {
+        let rows = recent_project::Entity::find()
+            .filter(recent_project::Column::UserId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?;
+        for row in rows {
+            recent_project::Entity::delete_by_id(row.id)
+                .exec(&self.db)
+                .await?;
+        }
+        Ok(())
+    }
+
+    pub async fn add_workspace_email_for_user(
+        &self,
+        user_id: i64,
+        email_address: &str,
+    ) -> Result<(), DbErr> {
+        let normalized_email = normalize_identity(email_address);
+        if normalized_email.is_empty() {
+            return Err(DbErr::Custom("Email address is required.".to_string()));
+        }
+        if !looks_like_email_address(&normalized_email) {
+            return Err(DbErr::Custom("Email address is invalid.".to_string()));
+        }
+
+        let Some(user) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+            return Err(DbErr::Custom("User not found.".to_string()));
+        };
+        if normalize_optional(user.email.as_deref()).as_deref() == Some(normalized_email.as_str()) {
+            return Err(DbErr::Custom("Email address is already in use.".to_string()));
+        }
+
+        let duplicate = email::Entity::find()
+            .filter(email::Column::Email.eq(Some(normalized_email.clone())))
+            .one(&self.db)
+            .await?;
+        if duplicate.is_some() {
+            return Err(DbErr::Custom("Email address is already in use.".to_string()));
+        }
+
+        email::ActiveModel {
+            id: NotSet,
+            user_id: Set(Some(user_id)),
+            email: Set(Some(normalized_email)),
+            valid: Set(Some(0)),
+            token: Set(Some(random_workspace_token())),
+        }
+        .insert(&self.db)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn delete_workspace_email_for_user(
+        &self,
+        user_id: i64,
+        email_id: i64,
+    ) -> Result<(), DbErr> {
+        let Some(model) = email::Entity::find_by_id(email_id).one(&self.db).await? else {
+            return Err(DbErr::Custom("Email not found.".to_string()));
+        };
+        if model.user_id != Some(user_id) {
+            return Err(DbErr::Custom("Email not found.".to_string()));
+        }
+        email::Entity::delete_by_id(email_id).exec(&self.db).await?;
+        Ok(())
+    }
+
+    pub async fn send_workspace_email_validation_for_user(
+        &self,
+        user_id: i64,
+        email_id: i64,
+    ) -> Result<(), DbErr> {
+        let Some(model) = email::Entity::find_by_id(email_id).one(&self.db).await? else {
+            return Err(DbErr::Custom("Email not found.".to_string()));
+        };
+        if model.user_id != Some(user_id) {
+            return Err(DbErr::Custom("Email not found.".to_string()));
+        }
+        let mut active = email::ActiveModel::from(model);
+        active.token = Set(Some(random_workspace_token()));
+        active.update(&self.db).await?;
+        Ok(())
+    }
+
+    pub async fn set_main_workspace_email_for_user(
+        &self,
+        user_id: i64,
+        email_id: i64,
+    ) -> Result<AppUserRecord, DbErr> {
+        let Some(selected_email) = email::Entity::find_by_id(email_id).one(&self.db).await? else {
+            return Err(DbErr::Custom("Email not found.".to_string()));
+        };
+        if selected_email.user_id != Some(user_id) {
+            return Err(DbErr::Custom("Email not found.".to_string()));
+        }
+        if selected_email.valid.unwrap_or_default() == 0 {
+            return Err(DbErr::Custom("Email must be validated first.".to_string()));
+        }
+        let Some(user) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+            return Err(DbErr::Custom("User not found.".to_string()));
+        };
+
+        let old_main_email = user.email.clone().unwrap_or_default();
+        let selected_value = selected_email.email.clone().unwrap_or_default();
+
+        let mut user_active = n4user::ActiveModel::from(user);
+        user_active.email = Set(Some(selected_value));
+        let updated_user = user_active.update(&self.db).await?;
+
+        email::Entity::delete_by_id(email_id).exec(&self.db).await?;
+        if !old_main_email.is_empty() {
+            email::ActiveModel {
+                id: NotSet,
+                user_id: Set(Some(user_id)),
+                email: Set(Some(normalize_identity(&old_main_email))),
+                valid: Set(Some(1)),
+                token: Set(None),
+            }
+            .insert(&self.db)
+            .await?;
+        }
+
+        self.app_user_record_from_model(updated_user).await
+    }
+
     pub async fn list_watched_project_notifications_for_user(
         &self,
         user_id: i64,
@@ -1057,6 +1292,50 @@ impl AppRepository {
         }
 
         Ok(watched_projects)
+    }
+
+    pub async fn toggle_workspace_notification_for_user(
+        &self,
+        user_id: i64,
+        project_id: i64,
+        event_type: &str,
+    ) -> Result<(), DbErr> {
+        let existing = user_project_notification::Entity::find()
+            .filter(user_project_notification::Column::UserId.eq(Some(user_id)))
+            .filter(user_project_notification::Column::ProjectId.eq(Some(project_id)))
+            .filter(user_project_notification::Column::NotificationType.eq(Some(event_type.to_string())))
+            .one(&self.db)
+            .await?;
+
+        match existing {
+            Some(row) => {
+                let current_allowed = row.allowed.unwrap_or(1) != 0;
+                let next_allowed = !current_allowed;
+                if next_allowed == workspace_notification_enabled_by_default(event_type) {
+                    user_project_notification::Entity::delete_by_id(row.id)
+                        .exec(&self.db)
+                        .await?;
+                } else {
+                    let mut active = user_project_notification::ActiveModel::from(row);
+                    active.allowed = Set(Some(if next_allowed { 1 } else { 0 }));
+                    active.update(&self.db).await?;
+                }
+            }
+            None => {
+                let next_allowed = !workspace_notification_enabled_by_default(event_type);
+                user_project_notification::ActiveModel {
+                    id: NotSet,
+                    user_id: Set(Some(user_id)),
+                    project_id: Set(Some(project_id)),
+                    notification_type: Set(Some(event_type.to_string())),
+                    allowed: Set(Some(if next_allowed { 1 } else { 0 })),
+                }
+                .insert(&self.db)
+                .await?;
+            }
+        }
+
+        Ok(())
     }
 
     pub async fn read_default_landing_path(&self, user_id: i64) -> Result<Option<String>, DbErr> {

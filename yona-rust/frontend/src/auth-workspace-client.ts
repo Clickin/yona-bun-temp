@@ -3,13 +3,18 @@ import { createConnectTransport } from "@connectrpc/connect-web";
 import type { MessageInitShape } from "@bufbuild/protobuf";
 import { create } from "@bufbuild/protobuf";
 import {
+  AddWorkspaceEmailRequestSchema,
+  ChangePasswordRequestSchema,
   CancelEnrollProjectRequestSchema,
   CreateOrganizationRequestSchema,
   CreateProjectRequestSchema,
+  DeleteWorkspaceEmailRequestSchema,
   EnrollProjectRequestSchema,
   ListOrganizationsRequestSchema,
   ListProjectsRequestSchema,
   PilotService,
+  ResetApiTokenRequestSchema,
+  ResetVisitedProjectsRequestSchema,
   ReadAuthUiCapabilitiesRequestSchema,
   ReadCurrentSessionRequestSchema,
   ReadOrganizationDetailRequestSchema,
@@ -21,10 +26,14 @@ import {
   ReadWorkspaceOverviewRequestSchema,
   RecordRecentProjectVisitRequestSchema,
   RegisterWithPasswordRequestSchema,
+  SendWorkspaceEmailValidationRequestSchema,
+  SetMainWorkspaceEmailRequestSchema,
   SetDefaultLandingPathRequestSchema,
   SignInWithPasswordRequestSchema,
   SignOutRequestSchema,
+  ToggleWorkspaceNotificationRequestSchema,
   ToggleFavoriteProjectRequestSchema,
+  UpdateProfileRequestSchema,
   UpdateOrganizationRequestSchema,
   UpdateProjectRequestSchema,
   type OrganizationDetail,
@@ -195,6 +204,113 @@ export async function setDefaultLandingPath(
 ): Promise<ReadWorkspaceOverviewResponse> {
   return createPilotClient(runtimeConfig, fetchImpl).setDefaultLandingPath(
     create(SetDefaultLandingPathRequestSchema, { path }),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function updateProfile(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof UpdateProfileRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadWorkspaceOverviewResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).updateProfile(
+    create(UpdateProfileRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function changePassword(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof ChangePasswordRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+) {
+  return createPilotClient(runtimeConfig, fetchImpl).changePassword(
+    create(ChangePasswordRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function resetVisitedProjects(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadWorkspaceOverviewResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).resetVisitedProjects(
+    create(ResetVisitedProjectsRequestSchema),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function addWorkspaceEmail(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  email: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadWorkspaceOverviewResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).addWorkspaceEmail(
+    create(AddWorkspaceEmailRequestSchema, { email }),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function deleteWorkspaceEmail(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  id: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadWorkspaceOverviewResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).deleteWorkspaceEmail(
+    create(DeleteWorkspaceEmailRequestSchema, { id }),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function sendWorkspaceEmailValidation(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  id: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadWorkspaceOverviewResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).sendWorkspaceEmailValidation(
+    create(SendWorkspaceEmailValidationRequestSchema, { id }),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function setMainWorkspaceEmail(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  id: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadWorkspaceOverviewResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).setMainWorkspaceEmail(
+    create(SetMainWorkspaceEmailRequestSchema, { id }),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function resetApiToken(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadWorkspaceOverviewResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).resetApiToken(
+    create(ResetApiTokenRequestSchema),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function toggleWorkspaceNotification(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  projectId: string,
+  eventType: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadWorkspaceOverviewResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).toggleWorkspaceNotification(
+    create(ToggleWorkspaceNotificationRequestSchema, { eventType, projectId }),
     { headers: { "x-csrf-token": csrfToken } },
   );
 }

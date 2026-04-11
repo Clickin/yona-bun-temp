@@ -40,6 +40,51 @@ export const readWorkspaceOverview = PilotService.method.readWorkspaceOverview;
 export const setDefaultLandingPath = PilotService.method.setDefaultLandingPath;
 
 /**
+ * @generated from rpc yona.pilot.v1.PilotService.UpdateProfile
+ */
+export const updateProfile = PilotService.method.updateProfile;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.ChangePassword
+ */
+export const changePassword = PilotService.method.changePassword;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.ResetVisitedProjects
+ */
+export const resetVisitedProjects = PilotService.method.resetVisitedProjects;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.AddWorkspaceEmail
+ */
+export const addWorkspaceEmail = PilotService.method.addWorkspaceEmail;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.DeleteWorkspaceEmail
+ */
+export const deleteWorkspaceEmail = PilotService.method.deleteWorkspaceEmail;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.SendWorkspaceEmailValidation
+ */
+export const sendWorkspaceEmailValidation = PilotService.method.sendWorkspaceEmailValidation;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.SetMainWorkspaceEmail
+ */
+export const setMainWorkspaceEmail = PilotService.method.setMainWorkspaceEmail;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.ResetApiToken
+ */
+export const resetApiToken = PilotService.method.resetApiToken;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.ToggleWorkspaceNotification
+ */
+export const toggleWorkspaceNotification = PilotService.method.toggleWorkspaceNotification;
+
+/**
  * @generated from rpc yona.pilot.v1.PilotService.CreateOrganization
  */
 export const createOrganization = PilotService.method.createOrganization;
