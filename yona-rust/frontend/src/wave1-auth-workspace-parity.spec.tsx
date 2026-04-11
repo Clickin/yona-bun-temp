@@ -145,6 +145,7 @@ describe("wave 1 auth and workspace parity", () => {
         },
       ],
       profile: {
+        avatarUrl: "",
         connectedSocialProviders: ["github", "google"],
         displayName: "Door",
         englishName: "Door English",
@@ -217,6 +218,7 @@ describe("wave 1 auth and workspace parity", () => {
       issueItems: [],
       memberProjects: [],
       profile: {
+        avatarUrl: "",
         connectedSocialProviders: [],
         displayName: "Door",
         englishName: "",

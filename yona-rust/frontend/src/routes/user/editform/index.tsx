@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { updateProfile } from "../../../auth-workspace-client";
+import { updateProfile, uploadProfileAvatar } from "../../../auth-workspace-client";
 import { useAppRuntime } from "../../../app-runtime-context";
-import { WorkspaceSettingsPage } from "../../-workspace-settings-view";
+import {
+  type ProfileUpdateInput,
+  WorkspaceSettingsPage,
+} from "../../-workspace-settings-view";
 import { navigateToAppHref, useCurrentHref, useRequireAuthenticatedRoute } from "../../-shared";
 
 export const Route = createFileRoute("/user/editform/")({
@@ -24,13 +27,21 @@ function EditProfileRouteComponent() {
       runtimeConfig={runtimeConfig}
       section="profile"
       workspaceOverview={workspaceOverview}
-      onUpdateProfile={async (input) => {
+      onUpdateProfile={async (input: ProfileUpdateInput) => {
         try {
           const overview = await updateProfile(runtimeConfig, csrfToken, input);
           await syncWorkspaceFromOverview(overview);
           navigateToAppHref(runtimeConfig.basePath, "/me");
         } catch (error) {
           setErrorMessage(error instanceof Error ? error.message : "Update profile failed.");
+        }
+      }}
+      onUploadAvatar={async (blob, filename) => {
+        try {
+          return await uploadProfileAvatar(runtimeConfig, filename, blob);
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : "Avatar upload failed.");
+          throw error;
         }
       }}
     />

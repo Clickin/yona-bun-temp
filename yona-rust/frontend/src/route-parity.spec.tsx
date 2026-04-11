@@ -31,6 +31,7 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain("fullPath: '/projects'");
     expect(routeTreeSource).toContain("fullPath: '/orgs'");
     expect(routeTreeSource).toContain("fullPath: '/user/editform'");
+    expect(routeTreeSource).toContain("fullPath: '/verify/$loginId/$verificationCode'");
     expect(routeTreeSource).toContain("fullPath: '/login'");
     expect(routeTreeSource).toContain("fullPath: '/register'");
     expect(routeTreeSource).toContain("fullPath: '/forgot-password'");
