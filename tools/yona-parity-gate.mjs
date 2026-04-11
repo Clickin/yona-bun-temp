@@ -29,14 +29,10 @@ const NON_IMPLEMENTATION_PREFIXES = [
   "tests/",
   "tools/",
   "bin/",
-  "apps/",
-  "cmd/",
   "drizzle/",
-  "frontend/",
-  "internal/",
-  "packages/",
-  "proto/",
-  "yona-rust/frontend/src/gen/",
+  "reference/mixed-code/",
+  "reference/spikes/",
+  "frontend/src/gen/",
 ];
 
 const NON_IMPLEMENTATION_FILES = new Set([
@@ -44,16 +40,9 @@ const NON_IMPLEMENTATION_FILES = new Set([
   "CLAUDE.md",
   "README.md",
   "SPEC.md",
-  "package.json",
-  "pnpm-lock.yaml",
-  "bun.lock",
-  "pnpm-workspace.yaml",
-  "tsconfig.base.json",
   "buf.yaml",
   "buf.gen.yaml",
-  "go.mod",
-  "go.sum",
-  "yona-rust/frontend/playwright.config.ts",
+  "frontend/playwright.config.ts",
 ]);
 
 const TEST_FILE_PATTERN = /(^tests\/)|(\/tests\/)|(\.spec\.)|(\.test\.)/i;
@@ -64,7 +53,7 @@ const PARITY_SLICES = [
     id: "public-landing",
     label: "Public landing and global navigation",
     status: "parity",
-    implementationPatterns: [/^yona-rust\/frontend\/src\/routes\/_app(?:\.index)?\.tsx$/i],
+    implementationPatterns: [/^frontend\/src\/routes\/index\.tsx$/i],
     testKeywords: ["public-landing", "home-route", "layout-parity"],
     provenanceDocs: ["docs/provenance/core-parity-audit.md"],
   },
@@ -73,8 +62,8 @@ const PARITY_SLICES = [
     label: "Public project directory",
     status: "parity",
     implementationPatterns: [
-      /^yona-rust\/frontend\/src\/routes\/_app\.projects\.index\.tsx$/i,
-      /^yona-rust\/frontend\/src\/styles\/app\.css$/i,
+      /^frontend\/src\/routes\/projects\/route\.tsx$/i,
+      /^frontend\/src\/app\.css$/i,
     ],
     testKeywords: ["project-directory-route", "projects", "directory-parity"],
     provenanceDocs: ["docs/provenance/core-parity-audit.md"],
@@ -84,8 +73,8 @@ const PARITY_SLICES = [
     label: "Public organization directory",
     status: "parity",
     implementationPatterns: [
-      /^yona-rust\/frontend\/src\/routes\/_app\.orgs\.index\.tsx$/i,
-      /^yona-rust\/frontend\/src\/styles\/app\.css$/i,
+      /^frontend\/src\/routes\/orgs\/route\.tsx$/i,
+      /^frontend\/src\/app\.css$/i,
     ],
     testKeywords: ["organization-directory-route", "orgs", "directory-parity"],
     provenanceDocs: ["docs/provenance/core-parity-audit.md"],
@@ -98,10 +87,10 @@ const DOMAIN_BUCKETS = [
     label: "Canonical schema and persistence foundation",
     status: "partial",
     implementationPatterns: [
-      /^yona-rust\/crates\/migration\//i,
-      /^yona-rust\/crates\/persistence\//i,
-      /^yona-rust\/proto\//i,
-      /^yona-rust\/crates\/integrations\//i,
+      /^crates\/migration\//i,
+      /^crates\/persistence\//i,
+      /^proto\//i,
+      /^crates\/integrations\//i,
     ],
     testKeywords: [
       "migration",
@@ -124,9 +113,9 @@ const DOMAIN_BUCKETS = [
     label: "Auth and account lifecycle",
     status: "gap",
     implementationPatterns: [
-      /^yona-rust\/frontend\/.*auth/i,
-      /^yona-rust\/crates\/(?:server|domain)\/.*(auth|session|password|account)/i,
-      /^yona-rust\/crates\/persistence\/.*(auth|user|session|workspace)/i,
+      /^frontend\/.*auth/i,
+      /^crates\/(?:server|domain)\/.*(auth|session|password|account)/i,
+      /^crates\/persistence\/.*(auth|user|session|workspace)/i,
     ],
     testKeywords: ["auth", "login", "register", "password", "session"],
     provenanceDocs: [
@@ -139,8 +128,8 @@ const DOMAIN_BUCKETS = [
     label: "ACL baseline",
     status: "gap",
     implementationPatterns: [
-      /^yona-rust\/crates\/domain\/.*(authorization|access-control|role|acl|policy)/i,
-      /^yona-rust\/crates\/server\/.*(authorization|access-control|acl|policy)/i,
+      /^crates\/domain\/.*(authorization|access-control|role|acl|policy)/i,
+      /^crates\/server\/.*(authorization|access-control|acl|policy)/i,
     ],
     testKeywords: ["authorization", "access-control", "role", "acl"],
     provenanceDocs: [
@@ -153,8 +142,8 @@ const DOMAIN_BUCKETS = [
     label: "Organization core CRU",
     status: "partial",
     implementationPatterns: [
-      /^yona-rust\/frontend\/.*organization/i,
-      /^yona-rust\/crates\/(?:domain|persistence|server)\/.*organization/i,
+      /^frontend\/.*organization/i,
+      /^crates\/(?:domain|persistence|server)\/.*organization/i,
     ],
     testKeywords: ["organization", "org"],
     provenanceDocs: [
@@ -167,8 +156,8 @@ const DOMAIN_BUCKETS = [
     label: "Project core CRU and enrollment",
     status: "partial",
     implementationPatterns: [
-      /^yona-rust\/frontend\/.*project/i,
-      /^yona-rust\/crates\/(?:domain|persistence|server)\/.*(project|enrollment)/i,
+      /^frontend\/.*project/i,
+      /^crates\/(?:domain|persistence|server)\/.*(project|enrollment)/i,
     ],
     testKeywords: ["project", "projects", "enroll", "enrollment"],
     provenanceDocs: ["docs/provenance/phase-0b/project.md", "docs/provenance/core-parity-audit.md"],
@@ -178,8 +167,8 @@ const DOMAIN_BUCKETS = [
     label: "Workspace recent/favorite/default landing",
     status: "partial",
     implementationPatterns: [
-      /^yona-rust\/frontend\/.*\/me/i,
-      /^yona-rust\/crates\/(?:domain|persistence|server)\/.*(workspace|default-landing|favorite|recent)/i,
+      /^frontend\/.*\/me/i,
+      /^crates\/(?:domain|persistence|server)\/.*(workspace|default-landing|favorite|recent)/i,
     ],
     testKeywords: ["workspace", "default-landing", "favorite", "recent", "me"],
     provenanceDocs: ["docs/provenance/phase-0b/project.md", "docs/provenance/core-parity-audit.md"],
@@ -189,8 +178,8 @@ const DOMAIN_BUCKETS = [
     label: "Issue lifecycle",
     status: "gap",
     implementationPatterns: [
-      /^yona-rust\/frontend\/.*issues?/i,
-      /^yona-rust\/crates\/(?:domain|persistence|server)\/.*(?:issue|label|milestone)/i,
+      /^frontend\/.*issues?/i,
+      /^crates\/(?:domain|persistence|server)\/.*(?:issue|label|milestone)/i,
     ],
     testKeywords: ["issue", "issues", "label", "milestone"],
     provenanceDocs: ["docs/provenance/phase-0b/issue.md", "docs/provenance/core-parity-audit.md"],
@@ -200,8 +189,8 @@ const DOMAIN_BUCKETS = [
     label: "Pull request and review",
     status: "gap",
     implementationPatterns: [
-      /^yona-rust\/frontend\/.*(pulls|pull-request|reviews?)/i,
-      /^yona-rust\/crates\/(?:domain|server)\/.*(pull-request|review)/i,
+      /^frontend\/.*(pulls|pull-request|reviews?)/i,
+      /^crates\/(?:domain|server)\/.*(pull-request|review)/i,
     ],
     testKeywords: ["pull-request", "pulls", "review", "reviews"],
     provenanceDocs: [
@@ -214,8 +203,8 @@ const DOMAIN_BUCKETS = [
     label: "Search",
     status: "gap",
     implementationPatterns: [
-      /^yona-rust\/frontend\/.*search/i,
-      /^yona-rust\/crates\/(?:search|persistence|server|domain)\/.*search/i,
+      /^frontend\/.*search/i,
+      /^crates\/(?:search|persistence|server|domain)\/.*search/i,
     ],
     testKeywords: ["search", "snippet"],
     provenanceDocs: ["docs/provenance/phase-0b/search.md", "docs/provenance/core-parity-audit.md"],
@@ -225,8 +214,8 @@ const DOMAIN_BUCKETS = [
     label: "Repository and smart HTTP",
     status: "gap",
     implementationPatterns: [
-      /^yona-rust\/frontend\/.*(repo|code|branches|commit)/i,
-      /^yona-rust\/crates\/(?:vcs|server|domain)\/.*(repo|code|branch|commit|smart-http|inline-edit)/i,
+      /^frontend\/.*(repo|code|branches|commit)/i,
+      /^crates\/(?:vcs|server|domain)\/.*(repo|code|branch|commit|smart-http|inline-edit)/i,
     ],
     testKeywords: ["repo", "code", "branch", "commit", "smart-http", "inline-edit"],
     provenanceDocs: [
@@ -239,8 +228,8 @@ const DOMAIN_BUCKETS = [
     label: "Attachment and asset ACL",
     status: "gap",
     implementationPatterns: [
-      /^yona-rust\/frontend\/.*(asset|upload|attachment|resource)/i,
-      /^yona-rust\/crates\/(?:server|persistence|domain)\/.*(asset|upload|attachment|resource)/i,
+      /^frontend\/.*(asset|upload|attachment|resource)/i,
+      /^crates\/(?:server|persistence|domain)\/.*(asset|upload|attachment|resource)/i,
     ],
     testKeywords: ["asset", "upload", "attachment", "resource"],
     provenanceDocs: [
@@ -261,12 +250,12 @@ const DOMAIN_BUCKETS = [
     label: "Rust foundation and runtime bootstrap",
     status: "partial",
     implementationPatterns: [
-      /^yona-rust\/(?:\.gitignore|Cargo\.lock|Cargo\.toml|README\.md|buf(?:\.gen)?\.yaml)$/i,
-      /^yona-rust\/frontend\/(?:README\.md|package\.json|pnpm-lock\.yaml|index\.html|tsconfig\.json|vite\.config\.ts)$/i,
-      /^yona-rust\/crates\/(?:server|domain|search|vcs)\//i,
-      /^yona-rust\/frontend\/src\/(?:App|main|route-table|runtime-config)\.tsx?$/i,
-      /^yona-rust\/reports\//i,
-      /^yona-rust\/scripts\//i,
+      /^(?:\.gitignore|Cargo\.lock|Cargo\.toml|buf(?:\.gen)?\.yaml)$/i,
+      /^frontend\/(?:README\.md|package\.json|pnpm-lock\.yaml|index\.html|tsconfig\.json|vite\.config\.ts)$/i,
+      /^crates\/(?:server|domain|search|vcs)\//i,
+      /^frontend\/src\/(?:main|router|runtime-config)\.tsx?$/i,
+      /^reports\//i,
+      /^scripts\//i,
     ],
     testKeywords: [
       "runtime_config",

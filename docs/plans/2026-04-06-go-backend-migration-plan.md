@@ -1,14 +1,14 @@
 # Go Backend Migration Plan
 
 > Status: `superseded`
-> This migration plan captures the pre-Rust-pivot Go backend strategy. Keep it as historical evidence only. The current canonical implementation baseline is `yona-rust/`.
+> This migration plan captures the pre-Rust-pivot Go backend strategy. Keep it as historical evidence only. The current canonical implementation baseline is repo root.
 
 Date: 2026-04-06
 
 ## Goal
 
 - 이 문서는 Go backend 재구축을 canonical path로 보던 시점의 계획이다.
-- 현재 canonical 구현은 `yona-rust/`에서 진행한다.
+- 현재 canonical 구현은 `repo root`에서 진행한다.
 - 아래 내용은 root mixed-code와 Go pivot 의사결정의 historical reference로만 사용한다.
 
 ## Fixed Direction
@@ -25,7 +25,7 @@ Date: 2026-04-06
 
 ## Contract Migration Position
 
-현재 TS backend는 `frontend/src/lib/*-trpc.ts`와 `createServerFn` 중심으로 frontend call site가 이미 형성되어 있다.
+현재 TS backend는 `reference/mixed-code/frontend/src/lib/*-trpc.ts`와 `createServerFn` 중심으로 frontend call site가 이미 형성되어 있다.
 
 따라서 migration 목표는 “frontend call site와 query key를 가능한 한 유지하면서 backend contract source of truth를 Protobuf로 옮기는 것”이다.
 
@@ -47,22 +47,22 @@ Date: 2026-04-06
 
 대상:
 
-- `frontend/src/lib/auth-trpc.ts`
-- `frontend/src/lib/me-trpc.ts`
-- `frontend/src/lib/project-trpc.ts`
-- `frontend/src/lib/organization-trpc.ts`
-- `frontend/src/lib/issue-trpc.ts`
-- `frontend/src/lib/pull-request-trpc.ts`
-- `frontend/src/lib/repo-trpc.ts`
-- `frontend/src/lib/search-trpc.ts`
-- `frontend/src/lib/posting-trpc.ts`
-- `frontend/src/lib/enrollment-trpc.ts`
-- `frontend/src/lib/label-trpc.ts`
-- `frontend/src/lib/milestone-trpc.ts`
-- `frontend/src/lib/auth.ts`
-- `frontend/src/lib/project.ts`
-- `frontend/src/lib/issue.ts`
-- `frontend/src/lib/pull-request.ts`
+- `reference/mixed-code/frontend/src/lib/auth-trpc.ts`
+- `reference/mixed-code/frontend/src/lib/me-trpc.ts`
+- `reference/mixed-code/frontend/src/lib/project-trpc.ts`
+- `reference/mixed-code/frontend/src/lib/organization-trpc.ts`
+- `reference/mixed-code/frontend/src/lib/issue-trpc.ts`
+- `reference/mixed-code/frontend/src/lib/pull-request-trpc.ts`
+- `reference/mixed-code/frontend/src/lib/repo-trpc.ts`
+- `reference/mixed-code/frontend/src/lib/search-trpc.ts`
+- `reference/mixed-code/frontend/src/lib/posting-trpc.ts`
+- `reference/mixed-code/frontend/src/lib/enrollment-trpc.ts`
+- `reference/mixed-code/frontend/src/lib/label-trpc.ts`
+- `reference/mixed-code/frontend/src/lib/milestone-trpc.ts`
+- `reference/mixed-code/frontend/src/lib/auth.ts`
+- `reference/mixed-code/frontend/src/lib/project.ts`
+- `reference/mixed-code/frontend/src/lib/issue.ts`
+- `reference/mixed-code/frontend/src/lib/pull-request.ts`
 
 산출물:
 
@@ -82,8 +82,8 @@ Date: 2026-04-06
 
 대상 ownership:
 
-- `internal/domain`
-- `internal/db`
+- `reference/mixed-code/internal/domain`
+- `reference/mixed-code/internal/db`
 
 원칙:
 
@@ -100,8 +100,8 @@ Date: 2026-04-06
 ownership:
 
 - `proto`
-- `internal/httpapi/connect`
-- `packages/contracts`
+- `reference/mixed-code/internal/httpapi/connect`
+- `reference/mixed-code/packages/contracts`
 
 원칙:
 
@@ -118,8 +118,8 @@ ownership:
 
 대상:
 
-- `frontend/src/lib/*-trpc.ts`
-- `frontend/src/lib/*.ts` (`createServerFn` wrappers)
+- `reference/mixed-code/frontend/src/lib/*-trpc.ts`
+- `reference/mixed-code/frontend/src/lib/*.ts` (`createServerFn` wrappers)
 - query helpers
 - mutation invalidation wiring
 - runtime config bootstrap
@@ -138,12 +138,12 @@ ownership:
 
 대상:
 
-- `packages/auth`
-- `packages/db`
-- `packages/domain`
-- `packages/integrations`
-- `packages/vcs`
-- `frontend/src/lib/*-trpc.server.ts`
+- `reference/mixed-code/packages/auth`
+- `reference/mixed-code/packages/db`
+- `reference/mixed-code/packages/domain`
+- `reference/mixed-code/packages/integrations`
+- `reference/mixed-code/packages/vcs`
+- `reference/mixed-code/frontend/src/lib/*-trpc.server.ts`
 
 원칙:
 
@@ -154,16 +154,16 @@ ownership:
 
 | Current TS surface | Go target |
 | --- | --- |
-| `auth-trpc` / `auth.ts` | `internal/auth` + `internal/httpapi/connect/auth` |
-| `me-trpc` / `me.ts` | `internal/domain/workspace` + `internal/httpapi/connect/me` |
-| `project-trpc` / `project.ts` | `internal/domain/project` + `internal/httpapi/connect/project` |
-| `organization-trpc` / `organization.ts` | `internal/domain/org` + `internal/httpapi/connect/org` |
-| `issue-trpc` / `issue.ts` | `internal/domain/issue` + `internal/httpapi/connect/issue` |
-| `pull-request-trpc` / `pull-request.ts` | `internal/domain/pullrequest` + `internal/httpapi/connect/pullrequest` |
-| `repo-trpc` / `repo-http` | `internal/vcs` + `internal/httpapi/repo` |
-| `search-trpc` / `search.ts` | `internal/search` + `internal/httpapi/connect/search` |
-| `posting-trpc` / `posting.ts` | `internal/domain/posting` + `internal/httpapi/connect/posting` |
-| `label-trpc` / `milestone-trpc` | `internal/domain/issue-meta` + `internal/httpapi/connect/issue-meta` |
+| `auth-trpc` / `auth.ts` | `reference/mixed-code/internal/auth` + `reference/mixed-code/internal/httpapi/connect/auth` |
+| `me-trpc` / `me.ts` | `reference/mixed-code/internal/domain/workspace` + `reference/mixed-code/internal/httpapi/connect/me` |
+| `project-trpc` / `project.ts` | `reference/mixed-code/internal/domain/project` + `reference/mixed-code/internal/httpapi/connect/project` |
+| `organization-trpc` / `organization.ts` | `reference/mixed-code/internal/domain/org` + `reference/mixed-code/internal/httpapi/connect/org` |
+| `issue-trpc` / `issue.ts` | `reference/mixed-code/internal/domain/issue` + `reference/mixed-code/internal/httpapi/connect/issue` |
+| `pull-request-trpc` / `pull-request.ts` | `reference/mixed-code/internal/domain/pullrequest` + `reference/mixed-code/internal/httpapi/connect/pullrequest` |
+| `repo-trpc` / `repo-http` | `reference/mixed-code/internal/vcs` + `reference/mixed-code/internal/httpapi/repo` |
+| `search-trpc` / `search.ts` | `reference/mixed-code/internal/search` + `reference/mixed-code/internal/httpapi/connect/search` |
+| `posting-trpc` / `posting.ts` | `reference/mixed-code/internal/domain/posting` + `reference/mixed-code/internal/httpapi/connect/posting` |
+| `label-trpc` / `milestone-trpc` | `reference/mixed-code/internal/domain/issue-meta` + `reference/mixed-code/internal/httpapi/connect/issue-meta` |
 
 ## DB Translation Position
 

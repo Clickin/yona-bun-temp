@@ -8,9 +8,9 @@
 ## 빠른 상황 인식
 
 - 목표는 legacy Yona 기능과 UX parity다.
-- current canonical implementation baseline은 `yona-rust/`다.
+- current canonical implementation baseline은 `repo root`다.
 - `yona-original/`은 1차 source of truth다.
-- root mixed code는 reference-only migration material이다.
+- `reference/mixed-code/**`는 reference-only migration material이다.
 - historical 문서는 status banner가 없으면 current guidance처럼 읽지 않는다.
 
 ## 추천 읽기 순서
@@ -23,8 +23,9 @@
 
 ## 구현 위치 체크리스트
 
-- [ ] 새 canonical 구현은 `yona-rust/frontend`, `yona-rust/proto`, `yona-rust/crates/*`에 둔다.
-- [ ] root mixed code에 새 canonical ownership을 추가하지 않는다.
+- [ ] 새 canonical 구현은 `frontend`, `proto`, `crates/*`에 둔다.
+- [ ] `reference/mixed-code/**`에 새 canonical ownership을 추가하지 않는다.
 - [ ] legacy source, mixed-code reference, Rust target layer를 provenance에 남긴다.
 - [ ] 누락 기능을 `deferred`, `gap`, `deviation` 중 하나로 기록한다.
 - [ ] historical 문서 변경 시 status banner를 유지한다.
+

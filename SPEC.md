@@ -11,7 +11,7 @@ Language: Korean-first, English identifiers
 이 문서는 다음 목적을 가진다.
 
 - legacy Yona parity와 UX parity의 기준을 고정한다.
-- `yona-rust/`를 canonical implementation baseline으로 고정한다.
+- `repo root`를 canonical implementation baseline으로 고정한다.
 - root 혼합 코드와 historical 문서를 reference-only로 재분류한다.
 - 누락 기능을 `deferred`, `gap`, `deviation`으로 명시하는 규칙을 고정한다.
 
@@ -29,10 +29,11 @@ Language: Korean-first, English identifiers
 Yona의 문서 기준선은 다음 순서를 따른다.
 
 1. [`yona-original/`](/G:/programming/yona/yona-original): 기능/UX parity의 1차 source of truth
-2. [`yona-rust/`](/G:/programming/yona/yona-rust): 현재 canonical implementation baseline
-3. root Bun/Go mixed code: reference-only migration material
+2. [repo root](/G:/programming/yona): 현재 canonical implementation baseline
+3. `reference/mixed-code/**`: reference-only migration material
+4. `reference/spikes/**`: historical spike archive
 
-현재 canonical 구현은 top-level `yona-rust/` workspace에서 진행한다. 이 경로는 공개 저장소 기준의 full app workspace이며 React frontend, proto contract, Rust crate 경계를 함께 가진다.
+현재 canonical 구현은 repo root workspace에서 진행한다. 이 경로는 공개 저장소 기준의 full app workspace이며 React frontend, proto contract, Rust crate 경계를 함께 가진다.
 
 일부 기능 누락은 허용된다. 다만 모든 누락은 다음 셋 중 하나로 기록해야 한다.
 
@@ -45,16 +46,19 @@ Yona의 문서 기준선은 다음 순서를 따른다.
 ### 3.1 Source Ordering
 
 - 1차 source of truth는 legacy Java/Play Yona다.
-- 2차 canonical implementation baseline은 `yona-rust/`다.
-- 3차 migration/reference material은 root mixed code다.
-- root mixed code는 useful source material일 수 있지만 canonical baseline이 아니다.
+- canonical implementation baseline은 repo root다.
+- 3차 migration/reference material은 `reference/mixed-code/**`다.
+- `reference/mixed-code/**`는 useful source material일 수 있지만 canonical baseline이 아니다.
 
 ### 3.2 Canonical Workspace Structure
 
 canonical 구조는 다음으로 고정한다.
 
 ```text
-yona-rust/
+repo root
+  Cargo.toml            # workspace manifest
+  buf.yaml              # protobuf module manifest
+  buf.gen.yaml          # browser client codegen manifest
   frontend/                # React SPA
   proto/                   # canonical contract source
   crates/
@@ -71,34 +75,30 @@ yona-rust/
 
 ### 3.3 Frontend Baseline
 
-- canonical frontend ownership은 `yona-rust/frontend/`다.
+- canonical frontend ownership은 `frontend/`다.
 - frontend는 `React` SPA 기준을 유지한다.
-- frontend routing은 `yona-rust/frontend/src/routes/**` 기반의 file-based / directory-based TanStack Router로 고정한다.
+- frontend routing은 `frontend/src/routes/**` 기반의 file-based / directory-based TanStack Router로 고정한다.
 - generated `routeTree.gen.ts`와 route modules만이 route source of truth다. static route table, manual route matcher, route-kind registry는 다시 도입하지 않는다.
 - 기존 root `frontend/`의 route/query/screen composition은 reference-only migration material이다.
 - UI layout, copy, CTA, menu, deep-link flow는 `yona-original/`을 기준으로 맞춘다.
 
 ### 3.4 Contract and Runtime Baseline
 
-- canonical contract source of truth는 `yona-rust/proto/`다.
-- session/auth bootstrap, HTTP/RPC, asset delivery, runtime base-path handling은 `yona-rust/crates/server/`의 소유 범위다.
-- parity-first domain behavior와 ACL은 `yona-rust/crates/domain/`이 소유한다.
-- DB access, repositories, dialect handling은 `yona-rust/crates/persistence/`가 소유한다.
-- schema, seed, migration은 `yona-rust/crates/migration/`이 소유한다.
+- canonical contract source of truth는 `proto/`다.
+- session/auth bootstrap, HTTP/RPC, asset delivery, runtime base-path handling은 `crates/server/`의 소유 범위다.
+- parity-first domain behavior와 ACL은 `crates/domain/`이 소유한다.
+- DB access, repositories, dialect handling은 `crates/persistence/`가 소유한다.
+- schema, seed, migration은 `crates/migration/`이 소유한다.
 - VCS, search, integrations는 각 vertical crate owner로 분리한다.
 
-이 문서는 old stack의 transport/runtime 선택을 현재 baseline으로 승격하지 않는다. root mixed code에 남아 있는 Go backend, `connect-go`, `chi`, `uptrace/bun`, `TanStack Start`, in-process `tRPC`, `createServerFn`, `Better Auth` 관련 내용은 모두 reference-only다.
+이 문서는 old stack의 transport/runtime 선택을 현재 baseline으로 승격하지 않는다. `reference/mixed-code/**`에 남아 있는 Go backend, `connect-go`, `chi`, `uptrace/bun`, `TanStack Start`, in-process `tRPC`, `createServerFn`, `Better Auth` 관련 내용은 모두 reference-only다.
 
-### 3.5 Root Mixed-Code Reclassification
+### 3.5 Reference Archive Reclassification
 
 다음 경로는 canonical 구현 위치가 아니라 reference-only migration material이다.
 
-- [`frontend/`](/G:/programming/yona/frontend)
-- [`packages/*`](/G:/programming/yona/packages)
-- [`cmd/`](/G:/programming/yona/cmd)
-- [`internal/`](/G:/programming/yona/internal)
-- [`apps/`](/G:/programming/yona/apps)
-- root [`proto/`](/G:/programming/yona/proto)
+- `reference/mixed-code/**`
+- `reference/spikes/**`
 
 이 경로들은 useful reference일 수 있지만, 새 canonical ownership을 추가하지 않는다.
 
@@ -190,8 +190,8 @@ legacy behavior mapping, legacy test inventory, semantic intent narrative는 보
 다음 조건이 모두 참일 때에만 변환 완료로 본다.
 
 - `yona-original/` 대비 핵심 기능과 UX parity가 확보된다.
-- canonical 구현 위치가 `yona-rust/`로 일관된다.
-- root mixed code가 더 이상 current baseline처럼 읽히지 않는다.
+- canonical 구현 위치가 `repo root`로 일관된다.
+- `reference/mixed-code/**`가 더 이상 current baseline처럼 읽히지 않는다.
 - provenance 문서가 legacy source, current mixed-code reference, Rust target layer, canonical owner를 함께 남긴다.
 - historical 문서에 상태 배너가 붙고, 현재 기준 오독 가능성이 제거된다.
 - `deferred`, `gap`, `deviation` 기록이 root canonical, provenance, plan docs 사이에서 서로 대응된다.
@@ -201,7 +201,10 @@ legacy behavior mapping, legacy test inventory, semantic intent narrative는 보
 
 문서 전환 작업의 기본 검증은 아래를 포함한다.
 
-- `pnpm verify:agents`
+- `bun --cwd reference/mixed-code/root-toolchain run verify:agents`
 - canonical docs에서 old stack이 current baseline처럼 남지 않았는지 검색 확인
 - former Rust pilot path가 current canonical path처럼 남지 않았는지 확인
-- `yona-rust/` 기준의 링크와 예시 명령 검증
+- `repo root` 기준의 링크와 예시 명령 검증
+
+
+

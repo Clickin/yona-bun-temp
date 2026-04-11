@@ -35,15 +35,15 @@ interface Violation {
 
 const ALLOWED_EXCEPTIONS = new Set<string>();
 const TARGET_OWNERSHIP_PREFIXES = [
-  "apps/app/",
-  "packages/auth/",
-  "packages/contracts/",
-  "packages/db/",
-  "packages/domain/",
-  "packages/i18n/",
-  "packages/integrations/",
-  "packages/ui/",
-  "packages/vcs/",
+  "reference/mixed-code/apps/app/",
+  "reference/mixed-code/packages/auth/",
+  "reference/mixed-code/packages/contracts/",
+  "reference/mixed-code/packages/db/",
+  "reference/mixed-code/packages/domain/",
+  "reference/mixed-code/packages/i18n/",
+  "reference/mixed-code/packages/integrations/",
+  "reference/mixed-code/packages/ui/",
+  "reference/mixed-code/packages/vcs/",
 ];
 const LEGACY_OWNERSHIP_IMPORTS = ["@yona/core", "@yona/infra"];
 
@@ -114,13 +114,13 @@ function validateImport(file: string, importPath: string): string | null {
     return "@api/* is removed; import from target ownership packages instead.";
   }
 
-  if (file.startsWith("packages/") && !isException(file)) {
+  if (file.startsWith("reference/mixed-code/packages/") && !isException(file)) {
     if (
       importPath.startsWith("@web/") ||
       importPath.startsWith("$lib") ||
       importPath.startsWith("$app")
     ) {
-      return "packages/* must not import app internals (@web/$lib/$app).";
+      return "reference/mixed-code/packages/* must not import app internals (@web/$lib/$app).";
     }
   }
 
@@ -128,13 +128,13 @@ function validateImport(file: string, importPath: string): string | null {
     return "Target ownership must not depend on legacy @yona/core or @yona/infra packages.";
   }
 
-  if (file.startsWith("apps/app/")) {
+  if (file.startsWith("reference/mixed-code/apps/app/")) {
     if (
       importPath.startsWith("@web/") ||
       importPath.startsWith("$lib") ||
       importPath.startsWith("$app")
     ) {
-      return "apps/app must not import SvelteKit app internals (@web/$lib/$app).";
+      return "reference/mixed-code/apps/app must not import SvelteKit app internals (@web/$lib/$app).";
     }
   }
 

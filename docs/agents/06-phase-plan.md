@@ -2,7 +2,7 @@
 
 ## Phase 0: Rust Pivot 정리
 
-- former Rust pilot 경로를 `yona-rust/` canonical workspace로 승격
+- former Rust pilot 경로를 `repo root` canonical workspace로 승격
 - root canonical 문서와 `docs/agents/*` mirror를 Rust 기준으로 재작성
 - `docs/provenance/*` owner/target/current baseline을 Rust 기준으로 갱신
 - historical 문서에 status banner와 Rust pivot 이후 설명 추가

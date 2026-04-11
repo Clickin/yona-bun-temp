@@ -1,7 +1,7 @@
 # API Transport Decision Data Collection
 
 > Status: `superseded`
-> This data report reflects the pre-Rust-pivot Go transport evaluation. It remains useful as historical evidence for why the repository explored `chi`/`connect-go`, but the current canonical implementation path is `yona-rust/` and the root mixed code is reference-only.
+> This data report reflects the pre-Rust-pivot Go transport evaluation. It remains useful as historical evidence for why the repository explored `chi`/`connect-go`, but the current canonical implementation path is repo root and the root mixed code is reference-only.
 
 Date: 2026-04-06
 
@@ -15,7 +15,7 @@ Date: 2026-04-06
 
 ### 1. 내부 app-facing surface는 이미 넓다
 
-`frontend/src/lib` 기준:
+`reference/mixed-code/frontend/src/lib` 기준:
 
 - `*-trpc.ts` 파일 수: `13`
 - `t.procedure` 수: `84`
@@ -45,7 +45,7 @@ Date: 2026-04-06
 
 ### 2. raw HTTP route도 이미 별도 surface로 존재한다
 
-`frontend/src/routes/api` 기준:
+`reference/mixed-code/frontend/src/routes/api` 기준:
 
 - raw route implementation 파일 수: `20`
 - raw route spec 파일 수: `9`
@@ -80,7 +80,7 @@ Date: 2026-04-06
 
 ### 3. 현재 frontend는 이미 TanStack Router와 가까운 구조다
 
-- `frontend/src/router.tsx`는 `createRouter`와 `setupRouterSsrQueryIntegration`을 직접 사용한다.
+- `reference/mixed-code/frontend/src/router.tsx`는 `createRouter`와 `setupRouterSsrQueryIntegration`을 직접 사용한다.
 - app router는 `QueryClient`와 auth caller를 context에 주입한다.
 - 즉, 현재 `TanStack Start`를 제거하더라도 router/query 계층 자체는 이미 독립적인 편이다.
 
@@ -91,13 +91,13 @@ Date: 2026-04-06
 
 ### 4. 현재 tooling은 아직 Bun 중심이다
 
-root `package.json`:
+root `reference/mixed-code/root-toolchain/package.json`:
 
 - `dev`, `build`, `check`, `test`가 `bun run` 기준
 - `bun.lock` 존재
 - `packageManager` 필드 없음
 
-`frontend/package.json`:
+`reference/mixed-code/frontend/package.json`:
 
 - `dev`는 `bun --bun vite dev`
 - `test`도 Bun 호출 포함
@@ -114,9 +114,9 @@ root `package.json`:
 
 스파이크 경로:
 
-- [tools/api-transport-spike/README.md](/G:/programming/yona/tools/api-transport-spike/README.md)
-- [main.go](/G:/programming/yona/tools/api-transport-spike/server/main.go)
-- [main_test.go](/G:/programming/yona/tools/api-transport-spike/server/main_test.go)
+- [reference/spikes/api-transport-spike/README.md](/G:/programming/yona/reference/spikes/api-transport-spike/README.md)
+- [main.go](/G:/programming/yona/reference/spikes/api-transport-spike/server/main.go)
+- [main_test.go](/G:/programming/yona/reference/spikes/api-transport-spike/server/main_test.go)
 
 확인한 사실:
 
@@ -138,7 +138,7 @@ root `package.json`:
 
 실행 경로:
 
-- [rest-manual.ts](/G:/programming/yona/tools/api-transport-spike/web/src/rest-manual.ts)
+- [rest-manual.ts](/G:/programming/yona/reference/spikes/api-transport-spike/web/src/rest-manual.ts)
 
 검증 결과:
 
@@ -171,10 +171,10 @@ root `package.json`:
 
 실행 경로:
 
-- [spike.openapi.yaml](/G:/programming/yona/tools/api-transport-spike/web/openapi/spike.openapi.yaml)
-- [orval.config.ts](/G:/programming/yona/tools/api-transport-spike/web/orval.config.ts)
-- [spike-client.ts](/G:/programming/yona/tools/api-transport-spike/web/src/generated/spike-client.ts)
-- [rest-openapi.ts](/G:/programming/yona/tools/api-transport-spike/web/src/rest-openapi.ts)
+- [spike.openapi.yaml](/G:/programming/yona/reference/spikes/api-transport-spike/web/openapi/spike.openapi.yaml)
+- [orval.config.ts](/G:/programming/yona/reference/spikes/api-transport-spike/web/orval.config.ts)
+- [spike-client.ts](/G:/programming/yona/reference/spikes/api-transport-spike/web/src/generated/spike-client.ts)
+- [rest-openapi.ts](/G:/programming/yona/reference/spikes/api-transport-spike/web/src/rest-openapi.ts)
 
 검증 결과:
 
@@ -214,13 +214,13 @@ root `package.json`:
 
 실행 경로:
 
-- [spike.proto](/G:/programming/yona/tools/api-transport-spike/connect/proto/yona/spike/v1/spike.proto)
-- [buf.gen.yaml](/G:/programming/yona/tools/api-transport-spike/connect/buf.gen.yaml)
-- [main.go](/G:/programming/yona/tools/api-transport-spike/connect/server/main.go)
-- [spike.connect.go](/G:/programming/yona/tools/api-transport-spike/connect/gen/go/yona/spike/v1/spikev1connect/spike.connect.go)
-- [spike_pb.ts](/G:/programming/yona/tools/api-transport-spike/web/src/generated-connect/yona/spike/v1/spike_pb.ts)
-- [spike-SpikeService_connectquery.ts](/G:/programming/yona/tools/api-transport-spike/web/src/generated-connect/yona/spike/v1/spike-SpikeService_connectquery.ts)
-- [connect-client.ts](/G:/programming/yona/tools/api-transport-spike/web/src/connect-client.ts)
+- [spike.proto](/G:/programming/yona/reference/spikes/api-transport-spike/connect/proto/yona/spike/v1/spike.proto)
+- [buf.gen.yaml](/G:/programming/yona/reference/spikes/api-transport-spike/connect/buf.gen.yaml)
+- [main.go](/G:/programming/yona/reference/spikes/api-transport-spike/connect/server/main.go)
+- [spike.connect.go](/G:/programming/yona/reference/spikes/api-transport-spike/connect/gen/go/yona/spike/v1/spikev1connect/spike.connect.go)
+- [spike_pb.ts](/G:/programming/yona/reference/spikes/api-transport-spike/web/src/generated-connect/yona/spike/v1/spike_pb.ts)
+- [spike-SpikeService_connectquery.ts](/G:/programming/yona/reference/spikes/api-transport-spike/web/src/generated-connect/yona/spike/v1/spike-SpikeService_connectquery.ts)
+- [connect-client.ts](/G:/programming/yona/reference/spikes/api-transport-spike/web/src/connect-client.ts)
 
 검증 결과:
 
@@ -434,10 +434,10 @@ Sources:
 
 ### 로컬
 
-- [package.json](/G:/programming/yona/package.json)
-- [frontend/package.json](/G:/programming/yona/frontend/package.json)
-- [router.tsx](/G:/programming/yona/frontend/src/router.tsx)
-- [queries.ts](/G:/programming/yona/frontend/src/lib/queries.ts)
+- [reference/mixed-code/root-toolchain/package.json](/G:/programming/yona/reference/mixed-code/root-toolchain/package.json)
+- [reference/mixed-code/frontend/package.json](/G:/programming/yona/reference/mixed-code/frontend/package.json)
+- [router.tsx](/G:/programming/yona/reference/mixed-code/frontend/src/router.tsx)
+- [queries.ts](/G:/programming/yona/reference/mixed-code/frontend/src/lib/queries.ts)
 
 ### 공식 문서
 

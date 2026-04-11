@@ -5,7 +5,7 @@
 ## 현재 해석 규칙
 
 - canonical execution rules는 `AGENTS.md`와 `SPEC.md`에 있다.
-- canonical implementation path는 [`yona-rust/`](/G:/programming/yona/yona-rust)다.
+- canonical implementation path는 [repo root](/G:/programming/yona)다.
 - 이 디렉터리에서 언급하는 root mixed-code 경로는 모두 reference-only migration material이다.
 - legacy source, current mixed-code reference, Rust target layer를 함께 남기는 것이 이 디렉터리의 목적이다.
 
@@ -23,5 +23,5 @@
 ## Batch Boundary
 
 - 이 디렉터리는 full parity claim이 아니라 bounded provenance evidence다.
-- full product parity는 `yona-rust/` 기준의 후속 vertical slice 구현이 완료되어야 한다.
+- full product parity는 `repo root` 기준의 후속 vertical slice 구현이 완료되어야 한다.
 - 여기의 미구현 항목은 `gap` 또는 `deferred`로 읽어야 하며, root canonical 문서와 plan docs의 follow-up item과 대응되어야 한다.

@@ -1,7 +1,7 @@
 # Runtime Stack Decision Report
 
 > Status: `superseded`
-> This report records the 2026-04-06 stack decision before the Rust pivot. Keep it for historical rationale only. The current canonical implementation path is `yona-rust/`.
+> This report records the 2026-04-06 stack decision before the Rust pivot. Keep it for historical rationale only. The current canonical implementation path is repo root.
 
 Date: 2026-04-06
 

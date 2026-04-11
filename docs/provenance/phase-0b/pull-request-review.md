@@ -18,20 +18,20 @@
 
 ## Current Baseline And Canonical Target
 
-- current mixed-code reference: `frontend/src/lib/pull-request-trpc.ts`, `packages/domain/*pull-request*`
-- canonical implementation path: `yona-rust/`
-- canonical owner path: `yona-rust/frontend`, `yona-rust/crates/server`, `yona-rust/crates/domain`
+- current mixed-code reference: `reference/mixed-code/frontend/src/lib/pull-request-trpc.ts`, `reference/mixed-code/packages/domain/*pull-request*`
+- canonical implementation path: `repo root`
+- canonical owner path: `frontend`, `crates/server`, `crates/domain`
 
 ## Extracted Intent
 
 | Legacy source | Intent | Rust translation target |
 | --- | --- | --- |
-| `PullRequestAppTest.testCloseAnonymous` and `testOpenAnonymous` | anonymous open/close attempts redirect or deny rather than mutating state | auth gate in `yona-rust/crates/server` plus frontend page guard |
-| `PullRequestAppTest.testCloseNotExistProject` and `testCloseNotExistPullRequest` | close rejects missing project or missing pull request with distinct error outcomes | `yona-rust/crates/server` error mapping backed by domain lookup result |
-| `PullRequestAppTest.testClosePullRequest` and `testClosePullRequestNotAllow` | authorized actors can close; unauthorized actors cannot mutate state | transition policy in `yona-rust/crates/domain` plus mutation contract test |
-| `PullRequestAppTest.testOpenPullRequest`, `testOpenPullRequestBadRequest`, and `testOpenRoute` | authorized reopen succeeds; already-open reopen is bad request | transition policy in `yona-rust/crates/domain` plus `yona-rust/crates/server` contract test |
-| `ReviewThreadAppTest.projectNotFound` and `projectForbidden` | review-thread listing respects project existence and project visibility before returning data | query authorization in `yona-rust/crates/server` plus frontend route test |
-| `ReviewSearchConditionTest.*` | review-thread list/filter semantics cover text, commit id, path, author, participant, and thread state filtering | query contract in `yona-rust/proto`, domain query service in `yona-rust/crates/domain`, list UI in `yona-rust/frontend` |
+| `PullRequestAppTest.testCloseAnonymous` and `testOpenAnonymous` | anonymous open/close attempts redirect or deny rather than mutating state | auth gate in `crates/server` plus frontend page guard |
+| `PullRequestAppTest.testCloseNotExistProject` and `testCloseNotExistPullRequest` | close rejects missing project or missing pull request with distinct error outcomes | `crates/server` error mapping backed by domain lookup result |
+| `PullRequestAppTest.testClosePullRequest` and `testClosePullRequestNotAllow` | authorized actors can close; unauthorized actors cannot mutate state | transition policy in `crates/domain` plus mutation contract test |
+| `PullRequestAppTest.testOpenPullRequest`, `testOpenPullRequestBadRequest`, and `testOpenRoute` | authorized reopen succeeds; already-open reopen is bad request | transition policy in `crates/domain` plus `crates/server` contract test |
+| `ReviewThreadAppTest.projectNotFound` and `projectForbidden` | review-thread listing respects project existence and project visibility before returning data | query authorization in `crates/server` plus frontend route test |
+| `ReviewSearchConditionTest.*` | review-thread list/filter semantics cover text, commit id, path, author, participant, and thread state filtering | query contract in `proto`, domain query service in `crates/domain`, list UI in `frontend` |
 
 ## Explicit Phase 4 Deferrals
 

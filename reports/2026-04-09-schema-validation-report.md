@@ -5,7 +5,7 @@ Date: 2026-04-09
 ## Summary
 
 - Overall result: `PASS`
-- Canonical schema source: `yona-rust/crates/persistence/src`
+- Canonical schema source: `crates/persistence/src`
 - Manifest-validated tables: `62`
 - Validation scope: full-table schema validation, startup schema policy (`up/adopt/validate_only`), env/TOML startup config, persistence regression, server request flow, SQLite/PostgreSQL/MariaDB matrix
 

@@ -11,7 +11,7 @@ export function createServerSearchCaller() {
 }
 
 export async function readServerSearchPage(input: SearchInput) {
-  const { runMigrations } = await import("../../../../packages/db/src/migrator");
+  const { runMigrations } = await import("../../../../reference/mixed-code/packages/db/src/migrator");
 
   await runMigrations();
   return createServerSearchCaller().search(input);

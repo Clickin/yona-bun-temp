@@ -19,28 +19,28 @@
 
 ## Current Baseline And Canonical Target
 
-- current mixed-code reference: `frontend/legacy-start/src/lib/project-trpc.ts`, `frontend/legacy-start/src/lib/enrollment-trpc.ts`, `frontend/legacy-start/src/lib/me-trpc.ts`, `packages/domain/*project*`, `packages/db/*project*`
-- canonical implementation path: `yona-rust/`
+- current mixed-code reference: `reference/mixed-code/frontend/legacy-start/src/lib/project-trpc.ts`, `reference/mixed-code/frontend/legacy-start/src/lib/enrollment-trpc.ts`, `reference/mixed-code/frontend/legacy-start/src/lib/me-trpc.ts`, `reference/mixed-code/packages/domain/*project*`, `reference/mixed-code/packages/db/*project*`
+- canonical implementation path: `repo root`
 - canonical owner path:
-  - `yona-rust/frontend`
-  - `yona-rust/crates/server`
-  - `yona-rust/crates/domain`
-  - `yona-rust/crates/persistence`
+  - `frontend`
+  - `crates/server`
+  - `crates/domain`
+  - `crates/persistence`
 
 ## Extracted Intent
 
 | Legacy source | Intent | Rust translation target |
 | --- | --- | --- |
-| `ProjectTest.create` | project create persists identity, overview, scope, VCS, and derived site URL semantics | `yona-rust/crates/persistence` repository helper + `yona-rust/crates/domain` create service |
-| `ProjectTest.findByNameAndOwner` and `Project.exists` | public routing keys are owner plus project name | identifiers in `yona-rust/proto` plus lookup helper in `yona-rust/crates/persistence` |
-| `ProjectApp.projects` and `project/list.scala.html` | `/projects` is a public, searchable, paginated directory entry surface and must not fall back to an unsupported route | `yona-rust/frontend` route shell + `PilotService.ListProjects` query + browser smoke |
-| `ProjectTest.projectNameChangeable` | rename stays owner-scoped and duplicate project names reject under the same owner | `yona-rust/crates/persistence` conflict helper + `yona-rust/crates/domain` update service |
-| `ProjectApp.newProject` | create under personal owner is allowed; org owner create requires org-admin authority | `yona-rust/crates/domain` create service + `yona-rust/crates/server` mutation contract test |
-| `ProjectApp.project` | detail read is permission filtered and records recent visit semantics | `yona-rust/crates/domain` detail resolution + `yona-rust/frontend` route/UI test |
-| `ProjectApp.projectOverviewUpdate` | manager-level actor can update overview content | `yona-rust/crates/domain` update service + `yona-rust/crates/server` mutation contract test |
-| `ProjectAppTest` visibility cases | public/protected/private visibility gates readable discovery | `yona-rust/crates/domain` read matrix + `yona-rust/crates/server` query contract test |
-| `EnrollProjectAppTest` | enrollment request and cancel stay guest-only, not-found for missing projects, idempotent | `yona-rust/crates/domain` enrollment service + `yona-rust/crates/server` mutation contract test |
-| `RecentlyVisitedProjectsTest` and `WatchProjectAppTest` | recent visits dedupe/reorder and favorites remain workspace-local behavior | `yona-rust/crates/domain` workspace service + `yona-rust/crates/persistence` workspace repo + `yona-rust/frontend` route/UI test |
+| `ProjectTest.create` | project create persists identity, overview, scope, VCS, and derived site URL semantics | `crates/persistence` repository helper + `crates/domain` create service |
+| `ProjectTest.findByNameAndOwner` and `Project.exists` | public routing keys are owner plus project name | identifiers in `proto` plus lookup helper in `crates/persistence` |
+| `ProjectApp.projects` and `project/list.scala.html` | `/projects` is a public, searchable, paginated directory entry surface and must not fall back to an unsupported route | `frontend` route shell + `PilotService.ListProjects` query + browser smoke |
+| `ProjectTest.projectNameChangeable` | rename stays owner-scoped and duplicate project names reject under the same owner | `crates/persistence` conflict helper + `crates/domain` update service |
+| `ProjectApp.newProject` | create under personal owner is allowed; org owner create requires org-admin authority | `crates/domain` create service + `crates/server` mutation contract test |
+| `ProjectApp.project` | detail read is permission filtered and records recent visit semantics | `crates/domain` detail resolution + `frontend` route/UI test |
+| `ProjectApp.projectOverviewUpdate` | manager-level actor can update overview content | `crates/domain` update service + `crates/server` mutation contract test |
+| `ProjectAppTest` visibility cases | public/protected/private visibility gates readable discovery | `crates/domain` read matrix + `crates/server` query contract test |
+| `EnrollProjectAppTest` | enrollment request and cancel stay guest-only, not-found for missing projects, idempotent | `crates/domain` enrollment service + `crates/server` mutation contract test |
+| `RecentlyVisitedProjectsTest` and `WatchProjectAppTest` | recent visits dedupe/reorder and favorites remain workspace-local behavior | `crates/domain` workspace service + `crates/persistence` workspace repo + `frontend` route/UI test |
 
 ## Explicit Gaps
 
@@ -55,6 +55,6 @@
 
 ## R0-3 Delivery Note
 
-- `R0-3` now covers project create/detail/settings, visibility-aware read, guest-only enrollment request/cancel, read-only member summary, and workspace favorite/recent linkage in `yona-rust/`.
-- The Wave 0 route-foundation slice also mounts the public `/projects` directory in `yona-rust/frontend` through file routes under `src/routes/projects/**`, with route-parity tests and a shell-routing Playwright smoke pack.
+- `R0-3` now covers project create/detail/settings, visibility-aware read, guest-only enrollment request/cancel, read-only member summary, and workspace favorite/recent linkage in `repo root`.
+- The Wave 0 route-foundation slice also mounts the public `/projects` directory in `frontend` through file routes under `src/routes/projects/**`, with route-parity tests and a shell-routing Playwright smoke pack.
 - Project detail read records recent visits for authenticated viewers, and `/me` now reflects favorite/recent project state through `ReadWorkspaceOverview`.

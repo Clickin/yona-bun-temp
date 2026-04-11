@@ -1,6 +1,6 @@
 # Protobuf Codegen Contract
 
-`yona-rust/`는 protobuf codegen을 두 경로로 나눈다.
+`repo root`는 protobuf codegen을 두 경로로 나눈다.
 
 ## Rust server
 
@@ -11,8 +11,8 @@
 ## Browser client
 
 - browser/client checked-in output은 `buf generate`가 canonical 경로다.
-- `yona-rust/buf.gen.yaml`은 `protoc-gen-es`와 `protoc-gen-connect-query`만 실행한다.
-- 출력 경로는 `yona-rust/frontend/src/gen`으로 고정한다.
+- `buf.gen.yaml`은 `protoc-gen-es`와 `protoc-gen-connect-query`만 실행한다.
+- 출력 경로는 `frontend/src/gen`으로 고정한다.
 
 ## Why split
 

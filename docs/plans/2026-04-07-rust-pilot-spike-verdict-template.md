@@ -1,7 +1,7 @@
 # Rust Pilot Spike Verdict Template
 
 > Status: reference-only
-> This template belongs to the original Rust pilot spike and is preserved as historical evidence. Current canonical implementation work lives under `yona-rust/`.
+> This template belongs to the original Rust pilot spike and is preserved as historical evidence. Current canonical implementation work lives under `repo root`.
 
 ## Mandatory Gates
 

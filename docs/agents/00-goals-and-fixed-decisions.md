@@ -17,10 +17,10 @@
 ## 고정 의사결정
 
 - 1차 source of truth는 `yona-original/`이다.
-- 2차 canonical implementation baseline은 `yona-rust/`다.
-- 3차 migration/reference material은 root mixed code다.
-- canonical frontend ownership은 `yona-rust/frontend/`다.
-- canonical contract source는 `yona-rust/proto/`다.
-- 최소 ownership은 `yona-rust/crates/server`, `domain`, `persistence`, `migration`, `vcs`, `search`, `integrations`로 고정한다.
-- root `frontend/`, `packages/*`, `cmd/`, `internal/`, `apps/*`, `proto/`는 reference-only다.
+- canonical implementation baseline은 repo root다.
+- 3차 migration/reference material은 `reference/mixed-code/**`다. historical spike evidence는 `reference/spikes/**`에 둔다.
+- canonical frontend ownership은 `frontend/`다.
+- canonical contract source는 `proto/`다.
+- 최소 ownership은 `crates/server`, `domain`, `persistence`, `migration`, `vcs`, `search`, `integrations`로 고정한다.
+- `reference/mixed-code/**`와 `reference/spikes/**`는 reference-only다.
 - historical 문서는 삭제하지 않고 status banner와 Rust pivot 이후 설명을 붙인다.

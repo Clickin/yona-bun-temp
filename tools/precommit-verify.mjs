@@ -75,18 +75,28 @@ const resolveExecutable = (name) => {
 
 const GIT_BIN = resolveExecutable("git");
 const PNPM_BIN = resolveExecutable("pnpm");
+const ROOT_PACKAGE_JSON = join(process.cwd(), "package.json");
 const TOOL_BIN_DIR = join(process.cwd(), "node_modules", ".bin");
-const OXFMT_BIN =
+const OXFMT_LOCAL_BIN =
   process.platform === "win32" ? join(TOOL_BIN_DIR, "oxfmt.CMD") : join(TOOL_BIN_DIR, "oxfmt");
-const OXLINT_BIN =
+const OXLINT_LOCAL_BIN =
   process.platform === "win32" ? join(TOOL_BIN_DIR, "oxlint.CMD") : join(TOOL_BIN_DIR, "oxlint");
 
-const resolveToolInvocation = (command, packageName) => {
-  if (existsSync(command)) {
-    return { argsPrefix: [], command };
+const resolveToolInvocation = (localBin, globalName, packageName) => {
+  if (existsSync(localBin) && canRun(localBin)) {
+    return { argsPrefix: [], command: localBin };
   }
 
-  return { argsPrefix: ["exec", packageName], command: PNPM_BIN };
+  const globalBin = resolveExecutable(globalName);
+  if (canRun(globalBin)) {
+    return { argsPrefix: [], command: globalBin };
+  }
+
+  if (existsSync(ROOT_PACKAGE_JSON) && canRun(PNPM_BIN, ["exec", packageName])) {
+    return { argsPrefix: ["exec", packageName], command: PNPM_BIN };
+  }
+
+  return null;
 };
 
 const canRun = (command, argsPrefix = []) => {
@@ -94,7 +104,7 @@ const canRun = (command, argsPrefix = []) => {
     process.platform === "win32" && command.toLowerCase().endsWith(".cmd")
       ? spawnSync("cmd.exe", ["/c", command, ...argsPrefix, "--version"], { stdio: "ignore" })
       : spawnSync(command, [...argsPrefix, "--version"], { stdio: "ignore" });
-  return result.status === 0;
+  return !result.error && result.status === 0;
 };
 
 const run = (command, args, argsPrefix = []) => {
@@ -138,20 +148,28 @@ const lintTargets = stagedFiles
   .filter((file) => OXLINT_EXTENSIONS.has(getExtension(file)))
   .filter((file) => !isGeneratedFile(file));
 if (lintTargets.length > 0) {
-  console.log(`precommit: running oxlint on ${lintTargets.length} staged file(s)`);
-  const oxlint = resolveToolInvocation(OXLINT_BIN, "oxlint");
-  run(oxlint.command, lintTargets, oxlint.argsPrefix);
+  const oxlint = resolveToolInvocation(OXLINT_LOCAL_BIN, "oxlint", "oxlint");
+  if (!oxlint) {
+    console.log(
+      "precommit: skipping oxlint because no local bin or package-managed invocation is available",
+    );
+  } else {
+    console.log(`precommit: running oxlint on ${lintTargets.length} staged file(s)`);
+    run(oxlint.command, lintTargets, oxlint.argsPrefix);
+  }
 }
 
 const formatTargets = stagedFiles
   .filter((file) => OXFMT_EXTENSIONS.has(getExtension(file)))
   .filter((file) => !isGeneratedFile(file));
 if (formatTargets.length > 0) {
-  console.log(`precommit: running oxfmt --check on ${formatTargets.length} staged file(s)`);
-  const oxfmt = resolveToolInvocation(OXFMT_BIN, "oxfmt");
-  if (!canRun(oxfmt.command, oxfmt.argsPrefix)) {
-    console.log("precommit: skipping oxfmt --check because formatter is unavailable in this environment");
+  const oxfmt = resolveToolInvocation(OXFMT_LOCAL_BIN, "oxfmt", "oxfmt");
+  if (!oxfmt) {
+    console.log(
+      "precommit: skipping oxfmt --check because no local bin or package-managed invocation is available",
+    );
   } else {
+    console.log(`precommit: running oxfmt --check on ${formatTargets.length} staged file(s)`);
     run(oxfmt.command, ["--check", ...formatTargets], oxfmt.argsPrefix);
   }
 }

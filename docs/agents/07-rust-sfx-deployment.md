@@ -2,7 +2,7 @@
 
 ## 목표
 
-- `yona-rust/` workspace를 single-binary/SFX와 Docker/Kubernetes 양쪽에 맞게 유지한다.
+- `repo root` workspace를 single-binary/SFX와 Docker/Kubernetes 양쪽에 맞게 유지한다.
 - frontend build output과 backend runtime을 하나의 Rust 배포 단위로 묶을 수 있게 한다.
 - user-uploaded asset과 embedded/static asset을 명확히 분리한다.
 

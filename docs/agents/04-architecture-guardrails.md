@@ -2,18 +2,18 @@
 
 ## G1) Canonical Baseline
 
-- current canonical implementation baseline은 `yona-rust/`다.
+- current canonical implementation baseline은 `repo root`다.
 - legacy truth는 `yona-original/`에 있다.
-- root mixed code는 reference-only다.
+- `reference/mixed-code/**`는 reference-only다.
 
 ## G2) Ownership Boundary
 
-- `yona-rust/frontend/`는 UI composition, route tree, client contract consumption만 소유한다.
-- `yona-rust/proto/`는 canonical contract source를 소유한다.
-- `yona-rust/crates/server/`는 runtime bootstrap, HTTP/RPC, asset delivery, session/auth bootstrap을 소유한다.
-- `yona-rust/crates/domain/`은 ACL, invariant, domain behavior를 소유한다.
-- `yona-rust/crates/persistence/`는 DB access와 repositories를 소유한다.
-- `yona-rust/crates/migration/`은 schema와 migration을 소유한다.
+- `frontend/`는 UI composition, route tree, client contract consumption만 소유한다.
+- `proto/`는 canonical contract source를 소유한다.
+- `crates/server/`는 runtime bootstrap, HTTP/RPC, asset delivery, session/auth bootstrap을 소유한다.
+- `crates/domain/`은 ACL, invariant, domain behavior를 소유한다.
+- `crates/persistence/`는 DB access와 repositories를 소유한다.
+- `crates/migration/`은 schema와 migration을 소유한다.
 
 ## G3) Historical Discipline
 
@@ -25,3 +25,4 @@
 - legacy UX와 기능 의미를 임의로 바꾸지 않는다.
 - 기능 누락은 `deferred`, `gap`, `deviation` 중 하나로 반드시 기록한다.
 - root canonical, provenance, plan docs 사이에 누락 항목 대응이 맞아야 한다.
+

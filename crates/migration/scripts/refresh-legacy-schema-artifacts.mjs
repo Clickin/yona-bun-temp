@@ -366,7 +366,7 @@ function main() {
 
   const manifest = {
     source: {
-      canonicalEntityTree: "yona-rust/crates/persistence/src",
+      canonicalEntityTree: "crates/persistence/src",
       supportingReference: "drizzle/* latest cumulative migrations",
       excludedTables: [...EXCLUDED_TABLES],
     },

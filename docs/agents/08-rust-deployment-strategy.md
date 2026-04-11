@@ -2,7 +2,7 @@
 
 ## 배포 토폴로지
 
-- canonical topology는 `yona-rust/` 기반 Rust application workspace다.
+- canonical topology는 repo root 기반 Rust application workspace다.
 - frontend와 backend는 ownership 경계상 분리되지만, 최종 artifact는 함께 제공될 수 있다.
 - 별도 old-stack backend API 프로세스를 canonical topology로 두지 않는다.
 
@@ -13,6 +13,7 @@
 
 ## 고정 규칙
 
-- 어떤 배포 형태에서도 canonical implementation path는 `yona-rust/`다.
-- root mixed code는 deployment baseline이 아니다.
+- 어떤 배포 형태에서도 canonical implementation path는 `repo root`다.
+- `reference/mixed-code/**`는 deployment baseline이 아니다.
 - user-uploaded asset은 image layer나 embedded static asset과 분리한다.
+

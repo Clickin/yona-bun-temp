@@ -16,22 +16,22 @@
 
 ## Current Baseline And Canonical Target
 
-- current mixed-code reference: `frontend/src/lib/search-trpc.ts`, `packages/domain/*search*`, `packages/db/*search*`
-- canonical implementation path: `yona-rust/`
-- canonical owner path: `yona-rust/frontend`, `yona-rust/crates/server`, `yona-rust/crates/search`, `yona-rust/crates/persistence`
+- current mixed-code reference: `reference/mixed-code/frontend/src/lib/search-trpc.ts`, `reference/mixed-code/packages/domain/*search*`, `reference/mixed-code/packages/db/*search*`
+- canonical implementation path: `repo root`
+- canonical owner path: `frontend`, `crates/server`, `crates/search`, `crates/persistence`
 
 ## Extracted Intent
 
 | Legacy source | Intent | Rust translation target |
 | --- | --- | --- |
-| `SearchApp.searchInAll`, `searchInAGroup`, `searchInAProject` | bounded search is query-driven and exposed at `global`, `organization`, `project` scopes | query contract in `yona-rust/proto`, route/UI handling in `yona-rust/frontend` |
-| `SearchTests.findUsersBy*` | `user` search matches query text and narrows by scope | `yona-rust/crates/search` query service + `yona-rust/crates/persistence` search repo |
-| `SearchTests.*findProjects*` | `project` search is permission filtered and visibility aware | `yona-rust/crates/search` query service + `yona-rust/crates/persistence` search repo |
-| `SearchTests.*findIssues*` | `issue` search preserves readable-result semantics across visibility states | `yona-rust/crates/search` query service + `yona-rust/crates/persistence` search repo |
-| `SearchTests.*findPosts*` | `posting` search keeps readable-result semantics | `yona-rust/crates/search` query service + `yona-rust/crates/persistence` search repo |
-| `SearchTests.*findReviews*` | `review_comment` search remains permission filtered across the same scopes | `yona-rust/crates/search` query service + `yona-rust/crates/persistence` search repo |
-| `SearchResultTests.makeSnipet`, `merge_overlap` | snippet generation preserves keyword-centered excerpt behavior and overlap merge behavior | snippet helper test in `yona-rust/crates/search` |
-| `AccessControlTest.*` | result inclusion must respect the same read boundary as project and issue visibility | ACL-backed filter reuse in `yona-rust/crates/search` and `yona-rust/crates/domain` |
+| `SearchApp.searchInAll`, `searchInAGroup`, `searchInAProject` | bounded search is query-driven and exposed at `global`, `organization`, `project` scopes | query contract in `proto`, route/UI handling in `frontend` |
+| `SearchTests.findUsersBy*` | `user` search matches query text and narrows by scope | `crates/search` query service + `crates/persistence` search repo |
+| `SearchTests.*findProjects*` | `project` search is permission filtered and visibility aware | `crates/search` query service + `crates/persistence` search repo |
+| `SearchTests.*findIssues*` | `issue` search preserves readable-result semantics across visibility states | `crates/search` query service + `crates/persistence` search repo |
+| `SearchTests.*findPosts*` | `posting` search keeps readable-result semantics | `crates/search` query service + `crates/persistence` search repo |
+| `SearchTests.*findReviews*` | `review_comment` search remains permission filtered across the same scopes | `crates/search` query service + `crates/persistence` search repo |
+| `SearchResultTests.makeSnipet`, `merge_overlap` | snippet generation preserves keyword-centered excerpt behavior and overlap merge behavior | snippet helper test in `crates/search` |
+| `AccessControlTest.*` | result inclusion must respect the same read boundary as project and issue visibility | ACL-backed filter reuse in `crates/search` and `crates/domain` |
 
 ## Explicit Deferrals
 

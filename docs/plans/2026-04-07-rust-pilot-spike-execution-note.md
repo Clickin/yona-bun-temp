@@ -1,11 +1,11 @@
 # Rust Pilot Spike Execution Note
 
 > Status: reference-only
-> This document records the spike that started under `experimental/rust-pilot/` and now lives at `yona-rust/`. Treat it as historical spike evidence, not as the canonical execution spec.
+> This document records the spike that started under `experimental/rust-pilot/` and now lives at `repo root`. Treat it as historical spike evidence, not as the canonical execution spec.
 
 ## Goal
 
-- Validate the Rust workspace promotion path that is now represented by `yona-rust/`.
+- Validate the Rust workspace promotion path that is now represented by `repo root`.
 - Preserve the original spike evidence for:
   - Connect JSON unary compatibility
   - session bootstrap + CSRF behavior
@@ -25,7 +25,7 @@
 ## Commands
 
 ```powershell
-cd yona-rust
+cd G:\programming\yona
 cargo test -p yona-rust-pilot-server
 cargo test -p yona-rust-pilot-server --test db_matrix_env -- --nocapture
 pwsh ./scripts/run-db-matrix.ps1

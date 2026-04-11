@@ -1,7 +1,7 @@
 # Project Enrollment Domain Design
 
 > Status: `historical`
-> This document records a pre-Rust-pivot design discussion. Current canonical implementation work happens in `yona-rust/`; any root mixed-code paths mentioned below are reference-only.
+> This document records a pre-Rust-pivot design discussion. Current canonical implementation work happens in `repo root`; any root mixed-code paths mentioned below are reference-only.
 
 ## Scope
 
@@ -34,7 +34,7 @@
 
 ## Domain Design
 
-- Add `packages/domain/src/enrollment-service.ts` for project enroll and cancel.
+- Add `reference/mixed-code/packages/domain/src/enrollment-service.ts` for project enroll and cancel.
 - Use `readProjectAuthorization` to resolve the target project and current actor facts.
 - Reject anonymous actors with `DomainPermissionError`.
 - Reject current project members, project managers, and site admins with `DomainConflictError`.
@@ -63,4 +63,4 @@
 # Status: historical
 #
 # This document records a pre-Rust-pivot design discussion. Current canonical implementation
-# work happens in `yona-rust/`; any root mixed-code paths mentioned below are reference-only.
+# work happens in `repo root`; any root mixed-code paths mentioned below are reference-only.

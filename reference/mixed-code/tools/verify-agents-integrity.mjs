@@ -14,8 +14,8 @@ const requiredSnippets = [
   "DB session persistence는 금지한다. 기본은 in-memory session이며 `Redis/Valkey` secondary storage를 허용한다.",
   "`PostgreSQL`, `MySQL/MariaDB`, `SQLite`를 day 1부터 동등한 지원 대상으로 취급한다.",
   "Git/SVN 연동은 system executable만 사용한다.",
-  "새 ownership은 `apps/app`, `packages/auth`, `packages/contracts`, `packages/db`, `packages/domain`, `packages/integrations`, `packages/i18n`, `packages/ui`, `packages/vcs`에 둔다.",
-  "`apps/web`, `packages/api`, `packages/core`, `packages/infra`는 extraction/deletion 대상이므로 새 장기 ownership을 추가하지 않는다.",
+  "새 ownership은 `reference/mixed-code/apps/app`, `reference/mixed-code/packages/auth`, `reference/mixed-code/packages/contracts`, `reference/mixed-code/packages/db`, `reference/mixed-code/packages/domain`, `reference/mixed-code/packages/integrations`, `reference/mixed-code/packages/i18n`, `reference/mixed-code/packages/ui`, `reference/mixed-code/packages/vcs`에 둔다.",
+  "`reference/mixed-code/apps/web`, `reference/mixed-code/packages/api`, `reference/mixed-code/packages/core`, `reference/mixed-code/packages/infra`는 extraction/deletion 대상이므로 새 장기 ownership을 추가하지 않는다.",
 ];
 
 const forbiddenPatterns = [

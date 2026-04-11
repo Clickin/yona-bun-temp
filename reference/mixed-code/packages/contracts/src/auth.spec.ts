@@ -61,7 +61,7 @@ describe("auth contracts", () => {
     );
   });
 
-  it("validates canonical auth mutation inputs from packages/contracts", () => {
+  it("validates canonical auth mutation inputs from reference/mixed-code/packages/contracts", () => {
     expect(
       signInWithPasswordInputSchema.parse({
         identifier: " door ",

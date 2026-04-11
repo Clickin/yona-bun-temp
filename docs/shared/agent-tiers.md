@@ -8,7 +8,7 @@ Rust Ralph loops in this repository use three execution tiers.
 - 기본 역할: `explore`, `analyst`, `writer`
 - 사용 예:
   - 특정 legacy source path 확인
-  - current mixed-code reference inventory
+  - reference/mixed-code archive inventory
   - packet docs/status banner 정리
 
 ## STANDARD
@@ -16,7 +16,7 @@ Rust Ralph loops in this repository use three execution tiers.
 - 목적: bounded implementation, regression evidence, packet-local review
 - 기본 역할: `executor`, `test-engineer`, `verifier`, `planner`
 - 사용 예:
-  - `yona-rust` crate or frontend slice 구현
+  - repo root crate or frontend slice 구현
   - packet-level test/spec verification
   - bounded provenance and route/domain regression
 
@@ -41,3 +41,4 @@ Rust Ralph loops in this repository use three execution tiers.
   - Lane C: STANDARD persistence/migration
   - Lane D: STANDARD evidence/regression
   - Lane E: THOROUGH architect sign-off
+

@@ -15,14 +15,14 @@ Freeze these identifiers as the canonical parity fixture names:
 ## Current Baseline And Canonical Target
 
 - current mixed-code reference: root domain/db/frontend fixture helpers
-- canonical implementation path: `yona-rust/`
+- canonical implementation path: `repo root`
 - canonical owner path:
-  - `yona-rust/crates/domain`
-  - `yona-rust/crates/persistence`
-  - `yona-rust/frontend`
+  - `crates/domain`
+  - `crates/persistence`
+  - `frontend`
 
 ## Rules
 
 - Prefer login IDs and public owner/project names in assertions.
 - Preserve legacy display names and Korean overview text only where they carry provenance value.
-- Build fixture factories in Rust domain/persistence layers first, then expose only the minimum UI-facing helpers needed by `yona-rust/frontend`.
+- Build fixture factories in Rust domain/persistence layers first, then expose only the minimum UI-facing helpers needed by `frontend`.
