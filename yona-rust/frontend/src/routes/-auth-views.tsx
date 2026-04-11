@@ -354,3 +354,25 @@ export function ResetPasswordPage({
     </main>
   );
 }
+
+export function VerifyUserPage({
+  invalid,
+  loginId,
+  runtimeConfig,
+}: {
+  invalid?: boolean;
+  loginId: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  return (
+    <main className="app-shell">
+      <p className="eyebrow">Yona Rust Auth</p>
+      <h1>{invalid ? "Invalid verification" : "Verified User"}</h1>
+      <p>{loginId}</p>
+      <p className="tag-line">
+        {invalid ? "Invalid verification" : "User is verified. Try logging in."}
+      </p>
+      <a href={appHref(runtimeConfig, "/users/loginform")}>Login</a>
+    </main>
+  );
+}

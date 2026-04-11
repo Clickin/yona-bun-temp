@@ -51,6 +51,7 @@ function toWorkspaceOverview(
     })),
     profile: overview.profile
       ? {
+          avatarUrl: overview.profile.avatarUrl,
           connectedSocialProviders: [...overview.profile.connectedSocialProviders],
           displayName: overview.profile.displayName,
           englishName: overview.profile.englishName,

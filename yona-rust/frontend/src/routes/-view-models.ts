@@ -26,6 +26,7 @@ export interface WorkspaceOverviewViewModel {
     watchCount: number;
   }>;
   profile?: {
+    avatarUrl: string;
     connectedSocialProviders: string[];
     displayName: string;
     englishName: string;

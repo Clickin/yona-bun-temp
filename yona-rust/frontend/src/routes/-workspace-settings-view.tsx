@@ -1,6 +1,7 @@
 import * as React from "react";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { WorkspaceOverviewViewModel } from "./-view-models";
+import { resolveWorkspaceAvatarUrl } from "./-workspace-views";
 
 export type WorkspaceSettingsSection =
   | "emails"
@@ -8,6 +9,112 @@ export type WorkspaceSettingsSection =
   | "password"
   | "profile"
   | "token";
+
+export interface ProfileUpdateInput {
+  avatarAttachmentId: string;
+  email: string;
+  name: string;
+}
+
+export interface AvatarCropSelection {
+  size: number;
+  x: number;
+  y: number;
+}
+
+function clampAvatarCropSelection(
+  crop: AvatarCropSelection,
+  imageWidth: number,
+  imageHeight: number,
+): AvatarCropSelection {
+  const maxSize = Math.max(1, Math.min(imageWidth, imageHeight));
+  const size = Math.min(Math.max(1, Math.round(crop.size)), maxSize);
+  const x = Math.min(Math.max(0, Math.round(crop.x)), Math.max(0, imageWidth - size));
+  const y = Math.min(Math.max(0, Math.round(crop.y)), Math.max(0, imageHeight - size));
+
+  return { size, x, y };
+}
+
+export function createDefaultAvatarCrop(
+  imageWidth: number,
+  imageHeight: number,
+): AvatarCropSelection {
+  const size = Math.max(1, Math.min(imageWidth, imageHeight));
+  return {
+    size,
+    x: Math.floor((imageWidth - size) / 2),
+    y: Math.floor((imageHeight - size) / 2),
+  };
+}
+
+export function getAvatarCropPreviewStyle(
+  crop: AvatarCropSelection,
+  imageWidth: number,
+  imageHeight: number,
+): Record<string, string> {
+  const clampedCrop = clampAvatarCropSelection(crop, imageWidth, imageHeight);
+  const ratio = 128 / clampedCrop.size;
+  const marginLeft = Math.round(clampedCrop.x * ratio);
+  const marginTop = Math.round(clampedCrop.y * ratio);
+
+  return {
+    height: `${Math.round(imageHeight * ratio)}px`,
+    marginLeft: `${marginLeft === 0 ? 0 : -marginLeft}px`,
+    marginTop: `${marginTop === 0 ? 0 : -marginTop}px`,
+    width: `${Math.round(imageWidth * ratio)}px`,
+  };
+}
+
+export function drawAvatarCropToCanvas(
+  canvas: HTMLCanvasElement,
+  image: HTMLImageElement,
+  crop: AvatarCropSelection,
+) {
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("Canvas 2D context is not available.");
+  }
+
+  const imageWidth = image.naturalWidth || canvas.width;
+  const imageHeight = image.naturalHeight || canvas.height;
+  const clampedCrop = clampAvatarCropSelection(crop, imageWidth, imageHeight);
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(
+    image,
+    clampedCrop.x,
+    clampedCrop.y,
+    clampedCrop.size,
+    clampedCrop.size,
+    0,
+    0,
+    canvas.width,
+    canvas.height,
+  );
+}
+
+function blobFromCanvas(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error("Avatar crop failed."));
+        return;
+      }
+      resolve(blob);
+    }, "image/png");
+  });
+}
+
+export function buildProfileUpdateInput(
+  formData: FormData,
+  avatarAttachmentId: string,
+): ProfileUpdateInput {
+  return {
+    avatarAttachmentId,
+    email: String(formData.get("email") ?? ""),
+    name: String(formData.get("name") ?? ""),
+  };
+}
 
 function appHref(runtimeConfig: RuntimeConfig, href: string): string {
   return prefixBasePath(runtimeConfig.basePath, href);
@@ -30,7 +137,8 @@ export function WorkspaceSettingsPage(props: {
   onResetVisitedProjects?: () => void;
   onSetMainWorkspaceEmail?: (id: string) => void;
   onToggleWorkspaceNotification?: (projectId: string, eventType: string) => void;
-  onUpdateProfile?: (input: { email: string; name: string }) => void;
+  onUploadAvatar?: (blob: Blob, filename: string) => Promise<string>;
+  onUpdateProfile?: (input: ProfileUpdateInput) => void;
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
   routeHref: string;
@@ -51,12 +159,128 @@ export function WorkspaceSettingsPage(props: {
   const apiToken = props.workspaceOverview?.apiToken ?? "";
   const emails = props.workspaceOverview?.emails ?? [];
   const watchedProjects = props.workspaceOverview?.watchedProjects ?? [];
+  const profile = props.workspaceOverview?.profile ?? {
+    avatarUrl: "",
+    connectedSocialProviders: [],
+    displayName: session.userLabel,
+    englishName: "",
+    isBlocked: false,
+    isSiteAdmin: session.isSiteAdmin,
+    loginId: session.loginId,
+    primaryEmailAddress: session.emailAddress,
+    sinceLabel: "",
+  };
+  const [avatarAttachmentId, setAvatarAttachmentId] = React.useState("");
+  const [avatarErrorMessage, setAvatarErrorMessage] = React.useState<null | string>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = React.useState("");
+  const [cropFilename, setCropFilename] = React.useState("avatar.png");
+  const [cropImageSize, setCropImageSize] = React.useState({ height: 128, width: 128 });
+  const [cropSelection, setCropSelection] = React.useState<AvatarCropSelection>({
+    size: 128,
+    x: 0,
+    y: 0,
+  });
+  const [cropSourceUrl, setCropSourceUrl] = React.useState("");
+  const [uploadingAvatar, setUploadingAvatar] = React.useState(false);
+  const cropCanvasRef = React.useRef<HTMLCanvasElement | null>(null);
+  const cropImageRef = React.useRef<HTMLImageElement | null>(null);
+  const currentAvatarUrl = avatarPreviewUrl || resolveWorkspaceAvatarUrl(
+    profile.avatarUrl,
+    profile.displayName || session.userLabel || session.loginId,
+  );
+  const isCropModalOpen = cropSourceUrl !== "";
+  const cropPreviewStyle = getAvatarCropPreviewStyle(
+    cropSelection,
+    cropImageSize.width,
+    cropImageSize.height,
+  );
+
+  const closeCropModal = React.useCallback(() => {
+    setCropSourceUrl("");
+  }, []);
+
+  const onAvatarFileChange = React.useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      event.target.value = "";
+      if (!file) {
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        setAvatarErrorMessage("Only image files are allowed to be uploaded.");
+        return;
+      }
+
+      setAvatarErrorMessage(null);
+      const nextCropSourceUrl = URL.createObjectURL(file);
+      setCropFilename(file.name || "avatar.png");
+      setCropSourceUrl(nextCropSourceUrl);
+
+      const image = new Image();
+      image.onload = () => {
+        setCropImageSize({
+          height: image.naturalHeight,
+          width: image.naturalWidth,
+        });
+        setCropSelection(createDefaultAvatarCrop(image.naturalWidth, image.naturalHeight));
+      };
+      image.src = nextCropSourceUrl;
+    },
+    [],
+  );
+
+  const uploadCroppedAvatar = React.useCallback(async () => {
+    const canvas = cropCanvasRef.current;
+    const image = cropImageRef.current;
+    if (!canvas || !image || !props.onUploadAvatar) {
+      return;
+    }
+
+    setUploadingAvatar(true);
+    setAvatarErrorMessage(null);
+    try {
+      drawAvatarCropToCanvas(canvas, image, cropSelection);
+      const blob = await blobFromCanvas(canvas);
+      const nextAttachmentId = await props.onUploadAvatar(blob, cropFilename);
+      setAvatarAttachmentId(nextAttachmentId);
+      setAvatarPreviewUrl(URL.createObjectURL(blob));
+      closeCropModal();
+    } catch (error) {
+      setAvatarErrorMessage(error instanceof Error ? error.message : "Avatar upload failed.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }, [closeCropModal, cropFilename, cropSelection, props, setAvatarAttachmentId]);
 
   let sectionBody: React.ReactNode;
   switch (props.section) {
     case "profile":
       sectionBody = (
         <>
+          <section className="runtime-grid">
+            <div className="avatar-frm">
+              <div className="avatar-wrap xlarge">
+                <img
+                  alt={`${session.loginId} avatar`}
+                  src={currentAvatarUrl}
+                  style={{ width: "128px", maxWidth: "none" }}
+                />
+              </div>
+              <div className="btn-wrap mt10 center-txt">
+                <label className="ybtn ybtn-small btnUploadAvatar">
+                  Change avatar
+                  <input
+                    accept="image/*"
+                    className="file"
+                    hidden
+                    onChange={onAvatarFileChange}
+                    type="file"
+                  />
+                </label>
+              </div>
+              {avatarErrorMessage ? <p className="lede">{avatarErrorMessage}</p> : null}
+            </div>
+          </section>
           <form
             action={appHref(props.runtimeConfig, "/user/edit")}
             className="runtime-grid"
@@ -64,12 +288,14 @@ export function WorkspaceSettingsPage(props: {
             onSubmit={(event) => {
               event.preventDefault();
               const formData = new FormData(event.currentTarget);
-              props.onUpdateProfile?.({
-                email: String(formData.get("email") ?? ""),
-                name: String(formData.get("name") ?? ""),
-              });
+              props.onUpdateProfile?.(buildProfileUpdateInput(formData, avatarAttachmentId));
             }}
           >
+            <input
+              name="avatarAttachmentId"
+              type="hidden"
+              value={avatarAttachmentId}
+            />
             <label>
               <span>Login ID</span>
               <input defaultValue={session.loginId} name="loginId" readOnly type="text" />
@@ -84,6 +310,103 @@ export function WorkspaceSettingsPage(props: {
             </label>
             <button type="submit">{props.pending ? "Saving..." : "Edit Profile"}</button>
           </form>
+          <section className="modal" hidden={!isCropModalOpen}>
+            <div className="modal-header center-txt">
+              <h2>Crop Avatar</h2>
+              <div className="avatar-wrap xlarge">
+                <img
+                  alt="Avatar crop preview"
+                  src={cropSourceUrl}
+                  style={cropPreviewStyle}
+                />
+              </div>
+            </div>
+            <div className="modal-body runtime-grid">
+              <img
+                alt="Avatar crop source"
+                ref={cropImageRef}
+                src={cropSourceUrl}
+                style={{ maxWidth: "500px" }}
+              />
+              <label>
+                <span>Crop X</span>
+                <input
+                  max={Math.max(0, cropImageSize.width - cropSelection.size)}
+                  min={0}
+                  onChange={(event) =>
+                    setCropSelection((current) =>
+                      clampAvatarCropSelection(
+                        {
+                          ...current,
+                          x: Number(event.target.value),
+                        },
+                        cropImageSize.width,
+                        cropImageSize.height,
+                      ),
+                    )
+                  }
+                  type="range"
+                  value={cropSelection.x}
+                />
+              </label>
+              <label>
+                <span>Crop Y</span>
+                <input
+                  max={Math.max(0, cropImageSize.height - cropSelection.size)}
+                  min={0}
+                  onChange={(event) =>
+                    setCropSelection((current) =>
+                      clampAvatarCropSelection(
+                        {
+                          ...current,
+                          y: Number(event.target.value),
+                        },
+                        cropImageSize.width,
+                        cropImageSize.height,
+                      ),
+                    )
+                  }
+                  type="range"
+                  value={cropSelection.y}
+                />
+              </label>
+              <label>
+                <span>Crop Size</span>
+                <input
+                  max={Math.max(32, Math.min(cropImageSize.width, cropImageSize.height))}
+                  min={32}
+                  onChange={(event) =>
+                    setCropSelection((current) =>
+                      clampAvatarCropSelection(
+                        {
+                          ...current,
+                          size: Number(event.target.value),
+                        },
+                        cropImageSize.width,
+                        cropImageSize.height,
+                      ),
+                    )
+                  }
+                  type="range"
+                  value={cropSelection.size}
+                />
+              </label>
+              <canvas
+                height={128}
+                hidden
+                ref={cropCanvasRef}
+                width={128}
+              />
+            </div>
+            <div className="modal-footer">
+              <button onClick={closeCropModal} type="button">
+                Cancel
+              </button>
+              <button disabled={uploadingAvatar} onClick={() => void uploadCroppedAvatar()} type="button">
+                {uploadingAvatar ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </section>
           <form
             action={appHref(props.runtimeConfig, "/user/resetVisitedList")}
             method="post"

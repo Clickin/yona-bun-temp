@@ -36,6 +36,7 @@ import {
   UpdateProfileRequestSchema,
   UpdateOrganizationRequestSchema,
   UpdateProjectRequestSchema,
+  VerifyUserRequestSchema,
   type OrganizationDetail,
   type ListOrganizationsResponse,
   type ListProjectsResponse,
@@ -47,7 +48,7 @@ import {
   type RecordRecentProjectVisitResponse,
   type ToggleFavoriteProjectResponse,
 } from "./gen/yona/pilot/v1/pilot_pb";
-import type { RuntimeConfig } from "./runtime-config";
+import { prefixBasePath, type RuntimeConfig } from "./runtime-config";
 
 export interface SessionBootstrapPayload {
   session: null | {
@@ -85,6 +86,42 @@ function createPilotClient(runtimeConfig: RuntimeConfig, fetchImpl: typeof fetch
     useBinaryFormat: false,
   });
   return createClient(PilotService, transport);
+}
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function readNonEmptyStringField(
+  value: Record<string, unknown>,
+  fieldName: string,
+): null | string {
+  const fieldValue = value[fieldName];
+  if (typeof fieldValue !== "string") {
+    return null;
+  }
+  const trimmed = fieldValue.trim();
+  return trimmed === "" ? null : trimmed;
+}
+
+function extractAttachmentId(payload: unknown): null | string {
+  if (!isObjectRecord(payload)) {
+    return null;
+  }
+
+  const directAttachmentId =
+    readNonEmptyStringField(payload, "attachmentId") ??
+    readNonEmptyStringField(payload, "id");
+  if (directAttachmentId) {
+    return directAttachmentId;
+  }
+
+  const nestedAttachment = payload.attachment;
+  if (isObjectRecord(nestedAttachment)) {
+    return readNonEmptyStringField(nestedAttachment, "id");
+  }
+
+  return null;
 }
 
 export async function readSessionBootstrap(
@@ -161,6 +198,43 @@ export async function signOut(
     create(SignOutRequestSchema),
     { headers: { "x-csrf-token": csrfToken } },
   );
+}
+
+export async function verifyUser(
+  runtimeConfig: RuntimeConfig,
+  input: MessageInitShape<typeof VerifyUserRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+) {
+  return createPilotClient(runtimeConfig, fetchImpl).verifyUser(
+    create(VerifyUserRequestSchema, input),
+  );
+}
+
+export async function uploadProfileAvatar(
+  runtimeConfig: RuntimeConfig,
+  filename: string,
+  blob: Blob,
+  fetchImpl: typeof fetch = fetch,
+): Promise<string> {
+  const formData = new FormData();
+  formData.set("file", blob, filename);
+
+  const response = await fetchImpl(prefixBasePath(runtimeConfig.basePath, "/files"), {
+    body: formData,
+    credentials: "include",
+    method: "POST",
+  });
+  if (!response.ok) {
+    throw new Error(`Avatar upload failed with ${response.status}.`);
+  }
+
+  const payload = (await response.json()) as unknown;
+  const attachmentId = extractAttachmentId(payload);
+  if (!attachmentId) {
+    throw new Error("Avatar upload did not return an attachment id.");
+  }
+
+  return attachmentId;
 }
 
 export async function readWorkspaceOverview(

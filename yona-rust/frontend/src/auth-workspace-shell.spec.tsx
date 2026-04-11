@@ -1,4 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import {
+  buildProfileUpdateInput,
+  createDefaultAvatarCrop,
+  drawAvatarCropToCanvas,
+  getAvatarCropPreviewStyle,
+} from "./routes/-workspace-settings-view";
 import { resolveAuthRedirectPath, resolvePostAuthHref } from "./routes/-auth-views";
 import {
   renderHome,
@@ -10,6 +16,7 @@ import {
   renderProjectDirectory,
   renderRegister,
   renderResetPassword,
+  renderVerifyUser,
   renderWorkspace,
   renderWorkspaceSettings,
 } from "./auth-workspace-shell.test-helpers";
@@ -102,6 +109,19 @@ describe("auth and workspace views", () => {
 
     const requestedHtml = renderLogin({ routeHref: "/users/loginform?signup=requested" });
     expect(requestedHtml).toContain("Sign up requires confirmation.");
+  });
+
+  it("renders verify-user success and invalid surfaces", () => {
+    const successHtml = renderVerifyUser({ loginId: "door" });
+    expect(successHtml).toContain("Verified User");
+    expect(successHtml).toContain("door");
+    expect(successHtml).toContain("User is verified. Try logging in.");
+    expect(successHtml).toContain('href="/yona/users/loginform"');
+
+    const invalidHtml = renderVerifyUser({ invalid: true, loginId: "door" });
+    expect(invalidHtml).toContain("Invalid verification");
+    expect(invalidHtml).toContain("door");
+    expect(invalidHtml).toContain('href="/yona/users/loginform"');
   });
 
   it("hides local auth forms when social-login-only mode is enabled", () => {
@@ -261,6 +281,187 @@ describe("auth and workspace views", () => {
     expect(html).toContain('name="loginId"');
     expect(html).toContain('href="/yona/lostPassword"');
     expect(html).toContain("Change Password");
+  });
+
+  it("prefers profile.avatarUrl on /me and profile settings before placeholder fallback", () => {
+    const withAvatarHtml = renderWorkspace({
+      defaultLandingPath: "/me",
+      favoriteProjects: [],
+      recentProjects: [],
+      profile: {
+        avatarUrl: "https://cdn.yona/avatar-door.png",
+        connectedSocialProviders: [],
+        displayName: "Door",
+        englishName: "",
+        isBlocked: false,
+        isSiteAdmin: false,
+        loginId: "door",
+        primaryEmailAddress: "door@example.com",
+        sinceLabel: "",
+      },
+      session: {
+        defaultLandingPath: "/me",
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
+      },
+    });
+    expect(withAvatarHtml).toContain("https://cdn.yona/avatar-door.png");
+
+    const settingsWithAvatarHtml = renderWorkspaceSettings(
+      "profile",
+      "/user/editform",
+      {
+        defaultLandingPath: "/me",
+        favoriteProjects: [],
+        profile: {
+          avatarUrl: "https://cdn.yona/avatar-door.png",
+          connectedSocialProviders: [],
+          displayName: "Door",
+          englishName: "",
+          isBlocked: false,
+          isSiteAdmin: false,
+          loginId: "door",
+          primaryEmailAddress: "door@example.com",
+          sinceLabel: "",
+        },
+        recentProjects: [],
+        session: {
+          defaultLandingPath: "/me",
+          emailAddress: "door@example.com",
+          isAnonymous: false,
+          isConfirmed: true,
+          isSiteAdmin: false,
+          loginId: "door",
+          userLabel: "Door",
+        },
+      },
+    );
+    expect(settingsWithAvatarHtml).toContain("https://cdn.yona/avatar-door.png");
+
+    const fallbackHtml = renderWorkspaceSettings(
+      "profile",
+      "/user/editform",
+      {
+        defaultLandingPath: "/me",
+        favoriteProjects: [],
+        profile: {
+          avatarUrl: "",
+          connectedSocialProviders: [],
+          displayName: "Door",
+          englishName: "",
+          isBlocked: false,
+          isSiteAdmin: false,
+          loginId: "door",
+          primaryEmailAddress: "door@example.com",
+          sinceLabel: "",
+        },
+        recentProjects: [],
+        session: {
+          defaultLandingPath: "/me",
+          emailAddress: "door@example.com",
+          isAnonymous: false,
+          isConfirmed: true,
+          isSiteAdmin: false,
+          loginId: "door",
+          userLabel: "Door",
+        },
+      },
+    );
+    expect(fallbackHtml).toContain("data:image/svg+xml;utf8,");
+  });
+
+  it("builds updateProfile input with avatarAttachmentId", () => {
+    const formData = new FormData();
+    formData.set("email", "door@example.com");
+    formData.set("name", "Door");
+
+    expect(buildProfileUpdateInput(formData, "avatar-attachment-1")).toEqual({
+      avatarAttachmentId: "avatar-attachment-1",
+      email: "door@example.com",
+      name: "Door",
+    });
+  });
+
+  it("renders the avatar uploader shell and crop modal in profile settings", () => {
+    const html = renderWorkspaceSettings(
+      "profile",
+      "/user/editform",
+      {
+        defaultLandingPath: "/me",
+        favoriteProjects: [],
+        profile: {
+          avatarUrl: "",
+          connectedSocialProviders: [],
+          displayName: "Door",
+          englishName: "",
+          isBlocked: false,
+          isSiteAdmin: false,
+          loginId: "door",
+          primaryEmailAddress: "door@example.com",
+          sinceLabel: "",
+        },
+        recentProjects: [],
+        session: {
+          defaultLandingPath: "/me",
+          emailAddress: "door@example.com",
+          isAnonymous: false,
+          isConfirmed: true,
+          isSiteAdmin: false,
+          loginId: "door",
+          userLabel: "Door",
+        },
+      },
+    );
+
+    expect(html).toContain("Change avatar");
+    expect(html).toContain('name="avatarAttachmentId"');
+    expect(html).toContain("Crop Avatar");
+    expect(html).toContain("Cancel");
+    expect(html).toContain("Save");
+  });
+
+  it("creates centered avatar crop defaults and preview styles", () => {
+    const crop = createDefaultAvatarCrop(640, 480);
+    expect(crop).toEqual({
+      size: 480,
+      x: 80,
+      y: 0,
+    });
+
+    expect(getAvatarCropPreviewStyle(crop, 640, 480)).toEqual({
+      height: "128px",
+      marginLeft: "-21px",
+      marginTop: "0px",
+      width: "171px",
+    });
+  });
+
+  it("draws the selected avatar crop into a 128px canvas", () => {
+    const drawImage = vi.fn();
+    const canvas = {
+      getContext: vi.fn(() => ({
+        clearRect: vi.fn(),
+        drawImage,
+      })),
+      height: 128,
+      width: 128,
+    } as unknown as HTMLCanvasElement;
+    const image = {
+      naturalHeight: 480,
+      naturalWidth: 640,
+    } as HTMLImageElement;
+
+    drawAvatarCropToCanvas(canvas, image, {
+      size: 480,
+      x: 80,
+      y: 0,
+    });
+
+    expect(drawImage).toHaveBeenCalledWith(image, 80, 0, 480, 480, 0, 0, 128, 128);
   });
 });
 

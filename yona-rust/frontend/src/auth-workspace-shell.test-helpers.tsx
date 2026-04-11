@@ -6,6 +6,7 @@ import {
   LostPasswordPage,
   RegisterPage,
   ResetPasswordPage,
+  VerifyUserPage,
 } from "./routes/-auth-views";
 import {
   OrganizationDirectoryPage,
@@ -85,6 +86,16 @@ export function renderResetPassword(
   return renderToString(
     <ResetPasswordPage routeHref={routeHref} runtimeConfig={runtimeConfig} />,
   );
+}
+
+export function renderVerifyUser(
+  overrides: {
+    invalid?: boolean;
+    loginId: string;
+  },
+  runtimeConfig: RuntimeConfig = testRuntimeConfig,
+): string {
+  return renderToString(<VerifyUserPage runtimeConfig={runtimeConfig} {...overrides} />);
 }
 
 export function renderWorkspace(

@@ -32,6 +32,7 @@ import { Route as OwnerProjectNameRouteRouteImport } from './routes/$owner/$proj
 import { Route as UserEditformIndexRouteImport } from './routes/user/editform/index'
 import { Route as OrganizationsOrganizationNameIndexRouteImport } from './routes/organizations/$organizationName/index'
 import { Route as OwnerProjectNameIndexRouteImport } from './routes/$owner/$projectName/index'
+import { Route as VerifyLoginIdVerificationCodeRouteRouteImport } from './routes/verify/$loginId/$verificationCode/route'
 import { Route as UserEditformTokenRouteRouteImport } from './routes/user/editform/token/route'
 import { Route as UserEditformPasswordRouteRouteImport } from './routes/user/editform/password/route'
 import { Route as UserEditformNotificationsRouteRouteImport } from './routes/user/editform/notifications/route'
@@ -175,6 +176,12 @@ const OwnerProjectNameIndexRoute = OwnerProjectNameIndexRouteImport.update({
   path: '/',
   getParentRoute: () => OwnerProjectNameRouteRoute,
 } as any)
+const VerifyLoginIdVerificationCodeRouteRoute =
+  VerifyLoginIdVerificationCodeRouteRouteImport.update({
+    id: '/verify/$loginId/$verificationCode',
+    path: '/verify/$loginId/$verificationCode',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const UserEditformTokenRouteRoute = UserEditformTokenRouteRouteImport.update({
   id: '/token',
   path: '/token',
@@ -356,6 +363,7 @@ export interface FileRoutesByFullPath {
   '/user/editform/notifications': typeof UserEditformNotificationsRouteRoute
   '/user/editform/password': typeof UserEditformPasswordRouteRoute
   '/user/editform/token': typeof UserEditformTokenRouteRoute
+  '/verify/$loginId/$verificationCode': typeof VerifyLoginIdVerificationCodeRouteRoute
   '/$owner/$projectName/': typeof OwnerProjectNameIndexRoute
   '/organizations/$organizationName/': typeof OrganizationsOrganizationNameIndexRoute
   '/user/editform/': typeof UserEditformIndexRoute
@@ -402,6 +410,7 @@ export interface FileRoutesByTo {
   '/user/editform/notifications': typeof UserEditformNotificationsRouteRoute
   '/user/editform/password': typeof UserEditformPasswordRouteRoute
   '/user/editform/token': typeof UserEditformTokenRouteRoute
+  '/verify/$loginId/$verificationCode': typeof VerifyLoginIdVerificationCodeRouteRoute
   '/$owner/$projectName': typeof OwnerProjectNameIndexRoute
   '/organizations/$organizationName': typeof OrganizationsOrganizationNameIndexRoute
   '/user/editform': typeof UserEditformIndexRoute
@@ -452,6 +461,7 @@ export interface FileRoutesById {
   '/user/editform/notifications': typeof UserEditformNotificationsRouteRoute
   '/user/editform/password': typeof UserEditformPasswordRouteRoute
   '/user/editform/token': typeof UserEditformTokenRouteRoute
+  '/verify/$loginId/$verificationCode': typeof VerifyLoginIdVerificationCodeRouteRoute
   '/$owner/$projectName/': typeof OwnerProjectNameIndexRoute
   '/organizations/$organizationName/': typeof OrganizationsOrganizationNameIndexRoute
   '/user/editform/': typeof UserEditformIndexRoute
@@ -503,6 +513,7 @@ export interface FileRouteTypes {
     | '/user/editform/notifications'
     | '/user/editform/password'
     | '/user/editform/token'
+    | '/verify/$loginId/$verificationCode'
     | '/$owner/$projectName/'
     | '/organizations/$organizationName/'
     | '/user/editform/'
@@ -549,6 +560,7 @@ export interface FileRouteTypes {
     | '/user/editform/notifications'
     | '/user/editform/password'
     | '/user/editform/token'
+    | '/verify/$loginId/$verificationCode'
     | '/$owner/$projectName'
     | '/organizations/$organizationName'
     | '/user/editform'
@@ -598,6 +610,7 @@ export interface FileRouteTypes {
     | '/user/editform/notifications'
     | '/user/editform/password'
     | '/user/editform/token'
+    | '/verify/$loginId/$verificationCode'
     | '/$owner/$projectName/'
     | '/organizations/$organizationName/'
     | '/user/editform/'
@@ -626,6 +639,7 @@ export interface RootRouteChildren {
   UserEditformRouteRoute: typeof UserEditformRouteRouteWithChildren
   UsersLoginformRouteRoute: typeof UsersLoginformRouteRoute
   UsersSignupformRouteRoute: typeof UsersSignupformRouteRoute
+  VerifyLoginIdVerificationCodeRouteRoute: typeof VerifyLoginIdVerificationCodeRouteRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -790,6 +804,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$owner/$projectName/'
       preLoaderRoute: typeof OwnerProjectNameIndexRouteImport
       parentRoute: typeof OwnerProjectNameRouteRoute
+    }
+    '/verify/$loginId/$verificationCode': {
+      id: '/verify/$loginId/$verificationCode'
+      path: '/verify/$loginId/$verificationCode'
+      fullPath: '/verify/$loginId/$verificationCode'
+      preLoaderRoute: typeof VerifyLoginIdVerificationCodeRouteRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/user/editform/token': {
       id: '/user/editform/token'
@@ -1102,6 +1123,8 @@ const rootRouteChildren: RootRouteChildren = {
   UserEditformRouteRoute: UserEditformRouteRouteWithChildren,
   UsersLoginformRouteRoute: UsersLoginformRouteRoute,
   UsersSignupformRouteRoute: UsersSignupformRouteRoute,
+  VerifyLoginIdVerificationCodeRouteRoute:
+    VerifyLoginIdVerificationCodeRouteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

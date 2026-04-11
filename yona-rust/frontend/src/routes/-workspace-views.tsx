@@ -34,7 +34,7 @@ function Section({
   );
 }
 
-function workspaceAvatarDataUrl(label: string): string {
+export function workspaceAvatarDataUrl(label: string): string {
   const initials =
     label
       .split(/\s+/u)
@@ -45,6 +45,17 @@ function workspaceAvatarDataUrl(label: string): string {
       .toUpperCase() || "Y";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" rx="64" fill="#d9dde4"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="42" fill="#3b4552">${initials}</text></svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+export function resolveWorkspaceAvatarUrl(
+  avatarUrl: null | string | undefined,
+  fallbackLabel: string,
+): string {
+  const trimmedAvatarUrl = avatarUrl?.trim() ?? "";
+  if (trimmedAvatarUrl !== "") {
+    return trimmedAvatarUrl;
+  }
+  return workspaceAvatarDataUrl(fallbackLabel);
 }
 
 function renderWorkspaceProviderBadge(provider: string): React.ReactNode {
@@ -115,9 +126,10 @@ export function WorkspacePage(props: {
     isBlocked: false,
     isSiteAdmin: session.isSiteAdmin,
     loginId: session.loginId,
-    primaryEmailAddress: session.emailAddress,
-    sinceLabel: "",
-  };
+      primaryEmailAddress: session.emailAddress,
+      sinceLabel: "",
+      avatarUrl: "",
+    };
   const pullRequestItems = props.workspaceOverview?.pullRequestItems ?? [];
   const recentProjects = props.workspaceOverview?.recentProjects ?? [];
   const watchedProjects = props.workspaceOverview?.watchedProjects ?? [];
@@ -135,6 +147,7 @@ export function WorkspacePage(props: {
   >("issues");
   const [nextDefaultLandingPath, setNextDefaultLandingPath] =
     React.useState(defaultLandingPath);
+  const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(profile.avatarUrl, headlineName);
 
   return (
     <main className="app-shell">
@@ -146,7 +159,7 @@ export function WorkspacePage(props: {
             <div className="user-info-box runtime-grid">
               <div
                 className="whoami-wrap"
-                style={{ backgroundImage: `url('${workspaceAvatarDataUrl(headlineName)}')` }}
+                style={{ backgroundImage: `url('${resolvedAvatarUrl}')` }}
               />
               <div className="whoami">
                 <span className="name">{headlineName}</span>
