@@ -1,5 +1,0 @@
-{
-  "last_turn_at": "2026-03-24T14:33:00.266Z",
-  "turn_count": 5,
-  "last_agent_output": "Started.\n\n`git merge --ff-only atlas/phase-0b-blocker-reconciliation` on `main` returned `Already up"
-}

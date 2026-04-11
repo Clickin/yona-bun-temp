@@ -27,3 +27,10 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 # Playwright
 test-results
+
+# ByteRover local metadata
+.brv/config.json
+.brv/context-tree/.snapshot.json
+
+# OMX runtime state and logs
+.omx/

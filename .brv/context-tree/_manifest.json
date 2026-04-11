@@ -1,91 +1,55 @@
 {
   "active_context": [
     {
-      "order": 3,
-      "path": "_index.md",
-      "tokens": 653,
+      "order": 2,
+      "path": "auth/_index.md",
+      "tokens": 1181,
       "type": "summary"
     },
     {
       "order": 2,
-      "path": "migration/_index.md",
-      "tokens": 798,
+      "path": "experimental_pilot/_index.md",
+      "tokens": 663,
       "type": "summary"
     },
     {
-      "order": 2,
-      "path": "project_updates/_index.md",
-      "tokens": 399,
-      "type": "summary"
+      "importance": 60,
+      "path": "experimental_pilot/rust_sidecar/experimental_rust_pilot_sidecar.md",
+      "tokens": 869,
+      "type": "context"
     },
     {
-      "importance": 50,
-      "path": "migration/context.md",
-      "tokens": 127,
+      "importance": 60,
+      "path": "release/pilot_frontend/pilot_frontend_build_parity.md",
+      "tokens": 943,
+      "type": "context"
+    },
+    {
+      "importance": 55,
+      "path": "authentication/wave_1_direct_auth_email_packet/direct_auth_and_email_packet.md",
+      "tokens": 979,
+      "type": "context"
+    },
+    {
+      "importance": 55,
+      "path": "project_directory_parity/public_directory_routes/legacy_public_directory_routes.md",
+      "tokens": 1012,
       "type": "context"
     },
     {
       "importance": 50,
-      "path": "migration/legacy_provenance_baseline/context.md",
-      "tokens": 105,
-      "type": "context"
-    },
-    {
-      "importance": 50,
-      "path": "migration/legacy_provenance_baseline/legacy_provenance_baseline.md",
-      "tokens": 556,
-      "type": "context"
-    },
-    {
-      "importance": 50,
-      "path": "migration/phase_0b_provenance/context.md",
-      "tokens": 96,
-      "type": "context"
-    },
-    {
-      "importance": 50,
-      "path": "migration/phase_0b_provenance/phase_0b_provenance_home.md",
-      "tokens": 603,
-      "type": "context"
-    },
-    {
-      "importance": 50,
-      "path": "migration/phase_plan_overview/context.md",
-      "tokens": 138,
-      "type": "context"
-    },
-    {
-      "importance": 50,
-      "path": "migration/phase_plan_overview/phase_plan_overview.md",
-      "tokens": 652,
-      "type": "context"
-    },
-    {
-      "importance": 50,
-      "path": "project_updates/context.md",
-      "tokens": 132,
-      "type": "context"
-    },
-    {
-      "importance": 50,
-      "path": "project_updates/logs/context.md",
-      "tokens": 107,
-      "type": "context"
-    },
-    {
-      "importance": 50,
-      "path": "project_updates/logs/omx_turns_highlights.md",
-      "tokens": 617,
+      "path": "auth/account_ui_wave2/context.md",
+      "tokens": 125,
       "type": "context"
     }
   ],
-  "generated_at": "2026-04-04T09:33:51.829Z",
+  "generated_at": "2026-04-11T07:47:23.783Z",
   "lane_tokens": {
-    "contexts": 3133,
+    "contexts": 3928,
     "stubs": 0,
-    "summaries": 1850
+    "summaries": 1844
   },
-  "source_fingerprint": "2ad150ea69998a937b068f53f262432e3b0feff593c6846c2f02b3ec3c3dc709",
-  "total_tokens": 4983,
+  "source_fingerprint": "89f26e001eb3a725c7c1285bbf38fb4e979e4c959c4baaef70f2a81d04dd7416",
+  "total_tokens": 5772,
   "version": 1
 }

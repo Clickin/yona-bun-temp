@@ -1,40 +1,44 @@
 ---
-children_hash: cd77e01c9a121b0f3e1f5df718aa8f4432cabe1ffd08a025024b442968d762fe
-compression_ratio: 0.5533980582524272
+children_hash: c89803ae9d0cad8afd26b90051bf5d93dfcc1ce8f492e870fb7784d6848c27b3
+compression_ratio: 0.503
 condensation_order: 2
-covers: [context.md, legacy_provenance_baseline/_index.md, phase_0b_provenance/_index.md, phase_plan_overview/_index.md]
-covers_token_total: 1442
+covers: [context.md, legacy_provenance_baseline/_index.md, legacy_schema_baseline/_index.md, phase_0b_provenance/_index.md, phase_plan_overview/_index.md]
+covers_token_total: 2000
 summary_level: d2
-token_count: 798
+token_count: 1006
 type: summary
 ---
-# migration Domain Overview
-- **Purpose & Ownership**: Captures Yona migration phases, checkpoints, deferred work, and gate rules; owned by the Migration squad for guided bounded parity effort reference.
-- **Scope & Usage**: Includes phase definitions 0A–6, current checkpoint status, deferred feature lists, and phase gate criteria; excludes implementation details of individual features outside these phase descriptions. Use this domain to understand in-scope phase deliverables and remaining deferred capabilities.
+### Domain: migration (Level d2 Structural Summary)
 
-## Key Topics
-### legacy_provenance_baseline
-- **Objective**: Establish Phase 0B legacy-to-modern provenance baseline that maps every legacy test/capability to its modern translation, ownership, and deviation rule, ensuring traceable coverage before Wave 1 exit.
-- **Structure**: Matrix entries span Auth, ACL, Issue, Project, PR/Review, Git/Repository, and Search; each row records legacy test source, intent, target layer, owning team, and deviation constraint.
-- **Dependencies & Decisions**: References `SPEC.md` rules, `docs/agents/10-legacy-provenance-baseline.md`, and aligns with Provenance Phase 0B README; fixture strategy noted in `conf/test-data.yml`; mandates PRs cite matrix row and legacy-modern tracing before marking capabilities complete.
-- **Governance**: Wave 1 exit requires pairing legacy red tests with modern translations; OAuth callback contracts serve as exemplar extensions for baseline coverage.
+- **Purpose & Governance**
+  - Mission is to track migration phases, checkpoints, deferred features, and gating rules that drive Yona’s bounded parity effort (`context.md`).
+  - Owned by the Migration squad; use this domain to determine in-scope work per phase and what remains postponed.
 
-### phase_0b_provenance
-- **Context**: Defines Phase 0B provenance home, bounded batch expectations (Org/Project core plus Phase 1 CRU start), and deferred Phase 4–6 capabilities; links gating logic to `migration/phase_plan_overview`.
-- **Content Highlights**:
-  - Completes Org/Project provenance while keeping Org/Project delete deferred.
-  - Starts Phase 1 Org/Project CRU concurrently.
-  - Dependencies include legacy baseline rules from `docs/agents/10-legacy-provenance-baseline.md`; historical blockers like org enrollment and default landing are no longer blocking.
-- **Deferred Capabilities**:
-  - Phase 4: PR/review lifecycle features (merge acceptance, review comment CRUD, stale threads, PR diff presentation, branch cleanup, fork/clone flows, PR event timelines).
-  - Phase 5: Search expansions (issue_comment, posting_comment, milestone types, review search beyond review_comment, type-specific counts, full SQL coverage).
-  - Phase 6: AI-facing search surfaces (llms.txt, AI datasource endpoints, etc.).
+- **Phase Plan Overview (`migration/phase_plan_overview`)**
+  - Documents the April 4, 2026 roadmap spanning Phases 0A–6 with completion signals tied to behavior parity and provenance coverage.
+  - Checkpoint currently covers Phase 0B core provenance plus the start of Phase 1 Org/Project work; each phase gate requires pairing behavior outputs with provenance traceability.
+  - Highlights deferred work: Phase 4 (PR/Review lifecycle), Phase 5 (search/boards/integration expansion), and Phase 6 (admin, migration, AI/LLMO hardening), with AI-focused surfaces explicitly reserved for Phase 6.
+  - Relates to `legacy_provenance_baseline` for provenance gating and to `docs/agents/06-phase-plan.md` plus SPEC-driven rules.
 
-### phase_plan_overview
-- **Scope**: Presents the April 4, 2026 phase roadmap, emphasizing phase outputs, completion signals, and gate rules linking behavior parity with provenance completeness.
-- **Structure & Checkpoints**:
-  - Documents deliverables/completion signals for Phases 0A–6.
-  - Highlights bounded checkpoint covering Phase 0B core provenance and Phase 1 Org/Project kickoff (see `phase_0b_provenance_home`).
-- **Deferred Work & Dependencies**:
-  - Phases 4–6 deferred until parity plus provenance criteria satisfied, with AI/LLMO surfaces reserved for Phase 6 (see legacy baseline summary).
-  - Mirrors provenance rules in `SPEC.md`, legacy baseline documentation, and agent docs (`docs/agents/06-phase-plan.md`).
+- **Phase 0B Provenance (`migration/phase_0b_provenance`)**
+  - Captures the Phase 0B provenance home scope (Org/Project provenance completion and concurrent Phase 1 CRU kickoff) and catalogs deferred capabilities for later phases.
+  - Deferred scope lists precise gaps: Phase 4 (PR/review lifecycle, comments, diffs, branch workflows), Phase 5 (expanded search types/counts and DB coverage), and Phase 6 (AI-facing endpoints and llms.txt).
+  - Dependency chain references the legacy provenance baseline rules (`docs/agents/10-legacy-provenance-baseline.md`) and notes historical blockers no longer apply; Proto-level catalog is anchored in `docs/provenance/phase-0b/README.md`.
+
+- **Legacy Provenance Baseline (`migration/legacy_provenance_baseline`)**
+  - Provides the Phase 0B baseline matrix linking legacy tests (Auth, ACL, Issue, Project, PR/Review, Git/Repo, Search) to modern layers, ownership, and deviation rules.
+  - Flow enforces: legacy capability → legacy test inventory → modern target → owning team/deviation → Wave 1 exit reminder; every PR must cite a matrix row and link a red legacy test to its modern translation before signaling completion.
+  - Anchors fixture/seeding strategies (`conf/test-data.yml`), translation annotations for traceability (`docs/agents/10-legacy-provenance-baseline.md`, `SPEC.md`), and canonical rules for Wave 1 auditing.
+
+- **Legacy Schema Baseline (`migration/legacy_schema_baseline`)**
+  - Details the schema manifest/manifest snapshots, migration scripts, SeaORM persistence contracts, and validation tests that recreate the legacy database foundation in Rust.
+  - Layers include: canonical manifest (`yona-rust/crates/migration/legacy-final-schema-manifest.json`), migration flow (`migration/src/lib.rs` with SQL snapshot handling and rollback hygiene), SeaORM repos (`yona-rust/crates/persistence/src/lib.rs`, `repo.rs` with helper APIs for identity, roles, membership, favorites, and landing paths), and schema foundation tests (`tests/yona-rust-schema-foundation.test.mjs`) with dialect compatibility matrix (`yona-rust/crates/migration/dialect-compat-matrix.md` for Postgres/MySQL/SQLite).
+  - Validates end-to-end consistency: manifest → migration scripts → persistence repositories → automated tests ensure legacy constraints and artifacts exist.
+
+- **Relationships**
+  - `phase_plan_overview` defines checkpoints and links to provenance baseline and Phase 0B content for gating and deferred scope.
+  - `phase_0b_provenance` references the baseline rules and deferred features that feed future phases.
+  - `legacy_provenance_baseline` provides the traceability and governance that make Phase 0B’s deliverables auditable for Wave 1 exit.
+  - `legacy_schema_baseline` supplies the persistence and migration assurance underpinning the Rust migration effort referenced by provenance artifacts.
+
+This structure preserves key decisions, dependencies, and entry points for deeper drilling into each subtopic.
