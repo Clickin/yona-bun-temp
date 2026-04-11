@@ -1,5 +1,8 @@
 # Git Executable Backend Handoff (2026-03-01)
 
+> Status: `historical`
+> This handoff records a pre-Rust-pivot Git executable checkpoint. Keep it as historical evidence only; the current canonical implementation path is `yona-rust/`.
+
 ## Context
 
 - Branch: `git-exec-backend`

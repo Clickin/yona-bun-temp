@@ -2,73 +2,29 @@
 
 ## 목적
 
-- 이 문서는 Yona에 처음 투입된 LLM/에이전트가 `SPEC.md`를 바로 실행 가능한 작업 규칙으로 압축한 체크리스트다.
-- 메인 Source of Truth는 `AGENTS.md`이며, 기술적 상세의 canonical source는 `SPEC.md`다.
+- 이 문서는 새로 투입된 에이전트가 Rust pivot 이후 기준선을 빠르게 이해하도록 압축한 체크리스트다.
+- 메인 source of truth는 `AGENTS.md`이며, 기술적 상세의 canonical source는 `SPEC.md`다.
 
 ## 빠른 상황 인식
 
 - 목표는 legacy Yona 기능과 UX parity다.
-- 최종 baseline은 `Go backend + React + TanStack Router + TanStack Query` 단일 배포 단위다.
-- 현재 operator가 실행/검증 대상으로 삼아야 할 frontend는 `apps/app`이다.
-- current `TanStack Start`, `serverFunction`, `Better Auth`, in-process `tRPC`, TS backend package는 migration source material이다.
+- current canonical implementation baseline은 `yona-rust/`다.
+- `yona-original/`은 1차 source of truth다.
+- root mixed code는 reference-only migration material이다.
+- historical 문서는 status banner가 없으면 current guidance처럼 읽지 않는다.
 
 ## 추천 읽기 순서
 
 1. `AGENTS.md` 변환 원칙과 고정 결정을 읽는다.
-2. `SPEC.md`의 `2. 요약`, `3. 고정 결정`, `5. 목표 모노레포 구조`, `7. 아키텍처 개요`, `17. 테스트 전략`, `18. 전달 로드맵`, `19. Definition of Done`를 읽는다.
-3. 작업 대상에 맞는 `SPEC.md` feature 섹션과 current TS source material을 함께 읽는다.
-4. `docs/agents/00`, `03`, `04`, `05`, `06`, `07`을 읽는다.
-5. `yona-original/`에서 대응 legacy test/controller/model/route를 찾는다.
+2. `SPEC.md`의 Summary, Fixed Decisions, Documentation Governance, Phase Plan, Definition of Done을 읽는다.
+3. 작업 대상에 맞는 `docs/agents/*` mirror와 provenance 문서를 읽는다.
+4. `yona-original/`에서 대응 legacy test/controller/model을 찾는다.
+5. root mixed code의 대응 경로를 reference-only material로 읽는다.
 
 ## 구현 위치 체크리스트
 
-- [ ] frontend route tree, query integration, 화면 composition은 `apps/app`에 둔다.
-- [ ] 서버 bootstrap과 embed wiring은 `cmd/yona`에 둔다.
-- [ ] auth/session은 `internal/auth`에 둔다.
-- [ ] domain invariant, ACL, lifecycle rule은 `internal/domain`에 둔다.
-- [ ] schema, migration, query layer는 `internal/db`에 둔다.
-- [ ] app-facing API/route adapter는 `internal/httpapi`에 둔다.
-- [ ] integration provider와 email/integration delivery runtime은 `internal/integrations`에 둔다.
-- [ ] Git/SVN executable integration과 smart HTTP helper는 `internal/vcs`에 둔다.
-- [ ] current TS backend package와 `*-trpc*` 코드는 migration source material로만 다룬다.
-
-## Transport 체크리스트
-
-- [ ] frontend read/mutation의 canonical entry는 Go HTTP/RPC endpoint다.
-- [ ] current TS `tRPC` procedure 이름과 shape를 migration input으로 읽었다.
-- [ ] frontend call site를 최대한 유지할 수 있는지 먼저 검토했다.
-- [ ] full HTTP semantics가 필요한 경우는 Go route로 분리한다.
-
-## 고정 제약 체크리스트
-
-- [ ] DB session persistence를 재도입하지 않는다.
-- [ ] 기본 session storage는 secure cookie 또는 in-memory로 유지한다.
-- [ ] `PostgreSQL`, `MySQL/MariaDB`, `SQLite`를 처음부터 함께 고려한다.
-- [ ] Go query baseline은 `database/sql` + `uptrace/bun`이다.
-- [ ] user-uploaded asset은 항상 Yona-controlled route로 제공한다.
-- [ ] Git/SVN은 system executable만 사용한다.
-- [ ] notification/integration delivery가 same-process로 충분한지 먼저 판단했다.
-
-## 테스트 프로토콜 체크리스트
-
-- [ ] failing Red test 없이 Green 구현부터 시작하지 않는다.
-- [ ] legacy test가 있으면 그것을 1차 입력으로 쓴다.
-- [ ] legacy controller intent는 Go handler/API contract test 또는 protocol route test로 번역한다.
-- [ ] legacy model intent는 domain test로 번역한다.
-- [ ] ACL matrix는 domain ACL test와 route authorization test로 확인한다.
-- [ ] protocol은 route/protocol integration test로 확인한다.
-- [ ] end-user flow는 필요한 경우 Playwright E2E로 고정한다.
-
-## 종료 전 체크리스트
-
-- [ ] feature별 legacy provenance를 남겼다.
-- [ ] relevant domain/handler/route/E2E test가 통과했다.
-- [ ] 3개 DB 영향이 있는 경우 parity 확인 근거를 남겼다.
-- [ ] 문서와 deviation 기록을 갱신했다.
-
-## 한 줄 원칙
-
-- 구현보다 먼저 provenance.
-- 편의보다 먼저 ownership.
-- 화면보다 먼저 behavior parity.
-- Green보다 먼저 failing Red.
+- [ ] 새 canonical 구현은 `yona-rust/frontend`, `yona-rust/proto`, `yona-rust/crates/*`에 둔다.
+- [ ] root mixed code에 새 canonical ownership을 추가하지 않는다.
+- [ ] legacy source, mixed-code reference, Rust target layer를 provenance에 남긴다.
+- [ ] 누락 기능을 `deferred`, `gap`, `deviation` 중 하나로 기록한다.
+- [ ] historical 문서 변경 시 status banner를 유지한다.

@@ -1,18 +1,21 @@
 # Runtime Stack Decision Report
 
+> Status: `superseded`
+> This report records the 2026-04-06 stack decision before the Rust pivot. Keep it for historical rationale only. The current canonical implementation path is `yona-rust/`.
+
 Date: 2026-04-06
 
 ## Decision
 
-Yona의 현재 우선순위에서는 `Go backend + React/TanStack frontend`가 가장 합리적이다.
+이 문서는 작성 당시 `Go backend + React/TanStack frontend`를 가장 합리적인 경로로 평가했던 기록이다.
 
-이유는 아래 셋이다.
+현재 기준선은 더 이상 이 결정에 묶이지 않는다. 아래는 당시 판단 근거를 보존하기 위한 historical record다.
 
 1. parity 완료 시점보다 장기 유지보수성과 운영 안정성이 더 중요해졌다.
 2. on-prem SFX와 main site Docker/Kubernetes를 함께 고려할 때 Go binary 모델이 더 자연스럽다.
 3. `Gitea`/`Forgejo` 같은 강한 reference implementation leverage가 있다.
 
-frontend는 기존 React/TanStack 자산을 최대한 유지하고, backend만 Go로 재구축한다. 최종 배포에서는 frontend dist를 Go binary에 embed 하거나 동일 배포 단위에서 함께 제공한다.
+frontend는 기존 React/TanStack 자산을 최대한 유지하고, backend만 Go로 재구축한다. 최종 배포에서는 frontend dist를 Go binary에 embed 하거나 동일 배포 단위에서 함께 제공한다. internal business API는 `chi + connect-go + Protobuf + connect-query`를 canonical로 둔다.
 
 ## Fixed Constraints
 
@@ -93,16 +96,16 @@ Go DB 계층은 `gorm`보다 `uptrace/bun` 쪽이 현재 조건에 더 적합하
 
 따라서 현재 baseline은 `database/sql` + `uptrace/bun`으로 본다.
 
-## tRPC Migration Position
+## API Transport Position
 
-현재 frontend는 이미 `tRPC` 중심으로 분리돼 있었기 때문에, backend만 Go로 교체하는 경로가 현실적이다.
+현재 frontend는 이미 internal business query/mutation과 raw `/api` route가 분리돼 있다.
 
 현재 결론:
 
+- internal business API canonical은 `chi + connect-go + Protobuf + connect-query`
+- fallback은 `chi + OpenAPI + Orval`
+- `REST + manual TS types`는 현재 surface 규모에서 drift 비용이 커서 canonical로 채택하지 않는다.
 - current TS `tRPC` procedure 이름과 input/output shape는 migration input이다.
-- frontend call site를 가능한 한 보존하는 것이 좋다.
-- `github.com/befabri/trpcgo`는 이 목적의 호환성 spike 후보로 적합하다.
-- `github.com/trpc-group/trpc-go`는 별도 Go RPC framework로 보며, current TS client continuation의 drop-in replacement로는 가정하지 않는다.
 
 ## VCS Position
 

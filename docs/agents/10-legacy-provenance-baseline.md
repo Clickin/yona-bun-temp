@@ -2,39 +2,34 @@
 
 ## Purpose
 
-- This document fixes the initial legacy provenance baseline for the Go migration wave.
-- Canonical rules still live in `SPEC.md`; this file is an execution mirror for exact source-path and target-layer mapping.
-- Current TS implementation paths are now explicit migration source material and must be cited when they preserve useful behavior or contract detail.
+- 이 문서는 Rust pivot 이후 legacy provenance baseline을 고정한다.
+- canonical rules는 `SPEC.md`에 있고, 이 문서는 source-path와 target-layer 매핑의 mirror다.
+- root mixed code는 reference-only source material로 명시적으로 남긴다.
 
 ## Required Fields
 
 - source legacy path
 - extracted intent summary
-- current TS source path
-- modern Go translation target layer
-- target ownership
-- deviation rule
+- current mixed-code reference path
+- Rust translation target layer
+- canonical owner path
+- `gap`, `deviation`, `deferred` 규칙
 
 ## Baseline Matrix
 
-| Capability       | Legacy source paths                                                                                                                 | Extracted intent                                                              | Current TS source material                                                       | Modern translation target layer                                           | Target ownership                                                   |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Auth             | `yona-original/test/controllers/UserAppTest.java` `PasswordResetAppTest.java` `UserTest.java`                                       | login/register/reset flows, permission, token, audit, user-state semantics    | `apps/app/src/lib/auth-trpc.ts`, `packages/auth/*`                               | domain test, Go handler/API contract test, Playwright E2E                 | `internal/auth`, `internal/domain`, `internal/httpapi`, `apps/app` |
-| ACL              | `AccessControlTest.java`, `RoleTest.java`, `ProjectUserTest.java`                                                                   | resource-scoped create/read/update/delete matrix                              | `packages/domain/*authorization*`                                                | domain ACL test, route authorization test                                 | `internal/domain`, `internal/httpapi`                              |
-| Issue            | `IssueAppTest.java`, `IssueTest.java`, `WatchTest.java`                                                                             | issue lifecycle, watcher/voter/assignee semantics, permission boundaries      | `apps/app/src/lib/issue-trpc.ts`, `packages/domain`, `packages/db`               | domain test, Go handler/API contract test, Playwright E2E                 | `internal/domain`, `internal/db`, `internal/httpapi`, `apps/app`   |
-| Project          | `ProjectAppTest.java`, `EnrollProjectAppTest.java`, `ProjectTest.java`, `OrganizationTest.java`, `RecentlyVisitedProjectsTest.java` | project/org CRUD, enrollment, visibility, recent/favorite workspace semantics | `apps/app/src/lib/project-trpc.ts`, `organization-trpc.ts`, `enrollment-trpc.ts` | domain test, Go handler/API contract test, Playwright E2E                 | `internal/domain`, `internal/db`, `internal/httpapi`, `apps/app`   |
-| PR / Review      | `PullRequestAppTest.java`, `ReviewThreadAppTest.java`, `PullRequestTest.java`, `PullRequestEventTest.java`                          | PR state machine, reviewer constraints, review-thread lifecycle               | `apps/app/src/lib/pull-request-trpc.ts`                                          | domain test, Go handler/API contract test, Playwright E2E                 | `internal/domain`, `internal/db`, `internal/httpapi`, `apps/app`   |
-| Git / Repository | `GitRepositoryTest.java`, `RepositoryServiceTest.java`, `CommitCommentTest.java`, `CommentThreadTest.java`                          | smart HTTP, inline edit conflict handling, commit discussion/thread lifecycle | `apps/app/src/lib/repo-trpc.ts`, `repo-http.ts`, `packages/vcs/*`                | protocol integration test, server route test, domain test                 | `internal/vcs`, `internal/domain`, `internal/httpapi`, `apps/app`  |
-| Search           | `SearchTests.java`, `SearchResultTests.java`, `AccessControlTest.java`                                                              | permission-filtered search scope and filter semantics                         | `apps/app/src/lib/search-trpc.ts`, `packages/domain`, `packages/db`              | domain test, DB parity test, Go handler/API contract test, Playwright E2E | `internal/search`, `internal/db`, `internal/httpapi`, `apps/app`   |
+| Capability | Legacy source paths | Extracted intent | Current mixed-code reference | Rust translation target layer | Canonical owner path |
+| --- | --- | --- | --- | --- | --- |
+| Auth | `UserAppTest.java`, `PasswordResetAppTest.java`, `UserTest.java` | login/register/reset, permission, token, audit, user-state semantics | `frontend/src/lib/auth-trpc.ts`, `packages/auth/*` | domain test, Rust HTTP/RPC contract test, Playwright E2E | `yona-rust/crates/server`, `yona-rust/crates/domain`, `yona-rust/frontend` |
+| ACL | `AccessControlTest.java`, `RoleTest.java`, `ProjectUserTest.java` | resource-scoped create/read/update/delete matrix | `packages/domain/*authorization*` | Rust domain ACL test, route authorization test | `yona-rust/crates/domain`, `yona-rust/crates/server` |
+| Issue | `IssueAppTest.java`, `IssueTest.java`, `WatchTest.java` | issue lifecycle, watcher/voter/assignee semantics, permission boundaries | `frontend/src/lib/issue-trpc.ts`, `packages/domain`, `packages/db` | Rust domain test, Rust contract test, Playwright E2E | `yona-rust/crates/domain`, `yona-rust/crates/persistence`, `yona-rust/frontend` |
+| Project | `ProjectAppTest.java`, `EnrollProjectAppTest.java`, `ProjectTest.java`, `OrganizationTest.java`, `RecentlyVisitedProjectsTest.java` | project/org CRUD, enrollment, visibility, recent/favorite semantics | `frontend/src/lib/project-trpc.ts`, `organization-trpc.ts`, `enrollment-trpc.ts` | Rust domain test, Rust contract test, Playwright E2E | `yona-rust/crates/domain`, `yona-rust/crates/persistence`, `yona-rust/crates/server`, `yona-rust/frontend` |
+| PR / Review | `PullRequestAppTest.java`, `ReviewThreadAppTest.java`, `PullRequestTest.java`, `PullRequestEventTest.java` | PR state machine, reviewer constraints, review-thread lifecycle | `frontend/src/lib/pull-request-trpc.ts` | Rust domain test, Rust contract test, Playwright E2E | `yona-rust/crates/domain`, `yona-rust/crates/server`, `yona-rust/frontend` |
+| Git / Repository | `GitRepositoryTest.java`, `RepositoryServiceTest.java`, `CommitCommentTest.java`, `CommentThreadTest.java` | smart HTTP, inline edit conflict handling, commit discussion lifecycle | `frontend/src/lib/repo-trpc.ts`, `repo-http.ts`, `packages/vcs/*` | protocol integration test, server route test, Rust domain test | `yona-rust/crates/vcs`, `yona-rust/crates/server`, `yona-rust/frontend` |
+| Search | `SearchTests.java`, `SearchResultTests.java`, `AccessControlTest.java` | permission-filtered search scope and filter semantics | `frontend/src/lib/search-trpc.ts`, `packages/domain`, `packages/db` | Rust domain test, DB parity test, Rust contract test, Playwright E2E | `yona-rust/crates/search`, `yona-rust/crates/persistence`, `yona-rust/crates/server`, `yona-rust/frontend` |
 
 ## Translation Notes
 
-- Controller-origin behavior should map to Go handler/API contract tests unless full protocol semantics are required, in which case it maps to server-route tests.
-- Model-origin behavior should map to isolated domain tests first.
-- Git/SVN and future `llms.txt` style routes are server-route territory.
-- Current TS `tRPC` procedures are not the target architecture, but they are valuable contract snapshots and migration input.
-
-## Exit Condition
-
-- Every migration slice must cite at least one legacy source and one current TS source.
-- No feature can be called complete without the corresponding Red test and modern Go target-layer trace.
+- controller-origin behavior는 Rust HTTP/RPC contract test 또는 route test로 번역한다.
+- model-origin behavior는 isolated domain test로 번역한다.
+- root mixed code는 target architecture가 아니라 contract snapshot과 workflow hint다.
+- provenance는 legacy source와 Rust target을 잇는 다리이지, old stack baseline을 유지하는 장치가 아니다.

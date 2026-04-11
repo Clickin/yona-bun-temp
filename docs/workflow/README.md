@@ -1,5 +1,8 @@
 # Workflow Artifacts
 
+> Status: `historical`
+> These workflow artifacts come from a prior orchestration/workflow toolchain and are not the current Yona execution source of truth. Use `AGENTS.md`, `SPEC.md`, and `docs/agents/*` for active guidance; keep this directory as historical record only.
+
 Each completed task should have an atomic documentation artifact under this folder.
 
 ## Naming

@@ -1,58 +1,41 @@
 # Go Backend Migration Plan
 
+> Status: `superseded`
+> This migration plan captures the pre-Rust-pivot Go backend strategy. Keep it as historical evidence only. The current canonical implementation baseline is `yona-rust/`.
+
 Date: 2026-04-06
 
 ## Goal
 
-- React/TanStack frontend는 최대한 유지한다.
-- backend만 Go로 재구축한다.
-- 최종 배포는 frontend dist를 Go binary에 embed 하거나 동일 배포 단위에서 함께 제공한다.
-- current TS backend surface는 migration source material로 사용한다.
+- 이 문서는 Go backend 재구축을 canonical path로 보던 시점의 계획이다.
+- 현재 canonical 구현은 `yona-rust/`에서 진행한다.
+- 아래 내용은 root mixed-code와 Go pivot 의사결정의 historical reference로만 사용한다.
 
 ## Fixed Direction
 
 - frontend baseline: `React + TanStack Router + TanStack Query + Vite`
+- frontend tooling: `Node.js + pnpm`
 - backend baseline: `Go`
+- internal business API: `chi + connect-go + Protobuf + connect-query`
+- fallback transport: `chi + OpenAPI + Orval`
 - DB baseline: `database/sql` + `uptrace/bun`
 - VCS baseline: `git` / `svn` system executable
 - auth/session: Yona-owned Go implementation
+- runtime basepath: `YONA_BASE_PATH`
 
-## tRPC Migration Position
+## Contract Migration Position
 
-현재 TS backend는 `apps/app/src/lib/*-trpc.ts` 중심으로 frontend call site가 이미 형성되어 있다.
+현재 TS backend는 `frontend/src/lib/*-trpc.ts`와 `createServerFn` 중심으로 frontend call site가 이미 형성되어 있다.
 
-따라서 첫 migration 목표는 “transport를 완전히 새로 설계”하는 것이 아니라 “frontend call site와 procedure naming을 가능한 한 유지하면서 backend만 Go로 바꾸는 것”이다.
+따라서 migration 목표는 “frontend call site와 query key를 가능한 한 유지하면서 backend contract source of truth를 Protobuf로 옮기는 것”이다.
 
-### Candidate A: `github.com/befabri/trpcgo`
+현재 결정:
 
-장점:
-
-- README 기준으로 `@trpc/client`와 `@trpc/react-query`를 지원한다.
-- Go handler를 정의하고 current frontend call site를 상대적으로 덜 흔들 수 있다.
-- current TS `tRPC` surface를 migration input으로 쓰기에 가장 유리하다.
-
-리스크:
-
-- active development 상태다.
-- current Yona의 실제 input/output 패턴과 auth/error mapping을 바로 다 감당할지 별도 spike가 필요하다.
-
-### Candidate B: `github.com/trpc-group/trpc-go`
-
-장점:
-
-- Go 쪽 RPC framework로는 강하다.
-- 성능/서비스 프레임워크 관점에서는 매력적이다.
-
-리스크:
-
-- current TS `@trpc/client` continuation path로 보기엔 직접 호환성이 불분명하다.
-- 따라서 migration acceleration 관점에서는 1순위가 아니다.
-
-### Current Decision
-
-- 호환성 spike 1순위는 `befabri/trpcgo`
-- `trpc-group/trpc-go`는 별도 Go RPC architecture 후보
-- 두 후보가 모두 migration 요구를 만족하지 못하면 custom HTTP/JSON contract + generated TS client로 간다.
+- internal business API contract source of truth는 `proto/`
+- Go transport는 `connect-go`
+- TS client는 generated `connect-web` + `connect-query`
+- `OpenAPI + Orval`은 fallback
+- current TS `tRPC` surface와 `createServerFn` surface는 migration input
 
 ## Migration Slices
 
@@ -60,22 +43,26 @@ Date: 2026-04-06
 
 목표:
 
-- current TS `tRPC` surface를 inventory로 고정한다.
+- current TS `tRPC` surface와 `createServerFn` surface를 inventory로 고정한다.
 
 대상:
 
-- `apps/app/src/lib/auth-trpc.ts`
-- `apps/app/src/lib/me-trpc.ts`
-- `apps/app/src/lib/project-trpc.ts`
-- `apps/app/src/lib/organization-trpc.ts`
-- `apps/app/src/lib/issue-trpc.ts`
-- `apps/app/src/lib/pull-request-trpc.ts`
-- `apps/app/src/lib/repo-trpc.ts`
-- `apps/app/src/lib/search-trpc.ts`
-- `apps/app/src/lib/posting-trpc.ts`
-- `apps/app/src/lib/enrollment-trpc.ts`
-- `apps/app/src/lib/label-trpc.ts`
-- `apps/app/src/lib/milestone-trpc.ts`
+- `frontend/src/lib/auth-trpc.ts`
+- `frontend/src/lib/me-trpc.ts`
+- `frontend/src/lib/project-trpc.ts`
+- `frontend/src/lib/organization-trpc.ts`
+- `frontend/src/lib/issue-trpc.ts`
+- `frontend/src/lib/pull-request-trpc.ts`
+- `frontend/src/lib/repo-trpc.ts`
+- `frontend/src/lib/search-trpc.ts`
+- `frontend/src/lib/posting-trpc.ts`
+- `frontend/src/lib/enrollment-trpc.ts`
+- `frontend/src/lib/label-trpc.ts`
+- `frontend/src/lib/milestone-trpc.ts`
+- `frontend/src/lib/auth.ts`
+- `frontend/src/lib/project.ts`
+- `frontend/src/lib/issue.ts`
+- `frontend/src/lib/pull-request.ts`
 
 산출물:
 
@@ -85,6 +72,7 @@ Date: 2026-04-06
 - error mapping
 - auth requirement
 - query key / invalidation dependency
+- existing client-side usage site
 
 ### Slice 1: Go Domain Port
 
@@ -103,38 +91,44 @@ Date: 2026-04-06
 - current TS implementation은 translation hint다.
 - TS service naming을 가능한 한 Go service naming에 반영한다.
 
-### Slice 2: Go API Adapter
+### Slice 2: Protobuf / Connect Contract Layer
 
 목표:
 
-- current frontend call site를 가능한 한 유지하는 Go handler/API adapter를 만든다.
+- current frontend call site를 가능한 한 유지하는 Protobuf/Connect layer를 만든다.
 
 ownership:
 
-- `internal/httpapi`
+- `proto`
+- `internal/httpapi/connect`
+- `packages/contracts`
 
 원칙:
 
 - procedure naming drift를 최소화한다.
 - auth/error semantics를 TS 쪽과 맞춘다.
 - frontend 수정량이 가장 적은 경로를 우선한다.
+- `connect-query`와 TanStack Query를 기본 조합으로 사용한다.
 
 ### Slice 3: Frontend Repoint
 
 목표:
 
-- current TS in-process backend call을 Go backend call로 교체한다.
+- current TS in-process backend call을 generated Connect client 호출로 교체한다.
 
 대상:
 
-- `apps/app/src/lib/*-trpc.ts`
+- `frontend/src/lib/*-trpc.ts`
+- `frontend/src/lib/*.ts` (`createServerFn` wrappers)
 - query helpers
 - mutation invalidation wiring
+- runtime config bootstrap
 
 원칙:
 
 - UI는 그대로 두고 transport만 교체한다.
 - query key naming과 optimistic update semantics를 먼저 보존한다.
+- runtime `basePath`, `rpcBaseUrl`, `apiBaseUrl`를 frontend bootstrap에서 주입한다.
 
 ### Slice 4: Delete Or Archive TS Backend
 
@@ -149,7 +143,7 @@ ownership:
 - `packages/domain`
 - `packages/integrations`
 - `packages/vcs`
-- `apps/app/src/lib/*-trpc.server.ts`
+- `frontend/src/lib/*-trpc.server.ts`
 
 원칙:
 
@@ -158,18 +152,18 @@ ownership:
 
 ## Feature Mapping
 
-| Current TS surface              | Go target                                                      |
-| ------------------------------- | -------------------------------------------------------------- |
-| `auth-trpc`                     | `internal/auth` + `internal/httpapi/auth`                      |
-| `me-trpc`                       | `internal/domain/workspace` + `internal/httpapi/me`            |
-| `project-trpc`                  | `internal/domain/project` + `internal/httpapi/project`         |
-| `organization-trpc`             | `internal/domain/org` + `internal/httpapi/org`                 |
-| `issue-trpc`                    | `internal/domain/issue` + `internal/httpapi/issue`             |
-| `pull-request-trpc`             | `internal/domain/pullrequest` + `internal/httpapi/pullrequest` |
-| `repo-trpc` / `repo-http`       | `internal/vcs` + `internal/httpapi/repo`                       |
-| `search-trpc`                   | `internal/search` + `internal/httpapi/search`                  |
-| `posting-trpc`                  | `internal/domain/posting` + `internal/httpapi/posting`         |
-| `label-trpc` / `milestone-trpc` | `internal/domain/issue-meta` + `internal/httpapi/issue-meta`   |
+| Current TS surface | Go target |
+| --- | --- |
+| `auth-trpc` / `auth.ts` | `internal/auth` + `internal/httpapi/connect/auth` |
+| `me-trpc` / `me.ts` | `internal/domain/workspace` + `internal/httpapi/connect/me` |
+| `project-trpc` / `project.ts` | `internal/domain/project` + `internal/httpapi/connect/project` |
+| `organization-trpc` / `organization.ts` | `internal/domain/org` + `internal/httpapi/connect/org` |
+| `issue-trpc` / `issue.ts` | `internal/domain/issue` + `internal/httpapi/connect/issue` |
+| `pull-request-trpc` / `pull-request.ts` | `internal/domain/pullrequest` + `internal/httpapi/connect/pullrequest` |
+| `repo-trpc` / `repo-http` | `internal/vcs` + `internal/httpapi/repo` |
+| `search-trpc` / `search.ts` | `internal/search` + `internal/httpapi/connect/search` |
+| `posting-trpc` / `posting.ts` | `internal/domain/posting` + `internal/httpapi/connect/posting` |
+| `label-trpc` / `milestone-trpc` | `internal/domain/issue-meta` + `internal/httpapi/connect/issue-meta` |
 
 ## DB Translation Position
 
@@ -188,13 +182,14 @@ ownership:
 ## Testing
 
 - legacy source -> current TS behavior -> Go behavior 순서로 검증한다.
-- 가능한 경우 current TS `tRPC` output을 contract snapshot으로 사용한다.
+- 가능한 경우 current TS `tRPC` output과 `createServerFn` output을 contract snapshot으로 사용한다.
 - migration slice별 필수 검증:
   - legacy provenance
   - current TS contract capture
   - Go domain test
-  - Go handler/API contract test
+  - Connect handler/API contract test
   - frontend smoke / Playwright flow
+  - runtime basepath `/` / subdirectory mount
 
 ## First Recommended Order
 

@@ -1,31 +1,29 @@
 # Yona
 
-Yona는 `TanStack Start + React + Bun` 기반으로 레거시 Yona의 behavior parity를 목표로 재작성 중인 단일 애플리케이션 워크스페이스다.
+Yona는 legacy Yona의 기능과 UX parity를 목표로 재구성 중인 워크스페이스다.
 
-## Canonical Runtime
+현재 canonical 구현 경로는 [`yona-rust/`](/G:/programming/yona/yona-rust)다. 이 workspace가 `frontend/`, `proto/`, `crates/*`를 포함하는 Rust + React 기준선이다.
 
-- active runtime은 `apps/app`이다.
-- root `bun run dev`, `build`, `preview`, `check`, `test`는 `apps/app`을 기준으로 본다.
-- `packages/api`, `packages/core`, `packages/infra`는 extraction/deletion 대상인 legacy 경로다. 새 장기 ownership을 추가하지 않는다.
+## Canonical Order
 
-## Working Rules
-
-- canonical execution spec은 `SPEC.md`다.
-- 운영용 mirror는 `docs/agents/*.md`다.
-- 구현 전에는 대응 legacy route/test/model을 `yona-original/`에서 먼저 식별한다.
-- failing Red test 없이 Green 구현부터 시작하지 않는다.
+1. [`yona-original/`](/G:/programming/yona/yona-original): 기능/UX parity의 1차 source of truth
+2. [`yona-rust/`](/G:/programming/yona/yona-rust): current canonical implementation baseline
+3. root mixed code (`frontend/`, `packages/*`, `cmd/`, `internal/`, `apps/*`, `proto/`): reference-only migration material
 
 ## Workspace Landmarks
 
-- `apps/app/`: TanStack Start application
-- `packages/db/`: Drizzle schema, migration, parity test
-- `packages/vcs/`: git/svn executable integration
-- `yona-original/`: read-only legacy provenance source
-- `docs/agents/`: execution mirror docs
+- [`yona-rust/frontend/`](/G:/programming/yona/yona-rust/frontend): canonical React SPA ownership
+- [`yona-rust/proto/`](/G:/programming/yona/yona-rust/proto): canonical contract source
+- [`yona-rust/crates/server/`](/G:/programming/yona/yona-rust/crates/server): runtime bootstrap, HTTP/RPC, asset delivery, session/auth bootstrap
+- [`yona-rust/crates/domain/`](/G:/programming/yona/yona-rust/crates/domain): domain behavior, ACL, invariant
+- [`yona-rust/crates/persistence/`](/G:/programming/yona/yona-rust/crates/persistence): DB access and repositories
+- [`yona-rust/crates/migration/`](/G:/programming/yona/yona-rust/crates/migration): schema, seed, migration
+- [`docs/agents/`](/G:/programming/yona/docs/agents): 실행 mirror 문서
+- [`docs/provenance/`](/G:/programming/yona/docs/provenance): legacy source, gap, deviation, deferred scope 근거
 
-## Current Migration Stance
+## Working Rules
 
-- 내부 read/mutation의 canonical backend boundary는 in-process `tRPC`다.
-- TanStack Start `createServerFn`/`serverFunction`은 thin adapter shell이고, 외부/프로토콜 endpoint는 server route가 기준이다.
-- app-internal non-plain-JSON 타입은 `superjson`을 기준으로 직렬화한다.
-- 인증은 `Better Auth`를 우선 사용하되, identity/ACL/audit ownership은 Yona가 직접 가진다.
+- canonical execution rules는 [`AGENTS.md`](/G:/programming/yona/AGENTS.md)와 [`SPEC.md`](/G:/programming/yona/SPEC.md)에 있다.
+- 구현 전에는 `yona-original/`에서 대응 legacy route/test/model을 먼저 식별한다.
+- root mixed code는 reference-only migration material로 읽고, 새 canonical ownership은 `yona-rust/`에 둔다.
+- 일부 기능 누락은 허용되지만 반드시 `deferred`, `gap`, `deviation`으로 기록한다.

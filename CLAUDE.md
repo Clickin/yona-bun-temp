@@ -1,37 +1,10 @@
-Project context mirror for Yona:
+Project context mirror for Yona.
 
-## Canonical Source
+## 에이전트 지침
 
-- `SPEC.md` is the canonical execution spec.
-- `docs/agents/*.md` are condensed agent-facing mirrors.
-- The old `SvelteKit + Hono` direction is historical and should not be expanded except when extracting or deleting code during migration.
-
-## Target Architecture
-
-- One `TanStack Start + React + Bun` application.
-- Internal app operations use `createServerFn`.
-- External or protocol-sensitive surfaces use server routes.
-- `Better Auth` is the auth framework, but Yona owns canonical identity, ACL, audit, and resource permission semantics.
-- Session persistence in DB is forbidden. Baseline is in-memory with optional `Redis/Valkey` secondary storage.
-- Runtime DB access is `Bun.SQL + Drizzle` with `PostgreSQL`, `MySQL/MariaDB`, and `SQLite` treated as first-class from the first implementation.
-- Async notification/integration delivery runs inside the Bun process through a dedicated worker path.
-
-## Package Direction
-
-- Target ownership lives in `apps/app`, `packages/auth`, `packages/contracts`, `packages/db`, `packages/domain`, `packages/integrations`, `packages/i18n`, `packages/ui`, `packages/vcs`.
-- Current `apps/web`, `packages/api`, `packages/core`, and `packages/infra` are transition assets and extraction sources.
-
-## Import Rules
-
-- Cross-package imports use `@yona/*`.
-- New app-internal imports use `@app/*`.
-- `@drizzle/*` is allowed during migration for shared schema/config access.
-- Legacy `@web`, `$lib`, `$app`, `@core`, `@api`, `@infra` aliases may remain only inside untouched migration-era code and should not appear in new long-lived files.
-
-## Execution Rules
-
-- Start from the relevant `SPEC.md` section and matching `docs/agents/*` summary.
-- Identify legacy Yona references before implementing a feature.
-- Write failing Red tests before implementation.
-- When writing schema or query code, explicitly account for PostgreSQL/MySQL/SQLite parity, especially around datetime, FTS, and raw SQL.
-- Prefer official TanStack Start/Router/Query, Better Auth, Bun, and Drizzle documentation when framework behavior must be verified.
+- [`AGENTS.md`](/G:/programming/yona/AGENTS.md)가 에이전트 실행 규칙의 메인 source of truth다.
+- [`SPEC.md`](/G:/programming/yona/SPEC.md)는 Rust pivot 이후 기술적 상세의 canonical execution spec이다.
+- [`docs/agents/`](/G:/programming/yona/docs/agents)는 AGENTS와 SPEC의 실행 mirror다.
+- 현재 canonical 구현 경로는 [`yona-rust/`](/G:/programming/yona/yona-rust)다.
+- [`yona-original/`](/G:/programming/yona/yona-original)은 기능과 UX parity의 1차 기준이다.
+- root mixed code는 reference-only migration material이다.

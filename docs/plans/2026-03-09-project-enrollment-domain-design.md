@@ -1,5 +1,8 @@
 # Project Enrollment Domain Design
 
+> Status: `historical`
+> This document records a pre-Rust-pivot design discussion. Current canonical implementation work happens in `yona-rust/`; any root mixed-code paths mentioned below are reference-only.
+
 ## Scope
 
 - Project self-enrollment request and cancel
@@ -57,3 +60,7 @@
 
 - Legacy project enroll and cancel return `403 Forbidden` for missing project because the Play action guard resolves project existence before controller logic.
 - Modern domain keeps missing project as `DomainNotFoundError`, and the tRPC layer returns `NOT_FOUND`.
+# Status: historical
+#
+# This document records a pre-Rust-pivot design discussion. Current canonical implementation
+# work happens in `yona-rust/`; any root mixed-code paths mentioned below are reference-only.
