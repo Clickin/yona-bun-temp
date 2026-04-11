@@ -478,6 +478,7 @@ export function App({ runtimeConfig }: AppProps) {
   return (
     <AuthWorkspaceShell
       bootstrapping={currentSession === null}
+      csrfToken={csrfToken}
       route={route}
       authUiCapabilities={authUiCapabilities}
       errorMessage={errorMessage}
