@@ -1,10 +1,10 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { readOrganizationSettings, updateOrganization } from "../../../../auth-workspace-client";
+import { readOrganizationContainer, updateOrganization } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { OrganizationSettingsPage } from "../../../-organization-views";
 import { navigateToAppHref, useRequireAuthenticatedRoute } from "../../../-shared";
-import { toOrganizationDetailView } from "../../../../app-view-models";
+import { toOrganizationContainerView } from "../../../../app-view-models";
 
 export const Route = createFileRoute("/organizations/$organizationName/settingform")({
   component: OrganizationSettingsRouteComponent,
@@ -14,7 +14,7 @@ function OrganizationSettingsRouteComponent() {
   const { organizationName } = Route.useParams();
   const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute(`/organizations/${organizationName}/settingform`);
-  const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationDetailView> | null>(null);
+  const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationContainerView> | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -22,9 +22,9 @@ function OrganizationSettingsRouteComponent() {
       return;
     }
     void (async () => {
-      const nextDetail = await readOrganizationSettings(runtimeConfig, organizationName);
+      const nextDetail = await readOrganizationContainer(runtimeConfig, organizationName);
       if (!cancelled) {
-        setDetail(toOrganizationDetailView(nextDetail));
+        setDetail(toOrganizationContainerView(nextDetail));
       }
     })();
     return () => {
@@ -39,6 +39,7 @@ function OrganizationSettingsRouteComponent() {
   return (
     <OrganizationSettingsPage
       detail={detail}
+      runtimeConfig={runtimeConfig}
       onUpdateOrganization={async (input) => {
         try {
           const nextDetail = await updateOrganization(runtimeConfig, csrfToken, input);

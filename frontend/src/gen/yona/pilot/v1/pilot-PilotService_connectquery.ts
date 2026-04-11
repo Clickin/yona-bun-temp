@@ -110,6 +110,11 @@ export const readOrganizationSettings = PilotService.method.readOrganizationSett
 export const readOrganizationMembers = PilotService.method.readOrganizationMembers;
 
 /**
+ * @generated from rpc yona.pilot.v1.PilotService.ReadOrganizationContainer
+ */
+export const readOrganizationContainer = PilotService.method.readOrganizationContainer;
+
+/**
  * @generated from rpc yona.pilot.v1.PilotService.UpdateOrganization
  */
 export const updateOrganization = PilotService.method.updateOrganization;
@@ -133,6 +138,21 @@ export const readProjectSettings = PilotService.method.readProjectSettings;
  * @generated from rpc yona.pilot.v1.PilotService.ReadProjectMembers
  */
 export const readProjectMembers = PilotService.method.readProjectMembers;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.ReadProjectContainer
+ */
+export const readProjectContainer = PilotService.method.readProjectContainer;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.UpdateProjectOverview
+ */
+export const updateProjectOverview = PilotService.method.updateProjectOverview;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.ToggleProjectWatch
+ */
+export const toggleProjectWatch = PilotService.method.toggleProjectWatch;
 
 /**
  * @generated from rpc yona.pilot.v1.PilotService.UpdateProject

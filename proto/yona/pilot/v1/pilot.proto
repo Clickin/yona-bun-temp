@@ -26,11 +26,15 @@ service PilotService {
   rpc ReadOrganizationDetail(ReadOrganizationDetailRequest) returns (OrganizationDetail) {}
   rpc ReadOrganizationSettings(ReadOrganizationSettingsRequest) returns (OrganizationDetail) {}
   rpc ReadOrganizationMembers(ReadOrganizationMembersRequest) returns (ReadOrganizationMembersResponse) {}
+  rpc ReadOrganizationContainer(ReadOrganizationContainerRequest) returns (OrganizationContainer) {}
   rpc UpdateOrganization(UpdateOrganizationRequest) returns (OrganizationDetail) {}
   rpc CreateProject(CreateProjectRequest) returns (ProjectDetail) {}
   rpc ReadProjectDetail(ReadProjectDetailRequest) returns (ProjectDetail) {}
   rpc ReadProjectSettings(ReadProjectSettingsRequest) returns (ProjectDetail) {}
   rpc ReadProjectMembers(ReadProjectMembersRequest) returns (ReadProjectMembersResponse) {}
+  rpc ReadProjectContainer(ReadProjectContainerRequest) returns (ProjectContainer) {}
+  rpc UpdateProjectOverview(UpdateProjectOverviewRequest) returns (ProjectContainer) {}
+  rpc ToggleProjectWatch(ToggleProjectWatchRequest) returns (ProjectContainer) {}
   rpc UpdateProject(UpdateProjectRequest) returns (ProjectDetail) {}
   rpc EnrollProject(EnrollProjectRequest) returns (EnrollmentMutationResult) {}
   rpc CancelEnrollProject(CancelEnrollProjectRequest) returns (EnrollmentMutationResult) {}
@@ -255,6 +259,10 @@ message ReadOrganizationMembersRequest {
   string organization_name = 1;
 }
 
+message ReadOrganizationContainerRequest {
+  string organization_name = 1;
+}
+
 message UpdateOrganizationRequest {
   string current_organization_name = 1;
   string organization_name = 2;
@@ -283,6 +291,38 @@ message ReadOrganizationMembersResponse {
   repeated OrganizationEnrollmentRequest enrollment_requests = 2;
 }
 
+message OrganizationMemberSummary {
+  string login_id = 1;
+  string user_label = 2;
+  string role = 3;
+  string avatar_url = 4;
+}
+
+message OrganizationProjectCard {
+  string owner_name = 1;
+  string project_name = 2;
+  string overview = 3;
+  string project_scope = 4;
+  string created_label = 5;
+  string last_pushed_label = 6;
+  uint32 member_count = 7;
+  uint32 watch_count = 8;
+  bool is_watching = 9;
+  string logo_url = 10;
+  string origin_owner_name = 11;
+  string origin_project_name = 12;
+}
+
+message OrganizationContainer {
+  string organization_name = 1;
+  string description = 2;
+  bool viewer_can_update = 3;
+  bool viewer_can_create_project = 4;
+  repeated OrganizationMemberSummary admin_members = 5;
+  repeated OrganizationMemberSummary member_members = 6;
+  repeated OrganizationProjectCard visible_projects = 7;
+}
+
 message CreateProjectRequest {
   string owner_name = 1;
   string project_name = 2;
@@ -301,6 +341,11 @@ message ReadProjectSettingsRequest {
 }
 
 message ReadProjectMembersRequest {
+  string owner_name = 1;
+  string project_name = 2;
+}
+
+message ReadProjectContainerRequest {
   string owner_name = 1;
   string project_name = 2;
 }
@@ -340,6 +385,71 @@ message ProjectEnrollmentRequest {
 message ReadProjectMembersResponse {
   repeated ProjectMember members = 1;
   repeated ProjectEnrollmentRequest enrollment_requests = 2;
+}
+
+message ProjectMemberSummary {
+  string login_id = 1;
+  string user_label = 2;
+  string role = 3;
+  string avatar_url = 4;
+}
+
+message ProjectMilestoneSummary {
+  string title = 1;
+  string due_date_label = 2;
+  uint32 open_issue_count = 3;
+  uint32 closed_issue_count = 4;
+  uint32 completion_percent = 5;
+}
+
+message ProjectContainer {
+  string owner_name = 1;
+  string project_name = 2;
+  string organization_name = 3;
+  string overview = 4;
+  string project_scope = 5;
+  bool is_forked = 6;
+  string origin_owner_name = 7;
+  string origin_project_name = 8;
+  string logo_url = 9;
+  string background_url = 10;
+  bool viewer_can_update = 11;
+  bool viewer_can_enroll = 12;
+  bool enrollment_requested = 13;
+  bool is_favorited = 14;
+  bool viewer_can_watch = 15;
+  bool is_watching = 16;
+  uint32 watch_count = 17;
+  string clone_url = 18;
+  bool overview_editable = 19;
+  bool show_code = 20;
+  bool code_member_only = 21;
+  bool show_issue = 22;
+  bool show_pull_request = 23;
+  bool show_review = 24;
+  bool show_milestone = 25;
+  bool show_board = 26;
+  bool show_admin = 27;
+  uint32 open_issue_count = 28;
+  uint32 open_pull_request_count = 29;
+  uint32 review_count = 30;
+  uint32 board_count = 31;
+  uint32 member_count = 32;
+  repeated ProjectMemberSummary members = 33;
+  ProjectMilestoneSummary current_milestone = 34;
+  string default_tab = 35;
+}
+
+message UpdateProjectOverviewRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  string overview = 3;
+}
+
+message ToggleProjectWatchRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  bool watching = 3;
 }
 
 message EnrollProjectRequest {

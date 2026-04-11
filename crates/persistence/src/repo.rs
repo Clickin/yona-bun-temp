@@ -1,21 +1,21 @@
 use crate::repo_types::{
-    AttachmentRecord,
-    AppUserInput, AppUserRecord, CreateOrganizationInput, CreateProjectInput, CreateUserInput,
-    IssueRecord, OrganizationAuthorizationRecord, OrganizationMemberDirectoryRecord,
-    OrganizationMemberRecord, OrganizationRecord, OrganizationViewerRecord,
-    ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord, ProjectListEntry,
-    ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectRecord, ProjectViewerRecord,
-    ToggleFavoriteProjectResult, UpdateOrganizationInput, UpdateProjectInput,
-    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
-    WorkspaceMemberProjectRecord,
+    AttachmentRecord, AppUserInput, AppUserRecord, CreateOrganizationInput, CreateProjectInput,
+    CreateUserInput, IssueRecord, OrganizationAuthorizationRecord,
+    OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationRecord,
+    OrganizationViewerRecord, ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord,
+    ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord,
+    ProjectMenuSettingsRecord, ProjectMilestoneSummaryRecord, ProjectRecord,
+    ProjectViewerRecord, ToggleFavoriteProjectResult, UpdateOrganizationInput,
+    UpdateProjectInput, WatchedProjectNotificationsRecord, WorkspaceEmailRecord,
+    WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
     WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
-    assignee, attachment, comment_thread, email, favorite_project, issue, linked_account, n4user, organization,
-    organization_user, project, project_user, pull_request, recent_project, role, site_admin,
-    user_credential, user_enrolled_project, user_verification,
-    user_project_notification, user_setting, watch,
+    assignee, attachment, comment_thread, email, favorite_project, issue, linked_account,
+    milestone, n4user, organization, organization_user, posting, project, project_menu_setting,
+    project_user, pull_request, recent_project, role, site_admin, user_credential,
+    user_enrolled_project, user_project_notification, user_setting, user_verification, watch,
 };
 use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::{
@@ -175,8 +175,12 @@ fn pull_request_state_from_raw(value: Option<i32>, is_conflict: Option<i8>) -> S
 
 #[derive(Debug, FromQueryResult)]
 struct ProjectRow {
+    created_date: Option<DateTime>,
     id: i64,
+    is_code_accessible_member_only: Option<i8>,
+    last_pushed_date: Option<DateTime>,
     name: Option<String>,
+    original_project_id: Option<i64>,
     overview: Option<String>,
     owner: Option<String>,
     organization_id: Option<i64>,
@@ -306,8 +310,12 @@ impl AppRepository {
     pub async fn list_projects(&self) -> Result<Vec<ProjectRecord>, DbErr> {
         let rows = project::Entity::find()
             .select_only()
+            .column(project::Column::CreatedDate)
             .column(project::Column::Id)
+            .column(project::Column::IsCodeAccessibleMemberOnly)
+            .column(project::Column::LastPushedDate)
             .column(project::Column::Name)
+            .column(project::Column::OriginalProjectId)
             .column(project::Column::Overview)
             .column(project::Column::Owner)
             .column(project::Column::OrganizationId)
@@ -413,8 +421,12 @@ impl AppRepository {
 
         let rows = project::Entity::find()
             .select_only()
+            .column(project::Column::CreatedDate)
             .column(project::Column::Id)
+            .column(project::Column::IsCodeAccessibleMemberOnly)
+            .column(project::Column::LastPushedDate)
             .column(project::Column::Name)
+            .column(project::Column::OriginalProjectId)
             .column(project::Column::Overview)
             .column(project::Column::Owner)
             .column(project::Column::OrganizationId)
@@ -573,7 +585,7 @@ impl AppRepository {
             vcs: Set(None),
             siteurl: Set(None),
             owner: Set(Some(input.owner_name.trim().to_string())),
-            created_date: Set(None),
+            created_date: Set(Some(current_datetime())),
             last_issue_number: Set(Some(0)),
             last_posting_number: Set(Some(0)),
             original_project_id: Set(None),
@@ -586,6 +598,19 @@ impl AppRepository {
             previous_name: Set(None),
             previous_name_changed_time: Set(None),
             is_code_accessible_member_only: Set(Some(0)),
+        }
+        .insert(&self.db)
+        .await?;
+
+        project_menu_setting::ActiveModel {
+            id: NotSet,
+            project_id: Set(Some(created.id)),
+            code: Set(Some(1)),
+            issue: Set(Some(1)),
+            pull_request: Set(Some(1)),
+            review: Set(Some(1)),
+            milestone: Set(Some(1)),
+            board: Set(Some(1)),
         }
         .insert(&self.db)
         .await?;
@@ -722,8 +747,10 @@ impl AppRepository {
             };
 
             members.push(OrganizationMemberRecord {
+                email_address: user.email_address,
                 login_id: user.login_id,
                 role: self.role_name_for_id(membership.role_id).await?,
+                user_id,
                 user_label: user.display_name,
             });
         }
@@ -844,8 +871,10 @@ impl AppRepository {
                 continue;
             };
             members.push(ProjectMemberRecord {
+                email_address: user.email_address,
                 login_id: user.login_id,
                 role: self.role_name_for_id(membership.role_id).await?,
+                user_id,
                 user_label: user.display_name,
             });
         }
@@ -876,6 +905,140 @@ impl AppRepository {
             enrollment_requests,
             members,
         })
+    }
+
+    pub async fn list_projects_for_organization(
+        &self,
+        organization_id: i64,
+    ) -> Result<Vec<ProjectRecord>, DbErr> {
+        let models = project::Entity::find()
+            .filter(project::Column::OrganizationId.eq(Some(organization_id)))
+            .all(&self.db)
+            .await?;
+        let mut projects = Vec::new();
+        for model in models {
+            if let Some(record) = self.project_record_from_model(model).await? {
+                projects.push(record);
+            }
+        }
+        Ok(projects)
+    }
+
+    pub async fn count_project_members(&self, project_id: i64) -> Result<u32, DbErr> {
+        Ok(project_user::Entity::find()
+            .filter(project_user::Column::ProjectId.eq(Some(project_id)))
+            .count(&self.db)
+            .await? as u32)
+    }
+
+    pub async fn count_project_watchers(&self, project_id: i64) -> Result<u32, DbErr> {
+        Ok(watch::Entity::find()
+            .filter(watch::Column::ResourceType.eq(Some("PROJECT".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(project_id.to_string())))
+            .count(&self.db)
+            .await? as u32)
+    }
+
+    pub async fn read_project_menu_settings(
+        &self,
+        project_id: i64,
+    ) -> Result<ProjectMenuSettingsRecord, DbErr> {
+        let Some(row) = project_menu_setting::Entity::find()
+            .filter(project_menu_setting::Column::ProjectId.eq(Some(project_id)))
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(ProjectMenuSettingsRecord {
+                board: true,
+                code: true,
+                issue: true,
+                milestone: true,
+                pull_request: true,
+                review: true,
+            });
+        };
+
+        Ok(ProjectMenuSettingsRecord {
+            board: row.board.unwrap_or(1) != 0,
+            code: row.code.unwrap_or(1) != 0,
+            issue: row.issue.unwrap_or(1) != 0,
+            milestone: row.milestone.unwrap_or(1) != 0,
+            pull_request: row.pull_request.unwrap_or(1) != 0,
+            review: row.review.unwrap_or(1) != 0,
+        })
+    }
+
+    pub async fn count_open_issues_for_project(&self, project_id: i64) -> Result<u32, DbErr> {
+        Ok(issue::Entity::find()
+            .filter(issue::Column::ProjectId.eq(Some(project_id)))
+            .filter(issue::Column::State.eq(Some(0)))
+            .count(&self.db)
+            .await? as u32)
+    }
+
+    pub async fn count_open_pull_requests_for_project(
+        &self,
+        project_id: i64,
+    ) -> Result<u32, DbErr> {
+        Ok(pull_request::Entity::find()
+            .filter(pull_request::Column::ToProjectId.eq(Some(project_id)))
+            .filter(pull_request::Column::State.eq(Some(0)))
+            .count(&self.db)
+            .await? as u32)
+    }
+
+    pub async fn count_project_reviews(&self, project_id: i64) -> Result<u32, DbErr> {
+        Ok(comment_thread::Entity::find()
+            .filter(comment_thread::Column::ProjectId.eq(Some(project_id)))
+            .filter(comment_thread::Column::PullRequestId.is_not_null())
+            .count(&self.db)
+            .await? as u32)
+    }
+
+    pub async fn count_project_boards(&self, project_id: i64) -> Result<u32, DbErr> {
+        Ok(posting::Entity::find()
+            .filter(posting::Column::ProjectId.eq(Some(project_id)))
+            .count(&self.db)
+            .await? as u32)
+    }
+
+    pub async fn read_current_milestone_for_project(
+        &self,
+        project_id: i64,
+    ) -> Result<Option<ProjectMilestoneSummaryRecord>, DbErr> {
+        let Some(row) = milestone::Entity::find()
+            .filter(milestone::Column::ProjectId.eq(Some(project_id)))
+            .order_by_desc(milestone::Column::Id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+
+        let open_issue_count = issue::Entity::find()
+            .filter(issue::Column::MilestoneId.eq(Some(row.id)))
+            .filter(issue::Column::State.eq(Some(0)))
+            .count(&self.db)
+            .await? as u32;
+        let closed_issue_count = issue::Entity::find()
+            .filter(issue::Column::MilestoneId.eq(Some(row.id)))
+            .filter(issue::Column::State.ne(Some(0)))
+            .count(&self.db)
+            .await? as u32;
+        let total = open_issue_count + closed_issue_count;
+        let completion_percent = if total == 0 {
+            0
+        } else {
+            closed_issue_count.saturating_mul(100) / total
+        };
+
+        Ok(Some(ProjectMilestoneSummaryRecord {
+            closed_issue_count,
+            completion_percent,
+            due_date_label: format_workspace_date_label(row.due_date),
+            open_issue_count,
+            title: row.title.unwrap_or_default(),
+        }))
     }
 
     pub async fn create_project_enrollment_request(
@@ -1690,6 +1853,39 @@ impl AppRepository {
         self.project_record_from_model(row).await
     }
 
+    pub async fn set_project_watch(
+        &self,
+        user_id: i64,
+        project_id: i64,
+        watching: bool,
+    ) -> Result<(), DbErr> {
+        let existing = watch::Entity::find()
+            .filter(watch::Column::UserId.eq(Some(user_id)))
+            .filter(watch::Column::ResourceType.eq(Some("PROJECT".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(project_id.to_string())))
+            .all(&self.db)
+            .await?;
+
+        if watching {
+            if existing.is_empty() {
+                watch::ActiveModel {
+                    id: NotSet,
+                    user_id: Set(Some(user_id)),
+                    resource_type: Set(Some("PROJECT".to_string())),
+                    resource_id: Set(Some(project_id.to_string())),
+                }
+                .insert(&self.db)
+                .await?;
+            }
+        } else {
+            for row in existing {
+                watch::Entity::delete_by_id(row.id).exec(&self.db).await?;
+            }
+        }
+
+        Ok(())
+    }
+
     pub async fn is_watching_project(&self, user_id: i64, project_id: i64) -> Result<bool, DbErr> {
         Ok(watch::Entity::find()
             .filter(watch::Column::UserId.eq(Some(user_id)))
@@ -2110,7 +2306,12 @@ impl AppRepository {
         }
 
         Ok(Some(ProjectRecord {
+            created_date: row.created_date,
+            is_code_accessible_member_only: row.is_code_accessible_member_only.unwrap_or_default()
+                != 0,
+            last_pushed_date: row.last_pushed_date,
             id: row.id,
+            original_project_id: row.original_project_id,
             organization_id: row.organization_id,
             organization_name,
             owner_name,
@@ -2139,7 +2340,12 @@ impl AppRepository {
         }
 
         Ok(Some(ProjectRecord {
+            created_date: model.created_date,
+            is_code_accessible_member_only: model.is_code_accessible_member_only.unwrap_or_default()
+                != 0,
+            last_pushed_date: model.last_pushed_date,
             id: model.id,
+            original_project_id: model.original_project_id,
             organization_id: model.organization_id,
             organization_name,
             owner_name,

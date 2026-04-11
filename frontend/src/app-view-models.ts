@@ -11,9 +11,11 @@ import type {
 import {
   readAuthUiCapabilities,
   readCurrentSession,
+  readOrganizationContainer,
   readOrganizationDetail,
   readOrganizationMembers,
   listOrganizations,
+  readProjectContainer,
   readProjectDetail,
   readProjectMembers,
   listProjects,
@@ -118,6 +120,43 @@ export function toOrganizationDetailView(
   };
 }
 
+export function toOrganizationContainerView(
+  detail: Awaited<ReturnType<typeof readOrganizationContainer>>,
+): OrganizationDetailViewModel {
+  return {
+    adminMembers: detail.adminMembers.map((member) => ({
+      avatarUrl: member.avatarUrl,
+      loginId: member.loginId,
+      role: member.role,
+      userLabel: member.userLabel,
+    })),
+    description: detail.description,
+    memberMembers: detail.memberMembers.map((member) => ({
+      avatarUrl: member.avatarUrl,
+      loginId: member.loginId,
+      role: member.role,
+      userLabel: member.userLabel,
+    })),
+    organizationName: detail.organizationName,
+    viewerCanCreateProject: detail.viewerCanCreateProject,
+    viewerCanUpdate: detail.viewerCanUpdate,
+    visibleProjects: detail.visibleProjects.map((project) => ({
+      createdLabel: project.createdLabel,
+      isWatching: project.isWatching,
+      lastPushedLabel: project.lastPushedLabel,
+      logoUrl: project.logoUrl,
+      memberCount: project.memberCount,
+      originOwnerName: project.originOwnerName,
+      originProjectName: project.originProjectName,
+      overview: project.overview,
+      ownerName: project.ownerName,
+      projectName: project.projectName,
+      projectScope: project.projectScope,
+      watchCount: project.watchCount,
+    })),
+  };
+}
+
 export function toAuthUiCapabilitiesView(
   response: Awaited<ReturnType<typeof readAuthUiCapabilities>>,
 ): AuthUiCapabilitiesViewModel {
@@ -168,6 +207,61 @@ export function toProjectDetailView(
     projectScope: detail.projectScope,
     viewerCanEnroll: detail.viewerCanEnroll,
     viewerCanUpdate: detail.viewerCanUpdate,
+  };
+}
+
+export function toProjectContainerView(
+  detail: Awaited<ReturnType<typeof readProjectContainer>>,
+): ProjectDetailViewModel {
+  return {
+    backgroundUrl: detail.backgroundUrl,
+    boardCount: detail.boardCount,
+    cloneUrl: detail.cloneUrl,
+    codeMemberOnly: detail.codeMemberOnly,
+    currentMilestone: detail.currentMilestone
+      ? {
+          closedIssueCount: detail.currentMilestone.closedIssueCount,
+          completionPercent: detail.currentMilestone.completionPercent,
+          dueDateLabel: detail.currentMilestone.dueDateLabel,
+          openIssueCount: detail.currentMilestone.openIssueCount,
+          title: detail.currentMilestone.title,
+        }
+      : undefined,
+    defaultTab: detail.defaultTab,
+    enrollmentRequested: detail.enrollmentRequested,
+    isFavorited: detail.isFavorited,
+    isForked: detail.isForked,
+    isWatching: detail.isWatching,
+    logoUrl: detail.logoUrl,
+    memberCount: detail.memberCount,
+    members: detail.members.map((member) => ({
+      avatarUrl: member.avatarUrl,
+      loginId: member.loginId,
+      role: member.role,
+      userLabel: member.userLabel,
+    })),
+    openIssueCount: detail.openIssueCount,
+    openPullRequestCount: detail.openPullRequestCount,
+    organizationName: detail.organizationName,
+    originOwnerName: detail.originOwnerName,
+    originProjectName: detail.originProjectName,
+    overview: detail.overview,
+    overviewEditable: detail.overviewEditable,
+    ownerName: detail.ownerName,
+    projectName: detail.projectName,
+    projectScope: detail.projectScope,
+    reviewCount: detail.reviewCount,
+    showAdmin: detail.showAdmin,
+    showBoard: detail.showBoard,
+    showCode: detail.showCode,
+    showIssue: detail.showIssue,
+    showMilestone: detail.showMilestone,
+    showPullRequest: detail.showPullRequest,
+    showReview: detail.showReview,
+    viewerCanEnroll: detail.viewerCanEnroll,
+    viewerCanUpdate: detail.viewerCanUpdate,
+    viewerCanWatch: detail.viewerCanWatch,
+    watchCount: detail.watchCount,
   };
 }
 

@@ -17,9 +17,11 @@ import {
   ResetVisitedProjectsRequestSchema,
   ReadAuthUiCapabilitiesRequestSchema,
   ReadCurrentSessionRequestSchema,
+  ReadOrganizationContainerRequestSchema,
   ReadOrganizationDetailRequestSchema,
   ReadOrganizationMembersRequestSchema,
   ReadOrganizationSettingsRequestSchema,
+  ReadProjectContainerRequestSchema,
   ReadProjectDetailRequestSchema,
   ReadProjectMembersRequestSchema,
   ReadProjectSettingsRequestSchema,
@@ -33,13 +35,17 @@ import {
   SignOutRequestSchema,
   ToggleWorkspaceNotificationRequestSchema,
   ToggleFavoriteProjectRequestSchema,
+  ToggleProjectWatchRequestSchema,
   UpdateProfileRequestSchema,
   UpdateOrganizationRequestSchema,
   UpdateProjectRequestSchema,
+  UpdateProjectOverviewRequestSchema,
   VerifyUserRequestSchema,
+  type OrganizationContainer,
   type OrganizationDetail,
   type ListOrganizationsResponse,
   type ListProjectsResponse,
+  type ProjectContainer,
   type ProjectDetail,
   type ReadCurrentSessionResponse,
   type ReadOrganizationMembersResponse,
@@ -405,6 +411,16 @@ export async function readOrganizationDetail(
   );
 }
 
+export async function readOrganizationContainer(
+  runtimeConfig: RuntimeConfig,
+  organizationName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<OrganizationContainer> {
+  return createPilotClient(runtimeConfig, fetchImpl).readOrganizationContainer(
+    create(ReadOrganizationContainerRequestSchema, { organizationName }),
+  );
+}
+
 export async function readOrganizationSettings(
   runtimeConfig: RuntimeConfig,
   organizationName: string,
@@ -460,6 +476,17 @@ export async function readProjectDetail(
   );
 }
 
+export async function readProjectContainer(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectContainer> {
+  return createPilotClient(runtimeConfig, fetchImpl).readProjectContainer(
+    create(ReadProjectContainerRequestSchema, { ownerName, projectName }),
+  );
+}
+
 export async function readProjectSettings(
   runtimeConfig: RuntimeConfig,
   ownerName: string,
@@ -490,6 +517,18 @@ export async function updateProject(
 ): Promise<ProjectDetail> {
   return createPilotClient(runtimeConfig, fetchImpl).updateProject(
     create(UpdateProjectRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function updateProjectOverview(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof UpdateProjectOverviewRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectContainer> {
+  return createPilotClient(runtimeConfig, fetchImpl).updateProjectOverview(
+    create(UpdateProjectOverviewRequestSchema, input),
     { headers: { "x-csrf-token": csrfToken } },
   );
 }
@@ -529,6 +568,20 @@ export async function toggleFavoriteProject(
 ): Promise<ToggleFavoriteProjectResponse> {
   return createPilotClient(runtimeConfig, fetchImpl).toggleFavoriteProject(
     create(ToggleFavoriteProjectRequestSchema, { ownerName, projectName }),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function toggleProjectWatch(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  ownerName: string,
+  projectName: string,
+  watching: boolean,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectContainer> {
+  return createPilotClient(runtimeConfig, fetchImpl).toggleProjectWatch(
+    create(ToggleProjectWatchRequestSchema, { ownerName, projectName, watching }),
     { headers: { "x-csrf-token": csrfToken } },
   );
 }
