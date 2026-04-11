@@ -262,14 +262,22 @@ function LoginShell({
     password: "",
     rememberMe: true,
   });
-  const redirectUrl = resolveAuthRedirectPath(readSearchParams(routeHref));
+  const searchParams = readSearchParams(routeHref);
+  const redirectUrl = resolveAuthRedirectPath(searchParams);
   const canRenderLocalForm = authUiCapabilities !== null && !authUiCapabilities?.socialLoginOnly;
+  const postSubmitMessage =
+    searchParams.get("signup") === "requested"
+      ? "Sign up requires confirmation."
+      : searchParams.get("verify") === "sent"
+        ? "Confirmation mail will be sent."
+        : null;
 
   return (
     <main className="app-shell">
       <p className="eyebrow">Yona Rust Auth</p>
       <h1>Login for Yona</h1>
       <p className="lede">All-in-one software development platform.</p>
+      {postSubmitMessage ? <p className="lede">{postSubmitMessage}</p> : null}
       {authUiCapabilities?.emailVerificationEnabled ? (
         <p className="lede">Confirmation mail will be sent.</p>
       ) : null}

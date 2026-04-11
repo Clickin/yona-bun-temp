@@ -515,7 +515,27 @@ export function App({ runtimeConfig }: AppProps) {
         try {
           const session = await registerWithPassword(runtimeConfig, csrfToken, input);
           setCurrentSession(session);
-          await refreshWorkspace(session);
+          if (!session.isAnonymous) {
+            await refreshWorkspace(session);
+          } else {
+            setWorkspaceOverview(null);
+          }
+          if (session.isAnonymous) {
+            if (authUiCapabilities?.signupRequireConfirm) {
+              navigateInternal(
+                { kind: "login", href: "/users/loginform?signup=requested" },
+                "replace",
+              );
+              return;
+            }
+            if (authUiCapabilities?.emailVerificationEnabled) {
+              navigateInternal(
+                { kind: "login", href: "/users/loginform?verify=sent" },
+                "replace",
+              );
+              return;
+            }
+          }
           const searchParams =
             typeof window === "undefined" ? null : new URLSearchParams(window.location.search);
           const nextHref = resolvePostAuthHref(

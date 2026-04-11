@@ -175,7 +175,38 @@ async fn read_auth_ui_capabilities_reflects_runtime_env_flags() {
 }
 
 #[tokio::test]
+async fn register_requires_confirmation_session_when_signup_confirm_or_email_verification_is_enabled() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::set_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM", "true");
+
+    let (app, _, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+    let register = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+
+    assert_eq!(register.status(), StatusCode::OK);
+    let register_json = response_text(register).await;
+    assert!(register_json.contains("\"isAnonymous\":true"));
+}
+
+#[tokio::test]
 async fn register_sign_in_sign_out_and_current_session_round_trip() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -249,6 +280,9 @@ async fn register_sign_in_sign_out_and_current_session_round_trip() {
 
 #[tokio::test]
 async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -329,6 +363,9 @@ async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
 
 #[tokio::test]
 async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -580,6 +617,9 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
 
 #[tokio::test]
 async fn toggle_workspace_notification_preserves_missing_forbidden_and_unwatched_statuses() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, repository, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -676,6 +716,9 @@ async fn toggle_workspace_notification_preserves_missing_forbidden_and_unwatched
 
 #[tokio::test]
 async fn workspace_overview_reads_and_updates_default_landing() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 

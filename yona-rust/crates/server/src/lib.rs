@@ -343,6 +343,11 @@ fn fixed_auth_ui_capabilities() -> ReadAuthUiCapabilitiesResponse {
     }
 }
 
+fn confirmation_session_required() -> bool {
+    let capabilities = fixed_auth_ui_capabilities();
+    capabilities.signup_require_confirm || capabilities.email_verification_enabled
+}
+
 fn normalize_identifier(value: &str) -> String {
     value.trim().to_ascii_lowercase()
 }
@@ -782,13 +787,17 @@ impl PilotService for PilotServiceImpl {
             .create_user(persistence::CreateUserInput {
                 display_name: request.name.trim().to_string(),
                 email_address,
-                is_confirmed: true,
+                is_confirmed: !confirmation_session_required(),
                 is_site_admin: false,
                 login_id,
                 password_hash,
             })
             .await
             .map_err(internal_error)?;
+
+        if confirmation_session_required() {
+            return Ok((anonymous_current_session_response(), ctx));
+        }
 
         let authenticated_session = self
             .session_manager

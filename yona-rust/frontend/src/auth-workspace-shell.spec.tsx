@@ -116,6 +116,30 @@ describe("AuthWorkspaceShell", () => {
     expect(registerHtml).toContain("Sign up requires confirmation");
   });
 
+  it("renders login-side post-submit messages from auth query parameters", () => {
+    const verifyHtml = renderToString(
+      <AuthWorkspaceShell
+        {...({
+          route: { kind: "login", href: "/users/loginform?verify=sent" },
+          runtimeConfig,
+          workspaceOverview: null,
+        } as any)}
+      />,
+    );
+    expect(verifyHtml).toContain("Confirmation mail will be sent.");
+
+    const requestedHtml = renderToString(
+      <AuthWorkspaceShell
+        {...({
+          route: { kind: "login", href: "/users/loginform?signup=requested" },
+          runtimeConfig,
+          workspaceOverview: null,
+        } as any)}
+      />,
+    );
+    expect(requestedHtml).toContain("Sign up requires confirmation.");
+  });
+
   it("hides local auth forms when social-login-only mode is enabled", () => {
     const loginHtml = renderToString(
       <AuthWorkspaceShell
