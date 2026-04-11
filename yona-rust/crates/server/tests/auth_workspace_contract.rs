@@ -2,13 +2,16 @@ use axum::body::Body;
 use http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::{
+    entity::prelude::{DateTime, DateTimeUtc},
     ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet,
     QueryFilter, Set,
 };
 use std::sync::{Mutex, OnceLock};
+use std::time::{Duration, SystemTime};
 use tower::ServiceExt;
 use yona_rust_persistence::{
-    email, n4user, user_project_notification, watch, AppRepository, CreateProjectInput,
+    assignee, comment_thread, email, issue, linked_account, n4user, project, pull_request, user_credential,
+    user_project_notification, watch, AppRepository, CreateProjectInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -78,6 +81,10 @@ async fn bootstrap(app: axum::Router) -> (String, String) {
 async fn response_text(response: axum::response::Response) -> String {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     String::from_utf8(body.to_vec()).unwrap()
+}
+
+fn days_ago_datetime(days: u64) -> DateTime {
+    DateTimeUtc::from(SystemTime::now() - Duration::from_secs(days * 24 * 60 * 60)).naive_utc()
 }
 
 #[tokio::test]
@@ -810,6 +817,16 @@ async fn workspace_overview_reads_and_updates_default_landing() {
         })
         .await
         .unwrap();
+    let private_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "secret".to_string(),
+            overview: Some("Private project".to_string()),
+            project_name: "hiddenYobi".to_string(),
+            project_scope: "private".to_string(),
+        })
+        .await
+        .unwrap();
 
     let user_model = n4user::Entity::find_by_id(user.id)
         .one(&db)
@@ -817,8 +834,30 @@ async fn workspace_overview_reads_and_updates_default_landing() {
         .unwrap()
         .expect("user row");
     let mut user_active = n4user::ActiveModel::from(user_model);
+    user_active.english_name = Set(Some("Door English".to_string()));
     user_active.token = Set(Some("door-token".to_string()));
     user_active.update(&db).await.unwrap();
+    let project_model = project::Entity::find_by_id(project.id)
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("project row");
+    let mut project_active = project::ActiveModel::from(project_model);
+    project_active.last_pushed_date = Set(Some(days_ago_datetime(1)));
+    project_active.update(&db).await.unwrap();
+    let issue_assignee = assignee::ActiveModel {
+        id: NotSet,
+        user_id: Set(Some(user.id)),
+        project_id: Set(Some(project.id)),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+
+    repository
+        .add_project_membership(project.id, user.id, "member")
+        .await
+        .unwrap();
 
     email::ActiveModel {
         id: NotSet,
@@ -836,6 +875,308 @@ async fn workspace_overview_reads_and_updates_default_landing() {
         email: Set(Some("pending@example.com".to_string())),
         valid: Set(Some(0)),
         token: Set(Some("mail-token".to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let credential = user_credential::ActiveModel {
+        id: NotSet,
+        user_id: Set(Some(user.id)),
+        login_id: Set(Some("door".to_string())),
+        email: Set(Some("door@example.com".to_string())),
+        name: Set(Some("Door".to_string())),
+        active: Set(Some(1)),
+        email_validated: Set(Some(1)),
+        image: Set(None),
+        created_at: Set(None),
+        updated_at: Set(None),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    linked_account::ActiveModel {
+        id: NotSet,
+        user_credential_id: Set(Some(credential.id)),
+        provider_user_id: Set(Some("door-github".to_string())),
+        provider_key: Set(Some("github".to_string())),
+        provider_display_name: Set(Some("GitHub".to_string())),
+        avatar_url: Set(None),
+        password: Set(None),
+        access_token_expires_at: Set(None),
+        refresh_token_expires_at: Set(None),
+        scope: Set(None),
+        created_at: Set(None),
+        updated_at: Set(None),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    linked_account::ActiveModel {
+        id: NotSet,
+        user_credential_id: Set(Some(credential.id)),
+        provider_user_id: Set(Some("door-google".to_string())),
+        provider_key: Set(Some("google".to_string())),
+        provider_display_name: Set(Some("Google".to_string())),
+        avatar_url: Set(None),
+        password: Set(None),
+        access_token_expires_at: Set(None),
+        refresh_token_expires_at: Set(None),
+        scope: Set(None),
+        created_at: Set(None),
+        updated_at: Set(None),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    issue::ActiveModel {
+        id: NotSet,
+        title: Set(Some("Fix login redirect".to_string())),
+        created_date: Set(None),
+        updated_date: Set(Some(days_ago_datetime(2))),
+        author_id: Set(Some(user.id)),
+        author_login_id: Set(Some("door".to_string())),
+        author_name: Set(Some("Door".to_string())),
+        project_id: Set(Some(project.id)),
+        number: Set(Some(7)),
+        num_of_comments: Set(Some(3)),
+        state: Set(Some(0)),
+        due_date: Set(None),
+        milestone_id: Set(None),
+        assignee_id: Set(Some(issue_assignee.id)),
+        parent_id: Set(None),
+        weight: Set(None),
+        updated_by_author_id: Set(None),
+        is_draft: Set(Some(0)),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    issue::ActiveModel {
+        id: NotSet,
+        title: Set(Some("Close the stale issue".to_string())),
+        created_date: Set(None),
+        updated_date: Set(Some(days_ago_datetime(3))),
+        author_id: Set(Some(user.id)),
+        author_login_id: Set(Some("door".to_string())),
+        author_name: Set(Some("Door".to_string())),
+        project_id: Set(Some(project.id)),
+        number: Set(Some(3)),
+        num_of_comments: Set(Some(0)),
+        state: Set(Some(1)),
+        due_date: Set(None),
+        milestone_id: Set(None),
+        assignee_id: Set(None),
+        parent_id: Set(None),
+        weight: Set(None),
+        updated_by_author_id: Set(None),
+        is_draft: Set(Some(0)),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    issue::ActiveModel {
+        id: NotSet,
+        title: Set(Some("Stale issue should stay hidden".to_string())),
+        created_date: Set(None),
+        updated_date: Set(Some(days_ago_datetime(30))),
+        author_id: Set(Some(user.id)),
+        author_login_id: Set(Some("door".to_string())),
+        author_name: Set(Some("Door".to_string())),
+        project_id: Set(Some(project.id)),
+        number: Set(Some(11)),
+        num_of_comments: Set(Some(0)),
+        state: Set(Some(0)),
+        due_date: Set(None),
+        milestone_id: Set(None),
+        assignee_id: Set(None),
+        parent_id: Set(None),
+        weight: Set(None),
+        updated_by_author_id: Set(None),
+        is_draft: Set(Some(0)),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    issue::ActiveModel {
+        id: NotSet,
+        title: Set(Some("Private issue should stay hidden".to_string())),
+        created_date: Set(None),
+        updated_date: Set(Some(days_ago_datetime(2))),
+        author_id: Set(Some(user.id)),
+        author_login_id: Set(Some("door".to_string())),
+        author_name: Set(Some("Door".to_string())),
+        project_id: Set(Some(private_project.id)),
+        number: Set(Some(13)),
+        num_of_comments: Set(Some(0)),
+        state: Set(Some(0)),
+        due_date: Set(None),
+        milestone_id: Set(None),
+        assignee_id: Set(None),
+        parent_id: Set(None),
+        weight: Set(None),
+        updated_by_author_id: Set(None),
+        is_draft: Set(Some(0)),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let open_pull_request = pull_request::ActiveModel {
+        id: NotSet,
+        title: Set(Some("Review queue".to_string())),
+        to_project_id: Set(Some(project.id)),
+        from_project_id: Set(Some(project.id)),
+        to_branch: Set(Some("main".to_string())),
+        from_branch: Set(Some("topic/login-redirect".to_string())),
+        contributor_id: Set(Some(user.id)),
+        receiver_id: Set(Some(user.id)),
+        created: Set(None),
+        updated: Set(Some(days_ago_datetime(1))),
+        received: Set(None),
+        state: Set(Some(0)),
+        is_conflict: Set(Some(0)),
+        is_merging: Set(Some(0)),
+        last_commit_id: Set(None),
+        merged_commit_id_from: Set(None),
+        merged_commit_id_to: Set(None),
+        number: Set(Some(4)),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    comment_thread::ActiveModel {
+        dtype: Set("ReviewThread".to_string()),
+        id: NotSet,
+        author_id: Set(Some(user.id)),
+        author_login_id: Set(Some("door".to_string())),
+        author_name: Set(Some("Door".to_string())),
+        state: Set(Some("open".to_string())),
+        created_date: Set(Some(days_ago_datetime(1))),
+        pull_request_id: Set(Some(open_pull_request.id)),
+        project_id: Set(Some(project.id)),
+        prev_commit_id: Set(None),
+        commit_id: Set(None),
+        path: Set(None),
+        start_side: Set(None),
+        start_line: Set(None),
+        start_column: Set(None),
+        end_side: Set(None),
+        end_line: Set(None),
+        end_column: Set(None),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    comment_thread::ActiveModel {
+        dtype: Set("ReviewThread".to_string()),
+        id: NotSet,
+        author_id: Set(Some(user.id)),
+        author_login_id: Set(Some("door".to_string())),
+        author_name: Set(Some("Door".to_string())),
+        state: Set(Some("open".to_string())),
+        created_date: Set(Some(days_ago_datetime(1))),
+        pull_request_id: Set(Some(open_pull_request.id)),
+        project_id: Set(Some(project.id)),
+        prev_commit_id: Set(None),
+        commit_id: Set(None),
+        path: Set(None),
+        start_side: Set(None),
+        start_line: Set(None),
+        start_column: Set(None),
+        end_side: Set(None),
+        end_line: Set(None),
+        end_column: Set(None),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    pull_request::ActiveModel {
+        id: NotSet,
+        title: Set(Some("Recently merged queue".to_string())),
+        to_project_id: Set(Some(project.id)),
+        from_project_id: Set(Some(project.id)),
+        to_branch: Set(Some("main".to_string())),
+        from_branch: Set(Some("topic/closed".to_string())),
+        contributor_id: Set(Some(user.id)),
+        receiver_id: Set(Some(user.id)),
+        created: Set(None),
+        updated: Set(Some(days_ago_datetime(4))),
+        received: Set(None),
+        state: Set(Some(2)),
+        is_conflict: Set(Some(0)),
+        is_merging: Set(Some(0)),
+        last_commit_id: Set(None),
+        merged_commit_id_from: Set(None),
+        merged_commit_id_to: Set(None),
+        number: Set(Some(5)),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    pull_request::ActiveModel {
+        id: NotSet,
+        title: Set(Some("Conflict review queue".to_string())),
+        to_project_id: Set(Some(project.id)),
+        from_project_id: Set(Some(project.id)),
+        to_branch: Set(Some("main".to_string())),
+        from_branch: Set(Some("topic/conflict".to_string())),
+        contributor_id: Set(Some(user.id)),
+        receiver_id: Set(Some(user.id)),
+        created: Set(None),
+        updated: Set(Some(days_ago_datetime(2))),
+        received: Set(None),
+        state: Set(Some(0)),
+        is_conflict: Set(Some(1)),
+        is_merging: Set(Some(0)),
+        last_commit_id: Set(None),
+        merged_commit_id_from: Set(None),
+        merged_commit_id_to: Set(None),
+        number: Set(Some(9)),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    pull_request::ActiveModel {
+        id: NotSet,
+        title: Set(Some("Old review queue".to_string())),
+        to_project_id: Set(Some(project.id)),
+        from_project_id: Set(Some(project.id)),
+        to_branch: Set(Some("main".to_string())),
+        from_branch: Set(Some("topic/old".to_string())),
+        contributor_id: Set(Some(user.id)),
+        receiver_id: Set(Some(user.id)),
+        created: Set(None),
+        updated: Set(Some(days_ago_datetime(30))),
+        received: Set(None),
+        state: Set(Some(0)),
+        is_conflict: Set(Some(0)),
+        is_merging: Set(Some(0)),
+        last_commit_id: Set(None),
+        merged_commit_id_from: Set(None),
+        merged_commit_id_to: Set(None),
+        number: Set(Some(6)),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    pull_request::ActiveModel {
+        id: NotSet,
+        title: Set(Some("Private review queue".to_string())),
+        to_project_id: Set(Some(private_project.id)),
+        from_project_id: Set(Some(private_project.id)),
+        to_branch: Set(Some("main".to_string())),
+        from_branch: Set(Some("topic/private".to_string())),
+        contributor_id: Set(Some(user.id)),
+        receiver_id: Set(Some(user.id)),
+        created: Set(None),
+        updated: Set(Some(days_ago_datetime(2))),
+        received: Set(None),
+        state: Set(Some(0)),
+        is_conflict: Set(Some(0)),
+        is_merging: Set(Some(0)),
+        last_commit_id: Set(None),
+        merged_commit_id_from: Set(None),
+        merged_commit_id_to: Set(None),
+        number: Set(Some(8)),
     }
     .insert(&db)
     .await
@@ -877,9 +1218,36 @@ async fn workspace_overview_reads_and_updates_default_landing() {
     let enriched_json = String::from_utf8(enriched_body.to_vec()).unwrap();
     let enriched_payload: serde_json::Value = serde_json::from_str(&enriched_json).unwrap();
     assert!(enriched_json.contains("\"apiToken\":\"door-token\""));
+    assert!(enriched_json.contains("\"daysAgo\":14"));
     assert!(enriched_json.contains("\"emails\":["));
     assert!(enriched_json.contains("\"emailAddress\":\"alt@example.com\""));
     assert!(enriched_json.contains("\"emailAddress\":\"pending@example.com\""));
+    assert!(enriched_json.contains("\"profile\":{"));
+    assert!(enriched_json.contains("\"englishName\":\"Door English\""));
+    assert!(enriched_json.contains("\"connectedSocialProviders\":[\"github\",\"google\"]"));
+    assert!(enriched_json.contains("\"issueItems\":["));
+    assert!(enriched_json.contains("\"title\":\"Fix login redirect\""));
+    assert!(enriched_json.contains("\"title\":\"Close the stale issue\""));
+    assert!(enriched_json.contains("\"authorLabel\":\"Door\""));
+    assert!(enriched_json.contains("\"assigneeLabel\":\"Door\""));
+    assert!(enriched_json.contains("\"commentCount\":3"));
+    assert!(!enriched_json.contains("Stale issue should stay hidden"));
+    assert!(!enriched_json.contains("Private issue should stay hidden"));
+    assert!(enriched_json.contains("\"pullRequestItems\":["));
+    assert!(enriched_json.contains("\"title\":\"Review queue\""));
+    assert!(enriched_json.contains("\"title\":\"Recently merged queue\""));
+    assert!(enriched_json.contains("\"title\":\"Conflict review queue\""));
+    assert!(enriched_json.contains("\"contributorLabel\":\"Door\""));
+    assert!(enriched_json.contains("\"receiverLabel\":\"Door\""));
+    assert!(enriched_json.contains("\"commentCount\":2"));
+    assert!(enriched_json.contains("\"state\":\"merged\""));
+    assert!(enriched_json.contains("\"state\":\"conflict\""));
+    assert!(!enriched_json.contains("Old review queue"));
+    assert!(!enriched_json.contains("Private review queue"));
+    assert!(enriched_json.contains("\"memberProjects\":["));
+    assert!(enriched_json.contains("\"projectName\":\"projectYobi\""));
+    assert!(enriched_json.contains("\"memberCount\":1"));
+    assert!(enriched_json.contains("\"watchCount\":1"));
     assert!(enriched_json.contains("\"watchedProjects\":["));
     assert!(enriched_json.contains(&format!("\"projectId\":\"{}\"", project.id)));
     assert!(enriched_json.contains("\"projectName\":\"projectYobi\""));
@@ -889,6 +1257,13 @@ async fn workspace_overview_reads_and_updates_default_landing() {
         .get("watchedProjects")
         .and_then(|value| value.as_array())
         .expect("watched projects array");
+    let profile = enriched_payload.get("profile").expect("profile payload");
+    assert!(
+        profile
+            .get("sinceLabel")
+            .and_then(|value| value.as_str())
+            .is_some_and(|value| !value.trim().is_empty())
+    );
     let first_project = watched_projects.first().expect("watched project");
     let notifications = first_project
         .get("notifications")

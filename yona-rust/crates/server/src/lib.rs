@@ -494,12 +494,30 @@ fn map_project_scope(value: &str) -> Result<ProjectScope, ConnectError> {
         .map_err(|_| ConnectError::invalid_argument("invalid project scope"))
 }
 
+const WORKSPACE_DAYS_AGO: u32 = 14;
+
 fn workspace_project_item_from_entry(item: &persistence::ProjectListEntry) -> ProjectListItem {
     ProjectListItem {
         owner_name: item.owner_name.clone(),
         project_name: item.project_name.clone(),
         overview: String::new(),
         project_scope: String::new(),
+        ..Default::default()
+    }
+}
+
+fn workspace_member_project_item_from_record(
+    item: &persistence::WorkspaceMemberProjectRecord,
+) -> WorkspaceMemberProjectItem {
+    WorkspaceMemberProjectItem {
+        created_label: item.created_label.clone(),
+        last_pushed_label: item.last_pushed_label.clone(),
+        member_count: item.member_count,
+        owner_name: item.owner_name.clone(),
+        project_name: item.project_name.clone(),
+        overview: item.overview.clone(),
+        project_scope: item.project_scope.clone(),
+        watch_count: item.watch_count,
         ..Default::default()
     }
 }
@@ -536,6 +554,54 @@ fn watched_project_notifications_from_record(
         owner_name: record.owner_name.clone(),
         project_id: record.project_id.clone(),
         project_name: record.project_name.clone(),
+        ..Default::default()
+    }
+}
+
+fn workspace_profile_from_record(record: &persistence::WorkspaceProfileRecord) -> WorkspaceProfile {
+    WorkspaceProfile {
+        connected_social_providers: record.connected_social_providers.clone(),
+        display_name: record.display_name.clone(),
+        english_name: record.english_name.clone(),
+        is_blocked: record.is_blocked,
+        is_site_admin: record.is_site_admin,
+        login_id: record.login_id.clone(),
+        primary_email_address: record.primary_email_address.clone(),
+        since_label: record.since_label.clone(),
+        ..Default::default()
+    }
+}
+
+fn workspace_issue_item_from_record(
+    record: &persistence::WorkspaceIssueListItemRecord,
+) -> WorkspaceIssueItem {
+    WorkspaceIssueItem {
+        assignee_label: record.assignee_label.clone(),
+        author_label: record.author_label.clone(),
+        comment_count: record.comment_count,
+        issue_number: record.issue_number,
+        owner_name: record.owner_name.clone(),
+        project_name: record.project_name.clone(),
+        state: record.state.clone(),
+        title: record.title.clone(),
+        updated_label: record.updated_label.clone(),
+        ..Default::default()
+    }
+}
+
+fn workspace_pull_request_item_from_record(
+    record: &persistence::WorkspacePullRequestListItemRecord,
+) -> WorkspacePullRequestItem {
+    WorkspacePullRequestItem {
+        comment_count: record.comment_count,
+        contributor_label: record.contributor_label.clone(),
+        owner_name: record.owner_name.clone(),
+        project_name: record.project_name.clone(),
+        pull_request_number: record.pull_request_number,
+        receiver_label: record.receiver_label.clone(),
+        state: record.state.clone(),
+        title: record.title.clone(),
+        updated_label: record.updated_label.clone(),
         ..Default::default()
     }
 }
@@ -589,6 +655,136 @@ async fn load_workspace_settings_data(
     Ok((api_token, emails, watched_projects))
 }
 
+async fn load_workspace_dashboard_data(
+    repository: &PilotRepository,
+    user_id: i64,
+) -> Result<
+    (
+        Option<WorkspaceProfile>,
+        Vec<WorkspaceIssueItem>,
+        Vec<WorkspacePullRequestItem>,
+        Vec<WorkspaceMemberProjectItem>,
+    ),
+    ConnectError,
+> {
+    let days_ago = u64::from(WORKSPACE_DAYS_AGO);
+    let profile = repository
+        .read_workspace_profile_for_user(user_id)
+        .await
+        .map_err(internal_error)?
+        .as_ref()
+        .map(workspace_profile_from_record);
+    let issue_items = filter_workspace_issue_items_by_read_acl(
+        repository,
+        user_id,
+        repository
+            .list_recent_workspace_issues_for_user(user_id, days_ago)
+            .await
+            .map_err(internal_error)?,
+    )
+    .await?;
+    let pull_request_items = filter_workspace_pull_request_items_by_read_acl(
+        repository,
+        user_id,
+        repository
+            .list_recent_workspace_pull_requests_for_user(user_id, days_ago)
+            .await
+            .map_err(internal_error)?,
+    )
+    .await?;
+    let member_projects = repository
+        .list_member_projects_for_user(user_id)
+        .await
+        .map_err(internal_error)?;
+    let member_projects =
+        filter_workspace_member_projects_by_read_acl(repository, user_id, member_projects).await?;
+
+    Ok((profile, issue_items, pull_request_items, member_projects))
+}
+
+async fn filter_workspace_issue_items_by_read_acl(
+    repository: &PilotRepository,
+    user_id: i64,
+    items: Vec<persistence::WorkspaceIssueListItemRecord>,
+) -> Result<Vec<WorkspaceIssueItem>, ConnectError> {
+    let mut visible = Vec::new();
+
+    for item in items {
+        if workspace_project_read_allowed(repository, user_id, &item.owner_name, &item.project_name)
+            .await?
+        {
+            visible.push(workspace_issue_item_from_record(&item));
+        }
+    }
+
+    Ok(visible)
+}
+
+async fn filter_workspace_pull_request_items_by_read_acl(
+    repository: &PilotRepository,
+    user_id: i64,
+    items: Vec<persistence::WorkspacePullRequestListItemRecord>,
+) -> Result<Vec<WorkspacePullRequestItem>, ConnectError> {
+    let mut visible = Vec::new();
+
+    for item in items {
+        if workspace_project_read_allowed(repository, user_id, &item.owner_name, &item.project_name)
+            .await?
+        {
+            visible.push(workspace_pull_request_item_from_record(&item));
+        }
+    }
+
+    Ok(visible)
+}
+
+async fn filter_workspace_member_projects_by_read_acl(
+    repository: &PilotRepository,
+    user_id: i64,
+    items: Vec<persistence::WorkspaceMemberProjectRecord>,
+) -> Result<Vec<WorkspaceMemberProjectItem>, ConnectError> {
+    let mut visible = Vec::new();
+
+    for item in items {
+        if workspace_project_read_allowed(repository, user_id, &item.owner_name, &item.project_name)
+            .await?
+        {
+            visible.push(workspace_member_project_item_from_record(&item));
+        }
+    }
+
+    Ok(visible)
+}
+
+async fn workspace_project_read_allowed(
+    repository: &PilotRepository,
+    user_id: i64,
+    owner_name: &str,
+    project_name: &str,
+) -> Result<bool, ConnectError> {
+    let Some(authorization) = repository
+        .read_project_authorization(owner_name, project_name, Some(user_id))
+        .await
+        .map_err(internal_error)?
+    else {
+        return Ok(false);
+    };
+
+    Ok(authorize_project_access(
+        &ProjectAccessFacts {
+            is_anonymous: false,
+            is_organization_admin: authorization.viewer.is_organization_admin,
+            is_organization_member: authorization.viewer.is_organization_member,
+            is_project_manager: authorization.viewer.is_project_manager,
+            is_project_member: authorization.viewer.is_project_member,
+            is_site_admin: authorization.viewer.is_site_admin,
+            project_scope: map_project_scope(&authorization.project.project_scope)?,
+        },
+        ProjectOperation::Read,
+    )
+    .allowed)
+}
+
 async fn build_workspace_overview_response(
     repository: &PilotRepository,
     session: &session::Session,
@@ -612,12 +808,19 @@ async fn build_workspace_overview_response(
         load_workspace_project_lists(repository, user_id).await?;
     let (api_token, emails, watched_projects) =
         load_workspace_settings_data(repository, user_id).await?;
+    let (profile, issue_items, pull_request_items, member_projects) =
+        load_workspace_dashboard_data(repository, user_id).await?;
 
     Ok(ReadWorkspaceOverviewResponse {
         api_token,
+        days_ago: WORKSPACE_DAYS_AGO,
         default_landing_path: response.default_landing_path.clone(),
         emails,
         favorite_projects,
+        issue_items,
+        member_projects,
+        profile: profile.into(),
+        pull_request_items,
         recent_projects,
         session: Some(response).into(),
         watched_projects,

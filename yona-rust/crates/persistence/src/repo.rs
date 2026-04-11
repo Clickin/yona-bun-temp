@@ -5,19 +5,26 @@ use crate::repo_types::{
     ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord, ProjectListEntry,
     ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectRecord, ProjectViewerRecord,
     ToggleFavoriteProjectResult, UpdateOrganizationInput, UpdateProjectInput,
-    WatchedProjectNotificationsRecord, WorkspaceEmailRecord,
-    WorkspaceNotificationPreferenceRecord,
+    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
+    WorkspaceMemberProjectRecord,
+    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    WorkspacePullRequestListItemRecord,
 };
 use crate::{
-    email, favorite_project, issue, n4user, organization, organization_user, project,
-    project_user, recent_project, role, site_admin, user_enrolled_project,
+    assignee, comment_thread, email, favorite_project, issue, linked_account, n4user, organization,
+    organization_user, project, project_user, pull_request, recent_project, role, site_admin,
+    user_credential, user_enrolled_project,
     user_project_notification, user_setting, watch,
 };
 use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::{
-    sea_query::Expr, ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait,
-    FromQueryResult, NotSet, QueryFilter, QueryOrder, QuerySelect, Set,
+    sea_query::Expr, ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DbErr,
+    EntityTrait, FromQueryResult, NotSet, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect,
+    Set,
 };
+use std::collections::HashSet;
+use std::time::{Duration, SystemTime};
+use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
 
 fn normalize_identity(value: &str) -> String {
     value.trim().to_ascii_lowercase()
@@ -99,6 +106,24 @@ fn random_workspace_token() -> String {
         .collect()
 }
 
+fn current_datetime() -> DateTime {
+    DateTimeUtc::from(SystemTime::now()).naive_utc()
+}
+
+fn days_ago_datetime(days: u64) -> DateTime {
+    let seconds = days.saturating_mul(24 * 60 * 60);
+    let cutoff = SystemTime::now()
+        .checked_sub(Duration::from_secs(seconds))
+        .unwrap_or(SystemTime::UNIX_EPOCH);
+    DateTimeUtc::from(cutoff).naive_utc()
+}
+
+fn format_workspace_date_label(value: Option<DateTime>) -> String {
+    value
+        .map(|value| value.format("%Y-%m-%d").to_string())
+        .unwrap_or_default()
+}
+
 fn looks_like_email_address(value: &str) -> bool {
     let trimmed = value.trim();
     let Some((local, domain)) = trimmed.split_once('@') else {
@@ -116,6 +141,18 @@ fn issue_state_from_raw(value: Option<i32>) -> String {
         "open".to_string()
     } else {
         "closed".to_string()
+    }
+}
+
+fn pull_request_state_from_raw(value: Option<i32>, is_conflict: Option<i8>) -> String {
+    if is_conflict.unwrap_or_default() != 0 {
+        return "conflict".to_string();
+    }
+
+    match value.unwrap_or(0) {
+        2 => "merged".to_string(),
+        1 => "closed".to_string(),
+        _ => "open".to_string(),
     }
 }
 
@@ -167,7 +204,7 @@ impl AppRepository {
             remember_me: Set(Some(0)),
             state: Set(user_state_from_confirmed(input.is_confirmed)),
             last_state_modified_date: Set(None),
-            created_date: Set(None),
+            created_date: Set(Some(current_datetime())),
             lang: Set(None),
             token: Set(None),
             is_guest: Set(Some(0)),
@@ -986,6 +1023,244 @@ impl AppRepository {
         Ok(projects)
     }
 
+    pub async fn read_workspace_profile_for_user(
+        &self,
+        user_id: i64,
+    ) -> Result<Option<WorkspaceProfileRecord>, DbErr> {
+        let Some(user) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+            return Ok(None);
+        };
+        let is_site_admin = site_admin::Entity::find()
+            .filter(site_admin::Column::AdminId.eq(Some(user_id)))
+            .one(&self.db)
+            .await?
+            .is_some();
+
+        Ok(Some(WorkspaceProfileRecord {
+            connected_social_providers: self
+                .list_connected_social_providers_for_user(user_id)
+                .await?,
+            display_name: user.name.unwrap_or_default(),
+            english_name: user.english_name.unwrap_or_default(),
+            is_blocked: normalize_optional(user.state.as_deref()).as_deref() == Some("locked"),
+            is_site_admin,
+            login_id: user.login_id.unwrap_or_default(),
+            primary_email_address: user.email.unwrap_or_default(),
+            since_label: user
+                .created_date
+                .map(|value| value.format("%b %d, %Y").to_string())
+                .unwrap_or_default(),
+        }))
+    }
+
+    pub async fn list_member_projects_for_user(
+        &self,
+        user_id: i64,
+    ) -> Result<Vec<WorkspaceMemberProjectRecord>, DbErr> {
+        let memberships = project_user::Entity::find()
+            .filter(project_user::Column::UserId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?;
+        let mut seen = HashSet::new();
+        let mut project_models = Vec::new();
+        for membership in memberships {
+            let Some(project_id) = membership.project_id else {
+                continue;
+            };
+            if !seen.insert(project_id) {
+                continue;
+            }
+            let Some(project_model) = project::Entity::find_by_id(project_id).one(&self.db).await?
+            else {
+                continue;
+            };
+            project_models.push(project_model);
+        }
+
+        project_models.sort_by(|left, right| {
+            let left_name = left.name.clone().unwrap_or_default();
+            let right_name = right.name.clone().unwrap_or_default();
+            let left_owner = left.owner.clone().unwrap_or_default();
+            let right_owner = right.owner.clone().unwrap_or_default();
+
+            match (left.last_pushed_date.clone(), right.last_pushed_date.clone()) {
+                (Some(left_date), Some(right_date)) => right_date
+                    .cmp(&left_date)
+                    .then_with(|| left_name.cmp(&right_name))
+                    .then_with(|| left_owner.cmp(&right_owner)),
+                (Some(_), None) => std::cmp::Ordering::Less,
+                (None, Some(_)) => std::cmp::Ordering::Greater,
+                (None, None) => left_name
+                    .cmp(&right_name)
+                    .then_with(|| left_owner.cmp(&right_owner)),
+            }
+        });
+
+        let mut projects = Vec::new();
+        for project_model in project_models {
+            if let Some(record) = self.project_record_from_model(project_model.clone()).await? {
+                let member_count = project_user::Entity::find()
+                    .filter(project_user::Column::ProjectId.eq(Some(project_model.id)))
+                    .count(&self.db)
+                    .await? as u32;
+                let watch_count = watch::Entity::find()
+                    .filter(watch::Column::ResourceType.eq(Some("PROJECT".to_string())))
+                    .filter(watch::Column::ResourceId.eq(Some(project_model.id.to_string())))
+                    .count(&self.db)
+                    .await? as u32;
+
+                projects.push(WorkspaceMemberProjectRecord {
+                    created_label: format_workspace_date_label(project_model.created_date),
+                    last_pushed_label: format_workspace_date_label(project_model.last_pushed_date),
+                    member_count,
+                    owner_name: record.owner_name,
+                    overview: record.overview.unwrap_or_default(),
+                    project_name: record.project_name,
+                    project_scope: record.project_scope,
+                    watch_count,
+                });
+            }
+        }
+
+        Ok(projects)
+    }
+
+    pub async fn list_recent_workspace_issues_for_user(
+        &self,
+        user_id: i64,
+        days_ago: u64,
+    ) -> Result<Vec<WorkspaceIssueListItemRecord>, DbErr> {
+        let cutoff = days_ago_datetime(days_ago);
+        let assignee_ids: Vec<i64> = assignee::Entity::find()
+            .filter(assignee::Column::UserId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect();
+
+        let mut filter = Condition::any().add(issue::Column::AuthorId.eq(Some(user_id)));
+        for assignee_id in assignee_ids {
+            filter = filter.add(issue::Column::AssigneeId.eq(Some(assignee_id)));
+        }
+
+        let rows = issue::Entity::find()
+            .filter(filter)
+            .filter(issue::Column::UpdatedDate.gte(cutoff))
+            .order_by_desc(issue::Column::UpdatedDate)
+            .order_by_asc(issue::Column::State)
+            .all(&self.db)
+            .await?;
+
+        let mut issues = Vec::new();
+        for row in rows {
+            let Some(project_id) = row.project_id else {
+                continue;
+            };
+            let Some(project_record) = self.read_project_by_id(project_id).await? else {
+                continue;
+            };
+            let Some(issue_number) = row.number else {
+                continue;
+            };
+            let author_label = row.author_name.unwrap_or_default();
+            let assignee_label = match row.assignee_id {
+                Some(assignee_id) => {
+                    let assignee_user_id = assignee::Entity::find_by_id(assignee_id)
+                        .one(&self.db)
+                        .await?
+                        .and_then(|model| model.user_id);
+                    match assignee_user_id {
+                        Some(user_id) => self
+                            .find_user_by_id(user_id)
+                            .await?
+                            .map(|user| user.display_name)
+                            .unwrap_or_default(),
+                        None => String::new(),
+                    }
+                }
+                None => String::new(),
+            };
+
+            issues.push(WorkspaceIssueListItemRecord {
+                assignee_label,
+                author_label,
+                comment_count: row.num_of_comments.unwrap_or_default() as u32,
+                issue_number,
+                owner_name: project_record.owner_name,
+                project_name: project_record.project_name,
+                state: issue_state_from_raw(row.state),
+                title: row.title.unwrap_or_default(),
+                updated_label: format_workspace_date_label(row.updated_date.or(row.created_date)),
+            });
+        }
+
+        Ok(issues)
+    }
+
+    pub async fn list_recent_workspace_pull_requests_for_user(
+        &self,
+        user_id: i64,
+        days_ago: u64,
+    ) -> Result<Vec<WorkspacePullRequestListItemRecord>, DbErr> {
+        let cutoff = days_ago_datetime(days_ago);
+        let rows = pull_request::Entity::find()
+            .filter(pull_request::Column::ContributorId.eq(Some(user_id)))
+            .filter(pull_request::Column::Updated.gte(cutoff))
+            .order_by_desc(pull_request::Column::Updated)
+            .order_by_asc(pull_request::Column::State)
+            .order_by_desc(pull_request::Column::Created)
+            .all(&self.db)
+            .await?;
+
+        let mut pull_requests = Vec::new();
+        for row in rows {
+            let Some(project_id) = row.to_project_id else {
+                continue;
+            };
+            let Some(project_record) = self.read_project_by_id(project_id).await? else {
+                continue;
+            };
+            let Some(pull_request_number) = row.number else {
+                continue;
+            };
+            let contributor_label = match row.contributor_id {
+                Some(contributor_id) => self
+                    .find_user_by_id(contributor_id)
+                    .await?
+                    .map(|user| user.display_name)
+                    .unwrap_or_default(),
+                None => String::new(),
+            };
+            let receiver_label = match row.receiver_id {
+                Some(receiver_id) => self
+                    .find_user_by_id(receiver_id)
+                    .await?
+                    .map(|user| user.display_name)
+                    .unwrap_or_default(),
+                None => String::new(),
+            };
+            let comment_count = comment_thread::Entity::find()
+                .filter(comment_thread::Column::PullRequestId.eq(Some(row.id)))
+                .count(&self.db)
+                .await? as u32;
+
+            pull_requests.push(WorkspacePullRequestListItemRecord {
+                comment_count,
+                contributor_label,
+                owner_name: project_record.owner_name,
+                project_name: project_record.project_name,
+                pull_request_number,
+                receiver_label,
+                state: pull_request_state_from_raw(row.state, row.is_conflict),
+                title: row.title.unwrap_or_default(),
+                updated_label: format_workspace_date_label(row.updated.or(row.created)),
+            });
+        }
+
+        Ok(pull_requests)
+    }
+
     pub async fn list_workspace_emails_for_user(
         &self,
         user_id: i64,
@@ -1403,6 +1678,33 @@ impl AppRepository {
             login_id: model.login_id.unwrap_or_default(),
             password_hash: model.password.unwrap_or_default(),
         })
+    }
+
+    async fn list_connected_social_providers_for_user(
+        &self,
+        user_id: i64,
+    ) -> Result<Vec<String>, DbErr> {
+        let credentials = user_credential::Entity::find()
+            .filter(user_credential::Column::UserId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?;
+        let mut providers = Vec::new();
+
+        for credential in credentials {
+            let linked_accounts = linked_account::Entity::find()
+                .filter(linked_account::Column::UserCredentialId.eq(Some(credential.id)))
+                .all(&self.db)
+                .await?;
+            for account in linked_accounts {
+                if let Some(provider_key) = normalize_optional(account.provider_key.as_deref()) {
+                    providers.push(provider_key);
+                }
+            }
+        }
+
+        providers.sort();
+        providers.dedup();
+        Ok(providers)
     }
 
     fn organization_record_from_model(

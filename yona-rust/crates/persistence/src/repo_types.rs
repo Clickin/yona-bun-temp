@@ -174,6 +174,56 @@ pub struct WorkspaceEmailRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WorkspaceProfileRecord {
+    pub connected_social_providers: Vec<String>,
+    pub display_name: String,
+    pub english_name: String,
+    pub is_blocked: bool,
+    pub is_site_admin: bool,
+    pub login_id: String,
+    pub primary_email_address: String,
+    pub since_label: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WorkspaceIssueListItemRecord {
+    pub assignee_label: String,
+    pub author_label: String,
+    pub comment_count: u32,
+    pub issue_number: i64,
+    pub owner_name: String,
+    pub project_name: String,
+    pub state: String,
+    pub title: String,
+    pub updated_label: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WorkspacePullRequestListItemRecord {
+    pub comment_count: u32,
+    pub contributor_label: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub pull_request_number: i64,
+    pub receiver_label: String,
+    pub state: String,
+    pub title: String,
+    pub updated_label: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WorkspaceMemberProjectRecord {
+    pub created_label: String,
+    pub last_pushed_label: String,
+    pub member_count: u32,
+    pub owner_name: String,
+    pub overview: String,
+    pub project_name: String,
+    pub project_scope: String,
+    pub watch_count: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ToggleFavoriteProjectResult {
     pub favorited: bool,
     pub owner_name: String,

@@ -60,6 +60,7 @@ function toWorkspaceOverview(session: Awaited<ReturnType<typeof readCurrentSessi
   return {
     apiToken: overview.apiToken,
     defaultLandingPath: overview.defaultLandingPath,
+    daysAgo: overview.daysAgo,
     emails: overview.emails.map((email) => ({
       emailAddress: email.emailAddress,
       id: email.id,
@@ -68,6 +69,50 @@ function toWorkspaceOverview(session: Awaited<ReturnType<typeof readCurrentSessi
     favoriteProjects: overview.favoriteProjects.map((project) => ({
       ownerName: project.ownerName,
       projectName: project.projectName,
+    })),
+    issueItems: overview.issueItems.map((item) => ({
+      assigneeLabel: item.assigneeLabel,
+      authorLabel: item.authorLabel,
+      commentCount: item.commentCount,
+      issueNumber: Number(item.issueNumber),
+      ownerName: item.ownerName,
+      projectName: item.projectName,
+      state: item.state,
+      title: item.title,
+      updatedLabel: item.updatedLabel,
+    })),
+    memberProjects: overview.memberProjects.map((project) => ({
+      createdLabel: project.createdLabel,
+      lastPushedLabel: project.lastPushedLabel,
+      memberCount: project.memberCount,
+      ownerName: project.ownerName,
+      overview: project.overview,
+      projectName: project.projectName,
+      projectScope: project.projectScope,
+      watchCount: project.watchCount,
+    })),
+    profile: overview.profile
+      ? {
+          connectedSocialProviders: [...overview.profile.connectedSocialProviders],
+          displayName: overview.profile.displayName,
+          englishName: overview.profile.englishName,
+          isBlocked: overview.profile.isBlocked,
+          isSiteAdmin: overview.profile.isSiteAdmin,
+          loginId: overview.profile.loginId,
+          primaryEmailAddress: overview.profile.primaryEmailAddress,
+          sinceLabel: overview.profile.sinceLabel,
+        }
+      : undefined,
+    pullRequestItems: overview.pullRequestItems.map((item) => ({
+      commentCount: item.commentCount,
+      contributorLabel: item.contributorLabel,
+      ownerName: item.ownerName,
+      projectName: item.projectName,
+      pullRequestNumber: Number(item.pullRequestNumber),
+      receiverLabel: item.receiverLabel,
+      state: item.state,
+      title: item.title,
+      updatedLabel: item.updatedLabel,
     })),
     recentProjects: overview.recentProjects.map((project) => ({
       ownerName: project.ownerName,

@@ -124,6 +124,52 @@ message WorkspaceEmail {
   bool valid = 3;
 }
 
+message WorkspaceProfile {
+  string display_name = 1;
+  string english_name = 2;
+  string login_id = 3;
+  string primary_email_address = 4;
+  bool is_site_admin = 5;
+  bool is_blocked = 6;
+  string since_label = 7;
+  repeated string connected_social_providers = 8;
+}
+
+message WorkspaceIssueItem {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+  string title = 4;
+  string state = 5;
+  string author_label = 6;
+  string assignee_label = 7;
+  string updated_label = 8;
+  uint32 comment_count = 9;
+}
+
+message WorkspacePullRequestItem {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 pull_request_number = 3;
+  string title = 4;
+  string state = 5;
+  string contributor_label = 6;
+  string receiver_label = 7;
+  string updated_label = 8;
+  uint32 comment_count = 9;
+}
+
+message WorkspaceMemberProjectItem {
+  string owner_name = 1;
+  string project_name = 2;
+  string overview = 3;
+  string project_scope = 4;
+  string created_label = 5;
+  string last_pushed_label = 6;
+  uint32 member_count = 7;
+  uint32 watch_count = 8;
+}
+
 message ReadWorkspaceOverviewResponse {
   ReadCurrentSessionResponse session = 1;
   string default_landing_path = 2;
@@ -132,6 +178,11 @@ message ReadWorkspaceOverviewResponse {
   repeated WatchedProjectNotifications watched_projects = 5;
   repeated WorkspaceEmail emails = 6;
   string api_token = 7;
+  WorkspaceProfile profile = 8;
+  repeated WorkspaceIssueItem issue_items = 9;
+  repeated WorkspacePullRequestItem pull_request_items = 10;
+  repeated WorkspaceMemberProjectItem member_projects = 11;
+  uint32 days_ago = 12;
 }
 
 message SetDefaultLandingPathRequest {
