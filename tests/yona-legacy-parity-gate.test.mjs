@@ -47,6 +47,22 @@ test("ignores reference-only spikes archive changes", () => {
   assert.match(result.summary, /No implementation files/);
 });
 
+test("ignores repo tooling and bootstrap files that do not define parity semantics", () => {
+  const result = runGate([
+    ".gitignore",
+    ".husky/pre-commit",
+    "frontend/package.json",
+    "frontend/pnpm-lock.yaml",
+    "frontend/index.html",
+    "frontend/tsconfig.json",
+    "frontend/vite.config.ts",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(result.implementationFiles.length, 0);
+  assert.match(result.summary, /No implementation files/);
+});
+
 test("blocks parity-complete canonical route changes without accompanying parity evidence", () => {
   const result = runGate(["frontend/src/routes/projects/route.tsx"]);
 
@@ -143,6 +159,10 @@ test("treats wave-0 route-foundation files as mapped canonical work", () => {
     "docs/provenance/phase-0b/project.md",
   ]);
 
+  assert.equal(result.implementationFiles.includes("frontend/package.json"), false);
+  assert.equal(result.implementationFiles.includes("frontend/index.html"), false);
+  assert.equal(result.implementationFiles.includes("frontend/vite.config.ts"), false);
+  assert.equal(result.implementationFiles.includes("frontend/tsconfig.json"), false);
   assert.equal(
     result.unmappedImplementationFiles.includes("frontend/package.json"),
     false,

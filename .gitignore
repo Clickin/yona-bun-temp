@@ -6,6 +6,7 @@ node_modules
 .vercel
 .netlify
 .wrangler
+/target/
 /apps/app/dist
 
 # Yona runtime data

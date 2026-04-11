@@ -1,1 +1,2 @@
-bun run precommit:verify
+#!/usr/bin/env sh
+node ./tools/precommit-verify.mjs

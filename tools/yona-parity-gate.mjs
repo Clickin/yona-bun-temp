@@ -17,6 +17,7 @@ const GLOBAL_PROVENANCE_FILES = new Set([
 const NON_IMPLEMENTATION_PREFIXES = [
   ".agents/",
   ".codex/",
+  ".github/",
   ".husky/",
   ".omx/",
   ".brv/",
@@ -30,19 +31,30 @@ const NON_IMPLEMENTATION_PREFIXES = [
   "tools/",
   "bin/",
   "drizzle/",
+  "reports/",
   "reference/mixed-code/",
   "reference/spikes/",
+  "scripts/",
   "frontend/src/gen/",
 ];
 
 const NON_IMPLEMENTATION_FILES = new Set([
+  ".gitignore",
   "AGENTS.md",
+  "Cargo.lock",
+  "Cargo.toml",
   "CLAUDE.md",
   "README.md",
   "SPEC.md",
   "buf.yaml",
   "buf.gen.yaml",
+  "frontend/README.md",
+  "frontend/index.html",
+  "frontend/package.json",
   "frontend/playwright.config.ts",
+  "frontend/pnpm-lock.yaml",
+  "frontend/tsconfig.json",
+  "frontend/vite.config.ts",
 ]);
 
 const TEST_FILE_PATTERN = /(^tests\/)|(\/tests\/)|(\.spec\.)|(\.test\.)/i;
