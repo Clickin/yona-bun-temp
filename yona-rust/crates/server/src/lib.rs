@@ -703,13 +703,22 @@ impl PilotService for PilotServiceImpl {
 
         let login_id = normalize_identifier(request.login_id);
         let email_address = normalize_identifier(request.email_address);
-        if login_id.is_empty()
-            || email_address.is_empty()
-            || request.name.trim().is_empty()
-            || request.password.len() < 8
-            || request.password != request.retyped_password
-        {
-            return Err(ConnectError::invalid_argument("invalid register request"));
+        if login_id.is_empty() {
+            return Err(ConnectError::invalid_argument("Login ID is required."));
+        }
+        if email_address.is_empty() {
+            return Err(ConnectError::invalid_argument("Email address is required."));
+        }
+        if request.name.trim().is_empty() {
+            return Err(ConnectError::invalid_argument("Name is required."));
+        }
+        if request.password.len() < 8 {
+            return Err(ConnectError::invalid_argument(
+                "Password must be at least 8 characters.",
+            ));
+        }
+        if request.password != request.retyped_password {
+            return Err(ConnectError::invalid_argument("Passwords do not match."));
         }
 
         if repository

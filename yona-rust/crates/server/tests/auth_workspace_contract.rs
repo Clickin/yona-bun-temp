@@ -72,6 +72,11 @@ async fn bootstrap(app: axum::Router) -> (String, String) {
     (csrf, cookies.join("; "))
 }
 
+async fn response_text(response: axum::response::Response) -> String {
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    String::from_utf8(body.to_vec()).unwrap()
+}
+
 #[tokio::test]
 async fn read_auth_ui_capabilities_returns_local_password_flags() {
     let _guard = auth_env_lock().lock().unwrap();
@@ -237,6 +242,86 @@ async fn register_sign_in_sign_out_and_current_session_round_trip() {
         .await
         .unwrap();
     assert_eq!(sign_in.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
+    let (app, _, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let short_password = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"admin\",\"name\":\"admin\",\"emailAddress\":\"admin@test.me\",\"password\":\"admin\",\"retypedPassword\":\"admin\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(short_password.status(), StatusCode::BAD_REQUEST);
+    let short_password_json = response_text(short_password).await;
+    assert!(short_password_json.contains("\"code\":\"invalid_argument\""));
+    assert!(short_password_json.contains("Password must be at least 8 characters."));
+
+    let mismatch = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"admin\",\"name\":\"admin\",\"emailAddress\":\"admin@test.me\",\"password\":\"adminpass\",\"retypedPassword\":\"adminpass2\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(mismatch.status(), StatusCode::BAD_REQUEST);
+    let mismatch_json = response_text(mismatch).await;
+    assert!(mismatch_json.contains("\"code\":\"invalid_argument\""));
+    assert!(mismatch_json.contains("Passwords do not match."));
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"admin\",\"name\":\"admin\",\"emailAddress\":\"admin@test.me\",\"password\":\"adminpass\",\"retypedPassword\":\"adminpass\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let sign_in = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/SignInWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"admin\",\"password\":\"wrongpass\",\"rememberMe\":true}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(sign_in.status(), StatusCode::UNAUTHORIZED);
+    let sign_in_json = response_text(sign_in).await;
+    assert!(sign_in_json.contains("\"code\":\"unauthenticated\""));
+    assert!(sign_in_json.contains("Invalid login ID, email, or password."));
 }
 
 #[tokio::test]
