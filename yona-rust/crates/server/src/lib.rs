@@ -2,9 +2,10 @@ pub mod persistence;
 pub mod runtime_config;
 pub mod session;
 
+use axum::extract::Form;
 use axum::http::HeaderMap;
-use axum::response::{IntoResponse, Response};
-use axum::routing::get;
+use axum::response::{IntoResponse, Redirect, Response};
+use axum::routing::{get, post};
 use axum::{extract::Path, http::Method};
 use axum::{Json, Router};
 use bcrypt::{hash, verify, DEFAULT_COST};
@@ -16,7 +17,7 @@ use runtime_config::normalize_base_path;
 use serde::Serialize;
 use session::{SessionConfig, SessionManager};
 use std::sync::Arc;
-use std::{path::PathBuf, vec};
+use std::{collections::HashMap, path::PathBuf, vec};
 
 use generated::yona::pilot::v1::*;
 use persistence::PilotRepository;
@@ -110,6 +111,17 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     })
     .register(connectrpc::Router::new())
     .into_axum_service();
+    let lost_password_session_manager = session_manager.clone();
+    let lost_password_backend = route_backend.clone();
+    let lost_password_base_path = base_path.clone();
+    let reset_password_backend = route_backend.clone();
+    let reset_password_base_path = base_path.clone();
+    let send_validation_session_manager = session_manager.clone();
+    let send_validation_backend = route_backend.clone();
+    let send_validation_base_path = base_path.clone();
+    let confirm_email_session_manager = session_manager.clone();
+    let confirm_email_backend = route_backend.clone();
+    let confirm_email_base_path = base_path.clone();
 
     let mut base_router = Router::new()
         .route(
@@ -118,6 +130,66 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                 let session_manager = session_manager.clone();
                 let backend = route_backend.clone();
                 async move { session_bootstrap(headers, session_manager, backend).await }
+            }),
+        )
+        .route(
+            "/lostPassword",
+            post(move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_request_reset_password_email(
+                        headers,
+                        form,
+                        lost_password_session_manager.clone(),
+                        lost_password_backend.clone(),
+                        lost_password_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/resetPassword",
+            post(move |Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_reset_password(
+                        form,
+                        reset_password_backend.clone(),
+                        reset_password_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/user/email/sendValidationEmail/{email_id}",
+            post(move |headers: HeaderMap, Path(email_id): Path<String>, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_send_workspace_email_validation(
+                        headers,
+                        email_id,
+                        form,
+                        send_validation_session_manager.clone(),
+                        send_validation_backend.clone(),
+                        send_validation_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/user/email/confirm/{email_id}/{token}",
+            get(move |headers: HeaderMap, Path((email_id, token)): Path<(String, String)>| {
+                async move {
+                    direct_confirm_workspace_email(
+                        headers,
+                        email_id,
+                        token,
+                        confirm_email_session_manager.clone(),
+                        confirm_email_backend.clone(),
+                        confirm_email_base_path.clone(),
+                    )
+                    .await
+                }
             }),
         )
         .nest_service("/rpc", connect_router);
@@ -245,6 +317,203 @@ async fn session_bootstrap(
         );
     }
     response
+}
+
+fn base_path_href(base_path: &str, path: &str) -> String {
+    if base_path == "/" {
+        path.to_string()
+    } else {
+        format!("{base_path}{path}")
+    }
+}
+
+async fn direct_request_reset_password_email(
+    headers: HeaderMap,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let session = session_manager.ensure_anonymous_session(&headers);
+    let redirect_path = match &backend {
+        PilotBackend::Repository(repository) => {
+            let login_id = normalize_identifier(form.get("loginId").map(String::as_str).unwrap_or_default());
+            let email_address =
+                normalize_identifier(form.get("emailAddress").map(String::as_str).unwrap_or_default());
+            match repository
+                .find_user_by_login_id(&login_id)
+                .await
+                .ok()
+                .flatten()
+            {
+                Some(user) if normalize_identifier(&user.email_address) == email_address => {
+                    let _ = repository
+                        .create_password_reset_verification_for_user(user.id, &user.login_id)
+                        .await;
+                    "/lostPassword?requested=1"
+                }
+                _ => "/lostPassword?error=invalid",
+            }
+        }
+        _ => "/lostPassword?error=unsupported",
+    };
+
+    let mut response = Redirect::to(&base_path_href(&base_path, redirect_path)).into_response();
+    for cookie in session_manager.build_set_cookie_headers(&session) {
+        response.headers_mut().append(
+            axum::http::header::SET_COOKIE,
+            cookie.parse().expect("set-cookie header"),
+        );
+    }
+    response
+}
+
+async fn direct_reset_password(
+    form: HashMap<String, String>,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let hash_string = form.get("hashString").cloned().unwrap_or_default();
+    let password = form.get("password").cloned().unwrap_or_default();
+    let retyped_password = form
+        .get("retypedPassword")
+        .cloned()
+        .unwrap_or_default();
+
+    if password.len() < 8 || password != retyped_password {
+        let query = if hash_string.is_empty() {
+            "/resetPassword?error=invalid".to_string()
+        } else {
+            format!("/resetPassword?error=invalid&s={hash_string}")
+        };
+        return Redirect::to(&base_path_href(&base_path, &query)).into_response();
+    }
+
+    let redirect_path = match &backend {
+        PilotBackend::Repository(repository) => {
+            match repository.find_valid_password_reset_user_id(&hash_string).await {
+                Ok(Some(user_id)) => {
+                    match hash(&password, DEFAULT_COST) {
+                        Ok(password_hash) => {
+                            if repository
+                                .update_password_hash_for_user(user_id, &password_hash)
+                                .await
+                                .is_ok()
+                            {
+                                let _ = repository.delete_password_reset_verification(&hash_string).await;
+                                "/users/loginform?password=reset".to_string()
+                            } else {
+                                format!("/resetPassword?error=invalid&s={hash_string}")
+                            }
+                        }
+                        Err(_) => format!("/resetPassword?error=invalid&s={hash_string}"),
+                    }
+                }
+                _ => format!("/resetPassword?error=invalid&s={hash_string}"),
+            }
+        }
+        _ => "/resetPassword?error=unsupported".to_string(),
+    };
+
+    Redirect::to(&base_path_href(&base_path, &redirect_path)).into_response()
+}
+
+async fn direct_send_workspace_email_validation(
+    headers: HeaderMap,
+    email_id: String,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let login_redirect = base_path_href(&base_path, "/users/loginform?redirectUrl=%2Fuser%2Feditform%2Femails");
+    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+        return Redirect::to(&login_redirect).into_response();
+    };
+    let Some(user_id) = session.user_id else {
+        return Redirect::to(&login_redirect).into_response();
+    };
+    let valid_csrf = form
+        .get("csrfToken")
+        .map(|value| value.trim() == session.csrf_token)
+        .unwrap_or(false);
+    if !valid_csrf {
+        return Redirect::to(&base_path_href(&base_path, "/user/editform/emails?validation=error"))
+            .into_response();
+    }
+    let Ok(email_id) = email_id.parse::<i64>() else {
+        return Redirect::to(&base_path_href(&base_path, "/user/editform/emails?validation=error"))
+            .into_response();
+    };
+
+    let redirect_path = match &backend {
+        PilotBackend::Repository(repository) => {
+            if repository
+                .send_workspace_email_validation_for_user(user_id, email_id)
+                .await
+                .is_ok()
+            {
+                "/user/editform/emails?validation=sent"
+            } else {
+                "/user/editform/emails?validation=error"
+            }
+        }
+        _ => "/user/editform/emails?validation=error",
+    };
+
+    Redirect::to(&base_path_href(&base_path, redirect_path)).into_response()
+}
+
+async fn direct_confirm_workspace_email(
+    headers: HeaderMap,
+    email_id: String,
+    token: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let previous_session = session_manager.read_session_from_headers(&headers);
+    let previous_token = previous_session.as_ref().map(|session| session.token.as_str());
+    let Ok(email_id) = email_id.parse::<i64>() else {
+        return Redirect::to(&base_path_href(&base_path, "/user/editform/emails?confirmed=invalid"))
+            .into_response();
+    };
+
+    match &backend {
+        PilotBackend::Repository(repository) => {
+            match repository
+                .confirm_workspace_email_for_user(email_id, &token)
+                .await
+            {
+                Ok(Some(user_id)) => {
+                    let authenticated_session = session_manager
+                        .create_authenticated_session(previous_token, user_id);
+                    let mut response = Redirect::to(&base_path_href(
+                        &base_path,
+                        "/user/editform/emails?confirmed=1",
+                    ))
+                    .into_response();
+                    for cookie in session_manager.build_set_cookie_headers(&authenticated_session) {
+                        response.headers_mut().append(
+                            axum::http::header::SET_COOKIE,
+                            cookie.parse().expect("set-cookie header"),
+                        );
+                    }
+                    response
+                }
+                _ => Redirect::to(&base_path_href(
+                    &base_path,
+                    "/user/editform/emails?confirmed=invalid",
+                ))
+                .into_response(),
+            }
+        }
+        _ => Redirect::to(&base_path_href(
+            &base_path,
+            "/user/editform/emails?confirmed=invalid",
+        ))
+        .into_response(),
+    }
 }
 
 #[derive(Clone)]

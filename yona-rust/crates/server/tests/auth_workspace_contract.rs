@@ -11,7 +11,7 @@ use std::time::{Duration, SystemTime};
 use tower::ServiceExt;
 use yona_rust_persistence::{
     assignee, comment_thread, email, issue, linked_account, n4user, project, pull_request, user_credential,
-    user_project_notification, watch, AppRepository, CreateProjectInput,
+    user_project_notification, user_verification, watch, AppRepository, CreateProjectInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -366,6 +366,193 @@ async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
     let sign_in_json = response_text(sign_in).await;
     assert!(sign_in_json.contains("\"code\":\"unauthenticated\""));
     assert!(sign_in_json.contains("Invalid login ID, email, or password."));
+}
+
+#[tokio::test]
+async fn direct_lost_password_and_reset_password_routes_round_trip() {
+    let _guard = auth_env_lock().lock().unwrap();
+    let (app, repository, db) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let request_reset = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/lostPassword")
+                .header(http::header::CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .body(Body::from("loginId=door&emailAddress=door%40example.com"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(request_reset.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        request_reset
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/lostPassword?requested=1")
+    );
+
+    let verification = user_verification::Entity::find()
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("password reset verification");
+    let reset_code = verification
+        .verification_code
+        .clone()
+        .expect("verification code");
+
+    let reset_password = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/resetPassword")
+                .header(http::header::CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .body(Body::from(format!(
+                    "hashString={reset_code}&password=renewpass1&retypedPassword=renewpass1"
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(reset_password.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        reset_password
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/users/loginform?password=reset")
+    );
+
+    let user = repository
+        .find_user_by_identifier("door")
+        .await
+        .unwrap()
+        .expect("user after reset");
+    assert!(bcrypt::verify("renewpass1", &user.password_hash).unwrap());
+    assert!(user_verification::Entity::find().all(&db).await.unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn direct_email_validation_send_and_confirm_routes_round_trip() {
+    let _guard = auth_env_lock().lock().unwrap();
+    let (app, repository, db) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let user = repository
+        .find_user_by_identifier("door")
+        .await
+        .unwrap()
+        .expect("registered user");
+    repository
+        .add_workspace_email_for_user(user.id, "pending@example.com")
+        .await
+        .unwrap();
+    let email_before = email::Entity::find()
+        .filter(email::Column::UserId.eq(Some(user.id)))
+        .filter(email::Column::Email.eq(Some("pending@example.com".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("secondary email");
+    let old_token = email_before.token.clone();
+
+    let send_validation = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(&format!("/yona/user/email/sendValidationEmail/{}", email_before.id))
+                .header(http::header::COOKIE, &cookie_header)
+                .header(http::header::CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .body(Body::from(format!("csrfToken={csrf}")))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(send_validation.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        send_validation
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/user/editform/emails?validation=sent")
+    );
+
+    let email_after_send = email::Entity::find_by_id(email_before.id)
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("email after send");
+    assert_ne!(email_after_send.token, old_token);
+    let token = email_after_send.token.clone().expect("validation token");
+
+    let confirm_email = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(&format!(
+                    "/yona/user/email/confirm/{}/{}",
+                    email_after_send.id, token
+                ))
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(confirm_email.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        confirm_email
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/user/editform/emails?confirmed=1")
+    );
+
+    let email_after_confirm = email::Entity::find_by_id(email_after_send.id)
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("email after confirm");
+    assert_eq!(email_after_confirm.valid, Some(1));
 }
 
 #[tokio::test]

@@ -97,7 +97,7 @@ describe("AuthWorkspaceShell", () => {
         } as any)}
       />,
     );
-    expect(loginHtml).toContain("Confirmation mail will be sent");
+    expect(loginHtml).toContain("Email verification is required");
 
     const registerHtml = renderToString(
       <AuthWorkspaceShell
@@ -126,7 +126,7 @@ describe("AuthWorkspaceShell", () => {
         } as any)}
       />,
     );
-    expect(verifyHtml).toContain("Confirmation mail will be sent.");
+    expect(verifyHtml).toContain("Confirmation request was accepted.");
 
     const requestedHtml = renderToString(
       <AuthWorkspaceShell

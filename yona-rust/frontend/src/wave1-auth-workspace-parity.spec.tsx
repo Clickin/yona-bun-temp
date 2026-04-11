@@ -51,7 +51,76 @@ describe("wave 1 auth and workspace parity", () => {
       />,
     );
     expect(resetPasswordHtml).toContain('action="/yona/resetPassword"');
+    expect(resetPasswordHtml).toContain('name="hashString"');
     expect(resetPasswordHtml).toContain(">Confirm<");
+  });
+
+  it("renders password-reset and email-validation status messaging from query params", () => {
+    const lostPasswordHtml = renderToString(
+      <AuthWorkspaceShell
+        route={{ kind: "lost-password", href: "/lostPassword?requested=1" }}
+        runtimeConfig={runtimeConfig}
+        workspaceOverview={null}
+      />,
+    );
+    expect(lostPasswordHtml).toContain("Password reset request was accepted.");
+
+    const loginHtml = renderToString(
+      <AuthWorkspaceShell
+        route={{ kind: "login", href: "/users/loginform?password=reset" }}
+        runtimeConfig={runtimeConfig}
+        workspaceOverview={null}
+      />,
+    );
+    expect(loginHtml).toContain("Login with your new password.");
+
+    const emailHtml = renderToString(
+      <AuthWorkspaceShell
+        route={{ kind: "workspace-settings", href: "/user/editform/emails?validation=sent", section: "emails" } as any}
+        runtimeConfig={runtimeConfig}
+        workspaceOverview={{
+          defaultLandingPath: "/me",
+          emails: [{ emailAddress: "pending@example.com", id: "3", valid: false }],
+          favoriteProjects: [],
+          recentProjects: [],
+          session: {
+            defaultLandingPath: "/me",
+            emailAddress: "door@example.com",
+            isAnonymous: false,
+            isConfirmed: true,
+            isSiteAdmin: false,
+            loginId: "door",
+            userLabel: "Door",
+          },
+        }}
+      />,
+    );
+    expect(emailHtml).toContain("Validation request was accepted.");
+    expect(emailHtml).toContain('action="/yona/user/email/sendValidationEmail/3"');
+
+    const invalidConfirmHtml = renderToString(
+      <AuthWorkspaceShell
+        route={{ kind: "workspace-settings", href: "/user/editform/emails?confirmed=invalid&validation=error", section: "emails" } as any}
+        runtimeConfig={runtimeConfig}
+        workspaceOverview={{
+          defaultLandingPath: "/me",
+          emails: [{ emailAddress: "pending@example.com", id: "3", valid: false }],
+          favoriteProjects: [],
+          recentProjects: [],
+          session: {
+            defaultLandingPath: "/me",
+            emailAddress: "door@example.com",
+            isAnonymous: false,
+            isConfirmed: true,
+            isSiteAdmin: false,
+            loginId: "door",
+            userLabel: "Door",
+          },
+        }}
+      />,
+    );
+    expect(invalidConfirmHtml).toContain("Validation request failed.");
+    expect(invalidConfirmHtml).toContain("Invalid email confirmation link.");
   });
 
   it("renders capability-driven auth help messaging", () => {

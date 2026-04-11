@@ -13,7 +13,7 @@ use crate::repo_types::{
 use crate::{
     assignee, comment_thread, email, favorite_project, issue, linked_account, n4user, organization,
     organization_user, project, project_user, pull_request, recent_project, role, site_admin,
-    user_credential, user_enrolled_project,
+    user_credential, user_enrolled_project, user_verification,
     user_project_notification, user_setting, watch,
 };
 use rand::{distributions::Alphanumeric, Rng};
@@ -108,6 +108,13 @@ fn random_workspace_token() -> String {
 
 fn current_datetime() -> DateTime {
     DateTimeUtc::from(SystemTime::now()).naive_utc()
+}
+
+fn current_timestamp_millis() -> i64 {
+    SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map(|duration| duration.as_millis() as i64)
+        .unwrap_or_default()
 }
 
 fn days_ago_datetime(days: u64) -> DateTime {
@@ -238,6 +245,27 @@ impl AppRepository {
             let email_matches =
                 normalize_optional(user.email.as_deref()).as_deref() == Some(normalized.as_str());
             if login_matches || email_matches {
+                return self.app_user_record_from_model(user).await.map(Some);
+            }
+        }
+
+        Ok(None)
+    }
+
+    pub async fn find_user_by_login_id(
+        &self,
+        login_id: &str,
+    ) -> Result<Option<AppUserRecord>, DbErr> {
+        let normalized = normalize_identity(login_id);
+        if normalized.is_empty() {
+            return Ok(None);
+        }
+
+        let users = n4user::Entity::find().all(&self.db).await?;
+        for user in users {
+            let login_matches = normalize_optional(user.login_id.as_deref()).as_deref()
+                == Some(normalized.as_str());
+            if login_matches {
                 return self.app_user_record_from_model(user).await.map(Some);
             }
         }
@@ -1359,6 +1387,76 @@ impl AppRepository {
         Ok(())
     }
 
+    pub async fn create_password_reset_verification_for_user(
+        &self,
+        user_id: i64,
+        login_id: &str,
+    ) -> Result<String, DbErr> {
+        let code = random_workspace_token();
+        let existing = user_verification::Entity::find()
+            .filter(user_verification::Column::UserId.eq(Some(user_id)))
+            .one(&self.db)
+            .await?;
+
+        if let Some(existing) = existing {
+            let mut active = user_verification::ActiveModel::from(existing);
+            active.login_id = Set(Some(login_id.to_string()));
+            active.verification_code = Set(Some(code.clone()));
+            active.timestamp = Set(Some(current_timestamp_millis()));
+            active.update(&self.db).await?;
+        } else {
+            user_verification::ActiveModel {
+                id: NotSet,
+                user_id: Set(Some(user_id)),
+                login_id: Set(Some(login_id.to_string())),
+                verification_code: Set(Some(code.clone())),
+                timestamp: Set(Some(current_timestamp_millis())),
+            }
+            .insert(&self.db)
+            .await?;
+        }
+
+        Ok(code)
+    }
+
+    pub async fn find_valid_password_reset_user_id(
+        &self,
+        verification_code: &str,
+    ) -> Result<Option<i64>, DbErr> {
+        let Some(verification) = user_verification::Entity::find()
+            .filter(user_verification::Column::VerificationCode.eq(Some(verification_code.to_string())))
+            .one(&self.db)
+            .await? else {
+            return Ok(None);
+        };
+
+        let age_millis = current_timestamp_millis() - verification.timestamp.unwrap_or_default();
+        if age_millis > 60 * 60 * 1000 {
+            user_verification::Entity::delete_by_id(verification.id)
+                .exec(&self.db)
+                .await?;
+            return Ok(None);
+        }
+
+        Ok(verification.user_id)
+    }
+
+    pub async fn delete_password_reset_verification(
+        &self,
+        verification_code: &str,
+    ) -> Result<(), DbErr> {
+        let rows = user_verification::Entity::find()
+            .filter(user_verification::Column::VerificationCode.eq(Some(verification_code.to_string())))
+            .all(&self.db)
+            .await?;
+        for row in rows {
+            user_verification::Entity::delete_by_id(row.id)
+                .exec(&self.db)
+                .await?;
+        }
+        Ok(())
+    }
+
     pub async fn read_project_by_id(&self, project_id: i64) -> Result<Option<ProjectRecord>, DbErr> {
         let row = project::Entity::find_by_id(project_id).one(&self.db).await?;
         let Some(row) = row else {
@@ -1461,6 +1559,39 @@ impl AppRepository {
         active.token = Set(Some(random_workspace_token()));
         active.update(&self.db).await?;
         Ok(())
+    }
+
+    pub async fn confirm_workspace_email_for_user(
+        &self,
+        email_id: i64,
+        token: &str,
+    ) -> Result<Option<i64>, DbErr> {
+        let Some(model) = email::Entity::find_by_id(email_id).one(&self.db).await? else {
+            return Ok(None);
+        };
+        if model.token.as_deref() != Some(token) {
+            return Ok(None);
+        }
+
+        let user_id = model.user_id;
+        let email_address = model.email.clone();
+        let mut active = email::ActiveModel::from(model);
+        active.valid = Set(Some(1));
+        active.token = Set(None);
+        active.update(&self.db).await?;
+
+        if let Some(email_address) = email_address {
+            let invalid_rows = email::Entity::find()
+                .filter(email::Column::Email.eq(Some(email_address)))
+                .filter(email::Column::Valid.eq(Some(0)))
+                .all(&self.db)
+                .await?;
+            for row in invalid_rows {
+                email::Entity::delete_by_id(row.id).exec(&self.db).await?;
+            }
+        }
+
+        Ok(user_id)
     }
 
     pub async fn set_main_workspace_email_for_user(

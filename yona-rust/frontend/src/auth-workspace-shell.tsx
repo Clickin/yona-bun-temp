@@ -120,6 +120,7 @@ export interface OrganizationDirectoryViewModel {
 
 export interface AuthWorkspaceShellProps {
   bootstrapping?: boolean;
+  csrfToken?: string;
   route: AppRoute;
   runtimeConfig: RuntimeConfig;
   authUiCapabilities?: AuthUiCapabilitiesViewModel | null;
@@ -378,8 +379,10 @@ function LoginShell({
   const postSubmitMessage =
     searchParams.get("signup") === "requested"
       ? "Sign up requires confirmation."
+      : searchParams.get("password") === "reset"
+        ? "Login with your new password."
       : searchParams.get("verify") === "sent"
-        ? "Confirmation mail will be sent."
+        ? "Confirmation request was accepted."
         : null;
 
   return (
@@ -389,7 +392,7 @@ function LoginShell({
       <p className="lede">All-in-one software development platform.</p>
       {postSubmitMessage ? <p className="lede">{postSubmitMessage}</p> : null}
       {authUiCapabilities?.emailVerificationEnabled ? (
-        <p className="lede">Confirmation mail will be sent.</p>
+        <p className="lede">Email verification is required.</p>
       ) : null}
       {authUiCapabilities?.socialLoginOnly ? (
         <p className="lede">Social login only</p>
@@ -531,11 +534,25 @@ function HomeShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
   );
 }
 
-function LostPasswordShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function LostPasswordShell({
+  routeHref,
+  runtimeConfig,
+}: {
+  routeHref: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const searchParams = readSearchParams(routeHref);
+  const message =
+    searchParams.get("requested") === "1"
+      ? "Password reset request was accepted."
+      : searchParams.get("error") === "invalid"
+        ? "Invalid login ID or email address."
+        : null;
   return (
     <main className="app-shell">
       <p className="eyebrow">Yona Rust Auth</p>
       <h1>Reset Password for Yona</h1>
+      {message ? <p className="lede">{message}</p> : null}
       <form action={appHref(runtimeConfig, "/lostPassword")} className="runtime-grid" method="post">
         <label>
           <span>Login ID</span>
@@ -551,12 +568,23 @@ function LostPasswordShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
   );
 }
 
-function ResetPasswordShell({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function ResetPasswordShell({
+  routeHref,
+  runtimeConfig,
+}: {
+  routeHref: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const searchParams = readSearchParams(routeHref);
+  const hashString = searchParams.get("s") ?? searchParams.get("hashString") ?? "";
+  const message = searchParams.get("error") === "invalid" ? "Invalid password reset link." : null;
   return (
     <main className="app-shell">
       <p className="eyebrow">Yona Rust Auth</p>
       <h1>Reset Password for Yona</h1>
+      {message ? <p className="lede">{message}</p> : null}
       <form action={appHref(runtimeConfig, "/resetPassword")} className="runtime-grid" method="post">
+        <input name="hashString" type="hidden" value={hashString} />
         <label>
           <span>Password</span>
           <input name="password" type="password" />
@@ -1006,9 +1034,12 @@ function WorkspaceSettingsShell(props: {
   onUpdateProfile?: AuthWorkspaceShellProps["onUpdateProfile"];
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
+  routeHref: string;
+  csrfToken?: string;
   section: "emails" | "notifications" | "password" | "profile" | "token";
   workspaceOverview: WorkspaceOverviewViewModel | null;
 }) {
+  const searchParams = readSearchParams(props.routeHref);
   const session = props.workspaceOverview?.session ?? {
     defaultLandingPath: "/me",
     emailAddress: "anonymous@yona.invalid",
@@ -1174,6 +1205,18 @@ function WorkspaceSettingsShell(props: {
             <br />
             Sub emails can be promoted after validation.
           </p>
+          {searchParams.get("validation") === "sent" ? (
+            <p className="lede">Validation request was accepted.</p>
+          ) : null}
+          {searchParams.get("validation") === "error" ? (
+            <p className="lede">Validation request failed.</p>
+          ) : null}
+          {searchParams.get("confirmed") === "1" ? (
+            <p className="lede">Email address was confirmed.</p>
+          ) : null}
+          {searchParams.get("confirmed") === "invalid" ? (
+            <p className="lede">Invalid email confirmation link.</p>
+          ) : null}
           <div>
             <strong>Main Email</strong>
             <p>{session.emailAddress}</p>
@@ -1199,7 +1242,13 @@ function WorkspaceSettingsShell(props: {
                     Set as main
                   </button>
                 ) : (
-                  <span>Validation required</span>
+                  <div className="runtime-grid">
+                    <span>Validation required</span>
+                    <form action={appHref(props.runtimeConfig, `/user/email/sendValidationEmail/${email.id}`)} method="post">
+                      <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
+                      <button type="submit">Send validation mail</button>
+                    </form>
+                  </div>
                 )}
               </div>
             </div>
@@ -1726,10 +1775,10 @@ export function AuthWorkspaceShell(props: AuthWorkspaceShellProps) {
       );
       break;
     case "lost-password":
-      content = <LostPasswordShell runtimeConfig={props.runtimeConfig} />;
+      content = <LostPasswordShell routeHref={props.route.href} runtimeConfig={props.runtimeConfig} />;
       break;
     case "reset-password":
-      content = <ResetPasswordShell runtimeConfig={props.runtimeConfig} />;
+      content = <ResetPasswordShell routeHref={props.route.href} runtimeConfig={props.runtimeConfig} />;
       break;
     case "me":
       content = <WorkspaceShell pending={props.pending} runtimeConfig={props.runtimeConfig} workspaceOverview={props.workspaceOverview} onSetDefaultLandingPath={props.onSetDefaultLandingPath} onSignOut={props.onSignOut} />;
@@ -1747,6 +1796,8 @@ export function AuthWorkspaceShell(props: AuthWorkspaceShellProps) {
           onToggleWorkspaceNotification={props.onToggleWorkspaceNotification}
           onUpdateProfile={props.onUpdateProfile}
           pending={props.pending}
+          csrfToken={props.csrfToken}
+          routeHref={props.route.href}
           runtimeConfig={props.runtimeConfig}
           section={props.route.section}
           workspaceOverview={props.workspaceOverview}
