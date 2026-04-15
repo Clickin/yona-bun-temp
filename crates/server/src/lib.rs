@@ -4133,6 +4133,98 @@ impl PilotService for PilotServiceImpl {
         ))
     }
 
+    async fn list_project_issues(
+        &self,
+        ctx: Context,
+        request: OwnedView<ListProjectIssuesRequestView<'static>>,
+    ) -> Result<(ListProjectIssuesResponse, Context), ConnectError> {
+        if request.owner_name.trim().is_empty() || request.project_name.trim().is_empty() {
+            return Err(ConnectError::invalid_argument(
+                "invalid pilot project issue list request",
+            ));
+        }
+
+        if let PilotBackend::Repository(repository) = &self.backend {
+            let actor_id = self
+                .session_manager
+                .read_session_from_headers(&ctx.headers)
+                .and_then(|session| session.user_id);
+
+            let project = repository
+                .read_project_by_owner_and_name(request.owner_name, request.project_name)
+                .await
+                .map_err(|error| {
+                    ConnectError::new(connectrpc::ErrorCode::Internal, error.to_string())
+                })?
+                .ok_or_else(|| ConnectError::not_found("pilot project not found"))?;
+
+            let viewer = repository
+                .read_project_authorization(request.owner_name, request.project_name, actor_id)
+                .await
+                .map_err(|error| {
+                    ConnectError::new(connectrpc::ErrorCode::Internal, error.to_string())
+                })?
+                .ok_or_else(|| ConnectError::not_found("pilot project not found"))?;
+            let decision = authorize_project_access(
+                &ProjectAccessFacts {
+                    is_anonymous: actor_id.is_none(),
+                    is_organization_admin: viewer.viewer.is_organization_admin,
+                    is_organization_member: viewer.viewer.is_organization_member,
+                    is_project_manager: viewer.viewer.is_project_manager,
+                    is_project_member: viewer.viewer.is_project_member,
+                    is_site_admin: viewer.viewer.is_site_admin,
+                    project_scope: ProjectScope::try_from(project.project_scope.as_str())
+                        .unwrap_or(ProjectScope::Private),
+                },
+                ProjectOperation::Read,
+            );
+            if !decision.allowed {
+                return Err(ConnectError::permission_denied(
+                    "project issue list is not allowed",
+                ));
+            }
+
+            let items = repository
+                .list_project_issues(request.owner_name, request.project_name)
+                .await
+                .map_err(|error| {
+                    ConnectError::new(connectrpc::ErrorCode::Internal, error.to_string())
+                })?
+                .into_iter()
+                .map(project_issue_list_item_to_proto)
+                .collect();
+
+            return Ok((
+                ListProjectIssuesResponse {
+                    items,
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                    ..Default::default()
+                },
+                ctx,
+            ));
+        }
+
+        if request.owner_name != "pilot" || request.project_name != "yona" {
+            return Err(ConnectError::not_found("pilot project not found"));
+        }
+
+        Ok((
+            ListProjectIssuesResponse {
+                owner_name: "pilot".to_string(),
+                project_name: "yona".to_string(),
+                items: vec![ProjectIssueListItem {
+                    issue_number: 1,
+                    title: "Pilot issue".to_string(),
+                    state: "open".to_string(),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
     async fn read_issue_detail(
         &self,
         ctx: Context,
@@ -4238,6 +4330,20 @@ fn issue_model_to_response(issue: persistence::IssueRecord) -> ReadIssueDetailRe
         issue_number: issue.issue_number,
         title: issue.title,
         state: issue.state,
+        ..Default::default()
+    }
+}
+
+fn project_issue_list_item_to_proto(
+    item: persistence::ProjectIssueListItemRecord,
+) -> ProjectIssueListItem {
+    ProjectIssueListItem {
+        author_label: item.author_label,
+        comment_count: item.comment_count,
+        issue_number: item.issue_number,
+        state: item.state,
+        title: item.title,
+        updated_label: item.updated_label,
         ..Default::default()
     }
 }

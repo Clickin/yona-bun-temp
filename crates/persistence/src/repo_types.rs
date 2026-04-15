@@ -21,6 +21,18 @@ pub struct IssueRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectIssueListItemRecord {
+    pub author_label: String,
+    pub comment_count: u32,
+    pub issue_number: i64,
+    pub owner_name: String,
+    pub project_name: String,
+    pub state: String,
+    pub title: String,
+    pub updated_label: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CreateUserInput {
     pub display_name: String,
     pub email_address: String,

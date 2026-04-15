@@ -44,6 +44,26 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
         .unwrap();
     assert_eq!(list_response.status(), StatusCode::OK);
 
+    let issue_list_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/ListProjectIssues")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(Body::from(
+                    "{\"ownerName\":\"pilot\",\"projectName\":\"yona\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(issue_list_response.status(), StatusCode::OK);
+    let issue_list_body = issue_list_response.into_body().collect().await.unwrap().to_bytes();
+    let issue_list_json = String::from_utf8(issue_list_body.to_vec()).unwrap();
+    assert!(issue_list_json.contains("\"title\":\"Pilot issue\""));
+    assert!(issue_list_json.contains("\"state\":\"open\""));
+
     let org_response = app
         .clone()
         .oneshot(

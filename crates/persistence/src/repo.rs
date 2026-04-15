@@ -3,6 +3,7 @@ use crate::repo_types::{
     CreateUserInput, IssueRecord, OrganizationAuthorizationRecord,
     OrganizationEnrollmentRequestRecord, OrganizationMemberDirectoryRecord,
     OrganizationMemberRecord, OrganizationRecord, OrganizationViewerRecord,
+    ProjectIssueListItemRecord,
     ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord,
     ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord,
     ProjectMenuSettingsRecord, ProjectMilestoneSummaryRecord, ProjectRecord,
@@ -192,6 +193,9 @@ struct ProjectRow {
 
 #[derive(Debug, FromQueryResult)]
 struct IssueRow {
+    author_name: Option<String>,
+    num_of_comments: Option<i32>,
+    updated_date: Option<DateTime>,
     title: Option<String>,
     number: Option<i64>,
     state: Option<i32>,
@@ -376,6 +380,50 @@ impl AppRepository {
             .await?;
 
         Ok(issue.and_then(|row| self.issue_record_from_row(row, &project)))
+    }
+
+    pub async fn list_project_issues(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+    ) -> Result<Vec<ProjectIssueListItemRecord>, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(Vec::new());
+        };
+
+        let rows = issue::Entity::find()
+            .select_only()
+            .column(issue::Column::AuthorName)
+            .column(issue::Column::NumOfComments)
+            .column(issue::Column::UpdatedDate)
+            .column(issue::Column::Title)
+            .column(issue::Column::Number)
+            .column(issue::Column::State)
+            .filter(issue::Column::ProjectId.eq(Some(project.id)))
+            .order_by_desc(issue::Column::Number)
+            .into_model::<IssueRow>()
+            .all(&self.db)
+            .await?;
+
+        Ok(rows
+            .into_iter()
+            .filter_map(|row| {
+                let issue_number = row.number?;
+                Some(ProjectIssueListItemRecord {
+                    author_label: row.author_name.unwrap_or_default(),
+                    comment_count: row.num_of_comments.unwrap_or_default().max(0) as u32,
+                    issue_number,
+                    owner_name: project.owner_name.clone(),
+                    project_name: project.project_name.clone(),
+                    state: issue_state_from_raw(row.state),
+                    title: row.title.unwrap_or_default(),
+                    updated_label: format_workspace_date_label(row.updated_date),
+                })
+            })
+            .collect())
     }
 
     pub async fn update_issue_state(
