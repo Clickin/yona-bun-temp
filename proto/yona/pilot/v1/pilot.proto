@@ -51,6 +51,7 @@ service PilotService {
   rpc RecordRecentProjectVisit(RecordRecentProjectVisitRequest) returns (RecordRecentProjectVisitResponse) {}
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) {}
   rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse) {}
+  rpc ListProjectIssues(ListProjectIssuesRequest) returns (ListProjectIssuesResponse) {}
   rpc ReadIssueDetail(ReadIssueDetailRequest) returns (ReadIssueDetailResponse) {}
   rpc UpdateIssueState(UpdateIssueStateRequest) returns (ReadIssueDetailResponse) {}
 }
@@ -124,6 +125,26 @@ message OrganizationListItem {
 
 message ListOrganizationsResponse {
   repeated OrganizationListItem items = 1;
+}
+
+message ListProjectIssuesRequest {
+  string owner_name = 1;
+  string project_name = 2;
+}
+
+message ProjectIssueListItem {
+  int64 issue_number = 1;
+  string title = 2;
+  string state = 3;
+  string author_label = 4;
+  string updated_label = 5;
+  uint32 comment_count = 6;
+}
+
+message ListProjectIssuesResponse {
+  string owner_name = 1;
+  string project_name = 2;
+  repeated ProjectIssueListItem items = 3;
 }
 
 message ReadWorkspaceOverviewRequest {}
