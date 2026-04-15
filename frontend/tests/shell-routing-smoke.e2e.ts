@@ -87,6 +87,79 @@ test.beforeEach(async ({ page }) => {
     },
   );
 
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ListProjectIssues", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        items: [
+          {
+            authorLabel: "Nori",
+            commentCount: 3,
+            issueNumber: "1",
+            state: "open",
+            title: "Pilot issue",
+            updatedLabel: "2026-04-15",
+          },
+        ],
+        ownerName: "admin",
+        projectName: "projectYobi",
+      }),
+      headers: connectJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadProjectContainer", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        boardCount: 0,
+        cloneUrl: "https://example.com/admin/projectYobi.git",
+        codeMemberOnly: false,
+        defaultTab: "readme",
+        enrollmentRequested: false,
+        isFavorited: false,
+        isForked: false,
+        isWatching: false,
+        memberCount: 0,
+        members: [],
+        openIssueCount: 1,
+        openPullRequestCount: 0,
+        organizationName: "",
+        overview: "Project issue parity route",
+        ownerName: "admin",
+        projectName: "projectYobi",
+        projectScope: "public",
+        reviewCount: 0,
+        showAdmin: false,
+        showBoard: true,
+        showCode: true,
+        showIssue: true,
+        showMilestone: true,
+        showPullRequest: true,
+        showReview: true,
+        viewerCanEnroll: false,
+        viewerCanUpdate: false,
+        viewerCanWatch: false,
+        watchCount: 0,
+      }),
+      headers: connectJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadIssueDetail", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        issueNumber: "1",
+        ownerName: "admin",
+        projectName: "projectYobi",
+        state: "open",
+        title: "Pilot issue",
+      }),
+      headers: connectJsonHeaders,
+      status: 200,
+    });
+  });
+
   await page.route("**/rpc/yona.pilot.v1.PilotService/SignOut", async (route) => {
     await route.fulfill({
       body: JSON.stringify({
@@ -120,7 +193,7 @@ test("shell routing smoke covers home, auth, public directories, and deep placeh
 
   await page.goto("/yona/admin/projectYobi/issues?pageNum=2");
   await expect(page).toHaveTitle("Issues");
-  await expect(page.getByRole("heading", { name: "Issues" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Issue List" })).toBeVisible();
 });
 
 test("programmatic internal navigation keeps browser URL in sync under the mounted base path", async ({
@@ -250,4 +323,80 @@ test("organization admin routes render forbidden and not-found shells for authen
   await page.goto("/yona/organizations/missinglabs/deleteForm");
   await expect(page.getByRole("heading", { name: "Not found" })).toBeVisible();
   await expect(page.getByText("/organizations/missinglabs/deleteForm")).toBeVisible();
+});
+
+test("project issue routes render data-backed issue list and detail screens", async ({ page }) => {
+  await page.goto("/yona/admin/projectYobi/issues?pageNum=1");
+  await expect(page.getByText("Pilot issue")).toBeVisible();
+  await expect(page.getByText("2026-04-15")).toBeVisible();
+
+  await page.goto("/yona/admin/projectYobi/issue/1");
+  await expect(page.getByRole("heading", { name: "Pilot issue" })).toBeVisible();
+  await expect(page.getByText("#1")).toBeVisible();
+  await expect(page.getByText("open")).toBeVisible();
+});
+
+test("project issue routes render forbidden and not-found shells when issue reads fail", async ({ page }) => {
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ListProjectIssues", async (route) => {
+    const payload = route.request().postDataJSON();
+    if (payload?.ownerName === "missing" || payload?.projectName === "missingYobi") {
+      await route.fulfill({
+        body: JSON.stringify({
+          code: "not_found",
+          message: "project not found",
+        }),
+        headers: connectJsonHeaders,
+        status: 404,
+      });
+      return;
+    }
+
+    await route.fulfill({
+      body: JSON.stringify({
+        code: "permission_denied",
+        message: "issue list is not allowed",
+      }),
+      headers: connectJsonHeaders,
+      status: 403,
+    });
+  });
+
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadIssueDetail", async (route) => {
+    if (route.request().postDataJSON()?.issueNumber === "999") {
+      await route.fulfill({
+        body: JSON.stringify({
+          code: "not_found",
+          message: "issue not found",
+        }),
+        headers: connectJsonHeaders,
+        status: 404,
+      });
+      return;
+    }
+
+    await route.fulfill({
+      body: JSON.stringify({
+        code: "permission_denied",
+        message: "issue read is not allowed",
+      }),
+      headers: connectJsonHeaders,
+      status: 403,
+    });
+  });
+
+  await page.goto("/yona/admin/projectYobi/issues?pageNum=1");
+  await expect(page.getByRole("heading", { name: "Forbidden" })).toBeVisible();
+  await expect(page.getByText("/admin/projectYobi/issues")).toBeVisible();
+
+  await page.goto("/yona/missing/projectYobi/issues?pageNum=1");
+  await expect(page.getByRole("heading", { name: "Not found" })).toBeVisible();
+  await expect(page.getByText("/missing/projectYobi/issues")).toBeVisible();
+
+  await page.goto("/yona/admin/projectYobi/issue/1");
+  await expect(page.getByRole("heading", { name: "Forbidden" })).toBeVisible();
+  await expect(page.getByText("/admin/projectYobi/issue/1")).toBeVisible();
+
+  await page.goto("/yona/admin/projectYobi/issue/999");
+  await expect(page.getByRole("heading", { name: "Not found" })).toBeVisible();
+  await expect(page.getByText("/admin/projectYobi/issue/999")).toBeVisible();
 });

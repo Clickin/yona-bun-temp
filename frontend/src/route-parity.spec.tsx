@@ -39,6 +39,20 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain("fullPath: '/me/settings/profile'");
   });
 
+  it("requires real project issue routes instead of placeholder pages", () => {
+    const issueListRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/issues/route.tsx"),
+      "utf8",
+    );
+    const issueDetailRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/issue/$issueNumber/route.tsx"),
+      "utf8",
+    );
+
+    expect(issueListRouteSource).not.toContain("PlaceholderPage");
+    expect(issueDetailRouteSource).not.toContain("PlaceholderPage");
+  });
+
   it("keeps the public home title and entry CTA/navigation order stable", () => {
     const html = renderHome();
 
