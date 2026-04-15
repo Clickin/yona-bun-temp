@@ -24,11 +24,13 @@ import {
   ReadAuthUiCapabilitiesRequestSchema,
   ReadCurrentSessionRequestSchema,
   LeaveOrganizationRequestSchema,
+  ListProjectIssuesRequestSchema,
   ReadOrganizationAdminRequestSchema,
   ReadOrganizationContainerRequestSchema,
   ReadOrganizationDetailRequestSchema,
   ReadOrganizationMembersRequestSchema,
   ReadOrganizationSettingsRequestSchema,
+  ReadIssueDetailRequestSchema,
   ReadProjectContainerRequestSchema,
   ReadProjectDetailRequestSchema,
   ReadProjectMembersRequestSchema,
@@ -49,7 +51,9 @@ import {
   UpdateOrganizationRequestSchema,
   UpdateProjectRequestSchema,
   UpdateProjectOverviewRequestSchema,
+  UpdateIssueStateRequestSchema,
   VerifyUserRequestSchema,
+  type ListProjectIssuesResponse,
   type OrganizationAdminView,
   type OrganizationContainer,
   type OrganizationDetail,
@@ -58,6 +62,7 @@ import {
   type ListProjectsResponse,
   type ProjectContainer,
   type ProjectDetail,
+  type ReadIssueDetailResponse,
   type ReadCurrentSessionResponse,
   type ReadOrganizationMembersResponse,
   type ReadProjectMembersResponse,
@@ -278,6 +283,45 @@ export async function listOrganizations(
 ): Promise<ListOrganizationsResponse> {
   return createPilotClient(runtimeConfig, fetchImpl).listOrganizations(
     create(ListOrganizationsRequestSchema),
+  );
+}
+
+export async function listProjectIssues(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ListProjectIssuesResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).listProjectIssues(
+    create(ListProjectIssuesRequestSchema, { ownerName, projectName }),
+  );
+}
+
+export async function readIssueDetail(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  issueNumber: bigint | number,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).readIssueDetail(
+    create(ReadIssueDetailRequestSchema, {
+      issueNumber: BigInt(issueNumber),
+      ownerName,
+      projectName,
+    }),
+  );
+}
+
+export async function updateIssueState(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof UpdateIssueStateRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).updateIssueState(
+    create(UpdateIssueStateRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
   );
 }
 
