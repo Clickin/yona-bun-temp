@@ -2,7 +2,7 @@ import * as React from "react";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { ProjectDetailViewModel } from "./-view-models";
 
-function buildProjectHref(
+export function buildProjectHref(
   runtimeConfig: RuntimeConfig,
   ownerName: string,
   projectName: string,
@@ -15,7 +15,7 @@ function buildProjectHref(
   );
 }
 
-function ProjectMenu(props: {
+export function ProjectMenu(props: {
   detail: ProjectDetailViewModel;
   runtimeConfig: RuntimeConfig;
 }) {

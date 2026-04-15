@@ -3,6 +3,8 @@ import type {
   OrganizationDirectoryViewModel,
   OrganizationDetailViewModel,
   OrganizationMembersViewModel,
+  ProjectIssueDetailViewModel,
+  ProjectIssueListViewModel,
   ProjectDirectoryViewModel,
   ProjectDetailViewModel,
   ProjectMembersViewModel,
@@ -17,6 +19,8 @@ import {
   readOrganizationDetail,
   readOrganizationMembers,
   listOrganizations,
+  listProjectIssues,
+  readIssueDetail,
   readProjectContainer,
   readProjectDetail,
   readProjectMembers,
@@ -310,6 +314,35 @@ export function toProjectMembersView(
       role: item.role,
       userLabel: item.userLabel,
     })),
+  };
+}
+
+export function toProjectIssueListView(
+  response: Awaited<ReturnType<typeof listProjectIssues>>,
+): ProjectIssueListViewModel {
+  return {
+    items: response.items.map((item) => ({
+      authorLabel: item.authorLabel,
+      commentCount: Number(item.commentCount),
+      issueNumber: Number(item.issueNumber),
+      state: item.state,
+      title: item.title,
+      updatedLabel: item.updatedLabel,
+    })),
+    ownerName: response.ownerName,
+    projectName: response.projectName,
+  };
+}
+
+export function toProjectIssueDetailView(
+  response: Awaited<ReturnType<typeof readIssueDetail>>,
+): ProjectIssueDetailViewModel {
+  return {
+    issueNumber: Number(response.issueNumber),
+    ownerName: response.ownerName,
+    projectName: response.projectName,
+    state: response.state,
+    title: response.title,
   };
 }
 

@@ -165,6 +165,29 @@ export interface ProjectMembersViewModel {
   members: Array<{ loginId: string; role: string; userLabel: string }>;
 }
 
+export interface ProjectIssueListItemViewModel {
+  authorLabel: string;
+  commentCount: number;
+  issueNumber: number;
+  state: string;
+  title: string;
+  updatedLabel: string;
+}
+
+export interface ProjectIssueListViewModel {
+  items: ProjectIssueListItemViewModel[];
+  ownerName: string;
+  projectName: string;
+}
+
+export interface ProjectIssueDetailViewModel {
+  issueNumber: number;
+  ownerName: string;
+  projectName: string;
+  state: string;
+  title: string;
+}
+
 export interface AuthUiCapabilitiesViewModel {
   emailVerificationEnabled: boolean;
   signupRequireConfirm: boolean;
