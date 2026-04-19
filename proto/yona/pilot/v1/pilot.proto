@@ -77,6 +77,12 @@ service PilotService {
   rpc UpdateProjectLabelCategory(UpdateProjectLabelCategoryRequest) returns (ProjectLabelCategoryMutationResponse) {}
   rpc DeleteProjectLabelCategory(DeleteProjectLabelCategoryRequest) returns (ProjectLabelDeleteResponse) {}
   rpc ListProjectMilestones(ListProjectMilestonesRequest) returns (ListProjectMilestonesResponse) {}
+  rpc ReadProjectMilestone(ReadProjectMilestoneRequest) returns (ProjectMilestoneMutationResponse) {}
+  rpc CreateProjectMilestone(CreateProjectMilestoneRequest) returns (ProjectMilestoneMutationResponse) {}
+  rpc UpdateProjectMilestone(UpdateProjectMilestoneRequest) returns (ProjectMilestoneMutationResponse) {}
+  rpc DeleteProjectMilestone(DeleteProjectMilestoneRequest) returns (ProjectMilestoneDeleteResponse) {}
+  rpc OpenProjectMilestone(MilestoneStateMutationRequest) returns (ProjectMilestoneMutationResponse) {}
+  rpc CloseProjectMilestone(MilestoneStateMutationRequest) returns (ProjectMilestoneMutationResponse) {}
   rpc RenderMarkdown(RenderMarkdownRequest) returns (RenderMarkdownResponse) {}
 }
 
@@ -698,6 +704,13 @@ message IssueMilestone {
   uint32 open_issue_count = 5;
   uint32 closed_issue_count = 6;
   uint32 completion_percent = 7;
+  string contents_markdown = 8;
+  string contents_html = 9;
+  repeated IssueAttachment attachments = 10;
+  repeated ProjectIssueListItem open_issues = 11;
+  repeated ProjectIssueListItem closed_issues = 12;
+  bool viewer_can_update = 13;
+  bool viewer_can_delete = 14;
 }
 
 message IssueAttachment {
@@ -905,10 +918,60 @@ message ProjectLabelDeleteResponse {
 message ListProjectMilestonesRequest {
   string owner_name = 1;
   string project_name = 2;
+  string state = 3;
+  string order_by = 4;
+  string order_dir = 5;
 }
 
 message ListProjectMilestonesResponse {
   repeated IssueMilestone milestones = 1;
+}
+
+message ReadProjectMilestoneRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 milestone_id = 3;
+}
+
+message CreateProjectMilestoneRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  string title = 3;
+  string contents_markdown = 4;
+  string due_date = 5;
+  string state = 6;
+  repeated int64 attachment_ids = 7;
+}
+
+message UpdateProjectMilestoneRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 milestone_id = 3;
+  string title = 4;
+  string contents_markdown = 5;
+  string due_date = 6;
+  string state = 7;
+  repeated int64 attachment_ids = 8;
+}
+
+message DeleteProjectMilestoneRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 milestone_id = 3;
+}
+
+message MilestoneStateMutationRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 milestone_id = 3;
+}
+
+message ProjectMilestoneMutationResponse {
+  IssueMilestone milestone = 1;
+}
+
+message ProjectMilestoneDeleteResponse {
+  bool ok = 1;
 }
 
 message RenderMarkdownRequest {

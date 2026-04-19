@@ -128,6 +128,92 @@ test.beforeEach(async ({ page }) => {
     },
   );
 
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ListProjectMilestones", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        milestones: [
+          {
+            closedIssueCount: 1,
+            closedIssues: [
+              {
+                assigneeLabel: "Nori",
+                commentCount: 0,
+                issueNumber: "2",
+                labels: [],
+                state: "closed",
+                title: "Closed milestone issue",
+                updatedLabel: "2026-04-16",
+              },
+            ],
+            completionPercent: 50,
+            dueDateLabel: "2026-05-09",
+            id: "7",
+            openIssueCount: 1,
+            openIssues: [
+              {
+                assigneeLabel: "Nori",
+                commentCount: 1,
+                issueNumber: "1",
+                labels: [],
+                state: "open",
+                title: "Open milestone issue",
+                updatedLabel: "2026-04-15",
+              },
+            ],
+            state: "open",
+            title: "v1.0",
+          },
+        ],
+      }),
+      headers: connectJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadProjectMilestone", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        milestone: {
+          closedIssueCount: 1,
+          closedIssues: [
+            {
+              assigneeLabel: "Nori",
+              commentCount: 0,
+              issueNumber: "2",
+              labels: [],
+              state: "closed",
+              title: "Closed milestone issue",
+              updatedLabel: "2026-04-16",
+            },
+          ],
+          completionPercent: 50,
+          contentsHtml: "<p>Ship parity</p>",
+          contentsMarkdown: "Ship parity",
+          dueDateLabel: "2026-05-09",
+          id: "7",
+          openIssueCount: 1,
+          openIssues: [
+            {
+              assigneeLabel: "Nori",
+              commentCount: 1,
+              issueNumber: "1",
+              labels: [],
+              state: "open",
+              title: "Open milestone issue",
+              updatedLabel: "2026-04-15",
+            },
+          ],
+          state: "open",
+          title: "v1.0",
+          viewerCanDelete: true,
+          viewerCanUpdate: true,
+        },
+      }),
+      headers: connectJsonHeaders,
+      status: 200,
+    });
+  });
+
   await page.route("**/rpc/yona.pilot.v1.PilotService/ReadProjectContainer", async (route) => {
     await route.fulfill({
       body: JSON.stringify({
@@ -375,6 +461,27 @@ test("project issue label management route renders the legacy label editor shell
   await expect(page.getByPlaceholder("Category")).toBeVisible();
   await expect(page.getByPlaceholder("Name")).toBeVisible();
   await expect(page.getByText("No label exists")).toBeVisible();
+});
+
+test("project milestone routes render list detail and form shells", async ({ page }) => {
+  await page.goto("/yona/admin/projectYobi/milestones?state=open");
+  await expect(page.getByRole("heading", { name: "Milestones" })).toBeVisible();
+  await expect(page.getByText("v1.0")).toBeVisible();
+  await expect(page.getByText("Open milestone issue")).toBeVisible();
+  await expect(page.getByText("50%")).toBeVisible();
+
+  await page.goto("/yona/admin/projectYobi/milestone/7?state=all");
+  await expect(page.getByRole("heading", { exact: true, name: "v1.0" })).toBeVisible();
+  await expect(page.getByText("Ship parity")).toBeVisible();
+  await expect(page.getByText("Closed milestone issue")).toBeVisible();
+
+  await page.goto("/yona/admin/projectYobi/newMilestoneForm");
+  await expect(page.getByRole("heading", { name: "New Milestone" })).toBeVisible();
+  await expect(page.getByPlaceholder("yyyy-MM-dd")).toBeVisible();
+
+  await page.goto("/yona/admin/projectYobi/milestone/7/editform");
+  await expect(page.getByRole("heading", { name: "Edit Milestone" })).toBeVisible();
+  await expect(page.locator('input[name="title"]')).toHaveValue("v1.0");
 });
 
 test("project issue routes render forbidden and not-found shells when issue reads fail", async ({

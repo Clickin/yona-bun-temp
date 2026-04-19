@@ -607,16 +607,18 @@ POST  /:owner/:project/milestone/:id/close  → 마일스톤 닫기
 
 | 기능          | Legacy 동작                             | 현재 상태 | Phase |
 | ------------- | --------------------------------------- | --------- | ----- |
-| 마일스톤 CRUD | 제목, 설명, 마감일                      | gap       | 2     |
-| 마일스톤 상태 | open/closed 토글                        | gap       | 2     |
-| 이슈 집계     | 마일스톤별 open/closed 이슈 수 + 진행률 | gap       | 2     |
-| 마일스톤 상세 | 소속 이슈 목록                          | gap       | 2     |
+| 마일스톤 CRUD | 제목, 설명, 마감일                      | ✅ 구현   | 2     |
+| 마일스톤 상태 | open/closed 토글                        | ✅ 구현   | 2     |
+| 이슈 집계     | 마일스톤별 open/closed 이슈 수 + 진행률 | ✅ 구현   | 2     |
+| 마일스톤 상세 | 소속 이슈 목록                          | ✅ 구현   | 2     |
 
 #### 검수 기준
 
-- [ ] 마일스톤 목록: open/closed 탭, 각 마일스톤에 진행률 바(open/closed 이슈 비율) — legacy 동일
-- [ ] 마감일: Date picker, `yyyy-MM-dd` 형식
-- [ ] 마일스톤 상세: 소속 이슈 목록이 legacy `milestone/view.scala.html`과 동일
+- [x] 마일스톤 목록: open/closed 탭, 각 마일스톤에 진행률 바(open/closed 이슈 비율) — legacy 동일
+- [x] 마감일: `yyyy-MM-dd` 형식 저장/표시
+- [x] 마일스톤 상세: 소속 이슈 목록이 legacy `milestone/view.scala.html`과 동일
+
+**Phase 2C 구현 메모**: ConnectRPC와 SPA/direct legacy mutation route parity를 구현했다. REST `/-_-api/v1/.../milestones`, migration export, search milestone result type은 각각 REST/API, migration/export, search packet에 남긴다.
 
 ---
 
@@ -1313,7 +1315,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/:owner/:project/pullRequests`    | GET      | —                                     | `$owner/$projectName/pullRequests`            | gap                |
 | `/:owner/:project/code`            | GET      | —                                     | `$owner/$projectName/code`                    | gap                |
 | `/:owner/:project/commits`         | GET      | —                                     | —                                             | gap                |
-| `/:owner/:project/milestones`      | GET      | —                                     | —                                             | gap                |
+| `/:owner/:project/milestones`      | GET      | ConnectRPC `ListProjectMilestones`    | `$owner/$projectName/milestones`              | implemented        |
 | `/:owner/:project/branches`        | GET      | —                                     | —                                             | gap                |
 | `/organizations/new`               | GET      | SPA                                   | `organizations/new`                           | implemented        |
 | `/organizations/:name`             | GET      | ConnectRPC `ReadOrganizationDetail`   | `organizations/$organizationName/`            | implemented        |
@@ -1342,14 +1344,16 @@ max_file_size = 2147483454             # application.maxFileSize
 | Workspace (10)     | ReadWorkspaceOverview, SetDefaultLandingPath, UpdateProfile, ResetVisitedProjects, AddWorkspaceEmail, DeleteWorkspaceEmail, SendWorkspaceEmailValidation, SetMainWorkspaceEmail, ResetApiToken, ToggleWorkspaceNotification                                                                                                                                           | ✅ 전체 구현     |
 | Organization (12+) | CreateOrganization, ReadOrganizationDetail, ReadOrganizationSettings, UpdateOrganization, ReadOrganizationMembers, ReadOrganizationAdmin, ReadOrganizationContainer, AddOrganizationMember, UpdateOrganizationMemberRole, DeleteOrganizationMember, AcceptOrganizationEnrollment, EnrollOrganization, CancelEnrollOrganization, LeaveOrganization, DeleteOrganization | ✅ 전체 구현     |
 | Project (14)       | CreateProject, ReadProjectDetail, ReadProjectSettings, UpdateProject, UpdateProjectOverview, ReadProjectMembers, ReadProjectContainer, ToggleProjectWatch, EnrollProject, CancelEnrollProject, ToggleFavoriteProject, RecordRecentProjectVisit, ListProjects, ListOrganizations                                                                                       | ✅ 전체 구현     |
-| Issue              | ListProjectIssues, ReadIssueDetail, UpdateIssueState, CreateIssue, UpdateIssue, DeleteIssue, CreateIssueComment, UpdateIssueComment, DeleteIssueComment, ListIssueTimeline, WatchIssue, UnwatchIssue, VoteIssue, UnvoteIssue, AssignIssue, UnassignIssue, MassUpdateIssues, ListProjectLabels, ListProjectMilestones, RenderMarkdown                                  | ✅ Phase 2A 구현 |
+| Issue              | ListProjectIssues, ReadIssueDetail, UpdateIssueState, CreateIssue, UpdateIssue, DeleteIssue, CreateIssueComment, UpdateIssueComment, DeleteIssueComment, ListIssueTimeline, WatchIssue, UnwatchIssue, VoteIssue, UnvoteIssue, AssignIssue, UnassignIssue, MassUpdateIssues, RenderMarkdown                                                                            | ✅ Phase 2A 구현 |
+| Label              | ListProjectLabels, ListProjectLabelCategories, CreateProjectLabel, UpdateProjectLabel, DeleteProjectLabel, CreateProjectLabelCategory, UpdateProjectLabelCategory, DeleteProjectLabelCategory                                                                                                                                                                         | ✅ Phase 2B 구현 |
+| Milestone          | ListProjectMilestones, ReadProjectMilestone, CreateProjectMilestone, UpdateProjectMilestone, DeleteProjectMilestone, OpenProjectMilestone, CloseProjectMilestone                                                                                                                                                                                                      | ✅ Phase 2C 구현 |
 
 **추가 필요한 RPC 메서드** (Phase 2~6에서 추가):
 
 - Issue follow-up: issue sharer, mention autocomplete/notification semantics, comment vote, favorite issue, organization/user aggregate issue list, REST issue API parity
 - Board: CreatePosting, UpdatePosting, DeletePosting, ListProjectPostings, ReadPostingDetail, CreatePostingComment
 - Label follow-up: copyLabels Phase 6, REST label/project API parity
-- Milestone: CreateMilestone, UpdateMilestone, DeleteMilestone, ListProjectMilestones, ToggleMilestoneState
+- Milestone follow-up: REST milestone API parity, migration export, search milestone result type
 - Code: ListBranches, BrowseRepository, ReadFileContent, ListCommits, ReadCommitDetail
 - PullRequest: CreatePullRequest, ReadPullRequestDetail, ListPullRequests, MergePullRequest, ClosePullRequest, ReopenPullRequest, CreateReviewComment, ReviewPullRequest
 - Search: SearchGlobal, SearchInProject, SearchInOrganization

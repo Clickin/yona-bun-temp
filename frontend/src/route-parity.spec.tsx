@@ -19,10 +19,7 @@ function expectOrderedText(html: string, orderedSnippets: string[]) {
 
 describe("file-route parity harness", () => {
   it("keeps canonical and alias auth/settings routes in the generated route tree", () => {
-    const routeTreeSource = fs.readFileSync(
-      path.resolve(__dirname, "routeTree.gen.ts"),
-      "utf8",
-    );
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
 
     expect(routeTreeSource).toContain("fullPath: '/users/loginform'");
     expect(routeTreeSource).toContain("fullPath: '/users/signupform'");
@@ -37,6 +34,12 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain("fullPath: '/forgot-password'");
     expect(routeTreeSource).toContain("fullPath: '/reset-password'");
     expect(routeTreeSource).toContain("fullPath: '/me/settings/profile'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/milestones'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/newMilestoneForm'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/milestone/$milestoneId'");
+    expect(routeTreeSource).toContain(
+      "fullPath: '/$owner/$projectName/milestone/$milestoneId/editform'",
+    );
   });
 
   it("requires real project issue routes instead of placeholder pages", () => {
@@ -83,24 +86,20 @@ describe("file-route parity harness", () => {
   });
 
   it("pins canonical user settings paths and account-settings tab order", () => {
-    const html = renderWorkspaceSettings(
-      "password",
-      "/user/editform/password",
-      {
+    const html = renderWorkspaceSettings("password", "/user/editform/password", {
+      defaultLandingPath: "/me",
+      favoriteProjects: [],
+      recentProjects: [],
+      session: {
         defaultLandingPath: "/me",
-        favoriteProjects: [],
-        recentProjects: [],
-        session: {
-          defaultLandingPath: "/me",
-          emailAddress: "door@example.com",
-          isAnonymous: false,
-          isConfirmed: true,
-          isSiteAdmin: false,
-          loginId: "door",
-          userLabel: "Door",
-        },
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
       },
-    );
+    });
 
     expectOrderedText(html, [
       'href="/yona/user/editform"',

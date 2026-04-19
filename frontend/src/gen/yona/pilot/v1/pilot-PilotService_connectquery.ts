@@ -365,6 +365,36 @@ export const deleteProjectLabelCategory = PilotService.method.deleteProjectLabel
 export const listProjectMilestones = PilotService.method.listProjectMilestones;
 
 /**
+ * @generated from rpc yona.pilot.v1.PilotService.ReadProjectMilestone
+ */
+export const readProjectMilestone = PilotService.method.readProjectMilestone;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.CreateProjectMilestone
+ */
+export const createProjectMilestone = PilotService.method.createProjectMilestone;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.UpdateProjectMilestone
+ */
+export const updateProjectMilestone = PilotService.method.updateProjectMilestone;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.DeleteProjectMilestone
+ */
+export const deleteProjectMilestone = PilotService.method.deleteProjectMilestone;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.OpenProjectMilestone
+ */
+export const openProjectMilestone = PilotService.method.openProjectMilestone;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.CloseProjectMilestone
+ */
+export const closeProjectMilestone = PilotService.method.closeProjectMilestone;
+
+/**
  * @generated from rpc yona.pilot.v1.PilotService.RenderMarkdown
  */
 export const renderMarkdown = PilotService.method.renderMarkdown;

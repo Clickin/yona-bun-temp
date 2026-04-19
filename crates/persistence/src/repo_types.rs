@@ -131,13 +131,41 @@ pub struct UpdateProjectLabelCategoryInput {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IssueMilestoneRecord {
+    pub attachments: Vec<IssueAttachmentRecord>,
     pub closed_issue_count: u32,
     pub completion_percent: u32,
+    pub contents_markdown: String,
     pub due_date_label: String,
     pub id: i64,
+    pub open_issues: Vec<ProjectIssueListItemRecord>,
     pub open_issue_count: u32,
+    pub closed_issues: Vec<ProjectIssueListItemRecord>,
     pub state: String,
     pub title: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MilestoneListFilter {
+    pub order_by: String,
+    pub order_dir: String,
+    pub state: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MilestoneMutationInput {
+    pub attachment_ids: Vec<i64>,
+    pub contents_markdown: String,
+    pub due_date: Option<DateTime>,
+    pub owner_name: String,
+    pub project_name: String,
+    pub state: String,
+    pub title: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UpdateMilestoneInput {
+    pub milestone_id: i64,
+    pub values: MilestoneMutationInput,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

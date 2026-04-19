@@ -12,12 +12,14 @@ import {
   AssignIssueRequestSchema,
   CreateIssueCommentRequestSchema,
   CreateIssueRequestSchema,
+  CreateProjectMilestoneRequestSchema,
   CreateProjectLabelCategoryRequestSchema,
   CreateProjectLabelRequestSchema,
   DeleteIssueCommentRequestSchema,
   CreateOrganizationRequestSchema,
   CreateProjectRequestSchema,
   DeleteIssueRequestSchema,
+  DeleteProjectMilestoneRequestSchema,
   DeleteProjectLabelCategoryRequestSchema,
   DeleteProjectLabelRequestSchema,
   DeleteOrganizationMemberRequestSchema,
@@ -37,6 +39,7 @@ import {
   ListProjectLabelsRequestSchema,
   ListProjectIssuesRequestSchema,
   ListProjectMilestonesRequestSchema,
+  MilestoneStateMutationRequestSchema,
   MassUpdateIssuesRequestSchema,
   ReadOrganizationAdminRequestSchema,
   ReadOrganizationContainerRequestSchema,
@@ -44,6 +47,7 @@ import {
   ReadOrganizationMembersRequestSchema,
   ReadOrganizationSettingsRequestSchema,
   ReadIssueDetailRequestSchema,
+  ReadProjectMilestoneRequestSchema,
   ReadProjectContainerRequestSchema,
   ReadProjectDetailRequestSchema,
   ReadProjectMembersRequestSchema,
@@ -67,6 +71,7 @@ import {
   UpdateIssueStateRequestSchema,
   UpdateIssueCommentRequestSchema,
   UpdateIssueRequestSchema,
+  UpdateProjectMilestoneRequestSchema,
   UpdateProjectLabelCategoryRequestSchema,
   UpdateProjectLabelRequestSchema,
   VerifyUserRequestSchema,
@@ -85,6 +90,8 @@ import {
   type ProjectDetail,
   type ProjectLabelCategoryMutationResponse,
   type ProjectLabelMutationResponse,
+  type ProjectMilestoneDeleteResponse,
+  type ProjectMilestoneMutationResponse,
   type ReadIssueDetailResponse,
   type ReadCurrentSessionResponse,
   type ReadOrganizationMembersResponse,
@@ -122,6 +129,12 @@ export interface ProjectIssueListOptions {
   labelIds?: Array<bigint | number>;
   milestoneId?: bigint | number;
   pageNum?: number;
+  state?: string;
+}
+
+export interface ProjectMilestoneListOptions {
+  orderBy?: string;
+  orderDir?: string;
   state?: string;
 }
 
@@ -604,10 +617,93 @@ export async function listProjectMilestones(
   runtimeConfig: RuntimeConfig,
   ownerName: string,
   projectName: string,
+  input: ProjectMilestoneListOptions = {},
   fetchImpl: typeof fetch = fetch,
 ): Promise<ListProjectMilestonesResponse> {
   return createPilotClient(runtimeConfig, fetchImpl).listProjectMilestones(
-    create(ListProjectMilestonesRequestSchema, { ownerName, projectName }),
+    create(ListProjectMilestonesRequestSchema, {
+      orderBy: input.orderBy ?? "dueDate",
+      orderDir: input.orderDir ?? "asc",
+      ownerName,
+      projectName,
+      state: input.state ?? "open",
+    }),
+  );
+}
+
+export async function readProjectMilestone(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  milestoneId: bigint | number,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectMilestoneMutationResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).readProjectMilestone(
+    create(ReadProjectMilestoneRequestSchema, {
+      milestoneId: BigInt(milestoneId),
+      ownerName,
+      projectName,
+    }),
+  );
+}
+
+export async function createProjectMilestone(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof CreateProjectMilestoneRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectMilestoneMutationResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).createProjectMilestone(
+    create(CreateProjectMilestoneRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function updateProjectMilestone(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof UpdateProjectMilestoneRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectMilestoneMutationResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).updateProjectMilestone(
+    create(UpdateProjectMilestoneRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function deleteProjectMilestone(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof DeleteProjectMilestoneRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectMilestoneDeleteResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).deleteProjectMilestone(
+    create(DeleteProjectMilestoneRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function openProjectMilestone(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof MilestoneStateMutationRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectMilestoneMutationResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).openProjectMilestone(
+    create(MilestoneStateMutationRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function closeProjectMilestone(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof MilestoneStateMutationRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectMilestoneMutationResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).closeProjectMilestone(
+    create(MilestoneStateMutationRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
   );
 }
 

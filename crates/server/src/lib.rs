@@ -5,7 +5,7 @@ pub mod session;
 use axum::extract::{Form, Multipart};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Redirect, Response};
-use axum::routing::{get, post, put};
+use axum::routing::{delete, get, post, put};
 use axum::{extract::Path, http::Method};
 use axum::{Json, Router};
 use bcrypt::{hash, verify, DEFAULT_COST};
@@ -16,6 +16,7 @@ use http::{HeaderValue, StatusCode};
 use md5::{Digest, Md5};
 use pulldown_cmark::{html, Options, Parser};
 use runtime_config::normalize_base_path;
+use sea_orm::entity::prelude::DateTime;
 use serde::Serialize;
 use session::{SessionConfig, SessionManager};
 use std::sync::Arc;
@@ -153,6 +154,21 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let category_update_session_manager = session_manager.clone();
     let category_delete_backend = route_backend.clone();
     let category_delete_session_manager = session_manager.clone();
+    let milestone_create_backend = route_backend.clone();
+    let milestone_create_session_manager = session_manager.clone();
+    let milestone_create_base_path = base_path.clone();
+    let milestone_update_backend = route_backend.clone();
+    let milestone_update_session_manager = session_manager.clone();
+    let milestone_update_base_path = base_path.clone();
+    let milestone_delete_backend = route_backend.clone();
+    let milestone_delete_session_manager = session_manager.clone();
+    let milestone_delete_base_path = base_path.clone();
+    let milestone_open_backend = route_backend.clone();
+    let milestone_open_session_manager = session_manager.clone();
+    let milestone_open_base_path = base_path.clone();
+    let milestone_close_backend = route_backend.clone();
+    let milestone_close_session_manager = session_manager.clone();
+    let milestone_close_base_path = base_path.clone();
 
     let mut base_router = Router::new()
         .route(
@@ -384,6 +400,94 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         category_id,
                         category_delete_session_manager.clone(),
                         category_delete_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/milestones",
+            post(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_create_project_milestone(
+                        headers,
+                        owner,
+                        project,
+                        form,
+                        milestone_create_session_manager.clone(),
+                        milestone_create_backend.clone(),
+                        milestone_create_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/milestone/{milestone_id}/edit",
+            post(move |headers: HeaderMap, Path((owner, project, milestone_id)): Path<(String, String, i64)>, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_update_project_milestone(
+                        headers,
+                        owner,
+                        project,
+                        milestone_id,
+                        form,
+                        milestone_update_session_manager.clone(),
+                        milestone_update_backend.clone(),
+                        milestone_update_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/milestone/{milestone_id}/delete",
+            delete(move |headers: HeaderMap, Path((owner, project, milestone_id)): Path<(String, String, i64)>| {
+                async move {
+                    direct_delete_project_milestone(
+                        headers,
+                        owner,
+                        project,
+                        milestone_id,
+                        milestone_delete_session_manager.clone(),
+                        milestone_delete_backend.clone(),
+                        milestone_delete_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/milestone/{milestone_id}/open",
+            post(move |headers: HeaderMap, Path((owner, project, milestone_id)): Path<(String, String, i64)>| {
+                async move {
+                    direct_update_project_milestone_state(
+                        headers,
+                        owner,
+                        project,
+                        milestone_id,
+                        "open",
+                        milestone_open_session_manager.clone(),
+                        milestone_open_backend.clone(),
+                        milestone_open_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/milestone/{milestone_id}/close",
+            post(move |headers: HeaderMap, Path((owner, project, milestone_id)): Path<(String, String, i64)>| {
+                async move {
+                    direct_update_project_milestone_state(
+                        headers,
+                        owner,
+                        project,
+                        milestone_id,
+                        "closed",
+                        milestone_close_session_manager.clone(),
+                        milestone_close_backend.clone(),
+                        milestone_close_base_path.clone(),
                     )
                     .await
                 }
@@ -1278,6 +1382,243 @@ async fn direct_delete_issue_label_category(
     }
 }
 
+fn redirect_to(base_path: &str, path: &str) -> Response {
+    Redirect::to(&base_path_href(base_path, path)).into_response()
+}
+
+fn normalize_milestone_state(value: &str) -> Result<String, ConnectError> {
+    let normalized = value.trim().to_ascii_lowercase();
+    match normalized.as_str() {
+        "" => Ok("open".to_string()),
+        "open" => Ok("open".to_string()),
+        "closed" => Ok("closed".to_string()),
+        _ => Err(ConnectError::invalid_argument("invalid milestone state")),
+    }
+}
+
+fn parse_milestone_due_date(value: &str) -> Result<Option<DateTime>, ConnectError> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return Ok(None);
+    }
+    DateTime::parse_from_str(&format!("{trimmed} 23:59:59.999"), "%Y-%m-%d %H:%M:%S%.3f")
+        .map(Some)
+        .map_err(|_| ConnectError::invalid_argument("invalid milestone due date"))
+}
+
+fn parse_attachment_ids(value: &str) -> Vec<i64> {
+    value
+        .split(',')
+        .filter_map(|item| item.trim().parse::<i64>().ok())
+        .filter(|item| *item > 0)
+        .collect()
+}
+
+fn direct_milestone_input_from_form(
+    owner: &str,
+    project: &str,
+    form: &HashMap<String, String>,
+) -> Result<persistence::MilestoneMutationInput, ConnectError> {
+    let title = form_value(form, &["title"]).trim().to_string();
+    if title.is_empty() {
+        return Err(ConnectError::invalid_argument(
+            "milestone title is required",
+        ));
+    }
+    Ok(persistence::MilestoneMutationInput {
+        attachment_ids: parse_attachment_ids(form_value(
+            form,
+            &["attachmentIds", "attachment_ids"],
+        )),
+        contents_markdown: form_value(form, &["contents", "contentsMarkdown", "contents_markdown"])
+            .to_string(),
+        due_date: parse_milestone_due_date(form_value(form, &["dueDate", "due_date"]))?,
+        owner_name: owner.to_string(),
+        project_name: project.to_string(),
+        state: normalize_milestone_state(form_value(form, &["state"]))?,
+        title,
+    })
+}
+
+fn connect_error_to_status(error: ConnectError) -> Response {
+    if error.to_string().contains("invalid") || error.to_string().contains("required") {
+        StatusCode::BAD_REQUEST.into_response()
+    } else {
+        StatusCode::INTERNAL_SERVER_ERROR.into_response()
+    }
+}
+
+async fn direct_create_project_milestone(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    let input = match direct_milestone_input_from_form(&owner, &project, &form) {
+        Ok(input) => input,
+        Err(error) => return connect_error_to_status(error),
+    };
+    match repository
+        .project_milestone_title_exists(&owner, &project, &input.title, None)
+        .await
+    {
+        Ok(true) => return StatusCode::BAD_REQUEST.into_response(),
+        Ok(false) => {}
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+    match repository.create_project_milestone(input).await {
+        Ok(Some(milestone)) => redirect_to(
+            &base_path,
+            &format!("/{owner}/{project}/milestone/{}", milestone.id),
+        ),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+async fn direct_update_project_milestone(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    milestone_id: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    let input = match direct_milestone_input_from_form(&owner, &project, &form) {
+        Ok(input) => input,
+        Err(error) => return connect_error_to_status(error),
+    };
+    match repository
+        .project_milestone_title_exists(&owner, &project, &input.title, Some(milestone_id))
+        .await
+    {
+        Ok(true) => return StatusCode::BAD_REQUEST.into_response(),
+        Ok(false) => {}
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+    match repository
+        .update_project_milestone(persistence::UpdateMilestoneInput {
+            milestone_id,
+            values: input,
+        })
+        .await
+    {
+        Ok(Some(milestone)) => redirect_to(
+            &base_path,
+            &format!("/{owner}/{project}/milestone/{}", milestone.id),
+        ),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+async fn direct_update_project_milestone_state(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    milestone_id: i64,
+    state: &str,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    match repository
+        .update_project_milestone_state(&owner, &project, milestone_id, state)
+        .await
+    {
+        Ok(Some(milestone)) => redirect_to(
+            &base_path,
+            &format!("/{owner}/{project}/milestone/{}", milestone.id),
+        ),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+async fn direct_delete_project_milestone(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    milestone_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    match repository
+        .delete_project_milestone(&owner, &project, milestone_id)
+        .await
+    {
+        Ok(true) => redirect_to(&base_path, &format!("/{owner}/{project}/milestones")),
+        Ok(false) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
 #[derive(Clone)]
 struct PilotServiceImpl {
     base_path: String,
@@ -1287,6 +1628,54 @@ struct PilotServiceImpl {
 }
 
 impl PilotServiceImpl {
+    async fn set_project_milestone_state(
+        &self,
+        ctx: Context,
+        request: OwnedView<MilestoneStateMutationRequestView<'static>>,
+        state: &str,
+    ) -> Result<(ProjectMilestoneMutationResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "milestone requires repository backend",
+            ));
+        };
+        require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        if !project_update_allowed(&authorization)? {
+            return Err(ConnectError::permission_denied(
+                "milestone update is not allowed",
+            ));
+        }
+        let milestone = repository
+            .update_project_milestone_state(
+                request.owner_name,
+                request.project_name,
+                request.milestone_id,
+                state,
+            )
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
+        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
+        milestone.viewer_can_update = true;
+        milestone.viewer_can_delete = true;
+        Ok((
+            ProjectMilestoneMutationResponse {
+                milestone: Some(milestone).into(),
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
     async fn issue_participation(
         &self,
         ctx: Context,
@@ -2340,13 +2729,35 @@ fn issue_timeline_item_from_record(
     }
 }
 
-fn issue_milestone_from_record(record: &persistence::IssueMilestoneRecord) -> IssueMilestone {
+fn issue_milestone_from_record(
+    record: &persistence::IssueMilestoneRecord,
+    base_path: &str,
+) -> IssueMilestone {
     IssueMilestone {
+        attachments: record
+            .attachments
+            .iter()
+            .map(|attachment| issue_attachment_from_record(attachment, base_path))
+            .collect(),
         closed_issue_count: record.closed_issue_count,
+        closed_issues: record
+            .closed_issues
+            .clone()
+            .into_iter()
+            .map(project_issue_list_item_to_proto)
+            .collect(),
         completion_percent: record.completion_percent,
+        contents_html: render_markdown_html(&record.contents_markdown),
+        contents_markdown: record.contents_markdown.clone(),
         due_date_label: record.due_date_label.clone(),
         id: record.id,
         open_issue_count: record.open_issue_count,
+        open_issues: record
+            .open_issues
+            .clone()
+            .into_iter()
+            .map(project_issue_list_item_to_proto)
+            .collect(),
         state: record.state.clone(),
         title: record.title.clone(),
         ..Default::default()
@@ -2394,6 +2805,54 @@ fn issue_list_filter_from_request(
         page_num: request.page_num.max(1),
         state: (!request.state.trim().is_empty()).then(|| request.state.trim().to_string()),
     }
+}
+
+fn milestone_list_filter_from_request(
+    request: &ListProjectMilestonesRequestView<'_>,
+) -> persistence::MilestoneListFilter {
+    persistence::MilestoneListFilter {
+        order_by: if request.order_by.trim().is_empty() {
+            "dueDate".to_string()
+        } else {
+            request.order_by.trim().to_string()
+        },
+        order_dir: if request.order_dir.trim().is_empty() {
+            "asc".to_string()
+        } else {
+            request.order_dir.trim().to_string()
+        },
+        state: if request.state.trim().is_empty() {
+            "open".to_string()
+        } else {
+            request.state.trim().to_string()
+        },
+    }
+}
+
+fn milestone_mutation_input(
+    owner_name: &str,
+    project_name: &str,
+    title: &str,
+    contents_markdown: &str,
+    due_date: &str,
+    state: &str,
+    attachment_ids: &[i64],
+) -> Result<persistence::MilestoneMutationInput, ConnectError> {
+    let title = title.trim();
+    if title.is_empty() {
+        return Err(ConnectError::invalid_argument(
+            "milestone title is required",
+        ));
+    }
+    Ok(persistence::MilestoneMutationInput {
+        attachment_ids: attachment_ids.to_vec(),
+        contents_markdown: contents_markdown.to_string(),
+        due_date: parse_milestone_due_date(due_date)?,
+        owner_name: owner_name.to_string(),
+        project_name: project_name.to_string(),
+        state: normalize_milestone_state(state)?,
+        title: title.to_string(),
+    })
 }
 
 fn project_facts(
@@ -6374,11 +6833,15 @@ impl PilotService for PilotServiceImpl {
         )
         .await?;
         let milestones = repository
-            .list_project_milestones(request.owner_name, request.project_name)
+            .list_project_milestones(
+                request.owner_name,
+                request.project_name,
+                milestone_list_filter_from_request(&request),
+            )
             .await
             .map_err(internal_error)?
             .iter()
-            .map(issue_milestone_from_record)
+            .map(|record| issue_milestone_from_record(record, &self.base_path))
             .collect();
         Ok((
             ListProjectMilestonesResponse {
@@ -6387,6 +6850,241 @@ impl PilotService for PilotServiceImpl {
             },
             ctx,
         ))
+    }
+
+    async fn read_project_milestone(
+        &self,
+        ctx: Context,
+        request: OwnedView<ReadProjectMilestoneRequestView<'static>>,
+    ) -> Result<(ProjectMilestoneMutationResponse, Context), ConnectError> {
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "milestone requires repository backend",
+            ));
+        };
+        let session = self.session_manager.read_session_from_headers(&ctx.headers);
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.as_ref().and_then(|session| session.user_id),
+        )
+        .await?;
+        let viewer_can_update = project_update_allowed(&authorization).unwrap_or(false);
+        let milestone = repository
+            .read_project_milestone(
+                request.owner_name,
+                request.project_name,
+                request.milestone_id,
+            )
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
+        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
+        milestone.viewer_can_update = viewer_can_update;
+        milestone.viewer_can_delete = viewer_can_update;
+        Ok((
+            ProjectMilestoneMutationResponse {
+                milestone: Some(milestone).into(),
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
+    async fn create_project_milestone(
+        &self,
+        ctx: Context,
+        request: OwnedView<CreateProjectMilestoneRequestView<'static>>,
+    ) -> Result<(ProjectMilestoneMutationResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "milestone requires repository backend",
+            ));
+        };
+        require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        if !project_update_allowed(&authorization)? {
+            return Err(ConnectError::permission_denied(
+                "milestone create is not allowed",
+            ));
+        }
+        let input = milestone_mutation_input(
+            request.owner_name,
+            request.project_name,
+            request.title,
+            request.contents_markdown,
+            request.due_date,
+            request.state,
+            &request.attachment_ids,
+        )?;
+        if repository
+            .project_milestone_title_exists(
+                request.owner_name,
+                request.project_name,
+                &input.title,
+                None,
+            )
+            .await
+            .map_err(internal_error)?
+        {
+            return Err(ConnectError::invalid_argument(
+                "milestone title is duplicated",
+            ));
+        }
+        let milestone = repository
+            .create_project_milestone(input)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("project not found"))?;
+        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
+        milestone.viewer_can_update = true;
+        milestone.viewer_can_delete = true;
+        Ok((
+            ProjectMilestoneMutationResponse {
+                milestone: Some(milestone).into(),
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
+    async fn update_project_milestone(
+        &self,
+        ctx: Context,
+        request: OwnedView<UpdateProjectMilestoneRequestView<'static>>,
+    ) -> Result<(ProjectMilestoneMutationResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "milestone requires repository backend",
+            ));
+        };
+        require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        if !project_update_allowed(&authorization)? {
+            return Err(ConnectError::permission_denied(
+                "milestone update is not allowed",
+            ));
+        }
+        let input = milestone_mutation_input(
+            request.owner_name,
+            request.project_name,
+            request.title,
+            request.contents_markdown,
+            request.due_date,
+            request.state,
+            &request.attachment_ids,
+        )?;
+        if repository
+            .project_milestone_title_exists(
+                request.owner_name,
+                request.project_name,
+                &input.title,
+                Some(request.milestone_id),
+            )
+            .await
+            .map_err(internal_error)?
+        {
+            return Err(ConnectError::invalid_argument(
+                "milestone title is duplicated",
+            ));
+        }
+        let milestone = repository
+            .update_project_milestone(persistence::UpdateMilestoneInput {
+                milestone_id: request.milestone_id,
+                values: input,
+            })
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
+        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
+        milestone.viewer_can_update = true;
+        milestone.viewer_can_delete = true;
+        Ok((
+            ProjectMilestoneMutationResponse {
+                milestone: Some(milestone).into(),
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
+    async fn delete_project_milestone(
+        &self,
+        ctx: Context,
+        request: OwnedView<DeleteProjectMilestoneRequestView<'static>>,
+    ) -> Result<(ProjectMilestoneDeleteResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "milestone requires repository backend",
+            ));
+        };
+        require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        if !project_update_allowed(&authorization)? {
+            return Err(ConnectError::permission_denied(
+                "milestone delete is not allowed",
+            ));
+        }
+        let ok = repository
+            .delete_project_milestone(
+                request.owner_name,
+                request.project_name,
+                request.milestone_id,
+            )
+            .await
+            .map_err(internal_error)?;
+        if !ok {
+            return Err(ConnectError::not_found("milestone not found"));
+        }
+        Ok((
+            ProjectMilestoneDeleteResponse {
+                ok,
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
+    async fn open_project_milestone(
+        &self,
+        ctx: Context,
+        request: OwnedView<MilestoneStateMutationRequestView<'static>>,
+    ) -> Result<(ProjectMilestoneMutationResponse, Context), ConnectError> {
+        self.set_project_milestone_state(ctx, request, "open").await
+    }
+
+    async fn close_project_milestone(
+        &self,
+        ctx: Context,
+        request: OwnedView<MilestoneStateMutationRequestView<'static>>,
+    ) -> Result<(ProjectMilestoneMutationResponse, Context), ConnectError> {
+        self.set_project_milestone_state(ctx, request, "closed")
+            .await
     }
 
     async fn render_markdown(

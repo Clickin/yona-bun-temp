@@ -9,10 +9,7 @@ export function buildProjectHref(
   suffix = "",
 ) {
   const normalizedSuffix = suffix === "" ? "" : `/${suffix.replace(/^\/+/, "")}`;
-  return prefixBasePath(
-    runtimeConfig.basePath,
-    `/${ownerName}/${projectName}${normalizedSuffix}`,
-  );
+  return prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}${normalizedSuffix}`);
 }
 
 export function ProjectMenu(props: {
@@ -21,13 +18,41 @@ export function ProjectMenu(props: {
 }) {
   const { detail, runtimeConfig } = props;
   const menuItems = [
-    { href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName), label: "Home", show: true },
-    { href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "code"), label: "Code", show: detail.showCode },
-    { href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "issues"), label: `Issues ${detail.openIssueCount ?? 0}`, show: detail.showIssue },
-    { href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "pullRequests"), label: `Pull requests ${detail.openPullRequestCount ?? 0}`, show: detail.showPullRequest },
-    { href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "pullRequests"), label: `Reviews ${detail.reviewCount ?? 0}`, show: detail.showReview },
-    { href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "milestone"), label: "Milestones", show: detail.showMilestone },
-    { href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "posts"), label: `Boards ${detail.boardCount ?? 0}`, show: detail.showBoard },
+    {
+      href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName),
+      label: "Home",
+      show: true,
+    },
+    {
+      href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "code"),
+      label: "Code",
+      show: detail.showCode,
+    },
+    {
+      href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "issues"),
+      label: `Issues ${detail.openIssueCount ?? 0}`,
+      show: detail.showIssue,
+    },
+    {
+      href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "pullRequests"),
+      label: `Pull requests ${detail.openPullRequestCount ?? 0}`,
+      show: detail.showPullRequest,
+    },
+    {
+      href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "pullRequests"),
+      label: `Reviews ${detail.reviewCount ?? 0}`,
+      show: detail.showReview,
+    },
+    {
+      href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "milestones"),
+      label: "Milestones",
+      show: detail.showMilestone,
+    },
+    {
+      href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "posts"),
+      label: `Boards ${detail.boardCount ?? 0}`,
+      show: detail.showBoard,
+    },
   ];
 
   return (
@@ -40,7 +65,14 @@ export function ProjectMenu(props: {
           </a>
         ))}
       {detail.showAdmin || detail.viewerCanUpdate ? (
-        <a href={buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "settingform")}>
+        <a
+          href={buildProjectHref(
+            runtimeConfig,
+            detail.ownerName,
+            detail.projectName,
+            "settingform",
+          )}
+        >
           Settings
         </a>
       ) : null}
@@ -166,9 +198,10 @@ export function ProjectDetailPage(props: {
     setOverviewDraft(detail.overview);
   }, [detail.overview]);
 
-  const activeTab = detail.defaultTab === "history" || detail.defaultTab === "dashboard"
-    ? detail.defaultTab
-    : "readme";
+  const activeTab =
+    detail.defaultTab === "history" || detail.defaultTab === "dashboard"
+      ? detail.defaultTab
+      : "readme";
 
   return (
     <main className="app-shell">
@@ -185,9 +218,7 @@ export function ProjectDetailPage(props: {
         <div className="runtime-grid">
           <button
             type="button"
-            onClick={() =>
-              props.onToggleFavoriteProject?.(detail.ownerName, detail.projectName)
-            }
+            onClick={() => props.onToggleFavoriteProject?.(detail.ownerName, detail.projectName)}
           >
             {detail.isFavorited ? "Unfavorite project" : "Favorite project"}
           </button>
@@ -209,18 +240,14 @@ export function ProjectDetailPage(props: {
             detail.enrollmentRequested ? (
               <button
                 type="button"
-                onClick={() =>
-                  props.onCancelEnrollProject?.(detail.ownerName, detail.projectName)
-                }
+                onClick={() => props.onCancelEnrollProject?.(detail.ownerName, detail.projectName)}
               >
                 Cancel enrollment request
               </button>
             ) : (
               <button
                 type="button"
-                onClick={() =>
-                  props.onEnrollProject?.(detail.ownerName, detail.projectName)
-                }
+                onClick={() => props.onEnrollProject?.(detail.ownerName, detail.projectName)}
               >
                 Request enrollment
               </button>
@@ -242,11 +269,7 @@ export function ProjectDetailPage(props: {
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              props.onUpdateProjectOverview?.(
-                detail.ownerName,
-                detail.projectName,
-                overviewDraft,
-              );
+              props.onUpdateProjectOverview?.(detail.ownerName, detail.projectName, overviewDraft);
               setEditingOverview(false);
             }}
           >
@@ -277,10 +300,14 @@ export function ProjectDetailPage(props: {
           <a href={buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName)}>
             README
           </a>
-          <a href={`${buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName)}?tabId=history`}>
+          <a
+            href={`${buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName)}?tabId=history`}
+          >
             Recent history
           </a>
-          <a href={`${buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName)}?tabId=dashboard`}>
+          <a
+            href={`${buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName)}?tabId=dashboard`}
+          >
             Dashboard
           </a>
         </nav>
@@ -364,7 +391,12 @@ export function ProjectSettingsPage(props: {
       >
         <label>
           <span>Project location</span>
-          <input readOnly name="projectSlug" type="text" value={`${detail.ownerName}/${detail.projectName}`} />
+          <input
+            readOnly
+            name="projectSlug"
+            type="text"
+            value={`${detail.ownerName}/${detail.projectName}`}
+          />
         </label>
         <label>
           <span>Project name</span>

@@ -236,6 +236,40 @@ export interface ProjectIssueDetailViewModel {
   watcherCount: number;
 }
 
+export interface ProjectMilestoneIssueViewModel {
+  assigneeLabel: string;
+  commentCount: number;
+  issueNumber: number;
+  labels: Array<{ color: string; id: number; name: string }>;
+  state: string;
+  title: string;
+  updatedLabel: string;
+}
+
+export interface ProjectMilestoneViewModel {
+  attachments: Array<{ id: number; name: string; url: string }>;
+  closedIssueCount: number;
+  closedIssues: ProjectMilestoneIssueViewModel[];
+  completionPercent: number;
+  contentsHtml: string;
+  contentsMarkdown: string;
+  dueDateLabel: string;
+  id: number;
+  openIssueCount: number;
+  openIssues: ProjectMilestoneIssueViewModel[];
+  state: string;
+  title: string;
+  viewerCanDelete: boolean;
+  viewerCanUpdate: boolean;
+}
+
+export interface ProjectMilestoneListViewModel {
+  milestones: ProjectMilestoneViewModel[];
+  orderBy: string;
+  orderDir: string;
+  state: string;
+}
+
 export interface AuthUiCapabilitiesViewModel {
   emailVerificationEnabled: boolean;
   signupRequireConfirm: boolean;

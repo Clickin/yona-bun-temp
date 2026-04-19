@@ -5,6 +5,9 @@ import type {
   OrganizationMembersViewModel,
   ProjectIssueDetailViewModel,
   ProjectIssueListViewModel,
+  ProjectMilestoneIssueViewModel,
+  ProjectMilestoneListViewModel,
+  ProjectMilestoneViewModel,
   ProjectDirectoryViewModel,
   ProjectDetailViewModel,
   ProjectMembersViewModel,
@@ -20,7 +23,9 @@ import {
   readOrganizationMembers,
   listOrganizations,
   listProjectIssues,
+  listProjectMilestones,
   readIssueDetail,
+  readProjectMilestone,
   readProjectContainer,
   readProjectDetail,
   readProjectMembers,
@@ -406,6 +411,71 @@ export function toProjectIssueDetailView(
     voterCount: response.voterCount,
     watcherCount: response.watcherCount,
   };
+}
+
+function toProjectMilestoneIssueView(
+  item: Awaited<
+    ReturnType<typeof listProjectMilestones>
+  >["milestones"][number]["openIssues"][number],
+): ProjectMilestoneIssueViewModel {
+  return {
+    assigneeLabel: item.assigneeLabel,
+    commentCount: item.commentCount,
+    issueNumber: Number(item.issueNumber),
+    labels: item.labels.map((label) => ({
+      color: label.color,
+      id: Number(label.id),
+      name: label.name,
+    })),
+    state: item.state,
+    title: item.title,
+    updatedLabel: item.updatedLabel,
+  };
+}
+
+function toProjectMilestoneView(
+  milestone: Awaited<ReturnType<typeof listProjectMilestones>>["milestones"][number],
+): ProjectMilestoneViewModel {
+  return {
+    attachments: milestone.attachments.map((attachment) => ({
+      id: Number(attachment.id),
+      name: attachment.name,
+      url: attachment.url,
+    })),
+    closedIssueCount: milestone.closedIssueCount,
+    closedIssues: milestone.closedIssues.map(toProjectMilestoneIssueView),
+    completionPercent: milestone.completionPercent,
+    contentsHtml: milestone.contentsHtml,
+    contentsMarkdown: milestone.contentsMarkdown,
+    dueDateLabel: milestone.dueDateLabel,
+    id: Number(milestone.id),
+    openIssueCount: milestone.openIssueCount,
+    openIssues: milestone.openIssues.map(toProjectMilestoneIssueView),
+    state: milestone.state,
+    title: milestone.title,
+    viewerCanDelete: milestone.viewerCanDelete,
+    viewerCanUpdate: milestone.viewerCanUpdate,
+  };
+}
+
+export function toProjectMilestoneListView(
+  response: Awaited<ReturnType<typeof listProjectMilestones>>,
+  state: string,
+  orderBy: string,
+  orderDir: string,
+): ProjectMilestoneListViewModel {
+  return {
+    milestones: response.milestones.map(toProjectMilestoneView),
+    orderBy,
+    orderDir,
+    state,
+  };
+}
+
+export function toProjectMilestoneDetailView(
+  response: Awaited<ReturnType<typeof readProjectMilestone>>,
+): ProjectMilestoneViewModel | null {
+  return response.milestone ? toProjectMilestoneView(response.milestone) : null;
 }
 
 export function toProjectDirectoryView(

@@ -102,6 +102,7 @@ const PARITY_SLICES = [
       /^frontend\/src\/app-view-models\.ts$/i,
       /^frontend\/src\/auth-workspace-client\.ts$/i,
       /^frontend\/src\/routes\/-view-models\.ts$/i,
+      /^frontend\/src\/routes\/-milestone-views\.tsx$/i,
       /^frontend\/.*issues?/i,
       /^crates\/(?:domain|persistence|server)\/.*(?:issue|label|milestone)/i,
     ],
@@ -134,6 +135,7 @@ const DOMAIN_BUCKETS = [
     ],
     provenanceDocs: [
       "docs/provenance/phase-0b/legacy-test-inventory.md",
+      "docs/provenance/phase-0b/milestone.md",
       "docs/agents/10-legacy-provenance-baseline.md",
     ],
   },
@@ -188,8 +190,12 @@ const DOMAIN_BUCKETS = [
       /^frontend\/.*project/i,
       /^crates\/(?:domain|persistence|server)\/.*(project|enrollment)/i,
     ],
-    testKeywords: ["project", "projects", "enroll", "enrollment"],
-    provenanceDocs: ["docs/provenance/phase-0b/project.md", "docs/provenance/core-parity-audit.md"],
+    testKeywords: ["project", "projects", "enroll", "enrollment", "milestone"],
+    provenanceDocs: [
+      "docs/provenance/phase-0b/project.md",
+      "docs/provenance/phase-0b/milestone.md",
+      "docs/provenance/core-parity-audit.md",
+    ],
   },
   {
     id: "workspace-recent-favorite-default-landing",
@@ -210,6 +216,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/app-view-models\.ts$/i,
       /^frontend\/src\/auth-workspace-client\.ts$/i,
       /^frontend\/src\/routes\/-view-models\.ts$/i,
+      /^frontend\/src\/routes\/-milestone-views\.tsx$/i,
       /^frontend\/.*issues?/i,
       /^crates\/(?:domain|persistence|server)\/.*(?:issue|label|milestone)/i,
     ],
@@ -302,6 +309,7 @@ const DOMAIN_BUCKETS = [
     ],
     provenanceDocs: [
       "docs/provenance/core-parity-audit.md",
+      "docs/provenance/phase-0b/milestone.md",
       "docs/agents/10-legacy-provenance-baseline.md",
     ],
   },
