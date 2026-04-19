@@ -212,6 +212,7 @@ export interface ProjectIssueDetailViewModel {
   milestoneTitle: string;
   ownerName: string;
   projectName: string;
+  sharers: Array<{ loginId: string; userId: number; userLabel: string }>;
   state: string;
   timeline: Array<{
     comment?: {
@@ -231,7 +232,10 @@ export interface ProjectIssueDetailViewModel {
   title: string;
   viewerCanComment: boolean;
   viewerCanDelete: boolean;
+  viewerCanManageSharers: boolean;
   viewerCanUpdate: boolean;
+  viewerHasInheritedShare: boolean;
+  viewerIsDirectSharer: boolean;
   voterCount: number;
   watcherCount: number;
 }

@@ -35,7 +35,14 @@ export function ProjectIssueListPage(props: {
       <p>{`${detail.ownerName}/${detail.projectName}`}</p>
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <section>
-        <form action={buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName, "issues")}>
+        <form
+          action={buildProjectHref(
+            props.runtimeConfig,
+            detail.ownerName,
+            detail.projectName,
+            "issues",
+          )}
+        >
           <select name="state" defaultValue="">
             <option value="">All</option>
             <option value="open">Open</option>
@@ -45,7 +52,15 @@ export function ProjectIssueListPage(props: {
           <input name="assigneeLoginId" placeholder="Assignee" />
           <button type="submit">Search</button>
         </form>
-        <a className="ybtn ybtn-success" href={buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName, "issueform")}>
+        <a
+          className="ybtn ybtn-success"
+          href={buildProjectHref(
+            props.runtimeConfig,
+            detail.ownerName,
+            detail.projectName,
+            "issueform",
+          )}
+        >
           New Issue
         </a>
       </section>
@@ -54,8 +69,19 @@ export function ProjectIssueListPage(props: {
         <ul>
           {(props.issueList?.items ?? []).map((item) => (
             <li key={item.issueNumber}>
-              <input aria-label={`select issue ${item.issueNumber}`} type="checkbox" value={item.issueNumber} />
-              <a href={buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName, `issue/${item.issueNumber}`)}>
+              <input
+                aria-label={`select issue ${item.issueNumber}`}
+                type="checkbox"
+                value={item.issueNumber}
+              />
+              <a
+                href={buildProjectHref(
+                  props.runtimeConfig,
+                  detail.ownerName,
+                  detail.projectName,
+                  `issue/${item.issueNumber}`,
+                )}
+              >
                 {item.title}
               </a>
               <span>{item.state}</span>
@@ -67,7 +93,9 @@ export function ProjectIssueListPage(props: {
               <span>{`Watchers: ${item.watcherCount}`}</span>
               <span>{item.updatedLabel}</span>
               {item.labels.map((label) => (
-                <span key={label.id} style={{ backgroundColor: label.color || "#ddd" }}>{label.name}</span>
+                <span key={label.id} style={{ backgroundColor: label.color || "#ddd" }}>
+                  {label.name}
+                </span>
               ))}
             </li>
           ))}
@@ -85,7 +113,9 @@ export function ProjectIssueDetailPage(props: {
   onCommentSubmit?: (contentsMarkdown: string) => Promise<void>;
   onCommentUpdate?: (commentId: number, contentsMarkdown: string) => Promise<void>;
   onDeleteIssue?: () => Promise<void>;
+  onShareIssue?: (loginId: string) => Promise<void>;
   onStateChange?: (state: string) => Promise<void>;
+  onUnshareIssue?: (loginId: string) => Promise<void>;
   onVoteToggle?: () => Promise<void>;
   onWatchToggle?: () => Promise<void>;
   runtimeConfig: RuntimeConfig;
@@ -110,15 +140,27 @@ export function ProjectIssueDetailPage(props: {
         <p>{`Watchers: ${issue?.watcherCount ?? 0}`}</p>
         <p>{`Voters: ${issue?.voterCount ?? 0}`}</p>
         {issue?.labels.map((label) => (
-          <span key={label.id} style={{ backgroundColor: label.color || "#ddd" }}>{label.name}</span>
+          <span key={label.id} style={{ backgroundColor: label.color || "#ddd" }}>
+            {label.name}
+          </span>
         ))}
         {issue?.viewerCanUpdate ? (
-          <a href={buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName, `issue/${issue.issueNumber}/editform`)}>
+          <a
+            href={buildProjectHref(
+              props.runtimeConfig,
+              detail.ownerName,
+              detail.projectName,
+              `issue/${issue.issueNumber}/editform`,
+            )}
+          >
             Edit
           </a>
         ) : null}
         {issue?.viewerCanUpdate && onStateChange ? (
-          <button onClick={() => void onStateChange(issue.state === "open" ? "closed" : "open")} type="button">
+          <button
+            onClick={() => void onStateChange(issue.state === "open" ? "closed" : "open")}
+            type="button"
+          >
             {issue.state === "open" ? "Close" : "Reopen"}
           </button>
         ) : null}
@@ -136,13 +178,27 @@ export function ProjectIssueDetailPage(props: {
           <IssueAssignForm initialAssignee={issue.assigneeLoginId} onSubmit={props.onAssign} />
         ) : null}
         {issue?.viewerCanDelete && onDeleteIssue ? (
-          <button onClick={() => void onDeleteIssue()} type="button">Delete</button>
+          <button onClick={() => void onDeleteIssue()} type="button">
+            Delete
+          </button>
+        ) : null}
+        {issue ? (
+          <IssueSharerPanel
+            issue={issue}
+            onShareIssue={issue.viewerCanManageSharers ? props.onShareIssue : undefined}
+            onUnshareIssue={issue.viewerCanManageSharers ? props.onUnshareIssue : undefined}
+          />
         ) : null}
       </section>
       <section>
-        <div className="markdown-wrap" dangerouslySetInnerHTML={{ __html: issue?.bodyHtml ?? "" }} />
+        <div
+          className="markdown-wrap"
+          dangerouslySetInnerHTML={{ __html: issue?.bodyHtml ?? "" }}
+        />
         {(issue?.attachments ?? []).map((attachment) => (
-          <a href={attachment.url} key={attachment.id}>{attachment.name}</a>
+          <a href={attachment.url} key={attachment.id}>
+            {attachment.name}
+          </a>
         ))}
       </section>
       <section id="comments">
@@ -152,7 +208,10 @@ export function ProjectIssueDetailPage(props: {
             {item.kind === "comment" && item.comment ? (
               <>
                 <p>{`${item.comment.authorLabel} ${item.comment.createdLabel}`}</p>
-                <div className="comment-body markdown-wrap" dangerouslySetInnerHTML={{ __html: item.comment.contentsHtml }} />
+                <div
+                  className="comment-body markdown-wrap"
+                  dangerouslySetInnerHTML={{ __html: item.comment.contentsHtml }}
+                />
                 {item.comment.viewerCanUpdate && props.onCommentUpdate ? (
                   <IssueCommentEditForm
                     commentId={item.comment.id}
@@ -161,7 +220,12 @@ export function ProjectIssueDetailPage(props: {
                   />
                 ) : null}
                 {item.comment.viewerCanDelete && props.onCommentDelete ? (
-                  <button onClick={() => void props.onCommentDelete?.(item.comment!.id)} type="button">Delete comment</button>
+                  <button
+                    onClick={() => void props.onCommentDelete?.(item.comment!.id)}
+                    type="button"
+                  >
+                    Delete comment
+                  </button>
                 ) : null}
               </>
             ) : (
@@ -177,7 +241,74 @@ export function ProjectIssueDetailPage(props: {
   );
 }
 
-function IssueAssignForm(props: { initialAssignee: string; onSubmit: (assigneeLoginId: string) => Promise<void> }) {
+function IssueSharerPanel(props: {
+  issue: ProjectIssueDetailViewModel;
+  onShareIssue?: (loginId: string) => Promise<void>;
+  onUnshareIssue?: (loginId: string) => Promise<void>;
+}) {
+  const [loginId, setLoginId] = React.useState("");
+  const [submitting, setSubmitting] = React.useState(false);
+  const canManage = props.issue.viewerCanManageSharers;
+  const hasSharers = props.issue.sharers.length > 0;
+  const onShareIssue = props.onShareIssue;
+
+  if (!hasSharers && !canManage) {
+    return null;
+  }
+
+  return (
+    <div className="sharer-list">
+      <h2>
+        Issue Sharer <span className="num issue-sharer-count">{props.issue.sharers.length}</span>
+      </h2>
+      {hasSharers ? (
+        <ul>
+          {props.issue.sharers.map((sharer) => (
+            <li className="sharer-item" key={sharer.loginId}>
+              <span>{sharer.userLabel || sharer.loginId}</span>
+              {canManage && props.onUnshareIssue ? (
+                <button onClick={() => void props.onUnshareIssue?.(sharer.loginId)} type="button">
+                  Remove sharer
+                </button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {canManage && onShareIssue ? (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            const nextLoginId = loginId.trim();
+            if (!nextLoginId) {
+              return;
+            }
+            setSubmitting(true);
+            void onShareIssue(nextLoginId).finally(() => {
+              setLoginId("");
+              setSubmitting(false);
+            });
+          }}
+        >
+          <input
+            name="issueSharer"
+            onChange={(event) => setLoginId(event.currentTarget.value)}
+            placeholder="Issue sharer login ID"
+            value={loginId}
+          />
+          <button disabled={submitting} type="submit">
+            Share
+          </button>
+        </form>
+      ) : null}
+    </div>
+  );
+}
+
+function IssueAssignForm(props: {
+  initialAssignee: string;
+  onSubmit: (assigneeLoginId: string) => Promise<void>;
+}) {
   const [assigneeLoginId, setAssigneeLoginId] = React.useState(props.initialAssignee);
   return (
     <form
@@ -221,7 +352,9 @@ function IssueCommentForm(props: { onSubmit: (contentsMarkdown: string) => Promi
         placeholder="Leave a comment"
         value={contentsMarkdown}
       />
-      <button disabled={submitting} type="submit">Comment</button>
+      <button disabled={submitting} type="submit">
+        Comment
+      </button>
     </form>
   );
 }
@@ -234,7 +367,11 @@ function IssueCommentEditForm(props: {
   const [editing, setEditing] = React.useState(false);
   const [contentsMarkdown, setContentsMarkdown] = React.useState(props.initialContents);
   if (!editing) {
-    return <button onClick={() => setEditing(true)} type="button">Edit comment</button>;
+    return (
+      <button onClick={() => setEditing(true)} type="button">
+        Edit comment
+      </button>
+    );
   }
   return (
     <form
@@ -252,7 +389,9 @@ function IssueCommentEditForm(props: {
         value={contentsMarkdown}
       />
       <button type="submit">Save comment</button>
-      <button onClick={() => setEditing(false)} type="button">Cancel</button>
+      <button onClick={() => setEditing(false)} type="button">
+        Cancel
+      </button>
     </form>
   );
 }
@@ -283,10 +422,17 @@ export function ProjectIssueFormPage(props: {
             return;
           }
           setSubmitting(true);
-          void props.onSubmit({ bodyMarkdown, title: nextTitle }).finally(() => setSubmitting(false));
+          void props
+            .onSubmit({ bodyMarkdown, title: nextTitle })
+            .finally(() => setSubmitting(false));
         }}
       >
-        <input name="title" onChange={(event) => setTitle(event.currentTarget.value)} placeholder="Title" value={title} />
+        <input
+          name="title"
+          onChange={(event) => setTitle(event.currentTarget.value)}
+          placeholder="Title"
+          value={title}
+        />
         <textarea
           className="editorSeries content"
           name="body"
@@ -294,7 +440,9 @@ export function ProjectIssueFormPage(props: {
           placeholder="Leave a comment"
           value={bodyMarkdown}
         />
-        <button disabled={submitting} type="submit">{props.mode === "create" ? "Create" : "Save"}</button>
+        <button disabled={submitting} type="submit">
+          {props.mode === "create" ? "Create" : "Save"}
+        </button>
       </form>
     </main>
   );

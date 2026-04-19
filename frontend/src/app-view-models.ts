@@ -386,6 +386,11 @@ export function toProjectIssueDetailView(
     milestoneTitle: response.milestoneTitle,
     ownerName: response.ownerName,
     projectName: response.projectName,
+    sharers: response.sharers.map((sharer) => ({
+      loginId: sharer.loginId,
+      userId: Number(sharer.userId),
+      userLabel: sharer.userLabel,
+    })),
     state: response.state,
     timeline: response.timeline.map((item) => ({
       comment: item.comment
@@ -407,7 +412,10 @@ export function toProjectIssueDetailView(
     title: response.title,
     viewerCanComment: response.viewerCanComment,
     viewerCanDelete: response.viewerCanDelete,
+    viewerCanManageSharers: response.viewerCanManageSharers,
     viewerCanUpdate: response.viewerCanUpdate,
+    viewerHasInheritedShare: response.viewerHasInheritedShare,
+    viewerIsDirectSharer: response.viewerIsDirectSharer,
     voterCount: response.voterCount,
     watcherCount: response.watcherCount,
   };

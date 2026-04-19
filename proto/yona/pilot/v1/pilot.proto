@@ -67,6 +67,8 @@ service PilotService {
   rpc UnvoteIssue(IssueParticipationRequest) returns (ReadIssueDetailResponse) {}
   rpc AssignIssue(AssignIssueRequest) returns (ReadIssueDetailResponse) {}
   rpc UnassignIssue(IssueParticipationRequest) returns (ReadIssueDetailResponse) {}
+  rpc ShareIssue(IssueShareRequest) returns (ReadIssueDetailResponse) {}
+  rpc UnshareIssue(IssueShareRequest) returns (ReadIssueDetailResponse) {}
   rpc MassUpdateIssues(MassUpdateIssuesRequest) returns (MassUpdateIssuesResponse) {}
   rpc ListProjectLabels(ListProjectLabelsRequest) returns (ListProjectLabelsResponse) {}
   rpc ListProjectLabelCategories(ListProjectLabelsRequest) returns (ListProjectLabelCategoriesResponse) {}
@@ -679,6 +681,16 @@ message ReadIssueDetailResponse {
   bool viewer_can_delete = 23;
   bool viewer_can_comment = 24;
   repeated IssueAttachment attachments = 25;
+  repeated IssueSharer sharers = 26;
+  bool viewer_is_direct_sharer = 27;
+  bool viewer_has_inherited_share = 28;
+  bool viewer_can_manage_sharers = 29;
+}
+
+message IssueSharer {
+  int64 user_id = 1;
+  string login_id = 2;
+  string user_label = 3;
 }
 
 message IssueLabel {
@@ -824,6 +836,13 @@ message AssignIssueRequest {
   string project_name = 2;
   int64 issue_number = 3;
   string assignee_login_id = 4;
+}
+
+message IssueShareRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+  string login_id = 4;
 }
 
 message MassUpdateIssuesRequest {

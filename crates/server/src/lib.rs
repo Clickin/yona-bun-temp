@@ -1750,6 +1750,91 @@ impl PilotServiceImpl {
             ctx,
         ))
     }
+
+    async fn issue_sharer_mutation(
+        &self,
+        ctx: Context,
+        request: OwnedView<IssueShareRequestView<'static>>,
+        action: &str,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        if request.owner_name.trim().is_empty()
+            || request.project_name.trim().is_empty()
+            || request.issue_number <= 0
+            || request.login_id.trim().is_empty()
+        {
+            return Err(ConnectError::invalid_argument(
+                "invalid issue sharer request",
+            ));
+        }
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "issue sharer requires repository backend",
+            ));
+        };
+        let access = read_issue_access(
+            repository,
+            request.owner_name,
+            request.project_name,
+            request.issue_number,
+            session.user_id,
+        )
+        .await?;
+        if !access.viewer_can_manage() {
+            return Err(ConnectError::permission_denied(
+                "issue sharer update is not allowed",
+            ));
+        }
+        let target = repository
+            .find_user_by_login_id(request.login_id)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("issue sharer user not found"))?;
+        match action {
+            "share" => repository
+                .add_issue_sharer(access.issue.id, target.id, &target.login_id)
+                .await
+                .map_err(internal_error)?,
+            "unshare" => repository
+                .remove_issue_sharer(access.issue.id, target.id)
+                .await
+                .map_err(internal_error)?,
+            _ => {
+                return Err(ConnectError::invalid_argument(
+                    "invalid issue sharer action",
+                ))
+            }
+        }
+        let updated = repository
+            .read_issue_detail(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+            )
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        let share_status = match session.user_id {
+            Some(user_id) => repository
+                .read_issue_share_status(updated.id, user_id)
+                .await
+                .map_err(internal_error)?,
+            None => persistence::IssueShareStatus::default(),
+        };
+        Ok((
+            issue_detail_response_from_record_with_sharer_flags(
+                &updated,
+                true,
+                true,
+                share_status.direct,
+                share_status.inherited_from_parent,
+                session.user_id,
+                &self.base_path,
+            ),
+            ctx,
+        ))
+    }
 }
 
 #[derive(Clone)]
@@ -2886,6 +2971,71 @@ fn issue_can_mutate(
                 .eq_ignore_ascii_case(&actor.login_id))
 }
 
+struct IssueAccessContext {
+    authorization: persistence::ProjectAuthorizationRecord,
+    issue: persistence::IssueRecord,
+    actor: Option<persistence::AppUserRecord>,
+    project_can_read: bool,
+    share_status: persistence::IssueShareStatus,
+}
+
+impl IssueAccessContext {
+    fn viewer_can_manage(&self) -> bool {
+        self.actor
+            .as_ref()
+            .is_some_and(|actor| issue_can_mutate(&self.authorization, &self.issue, actor))
+    }
+
+    fn viewer_can_comment(&self) -> bool {
+        self.actor.is_some() && (self.project_can_read || self.share_status.direct)
+    }
+}
+
+async fn read_issue_access(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    issue_number: i64,
+    actor_id: Option<i64>,
+) -> Result<IssueAccessContext, ConnectError> {
+    let authorization = repository
+        .read_project_authorization(owner_name, project_name, actor_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    let issue = repository
+        .read_issue_detail(owner_name, project_name, issue_number)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+    let actor = match actor_id {
+        Some(user_id) => repository
+            .find_user_by_id(user_id)
+            .await
+            .map_err(internal_error)?,
+        None => None,
+    };
+    let project_can_read = project_read_allowed(&authorization, actor_id.is_none())?;
+    let share_status = match actor_id {
+        Some(user_id) => repository
+            .read_issue_share_status(issue.id, user_id)
+            .await
+            .map_err(internal_error)?,
+        None => persistence::IssueShareStatus::default(),
+    };
+    if project_can_read || share_status.direct || share_status.inherited_from_parent {
+        Ok(IssueAccessContext {
+            authorization,
+            issue,
+            actor,
+            project_can_read,
+            share_status,
+        })
+    } else {
+        Err(ConnectError::permission_denied("issue read is not allowed"))
+    }
+}
+
 async fn require_project_read(
     repository: &PilotRepository,
     owner_name: &str,
@@ -2934,6 +3084,42 @@ fn issue_detail_response_from_record(
     viewer_id: Option<i64>,
     base_path: &str,
 ) -> ReadIssueDetailResponse {
+    issue_detail_response_from_record_with_sharer_flags(
+        issue,
+        viewer_can_manage,
+        viewer_can_comment,
+        false,
+        false,
+        viewer_id,
+        base_path,
+    )
+}
+
+fn issue_detail_response_from_access(
+    access: &IssueAccessContext,
+    viewer_id: Option<i64>,
+    base_path: &str,
+) -> ReadIssueDetailResponse {
+    issue_detail_response_from_record_with_sharer_flags(
+        &access.issue,
+        access.viewer_can_manage(),
+        access.viewer_can_comment(),
+        access.share_status.direct,
+        access.share_status.inherited_from_parent,
+        viewer_id,
+        base_path,
+    )
+}
+
+fn issue_detail_response_from_record_with_sharer_flags(
+    issue: &persistence::IssueRecord,
+    viewer_can_manage: bool,
+    viewer_can_comment: bool,
+    viewer_is_direct_sharer: bool,
+    viewer_has_inherited_share: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+) -> ReadIssueDetailResponse {
     ReadIssueDetailResponse {
         assignee_label: issue.assignee_label.clone(),
         assignee_login_id: issue.assignee_login_id.clone(),
@@ -2962,6 +3148,7 @@ fn issue_detail_response_from_record(
         milestone_title: issue.milestone_title.clone(),
         owner_name: issue.owner_name.clone(),
         project_name: issue.project_name.clone(),
+        sharers: issue.sharers.iter().map(issue_sharer_from_record).collect(),
         state: issue.state.clone(),
         timeline: issue
             .timeline
@@ -2973,9 +3160,21 @@ fn issue_detail_response_from_record(
         title: issue.title.clone(),
         viewer_can_comment,
         viewer_can_delete: viewer_can_manage,
+        viewer_can_manage_sharers: viewer_can_manage,
         viewer_can_update: viewer_can_manage,
+        viewer_has_inherited_share,
+        viewer_is_direct_sharer,
         voter_count: issue.voter_count,
         watcher_count: issue.watcher_count,
+        ..Default::default()
+    }
+}
+
+fn issue_sharer_from_record(record: &persistence::IssueSharerRecord) -> IssueSharer {
+    IssueSharer {
+        login_id: record.login_id.clone(),
+        user_id: record.user_id,
+        user_label: record.user_label.clone(),
         ..Default::default()
     }
 }
@@ -5759,44 +5958,16 @@ impl PilotService for PilotServiceImpl {
         if let PilotBackend::Repository(repository) = &self.backend {
             let session = self.session_manager.read_session_from_headers(&ctx.headers);
             let actor_id = session.as_ref().and_then(|session| session.user_id);
-            let authorization = require_project_read(
+            let access = read_issue_access(
                 repository,
                 request.owner_name,
                 request.project_name,
+                request.issue_number,
                 actor_id,
             )
             .await?;
-            let issue = repository
-                .read_issue_detail(
-                    request.owner_name,
-                    request.project_name,
-                    request.issue_number,
-                )
-                .await
-                .map_err(internal_error)?;
-
-            let Some(issue) = issue else {
-                return Err(ConnectError::not_found("pilot issue not found"));
-            };
-            let actor = match actor_id {
-                Some(user_id) => repository
-                    .find_user_by_id(user_id)
-                    .await
-                    .map_err(internal_error)?,
-                None => None,
-            };
-            let viewer_can_manage = actor
-                .as_ref()
-                .is_some_and(|actor| issue_can_mutate(&authorization, &issue, actor));
-            let viewer_can_comment = actor_id.is_some();
             return Ok((
-                issue_detail_response_from_record(
-                    &issue,
-                    viewer_can_manage,
-                    viewer_can_comment,
-                    actor_id,
-                    &self.base_path,
-                ),
+                issue_detail_response_from_access(&access, actor_id, &self.base_path),
                 ctx,
             ));
         } else if request.owner_name != "pilot"
@@ -6053,19 +6224,25 @@ impl PilotService for PilotServiceImpl {
                 "issue requires repository backend",
             ));
         };
-        let actor = require_authenticated_user(repository, session.user_id).await?;
-        require_project_read(
+        let access = read_issue_access(
             repository,
             request.owner_name,
             request.project_name,
+            request.issue_number,
             session.user_id,
         )
         .await?;
+        if !access.viewer_can_comment() {
+            return Err(ConnectError::permission_denied(
+                "issue comment create is not allowed",
+            ));
+        }
+        let actor = access.actor.as_ref().expect("authenticated issue actor");
         let issue = repository
             .create_issue_comment(persistence::CreateIssueCommentInput {
                 actor_display_name: actor.display_name.clone(),
                 actor_id: actor.id,
-                actor_login_id: actor.login_id,
+                actor_login_id: actor.login_id.clone(),
                 attachment_ids: request.attachment_ids.to_vec(),
                 contents_markdown: request.contents_markdown.to_string(),
                 issue_number: request.issue_number,
@@ -6076,13 +6253,7 @@ impl PilotService for PilotServiceImpl {
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
         Ok((
-            issue_detail_response_from_record(
-                &issue,
-                false,
-                true,
-                session.user_id,
-                &self.base_path,
-            ),
+            issue_detail_response_from_record(&issue, true, true, session.user_id, &self.base_path),
             ctx,
         ))
     }
@@ -6104,30 +6275,22 @@ impl PilotService for PilotServiceImpl {
                 "issue requires repository backend",
             ));
         };
-        let actor = require_authenticated_user(repository, session.user_id).await?;
-        let authorization = require_project_read(
+        let access = read_issue_access(
             repository,
             request.owner_name,
             request.project_name,
+            request.issue_number,
             session.user_id,
         )
         .await?;
-        let existing = repository
-            .read_issue_detail(
-                request.owner_name,
-                request.project_name,
-                request.issue_number,
-            )
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-        let comment_author = existing
+        let actor = access.actor.as_ref().expect("authenticated issue actor");
+        let comment_author = access
+            .issue
             .comments
             .iter()
             .find(|comment| comment.id == request.comment_id)
             .and_then(|comment| comment.author_id);
-        if comment_author != Some(actor.id) && !issue_can_mutate(&authorization, &existing, &actor)
-        {
+        if comment_author != Some(actor.id) && !access.viewer_can_manage() {
             return Err(ConnectError::permission_denied(
                 "issue comment update is not allowed",
             ));
@@ -6145,7 +6308,15 @@ impl PilotService for PilotServiceImpl {
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
         Ok((
-            issue_detail_response_from_record(&issue, true, true, session.user_id, &self.base_path),
+            issue_detail_response_from_record_with_sharer_flags(
+                &issue,
+                access.viewer_can_manage(),
+                access.viewer_can_comment(),
+                access.share_status.direct,
+                access.share_status.inherited_from_parent,
+                session.user_id,
+                &self.base_path,
+            ),
             ctx,
         ))
     }
@@ -6162,30 +6333,22 @@ impl PilotService for PilotServiceImpl {
                 "issue requires repository backend",
             ));
         };
-        let actor = require_authenticated_user(repository, session.user_id).await?;
-        let authorization = require_project_read(
+        let access = read_issue_access(
             repository,
             request.owner_name,
             request.project_name,
+            request.issue_number,
             session.user_id,
         )
         .await?;
-        let existing = repository
-            .read_issue_detail(
-                request.owner_name,
-                request.project_name,
-                request.issue_number,
-            )
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-        let comment_author = existing
+        let actor = access.actor.as_ref().expect("authenticated issue actor");
+        let comment_author = access
+            .issue
             .comments
             .iter()
             .find(|comment| comment.id == request.comment_id)
             .and_then(|comment| comment.author_id);
-        if comment_author != Some(actor.id) && !issue_can_mutate(&authorization, &existing, &actor)
-        {
+        if comment_author != Some(actor.id) && !access.viewer_can_manage() {
             return Err(ConnectError::permission_denied(
                 "issue comment delete is not allowed",
             ));
@@ -6201,7 +6364,15 @@ impl PilotService for PilotServiceImpl {
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
         Ok((
-            issue_detail_response_from_record(&issue, true, true, session.user_id, &self.base_path),
+            issue_detail_response_from_record_with_sharer_flags(
+                &issue,
+                access.viewer_can_manage(),
+                access.viewer_can_comment(),
+                access.share_status.direct,
+                access.share_status.inherited_from_parent,
+                session.user_id,
+                &self.base_path,
+            ),
             ctx,
         ))
     }
@@ -6218,35 +6389,19 @@ impl PilotService for PilotServiceImpl {
         };
         let session = self.session_manager.read_session_from_headers(&ctx.headers);
         let actor_id = session.as_ref().and_then(|session| session.user_id);
-        let authorization = require_project_read(
+        let access = read_issue_access(
             repository,
             request.owner_name,
             request.project_name,
+            request.issue_number,
             actor_id,
         )
         .await?;
-        let issue = repository
-            .read_issue_detail(
-                request.owner_name,
-                request.project_name,
-                request.issue_number,
-            )
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
-        let actor = match actor_id {
-            Some(user_id) => repository
-                .find_user_by_id(user_id)
-                .await
-                .map_err(internal_error)?,
-            None => None,
-        };
-        let can_manage = actor
-            .as_ref()
-            .is_some_and(|actor| issue_can_mutate(&authorization, &issue, actor));
+        let can_manage = access.viewer_can_manage();
         Ok((
             ListIssueTimelineResponse {
-                items: issue
+                items: access
+                    .issue
                     .timeline
                     .iter()
                     .map(|item| {
@@ -6391,6 +6546,22 @@ impl PilotService for PilotServiceImpl {
             issue_detail_response_from_record(&issue, true, true, session.user_id, &self.base_path),
             ctx,
         ))
+    }
+
+    async fn share_issue(
+        &self,
+        ctx: Context,
+        request: OwnedView<IssueShareRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        self.issue_sharer_mutation(ctx, request, "share").await
+    }
+
+    async fn unshare_issue(
+        &self,
+        ctx: Context,
+        request: OwnedView<IssueShareRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        self.issue_sharer_mutation(ctx, request, "unshare").await
     }
 
     async fn mass_update_issues(

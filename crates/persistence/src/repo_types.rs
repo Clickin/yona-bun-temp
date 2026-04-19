@@ -34,9 +34,23 @@ pub struct IssueRecord {
     pub is_watching: bool,
     pub has_voted: bool,
     pub labels: Vec<IssueLabelRecord>,
+    pub sharers: Vec<IssueSharerRecord>,
     pub comments: Vec<IssueCommentRecord>,
     pub timeline: Vec<IssueTimelineItemRecord>,
     pub attachments: Vec<IssueAttachmentRecord>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IssueSharerRecord {
+    pub user_id: i64,
+    pub login_id: String,
+    pub user_label: String,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct IssueShareStatus {
+    pub direct: bool,
+    pub inherited_from_parent: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

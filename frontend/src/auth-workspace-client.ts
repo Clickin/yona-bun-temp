@@ -36,6 +36,7 @@ import {
   ReadCurrentSessionRequestSchema,
   LeaveOrganizationRequestSchema,
   IssueParticipationRequestSchema,
+  IssueShareRequestSchema,
   ListProjectLabelsRequestSchema,
   ListProjectIssuesRequestSchema,
   ListProjectMilestonesRequestSchema,
@@ -503,6 +504,30 @@ export async function assignIssue(
 ): Promise<ReadIssueDetailResponse> {
   return createPilotClient(runtimeConfig, fetchImpl).assignIssue(
     create(AssignIssueRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function shareIssue(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof IssueShareRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).shareIssue(
+    create(IssueShareRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function unshareIssue(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof IssueShareRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).unshareIssue(
+    create(IssueShareRequestSchema, input),
     { headers: { "x-csrf-token": csrfToken } },
   );
 }

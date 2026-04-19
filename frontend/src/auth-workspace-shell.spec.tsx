@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+import * as React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
   buildProfileUpdateInput,
   createDefaultAvatarCrop,
@@ -20,6 +22,8 @@ import {
   renderWorkspace,
   renderWorkspaceSettings,
 } from "./auth-workspace-shell.test-helpers";
+import { ProjectIssueDetailPage } from "./routes/-issue-views";
+import type { ProjectIssueDetailViewModel } from "./routes/-view-models";
 
 describe("auth and workspace views", () => {
   it("renders the canonical login shell with legacy field names and recovery link", () => {
@@ -252,24 +256,20 @@ describe("auth and workspace views", () => {
   });
 
   it("renders workspace settings tabs with canonical legacy user-editform paths", () => {
-    const html = renderWorkspaceSettings(
-      "password",
-      "/user/editform/password",
-      {
+    const html = renderWorkspaceSettings("password", "/user/editform/password", {
+      defaultLandingPath: "/me",
+      favoriteProjects: [],
+      recentProjects: [],
+      session: {
         defaultLandingPath: "/me",
-        favoriteProjects: [],
-        recentProjects: [],
-        session: {
-          defaultLandingPath: "/me",
-          emailAddress: "door@example.com",
-          isAnonymous: false,
-          isConfirmed: true,
-          isSiteAdmin: false,
-          loginId: "door",
-          userLabel: "Door",
-        },
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
       },
-    );
+    });
 
     expect(html).toContain('href="/yona/user/editform"');
     expect(html).toContain('href="/yona/user/editform/password"');
@@ -311,66 +311,58 @@ describe("auth and workspace views", () => {
     });
     expect(withAvatarHtml).toContain("https://cdn.yona/avatar-door.png");
 
-    const settingsWithAvatarHtml = renderWorkspaceSettings(
-      "profile",
-      "/user/editform",
-      {
-        defaultLandingPath: "/me",
-        favoriteProjects: [],
-        profile: {
-          avatarUrl: "https://cdn.yona/avatar-door.png",
-          connectedSocialProviders: [],
-          displayName: "Door",
-          englishName: "",
-          isBlocked: false,
-          isSiteAdmin: false,
-          loginId: "door",
-          primaryEmailAddress: "door@example.com",
-          sinceLabel: "",
-        },
-        recentProjects: [],
-        session: {
-          defaultLandingPath: "/me",
-          emailAddress: "door@example.com",
-          isAnonymous: false,
-          isConfirmed: true,
-          isSiteAdmin: false,
-          loginId: "door",
-          userLabel: "Door",
-        },
+    const settingsWithAvatarHtml = renderWorkspaceSettings("profile", "/user/editform", {
+      defaultLandingPath: "/me",
+      favoriteProjects: [],
+      profile: {
+        avatarUrl: "https://cdn.yona/avatar-door.png",
+        connectedSocialProviders: [],
+        displayName: "Door",
+        englishName: "",
+        isBlocked: false,
+        isSiteAdmin: false,
+        loginId: "door",
+        primaryEmailAddress: "door@example.com",
+        sinceLabel: "",
       },
-    );
+      recentProjects: [],
+      session: {
+        defaultLandingPath: "/me",
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
+      },
+    });
     expect(settingsWithAvatarHtml).toContain("https://cdn.yona/avatar-door.png");
 
-    const fallbackHtml = renderWorkspaceSettings(
-      "profile",
-      "/user/editform",
-      {
-        defaultLandingPath: "/me",
-        favoriteProjects: [],
-        profile: {
-          avatarUrl: "",
-          connectedSocialProviders: [],
-          displayName: "Door",
-          englishName: "",
-          isBlocked: false,
-          isSiteAdmin: false,
-          loginId: "door",
-          primaryEmailAddress: "door@example.com",
-          sinceLabel: "",
-        },
-        recentProjects: [],
-        session: {
-          defaultLandingPath: "/me",
-          emailAddress: "door@example.com",
-          isAnonymous: false,
-          isConfirmed: true,
-          isSiteAdmin: false,
-          loginId: "door",
-          userLabel: "Door",
-        },
+    const fallbackHtml = renderWorkspaceSettings("profile", "/user/editform", {
+      defaultLandingPath: "/me",
+      favoriteProjects: [],
+      profile: {
+        avatarUrl: "",
+        connectedSocialProviders: [],
+        displayName: "Door",
+        englishName: "",
+        isBlocked: false,
+        isSiteAdmin: false,
+        loginId: "door",
+        primaryEmailAddress: "door@example.com",
+        sinceLabel: "",
       },
-    );
+      recentProjects: [],
+      session: {
+        defaultLandingPath: "/me",
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
+      },
+    });
     expect(fallbackHtml).toContain("data:image/svg+xml;utf8,");
   });
 
@@ -387,41 +379,81 @@ describe("auth and workspace views", () => {
   });
 
   it("renders the avatar uploader shell and crop modal in profile settings", () => {
-    const html = renderWorkspaceSettings(
-      "profile",
-      "/user/editform",
-      {
-        defaultLandingPath: "/me",
-        favoriteProjects: [],
-        profile: {
-          avatarUrl: "",
-          connectedSocialProviders: [],
-          displayName: "Door",
-          englishName: "",
-          isBlocked: false,
-          isSiteAdmin: false,
-          loginId: "door",
-          primaryEmailAddress: "door@example.com",
-          sinceLabel: "",
-        },
-        recentProjects: [],
-        session: {
-          defaultLandingPath: "/me",
-          emailAddress: "door@example.com",
-          isAnonymous: false,
-          isConfirmed: true,
-          isSiteAdmin: false,
-          loginId: "door",
-          userLabel: "Door",
-        },
+    const html = renderWorkspaceSettings("profile", "/user/editform", {
+      defaultLandingPath: "/me",
+      favoriteProjects: [],
+      profile: {
+        avatarUrl: "",
+        connectedSocialProviders: [],
+        displayName: "Door",
+        englishName: "",
+        isBlocked: false,
+        isSiteAdmin: false,
+        loginId: "door",
+        primaryEmailAddress: "door@example.com",
+        sinceLabel: "",
       },
-    );
+      recentProjects: [],
+      session: {
+        defaultLandingPath: "/me",
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
+      },
+    });
 
     expect(html).toContain("Change avatar");
     expect(html).toContain('name="avatarAttachmentId"');
     expect(html).toContain("Crop Avatar");
     expect(html).toContain("Cancel");
     expect(html).toContain("Save");
+  });
+
+  it("renders issue sharer list and manager controls in the issue sidebar", () => {
+    const html = renderIssueDetailPage(
+      {
+        viewerCanComment: true,
+        viewerCanDelete: true,
+        viewerCanManageSharers: true,
+        viewerCanUpdate: true,
+      },
+      {
+        onShareIssue: async () => undefined,
+        onUnshareIssue: async () => undefined,
+      },
+    );
+
+    expect(html).toContain("Issue Sharer");
+    expect(html).toContain("Guest User");
+    expect(html).toContain('name="issueSharer"');
+    expect(html).toContain('placeholder="Issue sharer login ID"');
+    expect(html).toContain(">Share<");
+    expect(html).toContain(">Remove sharer<");
+  });
+
+  it("keeps shared issue viewers on read/comment controls without issue mutation controls", () => {
+    const html = renderIssueDetailPage(
+      {
+        viewerCanComment: true,
+        viewerCanDelete: false,
+        viewerCanManageSharers: false,
+        viewerCanUpdate: false,
+      },
+      {
+        onCommentSubmit: async () => undefined,
+      },
+    );
+
+    expect(html).toContain("Issue Sharer");
+    expect(html).toContain("Guest User");
+    expect(html).toContain('placeholder="Leave a comment"');
+    expect(html).not.toContain(">Edit<");
+    expect(html).not.toContain(">Close<");
+    expect(html).not.toContain(">Assign<");
+    expect(html).not.toContain(">Delete<");
   });
 
   it("creates centered avatar crop defaults and preview styles", () => {
@@ -465,6 +497,61 @@ describe("auth and workspace views", () => {
   });
 });
 
+function renderIssueDetailPage(
+  overrides: Partial<ProjectIssueDetailViewModel> & {
+    viewerCanManageSharers?: boolean;
+  },
+  extraProps: Record<string, unknown> = {},
+) {
+  const issue = {
+    assigneeLabel: "",
+    assigneeLoginId: "",
+    attachments: [],
+    authorLabel: "Owner User",
+    bodyHtml: "<p>Body</p>",
+    bodyMarkdown: "Body",
+    commentCount: 0,
+    comments: [],
+    hasVoted: false,
+    isWatching: false,
+    issueNumber: 1,
+    labels: [],
+    milestoneTitle: "",
+    ownerName: "owner",
+    projectName: "projectYobi",
+    sharers: [{ loginId: "guest", userId: 2, userLabel: "Guest User" }],
+    state: "open",
+    timeline: [],
+    title: "Shared issue",
+    viewerCanComment: false,
+    viewerCanDelete: false,
+    viewerCanManageSharers: false,
+    viewerCanUpdate: false,
+    voterCount: 0,
+    watcherCount: 0,
+    ...overrides,
+  } as unknown as ProjectIssueDetailViewModel;
+
+  return renderToStaticMarkup(
+    React.createElement(ProjectIssueDetailPage, {
+      detail: {
+        enrollmentRequested: false,
+        isFavorited: false,
+        organizationName: "",
+        overview: "",
+        ownerName: "owner",
+        projectName: "projectYobi",
+        projectScope: "private",
+        viewerCanEnroll: false,
+        viewerCanUpdate: true,
+      },
+      issue,
+      runtimeConfig: { apiBaseUrl: "/yona/api", basePath: "/yona", rpcBaseUrl: "/yona/rpc" },
+      ...extraProps,
+    }),
+  );
+}
+
 describe("resolvePostAuthHref", () => {
   it("prefers redirect query, then saved default landing, then /me", () => {
     expect(resolvePostAuthHref("/owner/project/pulls/1", "/search?pageSize=20&scope=global")).toBe(
@@ -479,9 +566,9 @@ describe("resolvePostAuthHref", () => {
 
 describe("resolveAuthRedirectPath", () => {
   it("prefers redirectUrl, then redirect, then null", () => {
-    expect(
-      resolveAuthRedirectPath(new URLSearchParams("redirectUrl=%2Fadmin%2FprojectYobi")),
-    ).toBe("/admin/projectYobi");
+    expect(resolveAuthRedirectPath(new URLSearchParams("redirectUrl=%2Fadmin%2FprojectYobi"))).toBe(
+      "/admin/projectYobi",
+    );
     expect(
       resolveAuthRedirectPath(new URLSearchParams("redirect=%2Fsearch%3Fscope%3Dglobal")),
     ).toBe("/search?scope=global");

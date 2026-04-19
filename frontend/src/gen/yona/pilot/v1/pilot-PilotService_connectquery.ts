@@ -315,6 +315,16 @@ export const assignIssue = PilotService.method.assignIssue;
 export const unassignIssue = PilotService.method.unassignIssue;
 
 /**
+ * @generated from rpc yona.pilot.v1.PilotService.ShareIssue
+ */
+export const shareIssue = PilotService.method.shareIssue;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.UnshareIssue
+ */
+export const unshareIssue = PilotService.method.unshareIssue;
+
+/**
  * @generated from rpc yona.pilot.v1.PilotService.MassUpdateIssues
  */
 export const massUpdateIssues = PilotService.method.massUpdateIssues;

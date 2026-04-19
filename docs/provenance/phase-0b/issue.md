@@ -3,7 +3,7 @@
 ## Scope
 
 - Phase 2A issue core parity slice
-- Issue list/detail/create/edit/delete, comments, state mutation, watch/vote/assignee, mass update, Markdown rendering, and issue/comment attachment binding now have Rust canonical coverage.
+- Issue list/detail/create/edit/delete, comments, state mutation, watch/vote/assignee, mass update, Markdown rendering, issue/comment attachment binding, and core Issue Sharer read/comment authorization now have Rust canonical coverage.
 - Label/category and milestone management screens are now covered by Phase 2B/2C provenance. Phase 2A issue core only owns issue CRUD and issue-linked label/milestone consumption.
 
 ## Legacy Sources
@@ -11,6 +11,10 @@
 - `yona-original/test/controllers/IssueAppTest.java`
 - `yona-original/test/models/IssueTest.java`
 - `yona-original/app/controllers/IssueApp.java`
+- `yona-original/app/models/IssueSharer.java`
+- `yona-original/app/utils/AccessControl.java`
+- `yona-original/app/controllers/api/IssueApi.java`
+- `yona-original/app/views/issue/view.scala.html`
 
 ## Current Baseline And Canonical Target
 
@@ -39,6 +43,13 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 - `IssueAppTest.editBy*` and `deleteBy*` are translated as issue-specific mutation guard: author, assignee, project member, project manager, organization admin, or site admin can mutate; public-project outsider cannot edit another user's issue.
 - `IssueTest.watchDefault`, watch/unwatch, vote, comment timeline, and Markdown/XSS expectations are covered by `issue_core_contract_creates_reads_comments_and_sanitizes_markdown`.
 
+## Phase 2E Issue Sharer Translation Rule
+
+- Legacy `IssueSharer.createSharer` stores `loginId`, `user`, `issue`, and `created`; Rust resolves `login_id` to `n4user.id` and writes direct `issue_sharer(issue_id, user_id, login_id, created)` rows.
+- Legacy `AccessControl.isAllowedIfSharer` grants direct issue read and parent-to-child issue/comment read. Rust mirrors this with separate direct and inherited share flags, and allows comments only on directly shared issues.
+- Legacy `IssueApi.updateSharer` is an internal screen mutation. Rust implements this as ConnectRPC `ShareIssue` and `UnshareIssue`; no new REST endpoint is added in this phase.
+- Legacy `issue/view.scala.html` renders the `sharer-list` sidebar near issue metadata. Rust issue detail renders the direct sharer count/list and login ID add/remove controls when `viewerCanManageSharers` is true.
+
 ## Phase 2A Evidence
 
 | Evidence                                    | Rust target                                                                                                                                                                               |
@@ -49,7 +60,20 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | UI route surface                            | `frontend/src/routes/$owner/$projectName/issues`, `issueform`, `issue/$issueNumber`, `issue/$issueNumber/editform`                                                                        |
 | Regression tests                            | `cargo test -p yona-rust-pilot-server --test issue_core_contract`                                                                                                                         |
 
+## Phase 2E Evidence
+
+| Evidence                 | Rust target                                                                                                                      |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| Legacy sharer model      | `yona-original/app/models/IssueSharer.java`                                                                                      |
+| Legacy ACL rule          | `yona-original/app/utils/AccessControl.java#isAllowedIfSharer`                                                                   |
+| Legacy mutation endpoint | `yona-original/app/controllers/api/IssueApi.java#updateSharer`                                                                   |
+| Legacy sidebar view      | `yona-original/app/views/issue/view.scala.html#sharer-list`                                                                      |
+| Contract expansion       | `proto/yona/pilot/v1/pilot.proto` `IssueSharer`, `ShareIssue`, `UnshareIssue`                                                    |
+| Backend behavior         | `crates/persistence/src/repo.rs`, `crates/server/src/lib.rs`                                                                     |
+| UI route surface         | `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/-issue-views.tsx`                   |
+| Regression tests         | `cargo test -p yona-rust-pilot-server --test issue_sharer_contract`; `pnpm --dir frontend test -- auth-workspace-shell.spec.tsx` |
+
 ## Remaining Phase 2 Follow-ups
 
 - REST `/-_-api/v1` issue API parity.
-- Issue sharer, mention autocomplete notification semantics, comment vote UI, favorite issue workspace surface, and organization/user aggregate issue lists.
+- Sharable user autocomplete/search, shared-with-me issue filter, Issue Sharer changed timeline/notification semantics, mention autocomplete notification semantics, comment vote UI, favorite issue workspace surface, and organization/user aggregate issue lists.

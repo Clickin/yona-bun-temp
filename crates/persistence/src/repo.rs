@@ -3,23 +3,24 @@ use crate::repo_types::{
     CreateOrganizationInput, CreateProjectInput, CreateProjectLabelCategoryInput,
     CreateProjectLabelInput, CreateUserInput, IssueAttachmentRecord, IssueCommentRecord,
     IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter, IssueMilestoneRecord, IssueRecord,
-    IssueTimelineItemRecord, MassUpdateIssuesInput, MilestoneListFilter, MilestoneMutationInput,
-    OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
-    OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationRecord,
-    OrganizationViewerRecord, ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord,
-    ProjectIssueListItemRecord, ProjectIssueListRecord, ProjectListEntry,
-    ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
-    ProjectMilestoneSummaryRecord, ProjectRecord, ProjectViewerRecord, ToggleFavoriteProjectResult,
-    UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput,
-    UpdateProjectInput, UpdateProjectLabelCategoryInput, UpdateProjectLabelInput,
-    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
-    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, MassUpdateIssuesInput,
+    MilestoneListFilter, MilestoneMutationInput, OrganizationAuthorizationRecord,
+    OrganizationEnrollmentRequestRecord, OrganizationMemberDirectoryRecord,
+    OrganizationMemberRecord, OrganizationRecord, OrganizationViewerRecord,
+    ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord, ProjectIssueListItemRecord,
+    ProjectIssueListRecord, ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord,
+    ProjectMenuSettingsRecord, ProjectMilestoneSummaryRecord, ProjectRecord, ProjectViewerRecord,
+    ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
+    UpdateOrganizationInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
+    UpdateProjectLabelInput, WatchedProjectNotificationsRecord, WorkspaceEmailRecord,
+    WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
+    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
     assignee, attachment, comment_thread, email, favorite_organization, favorite_project, issue,
-    issue_comment, issue_event, issue_issue_label, issue_label, issue_label_category, issue_voter,
-    linked_account, milestone, n4user, organization, organization_user, posting,
+    issue_comment, issue_event, issue_issue_label, issue_label, issue_label_category, issue_sharer,
+    issue_voter, linked_account, milestone, n4user, organization, organization_user, posting,
     posting_issue_label, project, project_menu_setting, project_user, pull_request, recent_project,
     role, site_admin, user_credential, user_enrolled_organization, user_enrolled_project,
     user_project_notification, user_setting, user_verification, watch,
@@ -400,6 +401,59 @@ impl AppRepository {
                 .map(Some),
             None => Ok(None),
         }
+    }
+
+    pub async fn read_issue_share_status(
+        &self,
+        issue_id: i64,
+        user_id: i64,
+    ) -> Result<IssueShareStatus, DbErr> {
+        let direct = self.has_direct_issue_share(issue_id, user_id).await?;
+        let inherited_from_parent = match issue::Entity::find_by_id(issue_id).one(&self.db).await? {
+            Some(model) => match model.parent_id {
+                Some(parent_id) => self.has_direct_issue_share(parent_id, user_id).await?,
+                None => false,
+            },
+            None => false,
+        };
+
+        Ok(IssueShareStatus {
+            direct,
+            inherited_from_parent,
+        })
+    }
+
+    pub async fn add_issue_sharer(
+        &self,
+        issue_id: i64,
+        user_id: i64,
+        login_id: &str,
+    ) -> Result<(), DbErr> {
+        if self.has_direct_issue_share(issue_id, user_id).await? {
+            return Ok(());
+        }
+
+        issue_sharer::ActiveModel {
+            id: NotSet,
+            created: Set(Some(current_datetime().date())),
+            login_id: Set(Some(normalize_identity(login_id))),
+            user_id: Set(Some(user_id)),
+            issue_id: Set(Some(issue_id)),
+        }
+        .insert(&self.db)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn remove_issue_sharer(&self, issue_id: i64, user_id: i64) -> Result<(), DbErr> {
+        issue_sharer::Entity::delete_many()
+            .filter(issue_sharer::Column::IssueId.eq(Some(issue_id)))
+            .filter(issue_sharer::Column::UserId.eq(Some(user_id)))
+            .exec(&self.db)
+            .await?;
+
+        Ok(())
     }
 
     pub async fn list_project_issues(
@@ -3643,6 +3697,7 @@ impl AppRepository {
         let (milestone_id, milestone_title) =
             self.issue_milestone_summary(model.milestone_id).await?;
         let labels = self.list_issue_labels(model.id).await?;
+        let sharers = self.list_issue_sharers(model.id).await?;
         let comments = self.list_issue_comments(model.id, viewer_id).await?;
         let timeline = self.list_issue_timeline_items(model.id, viewer_id).await?;
         let attachments = self.list_issue_attachments("ISSUE", model.id).await?;
@@ -3675,6 +3730,7 @@ impl AppRepository {
             is_watching,
             issue_number: model.number.unwrap_or_default(),
             labels,
+            sharers,
             milestone_id,
             milestone_title,
             owner_name: project.owner_name.clone(),
@@ -3686,6 +3742,46 @@ impl AppRepository {
             voter_count,
             watcher_count,
         })
+    }
+
+    async fn has_direct_issue_share(&self, issue_id: i64, user_id: i64) -> Result<bool, DbErr> {
+        Ok(issue_sharer::Entity::find()
+            .filter(issue_sharer::Column::IssueId.eq(Some(issue_id)))
+            .filter(issue_sharer::Column::UserId.eq(Some(user_id)))
+            .one(&self.db)
+            .await?
+            .is_some())
+    }
+
+    async fn list_issue_sharers(&self, issue_id: i64) -> Result<Vec<IssueSharerRecord>, DbErr> {
+        let rows = issue_sharer::Entity::find()
+            .filter(issue_sharer::Column::IssueId.eq(Some(issue_id)))
+            .order_by_asc(issue_sharer::Column::Created)
+            .order_by_asc(issue_sharer::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut sharers = Vec::new();
+        for row in rows {
+            let Some(user_id) = row.user_id else {
+                continue;
+            };
+            let user = self.find_user_by_id(user_id).await?;
+            let login_id = user
+                .as_ref()
+                .map(|user| user.login_id.clone())
+                .or(row.login_id)
+                .unwrap_or_default();
+            let user_label = user
+                .map(|user| user.display_name)
+                .unwrap_or_else(|| login_id.clone());
+            sharers.push(IssueSharerRecord {
+                user_id,
+                login_id,
+                user_label,
+            });
+        }
+
+        Ok(sharers)
     }
 
     async fn read_project_issue_model(

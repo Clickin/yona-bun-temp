@@ -470,6 +470,7 @@ POST  /watch                                → 이슈 감시
 POST  /unwatch                              → 이슈 감시 해제
 POST  /:owner/:project/issue/:number/vote   → 이슈 투표
 POST  /:owner/:project/issue/:number/unvote → 이슈 투표 취소
+POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → 이슈 공유 변경(legacy REST, Rust는 ConnectRPC 내부 화면 기능)
 ```
 
 #### 기능 목록과 상태
@@ -489,7 +490,7 @@ POST  /:owner/:project/issue/:number/unvote → 이슈 투표 취소
 | 이슈 투표 (Vote)      | 이슈에 투표/취소                                        | ✅ Phase 2A 구현      | 2     |
 | 댓글 투표             | 댓글에 투표/취소                                        | gap                   | 2     |
 | @멘션                 | `@username` 자동 완성 + 알림                            | gap                   | 2     |
-| 이슈 공유 (Sharer)    | 비멤버에게 이슈 읽기 권한 부여                          | gap                   | 2     |
+| 이슈 공유 (Sharer)    | 비멤버에게 이슈 읽기 권한 부여                          | ✅ Phase 2E 핵심 구현 | 2     |
 | Mass Update           | 이슈 일괄 상태/담당자/마일스톤/라벨 변경                | ✅ Phase 2A 구현      | 2     |
 | 이슈 엑셀 내보내기    | xlsx 다운로드                                           | deferred              | 2차   |
 | 즐겨찾기 이슈         | workspace에서 즐겨찾기 관리                             | gap                   | 2     |
@@ -504,6 +505,7 @@ POST  /:owner/:project/issue/:number/unvote → 이슈 투표 취소
 - [ ] 타임라인: 상태 변경/담당자 변경/라벨 변경 이벤트가 댓글과 인터리빙되어 시간순 표시
 - [ ] Mass Update: 체크박스로 다중 선택 → 상태/담당자/마일스톤 일괄 변경 (legacy `IssueMassUpdate` 동일)
 - [ ] 이슈 삭제: 작성자 또는 프로젝트 관리자만 가능
+- [ ] 이슈 공유: 직접 공유된 사용자는 비공개/제한 이슈와 댓글을 읽고 해당 이슈에 댓글 작성 가능, parent issue 공유는 child issue 읽기만 허용
 - [ ] 첨부파일: 이슈 본문/댓글에 파일 첨부 가능 (`/files` 엔드포인트)
 
 ---
@@ -1340,19 +1342,19 @@ max_file_size = 2147483454             # application.maxFileSize
 
 `proto/yona/pilot/v1/pilot.proto` — PilotService (Phase 2A Issue RPC 포함)
 
-| 카테고리           | 메서드 수                                                                                                                                                                                                                                                                                                                                                             | 구현 상태        |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| Auth (7)           | ReadCurrentSession, ReadAuthUiCapabilities, SignInWithPassword, RegisterWithPassword, VerifyUser, SignOut, ChangePassword                                                                                                                                                                                                                                             | ✅ 전체 구현     |
-| Workspace (10)     | ReadWorkspaceOverview, SetDefaultLandingPath, UpdateProfile, ResetVisitedProjects, AddWorkspaceEmail, DeleteWorkspaceEmail, SendWorkspaceEmailValidation, SetMainWorkspaceEmail, ResetApiToken, ToggleWorkspaceNotification                                                                                                                                           | ✅ 전체 구현     |
-| Organization (12+) | CreateOrganization, ReadOrganizationDetail, ReadOrganizationSettings, UpdateOrganization, ReadOrganizationMembers, ReadOrganizationAdmin, ReadOrganizationContainer, AddOrganizationMember, UpdateOrganizationMemberRole, DeleteOrganizationMember, AcceptOrganizationEnrollment, EnrollOrganization, CancelEnrollOrganization, LeaveOrganization, DeleteOrganization | ✅ 전체 구현     |
-| Project (14)       | CreateProject, ReadProjectDetail, ReadProjectSettings, UpdateProject, UpdateProjectOverview, ReadProjectMembers, ReadProjectContainer, ToggleProjectWatch, EnrollProject, CancelEnrollProject, ToggleFavoriteProject, RecordRecentProjectVisit, ListProjects, ListOrganizations                                                                                       | ✅ 전체 구현     |
-| Issue              | ListProjectIssues, ReadIssueDetail, UpdateIssueState, CreateIssue, UpdateIssue, DeleteIssue, CreateIssueComment, UpdateIssueComment, DeleteIssueComment, ListIssueTimeline, WatchIssue, UnwatchIssue, VoteIssue, UnvoteIssue, AssignIssue, UnassignIssue, MassUpdateIssues, RenderMarkdown                                                                            | ✅ Phase 2A 구현 |
-| Label              | ListProjectLabels, ListProjectLabelCategories, CreateProjectLabel, UpdateProjectLabel, DeleteProjectLabel, CreateProjectLabelCategory, UpdateProjectLabelCategory, DeleteProjectLabelCategory                                                                                                                                                                         | ✅ Phase 2B 구현 |
-| Milestone          | ListProjectMilestones, ReadProjectMilestone, CreateProjectMilestone, UpdateProjectMilestone, DeleteProjectMilestone, OpenProjectMilestone, CloseProjectMilestone                                                                                                                                                                                                      | ✅ Phase 2C 구현 |
+| 카테고리           | 메서드 수                                                                                                                                                                                                                                                                                                                                                             | 구현 상태           |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| Auth (7)           | ReadCurrentSession, ReadAuthUiCapabilities, SignInWithPassword, RegisterWithPassword, VerifyUser, SignOut, ChangePassword                                                                                                                                                                                                                                             | ✅ 전체 구현        |
+| Workspace (10)     | ReadWorkspaceOverview, SetDefaultLandingPath, UpdateProfile, ResetVisitedProjects, AddWorkspaceEmail, DeleteWorkspaceEmail, SendWorkspaceEmailValidation, SetMainWorkspaceEmail, ResetApiToken, ToggleWorkspaceNotification                                                                                                                                           | ✅ 전체 구현        |
+| Organization (12+) | CreateOrganization, ReadOrganizationDetail, ReadOrganizationSettings, UpdateOrganization, ReadOrganizationMembers, ReadOrganizationAdmin, ReadOrganizationContainer, AddOrganizationMember, UpdateOrganizationMemberRole, DeleteOrganizationMember, AcceptOrganizationEnrollment, EnrollOrganization, CancelEnrollOrganization, LeaveOrganization, DeleteOrganization | ✅ 전체 구현        |
+| Project (14)       | CreateProject, ReadProjectDetail, ReadProjectSettings, UpdateProject, UpdateProjectOverview, ReadProjectMembers, ReadProjectContainer, ToggleProjectWatch, EnrollProject, CancelEnrollProject, ToggleFavoriteProject, RecordRecentProjectVisit, ListProjects, ListOrganizations                                                                                       | ✅ 전체 구현        |
+| Issue              | ListProjectIssues, ReadIssueDetail, UpdateIssueState, CreateIssue, UpdateIssue, DeleteIssue, CreateIssueComment, UpdateIssueComment, DeleteIssueComment, ListIssueTimeline, WatchIssue, UnwatchIssue, VoteIssue, UnvoteIssue, AssignIssue, UnassignIssue, ShareIssue, UnshareIssue, MassUpdateIssues, RenderMarkdown                                                  | ✅ Phase 2A/2E 구현 |
+| Label              | ListProjectLabels, ListProjectLabelCategories, CreateProjectLabel, UpdateProjectLabel, DeleteProjectLabel, CreateProjectLabelCategory, UpdateProjectLabelCategory, DeleteProjectLabelCategory                                                                                                                                                                         | ✅ Phase 2B 구현    |
+| Milestone          | ListProjectMilestones, ReadProjectMilestone, CreateProjectMilestone, UpdateProjectMilestone, DeleteProjectMilestone, OpenProjectMilestone, CloseProjectMilestone                                                                                                                                                                                                      | ✅ Phase 2C 구현    |
 
 **추가 필요한 RPC 메서드** (Phase 2~6에서 추가):
 
-- Issue follow-up: issue sharer, mention autocomplete/notification semantics, comment vote, favorite issue, organization/user aggregate issue list, REST issue API parity
+- Issue follow-up: sharable user autocomplete/search, shared-with-me filter, issue sharer timeline/notification semantics, mention autocomplete/notification semantics, comment vote, favorite issue, organization/user aggregate issue list, REST issue API parity
 - Board: CreatePosting, UpdatePosting, DeletePosting, ListProjectPostings, ReadPostingDetail, CreatePostingComment
 - Label follow-up: copyLabels Phase 6, REST label/project API parity
 - Milestone follow-up: REST milestone API parity, migration export, search milestone result type

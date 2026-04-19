@@ -19,7 +19,8 @@
 - Phase 2A complete: issue CRUD, comments, state mutation, watch/vote/assignee, mass update, Markdown rendering, and issue/comment attachment binding on Rust canonical stack.
 - Phase 2B complete: project issue label/category management screens, RPC CRUD, legacy direct label/category routes, and label CSS.
 - Phase 2C complete: milestone management screens/RPC, legacy direct mutation routes, state toggles, issue aggregation, Markdown description rendering, and milestone attachment binding.
-- Remaining Phase 2 packets: REST issue/milestone API parity, issue sharer/mention/comment-vote/favorite issue, organization/user aggregate issue lists, and Phase 6 label copy flow.
+- Phase 2E complete: core issue sharer read/comment ACL, ConnectRPC share/unshare by login ID, and issue detail sharer sidebar controls.
+- Remaining Phase 2 packets: REST issue/milestone API parity, sharable autocomplete/shared-with-me/sharer notification follow-ups, mention/comment-vote/favorite issue, organization/user aggregate issue lists, and Phase 6 label copy flow.
 
 ## Phase 3: 저장소와 VCS
 
