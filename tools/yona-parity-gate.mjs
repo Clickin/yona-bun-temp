@@ -136,6 +136,7 @@ const DOMAIN_BUCKETS = [
     provenanceDocs: [
       "docs/provenance/phase-0b/legacy-test-inventory.md",
       "docs/provenance/phase-0b/milestone.md",
+      "docs/provenance/phase-0b/yona-export.md",
       "docs/agents/10-legacy-provenance-baseline.md",
     ],
   },
@@ -310,6 +311,7 @@ const DOMAIN_BUCKETS = [
     provenanceDocs: [
       "docs/provenance/core-parity-audit.md",
       "docs/provenance/phase-0b/milestone.md",
+      "docs/provenance/phase-0b/yona-export.md",
       "docs/agents/10-legacy-provenance-baseline.md",
     ],
   },

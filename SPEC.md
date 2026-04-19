@@ -989,6 +989,8 @@ POST  /markdown                → 마크다운 → HTML 변환
 
 **주의**: 현재 Rust 구현은 ConnectRPC를 주 통신 프로토콜로 사용하지만, legacy REST API 호환성을 위해 `/-_-api/v1/**` 경로도 구현해야 한다. 이는 기존 Yona API를 사용하는 외부 도구와의 호환성을 위한 것이다.
 
+REST API는 외부 도구와의 호환이 확인된 경우에만 구현한다. 내부 React 화면, legacy view helper API, 또는 ConnectRPC로 이미 해결되는 issue/milestone 동작을 `/-_-api/v1/**` REST endpoint로 추가하지 않는다.
+
 #### 검수 기준
 
 - [ ] `/-_-api/v1/hello` 가 200 OK를 반환한다

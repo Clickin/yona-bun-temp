@@ -6,17 +6,50 @@ import path from "node:path";
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const hookPath = path.join(repoRoot, ".husky", "pre-commit");
 const verifyToolPath = path.join(repoRoot, "tools", "precommit-verify.mjs");
+const serverSourcePath = path.join(repoRoot, "crates", "server", "src", "lib.rs");
+const specPath = path.join(repoRoot, "SPEC.md");
+const yonaExportProvenancePath = path.join(
+  repoRoot,
+  "docs",
+  "provenance",
+  "phase-0b",
+  "yona-export.md",
+);
+const frontendToolExtensions = [".js", ".jsx", ".ts", ".tsx"];
+
+function readExtensionSet(source, name) {
+  const match = source.match(new RegExp(`const ${name} = new Set\\(\\[([\\s\\S]*?)\\]\\);`));
+  assert.ok(match, `${name} must be declared as a Set literal`);
+  return [...match[1].matchAll(/"([^"]+)"/gu)].map((entry) => entry[1]);
+}
 
 test("pre-commit hook points at the canonical root verification tool", () => {
   assert.equal(existsSync(hookPath), true, ".husky/pre-commit must exist");
-  assert.equal(
-    existsSync(verifyToolPath),
-    true,
-    "tools/precommit-verify.mjs must exist",
-  );
+  assert.equal(existsSync(verifyToolPath), true, "tools/precommit-verify.mjs must exist");
 
   const hookSource = readFileSync(hookPath, "utf8");
 
   assert.match(hookSource, /node\s+\.\/tools\/precommit-verify\.mjs/);
   assert.doesNotMatch(hookSource, /bun\s+run\s+precommit:verify/);
+});
+
+test("pre-commit ox tools only target frontend JavaScript and TypeScript files", () => {
+  const verifySource = readFileSync(verifyToolPath, "utf8");
+
+  assert.deepEqual(readExtensionSet(verifySource, "OXLINT_EXTENSIONS"), frontendToolExtensions);
+  assert.deepEqual(readExtensionSet(verifySource, "OXFMT_EXTENSIONS"), frontendToolExtensions);
+});
+
+test("external REST harness requires yona-export provenance for issue and milestone REST", () => {
+  const serverSource = readFileSync(serverSourcePath, "utf8");
+  const specSource = readFileSync(specPath, "utf8");
+  const provenanceSource = readFileSync(yonaExportProvenancePath, "utf8");
+
+  assert.doesNotMatch(serverSource, /\/-_-api\/v1\/owners\/[^"]*\/issues/u);
+  assert.doesNotMatch(serverSource, /\/-_-api\/v1\/owners\/[^"]*\/milestones/u);
+  assert.match(specSource, /ConnectRPC를 주 통신 프로토콜로 사용/u);
+  assert.match(specSource, /외부 도구와의 호환/u);
+  assert.match(specSource, /내부 React 화면/u);
+  assert.match(provenanceSource, /migration-facing project export\/import tool contract/u);
+  assert.match(provenanceSource, /Do not add `\/-_-api\/v1` issue\/milestone/u);
 });

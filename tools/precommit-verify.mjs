@@ -18,34 +18,8 @@ const IGNORED_PREFIXES = [
   ".husky/_/",
 ];
 const GENERATED_FILE_SUFFIXES = ["routeTree.gen.ts"];
-const OXLINT_EXTENSIONS = new Set([
-  ".js",
-  ".cjs",
-  ".mjs",
-  ".jsx",
-  ".ts",
-  ".cts",
-  ".mts",
-  ".tsx",
-  ".svelte",
-]);
-const OXFMT_EXTENSIONS = new Set([
-  ".js",
-  ".cjs",
-  ".mjs",
-  ".jsx",
-  ".ts",
-  ".cts",
-  ".mts",
-  ".tsx",
-  ".json",
-  ".md",
-  ".yaml",
-  ".yml",
-  ".css",
-  ".html",
-  ".svelte",
-]);
+const OXLINT_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx"]);
+const OXFMT_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx"]);
 
 const resolveExecutable = (name) => {
   if (process.platform === "win32") {
