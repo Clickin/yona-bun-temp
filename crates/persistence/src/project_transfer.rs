@@ -12,7 +12,7 @@ pub struct Model {
     pub project_id: Option<i64>,
     pub requested: Option<DateTime>,
     pub confirm_key: Option<String>,
-    pub accepted: Option<i8>,
+    pub accepted: Option<i16>,
     pub new_project_name: Option<String>,
 }
 

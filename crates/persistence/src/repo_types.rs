@@ -78,10 +78,55 @@ pub struct IssueListFilter {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IssueLabelRecord {
     pub category_id: Option<i64>,
+    pub category_is_exclusive: bool,
     pub category_name: String,
     pub color: String,
     pub id: i64,
     pub name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IssueLabelCategoryRecord {
+    pub id: i64,
+    pub is_exclusive: bool,
+    pub name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateProjectLabelInput {
+    pub category_is_exclusive: bool,
+    pub category_name: String,
+    pub label_color: String,
+    pub label_name: String,
+    pub owner_name: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UpdateProjectLabelInput {
+    pub category_id: i64,
+    pub label_color: String,
+    pub label_id: i64,
+    pub label_name: String,
+    pub owner_name: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateProjectLabelCategoryInput {
+    pub category_is_exclusive: bool,
+    pub category_name: String,
+    pub owner_name: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UpdateProjectLabelCategoryInput {
+    pub category_id: i64,
+    pub category_is_exclusive: bool,
+    pub category_name: String,
+    pub owner_name: String,
+    pub project_name: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -69,23 +69,20 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
-  await page.route(
-    "**/rpc/yona.pilot.v1.PilotService/ListOrganizations",
-    async (route) => {
-      await route.fulfill({
-        body: JSON.stringify({
-          items: [
-            {
-              description: "web labs",
-              organizationName: "weblabs",
-            },
-          ],
-        }),
-        headers: connectJsonHeaders,
-        status: 200,
-      });
-    },
-  );
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ListOrganizations", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        items: [
+          {
+            description: "web labs",
+            organizationName: "weblabs",
+          },
+        ],
+      }),
+      headers: connectJsonHeaders,
+      status: 200,
+    });
+  });
 
   await page.route("**/rpc/yona.pilot.v1.PilotService/ListProjectIssues", async (route) => {
     await route.fulfill({
@@ -107,6 +104,29 @@ test.beforeEach(async ({ page }) => {
       status: 200,
     });
   });
+
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ListProjectLabels", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        labels: [],
+      }),
+      headers: connectJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.route(
+    "**/rpc/yona.pilot.v1.PilotService/ListProjectLabelCategories",
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({
+          categories: [],
+        }),
+        headers: connectJsonHeaders,
+        status: 200,
+      });
+    },
+  );
 
   await page.route("**/rpc/yona.pilot.v1.PilotService/ReadProjectContainer", async (route) => {
     await route.fulfill({
@@ -242,21 +262,31 @@ test("programmatic internal navigation keeps browser URL in sync under the mount
 
 test("canonical user settings path stays mounted under the base path", async ({ page }) => {
   await page.goto("/yona/user/editform/password");
-  await expect(page).toHaveURL(/\/yona\/users\/loginform\?redirectUrl=%2Fuser%2Feditform%2Fpassword$/);
+  await expect(page).toHaveURL(
+    /\/yona\/users\/loginform\?redirectUrl=%2Fuser%2Feditform%2Fpassword$/,
+  );
   await expect(page.getByRole("heading", { name: "Login for Yona" })).toBeVisible();
 });
 
-test("organization admin routes redirect anonymous viewers to login with a return path", async ({ page }) => {
+test("organization admin routes redirect anonymous viewers to login with a return path", async ({
+  page,
+}) => {
   await page.goto("/yona/organizations/weblabs/members");
-  await expect(page).toHaveURL(/\/yona\/users\/loginform\?redirectUrl=%2Forganizations%2Fweblabs%2Fmembers$/);
+  await expect(page).toHaveURL(
+    /\/yona\/users\/loginform\?redirectUrl=%2Forganizations%2Fweblabs%2Fmembers$/,
+  );
   await expect(page.getByRole("heading", { name: "Login for Yona" })).toBeVisible();
 
   await page.goto("/yona/organizations/weblabs/deleteForm");
-  await expect(page).toHaveURL(/\/yona\/users\/loginform\?redirectUrl=%2Forganizations%2Fweblabs%2FdeleteForm$/);
+  await expect(page).toHaveURL(
+    /\/yona\/users\/loginform\?redirectUrl=%2Forganizations%2Fweblabs%2FdeleteForm$/,
+  );
   await expect(page.getByRole("heading", { name: "Login for Yona" })).toBeVisible();
 });
 
-test("organization admin routes render forbidden and not-found shells for authenticated viewers", async ({ page }) => {
+test("organization admin routes render forbidden and not-found shells for authenticated viewers", async ({
+  page,
+}) => {
   await page.route("**/rpc/yona.pilot.v1.PilotService/ReadCurrentSession", async (route) => {
     await route.fulfill({
       body: JSON.stringify({
@@ -336,7 +366,20 @@ test("project issue routes render data-backed issue list and detail screens", as
   await expect(page.getByText("open")).toBeVisible();
 });
 
-test("project issue routes render forbidden and not-found shells when issue reads fail", async ({ page }) => {
+test("project issue label management route renders the legacy label editor shell", async ({
+  page,
+}) => {
+  await page.goto("/yona/admin/projectYobi/issue/labelsform");
+  await expect(page.getByRole("heading", { name: "Issue Labels" })).toBeVisible();
+  await expect(page.getByText("Add new label")).toBeVisible();
+  await expect(page.getByPlaceholder("Category")).toBeVisible();
+  await expect(page.getByPlaceholder("Name")).toBeVisible();
+  await expect(page.getByText("No label exists")).toBeVisible();
+});
+
+test("project issue routes render forbidden and not-found shells when issue reads fail", async ({
+  page,
+}) => {
   await page.route("**/rpc/yona.pilot.v1.PilotService/ListProjectIssues", async (route) => {
     const payload = route.request().postDataJSON();
     if (payload?.ownerName === "missing" || payload?.projectName === "missingYobi") {

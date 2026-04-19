@@ -1,36 +1,38 @@
 use crate::repo_types::{
-    AttachmentRecord, AppUserInput, AppUserRecord, CreateIssueCommentInput, CreateIssueInput,
-    CreateOrganizationInput, CreateProjectInput, CreateUserInput, IssueAttachmentRecord,
-    IssueCommentRecord, IssueLabelRecord, IssueListFilter, IssueMilestoneRecord,
-    IssueRecord, IssueTimelineItemRecord, MassUpdateIssuesInput,
-    OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
-    OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationRecord,
-    OrganizationViewerRecord, ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord,
-    ProjectIssueListItemRecord, ProjectIssueListRecord, ProjectListEntry,
-    ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
-    ProjectMilestoneSummaryRecord, ProjectRecord, ProjectViewerRecord,
+    AppUserInput, AppUserRecord, AttachmentRecord, CreateIssueCommentInput, CreateIssueInput,
+    CreateOrganizationInput, CreateProjectInput, CreateProjectLabelCategoryInput,
+    CreateProjectLabelInput, CreateUserInput, IssueAttachmentRecord, IssueCommentRecord,
+    IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter, IssueMilestoneRecord, IssueRecord,
+    IssueTimelineItemRecord, MassUpdateIssuesInput, OrganizationAuthorizationRecord,
+    OrganizationEnrollmentRequestRecord, OrganizationMemberDirectoryRecord,
+    OrganizationMemberRecord, OrganizationRecord, OrganizationViewerRecord,
+    ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord, ProjectIssueListItemRecord,
+    ProjectIssueListRecord, ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord,
+    ProjectMenuSettingsRecord, ProjectMilestoneSummaryRecord, ProjectRecord, ProjectViewerRecord,
     ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput,
-    UpdateOrganizationInput, UpdateProjectInput, WatchedProjectNotificationsRecord,
-    WorkspaceEmailRecord, WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
-    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord, WorkspacePullRequestListItemRecord,
+    UpdateOrganizationInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
+    UpdateProjectLabelInput, WatchedProjectNotificationsRecord, WorkspaceEmailRecord,
+    WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
+    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    WorkspacePullRequestListItemRecord,
 };
 use crate::{
     assignee, attachment, comment_thread, email, favorite_organization, favorite_project, issue,
     issue_comment, issue_event, issue_issue_label, issue_label, issue_label_category, issue_voter,
     linked_account, milestone, n4user, organization, organization_user, posting,
-    project, project_menu_setting, project_user, pull_request, recent_project, role, site_admin,
-    user_credential, user_enrolled_organization, user_enrolled_project, user_project_notification,
-    user_setting, user_verification, watch,
+    posting_issue_label, project, project_menu_setting, project_user, pull_request, recent_project,
+    role, site_admin, user_credential, user_enrolled_organization, user_enrolled_project,
+    user_project_notification, user_setting, user_verification, watch,
 };
 use rand::{distributions::Alphanumeric, Rng};
+use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
 use sea_orm::{
-    sea_query::Expr, ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait,
+    sea_query::Expr, ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DatabaseBackend,
     DatabaseConnection, DbErr, EntityTrait, FromQueryResult, NotSet, PaginatorTrait, QueryFilter,
     QueryOrder, QuerySelect, Set, Statement, TransactionTrait,
 };
 use std::collections::HashSet;
 use std::time::{Duration, SystemTime};
-use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
 
 fn normalize_identity(value: &str) -> String {
     value.trim().to_ascii_lowercase()
@@ -79,7 +81,10 @@ const WORKSPACE_NOTIFICATION_TYPES: &[(&str, &str)] = &[
         "PULL_REQUEST_REVIEW_STATE_CHANGED",
         "Pull request review action changed",
     ),
-    ("ISSUE_REFERRED_FROM_PULL_REQUEST", "Issue referred from pull request"),
+    (
+        "ISSUE_REFERRED_FROM_PULL_REQUEST",
+        "Issue referred from pull request",
+    ),
     ("ISSUE_BODY_CHANGED", "Issue body changed"),
     ("REVIEW_THREAD_STATE_CHANGED", "Review state changed"),
     (
@@ -166,7 +171,30 @@ fn issue_state_from_raw(value: Option<i32>) -> String {
     }
 }
 
-fn pull_request_state_from_raw(value: Option<i32>, is_conflict: Option<i8>) -> String {
+fn bool_to_i16(value: bool) -> i16 {
+    if value {
+        1
+    } else {
+        0
+    }
+}
+
+fn issue_label_category_record(row: issue_label_category::Model) -> IssueLabelCategoryRecord {
+    IssueLabelCategoryRecord {
+        id: row.id,
+        is_exclusive: row.is_exclusive.unwrap_or_default() != 0,
+        name: row.name.unwrap_or_default(),
+    }
+}
+
+fn sql_placeholders(backend: DatabaseBackend, count: usize) -> Vec<String> {
+    match backend {
+        DatabaseBackend::Postgres => (1..=count).map(|index| format!("${index}")).collect(),
+        _ => (0..count).map(|_| "?".to_string()).collect(),
+    }
+}
+
+fn pull_request_state_from_raw(value: Option<i32>, is_conflict: Option<i16>) -> String {
     if is_conflict.unwrap_or_default() != 0 {
         return "conflict".to_string();
     }
@@ -182,7 +210,7 @@ fn pull_request_state_from_raw(value: Option<i32>, is_conflict: Option<i8>) -> S
 struct ProjectRow {
     created_date: Option<DateTime>,
     id: i64,
-    is_code_accessible_member_only: Option<i8>,
+    is_code_accessible_member_only: Option<i16>,
     last_pushed_date: Option<DateTime>,
     name: Option<String>,
     original_project_id: Option<i64>,
@@ -366,7 +394,10 @@ impl AppRepository {
             .await?;
 
         match issue {
-            Some(issue) => self.issue_record_from_model(issue, &project, None).await.map(Some),
+            Some(issue) => self
+                .issue_record_from_model(issue, &project, None)
+                .await
+                .map(Some),
             None => Ok(None),
         }
     }
@@ -421,18 +452,17 @@ impl AppRepository {
 
         let mut filtered = Vec::new();
         for model in models {
-            if filter
-                .state
-                .as_deref()
-                .is_some_and(|state| !state.trim().is_empty() && issue_state_from_raw(model.state) != normalize_identity(state))
-            {
+            if filter.state.as_deref().is_some_and(|state| {
+                !state.trim().is_empty()
+                    && issue_state_from_raw(model.state) != normalize_identity(state)
+            }) {
                 continue;
             }
-            if filter
-                .author_login_id
-                .as_deref()
-                .is_some_and(|login_id| !login_id.trim().is_empty() && model.author_login_id.as_deref().map(normalize_identity) != Some(normalize_identity(login_id)))
-            {
+            if filter.author_login_id.as_deref().is_some_and(|login_id| {
+                !login_id.trim().is_empty()
+                    && model.author_login_id.as_deref().map(normalize_identity)
+                        != Some(normalize_identity(login_id))
+            }) {
                 continue;
             }
             if let Some(milestone_id) = filter.milestone_id {
@@ -458,8 +488,10 @@ impl AppRepository {
                 continue;
             }
 
-            let (assignee_login_id, assignee_label) = self.issue_assignee_summary(model.assignee_id).await?;
-            let (milestone_id, milestone_title) = self.issue_milestone_summary(model.milestone_id).await?;
+            let (assignee_login_id, assignee_label) =
+                self.issue_assignee_summary(model.assignee_id).await?;
+            let (milestone_id, milestone_title) =
+                self.issue_milestone_summary(model.milestone_id).await?;
             filtered.push(ProjectIssueListItemRecord {
                 assignee_label,
                 author_label: model.author_name.unwrap_or_default(),
@@ -529,7 +561,10 @@ impl AppRepository {
             .await
     }
 
-    pub async fn create_issue(&self, input: CreateIssueInput) -> Result<Option<IssueRecord>, DbErr> {
+    pub async fn create_issue(
+        &self,
+        input: CreateIssueInput,
+    ) -> Result<Option<IssueRecord>, DbErr> {
         let Some(project_record) = self
             .read_project_by_owner_and_name(&input.owner_name, &input.project_name)
             .await?
@@ -583,7 +618,10 @@ impl AppRepository {
             .map(Some)
     }
 
-    pub async fn update_issue(&self, input: UpdateIssueInput) -> Result<Option<IssueRecord>, DbErr> {
+    pub async fn update_issue(
+        &self,
+        input: UpdateIssueInput,
+    ) -> Result<Option<IssueRecord>, DbErr> {
         let Some((project_record, model)) = self
             .read_project_issue_model(&input.owner_name, &input.project_name, input.issue_number)
             .await?
@@ -614,8 +652,13 @@ impl AppRepository {
                 updated.id,
                 &input.actor_login_id,
                 "ISSUE_ASSIGNEE_CHANGED",
-                &old_assignee.map(|value| value.to_string()).unwrap_or_default(),
-                &updated.assignee_id.map(|value| value.to_string()).unwrap_or_default(),
+                &old_assignee
+                    .map(|value| value.to_string())
+                    .unwrap_or_default(),
+                &updated
+                    .assignee_id
+                    .map(|value| value.to_string())
+                    .unwrap_or_default(),
             )
             .await?;
         }
@@ -624,8 +667,13 @@ impl AppRepository {
                 updated.id,
                 &input.actor_login_id,
                 "ISSUE_MILESTONE_CHANGED",
-                &old_milestone.map(|value| value.to_string()).unwrap_or_default(),
-                &updated.milestone_id.map(|value| value.to_string()).unwrap_or_default(),
+                &old_milestone
+                    .map(|value| value.to_string())
+                    .unwrap_or_default(),
+                &updated
+                    .milestone_id
+                    .map(|value| value.to_string())
+                    .unwrap_or_default(),
             )
             .await?;
         }
@@ -700,8 +748,13 @@ impl AppRepository {
         }
         .insert(&self.db)
         .await?;
-        self.write_text_column("issue_comment", "contents", created.id, &input.contents_markdown)
-            .await?;
+        self.write_text_column(
+            "issue_comment",
+            "contents",
+            created.id,
+            &input.contents_markdown,
+        )
+        .await?;
         self.bind_attachments("ISSUE_COMMENT", created.id, &input.attachment_ids)
             .await?;
         self.recount_issue_comments(issue_model.id).await?;
@@ -719,7 +772,10 @@ impl AppRepository {
         else {
             return Ok(None);
         };
-        let Some(comment) = issue_comment::Entity::find_by_id(input.comment_id).one(&self.db).await? else {
+        let Some(comment) = issue_comment::Entity::find_by_id(input.comment_id)
+            .one(&self.db)
+            .await?
+        else {
             return Ok(None);
         };
         if comment.issue_id != Some(issue_model.id) {
@@ -727,8 +783,13 @@ impl AppRepository {
         }
         let active = issue_comment::ActiveModel::from(comment);
         let updated = active.update(&self.db).await?;
-        self.write_text_column("issue_comment", "contents", updated.id, &input.contents_markdown)
-            .await?;
+        self.write_text_column(
+            "issue_comment",
+            "contents",
+            updated.id,
+            &input.contents_markdown,
+        )
+        .await?;
         self.bind_attachments("ISSUE_COMMENT", updated.id, &input.attachment_ids)
             .await?;
         self.read_issue_detail(&input.owner_name, &input.project_name, input.issue_number)
@@ -748,7 +809,10 @@ impl AppRepository {
         else {
             return Ok(None);
         };
-        let Some(comment) = issue_comment::Entity::find_by_id(comment_id).one(&self.db).await? else {
+        let Some(comment) = issue_comment::Entity::find_by_id(comment_id)
+            .one(&self.db)
+            .await?
+        else {
             return Ok(None);
         };
         if comment.issue_id != Some(issue_model.id) {
@@ -848,8 +912,13 @@ impl AppRepository {
                 updated.id,
                 actor_login_id,
                 "ISSUE_ASSIGNEE_CHANGED",
-                &old_assignee_id.map(|value| value.to_string()).unwrap_or_default(),
-                &updated.assignee_id.map(|value| value.to_string()).unwrap_or_default(),
+                &old_assignee_id
+                    .map(|value| value.to_string())
+                    .unwrap_or_default(),
+                &updated
+                    .assignee_id
+                    .map(|value| value.to_string())
+                    .unwrap_or_default(),
             )
             .await?;
         }
@@ -877,8 +946,15 @@ impl AppRepository {
             } else {
                 model.assignee_id
             };
-            for label_id in input.add_label_ids.iter().chain(input.remove_label_ids.iter()) {
-                if !self.label_belongs_to_project(project_record.id, *label_id).await? {
+            for label_id in input
+                .add_label_ids
+                .iter()
+                .chain(input.remove_label_ids.iter())
+            {
+                if !self
+                    .label_belongs_to_project(project_record.id, *label_id)
+                    .await?
+                {
                     return Err(DbErr::Custom("Issue label not found.".to_string()));
                 }
             }
@@ -888,7 +964,11 @@ impl AppRepository {
         let txn = self.db.begin().await?;
         for (_project_record, model, next_assignee_id) in &targets {
             let mut active = issue::ActiveModel::from(model.clone());
-            if let Some(state) = input.state.as_deref().filter(|value| !value.trim().is_empty()) {
+            if let Some(state) = input
+                .state
+                .as_deref()
+                .filter(|value| !value.trim().is_empty())
+            {
                 active.state = Set(Some(issue_state_to_raw(state)));
             }
             if input.assignee_update {
@@ -901,9 +981,9 @@ impl AppRepository {
             let model = active.update(&txn).await?;
             for label_id in &input.add_label_ids {
                 if issue_issue_label::Entity::find_by_id((model.id, *label_id))
-                        .one(&txn)
-                        .await?
-                        .is_none()
+                    .one(&txn)
+                    .await?
+                    .is_none()
                 {
                     issue_issue_label::ActiveModel {
                         issue_id: Set(model.id),
@@ -918,7 +998,11 @@ impl AppRepository {
                     .exec(&txn)
                     .await?;
             }
-            if let Some(state) = input.state.as_deref().filter(|value| !value.trim().is_empty()) {
+            if let Some(state) = input
+                .state
+                .as_deref()
+                .filter(|value| !value.trim().is_empty())
+            {
                 let created = issue_event::ActiveModel {
                     id: NotSet,
                     created: Set(Some(current_datetime())),
@@ -930,12 +1014,16 @@ impl AppRepository {
                 .insert(&txn)
                 .await?;
                 let backend = txn.get_database_backend();
+                let placeholders = sql_placeholders(backend, 2);
                 txn.execute(Statement::from_sql_and_values(
                     backend,
-                    "UPDATE issue_event SET new_value = ? WHERE id = ?",
+                    format!(
+                        "UPDATE issue_event SET new_value = {} WHERE id = {}",
+                        placeholders[0], placeholders[1]
+                    ),
                     vec![state.to_string().into(), created.id.into()],
                 ))
-                    .await?;
+                .await?;
             }
         }
         txn.commit().await?;
@@ -973,6 +1061,270 @@ impl AppRepository {
             records.push(self.issue_label_record(label).await?);
         }
         Ok(records)
+    }
+
+    pub async fn list_project_label_categories(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+    ) -> Result<Vec<IssueLabelCategoryRecord>, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(Vec::new());
+        };
+        Ok(issue_label_category::Entity::find()
+            .filter(issue_label_category::Column::ProjectId.eq(Some(project.id)))
+            .order_by_asc(issue_label_category::Column::Name)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(issue_label_category_record)
+            .collect())
+    }
+
+    pub async fn create_project_label(
+        &self,
+        input: CreateProjectLabelInput,
+    ) -> Result<Option<(IssueLabelRecord, bool)>, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(&input.owner_name, &input.project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let category = self
+            .find_or_create_issue_label_category(
+                project.id,
+                input.category_name.trim(),
+                input.category_is_exclusive,
+            )
+            .await?;
+        if let Some(existing) = self
+            .find_issue_label_by_project_category_name(
+                project.id,
+                category.id,
+                input.label_name.trim(),
+            )
+            .await?
+        {
+            return Ok(Some((self.issue_label_record(existing).await?, false)));
+        }
+        let created = issue_label::ActiveModel {
+            id: NotSet,
+            category_id: Set(Some(category.id)),
+            color: Set(Some(input.label_color)),
+            name: Set(Some(input.label_name.trim().to_string())),
+            project_id: Set(Some(project.id)),
+        }
+        .insert(&self.db)
+        .await?;
+        Ok(Some((self.issue_label_record(created).await?, true)))
+    }
+
+    pub async fn update_project_label(
+        &self,
+        input: UpdateProjectLabelInput,
+    ) -> Result<Option<IssueLabelRecord>, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(&input.owner_name, &input.project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+        if issue_label_category::Entity::find_by_id(input.category_id)
+            .one(&self.db)
+            .await?
+            .is_none_or(|category| category.project_id != Some(project.id))
+        {
+            return Err(DbErr::Custom("Issue label category not found.".to_string()));
+        }
+        let Some(label) = issue_label::Entity::find_by_id(input.label_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        if label.project_id != Some(project.id) {
+            return Ok(None);
+        }
+        if let Some(existing) = self
+            .find_issue_label_by_project_category_name(
+                project.id,
+                input.category_id,
+                input.label_name.trim(),
+            )
+            .await?
+        {
+            if existing.id != input.label_id {
+                return Err(DbErr::Custom("Issue label already exists.".to_string()));
+            }
+        }
+        let mut active = issue_label::ActiveModel::from(label);
+        active.category_id = Set(Some(input.category_id));
+        active.color = Set(Some(input.label_color));
+        active.name = Set(Some(input.label_name.trim().to_string()));
+        let updated = active.update(&self.db).await?;
+        self.issue_label_record(updated).await.map(Some)
+    }
+
+    pub async fn delete_project_label(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        label_id: i64,
+    ) -> Result<bool, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(false);
+        };
+        let Some(label) = issue_label::Entity::find_by_id(label_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(false);
+        };
+        if label.project_id != Some(project.id) {
+            return Ok(false);
+        }
+        let category_id = label.category_id;
+        let txn = self.db.begin().await?;
+        issue_issue_label::Entity::delete_many()
+            .filter(issue_issue_label::Column::IssueLabelId.eq(label_id))
+            .exec(&txn)
+            .await?;
+        posting_issue_label::Entity::delete_many()
+            .filter(posting_issue_label::Column::IssueLabelId.eq(label_id))
+            .exec(&txn)
+            .await?;
+        issue_label::Entity::delete_by_id(label_id)
+            .exec(&txn)
+            .await?;
+        if let Some(category_id) = category_id {
+            let remaining = issue_label::Entity::find()
+                .filter(issue_label::Column::CategoryId.eq(Some(category_id)))
+                .count(&txn)
+                .await?;
+            if remaining == 0 {
+                issue_label_category::Entity::delete_by_id(category_id)
+                    .exec(&txn)
+                    .await?;
+            }
+        }
+        txn.commit().await?;
+        Ok(true)
+    }
+
+    pub async fn create_project_label_category(
+        &self,
+        input: CreateProjectLabelCategoryInput,
+    ) -> Result<Option<(IssueLabelCategoryRecord, bool)>, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(&input.owner_name, &input.project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+        if let Some(existing) = self
+            .find_issue_label_category_by_name(project.id, input.category_name.trim())
+            .await?
+        {
+            return Ok(Some((issue_label_category_record(existing), false)));
+        }
+        let created = issue_label_category::ActiveModel {
+            id: NotSet,
+            project_id: Set(Some(project.id)),
+            name: Set(Some(input.category_name.trim().to_string())),
+            is_exclusive: Set(Some(bool_to_i16(input.category_is_exclusive))),
+        }
+        .insert(&self.db)
+        .await?;
+        Ok(Some((issue_label_category_record(created), true)))
+    }
+
+    pub async fn update_project_label_category(
+        &self,
+        input: UpdateProjectLabelCategoryInput,
+    ) -> Result<Option<IssueLabelCategoryRecord>, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(&input.owner_name, &input.project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(category) = issue_label_category::Entity::find_by_id(input.category_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        if category.project_id != Some(project.id) {
+            return Ok(None);
+        }
+        if let Some(existing) = self
+            .find_issue_label_category_by_name(project.id, input.category_name.trim())
+            .await?
+        {
+            if existing.id != input.category_id {
+                return Err(DbErr::Custom(
+                    "Issue label category already exists.".to_string(),
+                ));
+            }
+        }
+        let mut active = issue_label_category::ActiveModel::from(category);
+        active.name = Set(Some(input.category_name.trim().to_string()));
+        active.is_exclusive = Set(Some(bool_to_i16(input.category_is_exclusive)));
+        let updated = active.update(&self.db).await?;
+        Ok(Some(issue_label_category_record(updated)))
+    }
+
+    pub async fn delete_project_label_category(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        category_id: i64,
+    ) -> Result<bool, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(false);
+        };
+        let Some(category) = issue_label_category::Entity::find_by_id(category_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(false);
+        };
+        if category.project_id != Some(project.id) {
+            return Ok(false);
+        }
+        let labels = issue_label::Entity::find()
+            .filter(issue_label::Column::CategoryId.eq(Some(category_id)))
+            .all(&self.db)
+            .await?;
+        let txn = self.db.begin().await?;
+        for label in labels {
+            issue_issue_label::Entity::delete_many()
+                .filter(issue_issue_label::Column::IssueLabelId.eq(label.id))
+                .exec(&txn)
+                .await?;
+            posting_issue_label::Entity::delete_many()
+                .filter(posting_issue_label::Column::IssueLabelId.eq(label.id))
+                .exec(&txn)
+                .await?;
+            issue_label::Entity::delete_by_id(label.id)
+                .exec(&txn)
+                .await?;
+        }
+        issue_label_category::Entity::delete_by_id(category_id)
+            .exec(&txn)
+            .await?;
+        txn.commit().await?;
+        Ok(true)
     }
 
     pub async fn list_project_milestones(
@@ -1380,10 +1732,11 @@ impl AppRepository {
                     viewer.is_organization_admin || role_name == "org_member";
             }
 
-            enrollment_requested = user_enrolled_organization::Entity::find_by_id((actor_id, organization.id))
-                .one(&self.db)
-                .await?
-                .is_some();
+            enrollment_requested =
+                user_enrolled_organization::Entity::find_by_id((actor_id, organization.id))
+                    .one(&self.db)
+                    .await?
+                    .is_some();
         }
 
         Ok(Some(OrganizationAuthorizationRecord {
@@ -1966,7 +2319,9 @@ impl AppRepository {
             if !seen.insert(project_id) {
                 continue;
             }
-            let Some(project_model) = project::Entity::find_by_id(project_id).one(&self.db).await?
+            let Some(project_model) = project::Entity::find_by_id(project_id)
+                .one(&self.db)
+                .await?
             else {
                 continue;
             };
@@ -1979,7 +2334,10 @@ impl AppRepository {
             let left_owner = left.owner.clone().unwrap_or_default();
             let right_owner = right.owner.clone().unwrap_or_default();
 
-            match (left.last_pushed_date.clone(), right.last_pushed_date.clone()) {
+            match (
+                left.last_pushed_date.clone(),
+                right.last_pushed_date.clone(),
+            ) {
                 (Some(left_date), Some(right_date)) => right_date
                     .cmp(&left_date)
                     .then_with(|| left_name.cmp(&right_name))
@@ -1994,7 +2352,10 @@ impl AppRepository {
 
         let mut projects = Vec::new();
         for project_model in project_models {
-            if let Some(record) = self.project_record_from_model(project_model.clone()).await? {
+            if let Some(record) = self
+                .project_record_from_model(project_model.clone())
+                .await?
+            {
                 let member_count = project_user::Entity::find()
                     .filter(project_user::Column::ProjectId.eq(Some(project_model.id)))
                     .count(&self.db)
@@ -2220,10 +2581,13 @@ impl AppRepository {
             .await?
             .into_iter()
             .any(|row| {
-                normalize_optional(row.email.as_deref()).as_deref() == Some(normalized_email.as_str())
+                normalize_optional(row.email.as_deref()).as_deref()
+                    == Some(normalized_email.as_str())
             });
         if duplicate_email {
-            return Err(DbErr::Custom("Email address is already in use.".to_string()));
+            return Err(DbErr::Custom(
+                "Email address is already in use.".to_string(),
+            ));
         }
         let duplicate_valid_secondary = email::Entity::find()
             .filter(email::Column::Email.eq(Some(normalized_email.clone())))
@@ -2231,7 +2595,9 @@ impl AppRepository {
             .one(&self.db)
             .await?;
         if duplicate_valid_secondary.is_some() {
-            return Err(DbErr::Custom("Email address is already in use.".to_string()));
+            return Err(DbErr::Custom(
+                "Email address is already in use.".to_string(),
+            ));
         }
 
         let mut active = n4user::ActiveModel::from(model);
@@ -2334,9 +2700,12 @@ impl AppRepository {
         verification_code: &str,
     ) -> Result<Option<i64>, DbErr> {
         let Some(verification) = user_verification::Entity::find()
-            .filter(user_verification::Column::VerificationCode.eq(Some(verification_code.to_string())))
+            .filter(
+                user_verification::Column::VerificationCode.eq(Some(verification_code.to_string())),
+            )
             .one(&self.db)
-            .await? else {
+            .await?
+        else {
             return Ok(None);
         };
         if !verification
@@ -2367,9 +2736,12 @@ impl AppRepository {
         let normalized_login_id = normalize_identity(login_id);
         let Some(verification) = user_verification::Entity::find()
             .filter(user_verification::Column::LoginId.eq(Some(normalized_login_id)))
-            .filter(user_verification::Column::VerificationCode.eq(Some(verification_code.to_string())))
+            .filter(
+                user_verification::Column::VerificationCode.eq(Some(verification_code.to_string())),
+            )
             .one(&self.db)
-            .await? else {
+            .await?
+        else {
             return Ok(None);
         };
         if !verification
@@ -2395,7 +2767,9 @@ impl AppRepository {
         verification_code: &str,
     ) -> Result<(), DbErr> {
         let rows = user_verification::Entity::find()
-            .filter(user_verification::Column::VerificationCode.eq(Some(verification_code.to_string())))
+            .filter(
+                user_verification::Column::VerificationCode.eq(Some(verification_code.to_string())),
+            )
             .all(&self.db)
             .await?;
         for row in rows {
@@ -2406,12 +2780,11 @@ impl AppRepository {
         Ok(())
     }
 
-    pub async fn delete_signup_verification(
-        &self,
-        verification_code: &str,
-    ) -> Result<(), DbErr> {
+    pub async fn delete_signup_verification(&self, verification_code: &str) -> Result<(), DbErr> {
         let rows = user_verification::Entity::find()
-            .filter(user_verification::Column::VerificationCode.eq(Some(verification_code.to_string())))
+            .filter(
+                user_verification::Column::VerificationCode.eq(Some(verification_code.to_string())),
+            )
             .all(&self.db)
             .await?;
         for row in rows.into_iter().filter(|row| {
@@ -2465,7 +2838,10 @@ impl AppRepository {
         &self,
         attachment_id: i64,
     ) -> Result<Option<AttachmentRecord>, DbErr> {
-        let Some(model) = attachment::Entity::find_by_id(attachment_id).one(&self.db).await? else {
+        let Some(model) = attachment::Entity::find_by_id(attachment_id)
+            .one(&self.db)
+            .await?
+        else {
             return Ok(None);
         };
         Ok(Some(AttachmentRecord {
@@ -2485,11 +2861,15 @@ impl AppRepository {
         user_id: i64,
     ) -> Result<Option<AttachmentRecord>, DbErr> {
         let Some(model) = attachment::Entity::find()
-            .filter(attachment::Column::ContainerType.eq(Some(USER_AVATAR_ATTACHMENT_CONTAINER.to_string())))
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(USER_AVATAR_ATTACHMENT_CONTAINER.to_string())),
+            )
             .filter(attachment::Column::ContainerId.eq(user_id))
             .order_by_desc(attachment::Column::Id)
             .one(&self.db)
-            .await? else {
+            .await?
+        else {
             return Ok(None);
         };
         Ok(Some(AttachmentRecord {
@@ -2509,7 +2889,10 @@ impl AppRepository {
         user_id: i64,
         attachment_id: i64,
     ) -> Result<Option<AttachmentRecord>, DbErr> {
-        let Some(model) = attachment::Entity::find_by_id(attachment_id).one(&self.db).await? else {
+        let Some(model) = attachment::Entity::find_by_id(attachment_id)
+            .one(&self.db)
+            .await?
+        else {
             return Ok(None);
         };
         if model.container_id != user_id
@@ -2518,12 +2901,17 @@ impl AppRepository {
             return Ok(None);
         }
         let previous_rows = attachment::Entity::find()
-            .filter(attachment::Column::ContainerType.eq(Some(USER_AVATAR_ATTACHMENT_CONTAINER.to_string())))
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(USER_AVATAR_ATTACHMENT_CONTAINER.to_string())),
+            )
             .filter(attachment::Column::ContainerId.eq(user_id))
             .all(&self.db)
             .await?;
         for row in previous_rows {
-            attachment::Entity::delete_by_id(row.id).exec(&self.db).await?;
+            attachment::Entity::delete_by_id(row.id)
+                .exec(&self.db)
+                .await?;
         }
         let mut active = attachment::ActiveModel::from(model);
         active.container_type = Set(Some(USER_AVATAR_ATTACHMENT_CONTAINER.to_string()));
@@ -2540,8 +2928,13 @@ impl AppRepository {
         }))
     }
 
-    pub async fn read_project_by_id(&self, project_id: i64) -> Result<Option<ProjectRecord>, DbErr> {
-        let row = project::Entity::find_by_id(project_id).one(&self.db).await?;
+    pub async fn read_project_by_id(
+        &self,
+        project_id: i64,
+    ) -> Result<Option<ProjectRecord>, DbErr> {
+        let row = project::Entity::find_by_id(project_id)
+            .one(&self.db)
+            .await?;
         let Some(row) = row else {
             return Ok(None);
         };
@@ -2621,7 +3014,9 @@ impl AppRepository {
             return Err(DbErr::Custom("User not found.".to_string()));
         };
         if normalize_optional(user.email.as_deref()).as_deref() == Some(normalized_email.as_str()) {
-            return Err(DbErr::Custom("Email address is already in use.".to_string()));
+            return Err(DbErr::Custom(
+                "Email address is already in use.".to_string(),
+            ));
         }
 
         let duplicate = email::Entity::find()
@@ -2629,7 +3024,9 @@ impl AppRepository {
             .one(&self.db)
             .await?;
         if duplicate.is_some() {
-            return Err(DbErr::Custom("Email address is already in use.".to_string()));
+            return Err(DbErr::Custom(
+                "Email address is already in use.".to_string(),
+            ));
         }
 
         email::ActiveModel {
@@ -2788,7 +3185,10 @@ impl AppRepository {
             else {
                 continue;
             };
-            let Some(project_row) = project::Entity::find_by_id(project_id).one(&self.db).await? else {
+            let Some(project_row) = project::Entity::find_by_id(project_id)
+                .one(&self.db)
+                .await?
+            else {
                 continue;
             };
             let (Some(owner_name), Some(project_name)) =
@@ -2808,9 +3208,7 @@ impl AppRepository {
                 .map(|(event_type, label)| {
                     let enabled = overrides
                         .iter()
-                        .find(|row| {
-                            row.notification_type.as_deref() == Some(*event_type)
-                        })
+                        .find(|row| row.notification_type.as_deref() == Some(*event_type))
                         .map(|row| row.allowed.unwrap_or(1) != 0)
                         .unwrap_or_else(|| workspace_notification_enabled_by_default(event_type));
 
@@ -2842,7 +3240,10 @@ impl AppRepository {
         let existing = user_project_notification::Entity::find()
             .filter(user_project_notification::Column::UserId.eq(Some(user_id)))
             .filter(user_project_notification::Column::ProjectId.eq(Some(project_id)))
-            .filter(user_project_notification::Column::NotificationType.eq(Some(event_type.to_string())))
+            .filter(
+                user_project_notification::Column::NotificationType
+                    .eq(Some(event_type.to_string())),
+            )
             .one(&self.db)
             .await?;
 
@@ -3036,7 +3437,9 @@ impl AppRepository {
 
         Ok(Some(ProjectRecord {
             created_date: model.created_date,
-            is_code_accessible_member_only: model.is_code_accessible_member_only.unwrap_or_default()
+            is_code_accessible_member_only: model
+                .is_code_accessible_member_only
+                .unwrap_or_default()
                 != 0,
             last_pushed_date: model.last_pushed_date,
             id: model.id,
@@ -3058,7 +3461,8 @@ impl AppRepository {
     ) -> Result<IssueRecord, DbErr> {
         let (assignee_login_id, assignee_label) =
             self.issue_assignee_summary(model.assignee_id).await?;
-        let (milestone_id, milestone_title) = self.issue_milestone_summary(model.milestone_id).await?;
+        let (milestone_id, milestone_title) =
+            self.issue_milestone_summary(model.milestone_id).await?;
         let labels = self.list_issue_labels(model.id).await?;
         let comments = self.list_issue_comments(model.id, viewer_id).await?;
         let timeline = self.list_issue_timeline_items(model.id, viewer_id).await?;
@@ -3125,17 +3529,17 @@ impl AppRepository {
         Ok(issue.map(|model| (project_record, model)))
     }
 
-    async fn read_text_column(
-        &self,
-        table: &str,
-        column: &str,
-        id: i64,
-    ) -> Result<String, DbErr> {
-        let sql = format!("SELECT {column} AS value FROM {table} WHERE id = ?");
+    async fn read_text_column(&self, table: &str, column: &str, id: i64) -> Result<String, DbErr> {
+        let backend = self.db.get_database_backend();
+        let placeholders = sql_placeholders(backend, 1);
+        let sql = format!(
+            "SELECT {column} AS value FROM {table} WHERE id = {}",
+            placeholders[0]
+        );
         let Some(row) = self
             .db
             .query_one(Statement::from_sql_and_values(
-                self.db.get_database_backend(),
+                backend,
                 sql,
                 vec![id.into()],
             ))
@@ -3157,10 +3561,15 @@ impl AppRepository {
         id: i64,
         value: &str,
     ) -> Result<(), DbErr> {
-        let sql = format!("UPDATE {table} SET {column} = ? WHERE id = ?");
+        let backend = self.db.get_database_backend();
+        let placeholders = sql_placeholders(backend, 2);
+        let sql = format!(
+            "UPDATE {table} SET {column} = {} WHERE id = {}",
+            placeholders[0], placeholders[1]
+        );
         self.db
             .execute(Statement::from_sql_and_values(
-                self.db.get_database_backend(),
+                backend,
                 sql,
                 vec![empty_to_none(Some(value.to_string())).into(), id.into()],
             ))
@@ -3169,8 +3578,12 @@ impl AppRepository {
     }
 
     async fn next_issue_number(&self, project_id: i64) -> Result<i64, DbErr> {
-        let project_row = project::Entity::find_by_id(project_id).one(&self.db).await?;
-        let project_last = project_row.and_then(|row| row.last_issue_number).unwrap_or_default();
+        let project_row = project::Entity::find_by_id(project_id)
+            .one(&self.db)
+            .await?;
+        let project_last = project_row
+            .and_then(|row| row.last_issue_number)
+            .unwrap_or_default();
         let max_existing = issue::Entity::find()
             .filter(issue::Column::ProjectId.eq(Some(project_id)))
             .all(&self.db)
@@ -3187,7 +3600,10 @@ impl AppRepository {
         project_id: i64,
         assignee_login_id: Option<&str>,
     ) -> Result<Option<i64>, DbErr> {
-        let Some(login_id) = assignee_login_id.map(normalize_identity).filter(|value| !value.is_empty()) else {
+        let Some(login_id) = assignee_login_id
+            .map(normalize_identity)
+            .filter(|value| !value.is_empty())
+        else {
             return Ok(None);
         };
         let Some(user) = n4user::Entity::find()
@@ -3222,7 +3638,10 @@ impl AppRepository {
         let Some(assignee_id) = assignee_id else {
             return Ok((String::new(), String::new()));
         };
-        let Some(row) = assignee::Entity::find_by_id(assignee_id).one(&self.db).await? else {
+        let Some(row) = assignee::Entity::find_by_id(assignee_id)
+            .one(&self.db)
+            .await?
+        else {
             return Ok((String::new(), String::new()));
         };
         let Some(user_id) = row.user_id else {
@@ -3231,7 +3650,10 @@ impl AppRepository {
         let Some(user) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
             return Ok((String::new(), String::new()));
         };
-        Ok((user.login_id.unwrap_or_default(), user.name.unwrap_or_default()))
+        Ok((
+            user.login_id.unwrap_or_default(),
+            user.name.unwrap_or_default(),
+        ))
     }
 
     async fn issue_milestone_summary(
@@ -3241,7 +3663,10 @@ impl AppRepository {
         let Some(milestone_id) = milestone_id else {
             return Ok((None, String::new()));
         };
-        let Some(row) = milestone::Entity::find_by_id(milestone_id).one(&self.db).await? else {
+        let Some(row) = milestone::Entity::find_by_id(milestone_id)
+            .one(&self.db)
+            .await?
+        else {
             return Ok((None, String::new()));
         };
         Ok((Some(row.id), row.title.unwrap_or_default()))
@@ -3268,21 +3693,81 @@ impl AppRepository {
         &self,
         label: issue_label::Model,
     ) -> Result<IssueLabelRecord, DbErr> {
-        let category_name = match label.category_id {
-            Some(category_id) => issue_label_category::Entity::find_by_id(category_id)
-                .one(&self.db)
-                .await?
-                .and_then(|row| row.name)
-                .unwrap_or_default(),
-            None => String::new(),
+        let (category_name, category_is_exclusive) = match label.category_id {
+            Some(category_id) => {
+                let category = issue_label_category::Entity::find_by_id(category_id)
+                    .one(&self.db)
+                    .await?;
+                (
+                    category
+                        .as_ref()
+                        .and_then(|row| row.name.clone())
+                        .unwrap_or_default(),
+                    category
+                        .as_ref()
+                        .and_then(|row| row.is_exclusive)
+                        .unwrap_or_default()
+                        != 0,
+                )
+            }
+            None => (String::new(), false),
         };
         Ok(IssueLabelRecord {
             category_id: label.category_id,
+            category_is_exclusive,
             category_name,
             color: label.color.unwrap_or_default(),
             id: label.id,
             name: label.name.unwrap_or_default(),
         })
+    }
+
+    async fn find_or_create_issue_label_category(
+        &self,
+        project_id: i64,
+        category_name: &str,
+        is_exclusive: bool,
+    ) -> Result<issue_label_category::Model, DbErr> {
+        if let Some(existing) = self
+            .find_issue_label_category_by_name(project_id, category_name)
+            .await?
+        {
+            return Ok(existing);
+        }
+        issue_label_category::ActiveModel {
+            id: NotSet,
+            project_id: Set(Some(project_id)),
+            name: Set(Some(category_name.trim().to_string())),
+            is_exclusive: Set(Some(bool_to_i16(is_exclusive))),
+        }
+        .insert(&self.db)
+        .await
+    }
+
+    async fn find_issue_label_category_by_name(
+        &self,
+        project_id: i64,
+        category_name: &str,
+    ) -> Result<Option<issue_label_category::Model>, DbErr> {
+        issue_label_category::Entity::find()
+            .filter(issue_label_category::Column::ProjectId.eq(Some(project_id)))
+            .filter(issue_label_category::Column::Name.eq(Some(category_name.trim().to_string())))
+            .one(&self.db)
+            .await
+    }
+
+    async fn find_issue_label_by_project_category_name(
+        &self,
+        project_id: i64,
+        category_id: i64,
+        label_name: &str,
+    ) -> Result<Option<issue_label::Model>, DbErr> {
+        issue_label::Entity::find()
+            .filter(issue_label::Column::ProjectId.eq(Some(project_id)))
+            .filter(issue_label::Column::CategoryId.eq(Some(category_id)))
+            .filter(issue_label::Column::Name.eq(Some(label_name.trim().to_string())))
+            .one(&self.db)
+            .await
     }
 
     async fn issue_milestone_record(
@@ -3328,7 +3813,9 @@ impl AppRepository {
             .await?;
         let mut seen = HashSet::new();
         for label_id in label_ids {
-            if seen.insert(*label_id) && self.label_belongs_to_project(project_id, *label_id).await? {
+            if seen.insert(*label_id)
+                && self.label_belongs_to_project(project_id, *label_id).await?
+            {
                 issue_issue_label::ActiveModel {
                     issue_id: Set(issue_id),
                     issue_label_id: Set(*label_id),

@@ -8,12 +8,12 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
     pub project_id: Option<i64>,
-    pub code: Option<i8>,
-    pub issue: Option<i8>,
-    pub pull_request: Option<i8>,
-    pub review: Option<i8>,
-    pub milestone: Option<i8>,
-    pub board: Option<i8>,
+    pub code: Option<i16>,
+    pub issue: Option<i16>,
+    pub pull_request: Option<i16>,
+    pub review: Option<i16>,
+    pub milestone: Option<i16>,
+    pub board: Option<i16>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

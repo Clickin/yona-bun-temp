@@ -18,13 +18,13 @@ pub struct Model {
     pub original_project_id: Option<i64>,
     pub last_pushed_date: Option<DateTime>,
     pub default_reviewer_count: Option<i32>,
-    pub is_using_reviewer_count: Option<i8>,
+    pub is_using_reviewer_count: Option<i16>,
     pub organization_id: Option<i64>,
     pub project_scope: Option<String>,
     pub previous_owner_login_id: Option<String>,
     pub previous_name: Option<String>,
     pub previous_name_changed_time: Option<i64>,
-    pub is_code_accessible_member_only: Option<i8>,
+    pub is_code_accessible_member_only: Option<i16>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

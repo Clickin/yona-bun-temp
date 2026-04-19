@@ -25,8 +25,8 @@ pub struct Model {
     #[sea_orm(unique_key = "uq_posting_1")]
     pub number: Option<i64>,
     pub num_of_comments: Option<i32>,
-    pub notice: Option<i8>,
-    pub readme: Option<i8>,
+    pub notice: Option<i16>,
+    pub readme: Option<i16>,
     #[sea_orm(
         ignore,
         column_type = "custom(\"LONGTEXT\")",

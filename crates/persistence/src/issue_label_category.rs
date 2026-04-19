@@ -9,7 +9,7 @@ pub struct Model {
     pub id: i64,
     pub project_id: Option<i64>,
     pub name: Option<String>,
-    pub is_exclusive: Option<i8>,
+    pub is_exclusive: Option<i16>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

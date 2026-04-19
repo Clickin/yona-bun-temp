@@ -325,6 +325,41 @@ export const massUpdateIssues = PilotService.method.massUpdateIssues;
 export const listProjectLabels = PilotService.method.listProjectLabels;
 
 /**
+ * @generated from rpc yona.pilot.v1.PilotService.ListProjectLabelCategories
+ */
+export const listProjectLabelCategories = PilotService.method.listProjectLabelCategories;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.CreateProjectLabel
+ */
+export const createProjectLabel = PilotService.method.createProjectLabel;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.UpdateProjectLabel
+ */
+export const updateProjectLabel = PilotService.method.updateProjectLabel;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.DeleteProjectLabel
+ */
+export const deleteProjectLabel = PilotService.method.deleteProjectLabel;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.CreateProjectLabelCategory
+ */
+export const createProjectLabelCategory = PilotService.method.createProjectLabelCategory;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.UpdateProjectLabelCategory
+ */
+export const updateProjectLabelCategory = PilotService.method.updateProjectLabelCategory;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.DeleteProjectLabelCategory
+ */
+export const deleteProjectLabelCategory = PilotService.method.deleteProjectLabelCategory;
+
+/**
  * @generated from rpc yona.pilot.v1.PilotService.ListProjectMilestones
  */
 export const listProjectMilestones = PilotService.method.listProjectMilestones;

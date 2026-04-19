@@ -5,7 +5,7 @@ pub mod session;
 use axum::extract::{Form, Multipart};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Redirect, Response};
-use axum::routing::{get, post};
+use axum::routing::{get, post, put};
 use axum::{extract::Path, http::Method};
 use axum::{Json, Router};
 use bcrypt::{hash, verify, DEFAULT_COST};
@@ -23,13 +23,13 @@ use std::{collections::HashMap, path::PathBuf, vec};
 
 use generated::yona::pilot::v1::*;
 use persistence::PilotRepository;
-use yona_rust_integrations::{deliver, OutboundMail};
 use yona_rust_domain::{
     authorize_project_access, can_create_organization_project, can_create_personal_project,
     can_request_project_enrollment, can_update_organization, is_valid_organization_name,
     is_valid_project_name, normalize_default_landing_path, ProjectAccessFacts, ProjectOperation,
     ProjectScope, DEFAULT_LANDING_FALLBACK_PATH,
 };
+use yona_rust_integrations::{deliver, OutboundMail};
 
 #[allow(clippy::missing_panics_doc)]
 pub mod generated {
@@ -135,6 +135,24 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let file_base_path = base_path.clone();
     let file_read_session_manager = session_manager.clone();
     let file_read_backend = route_backend.clone();
+    let label_list_backend = route_backend.clone();
+    let label_list_session_manager = session_manager.clone();
+    let label_create_backend = route_backend.clone();
+    let label_create_session_manager = session_manager.clone();
+    let label_css_backend = route_backend.clone();
+    let label_css_session_manager = session_manager.clone();
+    let label_update_backend = route_backend.clone();
+    let label_update_session_manager = session_manager.clone();
+    let label_delete_backend = route_backend.clone();
+    let label_delete_session_manager = session_manager.clone();
+    let category_list_backend = route_backend.clone();
+    let category_list_session_manager = session_manager.clone();
+    let category_create_backend = route_backend.clone();
+    let category_create_session_manager = session_manager.clone();
+    let category_update_backend = route_backend.clone();
+    let category_update_session_manager = session_manager.clone();
+    let category_delete_backend = route_backend.clone();
+    let category_delete_session_manager = session_manager.clone();
 
     let mut base_router = Router::new()
         .route(
@@ -231,6 +249,141 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         id,
                         file_read_session_manager.clone(),
                         file_read_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/issue/labels",
+            get(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>| {
+                async move {
+                    direct_list_issue_labels(
+                        headers,
+                        owner,
+                        project,
+                        label_list_session_manager.clone(),
+                        label_list_backend.clone(),
+                    )
+                    .await
+                }
+            })
+            .post(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_create_issue_label(
+                        headers,
+                        owner,
+                        project,
+                        form,
+                        label_create_session_manager.clone(),
+                        label_create_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/issue/labels.css",
+            get(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>| {
+                async move {
+                    direct_issue_label_css(
+                        headers,
+                        owner,
+                        project,
+                        label_css_session_manager.clone(),
+                        label_css_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/issue/label/{label_id}",
+            put(move |headers: HeaderMap, Path((owner, project, label_id)): Path<(String, String, i64)>, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_update_issue_label(
+                        headers,
+                        owner,
+                        project,
+                        label_id,
+                        form,
+                        label_update_session_manager.clone(),
+                        label_update_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/issue/label/{label_id}/delete",
+            post(move |headers: HeaderMap, Path((owner, project, label_id)): Path<(String, String, i64)>, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_delete_issue_label(
+                        headers,
+                        owner,
+                        project,
+                        label_id,
+                        form,
+                        label_delete_session_manager.clone(),
+                        label_delete_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/issue/label/categories",
+            get(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>| {
+                async move {
+                    direct_list_issue_label_categories(
+                        headers,
+                        owner,
+                        project,
+                        category_list_session_manager.clone(),
+                        category_list_backend.clone(),
+                    )
+                    .await
+                }
+            })
+            .post(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_create_issue_label_category(
+                        headers,
+                        owner,
+                        project,
+                        form,
+                        category_create_session_manager.clone(),
+                        category_create_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/issue/label/category/{category_id}",
+            put(move |headers: HeaderMap, Path((owner, project, category_id)): Path<(String, String, i64)>, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_update_issue_label_category(
+                        headers,
+                        owner,
+                        project,
+                        category_id,
+                        form,
+                        category_update_session_manager.clone(),
+                        category_update_backend.clone(),
+                    )
+                    .await
+                }
+            })
+            .delete(move |headers: HeaderMap, Path((owner, project, category_id)): Path<(String, String, i64)>| {
+                async move {
+                    direct_delete_issue_label_category(
+                        headers,
+                        owner,
+                        project,
+                        category_id,
+                        category_delete_session_manager.clone(),
+                        category_delete_backend.clone(),
                     )
                     .await
                 }
@@ -439,9 +592,7 @@ fn send_signup_verification_mail(
         &format!("/verify/{login_id}/{verification_code}"),
     );
     deliver(OutboundMail {
-        body: format!(
-            "User verification\n\nClick this link to verify email:\n{verify_url}\n"
-        ),
+        body: format!("User verification\n\nClick this link to verify email:\n{verify_url}\n"),
         from: default_smtp_from(),
         subject: "New Sign-up Confirm".to_string(),
         to: to.to_string(),
@@ -461,7 +612,9 @@ fn send_password_reset_mail(
         &format!("/resetPassword?s={verification_code}"),
     );
     deliver(OutboundMail {
-        body: format!("Password reset request\n\nOpen this link to reset your password:\n{reset_url}\n"),
+        body: format!(
+            "Password reset request\n\nOpen this link to reset your password:\n{reset_url}\n"
+        ),
         from: default_smtp_from(),
         subject: "Password reset request".to_string(),
         to: to.to_string(),
@@ -501,9 +654,13 @@ async fn direct_request_reset_password_email(
     let session = session_manager.ensure_anonymous_session(&headers);
     let redirect_path = match &backend {
         PilotBackend::Repository(repository) => {
-            let login_id = normalize_identifier(form.get("loginId").map(String::as_str).unwrap_or_default());
-            let email_address =
-                normalize_identifier(form.get("emailAddress").map(String::as_str).unwrap_or_default());
+            let login_id =
+                normalize_identifier(form.get("loginId").map(String::as_str).unwrap_or_default());
+            let email_address = normalize_identifier(
+                form.get("emailAddress")
+                    .map(String::as_str)
+                    .unwrap_or_default(),
+            );
             match repository
                 .find_user_by_login_id(&login_id)
                 .await
@@ -547,10 +704,7 @@ async fn direct_reset_password(
 ) -> Response {
     let hash_string = form.get("hashString").cloned().unwrap_or_default();
     let password = form.get("password").cloned().unwrap_or_default();
-    let retyped_password = form
-        .get("retypedPassword")
-        .cloned()
-        .unwrap_or_default();
+    let retyped_password = form.get("retypedPassword").cloned().unwrap_or_default();
 
     if password.len() < 8 || password != retyped_password {
         let query = if hash_string.is_empty() {
@@ -563,24 +717,27 @@ async fn direct_reset_password(
 
     let redirect_path = match &backend {
         PilotBackend::Repository(repository) => {
-            match repository.find_valid_password_reset_user_id(&hash_string).await {
-                Ok(Some(user_id)) => {
-                    match hash(&password, DEFAULT_COST) {
-                        Ok(password_hash) => {
-                            if repository
-                                .update_password_hash_for_user(user_id, &password_hash)
-                                .await
-                                .is_ok()
-                            {
-                                let _ = repository.delete_password_reset_verification(&hash_string).await;
-                                "/users/loginform?password=reset".to_string()
-                            } else {
-                                format!("/resetPassword?error=invalid&s={hash_string}")
-                            }
+            match repository
+                .find_valid_password_reset_user_id(&hash_string)
+                .await
+            {
+                Ok(Some(user_id)) => match hash(&password, DEFAULT_COST) {
+                    Ok(password_hash) => {
+                        if repository
+                            .update_password_hash_for_user(user_id, &password_hash)
+                            .await
+                            .is_ok()
+                        {
+                            let _ = repository
+                                .delete_password_reset_verification(&hash_string)
+                                .await;
+                            "/users/loginform?password=reset".to_string()
+                        } else {
+                            format!("/resetPassword?error=invalid&s={hash_string}")
                         }
-                        Err(_) => format!("/resetPassword?error=invalid&s={hash_string}"),
                     }
-                }
+                    Err(_) => format!("/resetPassword?error=invalid&s={hash_string}"),
+                },
                 _ => format!("/resetPassword?error=invalid&s={hash_string}"),
             }
         }
@@ -599,7 +756,10 @@ async fn direct_send_workspace_email_validation(
     base_path: String,
     public_origin: String,
 ) -> Response {
-    let login_redirect = base_path_href(&base_path, "/users/loginform?redirectUrl=%2Fuser%2Feditform%2Femails");
+    let login_redirect = base_path_href(
+        &base_path,
+        "/users/loginform?redirectUrl=%2Fuser%2Feditform%2Femails",
+    );
     let Some(session) = session_manager.read_session_from_headers(&headers) else {
         return Redirect::to(&login_redirect).into_response();
     };
@@ -611,12 +771,18 @@ async fn direct_send_workspace_email_validation(
         .map(|value| value.trim() == session.csrf_token)
         .unwrap_or(false);
     if !valid_csrf {
-        return Redirect::to(&base_path_href(&base_path, "/user/editform/emails?validation=error"))
-            .into_response();
+        return Redirect::to(&base_path_href(
+            &base_path,
+            "/user/editform/emails?validation=error",
+        ))
+        .into_response();
     }
     let Ok(email_id) = email_id.parse::<i64>() else {
-        return Redirect::to(&base_path_href(&base_path, "/user/editform/emails?validation=error"))
-            .into_response();
+        return Redirect::to(&base_path_href(
+            &base_path,
+            "/user/editform/emails?validation=error",
+        ))
+        .into_response();
     };
 
     let redirect_path = match &backend {
@@ -658,10 +824,15 @@ async fn direct_confirm_workspace_email(
     base_path: String,
 ) -> Response {
     let previous_session = session_manager.read_session_from_headers(&headers);
-    let previous_token = previous_session.as_ref().map(|session| session.token.as_str());
+    let previous_token = previous_session
+        .as_ref()
+        .map(|session| session.token.as_str());
     let Ok(email_id) = email_id.parse::<i64>() else {
-        return Redirect::to(&base_path_href(&base_path, "/user/editform/emails?confirmed=invalid"))
-            .into_response();
+        return Redirect::to(&base_path_href(
+            &base_path,
+            "/user/editform/emails?confirmed=invalid",
+        ))
+        .into_response();
     };
 
     match &backend {
@@ -671,8 +842,8 @@ async fn direct_confirm_workspace_email(
                 .await
             {
                 Ok(Some(user_id)) => {
-                    let authenticated_session = session_manager
-                        .create_authenticated_session(previous_token, user_id);
+                    let authenticated_session =
+                        session_manager.create_authenticated_session(previous_token, user_id);
                     let mut response = Redirect::to(&base_path_href(
                         &base_path,
                         "/user/editform/emails?confirmed=1",
@@ -701,6 +872,412 @@ async fn direct_confirm_workspace_email(
     }
 }
 
+fn form_value<'a>(form: &'a HashMap<String, String>, keys: &[&str]) -> &'a str {
+    keys.iter()
+        .find_map(|key| form.get(*key).map(String::as_str))
+        .unwrap_or("")
+}
+
+fn form_bool(form: &HashMap<String, String>, keys: &[&str]) -> bool {
+    matches!(
+        form_value(form, keys).trim().to_ascii_lowercase().as_str(),
+        "true" | "1" | "on" | "yes"
+    )
+}
+
+fn direct_json_label(label: &persistence::IssueLabelRecord) -> serde_json::Value {
+    serde_json::json!({
+        "id": label.id.to_string(),
+        "name": label.name,
+        "color": label.color,
+        "category": label.category_name,
+        "categoryId": label.category_id.unwrap_or_default().to_string(),
+        "categoryIsExclusive": label.category_is_exclusive,
+    })
+}
+
+fn direct_json_category(category: &persistence::IssueLabelCategoryRecord) -> serde_json::Value {
+    serde_json::json!({
+        "id": category.id.to_string(),
+        "name": category.name,
+        "isExclusive": category.is_exclusive.to_string(),
+    })
+}
+
+async fn direct_project_update_allowed(
+    headers: &HeaderMap,
+    owner: &str,
+    project: &str,
+    session_manager: &SessionManager,
+    repository: &PilotRepository,
+    check_csrf: bool,
+) -> Result<session::Session, Response> {
+    let session = match require_session(session_manager, headers) {
+        Ok(session) => session,
+        Err(_) => return Err(StatusCode::UNAUTHORIZED.into_response()),
+    };
+    if check_csrf && require_valid_csrf(session_manager, headers, &session).is_err() {
+        return Err(StatusCode::FORBIDDEN.into_response());
+    }
+    let Some(user_id) = session.user_id else {
+        return Err(StatusCode::UNAUTHORIZED.into_response());
+    };
+    let authorization = match repository
+        .read_project_authorization(owner, project, Some(user_id))
+        .await
+    {
+        Ok(Some(authorization)) => authorization,
+        Ok(None) => return Err(StatusCode::NOT_FOUND.into_response()),
+        Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR.into_response()),
+    };
+    match project_update_allowed(&authorization) {
+        Ok(true) => Ok(session),
+        Ok(false) => Err(StatusCode::FORBIDDEN.into_response()),
+        Err(_) => Err(StatusCode::BAD_REQUEST.into_response()),
+    }
+}
+
+async fn direct_list_issue_labels(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    if require_project_read(&repository, &owner, &project, actor_id)
+        .await
+        .is_err()
+    {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    match repository.list_project_labels(&owner, &project).await {
+        Ok(labels) => {
+            Json(labels.iter().map(direct_json_label).collect::<Vec<_>>()).into_response()
+        }
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+async fn direct_create_issue_label(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    let label_name = form_value(&form, &["labelName", "name"]).trim();
+    let category_name = form_value(&form, &["categoryName", "category"]).trim();
+    let color = match normalize_issue_label_color(form_value(&form, &["labelColor", "color"])) {
+        Ok(color) => color,
+        Err(_) => return StatusCode::BAD_REQUEST.into_response(),
+    };
+    if label_name.is_empty() || category_name.is_empty() {
+        return StatusCode::BAD_REQUEST.into_response();
+    }
+    match repository
+        .create_project_label(persistence::CreateProjectLabelInput {
+            category_is_exclusive: form_bool(&form, &["categoryIsExclusive", "isExclusive"]),
+            category_name: category_name.to_string(),
+            label_color: color,
+            label_name: label_name.to_string(),
+            owner_name: owner,
+            project_name: project,
+        })
+        .await
+    {
+        Ok(Some((label, true))) => {
+            (StatusCode::CREATED, Json(direct_json_label(&label))).into_response()
+        }
+        Ok(Some((_label, false))) => StatusCode::NO_CONTENT.into_response(),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+async fn direct_issue_label_css(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    if require_project_read(&repository, &owner, &project, actor_id)
+        .await
+        .is_err()
+    {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    match repository.list_project_labels(&owner, &project).await {
+        Ok(labels) => (
+            [(http::header::CONTENT_TYPE, "text/css")],
+            issue_label_css(&labels),
+        )
+            .into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+async fn direct_update_issue_label(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    label_id: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    let category_id = form_value(&form, &["category.id", "categoryId"])
+        .parse::<i64>()
+        .unwrap_or_default();
+    let color = match normalize_issue_label_color(form_value(&form, &["color", "labelColor"])) {
+        Ok(color) => color,
+        Err(_) => return StatusCode::BAD_REQUEST.into_response(),
+    };
+    match repository
+        .update_project_label(persistence::UpdateProjectLabelInput {
+            category_id,
+            label_color: color,
+            label_id,
+            label_name: form_value(&form, &["name", "labelName"]).to_string(),
+            owner_name: owner,
+            project_name: project,
+        })
+        .await
+    {
+        Ok(Some(_)) => StatusCode::OK.into_response(),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::BAD_REQUEST.into_response(),
+    }
+}
+
+async fn direct_delete_issue_label(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    label_id: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    if form_value(&form, &["_method"]).to_ascii_lowercase() != "delete" {
+        return StatusCode::BAD_REQUEST.into_response();
+    }
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    match repository
+        .delete_project_label(&owner, &project, label_id)
+        .await
+    {
+        Ok(true) => StatusCode::OK.into_response(),
+        Ok(false) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+async fn direct_list_issue_label_categories(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    if require_project_read(&repository, &owner, &project, actor_id)
+        .await
+        .is_err()
+    {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    match repository
+        .list_project_label_categories(&owner, &project)
+        .await
+    {
+        Ok(categories) => Json(
+            categories
+                .iter()
+                .map(direct_json_category)
+                .collect::<Vec<_>>(),
+        )
+        .into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
+async fn direct_create_issue_label_category(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    match repository
+        .create_project_label_category(persistence::CreateProjectLabelCategoryInput {
+            category_is_exclusive: form_bool(&form, &["isExclusive", "categoryIsExclusive"]),
+            category_name: form_value(&form, &["name", "categoryName"]).to_string(),
+            owner_name: owner,
+            project_name: project,
+        })
+        .await
+    {
+        Ok(Some((category, true))) => {
+            (StatusCode::CREATED, Json(direct_json_category(&category))).into_response()
+        }
+        Ok(Some((_category, false))) => StatusCode::NO_CONTENT.into_response(),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::BAD_REQUEST.into_response(),
+    }
+}
+
+async fn direct_update_issue_label_category(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    category_id: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    match repository
+        .update_project_label_category(persistence::UpdateProjectLabelCategoryInput {
+            category_id,
+            category_is_exclusive: form_bool(&form, &["isExclusive", "categoryIsExclusive"]),
+            category_name: form_value(&form, &["name", "categoryName"]).to_string(),
+            owner_name: owner,
+            project_name: project,
+        })
+        .await
+    {
+        Ok(Some(_)) => StatusCode::OK.into_response(),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::BAD_REQUEST.into_response(),
+    }
+}
+
+async fn direct_delete_issue_label_category(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    category_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if let Err(response) = direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        return response;
+    }
+    match repository
+        .delete_project_label_category(&owner, &project, category_id)
+        .await
+    {
+        Ok(true) => StatusCode::OK.into_response(),
+        Ok(false) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
+}
+
 #[derive(Clone)]
 struct PilotServiceImpl {
     base_path: String,
@@ -719,7 +1296,9 @@ impl PilotServiceImpl {
         let session = require_session(&self.session_manager, &ctx.headers)?;
         require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
         let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented("issue requires repository backend"));
+            return Err(ConnectError::unimplemented(
+                "issue requires repository backend",
+            ));
         };
         let _actor = require_authenticated_user(repository, session.user_id).await?;
         require_project_read(
@@ -730,20 +1309,44 @@ impl PilotServiceImpl {
         )
         .await?;
         let issue = repository
-            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .read_issue_detail(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+            )
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
         let user_id = session.user_id.expect("authenticated user id");
         match action {
-            "watch" => repository.watch_issue(issue.id, user_id).await.map_err(internal_error)?,
-            "unwatch" => repository.unwatch_issue(issue.id, user_id).await.map_err(internal_error)?,
-            "vote" => repository.vote_issue(issue.id, user_id).await.map_err(internal_error)?,
-            "unvote" => repository.unvote_issue(issue.id, user_id).await.map_err(internal_error)?,
-            _ => return Err(ConnectError::invalid_argument("invalid issue participation action")),
+            "watch" => repository
+                .watch_issue(issue.id, user_id)
+                .await
+                .map_err(internal_error)?,
+            "unwatch" => repository
+                .unwatch_issue(issue.id, user_id)
+                .await
+                .map_err(internal_error)?,
+            "vote" => repository
+                .vote_issue(issue.id, user_id)
+                .await
+                .map_err(internal_error)?,
+            "unvote" => repository
+                .unvote_issue(issue.id, user_id)
+                .await
+                .map_err(internal_error)?,
+            _ => {
+                return Err(ConnectError::invalid_argument(
+                    "invalid issue participation action",
+                ))
+            }
         }
         let updated = repository
-            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .read_issue_detail(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+            )
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
@@ -837,7 +1440,12 @@ impl BrowserRuntimeConfig {
 fn fixed_auth_ui_capabilities() -> ReadAuthUiCapabilitiesResponse {
     fn parse_bool_env(name: &str) -> bool {
         std::env::var(name)
-            .map(|value| matches!(value.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+            .map(|value| {
+                matches!(
+                    value.trim().to_ascii_lowercase().as_str(),
+                    "1" | "true" | "yes" | "on"
+                )
+            })
             .unwrap_or(false)
     }
 
@@ -1202,11 +1810,7 @@ async fn get_uploaded_file(
     let Ok(bytes) = std::fs::read(uploaded_file_path(&attachment.hash)) else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    (
-        [(http::header::CONTENT_TYPE, attachment.mime_type)],
-        bytes,
-    )
-        .into_response()
+    ([(http::header::CONTENT_TYPE, attachment.mime_type)], bytes).into_response()
 }
 
 async fn workspace_avatar_url(
@@ -1220,7 +1824,10 @@ async fn workspace_avatar_url(
         .await
         .map_err(internal_error)?
     {
-        return Ok(base_path_href(base_path, &format!("/files/{}", attachment.id)));
+        return Ok(base_path_href(
+            base_path,
+            &format!("/files/{}", attachment.id),
+        ));
     }
     Ok(gravatar_url(email_address))
 }
@@ -1284,7 +1891,14 @@ async fn load_workspace_project_lists(
 async fn load_workspace_settings_data(
     repository: &PilotRepository,
     user_id: i64,
-) -> Result<(String, Vec<WorkspaceEmail>, Vec<WatchedProjectNotifications>), ConnectError> {
+) -> Result<
+    (
+        String,
+        Vec<WorkspaceEmail>,
+        Vec<WatchedProjectNotifications>,
+    ),
+    ConnectError,
+> {
     let api_token = repository
         .read_api_token_for_user(user_id)
         .await
@@ -1584,12 +2198,67 @@ fn render_markdown_html(markdown: &str) -> String {
 fn issue_label_from_record(record: &persistence::IssueLabelRecord) -> IssueLabel {
     IssueLabel {
         category_id: record.category_id.unwrap_or_default(),
+        category_is_exclusive: record.category_is_exclusive,
         category_name: record.category_name.clone(),
         color: record.color.clone(),
         id: record.id,
         name: record.name.clone(),
         ..Default::default()
     }
+}
+
+fn issue_label_category_from_record(
+    record: &persistence::IssueLabelCategoryRecord,
+) -> IssueLabelCategory {
+    IssueLabelCategory {
+        id: record.id,
+        is_exclusive: record.is_exclusive,
+        name: record.name.clone(),
+        ..Default::default()
+    }
+}
+
+fn normalize_issue_label_color(value: &str) -> Result<String, ConnectError> {
+    let trimmed = value.trim().trim_start_matches('#');
+    let expanded = match trimmed.len() {
+        3 if trimmed.chars().all(|item| item.is_ascii_hexdigit()) => trimmed
+            .chars()
+            .flat_map(|item| [item, item])
+            .collect::<String>(),
+        6 if trimmed.chars().all(|item| item.is_ascii_hexdigit()) => trimmed.to_string(),
+        _ => return Err(ConnectError::invalid_argument("invalid issue label color")),
+    };
+    Ok(format!("#{}", expanded.to_ascii_lowercase()))
+}
+
+fn issue_label_text_color(background: &str) -> &'static str {
+    let normalized =
+        normalize_issue_label_color(background).unwrap_or_else(|_| "#ffffff".to_string());
+    let hex = normalized.trim_start_matches('#');
+    let red = u8::from_str_radix(&hex[0..2], 16).unwrap_or(255) as f64;
+    let green = u8::from_str_radix(&hex[2..4], 16).unwrap_or(255) as f64;
+    let blue = u8::from_str_radix(&hex[4..6], 16).unwrap_or(255) as f64;
+    let color_space = (red * 0.21) + (green * 0.72) + (blue * 0.07);
+    if color_space > 192.0 {
+        "dimgray"
+    } else {
+        "white"
+    }
+}
+
+fn issue_label_css(labels: &[persistence::IssueLabelRecord]) -> String {
+    labels
+        .iter()
+        .map(|label| {
+            let color = normalize_issue_label_color(&label.color)
+                .unwrap_or_else(|_| "#ffffff".to_string());
+            let text_color = issue_label_text_color(&color);
+            format!(
+                ".issue-label[data-label-id=\"{}\"]{{\n    box-shadow: inset 2px 0 0px {};\n    -webkit-box-shadow: inset 2px 0 0px {};\n    -moz-box-shadow: inset 2px 0 0px {};\n}}\n.issue-label.active[data-label-id=\"{}\"]{{\n    background-color: {};\n    color: {};\n}}\n",
+                label.id, color, color, color, label.id, color, text_color
+            )
+        })
+        .collect()
 }
 
 fn issue_attachment_from_record(
@@ -1639,7 +2308,13 @@ fn issue_timeline_item_from_record(
 ) -> IssueTimelineItem {
     match record {
         persistence::IssueTimelineItemRecord::Comment(comment) => IssueTimelineItem {
-            comment: Some(issue_comment_from_record(comment, viewer_can_manage, viewer_id, base_path)).into(),
+            comment: Some(issue_comment_from_record(
+                comment,
+                viewer_can_manage,
+                viewer_id,
+                base_path,
+            ))
+            .into(),
             created_label: comment.created_label.clone(),
             id: comment.id,
             kind: "comment".to_string(),
@@ -1706,7 +2381,9 @@ fn issue_mutation_input_from_update(
     }
 }
 
-fn issue_list_filter_from_request(request: &ListProjectIssuesRequestView<'_>) -> persistence::IssueListFilter {
+fn issue_list_filter_from_request(
+    request: &ListProjectIssuesRequestView<'_>,
+) -> persistence::IssueListFilter {
     persistence::IssueListFilter {
         assignee_login_id: (!request.assignee_login_id.trim().is_empty())
             .then(|| request.assignee_login_id.trim().to_string()),
@@ -1745,7 +2422,9 @@ fn issue_can_mutate(
         || authorization.viewer.is_project_member
         || issue.author_id == Some(actor.id)
         || (!issue.assignee_login_id.is_empty()
-            && issue.assignee_login_id.eq_ignore_ascii_case(&actor.login_id))
+            && issue
+                .assignee_login_id
+                .eq_ignore_ascii_case(&actor.login_id))
 }
 
 async fn require_project_read(
@@ -1767,7 +2446,9 @@ async fn require_project_read(
     if allowed {
         Ok(authorization)
     } else {
-        Err(ConnectError::permission_denied("project read is not allowed"))
+        Err(ConnectError::permission_denied(
+            "project read is not allowed",
+        ))
     }
 }
 
@@ -1776,7 +2457,9 @@ async fn require_authenticated_user(
     user_id: Option<i64>,
 ) -> Result<persistence::AppUserRecord, ConnectError> {
     let Some(user_id) = user_id else {
-        return Err(ConnectError::unauthenticated("missing authenticated session"));
+        return Err(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ));
     };
     repository
         .find_user_by_id(user_id)
@@ -1808,7 +2491,9 @@ fn issue_detail_response_from_record(
         comments: issue
             .comments
             .iter()
-            .map(|comment| issue_comment_from_record(comment, viewer_can_manage, viewer_id, base_path))
+            .map(|comment| {
+                issue_comment_from_record(comment, viewer_can_manage, viewer_id, base_path)
+            })
             .collect(),
         has_voted: issue.has_voted,
         is_watching: issue.is_watching,
@@ -1822,7 +2507,9 @@ fn issue_detail_response_from_record(
         timeline: issue
             .timeline
             .iter()
-            .map(|item| issue_timeline_item_from_record(item, viewer_can_manage, viewer_id, base_path))
+            .map(|item| {
+                issue_timeline_item_from_record(item, viewer_can_manage, viewer_id, base_path)
+            })
             .collect(),
         title: issue.title.clone(),
         viewer_can_comment,
@@ -1892,7 +2579,9 @@ fn organization_role_options() -> Vec<OrganizationRoleOption> {
     ]
 }
 
-fn project_member_summary_from_record(record: &persistence::ProjectMemberRecord) -> ProjectMemberSummary {
+fn project_member_summary_from_record(
+    record: &persistence::ProjectMemberRecord,
+) -> ProjectMemberSummary {
     ProjectMemberSummary {
         avatar_url: gravatar_url(&record.email_address),
         login_id: record.login_id.clone(),
@@ -1932,7 +2621,10 @@ async fn resolve_project_origin(
     Ok((origin_project.owner_name, origin_project.project_name))
 }
 
-fn project_code_menu_visible(authorization: &persistence::ProjectAuthorizationRecord, show_code: bool) -> bool {
+fn project_code_menu_visible(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    show_code: bool,
+) -> bool {
     show_code
         && (!authorization.project.is_code_accessible_member_only
             || authorization.viewer.is_project_member
@@ -1982,7 +2674,8 @@ async fn build_organization_container_response(
         && !authorization.viewer.is_organization_member
         && !authorization.viewer.is_site_admin;
     let viewer_can_leave = actor_id.is_some()
-        && (authorization.viewer.is_organization_member || authorization.viewer.is_organization_admin)
+        && (authorization.viewer.is_organization_member
+            || authorization.viewer.is_organization_admin)
         && (!authorization.viewer.is_organization_admin || admin_count > 1);
 
     let projects = repository
@@ -2014,7 +2707,9 @@ async fn build_organization_container_response(
         visible_projects.push(OrganizationProjectCard {
             created_label: format_project_date_label(project_authorization.project.created_date),
             is_watching,
-            last_pushed_label: format_project_date_label(project_authorization.project.last_pushed_date),
+            last_pushed_label: format_project_date_label(
+                project_authorization.project.last_pushed_date,
+            ),
             logo_url: String::new(),
             member_count: repository
                 .count_project_members(project_authorization.project.id)
@@ -2022,7 +2717,11 @@ async fn build_organization_container_response(
                 .map_err(internal_error)?,
             origin_owner_name,
             origin_project_name,
-            overview: project_authorization.project.overview.clone().unwrap_or_default(),
+            overview: project_authorization
+                .project
+                .overview
+                .clone()
+                .unwrap_or_default(),
             owner_name: project_authorization.project.owner_name.clone(),
             project_name: project_authorization.project.project_name.clone(),
             project_scope: project_authorization.project.project_scope.clone(),
@@ -2059,7 +2758,11 @@ async fn build_organization_container_response(
 
     Ok(OrganizationContainer {
         admin_members,
-        description: authorization.organization.description.clone().unwrap_or_default(),
+        description: authorization
+            .organization
+            .description
+            .clone()
+            .unwrap_or_default(),
         enrollment_requested: authorization.enrollment_requested,
         member_members,
         organization_name: authorization.organization.organization_name.clone(),
@@ -2488,7 +3191,10 @@ impl PilotService for PilotServiceImpl {
                 "workspace requires repository backend",
             ));
         };
-        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
+        Ok((
+            build_workspace_overview_response(repository, &session, &self.base_path).await?,
+            ctx,
+        ))
     }
 
     async fn set_default_landing_path(
@@ -2519,7 +3225,10 @@ impl PilotService for PilotServiceImpl {
             .await
             .map_err(internal_error)?;
 
-        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
+        Ok((
+            build_workspace_overview_response(repository, &session, &self.base_path).await?,
+            ctx,
+        ))
     }
 
     async fn update_profile(
@@ -2559,14 +3268,19 @@ impl PilotService for PilotServiceImpl {
                 return Err(workspace_invalid_argument("Only image files are allowed."));
             }
             if attachment.size > 1024 * 1000 {
-                return Err(workspace_invalid_argument("Images should be less than 1MB in size."));
+                return Err(workspace_invalid_argument(
+                    "Images should be less than 1MB in size.",
+                ));
             }
         }
         repository
             .update_profile_for_user(user_id, &request.name, &request.email)
             .await
             .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
+        Ok((
+            build_workspace_overview_response(repository, &session, &self.base_path).await?,
+            ctx,
+        ))
     }
 
     async fn change_password(
@@ -2592,7 +3306,9 @@ impl PilotService for PilotServiceImpl {
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::unauthenticated("missing authenticated session"))?;
         if normalize_identifier(&request.login_id) != user.login_id {
-            return Err(workspace_invalid_argument("Login ID does not match current session."));
+            return Err(workspace_invalid_argument(
+                "Login ID does not match current session.",
+            ));
         }
         if !verify(&request.old_password, &user.password_hash).map_err(internal_error)? {
             return Err(workspace_invalid_argument("Current password is incorrect."));
@@ -2639,7 +3355,10 @@ impl PilotService for PilotServiceImpl {
             .clear_recent_projects_for_user(user_id)
             .await
             .map_err(internal_error)?;
-        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
+        Ok((
+            build_workspace_overview_response(repository, &session, &self.base_path).await?,
+            ctx,
+        ))
     }
 
     async fn add_workspace_email(
@@ -2663,7 +3382,10 @@ impl PilotService for PilotServiceImpl {
             .add_workspace_email_for_user(user_id, &request.email)
             .await
             .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
+        Ok((
+            build_workspace_overview_response(repository, &session, &self.base_path).await?,
+            ctx,
+        ))
     }
 
     async fn delete_workspace_email(
@@ -2691,7 +3413,10 @@ impl PilotService for PilotServiceImpl {
             .delete_workspace_email_for_user(user_id, email_id)
             .await
             .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
+        Ok((
+            build_workspace_overview_response(repository, &session, &self.base_path).await?,
+            ctx,
+        ))
     }
 
     async fn send_workspace_email_validation(
@@ -2719,7 +3444,10 @@ impl PilotService for PilotServiceImpl {
             .send_workspace_email_validation_for_user(user_id, email_id)
             .await
             .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
+        Ok((
+            build_workspace_overview_response(repository, &session, &self.base_path).await?,
+            ctx,
+        ))
     }
 
     async fn set_main_workspace_email(
@@ -2747,7 +3475,10 @@ impl PilotService for PilotServiceImpl {
             .set_main_workspace_email_for_user(user_id, email_id)
             .await
             .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
+        Ok((
+            build_workspace_overview_response(repository, &session, &self.base_path).await?,
+            ctx,
+        ))
     }
 
     async fn reset_api_token(
@@ -2771,7 +3502,10 @@ impl PilotService for PilotServiceImpl {
             .reset_api_token_for_user(user_id)
             .await
             .map_err(internal_error)?;
-        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
+        Ok((
+            build_workspace_overview_response(repository, &session, &self.base_path).await?,
+            ctx,
+        ))
     }
 
     async fn toggle_workspace_notification(
@@ -2832,7 +3566,10 @@ impl PilotService for PilotServiceImpl {
             .toggle_workspace_notification_for_user(user_id, project_id, &request.event_type)
             .await
             .map_err(|error| workspace_invalid_argument(error.to_string()))?;
-        Ok((build_workspace_overview_response(repository, &session, &self.base_path).await?, ctx))
+        Ok((
+            build_workspace_overview_response(repository, &session, &self.base_path).await?,
+            ctx,
+        ))
     }
 
     async fn create_organization(
@@ -3220,7 +3957,11 @@ impl PilotService for PilotServiceImpl {
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::invalid_argument("organization member is unknown"))?;
         repository
-            .add_organization_membership(authorization.organization.id, target_user.id, "org_member")
+            .add_organization_membership(
+                authorization.organization.id,
+                target_user.id,
+                "org_member",
+            )
             .await
             .map_err(internal_error)?;
         repository
@@ -3233,7 +3974,10 @@ impl PilotService for PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("organization not found"))?;
-        Ok((build_organization_admin_response(repository, &refreshed).await?, ctx))
+        Ok((
+            build_organization_admin_response(repository, &refreshed).await?,
+            ctx,
+        ))
     }
 
     async fn update_organization_member_role(
@@ -3254,7 +3998,9 @@ impl PilotService for PilotServiceImpl {
             ));
         };
         if request.role != "org_admin" && request.role != "org_member" {
-            return Err(ConnectError::invalid_argument("organization role is invalid"));
+            return Err(ConnectError::invalid_argument(
+                "organization role is invalid",
+            ));
         }
 
         let authorization = repository
@@ -3285,7 +4031,10 @@ impl PilotService for PilotServiceImpl {
                 .iter()
                 .filter(|member| member.role == "org_admin")
                 .count();
-            if current_member.role == "org_admin" && request.role == "org_member" && admin_count == 1 {
+            if current_member.role == "org_admin"
+                && request.role == "org_member"
+                && admin_count == 1
+            {
                 return Err(ConnectError::invalid_argument(
                     "organization requires at least one admin",
                 ));
@@ -3305,7 +4054,10 @@ impl PilotService for PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("organization not found"))?;
-        Ok((build_organization_admin_response(repository, &refreshed).await?, ctx))
+        Ok((
+            build_organization_admin_response(repository, &refreshed).await?,
+            ctx,
+        ))
     }
 
     async fn delete_organization_member(
@@ -3370,7 +4122,10 @@ impl PilotService for PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("organization not found"))?;
-        Ok((build_organization_admin_response(repository, &refreshed).await?, ctx))
+        Ok((
+            build_organization_admin_response(repository, &refreshed).await?,
+            ctx,
+        ))
     }
 
     async fn accept_organization_enrollment(
@@ -3405,7 +4160,11 @@ impl PilotService for PilotServiceImpl {
         }
 
         repository
-            .add_organization_membership(authorization.organization.id, request.user_id, "org_member")
+            .add_organization_membership(
+                authorization.organization.id,
+                request.user_id,
+                "org_member",
+            )
             .await
             .map_err(internal_error)?;
         repository
@@ -3418,7 +4177,10 @@ impl PilotService for PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("organization not found"))?;
-        Ok((build_organization_admin_response(repository, &refreshed).await?, ctx))
+        Ok((
+            build_organization_admin_response(repository, &refreshed).await?,
+            ctx,
+        ))
     }
 
     async fn enroll_organization(
@@ -3535,7 +4297,9 @@ impl PilotService for PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("organization not found"))?;
-        if !authorization.viewer.is_organization_admin && !authorization.viewer.is_organization_member {
+        if !authorization.viewer.is_organization_admin
+            && !authorization.viewer.is_organization_member
+        {
             return Err(ConnectError::invalid_argument(
                 "organization leave is only available to members",
             ));
@@ -3609,9 +4373,7 @@ impl PilotService for PilotServiceImpl {
             .map_err(internal_error)?
             .is_empty()
         {
-            return Err(ConnectError::invalid_argument(
-                "organization has projects",
-            ));
+            return Err(ConnectError::invalid_argument("organization has projects"));
         }
 
         repository
@@ -4466,9 +5228,13 @@ impl PilotService for PilotServiceImpl {
                 .read_session_from_headers(&ctx.headers)
                 .and_then(|session| session.user_id);
 
-            let authorization =
-                require_project_read(repository, request.owner_name, request.project_name, actor_id)
-                    .await?;
+            let authorization = require_project_read(
+                repository,
+                request.owner_name,
+                request.project_name,
+                actor_id,
+            )
+            .await?;
 
             let record = repository
                 .list_project_issues_filtered(
@@ -4534,9 +5300,13 @@ impl PilotService for PilotServiceImpl {
         if let PilotBackend::Repository(repository) = &self.backend {
             let session = self.session_manager.read_session_from_headers(&ctx.headers);
             let actor_id = session.as_ref().and_then(|session| session.user_id);
-            let authorization =
-                require_project_read(repository, request.owner_name, request.project_name, actor_id)
-                    .await?;
+            let authorization = require_project_read(
+                repository,
+                request.owner_name,
+                request.project_name,
+                actor_id,
+            )
+            .await?;
             let issue = repository
                 .read_issue_detail(
                     request.owner_name,
@@ -4550,7 +5320,10 @@ impl PilotService for PilotServiceImpl {
                 return Err(ConnectError::not_found("pilot issue not found"));
             };
             let actor = match actor_id {
-                Some(user_id) => repository.find_user_by_id(user_id).await.map_err(internal_error)?,
+                Some(user_id) => repository
+                    .find_user_by_id(user_id)
+                    .await
+                    .map_err(internal_error)?,
                 None => None,
             };
             let viewer_can_manage = actor
@@ -4602,7 +5375,11 @@ impl PilotService for PilotServiceImpl {
             )
             .await?;
             let existing = repository
-                .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+                .read_issue_detail(
+                    request.owner_name,
+                    request.project_name,
+                    request.issue_number,
+                )
                 .await
                 .map_err(internal_error)?
                 .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
@@ -4658,7 +5435,9 @@ impl PilotService for PilotServiceImpl {
             return Err(ConnectError::invalid_argument("issue title is required"));
         }
         let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented("issue requires repository backend"));
+            return Err(ConnectError::unimplemented(
+                "issue requires repository backend",
+            ));
         };
         let actor = require_authenticated_user(repository, session.user_id).await?;
         require_project_read(
@@ -4694,10 +5473,14 @@ impl PilotService for PilotServiceImpl {
         let session = require_session(&self.session_manager, &ctx.headers)?;
         require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
         if request.issue_number <= 0 || request.title.trim().is_empty() {
-            return Err(ConnectError::invalid_argument("invalid issue update request"));
+            return Err(ConnectError::invalid_argument(
+                "invalid issue update request",
+            ));
         }
         let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented("issue requires repository backend"));
+            return Err(ConnectError::unimplemented(
+                "issue requires repository backend",
+            ));
         };
         let actor = require_authenticated_user(repository, session.user_id).await?;
         let authorization = require_project_read(
@@ -4708,12 +5491,18 @@ impl PilotService for PilotServiceImpl {
         )
         .await?;
         let existing = repository
-            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .read_issue_detail(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+            )
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
         if !issue_can_mutate(&authorization, &existing, &actor) {
-            return Err(ConnectError::permission_denied("issue update is not allowed"));
+            return Err(ConnectError::permission_denied(
+                "issue update is not allowed",
+            ));
         }
         let issue = repository
             .update_issue(persistence::UpdateIssueInput {
@@ -4740,7 +5529,9 @@ impl PilotService for PilotServiceImpl {
         let session = require_session(&self.session_manager, &ctx.headers)?;
         require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
         let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented("issue requires repository backend"));
+            return Err(ConnectError::unimplemented(
+                "issue requires repository backend",
+            ));
         };
         let actor = require_authenticated_user(repository, session.user_id).await?;
         let authorization = require_project_read(
@@ -4751,15 +5542,25 @@ impl PilotService for PilotServiceImpl {
         )
         .await?;
         let existing = repository
-            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .read_issue_detail(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+            )
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
         if !issue_can_mutate(&authorization, &existing, &actor) {
-            return Err(ConnectError::permission_denied("issue delete is not allowed"));
+            return Err(ConnectError::permission_denied(
+                "issue delete is not allowed",
+            ));
         }
         if !repository
-            .delete_issue(request.owner_name, request.project_name, request.issue_number)
+            .delete_issue(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+            )
             .await
             .map_err(internal_error)?
         {
@@ -4784,10 +5585,14 @@ impl PilotService for PilotServiceImpl {
         let session = require_session(&self.session_manager, &ctx.headers)?;
         require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
         if request.issue_number <= 0 || request.contents_markdown.trim().is_empty() {
-            return Err(ConnectError::invalid_argument("invalid issue comment request"));
+            return Err(ConnectError::invalid_argument(
+                "invalid issue comment request",
+            ));
         }
         let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented("issue requires repository backend"));
+            return Err(ConnectError::unimplemented(
+                "issue requires repository backend",
+            ));
         };
         let actor = require_authenticated_user(repository, session.user_id).await?;
         require_project_read(
@@ -4812,7 +5617,13 @@ impl PilotService for PilotServiceImpl {
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
         Ok((
-            issue_detail_response_from_record(&issue, false, true, session.user_id, &self.base_path),
+            issue_detail_response_from_record(
+                &issue,
+                false,
+                true,
+                session.user_id,
+                &self.base_path,
+            ),
             ctx,
         ))
     }
@@ -4825,10 +5636,14 @@ impl PilotService for PilotServiceImpl {
         let session = require_session(&self.session_manager, &ctx.headers)?;
         require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
         if request.issue_number <= 0 || request.comment_id <= 0 {
-            return Err(ConnectError::invalid_argument("invalid issue comment request"));
+            return Err(ConnectError::invalid_argument(
+                "invalid issue comment request",
+            ));
         }
         let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented("issue requires repository backend"));
+            return Err(ConnectError::unimplemented(
+                "issue requires repository backend",
+            ));
         };
         let actor = require_authenticated_user(repository, session.user_id).await?;
         let authorization = require_project_read(
@@ -4839,7 +5654,11 @@ impl PilotService for PilotServiceImpl {
         )
         .await?;
         let existing = repository
-            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .read_issue_detail(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+            )
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
@@ -4880,7 +5699,9 @@ impl PilotService for PilotServiceImpl {
         let session = require_session(&self.session_manager, &ctx.headers)?;
         require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
         let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented("issue requires repository backend"));
+            return Err(ConnectError::unimplemented(
+                "issue requires repository backend",
+            ));
         };
         let actor = require_authenticated_user(repository, session.user_id).await?;
         let authorization = require_project_read(
@@ -4891,7 +5712,11 @@ impl PilotService for PilotServiceImpl {
         )
         .await?;
         let existing = repository
-            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .read_issue_detail(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+            )
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
@@ -4928,20 +5753,33 @@ impl PilotService for PilotServiceImpl {
         request: OwnedView<ListIssueTimelineRequestView<'static>>,
     ) -> Result<(ListIssueTimelineResponse, Context), ConnectError> {
         let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented("issue requires repository backend"));
+            return Err(ConnectError::unimplemented(
+                "issue requires repository backend",
+            ));
         };
         let session = self.session_manager.read_session_from_headers(&ctx.headers);
         let actor_id = session.as_ref().and_then(|session| session.user_id);
-        let authorization =
-            require_project_read(repository, request.owner_name, request.project_name, actor_id)
-                .await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            actor_id,
+        )
+        .await?;
         let issue = repository
-            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .read_issue_detail(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+            )
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
         let actor = match actor_id {
-            Some(user_id) => repository.find_user_by_id(user_id).await.map_err(internal_error)?,
+            Some(user_id) => repository
+                .find_user_by_id(user_id)
+                .await
+                .map_err(internal_error)?,
             None => None,
         };
         let can_manage = actor
@@ -4952,7 +5790,9 @@ impl PilotService for PilotServiceImpl {
                 items: issue
                     .timeline
                     .iter()
-                    .map(|item| issue_timeline_item_from_record(item, can_manage, actor_id, &self.base_path))
+                    .map(|item| {
+                        issue_timeline_item_from_record(item, can_manage, actor_id, &self.base_path)
+                    })
                     .collect(),
                 ..Default::default()
             },
@@ -5000,7 +5840,9 @@ impl PilotService for PilotServiceImpl {
         let session = require_session(&self.session_manager, &ctx.headers)?;
         require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
         let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented("issue requires repository backend"));
+            return Err(ConnectError::unimplemented(
+                "issue requires repository backend",
+            ));
         };
         let actor = require_authenticated_user(repository, session.user_id).await?;
         let authorization = require_project_read(
@@ -5011,12 +5853,18 @@ impl PilotService for PilotServiceImpl {
         )
         .await?;
         let existing = repository
-            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .read_issue_detail(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+            )
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
         if !issue_can_mutate(&authorization, &existing, &actor) {
-            return Err(ConnectError::permission_denied("issue assign is not allowed"));
+            return Err(ConnectError::permission_denied(
+                "issue assign is not allowed",
+            ));
         }
         let issue = repository
             .assign_issue(
@@ -5043,7 +5891,9 @@ impl PilotService for PilotServiceImpl {
         let session = require_session(&self.session_manager, &ctx.headers)?;
         require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
         let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented("issue requires repository backend"));
+            return Err(ConnectError::unimplemented(
+                "issue requires repository backend",
+            ));
         };
         let actor = require_authenticated_user(repository, session.user_id).await?;
         let authorization = require_project_read(
@@ -5054,12 +5904,18 @@ impl PilotService for PilotServiceImpl {
         )
         .await?;
         let existing = repository
-            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .read_issue_detail(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+            )
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
         if !issue_can_mutate(&authorization, &existing, &actor) {
-            return Err(ConnectError::permission_denied("issue assign is not allowed"));
+            return Err(ConnectError::permission_denied(
+                "issue assign is not allowed",
+            ));
         }
         let issue = repository
             .assign_issue(
@@ -5086,7 +5942,9 @@ impl PilotService for PilotServiceImpl {
         let session = require_session(&self.session_manager, &ctx.headers)?;
         require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
         let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented("issue requires repository backend"));
+            return Err(ConnectError::unimplemented(
+                "issue requires repository backend",
+            ));
         };
         let actor = require_authenticated_user(repository, session.user_id).await?;
         let authorization = require_project_read(
@@ -5103,7 +5961,9 @@ impl PilotService for PilotServiceImpl {
                 .map_err(internal_error)?
                 .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
             if !issue_can_mutate(&authorization, &issue, &actor) {
-                return Err(ConnectError::permission_denied("issue mass update is not allowed"));
+                return Err(ConnectError::permission_denied(
+                    "issue mass update is not allowed",
+                ));
             }
         }
         let items = repository
@@ -5119,7 +5979,8 @@ impl PilotService for PilotServiceImpl {
                     owner_name: request.owner_name.to_string(),
                     project_name: request.project_name.to_string(),
                     remove_label_ids: request.remove_label_ids.to_vec(),
-                    state: (!request.state.trim().is_empty()).then(|| request.state.trim().to_string()),
+                    state: (!request.state.trim().is_empty())
+                        .then(|| request.state.trim().to_string()),
                 },
                 &actor.login_id,
             )
@@ -5136,7 +5997,13 @@ impl PilotService for PilotServiceImpl {
                 )
             })
             .collect();
-        Ok((MassUpdateIssuesResponse { items, ..Default::default() }, ctx))
+        Ok((
+            MassUpdateIssuesResponse {
+                items,
+                ..Default::default()
+            },
+            ctx,
+        ))
     }
 
     async fn list_project_labels(
@@ -5145,7 +6012,9 @@ impl PilotService for PilotServiceImpl {
         request: OwnedView<ListProjectLabelsRequestView<'static>>,
     ) -> Result<(ListProjectLabelsResponse, Context), ConnectError> {
         let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented("issue requires repository backend"));
+            return Err(ConnectError::unimplemented(
+                "issue requires repository backend",
+            ));
         };
         let session = self.session_manager.read_session_from_headers(&ctx.headers);
         require_project_read(
@@ -5162,7 +6031,328 @@ impl PilotService for PilotServiceImpl {
             .iter()
             .map(issue_label_from_record)
             .collect();
-        Ok((ListProjectLabelsResponse { labels, ..Default::default() }, ctx))
+        Ok((
+            ListProjectLabelsResponse {
+                labels,
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
+    async fn list_project_label_categories(
+        &self,
+        ctx: Context,
+        request: OwnedView<ListProjectLabelsRequestView<'static>>,
+    ) -> Result<(ListProjectLabelCategoriesResponse, Context), ConnectError> {
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "issue label requires repository backend",
+            ));
+        };
+        let session = self.session_manager.read_session_from_headers(&ctx.headers);
+        require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.as_ref().and_then(|session| session.user_id),
+        )
+        .await?;
+        let categories = repository
+            .list_project_label_categories(request.owner_name, request.project_name)
+            .await
+            .map_err(internal_error)?
+            .iter()
+            .map(issue_label_category_from_record)
+            .collect();
+        Ok((
+            ListProjectLabelCategoriesResponse {
+                categories,
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
+    async fn create_project_label(
+        &self,
+        ctx: Context,
+        request: OwnedView<CreateProjectLabelRequestView<'static>>,
+    ) -> Result<(ProjectLabelMutationResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "issue label requires repository backend",
+            ));
+        };
+        require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        if !project_update_allowed(&authorization)? {
+            return Err(ConnectError::permission_denied(
+                "issue label create is not allowed",
+            ));
+        }
+        let color = normalize_issue_label_color(request.label_color)?;
+        let Some((label, created)) = repository
+            .create_project_label(persistence::CreateProjectLabelInput {
+                category_is_exclusive: request.category_is_exclusive,
+                category_name: request.category_name.trim().to_string(),
+                label_color: color,
+                label_name: request.label_name.trim().to_string(),
+                owner_name: request.owner_name.to_string(),
+                project_name: request.project_name.to_string(),
+            })
+            .await
+            .map_err(internal_error)?
+        else {
+            return Err(ConnectError::not_found("project not found"));
+        };
+        Ok((
+            ProjectLabelMutationResponse {
+                created,
+                label: Some(issue_label_from_record(&label)).into(),
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
+    async fn update_project_label(
+        &self,
+        ctx: Context,
+        request: OwnedView<UpdateProjectLabelRequestView<'static>>,
+    ) -> Result<(ProjectLabelMutationResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "issue label requires repository backend",
+            ));
+        };
+        require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        if !project_update_allowed(&authorization)? {
+            return Err(ConnectError::permission_denied(
+                "issue label update is not allowed",
+            ));
+        }
+        let color = normalize_issue_label_color(request.label_color)?;
+        let Some(label) = repository
+            .update_project_label(persistence::UpdateProjectLabelInput {
+                category_id: request.category_id,
+                label_color: color,
+                label_id: request.label_id,
+                label_name: request.label_name.trim().to_string(),
+                owner_name: request.owner_name.to_string(),
+                project_name: request.project_name.to_string(),
+            })
+            .await
+            .map_err(|error| ConnectError::invalid_argument(error.to_string()))?
+        else {
+            return Err(ConnectError::not_found("issue label not found"));
+        };
+        Ok((
+            ProjectLabelMutationResponse {
+                created: false,
+                label: Some(issue_label_from_record(&label)).into(),
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
+    async fn delete_project_label(
+        &self,
+        ctx: Context,
+        request: OwnedView<DeleteProjectLabelRequestView<'static>>,
+    ) -> Result<(ProjectLabelDeleteResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "issue label requires repository backend",
+            ));
+        };
+        require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        if !project_update_allowed(&authorization)? {
+            return Err(ConnectError::permission_denied(
+                "issue label delete is not allowed",
+            ));
+        }
+        let ok = repository
+            .delete_project_label(request.owner_name, request.project_name, request.label_id)
+            .await
+            .map_err(internal_error)?;
+        if !ok {
+            return Err(ConnectError::not_found("issue label not found"));
+        }
+        Ok((
+            ProjectLabelDeleteResponse {
+                ok,
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
+    async fn create_project_label_category(
+        &self,
+        ctx: Context,
+        request: OwnedView<CreateProjectLabelCategoryRequestView<'static>>,
+    ) -> Result<(ProjectLabelCategoryMutationResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "issue label requires repository backend",
+            ));
+        };
+        require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        if !project_update_allowed(&authorization)? {
+            return Err(ConnectError::permission_denied(
+                "issue label category create is not allowed",
+            ));
+        }
+        let Some((category, created)) = repository
+            .create_project_label_category(persistence::CreateProjectLabelCategoryInput {
+                category_is_exclusive: request.category_is_exclusive,
+                category_name: request.category_name.trim().to_string(),
+                owner_name: request.owner_name.to_string(),
+                project_name: request.project_name.to_string(),
+            })
+            .await
+            .map_err(internal_error)?
+        else {
+            return Err(ConnectError::not_found("project not found"));
+        };
+        Ok((
+            ProjectLabelCategoryMutationResponse {
+                category: Some(issue_label_category_from_record(&category)).into(),
+                created,
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
+    async fn update_project_label_category(
+        &self,
+        ctx: Context,
+        request: OwnedView<UpdateProjectLabelCategoryRequestView<'static>>,
+    ) -> Result<(ProjectLabelCategoryMutationResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "issue label requires repository backend",
+            ));
+        };
+        require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        if !project_update_allowed(&authorization)? {
+            return Err(ConnectError::permission_denied(
+                "issue label category update is not allowed",
+            ));
+        }
+        let Some(category) = repository
+            .update_project_label_category(persistence::UpdateProjectLabelCategoryInput {
+                category_id: request.category_id,
+                category_is_exclusive: request.category_is_exclusive,
+                category_name: request.category_name.trim().to_string(),
+                owner_name: request.owner_name.to_string(),
+                project_name: request.project_name.to_string(),
+            })
+            .await
+            .map_err(|error| ConnectError::invalid_argument(error.to_string()))?
+        else {
+            return Err(ConnectError::not_found("issue label category not found"));
+        };
+        Ok((
+            ProjectLabelCategoryMutationResponse {
+                category: Some(issue_label_category_from_record(&category)).into(),
+                created: false,
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
+    async fn delete_project_label_category(
+        &self,
+        ctx: Context,
+        request: OwnedView<DeleteProjectLabelCategoryRequestView<'static>>,
+    ) -> Result<(ProjectLabelDeleteResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "issue label requires repository backend",
+            ));
+        };
+        require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        if !project_update_allowed(&authorization)? {
+            return Err(ConnectError::permission_denied(
+                "issue label category delete is not allowed",
+            ));
+        }
+        let ok = repository
+            .delete_project_label_category(
+                request.owner_name,
+                request.project_name,
+                request.category_id,
+            )
+            .await
+            .map_err(internal_error)?;
+        if !ok {
+            return Err(ConnectError::not_found("issue label category not found"));
+        }
+        Ok((
+            ProjectLabelDeleteResponse {
+                ok,
+                ..Default::default()
+            },
+            ctx,
+        ))
     }
 
     async fn list_project_milestones(
@@ -5171,7 +6361,9 @@ impl PilotService for PilotServiceImpl {
         request: OwnedView<ListProjectMilestonesRequestView<'static>>,
     ) -> Result<(ListProjectMilestonesResponse, Context), ConnectError> {
         let PilotBackend::Repository(repository) = &self.backend else {
-            return Err(ConnectError::unimplemented("issue requires repository backend"));
+            return Err(ConnectError::unimplemented(
+                "issue requires repository backend",
+            ));
         };
         let session = self.session_manager.read_session_from_headers(&ctx.headers);
         require_project_read(
@@ -5188,7 +6380,13 @@ impl PilotService for PilotServiceImpl {
             .iter()
             .map(issue_milestone_from_record)
             .collect();
-        Ok((ListProjectMilestonesResponse { milestones, ..Default::default() }, ctx))
+        Ok((
+            ListProjectMilestonesResponse {
+                milestones,
+                ..Default::default()
+            },
+            ctx,
+        ))
     }
 
     async fn render_markdown(

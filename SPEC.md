@@ -29,18 +29,18 @@ Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무�
 
 ### 0.3 명시적 금지 사항 — MUST NOT
 
-| 번호 | 금지 행위 | 이유 |
-|------|-----------|------|
-| N-01 | legacy에 없는 UI 요소/화면/기능을 "개선"이라는 이름으로 추가 | 기능 변환의 범위 초과 |
-| N-02 | legacy의 레이블, 메뉴 구조, 버튼 텍스트, 동선을 임의 변경 | UX parity 위반 |
-| N-03 | `SPEC.md` Section 1의 고정 결정 밖에서 새 패턴이나 추상화 도입 | 구조 변환 범위 초과 |
-| N-04 | legacy 외부 호환 REST API를 임의 확장하거나, legacy 기능 근거 없이 ConnectRPC 메서드를 추가 | contract 범위 초과 |
-| N-05 | 검색 결과 UI, 페이지네이션 방식, 정렬 기준 등을 legacy와 다르게 구현 | UX parity 위반 |
-| N-06 | 에러 메시지, 빈 상태 텍스트, placeholder 등을 legacy와 다르게 작성 | copy parity 위반 |
-| N-07 | legacy에서 사용하는 URL 경로 패턴을 변경 (예: `/issues` → `/tickets`) | deep-link parity 위반 |
-| N-08 | 변환 범위를 벗어난 아키텍처 논의를 현재 작업에 끌어들이기 | scope creep |
-| N-09 | `reference/mixed-code/**` 코드를 canonical implementation처럼 취급 | reference-only 원칙 위반 |
-| N-10 | 현재 Phase에 속하지 않는 기능을 선행 구현 | Phase gate 위반 |
+| 번호 | 금지 행위                                                                                   | 이유                     |
+| ---- | ------------------------------------------------------------------------------------------- | ------------------------ |
+| N-01 | legacy에 없는 UI 요소/화면/기능을 "개선"이라는 이름으로 추가                                | 기능 변환의 범위 초과    |
+| N-02 | legacy의 레이블, 메뉴 구조, 버튼 텍스트, 동선을 임의 변경                                   | UX parity 위반           |
+| N-03 | `SPEC.md` Section 1의 고정 결정 밖에서 새 패턴이나 추상화 도입                              | 구조 변환 범위 초과      |
+| N-04 | legacy 외부 호환 REST API를 임의 확장하거나, legacy 기능 근거 없이 ConnectRPC 메서드를 추가 | contract 범위 초과       |
+| N-05 | 검색 결과 UI, 페이지네이션 방식, 정렬 기준 등을 legacy와 다르게 구현                        | UX parity 위반           |
+| N-06 | 에러 메시지, 빈 상태 텍스트, placeholder 등을 legacy와 다르게 작성                          | copy parity 위반         |
+| N-07 | legacy에서 사용하는 URL 경로 패턴을 변경 (예: `/issues` → `/tickets`)                       | deep-link parity 위반    |
+| N-08 | 변환 범위를 벗어난 아키텍처 논의를 현재 작업에 끌어들이기                                   | scope creep              |
+| N-09 | `reference/mixed-code/**` 코드를 canonical implementation처럼 취급                          | reference-only 원칙 위반 |
+| N-10 | 현재 Phase에 속하지 않는 기능을 선행 구현                                                   | Phase gate 위반          |
 
 ### 0.4 권한과 근거 우선순위
 
@@ -48,23 +48,23 @@ Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무�
 
 **권한 우선순위**:
 
-| 순위 | 소스 | 역할 |
-|------|------|------|
-| 1 | `AGENTS.md` | 에이전트 실행 규칙과 변환 원칙의 최상위 권한 |
-| 2 | 이 문서 (`SPEC.md`) | Rust pivot 이후 기술적 실행 명세 |
-| 3 | `repo root` 현재 코드 | canonical implementation baseline |
-| 4 | `docs/agents/*.md` | `AGENTS.md`와 `SPEC.md`의 실행 mirror |
-| 5 | `reference/mixed-code/**` | reference-only migration material |
+| 순위 | 소스                      | 역할                                         |
+| ---- | ------------------------- | -------------------------------------------- |
+| 1    | `AGENTS.md`               | 에이전트 실행 규칙과 변환 원칙의 최상위 권한 |
+| 2    | 이 문서 (`SPEC.md`)       | Rust pivot 이후 기술적 실행 명세             |
+| 3    | `repo root` 현재 코드     | canonical implementation baseline            |
+| 4    | `docs/agents/*.md`        | `AGENTS.md`와 `SPEC.md`의 실행 mirror        |
+| 5    | `reference/mixed-code/**` | reference-only migration material            |
 
 **기능/UX 근거 우선순위**:
 
-| 순위 | 소스 | 역할 |
-|------|------|------|
-| 1 | `yona-original/` | 기능/UX/copy/deep-link parity의 최상위 기준 |
-| 2 | 이 문서 (`SPEC.md`) | legacy 근거를 Rust 구현으로 번역한 실행 명세 |
-| 3 | `docs/provenance/*` | legacy source → Rust target 매핑, gap/deviation/deferred 근거 |
-| 4 | `repo root` 현재 코드 | 현재 canonical implementation baseline |
-| 5 | `reference/mixed-code/**` | pre-Rust pivot reference-only migration material |
+| 순위 | 소스                      | 역할                                                          |
+| ---- | ------------------------- | ------------------------------------------------------------- |
+| 1    | `yona-original/`          | 기능/UX/copy/deep-link parity의 최상위 기준                   |
+| 2    | 이 문서 (`SPEC.md`)       | legacy 근거를 Rust 구현으로 번역한 실행 명세                  |
+| 3    | `docs/provenance/*`       | legacy source → Rust target 매핑, gap/deviation/deferred 근거 |
+| 4    | `repo root` 현재 코드     | 현재 canonical implementation baseline                        |
+| 5    | `reference/mixed-code/**` | pre-Rust pivot reference-only migration material              |
 
 ---
 
@@ -72,18 +72,18 @@ Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무�
 
 ### 1.1 기술 스택
 
-| 계층 | 기술 | 결정 이유 |
-|------|------|-----------|
-| Backend runtime | Rust + Tokio | legacy 서버 기능을 single binary로 재구현하고 SFX 배포 기준선을 유지 |
-| HTTP framework | Axum 0.8 | HTTP/RPC/static asset delivery를 같은 Rust runtime에서 단순하게 소유 |
-| RPC protocol | ConnectRPC (Protobuf) | `proto/`를 canonical contract source로 두고 Rust/frontend 양쪽 타입 생성을 고정 |
-| ORM | SeaORM 1.1 | legacy schema adopt와 MySQL/PostgreSQL/SQLite day-1 repository 테스트를 지원 |
-| Frontend | React 19 SPA | legacy 화면을 file-route 기반 SPA로 변환하되 서버 렌더링 구조를 새로 도입하지 않음 |
-| Routing | TanStack Router (file-based) | `frontend/src/routes/**`를 route source로 고정해 legacy deep-link parity를 추적 |
-| Build | Vite + `@vitejs/plugin-react` | SPA build output을 Rust binary에 embed하는 현재 기준선과 맞춤 |
-| Contract codegen (Rust) | `connectrpc-build` via `build.rs` | Rust generated bindings는 빌드 산출물로 유지해 checked-in drift를 방지 |
-| Contract codegen (Browser) | `buf generate` | browser client bindings는 `frontend/src/gen/`에 checked-in해 frontend type contract를 고정 |
-| Deployment | Single-file executable (SFX) + Docker | legacy 사용자가 실행파일 교체 + 설정 migration으로 PoC를 검증할 수 있게 함 |
+| 계층                       | 기술                                  | 결정 이유                                                                                  |
+| -------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Backend runtime            | Rust + Tokio                          | legacy 서버 기능을 single binary로 재구현하고 SFX 배포 기준선을 유지                       |
+| HTTP framework             | Axum 0.8                              | HTTP/RPC/static asset delivery를 같은 Rust runtime에서 단순하게 소유                       |
+| RPC protocol               | ConnectRPC (Protobuf)                 | `proto/`를 canonical contract source로 두고 Rust/frontend 양쪽 타입 생성을 고정            |
+| ORM                        | SeaORM 1.1                            | legacy schema adopt와 MySQL/PostgreSQL/SQLite day-1 repository 테스트를 지원               |
+| Frontend                   | React 19 SPA                          | legacy 화면을 file-route 기반 SPA로 변환하되 서버 렌더링 구조를 새로 도입하지 않음         |
+| Routing                    | TanStack Router (file-based)          | `frontend/src/routes/**`를 route source로 고정해 legacy deep-link parity를 추적            |
+| Build                      | Vite + `@vitejs/plugin-react`         | SPA build output을 Rust binary에 embed하는 현재 기준선과 맞춤                              |
+| Contract codegen (Rust)    | `connectrpc-build` via `build.rs`     | Rust generated bindings는 빌드 산출물로 유지해 checked-in drift를 방지                     |
+| Contract codegen (Browser) | `buf generate`                        | browser client bindings는 `frontend/src/gen/`에 checked-in해 frontend type contract를 고정 |
+| Deployment                 | Single-file executable (SFX) + Docker | legacy 사용자가 실행파일 교체 + 설정 migration으로 PoC를 검증할 수 있게 함                 |
 
 ### 1.2 Workspace 구조
 
@@ -126,26 +126,26 @@ repo root/
 
 legacy Yona 사용자가 기존 설정을 최소한의 변환으로 새 실행파일에서 사용할 수 있어야 한다.
 
-| Legacy 설정 (application.conf) | Rust 환경변수 / TOML | 비고 |
-|------|------|------|
-| `application.siteName` | `YONA_SITE_NAME` | |
-| `application.context` | `YONA_BASE_PATH` | |
-| `application.allowsAnonymousAccess` | `YONA_ALLOW_ANONYMOUS_ACCESS` | |
-| `application.guest.user.login.id.prefix` | `YONA_GUEST_LOGIN_PREFIX` | |
-| `application.use.email.verification` | `YONA_AUTH_EMAIL_VERIFICATION_ENABLED` | |
-| `signup.require.admin.confirm` | `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM` | |
-| `application.use.social.login.only` | `YONA_AUTH_SOCIAL_LOGIN_ONLY` | |
-| `application.show.user.email` | `YONA_SHOW_USER_EMAIL` | |
-| `application.allowed.sending.mail.domains` | `YONA_ALLOWED_MAIL_DOMAINS` | |
-| `db.default.url` | `YONA_DATABASE_URL` | jdbc URL → standard URL 변환 |
-| `smtp.host` / `smtp.port` / `smtp.ssl` | `YONA_SMTP_HOST`, `YONA_SMTP_PORT`, `YONA_SMTP_SSL` | |
-| `smtp.user` / `smtp.password` | `YONA_SMTP_USER`, `YONA_SMTP_PASSWORD` | |
-| `notification.bymail.enabled` | `YONA_NOTIFICATION_MAIL_ENABLED` | |
-| `application.notification.bymail.interval` | `YONA_NOTIFICATION_MAIL_INTERVAL` | |
-| `application.maxFileSize` | `YONA_MAX_FILE_SIZE` | |
-| `project.default.scope.when.create` | `YONA_PROJECT_DEFAULT_SCOPE` | public/protected/private |
-| `project.creation.default.menus` | `YONA_PROJECT_DEFAULT_MENUS` | issue, milestone, board 등 |
-| `application.langs` | `YONA_LANGS` | i18n 지원 언어 목록 |
+| Legacy 설정 (application.conf)             | Rust 환경변수 / TOML                                | 비고                         |
+| ------------------------------------------ | --------------------------------------------------- | ---------------------------- |
+| `application.siteName`                     | `YONA_SITE_NAME`                                    |                              |
+| `application.context`                      | `YONA_BASE_PATH`                                    |                              |
+| `application.allowsAnonymousAccess`        | `YONA_ALLOW_ANONYMOUS_ACCESS`                       |                              |
+| `application.guest.user.login.id.prefix`   | `YONA_GUEST_LOGIN_PREFIX`                           |                              |
+| `application.use.email.verification`       | `YONA_AUTH_EMAIL_VERIFICATION_ENABLED`              |                              |
+| `signup.require.admin.confirm`             | `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM`                  |                              |
+| `application.use.social.login.only`        | `YONA_AUTH_SOCIAL_LOGIN_ONLY`                       |                              |
+| `application.show.user.email`              | `YONA_SHOW_USER_EMAIL`                              |                              |
+| `application.allowed.sending.mail.domains` | `YONA_ALLOWED_MAIL_DOMAINS`                         |                              |
+| `db.default.url`                           | `YONA_DATABASE_URL`                                 | jdbc URL → standard URL 변환 |
+| `smtp.host` / `smtp.port` / `smtp.ssl`     | `YONA_SMTP_HOST`, `YONA_SMTP_PORT`, `YONA_SMTP_SSL` |                              |
+| `smtp.user` / `smtp.password`              | `YONA_SMTP_USER`, `YONA_SMTP_PASSWORD`              |                              |
+| `notification.bymail.enabled`              | `YONA_NOTIFICATION_MAIL_ENABLED`                    |                              |
+| `application.notification.bymail.interval` | `YONA_NOTIFICATION_MAIL_INTERVAL`                   |                              |
+| `application.maxFileSize`                  | `YONA_MAX_FILE_SIZE`                                |                              |
+| `project.default.scope.when.create`        | `YONA_PROJECT_DEFAULT_SCOPE`                        | public/protected/private     |
+| `project.creation.default.menus`           | `YONA_PROJECT_DEFAULT_MENUS`                        | issue, milestone, board 등   |
+| `application.langs`                        | `YONA_LANGS`                                        | i18n 지원 언어 목록          |
 
 **검수 기준**: legacy `application.conf.default`의 모든 핵심 설정 키에 대응하는 환경변수 또는 TOML 키가 존재하고, 설정 migration 가이드 문서가 제공되어야 한다.
 
@@ -161,11 +161,11 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 
 모든 기능 누락은 다음 세 계층에 동시에 기록한다.
 
-| 계층 | 위치 | 기록 내용 |
-|------|------|-----------|
+| 계층           | 위치                                | 기록 내용                                        |
+| -------------- | ----------------------------------- | ------------------------------------------------ |
 | root canonical | 이 문서의 해당 Feature Group 테이블 | `status` 컬럼에 `deferred` / `gap` / `deviation` |
-| provenance | `docs/provenance/` | legacy source → Rust target 매핑과 gap 사유 |
-| plan | `docs/agents/06-phase-plan.md` | follow-up item으로 기록 |
+| provenance     | `docs/provenance/`                  | legacy source → Rust target 매핑과 gap 사유      |
+| plan           | `docs/agents/06-phase-plan.md`      | follow-up item으로 기록                          |
 
 **용어 정의**:
 
@@ -181,21 +181,22 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 
 ### 3.1 Phase 계획
 
-| Phase | 범위 | 목표 |
-|-------|------|------|
-| Phase 0 | Rust workspace promotion, 문서 정리, provenance 갱신 | ✅ **완료** |
-| Phase 1 | 인증, Workspace, 조직, 프로젝트 | ✅ **완료** (잔여 항목은 이후 Phase로 재분류) |
-| Phase 2 | 이슈, 댓글, 첨부, 라벨, 마일스톤 | 🔜 다음 착수 |
-| Phase 3 | 저장소 브라우저, Smart HTTP, 커밋 토론, VCS | 후속 |
-| Phase 4 | Pull Request, 코드 리뷰 | 후속 |
-| Phase 5 | 검색, 게시판, 알림, 연동(Webhook) | 후속 |
-| Phase 6 | 관리자, 마이그레이션 도구, 배포 하드닝 | 후속 |
+| Phase   | 범위                                                 | 목표                                          |
+| ------- | ---------------------------------------------------- | --------------------------------------------- |
+| Phase 0 | Rust workspace promotion, 문서 정리, provenance 갱신 | ✅ **완료**                                   |
+| Phase 1 | 인증, Workspace, 조직, 프로젝트                      | ✅ **완료** (잔여 항목은 이후 Phase로 재분류) |
+| Phase 2 | 이슈, 댓글, 첨부, 라벨, 마일스톤                     | 🔜 다음 착수                                  |
+| Phase 3 | 저장소 브라우저, Smart HTTP, 커밋 토론, VCS          | 후속                                          |
+| Phase 4 | Pull Request, 코드 리뷰                              | 후속                                          |
+| Phase 5 | 검색, 게시판, 알림, 연동(Webhook)                    | 후속                                          |
+| Phase 6 | 관리자, 마이그레이션 도구, 배포 하드닝               | 후속                                          |
 
 ### 3.2 1차 PoC 완료 기준
 
 **1차 PoC란**: Phase 2~6까지 완료하여 Git 이슈 관리 + 게시판 기준으로 모든 기능이 정상 동작하고, legacy Yona 사용자가 실행파일 교체 + 설정 migration만으로 즉시 사용 가능한 수준.
 
 구체적으로:
+
 - 기존 DB 스키마를 `adopt` 모드로 인식하여 기존 데이터 유지
 - 사용자 로그인/회원가입이 기존과 동일하게 동작
 - 프로젝트/조직 CRUD가 기존과 동일하게 동작
@@ -211,18 +212,18 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 
 다음은 1차 PoC 이후 별도 Phase로 진행한다:
 
-| 항목 | 사유 |
-|------|------|
-| SVN 프로토콜 지원 | 공수 대비 사용률 낮음 |
-| LDAP 연동 | 인프라 의존성 복잡 |
-| GitHub Import | 외부 API 의존 |
-| Migration 도구 (Export CSV/Excel) | 부가 기능 |
-| Social Login (OAuth) | 외부 provider 연동 복잡 |
-| IMAP 메일박스 서비스 | 부가 기능 |
-| Slack 연동 | 부가 기능 |
-| WebDAV 지원 | SVN과 연관된 부가 기능 |
-| i18n (다국어) | 1차에서는 한국어/영어 hardcode 허용, 추후 i18next 도입 |
-| Update notification (버전 업데이트 알림) | 배포 체계 변경 후 재설계 필요 |
+| 항목                                     | 사유                                                   |
+| ---------------------------------------- | ------------------------------------------------------ |
+| SVN 프로토콜 지원                        | 공수 대비 사용률 낮음                                  |
+| LDAP 연동                                | 인프라 의존성 복잡                                     |
+| GitHub Import                            | 외부 API 의존                                          |
+| Migration 도구 (Export CSV/Excel)        | 부가 기능                                              |
+| Social Login (OAuth)                     | 외부 provider 연동 복잡                                |
+| IMAP 메일박스 서비스                     | 부가 기능                                              |
+| Slack 연동                               | 부가 기능                                              |
+| WebDAV 지원                              | SVN과 연관된 부가 기능                                 |
+| i18n (다국어)                            | 1차에서는 한국어/영어 hardcode 허용, 추후 i18next 도입 |
+| Update notification (버전 업데이트 알림) | 배포 체계 변경 후 재설계 필요                          |
 
 ---
 
@@ -241,6 +242,7 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 **Legacy 참조**: `yona-original/app/controllers/UserApp.java`, `PasswordResetApp.java`, `app/views/user/login.scala.html`, `signup.scala.html`, `resetPassword.scala.html`
 
 **Legacy 라우트**:
+
 ```
 GET   /users/loginform          → 로그인 폼
 POST  /users/login              → 로그인 처리
@@ -257,22 +259,22 @@ GET   /authenticate/:provider   → OAuth 시작
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| 로그인 (ID/Password) | `UserApp.login()` → bcrypt 검증 → 세션 생성 → `redirectUrl`로 이동 | ✅ 구현 | 1 |
-| 회원가입 | `UserApp.newUser()` → ID/email 중복검사 → 생성 → 선택적 이메일 인증 | ✅ 구현 | 1 |
-| 로그아웃 | 세션 파기 | ✅ 구현 | 1 |
-| 비밀번호 찾기 (이메일 발송) | verification code 생성 → 이메일 발송 → 토큰 링크 | ✅ 구현 | 1 |
-| 비밀번호 재설정 | 토큰 검증 → 새 비밀번호 설정 | ✅ 구현 | 1 |
-| 이메일 인증 | verification code 확인 → 사용자 활성화 | ✅ 구현 | 1 |
-| 관리자 가입 승인 | `signup.require.admin.confirm=true` 시 관리자가 승인 | gap | 6 |
-| Social Login (OAuth) | GitHub, Google 등 | deferred | 2차 |
-| LDAP 연동 | LDAP 서버 인증 | deferred | 2차 |
-| "Remember Me" | 장기 세션 유지 | gap | 6 |
-| 세션 만료 | 설정 가능한 세션 타임아웃 | gap | 6 |
-| 게스트 사용자 | `application.guest.user.login.id.prefix`로 제한된 권한 | gap | 2 |
-| 익명 접근 제어 | `application.allowsAnonymousAccess` 설정 | gap | 2 |
-| 로그인 폼 커스텀 placeholder | `application.login.page.loginId.placeholder` | gap | 6 |
+| 기능                         | Legacy 동작                                                         | 현재 상태 | Phase |
+| ---------------------------- | ------------------------------------------------------------------- | --------- | ----- |
+| 로그인 (ID/Password)         | `UserApp.login()` → bcrypt 검증 → 세션 생성 → `redirectUrl`로 이동  | ✅ 구현   | 1     |
+| 회원가입                     | `UserApp.newUser()` → ID/email 중복검사 → 생성 → 선택적 이메일 인증 | ✅ 구현   | 1     |
+| 로그아웃                     | 세션 파기                                                           | ✅ 구현   | 1     |
+| 비밀번호 찾기 (이메일 발송)  | verification code 생성 → 이메일 발송 → 토큰 링크                    | ✅ 구현   | 1     |
+| 비밀번호 재설정              | 토큰 검증 → 새 비밀번호 설정                                        | ✅ 구현   | 1     |
+| 이메일 인증                  | verification code 확인 → 사용자 활성화                              | ✅ 구현   | 1     |
+| 관리자 가입 승인             | `signup.require.admin.confirm=true` 시 관리자가 승인                | gap       | 6     |
+| Social Login (OAuth)         | GitHub, Google 등                                                   | deferred  | 2차   |
+| LDAP 연동                    | LDAP 서버 인증                                                      | deferred  | 2차   |
+| "Remember Me"                | 장기 세션 유지                                                      | gap       | 6     |
+| 세션 만료                    | 설정 가능한 세션 타임아웃                                           | gap       | 6     |
+| 게스트 사용자                | `application.guest.user.login.id.prefix`로 제한된 권한              | gap       | 2     |
+| 익명 접근 제어               | `application.allowsAnonymousAccess` 설정                            | gap       | 2     |
+| 로그인 폼 커스텀 placeholder | `application.login.page.loginId.placeholder`                        | gap       | 6     |
 
 #### 검수 기준
 
@@ -292,6 +294,7 @@ GET   /authenticate/:provider   → OAuth 시작
 **Legacy 참조**: `yona-original/app/controllers/UserApp.java`, `app/views/user/view.scala.html`, `edit.scala.html`, `edit_notifications.scala.html`, `edit_password.scala.html`, `edit_token.scala.html`, `edit_emails.scala.html`
 
 **Legacy 라우트**:
+
 ```
 GET   /:user                    → 사용자 프로필 (본인이면 Workspace)
 GET   /user/editform            → 프로필 편집 폼
@@ -310,18 +313,18 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| Workspace 대시보드 | 이슈/PR/프로젝트 목록, 최근 방문, 즐겨찾기 | ✅ 구현 | 1 |
-| 프로필 편집 (이름, 아바타) | 이름 변경, 아바타 업로드/크롭 | ✅ 구현 | 1 |
-| 비밀번호 변경 | 기존 비밀번호 확인 → 새 비밀번호 설정 | ✅ 구현 | 1 |
-| 이메일 관리 (추가/삭제/인증/주 이메일 설정) | 복수 이메일, 인증 흐름 | ✅ 구현 | 1 |
-| API 토큰 관리 | 토큰 재생성 | ✅ 구현 | 1 |
-| 기본 랜딩 페이지 설정 | 로그인 후 이동할 기본 경로 | ✅ 구현 | 1 |
-| 방문 기록 초기화 | 최근 방문 프로젝트 목록 리셋 | ✅ 구현 | 1 |
-| 프로젝트별 알림 설정 | 프로젝트별 NEW_ISSUE, NEW_POSTING 등 토글 | ✅ 기본 구현 | 1 |
-| 사용자 프로필 공개 보기 | `/:user` 경로로 다른 사용자 프로필 조회 | gap | 2 |
-| 사용자 활동 통계 | `?daysAgo=N`으로 활동 내역 | gap | 5 |
+| 기능                                        | Legacy 동작                                | 현재 상태    | Phase |
+| ------------------------------------------- | ------------------------------------------ | ------------ | ----- |
+| Workspace 대시보드                          | 이슈/PR/프로젝트 목록, 최근 방문, 즐겨찾기 | ✅ 구현      | 1     |
+| 프로필 편집 (이름, 아바타)                  | 이름 변경, 아바타 업로드/크롭              | ✅ 구현      | 1     |
+| 비밀번호 변경                               | 기존 비밀번호 확인 → 새 비밀번호 설정      | ✅ 구현      | 1     |
+| 이메일 관리 (추가/삭제/인증/주 이메일 설정) | 복수 이메일, 인증 흐름                     | ✅ 구현      | 1     |
+| API 토큰 관리                               | 토큰 재생성                                | ✅ 구현      | 1     |
+| 기본 랜딩 페이지 설정                       | 로그인 후 이동할 기본 경로                 | ✅ 구현      | 1     |
+| 방문 기록 초기화                            | 최근 방문 프로젝트 목록 리셋               | ✅ 구현      | 1     |
+| 프로젝트별 알림 설정                        | 프로젝트별 NEW_ISSUE, NEW_POSTING 등 토글  | ✅ 기본 구현 | 1     |
+| 사용자 프로필 공개 보기                     | `/:user` 경로로 다른 사용자 프로필 조회    | gap          | 2     |
+| 사용자 활동 통계                            | `?daysAgo=N`으로 활동 내역                 | gap          | 5     |
 
 #### 검수 기준
 
@@ -338,6 +341,7 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
 **Legacy 참조**: `yona-original/app/controllers/OrganizationApp.java`, `EnrollOrganizationApp.java`, `app/views/organization/*.scala.html`
 
 **Legacy 라우트**:
+
 ```
 GET   /organizations/new                          → 조직 생성 폼
 POST  /organizations/new                          → 조직 생성
@@ -360,18 +364,18 @@ GET   /organizations/:name/search                 → 조직 내 검색
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| 조직 생성 | 이름/설명, 이름 유효성 검사 | ✅ 구현 | 1 |
-| 조직 홈 (프로젝트 목록) | 조직 소속 프로젝트 리스트 | ✅ 구현 | 1 |
-| 조직 설정 | 이름/설명 변경, 로고 업로드 | ✅ 구현 | 1 |
-| 조직 삭제 | 확인 다이얼로그 + 삭제 | ✅ 구현 | 1 |
-| 멤버 목록/추가/삭제/역할변경 | admin/member 역할 관리 | ✅ 구현 | 1 |
-| 가입 요청/승인/취소/탈퇴 | 인증된 비멤버만 요청 가능 | ✅ 구현 | 1 |
-| 조직 이슈 목록 | 조직 전체 프로젝트의 이슈 집계 | gap (placeholder route) | 2 |
-| 조직 게시판 목록 | 조직 전체 프로젝트의 게시글 집계 | gap (placeholder route) | 5 |
-| 조직 PR 목록 | 조직 전체 프로젝트의 PR 집계 | gap (placeholder route) | 4 |
-| 조직 내 검색 | 조직 범위 검색 | gap (placeholder route) | 5 |
+| 기능                         | Legacy 동작                      | 현재 상태               | Phase |
+| ---------------------------- | -------------------------------- | ----------------------- | ----- |
+| 조직 생성                    | 이름/설명, 이름 유효성 검사      | ✅ 구현                 | 1     |
+| 조직 홈 (프로젝트 목록)      | 조직 소속 프로젝트 리스트        | ✅ 구현                 | 1     |
+| 조직 설정                    | 이름/설명 변경, 로고 업로드      | ✅ 구현                 | 1     |
+| 조직 삭제                    | 확인 다이얼로그 + 삭제           | ✅ 구현                 | 1     |
+| 멤버 목록/추가/삭제/역할변경 | admin/member 역할 관리           | ✅ 구현                 | 1     |
+| 가입 요청/승인/취소/탈퇴     | 인증된 비멤버만 요청 가능        | ✅ 구현                 | 1     |
+| 조직 이슈 목록               | 조직 전체 프로젝트의 이슈 집계   | gap (placeholder route) | 2     |
+| 조직 게시판 목록             | 조직 전체 프로젝트의 게시글 집계 | gap (placeholder route) | 5     |
+| 조직 PR 목록                 | 조직 전체 프로젝트의 PR 집계     | gap (placeholder route) | 4     |
+| 조직 내 검색                 | 조직 범위 검색                   | gap (placeholder route) | 5     |
 
 #### 검수 기준
 
@@ -388,6 +392,7 @@ GET   /organizations/:name/search                 → 조직 내 검색
 **Legacy 참조**: `yona-original/app/controllers/ProjectApp.java`, `app/views/project/*.scala.html`, `app/models/Project.java`
 
 **Legacy 라우트**:
+
 ```
 GET   /projects                       → 프로젝트 목록 (공개)
 GET   /projectform                    → 프로젝트 생성 폼
@@ -416,24 +421,24 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| 프로젝트 목록 (공개) | 검색, 페이지네이션(10개), 메타데이터, 로고, 멤버수 | ✅ 구현 | 1 |
-| 프로젝트 생성 | owner 선택(개인/조직), 이름, VCS 타입, 공개범위 | ✅ 구현 | 1 |
-| 프로젝트 홈 | overview(README), 최근 활동, 코드 링크 | ✅ 기본 구현 | 1 |
-| 프로젝트 설정 | 이름/설명/공개범위 변경, 메뉴 토글 | ✅ 구현 | 1 |
-| 프로젝트 삭제 | 확인 + 삭제 | gap | 2 |
-| 멤버 관리 | 멤버 추가/삭제/역할변경 | gap (읽기만 구현) | 2 |
-| 감시자 (Watchers) | 프로젝트 감시/해제, 감시자 목록 | ✅ 토글 구현 | 1 |
-| 즐겨찾기 | 프로젝트 즐겨찾기 토글 | ✅ 구현 | 1 |
-| 가입 요청 | 비멤버가 가입 요청/취소 | ✅ 구현 | 1 |
-| 웹훅 관리 | CRUD, event type, secret | gap | 5 |
-| 프로젝트 이관 | 다른 owner로 이관 | gap | 6 |
-| VCS 변경 | Git ↔ SVN | deferred | 2차 |
-| 프로젝트 통계 | 활동 통계 | gap | 5 |
-| 프로젝트 메뉴 설정 | code/issue/milestone/board/pullRequest 토글 | ✅ 구현 | 1 |
-| 프로젝트 공개범위 | public/protected/private + ACL 체크 | ✅ 구현 | 1 |
-| Overview/README | 마크다운 편집 가능한 프로젝트 소개 | ✅ 구현 | 1 |
+| 기능                 | Legacy 동작                                        | 현재 상태         | Phase |
+| -------------------- | -------------------------------------------------- | ----------------- | ----- |
+| 프로젝트 목록 (공개) | 검색, 페이지네이션(10개), 메타데이터, 로고, 멤버수 | ✅ 구현           | 1     |
+| 프로젝트 생성        | owner 선택(개인/조직), 이름, VCS 타입, 공개범위    | ✅ 구현           | 1     |
+| 프로젝트 홈          | overview(README), 최근 활동, 코드 링크             | ✅ 기본 구현      | 1     |
+| 프로젝트 설정        | 이름/설명/공개범위 변경, 메뉴 토글                 | ✅ 구현           | 1     |
+| 프로젝트 삭제        | 확인 + 삭제                                        | gap               | 2     |
+| 멤버 관리            | 멤버 추가/삭제/역할변경                            | gap (읽기만 구현) | 2     |
+| 감시자 (Watchers)    | 프로젝트 감시/해제, 감시자 목록                    | ✅ 토글 구현      | 1     |
+| 즐겨찾기             | 프로젝트 즐겨찾기 토글                             | ✅ 구현           | 1     |
+| 가입 요청            | 비멤버가 가입 요청/취소                            | ✅ 구현           | 1     |
+| 웹훅 관리            | CRUD, event type, secret                           | gap               | 5     |
+| 프로젝트 이관        | 다른 owner로 이관                                  | gap               | 6     |
+| VCS 변경             | Git ↔ SVN                                          | deferred          | 2차   |
+| 프로젝트 통계        | 활동 통계                                          | gap               | 5     |
+| 프로젝트 메뉴 설정   | code/issue/milestone/board/pullRequest 토글        | ✅ 구현           | 1     |
+| 프로젝트 공개범위    | public/protected/private + ACL 체크                | ✅ 구현           | 1     |
+| Overview/README      | 마크다운 편집 가능한 프로젝트 소개                 | ✅ 구현           | 1     |
 
 #### 검수 기준
 
@@ -450,6 +455,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 **Legacy 참조**: `yona-original/app/controllers/IssueApp.java`, `app/views/issue/*.scala.html`, `app/models/Issue.java`, `IssueComment.java`, `Assignee.java`, `IssueEvent.java`
 
 **Legacy 라우트**:
+
 ```
 GET   /:owner/:project/issues              → 이슈 목록
 GET   /:owner/:project/issueform           → 이슈 작성 폼
@@ -468,26 +474,26 @@ POST  /:owner/:project/issue/:number/unvote → 이슈 투표 취소
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| 이슈 목록 | 필터(상태/담당자/라벨/마일스톤), 정렬, 페이지네이션 | ✅ Phase 2A 구현 | 2 |
-| 이슈 작성 | 제목, 본문(마크다운), 담당자, 마일스톤, 라벨 선택 | ✅ Phase 2A 구현 | 2 |
-| 이슈 상세 보기 | 제목/본문, 담당자, 마일스톤, 라벨, 이벤트 타임라인 | ✅ Phase 2A 구현 | 2 |
-| 이슈 수정 | 제목/본문/담당자/마일스톤/라벨 수정 | ✅ Phase 2A 구현 | 2 |
-| 이슈 삭제 | 작성자 또는 관리자만 가능 | ✅ Phase 2A 구현 | 2 |
-| 이슈 상태 변경 | open ↔ closed | ✅ Phase 2A 구현 | 2 |
-| 댓글 CRUD | 작성/수정/삭제, 마크다운 지원 | ✅ Phase 2A 구현 | 2 |
-| 이슈 타임라인 | 상태 변경, 담당자 변경, 라벨 변경 등 이벤트 목록 | ✅ Phase 2A 구현 | 2 |
-| 담당자 (Assignee) | 프로젝트 멤버 중 선택, 다중 담당자 | ✅ Phase 2A 기본 구현 | 2 |
-| 이슈 감시 (Watch) | 알림 수신 토글 | ✅ Phase 2A 구현 | 2 |
-| 이슈 투표 (Vote) | 이슈에 투표/취소 | ✅ Phase 2A 구현 | 2 |
-| 댓글 투표 | 댓글에 투표/취소 | gap | 2 |
-| @멘션 | `@username` 자동 완성 + 알림 | gap | 2 |
-| 이슈 공유 (Sharer) | 비멤버에게 이슈 읽기 권한 부여 | gap | 2 |
-| Mass Update | 이슈 일괄 상태/담당자/마일스톤/라벨 변경 | ✅ Phase 2A 구현 | 2 |
-| 이슈 엑셀 내보내기 | xlsx 다운로드 | deferred | 2차 |
-| 즐겨찾기 이슈 | workspace에서 즐겨찾기 관리 | gap | 2 |
-| 조직/사용자 이슈 목록 | `/organizations/:name/issues`, `/-_-api/v1/user/issues` | gap | 2 |
+| 기능                  | Legacy 동작                                             | 현재 상태             | Phase |
+| --------------------- | ------------------------------------------------------- | --------------------- | ----- |
+| 이슈 목록             | 필터(상태/담당자/라벨/마일스톤), 정렬, 페이지네이션     | ✅ Phase 2A 구현      | 2     |
+| 이슈 작성             | 제목, 본문(마크다운), 담당자, 마일스톤, 라벨 선택       | ✅ Phase 2A 구현      | 2     |
+| 이슈 상세 보기        | 제목/본문, 담당자, 마일스톤, 라벨, 이벤트 타임라인      | ✅ Phase 2A 구현      | 2     |
+| 이슈 수정             | 제목/본문/담당자/마일스톤/라벨 수정                     | ✅ Phase 2A 구현      | 2     |
+| 이슈 삭제             | 작성자 또는 관리자만 가능                               | ✅ Phase 2A 구현      | 2     |
+| 이슈 상태 변경        | open ↔ closed                                           | ✅ Phase 2A 구현      | 2     |
+| 댓글 CRUD             | 작성/수정/삭제, 마크다운 지원                           | ✅ Phase 2A 구현      | 2     |
+| 이슈 타임라인         | 상태 변경, 담당자 변경, 라벨 변경 등 이벤트 목록        | ✅ Phase 2A 구현      | 2     |
+| 담당자 (Assignee)     | 프로젝트 멤버 중 선택, 다중 담당자                      | ✅ Phase 2A 기본 구현 | 2     |
+| 이슈 감시 (Watch)     | 알림 수신 토글                                          | ✅ Phase 2A 구현      | 2     |
+| 이슈 투표 (Vote)      | 이슈에 투표/취소                                        | ✅ Phase 2A 구현      | 2     |
+| 댓글 투표             | 댓글에 투표/취소                                        | gap                   | 2     |
+| @멘션                 | `@username` 자동 완성 + 알림                            | gap                   | 2     |
+| 이슈 공유 (Sharer)    | 비멤버에게 이슈 읽기 권한 부여                          | gap                   | 2     |
+| Mass Update           | 이슈 일괄 상태/담당자/마일스톤/라벨 변경                | ✅ Phase 2A 구현      | 2     |
+| 이슈 엑셀 내보내기    | xlsx 다운로드                                           | deferred              | 2차   |
+| 즐겨찾기 이슈         | workspace에서 즐겨찾기 관리                             | gap                   | 2     |
+| 조직/사용자 이슈 목록 | `/organizations/:name/issues`, `/-_-api/v1/user/issues` | gap                   | 2     |
 
 #### 검수 기준
 
@@ -507,6 +513,7 @@ POST  /:owner/:project/issue/:number/unvote → 이슈 투표 취소
 **Legacy 참조**: `yona-original/app/controllers/BoardApp.java`, `app/views/board/*.scala.html`, `app/models/Posting.java`, `PostingComment.java`
 
 **Legacy 라우트**:
+
 ```
 GET   /:owner/:project/posts               → 게시글 목록
 GET   /:owner/:project/postform            → 게시글 작성 폼
@@ -521,18 +528,18 @@ DELETE /:owner/:project/post/comment/:id/delete → 댓글 삭제
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| 게시글 목록 | 검색, 페이지네이션, 공지 상단 고정 | gap | 5 |
-| 게시글 작성 | 제목, 본문(마크다운), 라벨 | gap | 5 |
-| 게시글 상세 | 제목/본문/댓글, 공지 표시 | gap | 5 |
-| 게시글 수정/삭제 | 작성자 또는 관리자 | gap | 5 |
-| 댓글 CRUD | 마크다운, 작성/삭제 | gap | 5 |
-| 공지 (notice) | `posting.notice=true` 시 목록 상단 고정 | gap | 5 |
-| README 게시글 | `posting.readme=true` 시 특별 표시 | gap | 5 |
-| 게시글 라벨 | 이슈 라벨과 공유 | gap | 5 |
-| 게시글 번호 | 프로젝트 내 자동 증가 | gap | 5 |
-| 조직 게시판 목록 | `/organizations/:name/boards` | gap | 5 |
+| 기능             | Legacy 동작                             | 현재 상태 | Phase |
+| ---------------- | --------------------------------------- | --------- | ----- |
+| 게시글 목록      | 검색, 페이지네이션, 공지 상단 고정      | gap       | 5     |
+| 게시글 작성      | 제목, 본문(마크다운), 라벨              | gap       | 5     |
+| 게시글 상세      | 제목/본문/댓글, 공지 표시               | gap       | 5     |
+| 게시글 수정/삭제 | 작성자 또는 관리자                      | gap       | 5     |
+| 댓글 CRUD        | 마크다운, 작성/삭제                     | gap       | 5     |
+| 공지 (notice)    | `posting.notice=true` 시 목록 상단 고정 | gap       | 5     |
+| README 게시글    | `posting.readme=true` 시 특별 표시      | gap       | 5     |
+| 게시글 라벨      | 이슈 라벨과 공유                        | gap       | 5     |
+| 게시글 번호      | 프로젝트 내 자동 증가                   | gap       | 5     |
+| 조직 게시판 목록 | `/organizations/:name/boards`           | gap       | 5     |
 
 #### 검수 기준
 
@@ -548,6 +555,7 @@ DELETE /:owner/:project/post/comment/:id/delete → 댓글 삭제
 **Legacy 참조**: `yona-original/app/controllers/IssueLabelApp.java`, `LabelApp.java`, `app/models/IssueLabel.java`, `IssueLabelCategory.java`
 
 **Legacy 라우트**:
+
 ```
 GET   /:owner/:project/issue/labels        → 프로젝트 라벨 목록
 POST  /:owner/:project/issue/labels        → 라벨 생성
@@ -560,13 +568,13 @@ GET   /categories                          → 전역 카테고리
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| 프로젝트 라벨 CRUD | 이름, 색상, 카테고리 | gap | 2 |
-| 라벨 카테고리 | 라벨을 카테고리별 그룹핑 | gap | 2 |
-| 라벨 필터링 | 이슈/게시판 목록에서 라벨 필터 | gap | 2 |
-| 라벨 색상 CSS | 자동 생성 CSS (`IssueLabel.labelCSS()`) | gap | 2 |
-| 라벨 복사 | 프로젝트 간 라벨 복사 | gap | 6 |
+| 기능               | Legacy 동작                             | 현재 상태           | Phase |
+| ------------------ | --------------------------------------- | ------------------- | ----- |
+| 프로젝트 라벨 CRUD | 이름, 색상, 카테고리                    | ✅ Phase 2B 구현    | 2     |
+| 라벨 카테고리      | 라벨을 카테고리별 그룹핑                | ✅ Phase 2B 구현    | 2     |
+| 라벨 필터링        | 이슈/게시판 목록에서 라벨 필터          | ✅ Phase 2A/2B 구현 | 2     |
+| 라벨 색상 CSS      | 자동 생성 CSS (`IssueLabel.labelCSS()`) | ✅ Phase 2B 구현    | 2     |
+| 라벨 복사          | 프로젝트 간 라벨 복사                   | gap                 | 6     |
 
 #### 검수 기준
 
@@ -582,6 +590,7 @@ GET   /categories                          → 전역 카테고리
 **Legacy 참조**: `yona-original/app/controllers/MilestoneApp.java`, `app/views/milestone/*.scala.html`, `app/models/Milestone.java`
 
 **Legacy 라우트**:
+
 ```
 GET   /:owner/:project/milestones           → 마일스톤 목록
 GET   /:owner/:project/newMilestoneForm     → 생성 폼
@@ -596,12 +605,12 @@ POST  /:owner/:project/milestone/:id/close  → 마일스톤 닫기
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| 마일스톤 CRUD | 제목, 설명, 마감일 | gap | 2 |
-| 마일스톤 상태 | open/closed 토글 | gap | 2 |
-| 이슈 집계 | 마일스톤별 open/closed 이슈 수 + 진행률 | gap | 2 |
-| 마일스톤 상세 | 소속 이슈 목록 | gap | 2 |
+| 기능          | Legacy 동작                             | 현재 상태 | Phase |
+| ------------- | --------------------------------------- | --------- | ----- |
+| 마일스톤 CRUD | 제목, 설명, 마감일                      | gap       | 2     |
+| 마일스톤 상태 | open/closed 토글                        | gap       | 2     |
+| 이슈 집계     | 마일스톤별 open/closed 이슈 수 + 진행률 | gap       | 2     |
+| 마일스톤 상세 | 소속 이슈 목록                          | gap       | 2     |
 
 #### 검수 기준
 
@@ -616,6 +625,7 @@ POST  /:owner/:project/milestone/:id/close  → 마일스톤 닫기
 **Legacy 참조**: `yona-original/app/controllers/CodeApp.java`, `CodeHistoryApp.java`, `BranchApp.java`, `CompareApp.java`, `app/views/code/*.scala.html`, `git/*.scala.html`
 
 **Legacy 라우트**:
+
 ```
 GET   /:owner/:project/code                → 코드 브라우저 (기본 브랜치)
 GET   /:owner/:project/code/:branch        → 특정 브랜치
@@ -634,18 +644,18 @@ GET   /:owner/:project/compare/:rev        → 커밋 비교
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| 파일/폴더 트리 브라우저 | 디렉토리 탐색, 파일 내용 표시 | gap | 3 |
-| 브랜치 선택기 | 드롭다운으로 브랜치/태그 전환 | gap | 3 |
-| 파일 보기 (syntax highlight) | 코드 하이라이트, 라인 번호 | gap | 3 |
-| Raw 파일 다운로드 | 바이너리/텍스트 직접 다운로드 | gap | 3 |
-| 이미지 미리보기 | 이미지 파일 인라인 표시 | gap | 3 |
-| 커밋 이력 | 커밋 목록, 페이지네이션 | gap | 3 |
-| 커밋 상세 (diff) | 변경 파일 목록, unified diff | gap | 3 |
-| 커밋 댓글 | 커밋에 댓글 작성/삭제 | gap | 3 |
-| 브랜치 관리 | 브랜치 목록, 삭제, 기본 브랜치 설정 | gap | 3 |
-| 커밋 비교 | 두 revision 간 diff | gap | 3 |
+| 기능                         | Legacy 동작                         | 현재 상태 | Phase |
+| ---------------------------- | ----------------------------------- | --------- | ----- |
+| 파일/폴더 트리 브라우저      | 디렉토리 탐색, 파일 내용 표시       | gap       | 3     |
+| 브랜치 선택기                | 드롭다운으로 브랜치/태그 전환       | gap       | 3     |
+| 파일 보기 (syntax highlight) | 코드 하이라이트, 라인 번호          | gap       | 3     |
+| Raw 파일 다운로드            | 바이너리/텍스트 직접 다운로드       | gap       | 3     |
+| 이미지 미리보기              | 이미지 파일 인라인 표시             | gap       | 3     |
+| 커밋 이력                    | 커밋 목록, 페이지네이션             | gap       | 3     |
+| 커밋 상세 (diff)             | 변경 파일 목록, unified diff        | gap       | 3     |
+| 커밋 댓글                    | 커밋에 댓글 작성/삭제               | gap       | 3     |
+| 브랜치 관리                  | 브랜치 목록, 삭제, 기본 브랜치 설정 | gap       | 3     |
+| 커밋 비교                    | 두 revision 간 diff                 | gap       | 3     |
 
 #### 검수 기준
 
@@ -662,6 +672,7 @@ GET   /:owner/:project/compare/:rev        → 커밋 비교
 **Legacy 참조**: `yona-original/app/controllers/GitApp.java`, `app/models/PlayRepository.java`
 
 **Legacy 라우트**:
+
 ```
 POST  /:owner/:project/info/refs                              → Git refs 광고
 POST  /:owner/:project/$service<git-upload-pack|git-receive-pack> → Git 프로토콜
@@ -669,14 +680,14 @@ POST  /:owner/:project/$service<git-upload-pack|git-receive-pack> → Git 프로
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| git clone (HTTPS) | Smart HTTP upload-pack | gap | 3 |
-| git push (HTTPS) | Smart HTTP receive-pack | gap | 3 |
-| 인증 | Basic Auth (username + password/token) | gap | 3 |
-| 권한 체크 | 프로젝트 공개범위 + 멤버 역할에 따른 read/write | gap | 3 |
-| Post-receive hook | push 후 알림/이벤트 발생 | gap | 3 |
-| 저장소 초기 생성 | 프로젝트 생성 시 bare repo 생성 | gap | 3 |
+| 기능              | Legacy 동작                                     | 현재 상태 | Phase |
+| ----------------- | ----------------------------------------------- | --------- | ----- |
+| git clone (HTTPS) | Smart HTTP upload-pack                          | gap       | 3     |
+| git push (HTTPS)  | Smart HTTP receive-pack                         | gap       | 3     |
+| 인증              | Basic Auth (username + password/token)          | gap       | 3     |
+| 권한 체크         | 프로젝트 공개범위 + 멤버 역할에 따른 read/write | gap       | 3     |
+| Post-receive hook | push 후 알림/이벤트 발생                        | gap       | 3     |
+| 저장소 초기 생성  | 프로젝트 생성 시 bare repo 생성                 | gap       | 3     |
 
 #### 검수 기준
 
@@ -692,6 +703,7 @@ POST  /:owner/:project/$service<git-upload-pack|git-receive-pack> → Git 프로
 **Legacy 참조**: `yona-original/app/controllers/PullRequestApp.java`, `ReviewApp.java`, `ReviewThreadApp.java`, `app/models/PullRequest.java`, `ReviewComment.java`, `CommentThread.java`
 
 **Legacy 라우트**:
+
 ```
 GET   /:owner/:project/pullRequests               → PR 목록 (open)
 GET   /:owner/:project/closedPullRequests         → PR 목록 (closed)
@@ -715,21 +727,21 @@ DELETE /:owner/:project/pullRequest/:id/deletefrombranch → from 브랜치 삭�
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| PR 목록 (open/closed/sent) | 탭으로 분류, 필터, 페이지네이션 | gap | 4 |
-| PR 생성 | from/to 브랜치 선택, 제목/본문 | gap | 4 |
-| PR 상세 | 커밋 목록, 변경 파일, 댓글/타임라인 | gap | 4 |
-| PR diff 보기 | 파일별 unified diff, 인라인 코멘트 | gap | 4 |
-| PR 상태 관리 | open → merged / closed, 재열기 | gap | 4 |
-| Merge 실행 | fast-forward / merge commit / squash | gap | 4 |
-| Merge 충돌 처리 | 충돌 시 알림, 수동 해결 안내 | gap | 4 |
-| 리뷰 승인/철회 | 리뷰어가 승인/철회 | gap | 4 |
-| 코드 리뷰 댓글 | 특정 라인에 인라인 댓글 | gap | 4 |
-| 리뷰 스레드 | 인라인 댓글 스레드 open/close | gap | 4 |
-| Fork & PR | 프로젝트 fork → PR 워크플로우 | gap | 4 |
-| from 브랜치 삭제 | merge 후 소스 브랜치 삭제 | gap | 4 |
-| 리뷰어 지정 | PR에 리뷰어 배정 | gap | 4 |
+| 기능                       | Legacy 동작                          | 현재 상태 | Phase |
+| -------------------------- | ------------------------------------ | --------- | ----- |
+| PR 목록 (open/closed/sent) | 탭으로 분류, 필터, 페이지네이션      | gap       | 4     |
+| PR 생성                    | from/to 브랜치 선택, 제목/본문       | gap       | 4     |
+| PR 상세                    | 커밋 목록, 변경 파일, 댓글/타임라인  | gap       | 4     |
+| PR diff 보기               | 파일별 unified diff, 인라인 코멘트   | gap       | 4     |
+| PR 상태 관리               | open → merged / closed, 재열기       | gap       | 4     |
+| Merge 실행                 | fast-forward / merge commit / squash | gap       | 4     |
+| Merge 충돌 처리            | 충돌 시 알림, 수동 해결 안내         | gap       | 4     |
+| 리뷰 승인/철회             | 리뷰어가 승인/철회                   | gap       | 4     |
+| 코드 리뷰 댓글             | 특정 라인에 인라인 댓글              | gap       | 4     |
+| 리뷰 스레드                | 인라인 댓글 스레드 open/close        | gap       | 4     |
+| Fork & PR                  | 프로젝트 fork → PR 워크플로우        | gap       | 4     |
+| from 브랜치 삭제           | merge 후 소스 브랜치 삭제            | gap       | 4     |
+| 리뷰어 지정                | PR에 리뷰어 배정                     | gap       | 4     |
 
 #### 검수 기준
 
@@ -747,6 +759,7 @@ DELETE /:owner/:project/pullRequest/:id/deletefrombranch → from 브랜치 삭�
 **Legacy 참조**: `yona-original/app/controllers/SearchApp.java`, `app/views/search/*.scala.html`, `app/models/Search.java`
 
 **Legacy 라우트**:
+
 ```
 GET   /search                                → 전체 검색
 GET   /:owner/:project/search               → 프로젝트 내 검색
@@ -755,14 +768,14 @@ GET   /organizations/:name/search            → 조직 내 검색
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| 전체 검색 | 모든 프로젝트의 이슈/게시판/댓글/마일스톤 검색 | gap | 5 |
-| 프로젝트 내 검색 | 특정 프로젝트 범위 검색 | gap | 5 |
-| 조직 내 검색 | 조직 소속 프로젝트 범위 검색 | gap | 5 |
-| 검색 타입 필터 | issue, posting, issue_comment, posting_comment, milestone, review_comment, user | gap | 5 |
-| 검색 결과 그룹핑 | 타입별 결과 수 + 결과 목록 | gap | 5 |
-| 검색 페이지네이션 | 결과 페이지네이션 | gap | 5 |
+| 기능              | Legacy 동작                                                                     | 현재 상태 | Phase |
+| ----------------- | ------------------------------------------------------------------------------- | --------- | ----- |
+| 전체 검색         | 모든 프로젝트의 이슈/게시판/댓글/마일스톤 검색                                  | gap       | 5     |
+| 프로젝트 내 검색  | 특정 프로젝트 범위 검색                                                         | gap       | 5     |
+| 조직 내 검색      | 조직 소속 프로젝트 범위 검색                                                    | gap       | 5     |
+| 검색 타입 필터    | issue, posting, issue_comment, posting_comment, milestone, review_comment, user | gap       | 5     |
+| 검색 결과 그룹핑  | 타입별 결과 수 + 결과 목록                                                      | gap       | 5     |
+| 검색 페이지네이션 | 결과 페이지네이션                                                               | gap       | 5     |
 
 #### 검수 기준
 
@@ -778,6 +791,7 @@ GET   /organizations/:name/search            → 조직 내 검색
 **Legacy 참조**: `yona-original/app/controllers/NotificationApp.java`, `WatchApp.java`, `WatchProjectApp.java`, `app/models/NotificationEvent.java`, `NotificationMail.java`, `Watch.java`
 
 **Legacy 라우트**:
+
 ```
 GET   /notification          → 알림 목록
 GET   /notifications         → 알림 목록 (alias)
@@ -786,17 +800,17 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 타입 토글
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| 알림 목록 | 시간역순 알림 이벤트 목록 | gap | 5 |
-| 이메일 알림 | 이벤트 발생 시 이메일 발송 | gap (SMTP 인프라만 구현) | 5 |
-| 프로젝트별 알림 설정 | NEW_ISSUE, NEW_POSTING, NEW_COMMENT 등 토글 | ✅ 기본 구현 | 1 |
-| Watch/Unwatch | 리소스(이슈/프로젝트) 감시 | ✅ 프로젝트 토글 구현 | 1 |
-| 알림 이벤트 타입 | 이슈 생성, 댓글, 상태변경, PR 생성/merge, 리뷰 등 | gap | 5 |
-| BCC 모드 | 수신자 간 이메일 주소 비공개 | gap | 5 |
-| 알림 간격 | `notification.bymail.interval` 배치 발송 | gap | 5 |
-| Draft-time 머징 | 30초 내 연속 편집 알림 병합 | gap | 5 |
-| 수신자 제한 | `recipientLimit` 설정 | gap | 5 |
+| 기능                 | Legacy 동작                                       | 현재 상태                | Phase |
+| -------------------- | ------------------------------------------------- | ------------------------ | ----- |
+| 알림 목록            | 시간역순 알림 이벤트 목록                         | gap                      | 5     |
+| 이메일 알림          | 이벤트 발생 시 이메일 발송                        | gap (SMTP 인프라만 구현) | 5     |
+| 프로젝트별 알림 설정 | NEW_ISSUE, NEW_POSTING, NEW_COMMENT 등 토글       | ✅ 기본 구현             | 1     |
+| Watch/Unwatch        | 리소스(이슈/프로젝트) 감시                        | ✅ 프로젝트 토글 구현    | 1     |
+| 알림 이벤트 타입     | 이슈 생성, 댓글, 상태변경, PR 생성/merge, 리뷰 등 | gap                      | 5     |
+| BCC 모드             | 수신자 간 이메일 주소 비공개                      | gap                      | 5     |
+| 알림 간격            | `notification.bymail.interval` 배치 발송          | gap                      | 5     |
+| Draft-time 머징      | 30초 내 연속 편집 알림 병합                       | gap                      | 5     |
+| 수신자 제한          | `recipientLimit` 설정                             | gap                      | 5     |
 
 #### 검수 기준
 
@@ -812,6 +826,7 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 타입 토글
 **Legacy 참조**: `yona-original/app/controllers/ProjectApp.java` (webhook 부분), `app/models/Webhook.java`
 
 **Legacy 라우트**:
+
 ```
 GET   /:owner/:project/webhooks       → 웹훅 목록
 POST  /:owner/:project/webhooks       → 웹훅 생성
@@ -820,13 +835,13 @@ DELETE /:owner/:project/webhooks/:id  → 웹훅 삭제
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| 웹훅 CRUD | payload URL, secret, active, 이벤트 타입 | gap | 5 |
-| 이벤트 발송 | JSON payload를 설정된 URL로 POST | gap | 5 |
-| Secret 검증 | HMAC-SHA256 서명 | gap | 5 |
-| 이벤트 타입 | issue, pull_request, comment, review 등 | gap | 5 |
-| 실행 이력 | 발송 성공/실패 기록 | gap | 5 |
+| 기능        | Legacy 동작                              | 현재 상태 | Phase |
+| ----------- | ---------------------------------------- | --------- | ----- |
+| 웹훅 CRUD   | payload URL, secret, active, 이벤트 타입 | gap       | 5     |
+| 이벤트 발송 | JSON payload를 설정된 URL로 POST         | gap       | 5     |
+| Secret 검증 | HMAC-SHA256 서명                         | gap       | 5     |
+| 이벤트 타입 | issue, pull_request, comment, review 등  | gap       | 5     |
+| 실행 이력   | 발송 성공/실패 기록                      | gap       | 5     |
 
 #### 검수 기준
 
@@ -842,6 +857,7 @@ DELETE /:owner/:project/webhooks/:id  → 웹훅 삭제
 **Legacy 참조**: `yona-original/app/controllers/AttachmentApp.java`, `app/models/Attachment.java`
 
 **Legacy 라우트**:
+
 ```
 POST  /files                  → 파일 업로드
 GET   /files/:id              → 파일 다운로드
@@ -850,15 +866,15 @@ DELETE /files/:id             → 파일 삭제
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| 파일 업로드 | multipart form-data | ✅ 구현 | 1 |
-| 파일 다운로드 | content-disposition | ✅ 구현 | 1 |
-| 파일 삭제 | 작성자 또는 관리자 | gap | 2 |
-| Container type | 이슈/게시판/PR/프로젝트 등에 연결 | gap | 2 |
-| 파일 크기 제한 | `application.maxFileSize` | gap | 2 |
-| MIME type 검사 | 업로드 시 MIME 검사 | gap | 2 |
-| 아바타 업로드 | 프로필 아바타 전용 | ✅ 구현 | 1 |
+| 기능           | Legacy 동작                       | 현재 상태 | Phase |
+| -------------- | --------------------------------- | --------- | ----- |
+| 파일 업로드    | multipart form-data               | ✅ 구현   | 1     |
+| 파일 다운로드  | content-disposition               | ✅ 구현   | 1     |
+| 파일 삭제      | 작성자 또는 관리자                | gap       | 2     |
+| Container type | 이슈/게시판/PR/프로젝트 등에 연결 | gap       | 2     |
+| 파일 크기 제한 | `application.maxFileSize`         | gap       | 2     |
+| MIME type 검사 | 업로드 시 MIME 검사               | gap       | 2     |
+| 아바타 업로드  | 프로필 아바타 전용                | ✅ 구현   | 1     |
 
 #### 검수 기준
 
@@ -874,6 +890,7 @@ DELETE /files/:id             → 파일 삭제
 **Legacy 참조**: `yona-original/app/controllers/SiteApp.java`, `app/views/site/*.scala.html`, `app/models/SiteAdmin.java`
 
 **Legacy 라우트**:
+
 ```
 GET   /sites/userList          → 사용자 목록
 GET   /sites/projectList       → 프로젝트 목록
@@ -895,15 +912,15 @@ GET   /sites/export            → 데이터 익스포트
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| 사용자 목록/관리 | 목록, 검색, 관리자 토글, 계정 잠금 | gap | 6 |
-| 프로젝트 목록/관리 | 목록, 검색, 삭제 | gap | 6 |
-| 게시글/이슈 목록 | 전체 게시글/이슈 관리 | gap | 6 |
-| 메일 설정/테스트 | SMTP 테스트, 대량 메일 | gap | 6 |
-| 시스템 진단 | DB 상태, 메모리 등 | gap | 6 |
-| 데이터 임포트/익스포트 | 전체 데이터 백업/복원 | deferred | 2차 |
-| 업데이트 확인 | 새 버전 확인 | deferred | 2차 |
+| 기능                   | Legacy 동작                        | 현재 상태 | Phase |
+| ---------------------- | ---------------------------------- | --------- | ----- |
+| 사용자 목록/관리       | 목록, 검색, 관리자 토글, 계정 잠금 | gap       | 6     |
+| 프로젝트 목록/관리     | 목록, 검색, 삭제                   | gap       | 6     |
+| 게시글/이슈 목록       | 전체 게시글/이슈 관리              | gap       | 6     |
+| 메일 설정/테스트       | SMTP 테스트, 대량 메일             | gap       | 6     |
+| 시스템 진단            | DB 상태, 메모리 등                 | gap       | 6     |
+| 데이터 임포트/익스포트 | 전체 데이터 백업/복원              | deferred  | 2차   |
+| 업데이트 확인          | 새 버전 확인                       | deferred  | 2차   |
 
 #### 검수 기준
 
@@ -918,22 +935,23 @@ GET   /sites/export            → 데이터 익스포트
 **Legacy 참조**: `yona-original/app/controllers/MarkdownApp.java`, 각 view의 마크다운 렌더링
 
 **Legacy 라우트**:
+
 ```
 POST  /markdown                → 마크다운 → HTML 변환
 ```
 
 #### 기능 목록과 상태
 
-| 기능 | Legacy 동작 | 현재 상태 | Phase |
-|------|-------------|-----------|-------|
-| 마크다운 렌더링 | GFM + 확장 문법 | gap | 2 |
-| @멘션 링크 | `@username` → 사용자 프로필 링크 | gap | 2 |
-| 이슈 참조 | `#123` → 이슈 링크 | gap | 2 |
-| 자동 링크 | URL 자동 링크 변환 | gap | 2 |
-| 코드 블록 | syntax highlighting | gap | 2 |
-| 이미지 | 인라인 이미지 표시 | gap | 2 |
-| 체크리스트 | `- [ ]` / `- [x]` | gap | 2 |
-| XSS 방지 | HTML sanitization | gap | 2 |
+| 기능            | Legacy 동작                      | 현재 상태 | Phase |
+| --------------- | -------------------------------- | --------- | ----- |
+| 마크다운 렌더링 | GFM + 확장 문법                  | gap       | 2     |
+| @멘션 링크      | `@username` → 사용자 프로필 링크 | gap       | 2     |
+| 이슈 참조       | `#123` → 이슈 링크               | gap       | 2     |
+| 자동 링크       | URL 자동 링크 변환               | gap       | 2     |
+| 코드 블록       | syntax highlighting              | gap       | 2     |
+| 이미지          | 인라인 이미지 표시               | gap       | 2     |
+| 체크리스트      | `- [ ]` / `- [x]`                | gap       | 2     |
+| XSS 방지        | HTML sanitization                | gap       | 2     |
 
 #### 검수 기준
 
@@ -954,18 +972,18 @@ POST  /markdown                → 마크다운 → HTML 변환
 
 #### 기능 목록과 상태
 
-| API | Legacy 동작 | 현재 상태 | Phase |
-|-----|-------------|-----------|-------|
-| `GET /-_-api/v1/hello` | Health check | gap | 2 |
-| `GET /-_-api/v1/users` | 사용자 목록 | gap | 6 |
-| `POST /-_-api/v1/users` | 사용자 생성 | gap | 6 |
-| `POST /-_-api/v1/users/token` | API 토큰 발급 | gap | 6 |
-| Issue API | 이슈 CRUD + 댓글 | gap | 2 |
-| Project API | 프로젝트 CRUD | gap | 2 |
-| Board API | 게시글 CRUD + 댓글 | gap | 5 |
-| Milestone API | 마일스톤 CRUD | gap | 2 |
-| Watcher API | 감시자 목록 | gap | 5 |
-| Favorite API | 즐겨찾기 관리 | gap | 2 |
+| API                           | Legacy 동작        | 현재 상태 | Phase |
+| ----------------------------- | ------------------ | --------- | ----- |
+| `GET /-_-api/v1/hello`        | Health check       | gap       | 2     |
+| `GET /-_-api/v1/users`        | 사용자 목록        | gap       | 6     |
+| `POST /-_-api/v1/users`       | 사용자 생성        | gap       | 6     |
+| `POST /-_-api/v1/users/token` | API 토큰 발급      | gap       | 6     |
+| Issue API                     | 이슈 CRUD + 댓글   | gap       | 2     |
+| Project API                   | 프로젝트 CRUD      | gap       | 2     |
+| Board API                     | 게시글 CRUD + 댓글 | gap       | 5     |
+| Milestone API                 | 마일스톤 CRUD      | gap       | 2     |
+| Watcher API                   | 감시자 목록        | gap       | 5     |
+| Favorite API                  | 즐겨찾기 관리      | gap       | 2     |
 
 **주의**: 현재 Rust 구현은 ConnectRPC를 주 통신 프로토콜로 사용하지만, legacy REST API 호환성을 위해 `/-_-api/v1/**` 경로도 구현해야 한다. 이는 기존 Yona API를 사용하는 외부 도구와의 호환성을 위한 것이다.
 
@@ -993,26 +1011,26 @@ legacy Yona 사용자가 기존 DB를 그대로 사용할 수 있어야 한다.
 
 현재 SeaORM 엔티티로 모든 legacy 테이블이 매핑되어 있다:
 
-| 카테고리 | 테이블 |
-|----------|--------|
-| 사용자/인증 | `n4user`, `user_credential`, `user_verification`, `email`, `linked_account`, `site_admin`, `role`, `user_setting` |
-| 조직 | `organization`, `organization_user`, `user_enrolled_organization` |
-| 프로젝트 | `project`, `project_user`, `user_enrolled_project`, `project_menu_setting`, `project_visitation`, `project_pushed_branch`, `project_transfer`, `recent_project`, `recently_visited_projects`, `favorite_project`, `favorite_organization` |
-| 이슈 | `issue`, `issue_comment`, `issue_label`, `issue_label_category`, `issue_issue_label`, `issue_comment_voter`, `issue_voter`, `issue_event`, `issue_sharer`, `assignee`, `mention`, `favorite_issue` |
-| PR/리뷰 | `pull_request`, `pull_request_event`, `pull_request_commit`, `pull_request_reviewers`, `review_comment`, `comment_thread`, `comment_thread_n4user` |
-| 게시판 | `posting`, `posting_comment`, `posting_issue_label` |
-| 파일 | `attachment` |
-| 알림 | `notification_event`, `notification_event_n4user`, `notification_mail`, `watch`, `unwatch`, `user_project_notification` |
-| 기타 | `milestone`, `label`, `property`, `webhook`, `webhook_thread`, `commit_comment` |
+| 카테고리    | 테이블                                                                                                                                                                                                                                    |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 사용자/인증 | `n4user`, `user_credential`, `user_verification`, `email`, `linked_account`, `site_admin`, `role`, `user_setting`                                                                                                                         |
+| 조직        | `organization`, `organization_user`, `user_enrolled_organization`                                                                                                                                                                         |
+| 프로젝트    | `project`, `project_user`, `user_enrolled_project`, `project_menu_setting`, `project_visitation`, `project_pushed_branch`, `project_transfer`, `recent_project`, `recently_visited_projects`, `favorite_project`, `favorite_organization` |
+| 이슈        | `issue`, `issue_comment`, `issue_label`, `issue_label_category`, `issue_issue_label`, `issue_comment_voter`, `issue_voter`, `issue_event`, `issue_sharer`, `assignee`, `mention`, `favorite_issue`                                        |
+| PR/리뷰     | `pull_request`, `pull_request_event`, `pull_request_commit`, `pull_request_reviewers`, `review_comment`, `comment_thread`, `comment_thread_n4user`                                                                                        |
+| 게시판      | `posting`, `posting_comment`, `posting_issue_label`                                                                                                                                                                                       |
+| 파일        | `attachment`                                                                                                                                                                                                                              |
+| 알림        | `notification_event`, `notification_event_n4user`, `notification_mail`, `watch`, `unwatch`, `user_project_notification`                                                                                                                   |
+| 기타        | `milestone`, `label`, `property`, `webhook`, `webhook_thread`, `commit_comment`                                                                                                                                                           |
 
 ### 5.3 Multi-DB 지원
 
-| DB | 지원 상태 | 비고 |
-|----|-----------|------|
-| MariaDB/MySQL | ✅ Day-1 | legacy Yona 기본 DB |
-| PostgreSQL | ✅ Day-1 | |
-| SQLite | ✅ Day-1 | 개발/소규모 운영용 |
-| H2 | deferred | legacy 개발용, 우선순위 낮음 |
+| DB            | 지원 상태 | 비고                         |
+| ------------- | --------- | ---------------------------- |
+| MariaDB/MySQL | ✅ Day-1  | legacy Yona 기본 DB          |
+| PostgreSQL    | ✅ Day-1  |                              |
+| SQLite        | ✅ Day-1  | 개발/소규모 운영용           |
+| H2            | deferred  | legacy 개발용, 우선순위 낮음 |
 
 **검수 기준**: MySQL/MariaDB, PostgreSQL, SQLite 각각에서 schema `up`, schema `validate`, legacy-like fixture `adopt`, 핵심 repository smoke test가 통과해야 Day-1 지원으로 인정한다.
 
@@ -1024,22 +1042,23 @@ legacy Yona 사용자가 기존 DB를 그대로 사용할 수 있어야 한다.
 
 모든 화면의 레이아웃은 `yona-original/app/views/` 하위 Scala HTML 템플릿을 기준으로 한다.
 
-| Legacy 템플릿 | 용도 | 반드시 유지할 구조 |
-|---------------|------|-------------------|
-| `layout.scala.html` | 전체 앱 레이아웃 | 네비게이션 바, 사이드바, 메인 컨텐츠 영역 |
-| `projectLayout.scala.html` | 프로젝트 레이아웃 | 프로젝트 헤더 + 프로젝트 메뉴 + 컨텐츠 |
-| `projectMenu.scala.html` | 프로젝트 메뉴 | Code/Issues/Milestones/Board/PullRequests 순서 |
-| `organizationLayout.scala.html` | 조직 레이아웃 | 조직 헤더 + 멤버/설정 메뉴 + 컨텐츠 |
-| `siteLayout.scala.html` | 관리자 레이아웃 | 관리자 전용 사이드 메뉴 + 컨텐츠 |
-| `common/navbar.scala.html` | 상단 네비게이션 | 프로젝트/조직/검색 + 사용자 메뉴 |
-| `common/usermenu.scala.html` | 사용자 드롭다운 | 알림/설정/로그아웃 |
-| `sidebar.scala.html` | 사용자 사이드바 | 프로필/프로젝트/조직 요약 |
+| Legacy 템플릿                   | 용도              | 반드시 유지할 구조                             |
+| ------------------------------- | ----------------- | ---------------------------------------------- |
+| `layout.scala.html`             | 전체 앱 레이아웃  | 네비게이션 바, 사이드바, 메인 컨텐츠 영역      |
+| `projectLayout.scala.html`      | 프로젝트 레이아웃 | 프로젝트 헤더 + 프로젝트 메뉴 + 컨텐츠         |
+| `projectMenu.scala.html`        | 프로젝트 메뉴     | Code/Issues/Milestones/Board/PullRequests 순서 |
+| `organizationLayout.scala.html` | 조직 레이아웃     | 조직 헤더 + 멤버/설정 메뉴 + 컨텐츠            |
+| `siteLayout.scala.html`         | 관리자 레이아웃   | 관리자 전용 사이드 메뉴 + 컨텐츠               |
+| `common/navbar.scala.html`      | 상단 네비게이션   | 프로젝트/조직/검색 + 사용자 메뉴               |
+| `common/usermenu.scala.html`    | 사용자 드롭다운   | 알림/설정/로그아웃                             |
+| `sidebar.scala.html`            | 사용자 사이드바   | 프로필/프로젝트/조직 요약                      |
 
 ### 6.2 URL 경로 규칙
 
 모든 사용자 접근 URL은 legacy routes 파일을 따른다. 변경 금지.
 
 **주요 경로 패턴**:
+
 ```
 /                                → 홈
 /users/loginform                 → 로그인
@@ -1061,18 +1080,19 @@ legacy Yona 사용자가 기존 DB를 그대로 사용할 수 있어야 한다.
 ```
 
 **deviation 허용 사항**:
+
 - `/me` 경로: legacy에는 현재 사용자 workspace도 `/:username` 경로였으나, Rust 구현은 현재 사용자 workspace shortcut으로 `/me`를 유지한다. public profile `/:user` parity는 별도 Feature gap으로 추적한다. Provenance: `docs/provenance/core-parity-audit.md`.
 - 설정 경로: legacy `/user/editform`은 canonical user-facing route로 유지한다. `/me/settings/*`가 존재하는 경우 내부 alias 또는 redirect로만 취급하며 legacy route를 대체하지 않는다.
 
 ### 6.3 UI 텍스트 규칙
 
-| 항목 | 규칙 |
-|------|------|
-| 메뉴 레이블 | legacy `messages` 파일 기준 (한국어: `messages.ko-KR`, 영어: `messages`) |
-| 버튼 텍스트 | legacy 뷰 템플릿의 텍스트와 동일 |
-| 에러 메시지 | legacy 뷰/컨트롤러의 에러 텍스트와 동일 |
-| placeholder | legacy 뷰의 placeholder와 동일 |
-| 빈 상태 메시지 | legacy 뷰의 empty state 텍스트와 동일 |
+| 항목           | 규칙                                                                     |
+| -------------- | ------------------------------------------------------------------------ |
+| 메뉴 레이블    | legacy `messages` 파일 기준 (한국어: `messages.ko-KR`, 영어: `messages`) |
+| 버튼 텍스트    | legacy 뷰 템플릿의 텍스트와 동일                                         |
+| 에러 메시지    | legacy 뷰/컨트롤러의 에러 텍스트와 동일                                  |
+| placeholder    | legacy 뷰의 placeholder와 동일                                           |
+| 빈 상태 메시지 | legacy 뷰의 empty state 텍스트와 동일                                    |
 
 ### 6.4 페이지네이션 규칙
 
@@ -1103,22 +1123,23 @@ legacy Yona는 `pageNum` 기반 offset 페이지네이션을 사용한다.
 
 ### 7.1 테스트 계층
 
-| 계층 | 도구 | 범위 |
-|------|------|------|
-| Domain unit | `cargo test -p yona-domain` | ACL, validation, invariant |
-| Persistence | `cargo test -p yona-persistence` | repository CRUD, query |
-| Server contract | `cargo test -p yona-server` | HTTP/RPC endpoint |
-| Migration | `cargo test -p yona-migration` | schema adopt/up/validate |
-| Frontend unit | `pnpm --dir frontend test` | component, API client |
-| Frontend parity | `src/route-parity.spec.tsx` | route 커버리지 |
-| E2E | `pnpm --dir frontend test:e2e` | 브라우저 플로우 |
-| Multi-DB smoke | `cargo test db_matrix*` | SQLite/PostgreSQL/MySQL |
+| 계층            | 도구                             | 범위                       |
+| --------------- | -------------------------------- | -------------------------- |
+| Domain unit     | `cargo test -p yona-domain`      | ACL, validation, invariant |
+| Persistence     | `cargo test -p yona-persistence` | repository CRUD, query     |
+| Server contract | `cargo test -p yona-server`      | HTTP/RPC endpoint          |
+| Migration       | `cargo test -p yona-migration`   | schema adopt/up/validate   |
+| Frontend unit   | `pnpm --dir frontend test`       | component, API client      |
+| Frontend parity | `src/route-parity.spec.tsx`      | route 커버리지             |
+| E2E             | `pnpm --dir frontend test:e2e`   | 브라우저 플로우            |
+| Multi-DB smoke  | `cargo test db_matrix*`          | SQLite/PostgreSQL/MySQL    |
 
 ### 7.2 기능별 검수 절차
 
 각 Feature Group의 검수 기준 체크리스트를 **모두 통과**해야 해당 기능 구현 완료로 인정한다.
 
 추가로:
+
 1. legacy 대응 route가 존재하면 해당 route의 HTTP 응답 코드가 동일해야 한다
 2. legacy 뷰 템플릿의 핵심 HTML 구조(헤더, 목록, 사이드바 등)가 React 컴포넌트에 반영되어야 한다
 3. legacy test 파일(`yona-original/test/`)의 테스트 시나리오가 Rust/React 테스트로 커버되어야 한다
@@ -1159,33 +1180,33 @@ legacy Yona는 `pageNum` 기반 offset 페이지네이션을 사용한다.
 
 ## 9. 현재 구현 상태 요약 (2026-04-19 기준)
 
-| 영역 | 상태 | 세부 |
-|------|------|------|
-| HTTP/RPC 서버 | ✅ 구현 | Axum + ConnectRPC, Phase 2A Issue RPC 포함 |
-| 세션/인증 | ✅ 구현 | bcrypt, CSRF, 세션 쿠키 |
-| DB 엔티티 | ✅ 구현 | 60+ SeaORM 모델, legacy 스키마 전체 매핑 |
-| Repository 메서드 | ✅ 구현 | 100+ 쿼리 메서드 |
-| Migration | ✅ 구현 | adopt/up/validate 모드, multi-DB |
-| 인증 플로우 | ✅ 구현 | 로그인/가입/비밀번호 찾기/이메일 인증 |
-| Workspace | ✅ 구현 | 대시보드, 설정, 이메일, 토큰, 아바타 |
-| 조직 CRUD | ✅ 구현 | 생성/수정/삭제/멤버/가입 |
-| 프로젝트 CRUD | ✅ 구현 | 생성/수정/설정/감시/즐겨찾기 |
-| 이슈 | ✅ Phase 2A 구현 | CRUD, 댓글, 타임라인, watch/vote/assignee, mass update, Markdown |
-| 게시판 | ❌ 미구현 | placeholder route만 |
-| 라벨/마일스톤 | ❌ 미구현 | DB 엔티티만 존재 |
-| 코드 브라우저 | ❌ 미구현 | `crates/vcs` placeholder |
-| Git Smart HTTP | ❌ 미구현 | |
-| PR/리뷰 | ❌ 미구현 | placeholder route만 |
-| 검색 | ❌ 미구현 | `crates/search` placeholder |
-| 알림 | 🔶 기본만 | SMTP 인프라, 프로젝트 알림 토글 |
-| 웹훅 | ❌ 미구현 | DB 엔티티만 존재 |
-| 관리자 | ❌ 미구현 | |
-| 마크다운 | 🔶 이슈 범위 구현 | Issue body/comment sanitized HTML projection |
-| REST API | ❌ 미구현 | ConnectRPC만 사용 중 |
-| Frontend 라우트 | ✅ 구현 | legacy issueform/editform 포함 |
-| Frontend 테스트 | 🔶 부분 | API client, route parity, E2E smoke |
-| i18n | ❌ 미구현 | hardcoded English/Korean |
-| Email 발송 | ✅ 구현 | Lettre SMTP, 인증/비밀번호 관련 |
+| 영역              | 상태              | 세부                                                             |
+| ----------------- | ----------------- | ---------------------------------------------------------------- |
+| HTTP/RPC 서버     | ✅ 구현           | Axum + ConnectRPC, Phase 2A Issue RPC 포함                       |
+| 세션/인증         | ✅ 구현           | bcrypt, CSRF, 세션 쿠키                                          |
+| DB 엔티티         | ✅ 구현           | 60+ SeaORM 모델, legacy 스키마 전체 매핑                         |
+| Repository 메서드 | ✅ 구현           | 100+ 쿼리 메서드                                                 |
+| Migration         | ✅ 구현           | adopt/up/validate 모드, multi-DB                                 |
+| 인증 플로우       | ✅ 구현           | 로그인/가입/비밀번호 찾기/이메일 인증                            |
+| Workspace         | ✅ 구현           | 대시보드, 설정, 이메일, 토큰, 아바타                             |
+| 조직 CRUD         | ✅ 구현           | 생성/수정/삭제/멤버/가입                                         |
+| 프로젝트 CRUD     | ✅ 구현           | 생성/수정/설정/감시/즐겨찾기                                     |
+| 이슈              | ✅ Phase 2A 구현  | CRUD, 댓글, 타임라인, watch/vote/assignee, mass update, Markdown |
+| 게시판            | ❌ 미구현         | placeholder route만                                              |
+| 라벨/마일스톤     | 🔶 부분           | 라벨/카테고리 관리 구현, 마일스톤 관리 미구현                    |
+| 코드 브라우저     | ❌ 미구현         | `crates/vcs` placeholder                                         |
+| Git Smart HTTP    | ❌ 미구현         |                                                                  |
+| PR/리뷰           | ❌ 미구현         | placeholder route만                                              |
+| 검색              | ❌ 미구현         | `crates/search` placeholder                                      |
+| 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글                                  |
+| 웹훅              | ❌ 미구현         | DB 엔티티만 존재                                                 |
+| 관리자            | ❌ 미구현         |                                                                  |
+| 마크다운          | 🔶 이슈 범위 구현 | Issue body/comment sanitized HTML projection                     |
+| REST API          | ❌ 미구현         | ConnectRPC만 사용 중                                             |
+| Frontend 라우트   | ✅ 구현           | legacy issueform/editform 포함                                   |
+| Frontend 테스트   | 🔶 부분           | API client, route parity, E2E smoke                              |
+| i18n              | ❌ 미구현         | hardcoded English/Korean                                         |
+| Email 발송        | ✅ 구현           | Lettre SMTP, 인증/비밀번호 관련                                  |
 
 ---
 
@@ -1193,12 +1214,12 @@ legacy Yona는 `pageNum` 기반 offset 페이지네이션을 사용한다.
 
 ### 10.1 Canonical Documents
 
-| 문서 | 역할 |
-|------|------|
-| `AGENTS.md` | 에이전트 실행 규칙 (최상위) |
-| `SPEC.md` (이 문서) | 기술적 실행 명세 |
-| `CLAUDE.md` | 에이전트 context mirror |
-| `README.md` | 프로젝트 개요 |
+| 문서                | 역할                        |
+| ------------------- | --------------------------- |
+| `AGENTS.md`         | 에이전트 실행 규칙 (최상위) |
+| `SPEC.md` (이 문서) | 기술적 실행 명세            |
+| `CLAUDE.md`         | 에이전트 context mirror     |
+| `README.md`         | 프로젝트 개요               |
 
 ### 10.2 Mirror Documents
 
@@ -1211,6 +1232,7 @@ legacy Yona는 `pageNum` 기반 offset 페이지네이션을 사용한다.
 ### 10.4 Historical Document Rule
 
 historical 문서(`docs/plans/*`, `docs/workflow/*`)는 삭제하지 않는다. 대신:
+
 1. 제목 아래에 `historical`, `superseded`, `reference-only` 배너
 2. 현재 기준처럼 읽히는 문구를 Rust pivot 이후 위치로 교체
 3. 세부 실행 절차와 당시 판단 근거는 보존
@@ -1268,45 +1290,45 @@ max_file_size = 2147483454             # application.maxFileSize
 > 이 부록은 legacy `conf/routes` 파일의 모든 라우트가 Rust + React에서 어떻게 대응되는지를 추적한다.
 > `status` 값: `implemented`, `gap`, `deferred`, `not-needed`
 
-| Legacy Route | Method | Rust 대응 | Frontend Route | Status |
-|-------------|--------|-----------|----------------|--------|
-| `/` | GET | SPA fallback | `__root.tsx` | implemented |
-| `/users/loginform` | GET | SPA | `legacy-auth/users/loginform` | implemented |
-| `/users/signupform` | GET | SPA | `legacy-auth/users/signupform` | implemented |
-| `/users/login` | POST | ConnectRPC `SignInWithPassword` | — | implemented |
-| `/users/signup` | POST | ConnectRPC `RegisterWithPassword` | — | implemented |
-| `/lostPassword` | GET/POST | `POST /lostPassword` direct | `lostPassword/` | implemented |
-| `/resetPassword` | GET/POST | `POST /resetPassword` direct | `resetPassword/` | implemented |
-| `/verify/:loginId/:code` | GET | ConnectRPC `VerifyUser` | `verify/$loginId/$code` | implemented |
-| `/logout` | GET | ConnectRPC `SignOut` | — | implemented |
-| `/me` | GET | SPA | `me/` | implemented |
-| `/user/editform` | GET | SPA | `user/editform/` | implemented |
-| `/projects` | GET | ConnectRPC `ListProjects` | `projects/` | implemented |
-| `/projectform` | GET | SPA | `projects/new` | implemented |
-| `/:owner/:project` | GET | ConnectRPC `ReadProjectDetail` | `$owner/$projectName/` | implemented |
-| `/:owner/:project/settingform` | GET | ConnectRPC `ReadProjectSettings` | `$owner/$projectName/settingform` | implemented |
-| `/:owner/:project/issues` | GET | ConnectRPC `ListProjectIssues` | `$owner/$projectName/issues` | implemented (기본) |
-| `/:owner/:project/issue/:number` | GET | ConnectRPC `ReadIssueDetail` | `$owner/$projectName/issue/$issueNumber` | implemented (기본) |
-| `/:owner/:project/posts` | GET | — | `$owner/$projectName/posts` | gap |
-| `/:owner/:project/pullRequests` | GET | — | `$owner/$projectName/pullRequests` | gap |
-| `/:owner/:project/code` | GET | — | `$owner/$projectName/code` | gap |
-| `/:owner/:project/commits` | GET | — | — | gap |
-| `/:owner/:project/milestones` | GET | — | — | gap |
-| `/:owner/:project/branches` | GET | — | — | gap |
-| `/organizations/new` | GET | SPA | `organizations/new` | implemented |
-| `/organizations/:name` | GET | ConnectRPC `ReadOrganizationDetail` | `organizations/$organizationName/` | implemented |
-| `/organizations/:name/members` | GET | ConnectRPC `ReadOrganizationMembers` | `organizations/$organizationName/members` | implemented |
-| `/organizations/:name/settingform` | GET | ConnectRPC `ReadOrganizationSettings` | `organizations/$organizationName/settingform` | implemented |
-| `/organizations/:name/issues` | GET | — | `organizations/$organizationName/issues` | gap |
-| `/organizations/:name/boards` | GET | — | `organizations/$organizationName/boards` | gap |
-| `/search` | GET | — | `search/` | gap |
-| `/files` | POST | `POST /files` direct | — | implemented |
-| `/files/:id` | GET | `GET /files/:id` direct | — | implemented |
-| `/notification` | GET | — | — | gap |
-| `/sites/*` | GET | — | — | gap |
-| `/-_-api/v1/*` | Various | — | — | gap |
-| `/svn/*` | Various | — | — | deferred |
-| `/authenticate/:provider` | GET | — | — | deferred |
+| Legacy Route                       | Method   | Rust 대응                             | Frontend Route                                | Status             |
+| ---------------------------------- | -------- | ------------------------------------- | --------------------------------------------- | ------------------ |
+| `/`                                | GET      | SPA fallback                          | `__root.tsx`                                  | implemented        |
+| `/users/loginform`                 | GET      | SPA                                   | `legacy-auth/users/loginform`                 | implemented        |
+| `/users/signupform`                | GET      | SPA                                   | `legacy-auth/users/signupform`                | implemented        |
+| `/users/login`                     | POST     | ConnectRPC `SignInWithPassword`       | —                                             | implemented        |
+| `/users/signup`                    | POST     | ConnectRPC `RegisterWithPassword`     | —                                             | implemented        |
+| `/lostPassword`                    | GET/POST | `POST /lostPassword` direct           | `lostPassword/`                               | implemented        |
+| `/resetPassword`                   | GET/POST | `POST /resetPassword` direct          | `resetPassword/`                              | implemented        |
+| `/verify/:loginId/:code`           | GET      | ConnectRPC `VerifyUser`               | `verify/$loginId/$code`                       | implemented        |
+| `/logout`                          | GET      | ConnectRPC `SignOut`                  | —                                             | implemented        |
+| `/me`                              | GET      | SPA                                   | `me/`                                         | implemented        |
+| `/user/editform`                   | GET      | SPA                                   | `user/editform/`                              | implemented        |
+| `/projects`                        | GET      | ConnectRPC `ListProjects`             | `projects/`                                   | implemented        |
+| `/projectform`                     | GET      | SPA                                   | `projects/new`                                | implemented        |
+| `/:owner/:project`                 | GET      | ConnectRPC `ReadProjectDetail`        | `$owner/$projectName/`                        | implemented        |
+| `/:owner/:project/settingform`     | GET      | ConnectRPC `ReadProjectSettings`      | `$owner/$projectName/settingform`             | implemented        |
+| `/:owner/:project/issues`          | GET      | ConnectRPC `ListProjectIssues`        | `$owner/$projectName/issues`                  | implemented (기본) |
+| `/:owner/:project/issue/:number`   | GET      | ConnectRPC `ReadIssueDetail`          | `$owner/$projectName/issue/$issueNumber`      | implemented (기본) |
+| `/:owner/:project/posts`           | GET      | —                                     | `$owner/$projectName/posts`                   | gap                |
+| `/:owner/:project/pullRequests`    | GET      | —                                     | `$owner/$projectName/pullRequests`            | gap                |
+| `/:owner/:project/code`            | GET      | —                                     | `$owner/$projectName/code`                    | gap                |
+| `/:owner/:project/commits`         | GET      | —                                     | —                                             | gap                |
+| `/:owner/:project/milestones`      | GET      | —                                     | —                                             | gap                |
+| `/:owner/:project/branches`        | GET      | —                                     | —                                             | gap                |
+| `/organizations/new`               | GET      | SPA                                   | `organizations/new`                           | implemented        |
+| `/organizations/:name`             | GET      | ConnectRPC `ReadOrganizationDetail`   | `organizations/$organizationName/`            | implemented        |
+| `/organizations/:name/members`     | GET      | ConnectRPC `ReadOrganizationMembers`  | `organizations/$organizationName/members`     | implemented        |
+| `/organizations/:name/settingform` | GET      | ConnectRPC `ReadOrganizationSettings` | `organizations/$organizationName/settingform` | implemented        |
+| `/organizations/:name/issues`      | GET      | —                                     | `organizations/$organizationName/issues`      | gap                |
+| `/organizations/:name/boards`      | GET      | —                                     | `organizations/$organizationName/boards`      | gap                |
+| `/search`                          | GET      | —                                     | `search/`                                     | gap                |
+| `/files`                           | POST     | `POST /files` direct                  | —                                             | implemented        |
+| `/files/:id`                       | GET      | `GET /files/:id` direct               | —                                             | implemented        |
+| `/notification`                    | GET      | —                                     | —                                             | gap                |
+| `/sites/*`                         | GET      | —                                     | —                                             | gap                |
+| `/-_-api/v1/*`                     | Various  | —                                     | —                                             | gap                |
+| `/svn/*`                           | Various  | —                                     | —                                             | deferred           |
+| `/authenticate/:provider`          | GET      | —                                     | —                                             | deferred           |
 
 ---
 
@@ -1314,19 +1336,19 @@ max_file_size = 2147483454             # application.maxFileSize
 
 `proto/yona/pilot/v1/pilot.proto` — PilotService (Phase 2A Issue RPC 포함)
 
-| 카테고리 | 메서드 수 | 구현 상태 |
-|----------|-----------|-----------|
-| Auth (7) | ReadCurrentSession, ReadAuthUiCapabilities, SignInWithPassword, RegisterWithPassword, VerifyUser, SignOut, ChangePassword | ✅ 전체 구현 |
-| Workspace (10) | ReadWorkspaceOverview, SetDefaultLandingPath, UpdateProfile, ResetVisitedProjects, AddWorkspaceEmail, DeleteWorkspaceEmail, SendWorkspaceEmailValidation, SetMainWorkspaceEmail, ResetApiToken, ToggleWorkspaceNotification | ✅ 전체 구현 |
-| Organization (12+) | CreateOrganization, ReadOrganizationDetail, ReadOrganizationSettings, UpdateOrganization, ReadOrganizationMembers, ReadOrganizationAdmin, ReadOrganizationContainer, AddOrganizationMember, UpdateOrganizationMemberRole, DeleteOrganizationMember, AcceptOrganizationEnrollment, EnrollOrganization, CancelEnrollOrganization, LeaveOrganization, DeleteOrganization | ✅ 전체 구현 |
-| Project (14) | CreateProject, ReadProjectDetail, ReadProjectSettings, UpdateProject, UpdateProjectOverview, ReadProjectMembers, ReadProjectContainer, ToggleProjectWatch, EnrollProject, CancelEnrollProject, ToggleFavoriteProject, RecordRecentProjectVisit, ListProjects, ListOrganizations | ✅ 전체 구현 |
-| Issue | ListProjectIssues, ReadIssueDetail, UpdateIssueState, CreateIssue, UpdateIssue, DeleteIssue, CreateIssueComment, UpdateIssueComment, DeleteIssueComment, ListIssueTimeline, WatchIssue, UnwatchIssue, VoteIssue, UnvoteIssue, AssignIssue, UnassignIssue, MassUpdateIssues, ListProjectLabels, ListProjectMilestones, RenderMarkdown | ✅ Phase 2A 구현 |
+| 카테고리           | 메서드 수                                                                                                                                                                                                                                                                                                                                                             | 구현 상태        |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| Auth (7)           | ReadCurrentSession, ReadAuthUiCapabilities, SignInWithPassword, RegisterWithPassword, VerifyUser, SignOut, ChangePassword                                                                                                                                                                                                                                             | ✅ 전체 구현     |
+| Workspace (10)     | ReadWorkspaceOverview, SetDefaultLandingPath, UpdateProfile, ResetVisitedProjects, AddWorkspaceEmail, DeleteWorkspaceEmail, SendWorkspaceEmailValidation, SetMainWorkspaceEmail, ResetApiToken, ToggleWorkspaceNotification                                                                                                                                           | ✅ 전체 구현     |
+| Organization (12+) | CreateOrganization, ReadOrganizationDetail, ReadOrganizationSettings, UpdateOrganization, ReadOrganizationMembers, ReadOrganizationAdmin, ReadOrganizationContainer, AddOrganizationMember, UpdateOrganizationMemberRole, DeleteOrganizationMember, AcceptOrganizationEnrollment, EnrollOrganization, CancelEnrollOrganization, LeaveOrganization, DeleteOrganization | ✅ 전체 구현     |
+| Project (14)       | CreateProject, ReadProjectDetail, ReadProjectSettings, UpdateProject, UpdateProjectOverview, ReadProjectMembers, ReadProjectContainer, ToggleProjectWatch, EnrollProject, CancelEnrollProject, ToggleFavoriteProject, RecordRecentProjectVisit, ListProjects, ListOrganizations                                                                                       | ✅ 전체 구현     |
+| Issue              | ListProjectIssues, ReadIssueDetail, UpdateIssueState, CreateIssue, UpdateIssue, DeleteIssue, CreateIssueComment, UpdateIssueComment, DeleteIssueComment, ListIssueTimeline, WatchIssue, UnwatchIssue, VoteIssue, UnvoteIssue, AssignIssue, UnassignIssue, MassUpdateIssues, ListProjectLabels, ListProjectMilestones, RenderMarkdown                                  | ✅ Phase 2A 구현 |
 
 **추가 필요한 RPC 메서드** (Phase 2~6에서 추가):
 
 - Issue follow-up: issue sharer, mention autocomplete/notification semantics, comment vote, favorite issue, organization/user aggregate issue list, REST issue API parity
 - Board: CreatePosting, UpdatePosting, DeletePosting, ListProjectPostings, ReadPostingDetail, CreatePostingComment
-- Label: CreateLabel, UpdateLabel, DeleteLabel, ListProjectLabels, CreateLabelCategory
+- Label follow-up: copyLabels Phase 6, REST label/project API parity
 - Milestone: CreateMilestone, UpdateMilestone, DeleteMilestone, ListProjectMilestones, ToggleMilestoneState
 - Code: ListBranches, BrowseRepository, ReadFileContent, ListCommits, ReadCommitDetail
 - PullRequest: CreatePullRequest, ReadPullRequestDetail, ListPullRequests, MergePullRequest, ClosePullRequest, ReopenPullRequest, CreateReviewComment, ReviewPullRequest
@@ -1337,4 +1359,3 @@ max_file_size = 2147483454             # application.maxFileSize
 - Markdown: RenderMarkdown
 
 ---
-

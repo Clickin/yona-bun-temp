@@ -13,7 +13,7 @@ pub struct Model {
     pub project_id: Option<i64>,
     #[sea_orm(unique_key = "uq_user_project_notification_1")]
     pub notification_type: Option<String>,
-    pub allowed: Option<i8>,
+    pub allowed: Option<i16>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

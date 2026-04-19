@@ -9,13 +9,17 @@ import {
   ChangePasswordRequestSchema,
   CancelEnrollOrganizationRequestSchema,
   CancelEnrollProjectRequestSchema,
+  AssignIssueRequestSchema,
   CreateIssueCommentRequestSchema,
   CreateIssueRequestSchema,
-  AssignIssueRequestSchema,
+  CreateProjectLabelCategoryRequestSchema,
+  CreateProjectLabelRequestSchema,
   DeleteIssueCommentRequestSchema,
   CreateOrganizationRequestSchema,
   CreateProjectRequestSchema,
   DeleteIssueRequestSchema,
+  DeleteProjectLabelCategoryRequestSchema,
+  DeleteProjectLabelRequestSchema,
   DeleteOrganizationMemberRequestSchema,
   DeleteOrganizationRequestSchema,
   DeleteWorkspaceEmailRequestSchema,
@@ -63,7 +67,10 @@ import {
   UpdateIssueStateRequestSchema,
   UpdateIssueCommentRequestSchema,
   UpdateIssueRequestSchema,
+  UpdateProjectLabelCategoryRequestSchema,
+  UpdateProjectLabelRequestSchema,
   VerifyUserRequestSchema,
+  type ListProjectLabelCategoriesResponse,
   type ListProjectIssuesResponse,
   type ListProjectLabelsResponse,
   type ListProjectMilestonesResponse,
@@ -76,6 +83,8 @@ import {
   type ListProjectsResponse,
   type ProjectContainer,
   type ProjectDetail,
+  type ProjectLabelCategoryMutationResponse,
+  type ProjectLabelMutationResponse,
   type ReadIssueDetailResponse,
   type ReadCurrentSessionResponse,
   type ReadOrganizationMembersResponse,
@@ -137,10 +146,7 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function readNonEmptyStringField(
-  value: Record<string, unknown>,
-  fieldName: string,
-): null | string {
+function readNonEmptyStringField(value: Record<string, unknown>, fieldName: string): null | string {
   const fieldValue = value[fieldName];
   if (typeof fieldValue !== "string") {
     return null;
@@ -155,8 +161,7 @@ function extractAttachmentId(payload: unknown): null | string {
   }
 
   const directAttachmentId =
-    readNonEmptyStringField(payload, "attachmentId") ??
-    readNonEmptyStringField(payload, "id");
+    readNonEmptyStringField(payload, "attachmentId") ?? readNonEmptyStringField(payload, "id");
   if (directAttachmentId) {
     return directAttachmentId;
   }
@@ -239,10 +244,9 @@ export async function signOut(
   csrfToken: string,
   fetchImpl: typeof fetch = fetch,
 ) {
-  return createPilotClient(runtimeConfig, fetchImpl).signOut(
-    create(SignOutRequestSchema),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return createPilotClient(runtimeConfig, fetchImpl).signOut(create(SignOutRequestSchema), {
+    headers: { "x-csrf-token": csrfToken },
+  });
 }
 
 export async function verifyUser(
@@ -510,6 +514,89 @@ export async function listProjectLabels(
 ): Promise<ListProjectLabelsResponse> {
   return createPilotClient(runtimeConfig, fetchImpl).listProjectLabels(
     create(ListProjectLabelsRequestSchema, { ownerName, projectName }),
+  );
+}
+
+export async function listProjectLabelCategories(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ListProjectLabelCategoriesResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).listProjectLabelCategories(
+    create(ListProjectLabelsRequestSchema, { ownerName, projectName }),
+  );
+}
+
+export async function createProjectLabel(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof CreateProjectLabelRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectLabelMutationResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).createProjectLabel(
+    create(CreateProjectLabelRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function updateProjectLabel(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof UpdateProjectLabelRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectLabelMutationResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).updateProjectLabel(
+    create(UpdateProjectLabelRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function deleteProjectLabel(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof DeleteProjectLabelRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<void> {
+  await createPilotClient(runtimeConfig, fetchImpl).deleteProjectLabel(
+    create(DeleteProjectLabelRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function createProjectLabelCategory(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof CreateProjectLabelCategoryRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectLabelCategoryMutationResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).createProjectLabelCategory(
+    create(CreateProjectLabelCategoryRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function updateProjectLabelCategory(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof UpdateProjectLabelCategoryRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectLabelCategoryMutationResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).updateProjectLabelCategory(
+    create(UpdateProjectLabelCategoryRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function deleteProjectLabelCategory(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof DeleteProjectLabelCategoryRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<void> {
+  await createPilotClient(runtimeConfig, fetchImpl).deleteProjectLabelCategory(
+    create(DeleteProjectLabelCategoryRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
   );
 }
 

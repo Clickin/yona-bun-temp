@@ -37,9 +37,9 @@ pub struct Model {
     )]
     pub history: Option<String>,
     pub parent_id: Option<i64>,
-    pub weight: Option<i8>,
+    pub weight: Option<i16>,
     pub updated_by_author_id: Option<i64>,
-    pub is_draft: Option<i8>,
+    pub is_draft: Option<i16>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

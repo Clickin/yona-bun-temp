@@ -69,6 +69,13 @@ service PilotService {
   rpc UnassignIssue(IssueParticipationRequest) returns (ReadIssueDetailResponse) {}
   rpc MassUpdateIssues(MassUpdateIssuesRequest) returns (MassUpdateIssuesResponse) {}
   rpc ListProjectLabels(ListProjectLabelsRequest) returns (ListProjectLabelsResponse) {}
+  rpc ListProjectLabelCategories(ListProjectLabelsRequest) returns (ListProjectLabelCategoriesResponse) {}
+  rpc CreateProjectLabel(CreateProjectLabelRequest) returns (ProjectLabelMutationResponse) {}
+  rpc UpdateProjectLabel(UpdateProjectLabelRequest) returns (ProjectLabelMutationResponse) {}
+  rpc DeleteProjectLabel(DeleteProjectLabelRequest) returns (ProjectLabelDeleteResponse) {}
+  rpc CreateProjectLabelCategory(CreateProjectLabelCategoryRequest) returns (ProjectLabelCategoryMutationResponse) {}
+  rpc UpdateProjectLabelCategory(UpdateProjectLabelCategoryRequest) returns (ProjectLabelCategoryMutationResponse) {}
+  rpc DeleteProjectLabelCategory(DeleteProjectLabelCategoryRequest) returns (ProjectLabelDeleteResponse) {}
   rpc ListProjectMilestones(ListProjectMilestonesRequest) returns (ListProjectMilestonesResponse) {}
   rpc RenderMarkdown(RenderMarkdownRequest) returns (RenderMarkdownResponse) {}
 }
@@ -674,6 +681,13 @@ message IssueLabel {
   string color = 3;
   int64 category_id = 4;
   string category_name = 5;
+  bool category_is_exclusive = 6;
+}
+
+message IssueLabelCategory {
+  int64 id = 1;
+  string name = 2;
+  bool is_exclusive = 3;
 }
 
 message IssueMilestone {
@@ -823,6 +837,69 @@ message ListProjectLabelsRequest {
 
 message ListProjectLabelsResponse {
   repeated IssueLabel labels = 1;
+}
+
+message ListProjectLabelCategoriesResponse {
+  repeated IssueLabelCategory categories = 1;
+}
+
+message CreateProjectLabelRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  string label_name = 3;
+  string label_color = 4;
+  string category_name = 5;
+  bool category_is_exclusive = 6;
+}
+
+message UpdateProjectLabelRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 label_id = 3;
+  string label_name = 4;
+  string label_color = 5;
+  int64 category_id = 6;
+}
+
+message DeleteProjectLabelRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 label_id = 3;
+}
+
+message CreateProjectLabelCategoryRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  string category_name = 3;
+  bool category_is_exclusive = 4;
+}
+
+message UpdateProjectLabelCategoryRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 category_id = 3;
+  string category_name = 4;
+  bool category_is_exclusive = 5;
+}
+
+message DeleteProjectLabelCategoryRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 category_id = 3;
+}
+
+message ProjectLabelMutationResponse {
+  bool created = 1;
+  IssueLabel label = 2;
+}
+
+message ProjectLabelCategoryMutationResponse {
+  bool created = 1;
+  IssueLabelCategory category = 2;
+}
+
+message ProjectLabelDeleteResponse {
+  bool ok = 1;
 }
 
 message ListProjectMilestonesRequest {

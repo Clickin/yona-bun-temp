@@ -11,8 +11,8 @@ pub struct Model {
     pub payload_url: Option<String>,
     pub secret: Option<String>,
     pub created_at: Option<DateTime>,
-    pub git_push: Option<i8>,
-    pub webhook_type: Option<i8>,
+    pub git_push: Option<i16>,
+    pub webhook_type: Option<i16>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
