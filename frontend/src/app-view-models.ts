@@ -322,15 +322,27 @@ export function toProjectIssueListView(
 ): ProjectIssueListViewModel {
   return {
     items: response.items.map((item) => ({
+      assigneeLabel: item.assigneeLabel,
       authorLabel: item.authorLabel,
       commentCount: Number(item.commentCount),
       issueNumber: Number(item.issueNumber),
+      labels: item.labels.map((label) => ({
+        color: label.color,
+        id: Number(label.id),
+        name: label.name,
+      })),
+      milestoneTitle: item.milestoneTitle,
       state: item.state,
       title: item.title,
       updatedLabel: item.updatedLabel,
+      voterCount: item.voterCount,
+      watcherCount: item.watcherCount,
     })),
     ownerName: response.ownerName,
+    pageNum: response.pageNum,
+    pageSize: response.pageSize,
     projectName: response.projectName,
+    totalCount: response.totalCount,
   };
 }
 
@@ -338,11 +350,61 @@ export function toProjectIssueDetailView(
   response: Awaited<ReturnType<typeof readIssueDetail>>,
 ): ProjectIssueDetailViewModel {
   return {
+    assigneeLabel: response.assigneeLabel,
+    assigneeLoginId: response.assigneeLoginId,
+    attachments: response.attachments.map((attachment) => ({
+      id: Number(attachment.id),
+      name: attachment.name,
+      url: attachment.url,
+    })),
+    authorLabel: response.authorLabel,
+    bodyHtml: response.bodyHtml,
+    bodyMarkdown: response.bodyMarkdown,
+    commentCount: response.commentCount,
+    comments: response.comments.map((comment) => ({
+      authorLabel: comment.authorLabel,
+      contentsHtml: comment.contentsHtml,
+      contentsMarkdown: comment.contentsMarkdown,
+      createdLabel: comment.createdLabel,
+      id: Number(comment.id),
+      viewerCanDelete: comment.viewerCanDelete,
+      viewerCanUpdate: comment.viewerCanUpdate,
+    })),
+    hasVoted: response.hasVoted,
+    isWatching: response.isWatching,
     issueNumber: Number(response.issueNumber),
+    labels: response.labels.map((label) => ({
+      color: label.color,
+      id: Number(label.id),
+      name: label.name,
+    })),
+    milestoneTitle: response.milestoneTitle,
     ownerName: response.ownerName,
     projectName: response.projectName,
     state: response.state,
+    timeline: response.timeline.map((item) => ({
+      comment: item.comment
+        ? {
+            authorLabel: item.comment.authorLabel,
+            contentsHtml: item.comment.contentsHtml,
+            contentsMarkdown: item.comment.contentsMarkdown,
+            createdLabel: item.comment.createdLabel,
+            id: Number(item.comment.id),
+            viewerCanDelete: item.comment.viewerCanDelete,
+            viewerCanUpdate: item.comment.viewerCanUpdate,
+          }
+        : undefined,
+      createdLabel: item.createdLabel,
+      eventType: item.eventType,
+      id: Number(item.id),
+      kind: item.kind,
+    })),
     title: response.title,
+    viewerCanComment: response.viewerCanComment,
+    viewerCanDelete: response.viewerCanDelete,
+    viewerCanUpdate: response.viewerCanUpdate,
+    voterCount: response.voterCount,
+    watcherCount: response.watcherCount,
   };
 }
 

@@ -94,6 +94,20 @@ const PARITY_SLICES = [
     testKeywords: ["organization-directory-route", "orgs", "directory-parity"],
     provenanceDocs: ["docs/provenance/core-parity-audit.md"],
   },
+  {
+    id: "issue-lifecycle",
+    label: "Issue lifecycle",
+    status: "gap",
+    implementationPatterns: [
+      /^frontend\/src\/app-view-models\.ts$/i,
+      /^frontend\/src\/auth-workspace-client\.ts$/i,
+      /^frontend\/src\/routes\/-view-models\.ts$/i,
+      /^frontend\/.*issues?/i,
+      /^crates\/(?:domain|persistence|server)\/.*(?:issue|label|milestone)/i,
+    ],
+    testKeywords: ["issue", "issues", "label", "milestone"],
+    provenanceDocs: ["docs/provenance/phase-0b/issue.md", "docs/provenance/core-parity-audit.md"],
+  },
 ];
 
 const DOMAIN_BUCKETS = [
@@ -193,6 +207,9 @@ const DOMAIN_BUCKETS = [
     label: "Issue lifecycle",
     status: "gap",
     implementationPatterns: [
+      /^frontend\/src\/app-view-models\.ts$/i,
+      /^frontend\/src\/auth-workspace-client\.ts$/i,
+      /^frontend\/src\/routes\/-view-models\.ts$/i,
       /^frontend\/.*issues?/i,
       /^crates\/(?:domain|persistence|server)\/.*(?:issue|label|milestone)/i,
     ],
@@ -279,6 +296,7 @@ const DOMAIN_BUCKETS = [
       "project",
       "sqlite",
       "matrix",
+      "contract",
       "foundation",
       "migration",
     ],

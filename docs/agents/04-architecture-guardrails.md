@@ -14,6 +14,7 @@
 - `crates/domain/`은 ACL, invariant, domain behavior를 소유한다.
 - `crates/persistence/`는 DB access와 repositories를 소유한다.
 - `crates/migration/`은 schema와 migration을 소유한다.
+- legacy 외부 호환 REST API는 임의 확장하지 않는다. ConnectRPC 메서드는 legacy 기능을 구현하기 위한 내부 SPA contract로만 추가한다.
 
 ## G3) Historical Discipline
 
@@ -24,5 +25,6 @@
 
 - legacy UX와 기능 의미를 임의로 바꾸지 않는다.
 - 기능 누락은 `deferred`, `gap`, `deviation` 중 하나로 반드시 기록한다.
+- `deviation`은 legacy 동작, Rust 동작, 사용자 영향, 허용 사유, provenance 위치를 남긴다. URL deviation은 legacy route, Rust route, redirect/alias 여부까지 기록한다.
 - root canonical, provenance, plan docs 사이에 누락 항목 대응이 맞아야 한다.
 

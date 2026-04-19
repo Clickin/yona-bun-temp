@@ -34,6 +34,13 @@
 - `missing`: the legacy capability or user-visible surface is not implemented in the current app.
 - `deferred-2nd-priority`: intentionally excluded from current remediation scope (`SVN`, `LDAP`, import/export, migration tooling).
 
+## Known SPEC-Level Deviations
+
+| Legacy surface | Rust surface | Treatment | Rationale |
+| -------------- | ------------ | --------- | --------- |
+| Current user's workspace at `/:user` | `/me` | Keep `/me` as the current-user workspace shortcut; track public profile `/:user` as a separate gap until restored. | The Rust workspace shell already uses `/me`, while legacy public profile parity still needs its own route/body evidence. |
+| User settings at `/user/editform` | `/user/editform`; optional `/me/settings/*` alias | Keep `/user/editform` as the canonical user-facing legacy route. Treat `/me/settings/*` only as an internal alias or redirect if present. | Deep-link parity requires the legacy settings route to remain mounted. |
+
 ## Audit Matrix
 
 | Capability                                                                                       | Legacy route/view/test                                                                                                                                                                                                                                                  | Current route/contract                                                                                                                                                                                                                  | Status                  | Drift type                                                       | Required Red test                                                                                                                                                       | Owner                                                              | Notes                                                                                                                                                                                                                                                                                                                                                                                   |

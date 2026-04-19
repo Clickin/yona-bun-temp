@@ -6,7 +6,7 @@
 
 1. **기능 동등성만이 목표다.** 레거시 Yona가 제공하는 동일한 기능을 동일한 UX로 구현한다.
 2. **1:1 기술적 대응이 아니다.** Java/Play의 특정 클래스를 Rust의 특정 타입으로 대응시키는 것이 아니라, 사용자 관점에서 동일한 기능과 경험을 제공하는 것이 목표다.
-3. **새로운 구조를 제안하지 않는다.** 기능 구현에 필요한 최소 구조만 사용한다. 여기서 "최소 구조"는 `SPEC.md` Section 3의 고정 결정에 한정한다.
+3. **새로운 구조를 제안하지 않는다.** 기능 구현에 필요한 최소 구조만 사용한다. 여기서 "최소 구조"는 `SPEC.md` Section 1의 고정 결정에 한정한다.
 4. **기존 UI/UX를 그대로 구현한다.** 화면, 레이블, 동선, 기능은 `yona-original/`을 기준으로 한다. "개선"을 이유로 임의로 바꾸지 않는다.
 5. **에이전트의 역할은 구현이다.** 더 나은 구조를 설계하는 것이 아니라, 기존 기능을 새 스택으로 구현하는 것이다.
 
@@ -18,11 +18,11 @@
 | 2순위 | SVN, LDAP, Import/Export, 마이그레이션 도구 등 구현 난이도가 높거나 우선순위가 낮은 기능 | 변환 완료 후 |
 | 3순위 | 아키텍처 개선, 성능 최적화, 새로운 기능 추가 | 개선 단계 |
 
-> "변환 완료" 기준은 `SPEC.md` Section 6 Definition of Done이다.
+> "변환 완료" 기준은 `SPEC.md` Section 8 Definition of Done이다.
 
 ### 명시적 금지
 
-- `SPEC.md` Section 3의 고정 결정 밖으로 새 패턴이나 추상화를 제안하지 않는다.
+- `SPEC.md` Section 1의 고정 결정 밖으로 새 패턴이나 추상화를 제안하지 않는다.
 - 레거시에 없는 기능을 "개선"이라는 이름으로 추가하지 않는다.
 - 기존 UI/UX를 "개선"한다는 이유로 임의로 바꾸지 않는다.
 - 변환 범위를 벗어난 아키텍처 논의를 현재 작업에 끌어오지 않는다.
@@ -32,6 +32,7 @@
 - `AGENTS.md`는 에이전트 실행 규칙의 메인 source of truth다.
 - 이 문서의 변환 원칙은 `SPEC.md`를 포함한 모든 문서에 우선한다.
 - `SPEC.md`는 Rust pivot 이후 기술적 상세의 canonical execution spec이다.
+- 권한 우선순위와 기능/UX 근거 우선순위는 분리한다. 권한은 `AGENTS.md` > `SPEC.md` > repo root 순서이며, 기능/UX/copy/deep-link 근거는 `yona-original/` > `SPEC.md` > `docs/provenance/*` 순서다.
 - `docs/agents/*.md`는 이 문서와 `SPEC.md`를 실행 관점으로 요약한 mirror다.
 - `docs/provenance/*`는 legacy intent, gap, deviation, deferred scope의 근거 문서다.
 - `docs/plans/*`, `docs/workflow/*`는 status banner가 없으면 현재 기준으로 읽지 말고 검토 후 배너를 붙인다.
@@ -45,7 +46,7 @@
 
 ## Fixed Decisions
 
-- 1차 source of truth는 [`yona-original/`](/G:/programming/yona/yona-original)의 Java/Play 기반 legacy Yona다.
+- 1차 기능/UX 근거 source of truth는 [`yona-original/`](/G:/programming/yona/yona-original)의 Java/Play 기반 legacy Yona다.
 - 2차 canonical implementation baseline은 [repo root](/G:/programming/yona)다.
 - 3차 migration/reference material은 `reference/mixed-code/**`다. historical spike evidence는 `reference/spikes/**`에 둔다.
 - canonical frontend ownership은 [`frontend/`](/G:/programming/yona/frontend)에 둔다.
@@ -70,6 +71,7 @@
   - root canonical 문서: deferred scope
   - provenance 문서: gap 또는 deviation
   - 계획 문서: follow-up item
+- 같은 Phase에 남은 `gap`은 Phase 종료 blocker다. 종료하려면 구현하거나, 이후 Phase/deferred로 재분류하고 root canonical 문서, provenance, phase plan에 사유를 남긴다.
 - 변환 완료 전에는 기능 구현에 필요한 최소 구조만 사용하고, 추가 구조 제안은 하지 않는다.
 
 ## Document Index

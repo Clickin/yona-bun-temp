@@ -16,11 +16,9 @@
 
 ## Phase 2: 이슈 추적
 
-- issue CRUD
-- comments
-- labels
-- milestones
-- attachments
+- Phase 2A complete: issue CRUD, comments, state mutation, watch/vote/assignee, mass update, Markdown rendering, and issue/comment attachment binding on Rust canonical stack.
+- Next Phase 2 packet: project label/category management screens and RPC CRUD.
+- Remaining Phase 2 packets: milestone management screens/RPC, REST issue API parity, issue sharer/mention/comment-vote/favorite issue, organization/user aggregate issue lists.
 
 ## Phase 3: 저장소와 VCS
 
@@ -53,4 +51,6 @@
 ## Phase Gate 규칙
 
 - phase 종료 기준은 UI completeness가 아니라 legacy parity와 provenance completeness다.
-- 누락 기능은 각 phase의 follow-up item으로 남겨야 한다.
+- 같은 Phase에 남은 `gap`은 phase 종료 blocker다.
+- phase를 종료하려면 해당 기능을 구현하거나, 이후 Phase/deferred로 재분류하고 root canonical 문서, provenance, phase plan에 사유를 남긴다.
+- 누락 기능은 재분류된 phase의 follow-up item으로 남겨야 한다.

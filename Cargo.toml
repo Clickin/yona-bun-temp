@@ -17,6 +17,7 @@ version = "0.1.0"
 
 [workspace.dependencies]
 anyhow = "1.0"
+ammonia = "4.1"
 async-trait = "0.1"
 axum = "0.8"
 base64 = "0.22"
@@ -35,6 +36,7 @@ lettre = "0.11"
 md-5 = "0.10"
 mime_guess = "2.0"
 protoc-bin-vendored = "3.2"
+pulldown-cmark = "0.13"
 rand = "0.8"
 sea-orm = { version = "1.1", features = ["macros", "runtime-tokio-rustls", "sqlx-mysql", "sqlx-postgres", "sqlx-sqlite"] }
 sea-orm-migration = { version = "1.1", features = ["runtime-tokio-rustls", "sqlx-mysql", "sqlx-postgres", "sqlx-sqlite"] }

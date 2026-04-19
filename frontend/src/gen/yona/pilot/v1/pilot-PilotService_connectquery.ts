@@ -248,3 +248,88 @@ export const readIssueDetail = PilotService.method.readIssueDetail;
  * @generated from rpc yona.pilot.v1.PilotService.UpdateIssueState
  */
 export const updateIssueState = PilotService.method.updateIssueState;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.CreateIssue
+ */
+export const createIssue = PilotService.method.createIssue;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.UpdateIssue
+ */
+export const updateIssue = PilotService.method.updateIssue;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.DeleteIssue
+ */
+export const deleteIssue = PilotService.method.deleteIssue;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.CreateIssueComment
+ */
+export const createIssueComment = PilotService.method.createIssueComment;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.UpdateIssueComment
+ */
+export const updateIssueComment = PilotService.method.updateIssueComment;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.DeleteIssueComment
+ */
+export const deleteIssueComment = PilotService.method.deleteIssueComment;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.ListIssueTimeline
+ */
+export const listIssueTimeline = PilotService.method.listIssueTimeline;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.WatchIssue
+ */
+export const watchIssue = PilotService.method.watchIssue;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.UnwatchIssue
+ */
+export const unwatchIssue = PilotService.method.unwatchIssue;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.VoteIssue
+ */
+export const voteIssue = PilotService.method.voteIssue;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.UnvoteIssue
+ */
+export const unvoteIssue = PilotService.method.unvoteIssue;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.AssignIssue
+ */
+export const assignIssue = PilotService.method.assignIssue;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.UnassignIssue
+ */
+export const unassignIssue = PilotService.method.unassignIssue;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.MassUpdateIssues
+ */
+export const massUpdateIssues = PilotService.method.massUpdateIssues;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.ListProjectLabels
+ */
+export const listProjectLabels = PilotService.method.listProjectLabels;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.ListProjectMilestones
+ */
+export const listProjectMilestones = PilotService.method.listProjectMilestones;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.RenderMarkdown
+ */
+export const renderMarkdown = PilotService.method.renderMarkdown;

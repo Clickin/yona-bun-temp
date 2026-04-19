@@ -27,7 +27,7 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
             base_path: "/yona".to_string(),
             public_origin: String::new(),
         },
-        repo,
+        repo.clone(),
     );
 
     let list_response = app
@@ -114,6 +114,37 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
         })
         .collect();
     let cookie_header = cookies.join("; ");
+
+    let register_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"pilot-manager\",\"name\":\"Pilot Manager\",\"emailAddress\":\"pilot-manager@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register_response.status(), StatusCode::OK);
+    let register_body = register_response.into_body().collect().await.unwrap().to_bytes();
+    let register_json: serde_json::Value =
+        serde_json::from_slice(&register_body).expect("register response json");
+    let actor_id = register_json
+        .get("actorId")
+        .and_then(|value| value.as_i64().or_else(|| value.as_str().and_then(|value| value.parse().ok())))
+        .expect("registered actor id");
+    let project = repo
+        .read_project_by_owner_and_name("pilot", "yona")
+        .await
+        .expect("read project")
+        .expect("seeded project");
+    repo.add_project_membership(project.id, actor_id, "manager")
+        .await
+        .expect("grant issue update authority");
 
     let update_response = app
         .clone()

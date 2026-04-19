@@ -9,8 +9,13 @@ import {
   ChangePasswordRequestSchema,
   CancelEnrollOrganizationRequestSchema,
   CancelEnrollProjectRequestSchema,
+  CreateIssueCommentRequestSchema,
+  CreateIssueRequestSchema,
+  AssignIssueRequestSchema,
+  DeleteIssueCommentRequestSchema,
   CreateOrganizationRequestSchema,
   CreateProjectRequestSchema,
+  DeleteIssueRequestSchema,
   DeleteOrganizationMemberRequestSchema,
   DeleteOrganizationRequestSchema,
   DeleteWorkspaceEmailRequestSchema,
@@ -24,7 +29,11 @@ import {
   ReadAuthUiCapabilitiesRequestSchema,
   ReadCurrentSessionRequestSchema,
   LeaveOrganizationRequestSchema,
+  IssueParticipationRequestSchema,
+  ListProjectLabelsRequestSchema,
   ListProjectIssuesRequestSchema,
+  ListProjectMilestonesRequestSchema,
+  MassUpdateIssuesRequestSchema,
   ReadOrganizationAdminRequestSchema,
   ReadOrganizationContainerRequestSchema,
   ReadOrganizationDetailRequestSchema,
@@ -52,8 +61,13 @@ import {
   UpdateProjectRequestSchema,
   UpdateProjectOverviewRequestSchema,
   UpdateIssueStateRequestSchema,
+  UpdateIssueCommentRequestSchema,
+  UpdateIssueRequestSchema,
   VerifyUserRequestSchema,
   type ListProjectIssuesResponse,
+  type ListProjectLabelsResponse,
+  type ListProjectMilestonesResponse,
+  type MassUpdateIssuesResponse,
   type OrganizationAdminView,
   type OrganizationContainer,
   type OrganizationDetail,
@@ -91,6 +105,15 @@ export interface SessionBootstrapPayload {
 export interface SessionBootstrapResult {
   csrfToken: string;
   payload: SessionBootstrapPayload;
+}
+
+export interface ProjectIssueListOptions {
+  assigneeLoginId?: string;
+  authorLoginId?: string;
+  labelIds?: Array<bigint | number>;
+  milestoneId?: bigint | number;
+  pageNum?: number;
+  state?: string;
 }
 
 function createFetchWithCredentials(fetchImpl: typeof fetch): typeof fetch {
@@ -290,10 +313,20 @@ export async function listProjectIssues(
   runtimeConfig: RuntimeConfig,
   ownerName: string,
   projectName: string,
+  input: ProjectIssueListOptions = {},
   fetchImpl: typeof fetch = fetch,
 ): Promise<ListProjectIssuesResponse> {
   return createPilotClient(runtimeConfig, fetchImpl).listProjectIssues(
-    create(ListProjectIssuesRequestSchema, { ownerName, projectName }),
+    create(ListProjectIssuesRequestSchema, {
+      assigneeLoginId: input.assigneeLoginId ?? "",
+      authorLoginId: input.authorLoginId ?? "",
+      labelIds: input.labelIds?.map((value) => BigInt(value)) ?? [],
+      milestoneId: input.milestoneId ? BigInt(input.milestoneId) : 0n,
+      ownerName,
+      pageNum: input.pageNum ?? 1,
+      projectName,
+      state: input.state ?? "",
+    }),
   );
 }
 
@@ -322,6 +355,172 @@ export async function updateIssueState(
   return createPilotClient(runtimeConfig, fetchImpl).updateIssueState(
     create(UpdateIssueStateRequestSchema, input),
     { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function createIssue(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof CreateIssueRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).createIssue(
+    create(CreateIssueRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function updateIssue(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof UpdateIssueRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).updateIssue(
+    create(UpdateIssueRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function deleteIssue(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof DeleteIssueRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<void> {
+  await createPilotClient(runtimeConfig, fetchImpl).deleteIssue(
+    create(DeleteIssueRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function createIssueComment(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof CreateIssueCommentRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).createIssueComment(
+    create(CreateIssueCommentRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function updateIssueComment(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof UpdateIssueCommentRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).updateIssueComment(
+    create(UpdateIssueCommentRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function deleteIssueComment(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof DeleteIssueCommentRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).deleteIssueComment(
+    create(DeleteIssueCommentRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function watchIssue(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof IssueParticipationRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).watchIssue(
+    create(IssueParticipationRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function unwatchIssue(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof IssueParticipationRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).unwatchIssue(
+    create(IssueParticipationRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function voteIssue(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof IssueParticipationRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).voteIssue(
+    create(IssueParticipationRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function unvoteIssue(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof IssueParticipationRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).unvoteIssue(
+    create(IssueParticipationRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function assignIssue(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof AssignIssueRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).assignIssue(
+    create(AssignIssueRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function massUpdateIssues(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof MassUpdateIssuesRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<MassUpdateIssuesResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).massUpdateIssues(
+    create(MassUpdateIssuesRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function listProjectLabels(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ListProjectLabelsResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).listProjectLabels(
+    create(ListProjectLabelsRequestSchema, { ownerName, projectName }),
+  );
+}
+
+export async function listProjectMilestones(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ListProjectMilestonesResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).listProjectMilestones(
+    create(ListProjectMilestonesRequestSchema, { ownerName, projectName }),
   );
 }
 

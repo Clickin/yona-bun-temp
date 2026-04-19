@@ -54,6 +54,23 @@ service PilotService {
   rpc ListProjectIssues(ListProjectIssuesRequest) returns (ListProjectIssuesResponse) {}
   rpc ReadIssueDetail(ReadIssueDetailRequest) returns (ReadIssueDetailResponse) {}
   rpc UpdateIssueState(UpdateIssueStateRequest) returns (ReadIssueDetailResponse) {}
+  rpc CreateIssue(CreateIssueRequest) returns (ReadIssueDetailResponse) {}
+  rpc UpdateIssue(UpdateIssueRequest) returns (ReadIssueDetailResponse) {}
+  rpc DeleteIssue(DeleteIssueRequest) returns (DeleteIssueResponse) {}
+  rpc CreateIssueComment(CreateIssueCommentRequest) returns (ReadIssueDetailResponse) {}
+  rpc UpdateIssueComment(UpdateIssueCommentRequest) returns (ReadIssueDetailResponse) {}
+  rpc DeleteIssueComment(DeleteIssueCommentRequest) returns (ReadIssueDetailResponse) {}
+  rpc ListIssueTimeline(ListIssueTimelineRequest) returns (ListIssueTimelineResponse) {}
+  rpc WatchIssue(IssueParticipationRequest) returns (ReadIssueDetailResponse) {}
+  rpc UnwatchIssue(IssueParticipationRequest) returns (ReadIssueDetailResponse) {}
+  rpc VoteIssue(IssueParticipationRequest) returns (ReadIssueDetailResponse) {}
+  rpc UnvoteIssue(IssueParticipationRequest) returns (ReadIssueDetailResponse) {}
+  rpc AssignIssue(AssignIssueRequest) returns (ReadIssueDetailResponse) {}
+  rpc UnassignIssue(IssueParticipationRequest) returns (ReadIssueDetailResponse) {}
+  rpc MassUpdateIssues(MassUpdateIssuesRequest) returns (MassUpdateIssuesResponse) {}
+  rpc ListProjectLabels(ListProjectLabelsRequest) returns (ListProjectLabelsResponse) {}
+  rpc ListProjectMilestones(ListProjectMilestonesRequest) returns (ListProjectMilestonesResponse) {}
+  rpc RenderMarkdown(RenderMarkdownRequest) returns (RenderMarkdownResponse) {}
 }
 
 message ReadCurrentSessionRequest {}
@@ -130,6 +147,12 @@ message ListOrganizationsResponse {
 message ListProjectIssuesRequest {
   string owner_name = 1;
   string project_name = 2;
+  string state = 3;
+  string assignee_login_id = 4;
+  string author_login_id = 5;
+  repeated int64 label_ids = 6;
+  int64 milestone_id = 7;
+  uint32 page_num = 8;
 }
 
 message ProjectIssueListItem {
@@ -139,12 +162,21 @@ message ProjectIssueListItem {
   string author_label = 4;
   string updated_label = 5;
   uint32 comment_count = 6;
+  string assignee_label = 7;
+  int64 milestone_id = 8;
+  string milestone_title = 9;
+  uint32 voter_count = 10;
+  uint32 watcher_count = 11;
+  repeated IssueLabel labels = 12;
 }
 
 message ListProjectIssuesResponse {
   string owner_name = 1;
   string project_name = 2;
   repeated ProjectIssueListItem items = 3;
+  uint32 page_num = 4;
+  uint32 page_size = 5;
+  uint32 total_count = 6;
 }
 
 message ReadWorkspaceOverviewRequest {}
@@ -614,4 +646,200 @@ message ReadIssueDetailResponse {
   int64 issue_number = 3;
   string title = 4;
   string state = 5;
+  string body_markdown = 6;
+  string body_html = 7;
+  string author_login_id = 8;
+  string author_label = 9;
+  string assignee_login_id = 10;
+  string assignee_label = 11;
+  int64 milestone_id = 12;
+  string milestone_title = 13;
+  repeated IssueLabel labels = 14;
+  repeated IssueComment comments = 15;
+  repeated IssueTimelineItem timeline = 16;
+  uint32 comment_count = 17;
+  uint32 voter_count = 18;
+  uint32 watcher_count = 19;
+  bool is_watching = 20;
+  bool has_voted = 21;
+  bool viewer_can_update = 22;
+  bool viewer_can_delete = 23;
+  bool viewer_can_comment = 24;
+  repeated IssueAttachment attachments = 25;
+}
+
+message IssueLabel {
+  int64 id = 1;
+  string name = 2;
+  string color = 3;
+  int64 category_id = 4;
+  string category_name = 5;
+}
+
+message IssueMilestone {
+  int64 id = 1;
+  string title = 2;
+  string state = 3;
+  string due_date_label = 4;
+  uint32 open_issue_count = 5;
+  uint32 closed_issue_count = 6;
+  uint32 completion_percent = 7;
+}
+
+message IssueAttachment {
+  int64 id = 1;
+  string name = 2;
+  string mime_type = 3;
+  int64 size = 4;
+  string url = 5;
+}
+
+message IssueComment {
+  int64 id = 1;
+  string contents_markdown = 2;
+  string contents_html = 3;
+  string author_login_id = 4;
+  string author_label = 5;
+  string created_label = 6;
+  bool viewer_can_update = 7;
+  bool viewer_can_delete = 8;
+  repeated IssueAttachment attachments = 9;
+}
+
+message IssueTimelineItem {
+  string kind = 1;
+  int64 id = 2;
+  string event_type = 3;
+  string old_value = 4;
+  string new_value = 5;
+  string sender_login_id = 6;
+  string created_label = 7;
+  IssueComment comment = 8;
+}
+
+message CreateIssueRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  string title = 3;
+  string body_markdown = 4;
+  string assignee_login_id = 5;
+  int64 milestone_id = 6;
+  repeated int64 label_ids = 7;
+  repeated int64 attachment_ids = 8;
+}
+
+message UpdateIssueRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+  string title = 4;
+  string body_markdown = 5;
+  string assignee_login_id = 6;
+  int64 milestone_id = 7;
+  repeated int64 label_ids = 8;
+  repeated int64 attachment_ids = 9;
+}
+
+message DeleteIssueRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+}
+
+message DeleteIssueResponse {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+}
+
+message CreateIssueCommentRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+  string contents_markdown = 4;
+  repeated int64 attachment_ids = 5;
+}
+
+message UpdateIssueCommentRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+  int64 comment_id = 4;
+  string contents_markdown = 5;
+  repeated int64 attachment_ids = 6;
+}
+
+message DeleteIssueCommentRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+  int64 comment_id = 4;
+}
+
+message ListIssueTimelineRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+}
+
+message ListIssueTimelineResponse {
+  repeated IssueTimelineItem items = 1;
+}
+
+message IssueParticipationRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+}
+
+message AssignIssueRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+  string assignee_login_id = 4;
+}
+
+message MassUpdateIssuesRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  repeated int64 issue_numbers = 3;
+  string state = 4;
+  bool assignee_update = 5;
+  string assignee_login_id = 6;
+  bool milestone_update = 7;
+  int64 milestone_id = 8;
+  repeated int64 add_label_ids = 9;
+  repeated int64 remove_label_ids = 10;
+}
+
+message MassUpdateIssuesResponse {
+  repeated ReadIssueDetailResponse items = 1;
+}
+
+message ListProjectLabelsRequest {
+  string owner_name = 1;
+  string project_name = 2;
+}
+
+message ListProjectLabelsResponse {
+  repeated IssueLabel labels = 1;
+}
+
+message ListProjectMilestonesRequest {
+  string owner_name = 1;
+  string project_name = 2;
+}
+
+message ListProjectMilestonesResponse {
+  repeated IssueMilestone milestones = 1;
+}
+
+message RenderMarkdownRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  string markdown = 3;
+}
+
+message RenderMarkdownResponse {
+  string html = 1;
 }

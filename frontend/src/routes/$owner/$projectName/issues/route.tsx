@@ -25,9 +25,15 @@ function ProjectIssuesRouteComponent() {
     setFailureKind(null);
     void (async () => {
       try {
+        const searchParams = new URLSearchParams(window.location.search);
         const [nextDetail, nextIssueList] = await Promise.all([
           readProjectContainer(runtimeConfig, owner, projectName),
-          listProjectIssues(runtimeConfig, owner, projectName),
+          listProjectIssues(runtimeConfig, owner, projectName, {
+            assigneeLoginId: searchParams.get("assigneeLoginId") ?? "",
+            authorLoginId: searchParams.get("authorLoginId") ?? "",
+            pageNum: Number(searchParams.get("pageNum") || "1"),
+            state: searchParams.get("state") ?? "",
+          }),
         ]);
         if (!cancelled) {
           setDetail(toProjectContainerView(nextDetail));

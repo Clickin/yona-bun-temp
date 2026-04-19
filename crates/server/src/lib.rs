@@ -14,6 +14,7 @@ use connectrpc::{ConnectError, Context};
 use http::header::SET_COOKIE;
 use http::{HeaderValue, StatusCode};
 use md5::{Digest, Md5};
+use pulldown_cmark::{html, Options, Parser};
 use runtime_config::normalize_base_path;
 use serde::Serialize;
 use session::{SessionConfig, SessionManager};
@@ -706,6 +707,57 @@ struct PilotServiceImpl {
     public_origin: String,
     session_manager: SessionManager,
     backend: PilotBackend,
+}
+
+impl PilotServiceImpl {
+    async fn issue_participation(
+        &self,
+        ctx: Context,
+        request: OwnedView<IssueParticipationRequestView<'static>>,
+        action: &str,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented("issue requires repository backend"));
+        };
+        let _actor = require_authenticated_user(repository, session.user_id).await?;
+        require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        let issue = repository
+            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        let user_id = session.user_id.expect("authenticated user id");
+        match action {
+            "watch" => repository.watch_issue(issue.id, user_id).await.map_err(internal_error)?,
+            "unwatch" => repository.unwatch_issue(issue.id, user_id).await.map_err(internal_error)?,
+            "vote" => repository.vote_issue(issue.id, user_id).await.map_err(internal_error)?,
+            "unvote" => repository.unvote_issue(issue.id, user_id).await.map_err(internal_error)?,
+            _ => return Err(ConnectError::invalid_argument("invalid issue participation action")),
+        }
+        let updated = repository
+            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        Ok((
+            issue_detail_response_from_record(
+                &updated,
+                false,
+                true,
+                session.user_id,
+                &self.base_path,
+            ),
+            ctx,
+        ))
+    }
 }
 
 #[derive(Clone)]
@@ -1516,6 +1568,270 @@ fn project_update_allowed(
         ProjectOperation::Update,
     )
     .allowed)
+}
+
+fn render_markdown_html(markdown: &str) -> String {
+    let mut options = Options::empty();
+    options.insert(Options::ENABLE_TABLES);
+    options.insert(Options::ENABLE_STRIKETHROUGH);
+    options.insert(Options::ENABLE_TASKLISTS);
+    let parser = Parser::new_ext(markdown, options);
+    let mut rendered = String::new();
+    html::push_html(&mut rendered, parser);
+    ammonia::clean(&rendered)
+}
+
+fn issue_label_from_record(record: &persistence::IssueLabelRecord) -> IssueLabel {
+    IssueLabel {
+        category_id: record.category_id.unwrap_or_default(),
+        category_name: record.category_name.clone(),
+        color: record.color.clone(),
+        id: record.id,
+        name: record.name.clone(),
+        ..Default::default()
+    }
+}
+
+fn issue_attachment_from_record(
+    record: &persistence::IssueAttachmentRecord,
+    base_path: &str,
+) -> IssueAttachment {
+    IssueAttachment {
+        id: record.id,
+        mime_type: record.mime_type.clone(),
+        name: record.name.clone(),
+        size: record.size,
+        url: base_path_href(base_path, &format!("/files/{}", record.id)),
+        ..Default::default()
+    }
+}
+
+fn issue_comment_from_record(
+    record: &persistence::IssueCommentRecord,
+    viewer_can_manage: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+) -> IssueComment {
+    let viewer_is_author = viewer_id.is_some() && viewer_id == record.author_id;
+    IssueComment {
+        attachments: record
+            .attachments
+            .iter()
+            .map(|attachment| issue_attachment_from_record(attachment, base_path))
+            .collect(),
+        author_label: record.author_label.clone(),
+        author_login_id: record.author_login_id.clone(),
+        contents_html: render_markdown_html(&record.contents_markdown),
+        contents_markdown: record.contents_markdown.clone(),
+        created_label: record.created_label.clone(),
+        id: record.id,
+        viewer_can_delete: viewer_can_manage || viewer_is_author,
+        viewer_can_update: viewer_can_manage || viewer_is_author,
+        ..Default::default()
+    }
+}
+
+fn issue_timeline_item_from_record(
+    record: &persistence::IssueTimelineItemRecord,
+    viewer_can_manage: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+) -> IssueTimelineItem {
+    match record {
+        persistence::IssueTimelineItemRecord::Comment(comment) => IssueTimelineItem {
+            comment: Some(issue_comment_from_record(comment, viewer_can_manage, viewer_id, base_path)).into(),
+            created_label: comment.created_label.clone(),
+            id: comment.id,
+            kind: "comment".to_string(),
+            ..Default::default()
+        },
+        persistence::IssueTimelineItemRecord::Event {
+            created_label,
+            event_type,
+            id,
+            new_value,
+            old_value,
+            sender_login_id,
+        } => IssueTimelineItem {
+            created_label: created_label.clone(),
+            event_type: event_type.clone(),
+            id: *id,
+            kind: "event".to_string(),
+            new_value: new_value.clone(),
+            old_value: old_value.clone(),
+            sender_login_id: sender_login_id.clone(),
+            ..Default::default()
+        },
+    }
+}
+
+fn issue_milestone_from_record(record: &persistence::IssueMilestoneRecord) -> IssueMilestone {
+    IssueMilestone {
+        closed_issue_count: record.closed_issue_count,
+        completion_percent: record.completion_percent,
+        due_date_label: record.due_date_label.clone(),
+        id: record.id,
+        open_issue_count: record.open_issue_count,
+        state: record.state.clone(),
+        title: record.title.clone(),
+        ..Default::default()
+    }
+}
+
+fn issue_mutation_input_from_create(
+    request: &CreateIssueRequestView<'_>,
+) -> persistence::IssueMutationInput {
+    persistence::IssueMutationInput {
+        assignee_login_id: (!request.assignee_login_id.trim().is_empty())
+            .then(|| request.assignee_login_id.trim().to_string()),
+        attachment_ids: request.attachment_ids.to_vec(),
+        body_markdown: request.body_markdown.to_string(),
+        label_ids: request.label_ids.to_vec(),
+        milestone_id: (request.milestone_id > 0).then_some(request.milestone_id),
+        title: request.title.trim().to_string(),
+    }
+}
+
+fn issue_mutation_input_from_update(
+    request: &UpdateIssueRequestView<'_>,
+) -> persistence::IssueMutationInput {
+    persistence::IssueMutationInput {
+        assignee_login_id: (!request.assignee_login_id.trim().is_empty())
+            .then(|| request.assignee_login_id.trim().to_string()),
+        attachment_ids: request.attachment_ids.to_vec(),
+        body_markdown: request.body_markdown.to_string(),
+        label_ids: request.label_ids.to_vec(),
+        milestone_id: (request.milestone_id > 0).then_some(request.milestone_id),
+        title: request.title.trim().to_string(),
+    }
+}
+
+fn issue_list_filter_from_request(request: &ListProjectIssuesRequestView<'_>) -> persistence::IssueListFilter {
+    persistence::IssueListFilter {
+        assignee_login_id: (!request.assignee_login_id.trim().is_empty())
+            .then(|| request.assignee_login_id.trim().to_string()),
+        author_login_id: (!request.author_login_id.trim().is_empty())
+            .then(|| request.author_login_id.trim().to_string()),
+        label_ids: request.label_ids.to_vec(),
+        milestone_id: (request.milestone_id > 0).then_some(request.milestone_id),
+        page_num: request.page_num.max(1),
+        state: (!request.state.trim().is_empty()).then(|| request.state.trim().to_string()),
+    }
+}
+
+fn project_facts(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    is_anonymous: bool,
+) -> Result<ProjectAccessFacts, ConnectError> {
+    Ok(ProjectAccessFacts {
+        is_anonymous,
+        is_organization_admin: authorization.viewer.is_organization_admin,
+        is_organization_member: authorization.viewer.is_organization_member,
+        is_project_manager: authorization.viewer.is_project_manager,
+        is_project_member: authorization.viewer.is_project_member,
+        is_site_admin: authorization.viewer.is_site_admin,
+        project_scope: map_project_scope(&authorization.project.project_scope)?,
+    })
+}
+
+fn issue_can_mutate(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    issue: &persistence::IssueRecord,
+    actor: &persistence::AppUserRecord,
+) -> bool {
+    authorization.viewer.is_site_admin
+        || authorization.viewer.is_organization_admin
+        || authorization.viewer.is_project_manager
+        || authorization.viewer.is_project_member
+        || issue.author_id == Some(actor.id)
+        || (!issue.assignee_login_id.is_empty()
+            && issue.assignee_login_id.eq_ignore_ascii_case(&actor.login_id))
+}
+
+async fn require_project_read(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    actor_id: Option<i64>,
+) -> Result<persistence::ProjectAuthorizationRecord, ConnectError> {
+    let authorization = repository
+        .read_project_authorization(owner_name, project_name, actor_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    let allowed = authorize_project_access(
+        &project_facts(&authorization, actor_id.is_none())?,
+        ProjectOperation::Read,
+    )
+    .allowed;
+    if allowed {
+        Ok(authorization)
+    } else {
+        Err(ConnectError::permission_denied("project read is not allowed"))
+    }
+}
+
+async fn require_authenticated_user(
+    repository: &PilotRepository,
+    user_id: Option<i64>,
+) -> Result<persistence::AppUserRecord, ConnectError> {
+    let Some(user_id) = user_id else {
+        return Err(ConnectError::unauthenticated("missing authenticated session"));
+    };
+    repository
+        .find_user_by_id(user_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::unauthenticated("missing authenticated user"))
+}
+
+fn issue_detail_response_from_record(
+    issue: &persistence::IssueRecord,
+    viewer_can_manage: bool,
+    viewer_can_comment: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+) -> ReadIssueDetailResponse {
+    ReadIssueDetailResponse {
+        assignee_label: issue.assignee_label.clone(),
+        assignee_login_id: issue.assignee_login_id.clone(),
+        attachments: issue
+            .attachments
+            .iter()
+            .map(|attachment| issue_attachment_from_record(attachment, base_path))
+            .collect(),
+        author_label: issue.author_label.clone(),
+        author_login_id: issue.author_login_id.clone(),
+        body_html: render_markdown_html(&issue.body_markdown),
+        body_markdown: issue.body_markdown.clone(),
+        comment_count: issue.comment_count,
+        comments: issue
+            .comments
+            .iter()
+            .map(|comment| issue_comment_from_record(comment, viewer_can_manage, viewer_id, base_path))
+            .collect(),
+        has_voted: issue.has_voted,
+        is_watching: issue.is_watching,
+        issue_number: issue.issue_number,
+        labels: issue.labels.iter().map(issue_label_from_record).collect(),
+        milestone_id: issue.milestone_id.unwrap_or_default(),
+        milestone_title: issue.milestone_title.clone(),
+        owner_name: issue.owner_name.clone(),
+        project_name: issue.project_name.clone(),
+        state: issue.state.clone(),
+        timeline: issue
+            .timeline
+            .iter()
+            .map(|item| issue_timeline_item_from_record(item, viewer_can_manage, viewer_id, base_path))
+            .collect(),
+        title: issue.title.clone(),
+        viewer_can_comment,
+        viewer_can_delete: viewer_can_manage,
+        viewer_can_update: viewer_can_manage,
+        voter_count: issue.voter_count,
+        watcher_count: issue.watcher_count,
+        ..Default::default()
+    }
 }
 
 fn format_project_date_label(value: Option<sea_orm::entity::prelude::DateTime>) -> String {
@@ -4150,55 +4466,31 @@ impl PilotService for PilotServiceImpl {
                 .read_session_from_headers(&ctx.headers)
                 .and_then(|session| session.user_id);
 
-            let project = repository
-                .read_project_by_owner_and_name(request.owner_name, request.project_name)
-                .await
-                .map_err(|error| {
-                    ConnectError::new(connectrpc::ErrorCode::Internal, error.to_string())
-                })?
-                .ok_or_else(|| ConnectError::not_found("pilot project not found"))?;
+            let authorization =
+                require_project_read(repository, request.owner_name, request.project_name, actor_id)
+                    .await?;
 
-            let viewer = repository
-                .read_project_authorization(request.owner_name, request.project_name, actor_id)
+            let record = repository
+                .list_project_issues_filtered(
+                    request.owner_name,
+                    request.project_name,
+                    issue_list_filter_from_request(&request),
+                )
                 .await
-                .map_err(|error| {
-                    ConnectError::new(connectrpc::ErrorCode::Internal, error.to_string())
-                })?
-                .ok_or_else(|| ConnectError::not_found("pilot project not found"))?;
-            let decision = authorize_project_access(
-                &ProjectAccessFacts {
-                    is_anonymous: actor_id.is_none(),
-                    is_organization_admin: viewer.viewer.is_organization_admin,
-                    is_organization_member: viewer.viewer.is_organization_member,
-                    is_project_manager: viewer.viewer.is_project_manager,
-                    is_project_member: viewer.viewer.is_project_member,
-                    is_site_admin: viewer.viewer.is_site_admin,
-                    project_scope: ProjectScope::try_from(project.project_scope.as_str())
-                        .unwrap_or(ProjectScope::Private),
-                },
-                ProjectOperation::Read,
-            );
-            if !decision.allowed {
-                return Err(ConnectError::permission_denied(
-                    "project issue list is not allowed",
-                ));
-            }
-
-            let items = repository
-                .list_project_issues(request.owner_name, request.project_name)
-                .await
-                .map_err(|error| {
-                    ConnectError::new(connectrpc::ErrorCode::Internal, error.to_string())
-                })?
-                .into_iter()
-                .map(project_issue_list_item_to_proto)
-                .collect();
+                .map_err(internal_error)?;
 
             return Ok((
                 ListProjectIssuesResponse {
-                    items,
-                    owner_name: project.owner_name,
-                    project_name: project.project_name,
+                    items: record
+                        .items
+                        .into_iter()
+                        .map(project_issue_list_item_to_proto)
+                        .collect(),
+                    owner_name: authorization.project.owner_name,
+                    page_num: record.page_num,
+                    page_size: record.page_size,
+                    project_name: authorization.project.project_name,
+                    total_count: record.total_count,
                     ..Default::default()
                 },
                 ctx,
@@ -4240,6 +4532,11 @@ impl PilotService for PilotServiceImpl {
         }
 
         if let PilotBackend::Repository(repository) = &self.backend {
+            let session = self.session_manager.read_session_from_headers(&ctx.headers);
+            let actor_id = session.as_ref().and_then(|session| session.user_id);
+            let authorization =
+                require_project_read(repository, request.owner_name, request.project_name, actor_id)
+                    .await?;
             let issue = repository
                 .read_issue_detail(
                     request.owner_name,
@@ -4247,13 +4544,29 @@ impl PilotService for PilotServiceImpl {
                     request.issue_number,
                 )
                 .await
-                .map_err(|error| {
-                    ConnectError::new(connectrpc::ErrorCode::Internal, error.to_string())
-                })?;
+                .map_err(internal_error)?;
 
-            return issue
-                .map(|issue| (issue_model_to_response(issue), ctx))
-                .ok_or_else(|| ConnectError::not_found("pilot issue not found"));
+            let Some(issue) = issue else {
+                return Err(ConnectError::not_found("pilot issue not found"));
+            };
+            let actor = match actor_id {
+                Some(user_id) => repository.find_user_by_id(user_id).await.map_err(internal_error)?,
+                None => None,
+            };
+            let viewer_can_manage = actor
+                .as_ref()
+                .is_some_and(|actor| issue_can_mutate(&authorization, &issue, actor));
+            let viewer_can_comment = actor_id.is_some();
+            return Ok((
+                issue_detail_response_from_record(
+                    &issue,
+                    viewer_can_manage,
+                    viewer_can_comment,
+                    actor_id,
+                    &self.base_path,
+                ),
+                ctx,
+            ));
         } else if request.owner_name != "pilot"
             || request.project_name != "yona"
             || request.issue_number != 1
@@ -4269,9 +4582,7 @@ impl PilotService for PilotServiceImpl {
         ctx: Context,
         request: OwnedView<UpdateIssueStateRequestView<'static>>,
     ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        let Some(session) = self.session_manager.read_session_from_headers(&ctx.headers) else {
-            return Err(ConnectError::unauthenticated("missing pilot session"));
-        };
+        let session = require_session(&self.session_manager, &ctx.headers)?;
 
         if request.issue_number <= 0 || !matches!(request.state, "open" | "closed") {
             return Err(ConnectError::invalid_argument(
@@ -4279,11 +4590,27 @@ impl PilotService for PilotServiceImpl {
             ));
         }
 
-        if !self.session_manager.validate_csrf(&ctx.headers, &session) {
-            return Err(ConnectError::permission_denied("invalid csrf token"));
-        }
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
 
         if let PilotBackend::Repository(repository) = &self.backend {
+            let actor = require_authenticated_user(repository, session.user_id).await?;
+            let authorization = require_project_read(
+                repository,
+                request.owner_name,
+                request.project_name,
+                session.user_id,
+            )
+            .await?;
+            let existing = repository
+                .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+                .await
+                .map_err(internal_error)?
+                .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+            if !issue_can_mutate(&authorization, &existing, &actor) {
+                return Err(ConnectError::permission_denied(
+                    "issue state update is not allowed",
+                ));
+            }
             let issue = repository
                 .update_issue_state(
                     request.owner_name,
@@ -4292,12 +4619,21 @@ impl PilotService for PilotServiceImpl {
                     request.state,
                 )
                 .await
-                .map_err(|error| {
-                    ConnectError::new(connectrpc::ErrorCode::Internal, error.to_string())
-                })?;
+                .map_err(internal_error)?;
 
             return issue
-                .map(|issue| (issue_model_to_response(issue), ctx))
+                .map(|issue| {
+                    (
+                        issue_detail_response_from_record(
+                            &issue,
+                            true,
+                            true,
+                            session.user_id,
+                            &self.base_path,
+                        ),
+                        ctx,
+                    )
+                })
                 .ok_or_else(|| ConnectError::not_found("pilot issue not found"));
         }
 
@@ -4309,6 +4645,574 @@ impl PilotService for PilotServiceImpl {
         }
 
         Ok((pilot_issue_response(request.state), ctx))
+    }
+
+    async fn create_issue(
+        &self,
+        ctx: Context,
+        request: OwnedView<CreateIssueRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        if request.title.trim().is_empty() {
+            return Err(ConnectError::invalid_argument("issue title is required"));
+        }
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented("issue requires repository backend"));
+        };
+        let actor = require_authenticated_user(repository, session.user_id).await?;
+        require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        let issue = repository
+            .create_issue(persistence::CreateIssueInput {
+                actor_display_name: actor.display_name.clone(),
+                actor_id: actor.id,
+                actor_login_id: actor.login_id.clone(),
+                owner_name: request.owner_name.to_string(),
+                project_name: request.project_name.to_string(),
+                values: issue_mutation_input_from_create(&request),
+            })
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("project not found"))?;
+        Ok((
+            issue_detail_response_from_record(&issue, true, true, session.user_id, &self.base_path),
+            ctx,
+        ))
+    }
+
+    async fn update_issue(
+        &self,
+        ctx: Context,
+        request: OwnedView<UpdateIssueRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        if request.issue_number <= 0 || request.title.trim().is_empty() {
+            return Err(ConnectError::invalid_argument("invalid issue update request"));
+        }
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented("issue requires repository backend"));
+        };
+        let actor = require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        let existing = repository
+            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        if !issue_can_mutate(&authorization, &existing, &actor) {
+            return Err(ConnectError::permission_denied("issue update is not allowed"));
+        }
+        let issue = repository
+            .update_issue(persistence::UpdateIssueInput {
+                actor_login_id: actor.login_id,
+                issue_number: request.issue_number,
+                owner_name: request.owner_name.to_string(),
+                project_name: request.project_name.to_string(),
+                values: issue_mutation_input_from_update(&request),
+            })
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        Ok((
+            issue_detail_response_from_record(&issue, true, true, session.user_id, &self.base_path),
+            ctx,
+        ))
+    }
+
+    async fn delete_issue(
+        &self,
+        ctx: Context,
+        request: OwnedView<DeleteIssueRequestView<'static>>,
+    ) -> Result<(DeleteIssueResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented("issue requires repository backend"));
+        };
+        let actor = require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        let existing = repository
+            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        if !issue_can_mutate(&authorization, &existing, &actor) {
+            return Err(ConnectError::permission_denied("issue delete is not allowed"));
+        }
+        if !repository
+            .delete_issue(request.owner_name, request.project_name, request.issue_number)
+            .await
+            .map_err(internal_error)?
+        {
+            return Err(ConnectError::not_found("pilot issue not found"));
+        }
+        Ok((
+            DeleteIssueResponse {
+                issue_number: request.issue_number,
+                owner_name: request.owner_name.to_string(),
+                project_name: request.project_name.to_string(),
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
+    async fn create_issue_comment(
+        &self,
+        ctx: Context,
+        request: OwnedView<CreateIssueCommentRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        if request.issue_number <= 0 || request.contents_markdown.trim().is_empty() {
+            return Err(ConnectError::invalid_argument("invalid issue comment request"));
+        }
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented("issue requires repository backend"));
+        };
+        let actor = require_authenticated_user(repository, session.user_id).await?;
+        require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        let issue = repository
+            .create_issue_comment(persistence::CreateIssueCommentInput {
+                actor_display_name: actor.display_name.clone(),
+                actor_id: actor.id,
+                actor_login_id: actor.login_id,
+                attachment_ids: request.attachment_ids.to_vec(),
+                contents_markdown: request.contents_markdown.to_string(),
+                issue_number: request.issue_number,
+                owner_name: request.owner_name.to_string(),
+                project_name: request.project_name.to_string(),
+            })
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        Ok((
+            issue_detail_response_from_record(&issue, false, true, session.user_id, &self.base_path),
+            ctx,
+        ))
+    }
+
+    async fn update_issue_comment(
+        &self,
+        ctx: Context,
+        request: OwnedView<UpdateIssueCommentRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        if request.issue_number <= 0 || request.comment_id <= 0 {
+            return Err(ConnectError::invalid_argument("invalid issue comment request"));
+        }
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented("issue requires repository backend"));
+        };
+        let actor = require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        let existing = repository
+            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        let comment_author = existing
+            .comments
+            .iter()
+            .find(|comment| comment.id == request.comment_id)
+            .and_then(|comment| comment.author_id);
+        if comment_author != Some(actor.id) && !issue_can_mutate(&authorization, &existing, &actor)
+        {
+            return Err(ConnectError::permission_denied(
+                "issue comment update is not allowed",
+            ));
+        }
+        let issue = repository
+            .update_issue_comment(persistence::UpdateIssueCommentInput {
+                attachment_ids: request.attachment_ids.to_vec(),
+                comment_id: request.comment_id,
+                contents_markdown: request.contents_markdown.to_string(),
+                issue_number: request.issue_number,
+                owner_name: request.owner_name.to_string(),
+                project_name: request.project_name.to_string(),
+            })
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        Ok((
+            issue_detail_response_from_record(&issue, true, true, session.user_id, &self.base_path),
+            ctx,
+        ))
+    }
+
+    async fn delete_issue_comment(
+        &self,
+        ctx: Context,
+        request: OwnedView<DeleteIssueCommentRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented("issue requires repository backend"));
+        };
+        let actor = require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        let existing = repository
+            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        let comment_author = existing
+            .comments
+            .iter()
+            .find(|comment| comment.id == request.comment_id)
+            .and_then(|comment| comment.author_id);
+        if comment_author != Some(actor.id) && !issue_can_mutate(&authorization, &existing, &actor)
+        {
+            return Err(ConnectError::permission_denied(
+                "issue comment delete is not allowed",
+            ));
+        }
+        let issue = repository
+            .delete_issue_comment(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+                request.comment_id,
+            )
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        Ok((
+            issue_detail_response_from_record(&issue, true, true, session.user_id, &self.base_path),
+            ctx,
+        ))
+    }
+
+    async fn list_issue_timeline(
+        &self,
+        ctx: Context,
+        request: OwnedView<ListIssueTimelineRequestView<'static>>,
+    ) -> Result<(ListIssueTimelineResponse, Context), ConnectError> {
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented("issue requires repository backend"));
+        };
+        let session = self.session_manager.read_session_from_headers(&ctx.headers);
+        let actor_id = session.as_ref().and_then(|session| session.user_id);
+        let authorization =
+            require_project_read(repository, request.owner_name, request.project_name, actor_id)
+                .await?;
+        let issue = repository
+            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        let actor = match actor_id {
+            Some(user_id) => repository.find_user_by_id(user_id).await.map_err(internal_error)?,
+            None => None,
+        };
+        let can_manage = actor
+            .as_ref()
+            .is_some_and(|actor| issue_can_mutate(&authorization, &issue, actor));
+        Ok((
+            ListIssueTimelineResponse {
+                items: issue
+                    .timeline
+                    .iter()
+                    .map(|item| issue_timeline_item_from_record(item, can_manage, actor_id, &self.base_path))
+                    .collect(),
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
+    async fn watch_issue(
+        &self,
+        ctx: Context,
+        request: OwnedView<IssueParticipationRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        self.issue_participation(ctx, request, "watch").await
+    }
+
+    async fn unwatch_issue(
+        &self,
+        ctx: Context,
+        request: OwnedView<IssueParticipationRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        self.issue_participation(ctx, request, "unwatch").await
+    }
+
+    async fn vote_issue(
+        &self,
+        ctx: Context,
+        request: OwnedView<IssueParticipationRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        self.issue_participation(ctx, request, "vote").await
+    }
+
+    async fn unvote_issue(
+        &self,
+        ctx: Context,
+        request: OwnedView<IssueParticipationRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        self.issue_participation(ctx, request, "unvote").await
+    }
+
+    async fn assign_issue(
+        &self,
+        ctx: Context,
+        request: OwnedView<AssignIssueRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented("issue requires repository backend"));
+        };
+        let actor = require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        let existing = repository
+            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        if !issue_can_mutate(&authorization, &existing, &actor) {
+            return Err(ConnectError::permission_denied("issue assign is not allowed"));
+        }
+        let issue = repository
+            .assign_issue(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+                Some(request.assignee_login_id).filter(|value| !value.trim().is_empty()),
+                &actor.login_id,
+            )
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        Ok((
+            issue_detail_response_from_record(&issue, true, true, session.user_id, &self.base_path),
+            ctx,
+        ))
+    }
+
+    async fn unassign_issue(
+        &self,
+        ctx: Context,
+        request: OwnedView<IssueParticipationRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented("issue requires repository backend"));
+        };
+        let actor = require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        let existing = repository
+            .read_issue_detail(request.owner_name, request.project_name, request.issue_number)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        if !issue_can_mutate(&authorization, &existing, &actor) {
+            return Err(ConnectError::permission_denied("issue assign is not allowed"));
+        }
+        let issue = repository
+            .assign_issue(
+                request.owner_name,
+                request.project_name,
+                request.issue_number,
+                None,
+                &actor.login_id,
+            )
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+        Ok((
+            issue_detail_response_from_record(&issue, true, true, session.user_id, &self.base_path),
+            ctx,
+        ))
+    }
+
+    async fn mass_update_issues(
+        &self,
+        ctx: Context,
+        request: OwnedView<MassUpdateIssuesRequestView<'static>>,
+    ) -> Result<(MassUpdateIssuesResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented("issue requires repository backend"));
+        };
+        let actor = require_authenticated_user(repository, session.user_id).await?;
+        let authorization = require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.user_id,
+        )
+        .await?;
+        for issue_number in request.issue_numbers.iter().copied() {
+            let issue = repository
+                .read_issue_detail(request.owner_name, request.project_name, issue_number)
+                .await
+                .map_err(internal_error)?
+                .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
+            if !issue_can_mutate(&authorization, &issue, &actor) {
+                return Err(ConnectError::permission_denied("issue mass update is not allowed"));
+            }
+        }
+        let items = repository
+            .mass_update_issues(
+                persistence::MassUpdateIssuesInput {
+                    add_label_ids: request.add_label_ids.to_vec(),
+                    assignee_login_id: (!request.assignee_login_id.trim().is_empty())
+                        .then(|| request.assignee_login_id.trim().to_string()),
+                    assignee_update: request.assignee_update,
+                    issue_numbers: request.issue_numbers.to_vec(),
+                    milestone_id: (request.milestone_id > 0).then_some(request.milestone_id),
+                    milestone_update: request.milestone_update,
+                    owner_name: request.owner_name.to_string(),
+                    project_name: request.project_name.to_string(),
+                    remove_label_ids: request.remove_label_ids.to_vec(),
+                    state: (!request.state.trim().is_empty()).then(|| request.state.trim().to_string()),
+                },
+                &actor.login_id,
+            )
+            .await
+            .map_err(internal_error)?
+            .into_iter()
+            .map(|issue| {
+                issue_detail_response_from_record(
+                    &issue,
+                    true,
+                    true,
+                    session.user_id,
+                    &self.base_path,
+                )
+            })
+            .collect();
+        Ok((MassUpdateIssuesResponse { items, ..Default::default() }, ctx))
+    }
+
+    async fn list_project_labels(
+        &self,
+        ctx: Context,
+        request: OwnedView<ListProjectLabelsRequestView<'static>>,
+    ) -> Result<(ListProjectLabelsResponse, Context), ConnectError> {
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented("issue requires repository backend"));
+        };
+        let session = self.session_manager.read_session_from_headers(&ctx.headers);
+        require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.as_ref().and_then(|session| session.user_id),
+        )
+        .await?;
+        let labels = repository
+            .list_project_labels(request.owner_name, request.project_name)
+            .await
+            .map_err(internal_error)?
+            .iter()
+            .map(issue_label_from_record)
+            .collect();
+        Ok((ListProjectLabelsResponse { labels, ..Default::default() }, ctx))
+    }
+
+    async fn list_project_milestones(
+        &self,
+        ctx: Context,
+        request: OwnedView<ListProjectMilestonesRequestView<'static>>,
+    ) -> Result<(ListProjectMilestonesResponse, Context), ConnectError> {
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented("issue requires repository backend"));
+        };
+        let session = self.session_manager.read_session_from_headers(&ctx.headers);
+        require_project_read(
+            repository,
+            request.owner_name,
+            request.project_name,
+            session.as_ref().and_then(|session| session.user_id),
+        )
+        .await?;
+        let milestones = repository
+            .list_project_milestones(request.owner_name, request.project_name)
+            .await
+            .map_err(internal_error)?
+            .iter()
+            .map(issue_milestone_from_record)
+            .collect();
+        Ok((ListProjectMilestonesResponse { milestones, ..Default::default() }, ctx))
+    }
+
+    async fn render_markdown(
+        &self,
+        ctx: Context,
+        request: OwnedView<RenderMarkdownRequestView<'static>>,
+    ) -> Result<(RenderMarkdownResponse, Context), ConnectError> {
+        if let PilotBackend::Repository(repository) = &self.backend {
+            let session = self.session_manager.read_session_from_headers(&ctx.headers);
+            require_project_read(
+                repository,
+                request.owner_name,
+                request.project_name,
+                session.as_ref().and_then(|session| session.user_id),
+            )
+            .await?;
+        }
+        Ok((
+            RenderMarkdownResponse {
+                html: render_markdown_html(request.markdown),
+                ..Default::default()
+            },
+            ctx,
+        ))
     }
 }
 
@@ -4323,27 +5227,22 @@ fn pilot_issue_response(state: &str) -> ReadIssueDetailResponse {
     }
 }
 
-fn issue_model_to_response(issue: persistence::IssueRecord) -> ReadIssueDetailResponse {
-    ReadIssueDetailResponse {
-        owner_name: issue.owner_name,
-        project_name: issue.project_name,
-        issue_number: issue.issue_number,
-        title: issue.title,
-        state: issue.state,
-        ..Default::default()
-    }
-}
-
 fn project_issue_list_item_to_proto(
     item: persistence::ProjectIssueListItemRecord,
 ) -> ProjectIssueListItem {
     ProjectIssueListItem {
+        assignee_label: item.assignee_label,
         author_label: item.author_label,
         comment_count: item.comment_count,
         issue_number: item.issue_number,
+        labels: item.labels.iter().map(issue_label_from_record).collect(),
+        milestone_id: item.milestone_id.unwrap_or_default(),
+        milestone_title: item.milestone_title,
         state: item.state,
         title: item.title,
         updated_label: item.updated_label,
+        voter_count: item.voter_count,
+        watcher_count: item.watcher_count,
         ..Default::default()
     }
 }

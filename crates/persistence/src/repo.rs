@@ -1,31 +1,32 @@
 use crate::repo_types::{
-    AttachmentRecord, AppUserInput, AppUserRecord, CreateOrganizationInput, CreateProjectInput,
-    CreateUserInput, IssueRecord, OrganizationAuthorizationRecord,
-    OrganizationEnrollmentRequestRecord, OrganizationMemberDirectoryRecord,
-    OrganizationMemberRecord, OrganizationRecord, OrganizationViewerRecord,
-    ProjectIssueListItemRecord,
-    ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord,
-    ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord,
-    ProjectMenuSettingsRecord, ProjectMilestoneSummaryRecord, ProjectRecord,
-    ProjectViewerRecord, ToggleFavoriteProjectResult, UpdateOrganizationInput,
-    UpdateProjectInput, WatchedProjectNotificationsRecord, WorkspaceEmailRecord,
-    WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
-    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
-    WorkspacePullRequestListItemRecord,
+    AttachmentRecord, AppUserInput, AppUserRecord, CreateIssueCommentInput, CreateIssueInput,
+    CreateOrganizationInput, CreateProjectInput, CreateUserInput, IssueAttachmentRecord,
+    IssueCommentRecord, IssueLabelRecord, IssueListFilter, IssueMilestoneRecord,
+    IssueRecord, IssueTimelineItemRecord, MassUpdateIssuesInput,
+    OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
+    OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationRecord,
+    OrganizationViewerRecord, ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord,
+    ProjectIssueListItemRecord, ProjectIssueListRecord, ProjectListEntry,
+    ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
+    ProjectMilestoneSummaryRecord, ProjectRecord, ProjectViewerRecord,
+    ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput,
+    UpdateOrganizationInput, UpdateProjectInput, WatchedProjectNotificationsRecord,
+    WorkspaceEmailRecord, WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
+    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord, WorkspacePullRequestListItemRecord,
 };
 use crate::{
-    assignee, attachment, comment_thread, email, favorite_organization, favorite_project,
-    issue, linked_account,
-    milestone, n4user, organization, organization_user, posting, project, project_menu_setting,
-    project_user, pull_request, recent_project, role, site_admin, user_credential,
-    user_enrolled_organization, user_enrolled_project, user_project_notification, user_setting,
-    user_verification, watch,
+    assignee, attachment, comment_thread, email, favorite_organization, favorite_project, issue,
+    issue_comment, issue_event, issue_issue_label, issue_label, issue_label_category, issue_voter,
+    linked_account, milestone, n4user, organization, organization_user, posting,
+    project, project_menu_setting, project_user, pull_request, recent_project, role, site_admin,
+    user_credential, user_enrolled_organization, user_enrolled_project, user_project_notification,
+    user_setting, user_verification, watch,
 };
 use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::{
-    sea_query::Expr, ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, DbErr,
-    EntityTrait, FromQueryResult, NotSet, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect,
-    Set,
+    sea_query::Expr, ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait,
+    DatabaseConnection, DbErr, EntityTrait, FromQueryResult, NotSet, PaginatorTrait, QueryFilter,
+    QueryOrder, QuerySelect, Set, Statement, TransactionTrait,
 };
 use std::collections::HashSet;
 use std::time::{Duration, SystemTime};
@@ -189,16 +190,6 @@ struct ProjectRow {
     owner: Option<String>,
     organization_id: Option<i64>,
     project_scope: Option<String>,
-}
-
-#[derive(Debug, FromQueryResult)]
-struct IssueRow {
-    author_name: Option<String>,
-    num_of_comments: Option<i32>,
-    updated_date: Option<DateTime>,
-    title: Option<String>,
-    number: Option<i64>,
-    state: Option<i32>,
 }
 
 #[derive(Clone)]
@@ -369,17 +360,15 @@ impl AppRepository {
         };
 
         let issue = issue::Entity::find()
-            .select_only()
-            .column(issue::Column::Title)
-            .column(issue::Column::Number)
-            .column(issue::Column::State)
             .filter(issue::Column::ProjectId.eq(Some(project.id)))
             .filter(issue::Column::Number.eq(Some(issue_number)))
-            .into_model::<IssueRow>()
             .one(&self.db)
             .await?;
 
-        Ok(issue.and_then(|row| self.issue_record_from_row(row, &project)))
+        match issue {
+            Some(issue) => self.issue_record_from_model(issue, &project, None).await.map(Some),
+            None => Ok(None),
+        }
     }
 
     pub async fn list_project_issues(
@@ -387,43 +376,124 @@ impl AppRepository {
         owner_name: &str,
         project_name: &str,
     ) -> Result<Vec<ProjectIssueListItemRecord>, DbErr> {
+        Ok(self
+            .list_project_issues_filtered(
+                owner_name,
+                project_name,
+                IssueListFilter {
+                    assignee_login_id: None,
+                    author_login_id: None,
+                    label_ids: Vec::new(),
+                    milestone_id: None,
+                    page_num: 1,
+                    state: None,
+                },
+            )
+            .await?
+            .items)
+    }
+
+    pub async fn list_project_issues_filtered(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        filter: IssueListFilter,
+    ) -> Result<ProjectIssueListRecord, DbErr> {
+        const PAGE_SIZE: u32 = 15;
         let Some(project) = self
             .read_project_by_owner_and_name(owner_name, project_name)
             .await?
         else {
-            return Ok(Vec::new());
+            return Ok(ProjectIssueListRecord {
+                items: Vec::new(),
+                page_num: filter.page_num.max(1),
+                page_size: PAGE_SIZE,
+                total_count: 0,
+            });
         };
 
-        let rows = issue::Entity::find()
-            .select_only()
-            .column(issue::Column::AuthorName)
-            .column(issue::Column::NumOfComments)
-            .column(issue::Column::UpdatedDate)
-            .column(issue::Column::Title)
-            .column(issue::Column::Number)
-            .column(issue::Column::State)
+        let models = issue::Entity::find()
             .filter(issue::Column::ProjectId.eq(Some(project.id)))
+            .order_by_desc(issue::Column::CreatedDate)
             .order_by_desc(issue::Column::Number)
-            .into_model::<IssueRow>()
             .all(&self.db)
             .await?;
 
-        Ok(rows
+        let mut filtered = Vec::new();
+        for model in models {
+            if filter
+                .state
+                .as_deref()
+                .is_some_and(|state| !state.trim().is_empty() && issue_state_from_raw(model.state) != normalize_identity(state))
+            {
+                continue;
+            }
+            if filter
+                .author_login_id
+                .as_deref()
+                .is_some_and(|login_id| !login_id.trim().is_empty() && model.author_login_id.as_deref().map(normalize_identity) != Some(normalize_identity(login_id)))
+            {
+                continue;
+            }
+            if let Some(milestone_id) = filter.milestone_id {
+                if model.milestone_id != Some(milestone_id) {
+                    continue;
+                }
+            }
+            if let Some(assignee_login_id) = filter.assignee_login_id.as_deref() {
+                if !assignee_login_id.trim().is_empty() {
+                    let assignee = self.issue_assignee_summary(model.assignee_id).await?;
+                    if assignee.0 != normalize_identity(assignee_login_id) {
+                        continue;
+                    }
+                }
+            }
+            let labels = self.list_issue_labels(model.id).await?;
+            if !filter.label_ids.is_empty()
+                && !filter
+                    .label_ids
+                    .iter()
+                    .all(|id| labels.iter().any(|label| label.id == *id))
+            {
+                continue;
+            }
+
+            let (assignee_login_id, assignee_label) = self.issue_assignee_summary(model.assignee_id).await?;
+            let (milestone_id, milestone_title) = self.issue_milestone_summary(model.milestone_id).await?;
+            filtered.push(ProjectIssueListItemRecord {
+                assignee_label,
+                author_label: model.author_name.unwrap_or_default(),
+                comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
+                issue_number: model.number.unwrap_or_default(),
+                labels,
+                milestone_id,
+                milestone_title,
+                owner_name: project.owner_name.clone(),
+                project_name: project.project_name.clone(),
+                state: issue_state_from_raw(model.state),
+                title: model.title.unwrap_or_default(),
+                updated_label: format_workspace_date_label(model.updated_date),
+                voter_count: self.count_issue_voters(model.id).await?,
+                watcher_count: self.count_issue_watchers(model.id).await?,
+            });
+            drop(assignee_login_id);
+        }
+
+        let page_num = filter.page_num.max(1);
+        let total_count = filtered.len() as u32;
+        let offset = ((page_num - 1) * PAGE_SIZE) as usize;
+        let items = filtered
             .into_iter()
-            .filter_map(|row| {
-                let issue_number = row.number?;
-                Some(ProjectIssueListItemRecord {
-                    author_label: row.author_name.unwrap_or_default(),
-                    comment_count: row.num_of_comments.unwrap_or_default().max(0) as u32,
-                    issue_number,
-                    owner_name: project.owner_name.clone(),
-                    project_name: project.project_name.clone(),
-                    state: issue_state_from_raw(row.state),
-                    title: row.title.unwrap_or_default(),
-                    updated_label: format_workspace_date_label(row.updated_date),
-                })
-            })
-            .collect())
+            .skip(offset)
+            .take(PAGE_SIZE as usize)
+            .collect();
+
+        Ok(ProjectIssueListRecord {
+            items,
+            page_num,
+            page_size: PAGE_SIZE,
+            total_count,
+        })
     }
 
     pub async fn update_issue_state(
@@ -457,6 +527,475 @@ impl AppRepository {
 
         self.read_issue_detail(owner_name, project_name, issue_number)
             .await
+    }
+
+    pub async fn create_issue(&self, input: CreateIssueInput) -> Result<Option<IssueRecord>, DbErr> {
+        let Some(project_record) = self
+            .read_project_by_owner_and_name(&input.owner_name, &input.project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let issue_number = self.next_issue_number(project_record.id).await?;
+        let assignee_id = self
+            .resolve_assignee_id(project_record.id, input.values.assignee_login_id.as_deref())
+            .await?;
+        let now = current_datetime();
+        let created = issue::ActiveModel {
+            id: NotSet,
+            title: Set(Some(input.values.title.trim().to_string())),
+            created_date: Set(Some(now)),
+            updated_date: Set(Some(now)),
+            author_id: Set(Some(input.actor_id)),
+            author_login_id: Set(Some(normalize_identity(&input.actor_login_id))),
+            author_name: Set(Some(input.actor_display_name)),
+            project_id: Set(Some(project_record.id)),
+            number: Set(Some(issue_number)),
+            num_of_comments: Set(Some(0)),
+            state: Set(Some(issue_state_to_raw("open"))),
+            due_date: Set(None),
+            milestone_id: Set(input.values.milestone_id.filter(|value| *value > 0)),
+            assignee_id: Set(assignee_id),
+            parent_id: Set(None),
+            weight: Set(None),
+            updated_by_author_id: Set(Some(input.actor_id)),
+            is_draft: Set(Some(0)),
+        }
+        .insert(&self.db)
+        .await?;
+        self.write_text_column("issue", "body", created.id, &input.values.body_markdown)
+            .await?;
+
+        let mut project_active = project::ActiveModel {
+            id: Set(project_record.id),
+            ..Default::default()
+        };
+        project_active.last_issue_number = Set(Some(issue_number));
+        project_active.update(&self.db).await?;
+
+        self.replace_issue_labels(created.id, project_record.id, &input.values.label_ids)
+            .await?;
+        self.bind_attachments("ISSUE", created.id, &input.values.attachment_ids)
+            .await?;
+        self.watch_issue(created.id, input.actor_id).await?;
+        self.issue_record_from_model(created, &project_record, Some(input.actor_id))
+            .await
+            .map(Some)
+    }
+
+    pub async fn update_issue(&self, input: UpdateIssueInput) -> Result<Option<IssueRecord>, DbErr> {
+        let Some((project_record, model)) = self
+            .read_project_issue_model(&input.owner_name, &input.project_name, input.issue_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let assignee_id = self
+            .resolve_assignee_id(project_record.id, input.values.assignee_login_id.as_deref())
+            .await?;
+        let old_state = issue_state_from_raw(model.state);
+        let old_assignee = model.assignee_id;
+        let old_milestone = model.milestone_id;
+        let mut active = issue::ActiveModel::from(model);
+        active.title = Set(Some(input.values.title.trim().to_string()));
+        active.assignee_id = Set(assignee_id);
+        active.milestone_id = Set(input.values.milestone_id.filter(|value| *value > 0));
+        active.updated_date = Set(Some(current_datetime()));
+        let updated = active.update(&self.db).await?;
+        self.write_text_column("issue", "body", updated.id, &input.values.body_markdown)
+            .await?;
+
+        self.replace_issue_labels(updated.id, project_record.id, &input.values.label_ids)
+            .await?;
+        self.bind_attachments("ISSUE", updated.id, &input.values.attachment_ids)
+            .await?;
+        if old_assignee != updated.assignee_id {
+            self.create_issue_event(
+                updated.id,
+                &input.actor_login_id,
+                "ISSUE_ASSIGNEE_CHANGED",
+                &old_assignee.map(|value| value.to_string()).unwrap_or_default(),
+                &updated.assignee_id.map(|value| value.to_string()).unwrap_or_default(),
+            )
+            .await?;
+        }
+        if old_milestone != updated.milestone_id {
+            self.create_issue_event(
+                updated.id,
+                &input.actor_login_id,
+                "ISSUE_MILESTONE_CHANGED",
+                &old_milestone.map(|value| value.to_string()).unwrap_or_default(),
+                &updated.milestone_id.map(|value| value.to_string()).unwrap_or_default(),
+            )
+            .await?;
+        }
+        let _ = old_state;
+
+        self.issue_record_from_model(updated, &project_record, None)
+            .await
+            .map(Some)
+    }
+
+    pub async fn delete_issue(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+    ) -> Result<bool, DbErr> {
+        let Some((_project, model)) = self
+            .read_project_issue_model(owner_name, project_name, issue_number)
+            .await?
+        else {
+            return Ok(false);
+        };
+        issue_issue_label::Entity::delete_many()
+            .filter(issue_issue_label::Column::IssueId.eq(model.id))
+            .exec(&self.db)
+            .await?;
+        issue_event::Entity::delete_many()
+            .filter(issue_event::Column::IssueId.eq(Some(model.id)))
+            .exec(&self.db)
+            .await?;
+        issue_voter::Entity::delete_many()
+            .filter(issue_voter::Column::IssueId.eq(model.id))
+            .exec(&self.db)
+            .await?;
+        issue_comment::Entity::delete_many()
+            .filter(issue_comment::Column::IssueId.eq(Some(model.id)))
+            .exec(&self.db)
+            .await?;
+        watch::Entity::delete_many()
+            .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(model.id.to_string())))
+            .exec(&self.db)
+            .await?;
+        attachment::Entity::delete_many()
+            .filter(attachment::Column::ContainerType.eq(Some("ISSUE".to_string())))
+            .filter(attachment::Column::ContainerId.eq(model.id))
+            .exec(&self.db)
+            .await?;
+        issue::Entity::delete_by_id(model.id).exec(&self.db).await?;
+        Ok(true)
+    }
+
+    pub async fn create_issue_comment(
+        &self,
+        input: CreateIssueCommentInput,
+    ) -> Result<Option<IssueRecord>, DbErr> {
+        let Some((project_record, issue_model)) = self
+            .read_project_issue_model(&input.owner_name, &input.project_name, input.issue_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let created = issue_comment::ActiveModel {
+            id: NotSet,
+            created_date: Set(Some(current_datetime())),
+            author_id: Set(Some(input.actor_id)),
+            author_login_id: Set(Some(normalize_identity(&input.actor_login_id))),
+            author_name: Set(Some(input.actor_display_name)),
+            issue_id: Set(Some(issue_model.id)),
+            project_id: Set(project_record.id),
+            parent_comment_id: Set(None),
+        }
+        .insert(&self.db)
+        .await?;
+        self.write_text_column("issue_comment", "contents", created.id, &input.contents_markdown)
+            .await?;
+        self.bind_attachments("ISSUE_COMMENT", created.id, &input.attachment_ids)
+            .await?;
+        self.recount_issue_comments(issue_model.id).await?;
+        self.read_issue_detail(&input.owner_name, &input.project_name, input.issue_number)
+            .await
+    }
+
+    pub async fn update_issue_comment(
+        &self,
+        input: UpdateIssueCommentInput,
+    ) -> Result<Option<IssueRecord>, DbErr> {
+        let Some((_project_record, issue_model)) = self
+            .read_project_issue_model(&input.owner_name, &input.project_name, input.issue_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(comment) = issue_comment::Entity::find_by_id(input.comment_id).one(&self.db).await? else {
+            return Ok(None);
+        };
+        if comment.issue_id != Some(issue_model.id) {
+            return Ok(None);
+        }
+        let active = issue_comment::ActiveModel::from(comment);
+        let updated = active.update(&self.db).await?;
+        self.write_text_column("issue_comment", "contents", updated.id, &input.contents_markdown)
+            .await?;
+        self.bind_attachments("ISSUE_COMMENT", updated.id, &input.attachment_ids)
+            .await?;
+        self.read_issue_detail(&input.owner_name, &input.project_name, input.issue_number)
+            .await
+    }
+
+    pub async fn delete_issue_comment(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        comment_id: i64,
+    ) -> Result<Option<IssueRecord>, DbErr> {
+        let Some((_project_record, issue_model)) = self
+            .read_project_issue_model(owner_name, project_name, issue_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(comment) = issue_comment::Entity::find_by_id(comment_id).one(&self.db).await? else {
+            return Ok(None);
+        };
+        if comment.issue_id != Some(issue_model.id) {
+            return Ok(None);
+        }
+        attachment::Entity::delete_many()
+            .filter(attachment::Column::ContainerType.eq(Some("ISSUE_COMMENT".to_string())))
+            .filter(attachment::Column::ContainerId.eq(comment_id))
+            .exec(&self.db)
+            .await?;
+        issue_comment::Entity::delete_by_id(comment_id)
+            .exec(&self.db)
+            .await?;
+        self.recount_issue_comments(issue_model.id).await?;
+        self.read_issue_detail(owner_name, project_name, issue_number)
+            .await
+    }
+
+    pub async fn watch_issue(&self, issue_id: i64, user_id: i64) -> Result<(), DbErr> {
+        if watch::Entity::find()
+            .filter(watch::Column::UserId.eq(Some(user_id)))
+            .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(issue_id.to_string())))
+            .one(&self.db)
+            .await?
+            .is_none()
+        {
+            watch::ActiveModel {
+                id: NotSet,
+                user_id: Set(Some(user_id)),
+                resource_type: Set(Some("ISSUE".to_string())),
+                resource_id: Set(Some(issue_id.to_string())),
+            }
+            .insert(&self.db)
+            .await?;
+        }
+        Ok(())
+    }
+
+    pub async fn unwatch_issue(&self, issue_id: i64, user_id: i64) -> Result<(), DbErr> {
+        watch::Entity::delete_many()
+            .filter(watch::Column::UserId.eq(Some(user_id)))
+            .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(issue_id.to_string())))
+            .exec(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn vote_issue(&self, issue_id: i64, user_id: i64) -> Result<(), DbErr> {
+        if issue_voter::Entity::find_by_id((issue_id, user_id))
+            .one(&self.db)
+            .await?
+            .is_none()
+        {
+            issue_voter::ActiveModel {
+                issue_id: Set(issue_id),
+                user_id: Set(user_id),
+            }
+            .insert(&self.db)
+            .await?;
+        }
+        Ok(())
+    }
+
+    pub async fn unvote_issue(&self, issue_id: i64, user_id: i64) -> Result<(), DbErr> {
+        issue_voter::Entity::delete_by_id((issue_id, user_id))
+            .exec(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn assign_issue(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        assignee_login_id: Option<&str>,
+        actor_login_id: &str,
+    ) -> Result<Option<IssueRecord>, DbErr> {
+        let Some((project_record, issue_model)) = self
+            .read_project_issue_model(owner_name, project_name, issue_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let next_assignee_id = self
+            .resolve_assignee_id(project_record.id, assignee_login_id)
+            .await?;
+        let old_assignee_id = issue_model.assignee_id;
+        let mut active = issue::ActiveModel::from(issue_model);
+        active.assignee_id = Set(next_assignee_id);
+        active.updated_date = Set(Some(current_datetime()));
+        let updated = active.update(&self.db).await?;
+        if old_assignee_id != updated.assignee_id {
+            self.create_issue_event(
+                updated.id,
+                actor_login_id,
+                "ISSUE_ASSIGNEE_CHANGED",
+                &old_assignee_id.map(|value| value.to_string()).unwrap_or_default(),
+                &updated.assignee_id.map(|value| value.to_string()).unwrap_or_default(),
+            )
+            .await?;
+        }
+        self.issue_record_from_model(updated, &project_record, None)
+            .await
+            .map(Some)
+    }
+
+    pub async fn mass_update_issues(
+        &self,
+        input: MassUpdateIssuesInput,
+        actor_login_id: &str,
+    ) -> Result<Vec<IssueRecord>, DbErr> {
+        let mut targets = Vec::new();
+        for issue_number in input.issue_numbers.iter().copied() {
+            let Some((project_record, model)) = self
+                .read_project_issue_model(&input.owner_name, &input.project_name, issue_number)
+                .await?
+            else {
+                return Err(DbErr::Custom("Issue not found.".to_string()));
+            };
+            let next_assignee_id = if input.assignee_update {
+                self.resolve_assignee_id(project_record.id, input.assignee_login_id.as_deref())
+                    .await?
+            } else {
+                model.assignee_id
+            };
+            for label_id in input.add_label_ids.iter().chain(input.remove_label_ids.iter()) {
+                if !self.label_belongs_to_project(project_record.id, *label_id).await? {
+                    return Err(DbErr::Custom("Issue label not found.".to_string()));
+                }
+            }
+            targets.push((project_record, model, next_assignee_id));
+        }
+
+        let txn = self.db.begin().await?;
+        for (_project_record, model, next_assignee_id) in &targets {
+            let mut active = issue::ActiveModel::from(model.clone());
+            if let Some(state) = input.state.as_deref().filter(|value| !value.trim().is_empty()) {
+                active.state = Set(Some(issue_state_to_raw(state)));
+            }
+            if input.assignee_update {
+                active.assignee_id = Set(*next_assignee_id);
+            }
+            if input.milestone_update {
+                active.milestone_id = Set(input.milestone_id.filter(|value| *value > 0));
+            }
+            active.updated_date = Set(Some(current_datetime()));
+            let model = active.update(&txn).await?;
+            for label_id in &input.add_label_ids {
+                if issue_issue_label::Entity::find_by_id((model.id, *label_id))
+                        .one(&txn)
+                        .await?
+                        .is_none()
+                {
+                    issue_issue_label::ActiveModel {
+                        issue_id: Set(model.id),
+                        issue_label_id: Set(*label_id),
+                    }
+                    .insert(&txn)
+                    .await?;
+                }
+            }
+            for label_id in &input.remove_label_ids {
+                issue_issue_label::Entity::delete_by_id((model.id, *label_id))
+                    .exec(&txn)
+                    .await?;
+            }
+            if let Some(state) = input.state.as_deref().filter(|value| !value.trim().is_empty()) {
+                let created = issue_event::ActiveModel {
+                    id: NotSet,
+                    created: Set(Some(current_datetime())),
+                    sender_login_id: Set(empty_to_none(Some(actor_login_id.to_string()))),
+                    sender_email: Set(None),
+                    issue_id: Set(Some(model.id)),
+                    event_type: Set(Some("ISSUE_STATE_CHANGED".to_string())),
+                }
+                .insert(&txn)
+                .await?;
+                let backend = txn.get_database_backend();
+                txn.execute(Statement::from_sql_and_values(
+                    backend,
+                    "UPDATE issue_event SET new_value = ? WHERE id = ?",
+                    vec![state.to_string().into(), created.id.into()],
+                ))
+                    .await?;
+            }
+        }
+        txn.commit().await?;
+
+        let mut updated = Vec::new();
+        for issue_number in input.issue_numbers {
+            if let Some(record) = self
+                .read_issue_detail(&input.owner_name, &input.project_name, issue_number)
+                .await?
+            {
+                updated.push(record);
+            }
+        }
+        Ok(updated)
+    }
+
+    pub async fn list_project_labels(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+    ) -> Result<Vec<IssueLabelRecord>, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(Vec::new());
+        };
+        let labels = issue_label::Entity::find()
+            .filter(issue_label::Column::ProjectId.eq(Some(project.id)))
+            .order_by_asc(issue_label::Column::Name)
+            .all(&self.db)
+            .await?;
+        let mut records = Vec::new();
+        for label in labels {
+            records.push(self.issue_label_record(label).await?);
+        }
+        Ok(records)
+    }
+
+    pub async fn list_project_milestones(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+    ) -> Result<Vec<IssueMilestoneRecord>, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(Vec::new());
+        };
+        let rows = milestone::Entity::find()
+            .filter(milestone::Column::ProjectId.eq(Some(project.id)))
+            .order_by_asc(milestone::Column::DueDate)
+            .all(&self.db)
+            .await?;
+        let mut records = Vec::new();
+        for row in rows {
+            records.push(self.issue_milestone_record(row).await?);
+        }
+        Ok(records)
     }
 
     pub async fn read_project_by_owner_and_name(
@@ -2511,14 +3050,492 @@ impl AppRepository {
         }))
     }
 
-    fn issue_record_from_row(&self, row: IssueRow, project: &ProjectRecord) -> Option<IssueRecord> {
-        Some(IssueRecord {
-            issue_number: row.number?,
+    async fn issue_record_from_model(
+        &self,
+        model: issue::Model,
+        project: &ProjectRecord,
+        viewer_id: Option<i64>,
+    ) -> Result<IssueRecord, DbErr> {
+        let (assignee_login_id, assignee_label) =
+            self.issue_assignee_summary(model.assignee_id).await?;
+        let (milestone_id, milestone_title) = self.issue_milestone_summary(model.milestone_id).await?;
+        let labels = self.list_issue_labels(model.id).await?;
+        let comments = self.list_issue_comments(model.id, viewer_id).await?;
+        let timeline = self.list_issue_timeline_items(model.id, viewer_id).await?;
+        let attachments = self.list_issue_attachments("ISSUE", model.id).await?;
+        let voter_count = self.count_issue_voters(model.id).await?;
+        let watcher_count = self.count_issue_watchers(model.id).await?;
+        let has_voted = match viewer_id {
+            Some(user_id) => issue_voter::Entity::find_by_id((model.id, user_id))
+                .one(&self.db)
+                .await?
+                .is_some(),
+            None => false,
+        };
+        let is_watching = match viewer_id {
+            Some(user_id) => self.is_issue_watched_by(model.id, user_id).await?,
+            None => false,
+        };
+
+        Ok(IssueRecord {
+            assignee_label,
+            assignee_login_id,
+            attachments,
+            author_id: model.author_id,
+            author_label: model.author_name.unwrap_or_default(),
+            author_login_id: model.author_login_id.unwrap_or_default(),
+            body_markdown: self.read_text_column("issue", "body", model.id).await?,
+            comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
+            comments,
+            has_voted,
+            id: model.id,
+            is_watching,
+            issue_number: model.number.unwrap_or_default(),
+            labels,
+            milestone_id,
+            milestone_title,
             owner_name: project.owner_name.clone(),
             project_name: project.project_name.clone(),
+            state: issue_state_from_raw(model.state),
+            timeline,
+            title: model.title.unwrap_or_default(),
+            updated_label: format_workspace_date_label(model.updated_date),
+            voter_count,
+            watcher_count,
+        })
+    }
+
+    async fn read_project_issue_model(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+    ) -> Result<Option<(ProjectRecord, issue::Model)>, DbErr> {
+        let Some(project_record) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let issue = issue::Entity::find()
+            .filter(issue::Column::ProjectId.eq(Some(project_record.id)))
+            .filter(issue::Column::Number.eq(Some(issue_number)))
+            .one(&self.db)
+            .await?;
+        Ok(issue.map(|model| (project_record, model)))
+    }
+
+    async fn read_text_column(
+        &self,
+        table: &str,
+        column: &str,
+        id: i64,
+    ) -> Result<String, DbErr> {
+        let sql = format!("SELECT {column} AS value FROM {table} WHERE id = ?");
+        let Some(row) = self
+            .db
+            .query_one(Statement::from_sql_and_values(
+                self.db.get_database_backend(),
+                sql,
+                vec![id.into()],
+            ))
+            .await?
+        else {
+            return Ok(String::new());
+        };
+        Ok(row
+            .try_get::<Option<String>>("", "value")
+            .ok()
+            .flatten()
+            .unwrap_or_default())
+    }
+
+    async fn write_text_column(
+        &self,
+        table: &str,
+        column: &str,
+        id: i64,
+        value: &str,
+    ) -> Result<(), DbErr> {
+        let sql = format!("UPDATE {table} SET {column} = ? WHERE id = ?");
+        self.db
+            .execute(Statement::from_sql_and_values(
+                self.db.get_database_backend(),
+                sql,
+                vec![empty_to_none(Some(value.to_string())).into(), id.into()],
+            ))
+            .await?;
+        Ok(())
+    }
+
+    async fn next_issue_number(&self, project_id: i64) -> Result<i64, DbErr> {
+        let project_row = project::Entity::find_by_id(project_id).one(&self.db).await?;
+        let project_last = project_row.and_then(|row| row.last_issue_number).unwrap_or_default();
+        let max_existing = issue::Entity::find()
+            .filter(issue::Column::ProjectId.eq(Some(project_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| row.number)
+            .max()
+            .unwrap_or_default();
+        Ok(project_last.max(max_existing) + 1)
+    }
+
+    async fn resolve_assignee_id(
+        &self,
+        project_id: i64,
+        assignee_login_id: Option<&str>,
+    ) -> Result<Option<i64>, DbErr> {
+        let Some(login_id) = assignee_login_id.map(normalize_identity).filter(|value| !value.is_empty()) else {
+            return Ok(None);
+        };
+        let Some(user) = n4user::Entity::find()
+            .filter(n4user::Column::LoginId.eq(Some(login_id)))
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        if let Some(existing) = assignee::Entity::find()
+            .filter(assignee::Column::ProjectId.eq(Some(project_id)))
+            .filter(assignee::Column::UserId.eq(Some(user.id)))
+            .one(&self.db)
+            .await?
+        {
+            return Ok(Some(existing.id));
+        }
+        let created = assignee::ActiveModel {
+            id: NotSet,
+            user_id: Set(Some(user.id)),
+            project_id: Set(Some(project_id)),
+        }
+        .insert(&self.db)
+        .await?;
+        Ok(Some(created.id))
+    }
+
+    async fn issue_assignee_summary(
+        &self,
+        assignee_id: Option<i64>,
+    ) -> Result<(String, String), DbErr> {
+        let Some(assignee_id) = assignee_id else {
+            return Ok((String::new(), String::new()));
+        };
+        let Some(row) = assignee::Entity::find_by_id(assignee_id).one(&self.db).await? else {
+            return Ok((String::new(), String::new()));
+        };
+        let Some(user_id) = row.user_id else {
+            return Ok((String::new(), String::new()));
+        };
+        let Some(user) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+            return Ok((String::new(), String::new()));
+        };
+        Ok((user.login_id.unwrap_or_default(), user.name.unwrap_or_default()))
+    }
+
+    async fn issue_milestone_summary(
+        &self,
+        milestone_id: Option<i64>,
+    ) -> Result<(Option<i64>, String), DbErr> {
+        let Some(milestone_id) = milestone_id else {
+            return Ok((None, String::new()));
+        };
+        let Some(row) = milestone::Entity::find_by_id(milestone_id).one(&self.db).await? else {
+            return Ok((None, String::new()));
+        };
+        Ok((Some(row.id), row.title.unwrap_or_default()))
+    }
+
+    async fn list_issue_labels(&self, issue_id: i64) -> Result<Vec<IssueLabelRecord>, DbErr> {
+        let links = issue_issue_label::Entity::find()
+            .filter(issue_issue_label::Column::IssueId.eq(issue_id))
+            .all(&self.db)
+            .await?;
+        let mut labels = Vec::new();
+        for link in links {
+            if let Some(label) = issue_label::Entity::find_by_id(link.issue_label_id)
+                .one(&self.db)
+                .await?
+            {
+                labels.push(self.issue_label_record(label).await?);
+            }
+        }
+        Ok(labels)
+    }
+
+    async fn issue_label_record(
+        &self,
+        label: issue_label::Model,
+    ) -> Result<IssueLabelRecord, DbErr> {
+        let category_name = match label.category_id {
+            Some(category_id) => issue_label_category::Entity::find_by_id(category_id)
+                .one(&self.db)
+                .await?
+                .and_then(|row| row.name)
+                .unwrap_or_default(),
+            None => String::new(),
+        };
+        Ok(IssueLabelRecord {
+            category_id: label.category_id,
+            category_name,
+            color: label.color.unwrap_or_default(),
+            id: label.id,
+            name: label.name.unwrap_or_default(),
+        })
+    }
+
+    async fn issue_milestone_record(
+        &self,
+        row: milestone::Model,
+    ) -> Result<IssueMilestoneRecord, DbErr> {
+        let open_issue_count = issue::Entity::find()
+            .filter(issue::Column::MilestoneId.eq(Some(row.id)))
+            .filter(issue::Column::State.eq(Some(issue_state_to_raw("open"))))
+            .count(&self.db)
+            .await? as u32;
+        let closed_issue_count = issue::Entity::find()
+            .filter(issue::Column::MilestoneId.eq(Some(row.id)))
+            .filter(issue::Column::State.eq(Some(issue_state_to_raw("closed"))))
+            .count(&self.db)
+            .await? as u32;
+        let total = open_issue_count + closed_issue_count;
+        let completion_percent = if total == 0 {
+            0
+        } else {
+            closed_issue_count.saturating_mul(100) / total
+        };
+        Ok(IssueMilestoneRecord {
+            closed_issue_count,
+            completion_percent,
+            due_date_label: format_workspace_date_label(row.due_date),
+            id: row.id,
+            open_issue_count,
             state: issue_state_from_raw(row.state),
             title: row.title.unwrap_or_default(),
         })
+    }
+
+    async fn replace_issue_labels(
+        &self,
+        issue_id: i64,
+        project_id: i64,
+        label_ids: &[i64],
+    ) -> Result<(), DbErr> {
+        issue_issue_label::Entity::delete_many()
+            .filter(issue_issue_label::Column::IssueId.eq(issue_id))
+            .exec(&self.db)
+            .await?;
+        let mut seen = HashSet::new();
+        for label_id in label_ids {
+            if seen.insert(*label_id) && self.label_belongs_to_project(project_id, *label_id).await? {
+                issue_issue_label::ActiveModel {
+                    issue_id: Set(issue_id),
+                    issue_label_id: Set(*label_id),
+                }
+                .insert(&self.db)
+                .await?;
+            }
+        }
+        Ok(())
+    }
+
+    async fn label_belongs_to_project(
+        &self,
+        project_id: i64,
+        label_id: i64,
+    ) -> Result<bool, DbErr> {
+        Ok(issue_label::Entity::find_by_id(label_id)
+            .one(&self.db)
+            .await?
+            .is_some_and(|row| row.project_id == Some(project_id)))
+    }
+
+    async fn list_issue_comments(
+        &self,
+        issue_id: i64,
+        _viewer_id: Option<i64>,
+    ) -> Result<Vec<IssueCommentRecord>, DbErr> {
+        let rows = issue_comment::Entity::find()
+            .filter(issue_comment::Column::IssueId.eq(Some(issue_id)))
+            .order_by_asc(issue_comment::Column::CreatedDate)
+            .order_by_asc(issue_comment::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut comments = Vec::new();
+        for row in rows {
+            comments.push(self.issue_comment_record(row).await?);
+        }
+        Ok(comments)
+    }
+
+    async fn issue_comment_record(
+        &self,
+        row: issue_comment::Model,
+    ) -> Result<IssueCommentRecord, DbErr> {
+        Ok(IssueCommentRecord {
+            attachments: self.list_issue_attachments("ISSUE_COMMENT", row.id).await?,
+            author_id: row.author_id,
+            author_label: row.author_name.unwrap_or_default(),
+            author_login_id: row.author_login_id.unwrap_or_default(),
+            contents_markdown: self
+                .read_text_column("issue_comment", "contents", row.id)
+                .await?,
+            created_label: format_workspace_date_label(row.created_date),
+            id: row.id,
+        })
+    }
+
+    async fn list_issue_timeline_items(
+        &self,
+        issue_id: i64,
+        viewer_id: Option<i64>,
+    ) -> Result<Vec<IssueTimelineItemRecord>, DbErr> {
+        let mut items: Vec<(Option<DateTime>, i64, IssueTimelineItemRecord)> = Vec::new();
+        for row in issue_comment::Entity::find()
+            .filter(issue_comment::Column::IssueId.eq(Some(issue_id)))
+            .all(&self.db)
+            .await?
+        {
+            let sort_id = row.id;
+            let created = row.created_date;
+            items.push((
+                created,
+                sort_id,
+                IssueTimelineItemRecord::Comment(self.issue_comment_record(row).await?),
+            ));
+        }
+        for row in issue_event::Entity::find()
+            .filter(issue_event::Column::IssueId.eq(Some(issue_id)))
+            .all(&self.db)
+            .await?
+        {
+            items.push((
+                row.created,
+                row.id,
+                IssueTimelineItemRecord::Event {
+                    created_label: format_workspace_date_label(row.created),
+                    event_type: row.event_type.unwrap_or_default(),
+                    id: row.id,
+                    new_value: self
+                        .read_text_column("issue_event", "new_value", row.id)
+                        .await?,
+                    old_value: self
+                        .read_text_column("issue_event", "old_value", row.id)
+                        .await?,
+                    sender_login_id: row.sender_login_id.unwrap_or_default(),
+                },
+            ));
+        }
+        let _ = viewer_id;
+        items.sort_by_key(|(created, id, _)| (*created, *id));
+        Ok(items.into_iter().map(|(_, _, item)| item).collect())
+    }
+
+    async fn list_issue_attachments(
+        &self,
+        container_type: &str,
+        container_id: i64,
+    ) -> Result<Vec<IssueAttachmentRecord>, DbErr> {
+        Ok(attachment::Entity::find()
+            .filter(attachment::Column::ContainerType.eq(Some(container_type.to_string())))
+            .filter(attachment::Column::ContainerId.eq(container_id))
+            .order_by_asc(attachment::Column::Id)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| IssueAttachmentRecord {
+                id: row.id,
+                mime_type: row.mime_type.unwrap_or_default(),
+                name: row.name.unwrap_or_default(),
+                size: row.size.unwrap_or_default(),
+            })
+            .collect())
+    }
+
+    async fn bind_attachments(
+        &self,
+        container_type: &str,
+        container_id: i64,
+        attachment_ids: &[i64],
+    ) -> Result<(), DbErr> {
+        for attachment_id in attachment_ids {
+            if let Some(row) = attachment::Entity::find_by_id(*attachment_id)
+                .one(&self.db)
+                .await?
+            {
+                let mut active = attachment::ActiveModel::from(row);
+                active.container_type = Set(Some(container_type.to_string()));
+                active.container_id = Set(container_id);
+                active.update(&self.db).await?;
+            }
+        }
+        Ok(())
+    }
+
+    async fn count_issue_voters(&self, issue_id: i64) -> Result<u32, DbErr> {
+        Ok(issue_voter::Entity::find()
+            .filter(issue_voter::Column::IssueId.eq(issue_id))
+            .count(&self.db)
+            .await? as u32)
+    }
+
+    async fn count_issue_watchers(&self, issue_id: i64) -> Result<u32, DbErr> {
+        Ok(watch::Entity::find()
+            .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(issue_id.to_string())))
+            .count(&self.db)
+            .await? as u32)
+    }
+
+    async fn is_issue_watched_by(&self, issue_id: i64, user_id: i64) -> Result<bool, DbErr> {
+        Ok(watch::Entity::find()
+            .filter(watch::Column::UserId.eq(Some(user_id)))
+            .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(issue_id.to_string())))
+            .one(&self.db)
+            .await?
+            .is_some())
+    }
+
+    async fn recount_issue_comments(&self, issue_id: i64) -> Result<(), DbErr> {
+        let count = issue_comment::Entity::find()
+            .filter(issue_comment::Column::IssueId.eq(Some(issue_id)))
+            .count(&self.db)
+            .await? as i32;
+        let mut active = issue::ActiveModel {
+            id: Set(issue_id),
+            ..Default::default()
+        };
+        active.num_of_comments = Set(Some(count));
+        active.updated_date = Set(Some(current_datetime()));
+        active.update(&self.db).await?;
+        Ok(())
+    }
+
+    async fn create_issue_event(
+        &self,
+        issue_id: i64,
+        sender_login_id: &str,
+        event_type: &str,
+        old_value: &str,
+        new_value: &str,
+    ) -> Result<(), DbErr> {
+        let created = issue_event::ActiveModel {
+            id: NotSet,
+            created: Set(Some(current_datetime())),
+            sender_login_id: Set(empty_to_none(Some(sender_login_id.to_string()))),
+            sender_email: Set(None),
+            issue_id: Set(Some(issue_id)),
+            event_type: Set(Some(event_type.to_string())),
+        }
+        .insert(&self.db)
+        .await?;
+        self.write_text_column("issue_event", "old_value", created.id, old_value)
+            .await?;
+        self.write_text_column("issue_event", "new_value", created.id, new_value)
+            .await?;
+        Ok(())
     }
 
     async fn ensure_site_admin(&self, user_id: i64) -> Result<(), DbErr> {

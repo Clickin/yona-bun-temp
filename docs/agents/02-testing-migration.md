@@ -26,9 +26,20 @@
 - canonical owner path
 - intentionally dropped semantics 또는 `deviation`
 
+## Feature Parity Evidence
+
+각 Feature 구현 전후에는 아래 evidence가 PR/커밋/문서 중 하나에 남아야 한다.
+
+- legacy route/controller/view/test 확인 결과
+- Rust route/API/contract 대응
+- UI parity evidence(스크린샷 또는 DOM/assertion)
+- 추가/수정한 테스트 파일
+- 남은 `gap`, `deviation`, `deferred` 항목
+
 ## Hard Gate
 
 - primary legacy reference가 식별되어 있어야 한다.
 - failing Red test가 먼저 존재해야 한다.
 - Green 구현 후 target layer별 테스트가 통과해야 한다.
 - legacy source가 없는 경우에만 spec-derived test를 단독 근거로 사용할 수 있다.
+- `legacy와 동일`이라는 완료 주장은 Feature Parity Evidence 없이는 인정하지 않는다.

@@ -166,26 +166,74 @@ export interface ProjectMembersViewModel {
 }
 
 export interface ProjectIssueListItemViewModel {
+  assigneeLabel: string;
   authorLabel: string;
   commentCount: number;
   issueNumber: number;
+  labels: Array<{ color: string; id: number; name: string }>;
+  milestoneTitle: string;
   state: string;
   title: string;
   updatedLabel: string;
+  voterCount: number;
+  watcherCount: number;
 }
 
 export interface ProjectIssueListViewModel {
   items: ProjectIssueListItemViewModel[];
   ownerName: string;
+  pageNum: number;
+  pageSize: number;
   projectName: string;
+  totalCount: number;
 }
 
 export interface ProjectIssueDetailViewModel {
+  assigneeLabel: string;
+  assigneeLoginId: string;
+  attachments: Array<{ id: number; name: string; url: string }>;
+  authorLabel: string;
+  bodyHtml: string;
+  bodyMarkdown: string;
+  commentCount: number;
+  comments: Array<{
+    authorLabel: string;
+    contentsHtml: string;
+    contentsMarkdown: string;
+    createdLabel: string;
+    id: number;
+    viewerCanDelete: boolean;
+    viewerCanUpdate: boolean;
+  }>;
+  hasVoted: boolean;
+  isWatching: boolean;
   issueNumber: number;
+  labels: Array<{ color: string; id: number; name: string }>;
+  milestoneTitle: string;
   ownerName: string;
   projectName: string;
   state: string;
+  timeline: Array<{
+    comment?: {
+      authorLabel: string;
+      contentsHtml: string;
+      contentsMarkdown: string;
+      createdLabel: string;
+      id: number;
+      viewerCanDelete: boolean;
+      viewerCanUpdate: boolean;
+    };
+    createdLabel: string;
+    eventType: string;
+    id: number;
+    kind: string;
+  }>;
   title: string;
+  viewerCanComment: boolean;
+  viewerCanDelete: boolean;
+  viewerCanUpdate: boolean;
+  voterCount: number;
+  watcherCount: number;
 }
 
 export interface AuthUiCapabilitiesViewModel {

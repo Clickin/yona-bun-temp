@@ -5,6 +5,7 @@
 - `AGENTS.md`가 에이전트 실행 규칙의 메인 source of truth다.
 - `AGENTS.md`의 변환 원칙은 `SPEC.md`를 포함한 모든 문서에 우선한다.
 - `SPEC.md`는 Rust pivot 이후 기술적 상세의 canonical source다.
+- 권한 우선순위와 기능/UX 근거 우선순위는 분리한다. 권한은 `AGENTS.md` > `SPEC.md` > repo root 순서이며, 기능/UX/copy/deep-link 근거는 `yona-original/` > `SPEC.md` > `docs/provenance/*` 순서다.
 - 이 문서는 `AGENTS.md`와 `SPEC.md`를 실행 규칙 중심으로 요약한 mirror다.
 
 ## 목표
@@ -16,7 +17,7 @@
 
 ## 고정 의사결정
 
-- 1차 source of truth는 `yona-original/`이다.
+- 1차 기능/UX 근거 source of truth는 `yona-original/`이다.
 - canonical implementation baseline은 repo root다.
 - 3차 migration/reference material은 `reference/mixed-code/**`다. historical spike evidence는 `reference/spikes/**`에 둔다.
 - canonical frontend ownership은 `frontend/`다.
