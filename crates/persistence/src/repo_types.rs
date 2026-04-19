@@ -80,6 +80,24 @@ pub struct ProjectIssueListRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OrganizationIssueProjectOptionRecord {
+    pub owner_name: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OrganizationIssueListRecord {
+    pub closed_issue_count: u32,
+    pub items: Vec<ProjectIssueListItemRecord>,
+    pub organization_name: String,
+    pub open_issue_count: u32,
+    pub page_num: u32,
+    pub page_size: u32,
+    pub total_count: u32,
+    pub visible_projects: Vec<OrganizationIssueProjectOptionRecord>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IssueListFilter {
     pub assignee_login_id: Option<String>,
     pub author_login_id: Option<String>,
@@ -87,6 +105,19 @@ pub struct IssueListFilter {
     pub milestone_id: Option<i64>,
     pub page_num: u32,
     pub state: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OrganizationIssueListFilter {
+    pub assignee_user_id: Option<i64>,
+    pub author_id: Option<i64>,
+    pub filter: Option<String>,
+    pub items_per_page: u32,
+    pub order_by: String,
+    pub order_dir: String,
+    pub page_num: u32,
+    pub project_names: Vec<String>,
+    pub state: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

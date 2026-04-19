@@ -3433,6 +3433,31 @@ async fn build_organization_container_response(
     })
 }
 
+async fn visible_projects_for_organization(
+    repository: &PilotRepository,
+    organization_id: i64,
+    actor_id: Option<i64>,
+) -> Result<Vec<persistence::ProjectRecord>, ConnectError> {
+    let projects = repository
+        .list_projects_for_organization(organization_id)
+        .await
+        .map_err(internal_error)?;
+    let mut visible_projects = Vec::new();
+    for project in projects {
+        let Some(project_authorization) = repository
+            .read_project_authorization(&project.owner_name, &project.project_name, actor_id)
+            .await
+            .map_err(internal_error)?
+        else {
+            continue;
+        };
+        if project_read_allowed(&project_authorization, actor_id.is_none())? {
+            visible_projects.push(project_authorization.project);
+        }
+    }
+    Ok(visible_projects)
+}
+
 async fn build_organization_admin_response(
     repository: &PilotRepository,
     authorization: &persistence::OrganizationAuthorizationRecord,
@@ -5869,6 +5894,101 @@ impl PilotService for PilotServiceImpl {
         ))
     }
 
+    async fn list_organization_issues(
+        &self,
+        ctx: Context,
+        request: OwnedView<ListOrganizationIssuesRequestView<'static>>,
+    ) -> Result<(ListOrganizationIssuesResponse, Context), ConnectError> {
+        if request.organization_name.trim().is_empty() {
+            return Err(ConnectError::invalid_argument(
+                "invalid organization issue list request",
+            ));
+        }
+        let state = if request.state.trim().is_empty() {
+            "open".to_string()
+        } else {
+            normalize_identifier(request.state)
+        };
+        if !matches!(state.as_str(), "open" | "closed") {
+            return Err(ConnectError::invalid_argument(
+                "invalid organization issue state",
+            ));
+        }
+
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "organization issues require repository backend",
+            ));
+        };
+        let session = self.session_manager.read_session_from_headers(&ctx.headers);
+        let actor_id = session.as_ref().and_then(|session| session.user_id);
+        let authorization = repository
+            .read_organization_authorization(request.organization_name, actor_id)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("organization not found"))?;
+        let visible_projects =
+            visible_projects_for_organization(repository, authorization.organization.id, actor_id)
+                .await?;
+        let current_user_filter = |value: i64| {
+            if value > 0 {
+                actor_id.or(Some(-1))
+            } else {
+                None
+            }
+        };
+        let record = repository
+            .list_organization_issues_filtered(
+                &authorization.organization.organization_name,
+                visible_projects,
+                persistence::OrganizationIssueListFilter {
+                    assignee_user_id: current_user_filter(request.assignee_id),
+                    author_id: current_user_filter(request.author_id),
+                    filter: Some(request.filter.to_string())
+                        .filter(|value| !value.trim().is_empty()),
+                    items_per_page: request.items_per_page,
+                    order_by: request.order_by.to_string(),
+                    order_dir: request.order_dir.to_string(),
+                    page_num: request.page_num,
+                    project_names: request
+                        .project_names
+                        .iter()
+                        .map(ToString::to_string)
+                        .collect(),
+                    state,
+                },
+            )
+            .await
+            .map_err(internal_error)?;
+
+        Ok((
+            ListOrganizationIssuesResponse {
+                closed_issue_count: record.closed_issue_count,
+                items: record
+                    .items
+                    .into_iter()
+                    .map(organization_issue_list_item_to_proto)
+                    .collect(),
+                open_issue_count: record.open_issue_count,
+                organization_name: record.organization_name,
+                page_num: record.page_num,
+                page_size: record.page_size,
+                total_count: record.total_count,
+                visible_projects: record
+                    .visible_projects
+                    .into_iter()
+                    .map(|project| OrganizationIssueProjectOption {
+                        owner_name: project.owner_name,
+                        project_name: project.project_name,
+                        ..Default::default()
+                    })
+                    .collect(),
+                ..Default::default()
+            },
+            ctx,
+        ))
+    }
+
     async fn list_project_issues(
         &self,
         ctx: Context,
@@ -7305,6 +7425,28 @@ fn project_issue_list_item_to_proto(
         labels: item.labels.iter().map(issue_label_from_record).collect(),
         milestone_id: item.milestone_id.unwrap_or_default(),
         milestone_title: item.milestone_title,
+        state: item.state,
+        title: item.title,
+        updated_label: item.updated_label,
+        voter_count: item.voter_count,
+        watcher_count: item.watcher_count,
+        ..Default::default()
+    }
+}
+
+fn organization_issue_list_item_to_proto(
+    item: persistence::ProjectIssueListItemRecord,
+) -> OrganizationIssueListItem {
+    OrganizationIssueListItem {
+        assignee_label: item.assignee_label,
+        author_label: item.author_label,
+        comment_count: item.comment_count,
+        issue_number: item.issue_number,
+        labels: item.labels.iter().map(issue_label_from_record).collect(),
+        milestone_id: item.milestone_id.unwrap_or_default(),
+        milestone_title: item.milestone_title,
+        owner_name: item.owner_name,
+        project_name: item.project_name,
         state: item.state,
         title: item.title,
         updated_label: item.updated_label,

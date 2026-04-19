@@ -452,6 +452,66 @@ test("project issue routes render data-backed issue list and detail screens", as
   await expect(page.getByText("open")).toBeVisible();
 });
 
+test("organization issue route renders cross-project issue inbox", async ({ page }) => {
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadOrganizationContainer", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        description: "web labs",
+        organizationName: "weblabs",
+        viewerCanUpdate: false,
+        visibleProjects: [
+          {
+            ownerName: "weblabs",
+            projectName: "projectAlpha",
+            projectScope: "public",
+          },
+        ],
+      }),
+      headers: connectJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ListOrganizationIssues", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        closedIssueCount: 1,
+        items: [
+          {
+            authorLabel: "Nori",
+            commentCount: 2,
+            issueNumber: "7",
+            ownerName: "weblabs",
+            projectName: "projectAlpha",
+            state: "open",
+            title: "Organization inbox issue",
+            updatedLabel: "2026-04-19",
+            voterCount: 1,
+            watcherCount: 3,
+          },
+        ],
+        openIssueCount: 1,
+        organizationName: "weblabs",
+        pageNum: 1,
+        pageSize: 15,
+        totalCount: 1,
+        visibleProjects: [{ ownerName: "weblabs", projectName: "projectAlpha" }],
+      }),
+      headers: connectJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/organizations/weblabs/issues?state=open&pageNum=1");
+  await expect(page.getByRole("heading", { name: "Organization Issues" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Open/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Closed/ })).toBeVisible();
+  await expect(page.getByLabel("Projects")).toBeVisible();
+  await expect(page.getByPlaceholder("Search issues")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Organization inbox issue" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "projectAlpha" })).toBeVisible();
+  await expect(page.getByText("#7")).toBeVisible();
+});
+
 test("project issue label management route renders the legacy label editor shell", async ({
   page,
 }) => {

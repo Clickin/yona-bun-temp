@@ -51,6 +51,7 @@ service PilotService {
   rpc RecordRecentProjectVisit(RecordRecentProjectVisitRequest) returns (RecordRecentProjectVisitResponse) {}
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse) {}
   rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse) {}
+  rpc ListOrganizationIssues(ListOrganizationIssuesRequest) returns (ListOrganizationIssuesResponse) {}
   rpc ListProjectIssues(ListProjectIssuesRequest) returns (ListProjectIssuesResponse) {}
   rpc ReadIssueDetail(ReadIssueDetailRequest) returns (ReadIssueDetailResponse) {}
   rpc UpdateIssueState(UpdateIssueStateRequest) returns (ReadIssueDetailResponse) {}
@@ -192,6 +193,52 @@ message ListProjectIssuesResponse {
   uint32 page_num = 4;
   uint32 page_size = 5;
   uint32 total_count = 6;
+}
+
+message ListOrganizationIssuesRequest {
+  string organization_name = 1;
+  string state = 2;
+  uint32 page_num = 3;
+  uint32 items_per_page = 4;
+  repeated string project_names = 5;
+  string filter = 6;
+  string order_by = 7;
+  string order_dir = 8;
+  int64 author_id = 9;
+  int64 assignee_id = 10;
+}
+
+message OrganizationIssueProjectOption {
+  string owner_name = 1;
+  string project_name = 2;
+}
+
+message OrganizationIssueListItem {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+  string title = 4;
+  string state = 5;
+  string author_label = 6;
+  string updated_label = 7;
+  uint32 comment_count = 8;
+  string assignee_label = 9;
+  int64 milestone_id = 10;
+  string milestone_title = 11;
+  uint32 voter_count = 12;
+  uint32 watcher_count = 13;
+  repeated IssueLabel labels = 14;
+}
+
+message ListOrganizationIssuesResponse {
+  string organization_name = 1;
+  repeated OrganizationIssueProjectOption visible_projects = 2;
+  repeated OrganizationIssueListItem items = 3;
+  uint32 page_num = 4;
+  uint32 page_size = 5;
+  uint32 total_count = 6;
+  uint32 open_issue_count = 7;
+  uint32 closed_issue_count = 8;
 }
 
 message ReadWorkspaceOverviewRequest {}

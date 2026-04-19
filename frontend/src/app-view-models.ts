@@ -2,6 +2,7 @@ import type {
   OrganizationAdminViewModel,
   OrganizationDirectoryViewModel,
   OrganizationDetailViewModel,
+  OrganizationIssueListViewModel,
   OrganizationMembersViewModel,
   ProjectIssueDetailViewModel,
   ProjectIssueListViewModel,
@@ -20,6 +21,7 @@ import {
   readOrganizationAdmin,
   readOrganizationContainer,
   readOrganizationDetail,
+  listOrganizationIssues,
   readOrganizationMembers,
   listOrganizations,
   listProjectIssues,
@@ -348,6 +350,42 @@ export function toProjectIssueListView(
     pageSize: response.pageSize,
     projectName: response.projectName,
     totalCount: response.totalCount,
+  };
+}
+
+export function toOrganizationIssueListView(
+  response: Awaited<ReturnType<typeof listOrganizationIssues>>,
+): OrganizationIssueListViewModel {
+  return {
+    closedIssueCount: response.closedIssueCount,
+    items: response.items.map((item) => ({
+      assigneeLabel: item.assigneeLabel,
+      authorLabel: item.authorLabel,
+      commentCount: Number(item.commentCount),
+      issueNumber: Number(item.issueNumber),
+      labels: item.labels.map((label) => ({
+        color: label.color,
+        id: Number(label.id),
+        name: label.name,
+      })),
+      milestoneTitle: item.milestoneTitle,
+      ownerName: item.ownerName,
+      projectName: item.projectName,
+      state: item.state,
+      title: item.title,
+      updatedLabel: item.updatedLabel,
+      voterCount: item.voterCount,
+      watcherCount: item.watcherCount,
+    })),
+    openIssueCount: response.openIssueCount,
+    organizationName: response.organizationName,
+    pageNum: response.pageNum,
+    pageSize: response.pageSize,
+    totalCount: response.totalCount,
+    visibleProjects: response.visibleProjects.map((project) => ({
+      ownerName: project.ownerName,
+      projectName: project.projectName,
+    })),
   };
 }
 

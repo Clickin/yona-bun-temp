@@ -116,6 +116,33 @@ export interface OrganizationAdminViewModel {
   viewerCanUpdate: boolean;
 }
 
+export interface OrganizationIssueListItemViewModel {
+  assigneeLabel: string;
+  authorLabel: string;
+  commentCount: number;
+  issueNumber: number;
+  labels: Array<{ color: string; id: number; name: string }>;
+  milestoneTitle: string;
+  ownerName: string;
+  projectName: string;
+  state: string;
+  title: string;
+  updatedLabel: string;
+  voterCount: number;
+  watcherCount: number;
+}
+
+export interface OrganizationIssueListViewModel {
+  closedIssueCount: number;
+  items: OrganizationIssueListItemViewModel[];
+  openIssueCount: number;
+  organizationName: string;
+  pageNum: number;
+  pageSize: number;
+  totalCount: number;
+  visibleProjects: Array<{ ownerName: string; projectName: string }>;
+}
+
 export interface ProjectDetailViewModel {
   backgroundUrl?: string;
   boardCount?: number;

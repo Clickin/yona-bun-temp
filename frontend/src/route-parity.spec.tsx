@@ -56,6 +56,16 @@ describe("file-route parity harness", () => {
     expect(issueDetailRouteSource).not.toContain("PlaceholderPage");
   });
 
+  it("requires a real organization issue route instead of a placeholder page", () => {
+    const organizationIssueRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/issues/route.tsx"),
+      "utf8",
+    );
+
+    expect(organizationIssueRouteSource).not.toContain("PlaceholderPage");
+    expect(organizationIssueRouteSource).toContain("listOrganizationIssues");
+  });
+
   it("keeps the public home title and entry CTA/navigation order stable", () => {
     const html = renderHome();
 

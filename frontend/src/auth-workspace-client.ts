@@ -27,6 +27,7 @@ import {
   DeleteWorkspaceEmailRequestSchema,
   EnrollOrganizationRequestSchema,
   EnrollProjectRequestSchema,
+  ListOrganizationIssuesRequestSchema,
   ListOrganizationsRequestSchema,
   ListProjectsRequestSchema,
   PilotService,
@@ -77,6 +78,7 @@ import {
   UpdateProjectLabelRequestSchema,
   VerifyUserRequestSchema,
   type ListProjectLabelCategoriesResponse,
+  type ListOrganizationIssuesResponse,
   type ListProjectIssuesResponse,
   type ListProjectLabelsResponse,
   type ListProjectMilestonesResponse,
@@ -130,6 +132,18 @@ export interface ProjectIssueListOptions {
   labelIds?: Array<bigint | number>;
   milestoneId?: bigint | number;
   pageNum?: number;
+  state?: string;
+}
+
+export interface OrganizationIssueListOptions {
+  assigneeId?: bigint | number;
+  authorId?: bigint | number;
+  filter?: string;
+  itemsPerPage?: number;
+  orderBy?: string;
+  orderDir?: string;
+  pageNum?: number;
+  projectNames?: string[];
   state?: string;
 }
 
@@ -324,6 +338,28 @@ export async function listOrganizations(
 ): Promise<ListOrganizationsResponse> {
   return createPilotClient(runtimeConfig, fetchImpl).listOrganizations(
     create(ListOrganizationsRequestSchema),
+  );
+}
+
+export async function listOrganizationIssues(
+  runtimeConfig: RuntimeConfig,
+  organizationName: string,
+  input: OrganizationIssueListOptions = {},
+  fetchImpl: typeof fetch = fetch,
+): Promise<ListOrganizationIssuesResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).listOrganizationIssues(
+    create(ListOrganizationIssuesRequestSchema, {
+      assigneeId: input.assigneeId ? BigInt(input.assigneeId) : 0n,
+      authorId: input.authorId ? BigInt(input.authorId) : 0n,
+      filter: input.filter ?? "",
+      itemsPerPage: input.itemsPerPage ?? 0,
+      orderBy: input.orderBy ?? "",
+      orderDir: input.orderDir ?? "",
+      organizationName,
+      pageNum: input.pageNum ?? 1,
+      projectNames: input.projectNames ?? [],
+      state: input.state ?? "",
+    }),
   );
 }
 

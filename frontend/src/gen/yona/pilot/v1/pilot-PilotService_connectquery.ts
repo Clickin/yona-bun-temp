@@ -235,6 +235,11 @@ export const listProjects = PilotService.method.listProjects;
 export const listOrganizations = PilotService.method.listOrganizations;
 
 /**
+ * @generated from rpc yona.pilot.v1.PilotService.ListOrganizationIssues
+ */
+export const listOrganizationIssues = PilotService.method.listOrganizationIssues;
+
+/**
  * @generated from rpc yona.pilot.v1.PilotService.ListProjectIssues
  */
 export const listProjectIssues = PilotService.method.listProjectIssues;

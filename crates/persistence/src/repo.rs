@@ -5,7 +5,8 @@ use crate::repo_types::{
     IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter, IssueMilestoneRecord, IssueRecord,
     IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, MassUpdateIssuesInput,
     MilestoneListFilter, MilestoneMutationInput, OrganizationAuthorizationRecord,
-    OrganizationEnrollmentRequestRecord, OrganizationMemberDirectoryRecord,
+    OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
+    OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
     OrganizationMemberRecord, OrganizationRecord, OrganizationViewerRecord,
     ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord, ProjectIssueListItemRecord,
     ProjectIssueListRecord, ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord,
@@ -32,7 +33,7 @@ use sea_orm::{
     DatabaseConnection, DbErr, EntityTrait, FromQueryResult, NotSet, PaginatorTrait, QueryFilter,
     QueryOrder, QuerySelect, Set, Statement, TransactionTrait,
 };
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::time::{Duration, SystemTime};
 
 fn normalize_identity(value: &str) -> String {
@@ -170,6 +171,33 @@ fn issue_state_from_raw(value: Option<i32>) -> String {
     } else {
         "closed".to_string()
     }
+}
+
+fn sort_issue_models_for_organization(
+    items: &mut [(issue::Model, ProjectRecord)],
+    order_by: &str,
+    order_dir: &str,
+) {
+    let descending = normalize_identity(order_dir) != "asc";
+    let normalized_order = normalize_identity(order_by);
+    items.sort_by(|(left, _), (right, _)| {
+        let ordering = match normalized_order.as_str() {
+            "duedate" => left.due_date.cmp(&right.due_date),
+            "updateddate" => left.updated_date.cmp(&right.updated_date),
+            "numofcomments" => left
+                .num_of_comments
+                .unwrap_or_default()
+                .cmp(&right.num_of_comments.unwrap_or_default()),
+            _ => left.created_date.cmp(&right.created_date),
+        }
+        .then_with(|| left.id.cmp(&right.id));
+
+        if descending {
+            ordering.reverse()
+        } else {
+            ordering
+        }
+    });
 }
 
 fn bool_to_i16(value: bool) -> i16 {
@@ -579,6 +607,153 @@ impl AppRepository {
             page_num,
             page_size: PAGE_SIZE,
             total_count,
+        })
+    }
+
+    pub async fn list_organization_issues_filtered(
+        &self,
+        organization_name: &str,
+        visible_projects: Vec<ProjectRecord>,
+        filter: OrganizationIssueListFilter,
+    ) -> Result<OrganizationIssueListRecord, DbErr> {
+        const DEFAULT_PAGE_SIZE: u32 = 15;
+        const MAX_PAGE_SIZE: u32 = 45;
+
+        let page_num = filter.page_num.max(1);
+        let page_size = if filter.items_per_page == 0 {
+            DEFAULT_PAGE_SIZE
+        } else {
+            filter.items_per_page.min(MAX_PAGE_SIZE)
+        };
+        let visible_projects = {
+            let mut projects = visible_projects;
+            projects.sort_by(|left, right| left.project_name.cmp(&right.project_name));
+            projects
+        };
+        let visible_project_options = visible_projects
+            .iter()
+            .map(|project| OrganizationIssueProjectOptionRecord {
+                owner_name: project.owner_name.clone(),
+                project_name: project.project_name.clone(),
+            })
+            .collect::<Vec<_>>();
+        let project_by_id = visible_projects
+            .iter()
+            .cloned()
+            .map(|project| (project.id, project))
+            .collect::<HashMap<_, _>>();
+
+        if project_by_id.is_empty() {
+            return Ok(OrganizationIssueListRecord {
+                closed_issue_count: 0,
+                items: Vec::new(),
+                organization_name: organization_name.to_string(),
+                open_issue_count: 0,
+                page_num,
+                page_size,
+                total_count: 0,
+                visible_projects: visible_project_options,
+            });
+        }
+
+        let project_name_filter = filter
+            .project_names
+            .iter()
+            .map(|name| normalize_identity(name))
+            .filter(|name| !name.is_empty())
+            .collect::<HashSet<_>>();
+        let assignee_ids = match filter.assignee_user_id {
+            Some(user_id) => assignee::Entity::find()
+                .filter(assignee::Column::UserId.eq(Some(user_id)))
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .map(|row| row.id)
+                .collect::<HashSet<_>>(),
+            None => HashSet::new(),
+        };
+
+        let rows = issue::Entity::find()
+            .filter(issue::Column::ProjectId.is_in(project_by_id.keys().copied().map(Some)))
+            .all(&self.db)
+            .await?;
+        let mut matches_without_state = Vec::new();
+        for row in rows {
+            if row.is_draft.unwrap_or_default() != 0 {
+                continue;
+            }
+            let Some(project_id) = row.project_id else {
+                continue;
+            };
+            let Some(project) = project_by_id.get(&project_id) else {
+                continue;
+            };
+            if !project_name_filter.is_empty()
+                && !project_name_filter.contains(&normalize_identity(&project.project_name))
+            {
+                continue;
+            }
+            if filter.author_id.is_some() && row.author_id != filter.author_id {
+                continue;
+            }
+            if filter.assignee_user_id.is_some()
+                && !row
+                    .assignee_id
+                    .is_some_and(|assignee_id| assignee_ids.contains(&assignee_id))
+            {
+                continue;
+            }
+            if let Some(text_filter) = filter.filter.as_deref() {
+                if !self
+                    .issue_model_matches_text_filter(&row, text_filter)
+                    .await?
+                {
+                    continue;
+                }
+            }
+            matches_without_state.push((row, project.clone()));
+        }
+
+        let open_issue_count = matches_without_state
+            .iter()
+            .filter(|(row, _)| issue_state_from_raw(row.state) == "open")
+            .count() as u32;
+        let closed_issue_count = matches_without_state
+            .iter()
+            .filter(|(row, _)| issue_state_from_raw(row.state) == "closed")
+            .count() as u32;
+
+        let state = normalize_identity(&filter.state);
+        let mut state_matches = matches_without_state
+            .into_iter()
+            .filter(|(row, _)| issue_state_from_raw(row.state) == state)
+            .collect::<Vec<_>>();
+        sort_issue_models_for_organization(&mut state_matches, &filter.order_by, &filter.order_dir);
+
+        let total_count = state_matches.len() as u32;
+        let offset = ((page_num - 1) * page_size) as usize;
+        let page_models = state_matches
+            .into_iter()
+            .skip(offset)
+            .take(page_size as usize)
+            .collect::<Vec<_>>();
+        let mut items = Vec::new();
+        for (row, project) in page_models {
+            items.push(
+                self.project_issue_list_item_from_model(row, &project)
+                    .await?,
+            );
+        }
+
+        Ok(OrganizationIssueListRecord {
+            closed_issue_count,
+            items,
+            organization_name: organization_name.to_string(),
+            open_issue_count,
+            page_num,
+            page_size,
+            total_count,
+            visible_projects: visible_project_options,
         })
     }
 
@@ -3742,6 +3917,72 @@ impl AppRepository {
             voter_count,
             watcher_count,
         })
+    }
+
+    async fn project_issue_list_item_from_model(
+        &self,
+        model: issue::Model,
+        project: &ProjectRecord,
+    ) -> Result<ProjectIssueListItemRecord, DbErr> {
+        let labels = self.list_issue_labels(model.id).await?;
+        let (_assignee_login_id, assignee_label) =
+            self.issue_assignee_summary(model.assignee_id).await?;
+        let (milestone_id, milestone_title) =
+            self.issue_milestone_summary(model.milestone_id).await?;
+        Ok(ProjectIssueListItemRecord {
+            assignee_label,
+            author_label: model.author_name.unwrap_or_default(),
+            comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
+            issue_number: model.number.unwrap_or_default(),
+            labels,
+            milestone_id,
+            milestone_title,
+            owner_name: project.owner_name.clone(),
+            project_name: project.project_name.clone(),
+            state: issue_state_from_raw(model.state),
+            title: model.title.unwrap_or_default(),
+            updated_label: format_workspace_date_label(model.updated_date.or(model.created_date)),
+            voter_count: self.count_issue_voters(model.id).await?,
+            watcher_count: self.count_issue_watchers(model.id).await?,
+        })
+    }
+
+    async fn issue_model_matches_text_filter(
+        &self,
+        model: &issue::Model,
+        text_filter: &str,
+    ) -> Result<bool, DbErr> {
+        let needle = normalize_identity(text_filter);
+        if needle.is_empty() {
+            return Ok(true);
+        }
+        if model
+            .title
+            .as_deref()
+            .is_some_and(|title| normalize_identity(title).contains(&needle))
+        {
+            return Ok(true);
+        }
+        if normalize_identity(&self.read_text_column("issue", "body", model.id).await?)
+            .contains(&needle)
+        {
+            return Ok(true);
+        }
+
+        let comments = issue_comment::Entity::find()
+            .filter(issue_comment::Column::IssueId.eq(Some(model.id)))
+            .all(&self.db)
+            .await?;
+        for comment in comments {
+            let contents = self
+                .read_text_column("issue_comment", "contents", comment.id)
+                .await?;
+            if normalize_identity(&contents).contains(&needle) {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
     }
 
     async fn has_direct_issue_share(&self, issue_id: i64, user_id: i64) -> Result<bool, DbErr> {

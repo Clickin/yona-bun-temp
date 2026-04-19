@@ -1,8 +1,12 @@
 import * as React from "react";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import type { OrganizationAdminViewModel, OrganizationDetailViewModel } from "./-view-models";
+import type {
+  OrganizationAdminViewModel,
+  OrganizationDetailViewModel,
+  OrganizationIssueListViewModel,
+} from "./-view-models";
 
-function buildOrganizationHref(
+export function buildOrganizationHref(
   runtimeConfig: RuntimeConfig,
   organizationName: string,
   suffix = "",
@@ -14,7 +18,53 @@ function buildOrganizationHref(
   );
 }
 
+function buildOrganizationIssueHref(
+  runtimeConfig: RuntimeConfig,
+  organizationName: string,
+  query: OrganizationIssueListQuery,
+  updates: Partial<OrganizationIssueListQuery>,
+) {
+  const nextQuery = { ...query, ...updates };
+  const search = new URLSearchParams();
+  if (nextQuery.state) {
+    search.set("state", nextQuery.state);
+  }
+  if (nextQuery.filter) {
+    search.set("filter", nextQuery.filter);
+  }
+  if (nextQuery.orderBy) {
+    search.set("orderBy", nextQuery.orderBy);
+  }
+  if (nextQuery.orderDir) {
+    search.set("orderDir", nextQuery.orderDir);
+  }
+  if (nextQuery.authorId) {
+    search.set("authorId", String(nextQuery.authorId));
+  }
+  if (nextQuery.assigneeId) {
+    search.set("assigneeId", String(nextQuery.assigneeId));
+  }
+  for (const projectName of nextQuery.projectNames) {
+    search.append("projectNames", projectName);
+  }
+  search.set("pageNum", String(nextQuery.pageNum || 1));
+  const suffix = `issues?${search.toString()}`;
+  return buildOrganizationHref(runtimeConfig, organizationName, suffix);
+}
+
+export interface OrganizationIssueListQuery {
+  assigneeId: number;
+  authorId: number;
+  filter: string;
+  orderBy: string;
+  orderDir: string;
+  pageNum: number;
+  projectNames: string[];
+  state: string;
+}
+
 function OrganizationMenu(props: {
+  active?: "boards" | "home" | "issues" | "pullrequests" | "settings";
   detail: OrganizationDetailViewModel;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -22,20 +72,35 @@ function OrganizationMenu(props: {
 
   return (
     <nav aria-label="Organization menu">
-      <a href={buildOrganizationHref(runtimeConfig, detail.organizationName)}>
+      <a
+        aria-current={props.active === "home" ? "page" : undefined}
+        href={buildOrganizationHref(runtimeConfig, detail.organizationName)}
+      >
         Group Home
       </a>
-      <a href={buildOrganizationHref(runtimeConfig, detail.organizationName, "issues")}>
+      <a
+        aria-current={props.active === "issues" ? "page" : undefined}
+        href={buildOrganizationHref(runtimeConfig, detail.organizationName, "issues")}
+      >
         Issue
       </a>
-      <a href={buildOrganizationHref(runtimeConfig, detail.organizationName, "boards")}>
+      <a
+        aria-current={props.active === "boards" ? "page" : undefined}
+        href={buildOrganizationHref(runtimeConfig, detail.organizationName, "boards")}
+      >
         Board
       </a>
-      <a href={buildOrganizationHref(runtimeConfig, detail.organizationName, "pullrequests")}>
+      <a
+        aria-current={props.active === "pullrequests" ? "page" : undefined}
+        href={buildOrganizationHref(runtimeConfig, detail.organizationName, "pullrequests")}
+      >
         Pull request
       </a>
       {detail.viewerCanUpdate ? (
-        <a href={buildOrganizationHref(runtimeConfig, detail.organizationName, "settingform")}>
+        <a
+          aria-current={props.active === "settings" ? "page" : undefined}
+          href={buildOrganizationHref(runtimeConfig, detail.organizationName, "settingform")}
+        >
           Settings
         </a>
       ) : null}
@@ -117,10 +182,7 @@ function OrganizationMembershipActions(props: {
     return (
       <section>
         <h2>Membership</h2>
-        <button
-          type="button"
-          onClick={() => props.onLeaveOrganization?.(detail.organizationName)}
-        >
+        <button type="button" onClick={() => props.onLeaveOrganization?.(detail.organizationName)}>
           Leave the group
         </button>
       </section>
@@ -131,10 +193,7 @@ function OrganizationMembershipActions(props: {
 }
 
 export function OrganizationNewPage(props: {
-  onCreateOrganization?: (input: {
-    description: string;
-    organizationName: string;
-  }) => void;
+  onCreateOrganization?: (input: { description: string; organizationName: string }) => void;
   pending?: boolean;
 }) {
   const [formState, setFormState] = React.useState({
@@ -222,7 +281,10 @@ export function OrganizationDetailPage(props: {
         <p>{detail.description || "No description yet."}</p>
       </section>
       <section>
-        <form action={buildOrganizationHref(props.runtimeConfig, detail.organizationName)} method="get">
+        <form
+          action={buildOrganizationHref(props.runtimeConfig, detail.organizationName)}
+          method="get"
+        >
           <label htmlFor="mylist-filter">Project filter</label>
           <input id="mylist-filter" name="filter" placeholder="Type project name" type="text" />
           <button type="submit">Search</button>
@@ -270,6 +332,175 @@ export function OrganizationDetailPage(props: {
       {detail.memberMembers?.length ? (
         <OrganizationMemberBubble members={detail.memberMembers} title="Group Member" />
       ) : null}
+    </main>
+  );
+}
+
+export function OrganizationIssueListPage(props: {
+  currentUserId: number;
+  detail: OrganizationDetailViewModel | null | undefined;
+  issueList: OrganizationIssueListViewModel | null | undefined;
+  query: OrganizationIssueListQuery;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const detail = props.detail ?? {
+    description: "",
+    organizationName: props.issueList?.organizationName ?? "",
+    viewerCanUpdate: false,
+  };
+  const issueList = props.issueList;
+  const query = props.query;
+  const organizationName = detail.organizationName || issueList?.organizationName || "";
+  const openHref = buildOrganizationIssueHref(props.runtimeConfig, organizationName, query, {
+    pageNum: 1,
+    state: "open",
+  });
+  const closedHref = buildOrganizationIssueHref(props.runtimeConfig, organizationName, query, {
+    pageNum: 1,
+    state: "closed",
+  });
+  const authoredHref = buildOrganizationIssueHref(props.runtimeConfig, organizationName, query, {
+    assigneeId: 0,
+    authorId: props.currentUserId,
+    pageNum: 1,
+  });
+  const assignedHref = buildOrganizationIssueHref(props.runtimeConfig, organizationName, query, {
+    assigneeId: props.currentUserId,
+    authorId: 0,
+    pageNum: 1,
+  });
+  const allHref = buildOrganizationIssueHref(props.runtimeConfig, organizationName, query, {
+    assigneeId: 0,
+    authorId: 0,
+    pageNum: 1,
+  });
+
+  return (
+    <main className="app-shell">
+      <p className="eyebrow">Yona Rust Organization</p>
+      <h1>Organization Issues</h1>
+      <p>{organizationName}</p>
+      <OrganizationMenu active="issues" detail={detail} runtimeConfig={props.runtimeConfig} />
+      <section className="issue-list-wrap">
+        <aside className="left-menu">
+          <nav aria-label="Issue quick filters">
+            <a href={allHref}>All</a>
+            {props.currentUserId > 0 ? (
+              <>
+                <a href={assignedHref}>Assigned to me</a>
+                <a href={authoredHref}>Authored by me</a>
+              </>
+            ) : null}
+          </nav>
+          <form
+            action={buildOrganizationHref(props.runtimeConfig, organizationName, "issues")}
+            method="get"
+          >
+            <input name="state" type="hidden" value={query.state || "open"} />
+            <input name="orderBy" type="hidden" value={query.orderBy} />
+            <input name="orderDir" type="hidden" value={query.orderDir} />
+            <input name="authorId" type="hidden" value={query.authorId || ""} />
+            <input name="assigneeId" type="hidden" value={query.assigneeId || ""} />
+            <label htmlFor="organization-issue-projects">Projects</label>
+            <select
+              id="organization-issue-projects"
+              multiple
+              name="projectNames"
+              defaultValue={query.projectNames}
+            >
+              {(issueList?.visibleProjects ?? []).map((project) => (
+                <option key={project.projectName} value={project.projectName}>
+                  {project.projectName}
+                </option>
+              ))}
+            </select>
+            <label htmlFor="organization-issue-filter">Search</label>
+            <input
+              id="organization-issue-filter"
+              name="filter"
+              placeholder="Search issues"
+              type="text"
+              defaultValue={query.filter}
+            />
+            <button type="submit">Search</button>
+          </form>
+        </aside>
+        <section>
+          <nav aria-label="Issue state tabs">
+            <a className={(query.state || "open") === "open" ? "active" : ""} href={openHref}>
+              Open <span>{issueList?.openIssueCount ?? 0}</span>
+            </a>
+            <a className={query.state === "closed" ? "active" : ""} href={closedHref}>
+              Closed <span>{issueList?.closedIssueCount ?? 0}</span>
+            </a>
+          </nav>
+          <div className="filter-wrap">
+            {["dueDate", "updatedDate", "createdDate", "numOfComments"].map((orderBy) => (
+              <a
+                href={buildOrganizationIssueHref(props.runtimeConfig, organizationName, query, {
+                  orderBy,
+                  orderDir: query.orderBy === orderBy && query.orderDir === "desc" ? "asc" : "desc",
+                  pageNum: 1,
+                })}
+                key={orderBy}
+              >
+                {orderBy}
+              </a>
+            ))}
+          </div>
+          {(issueList?.items ?? []).length > 0 ? (
+            <ul className="post-list-wrap">
+              {issueList?.items.map((issue) => (
+                <li
+                  className="post-item title"
+                  key={`${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`}
+                >
+                  <a
+                    className="title"
+                    href={prefixBasePath(
+                      props.runtimeConfig.basePath,
+                      `/${issue.ownerName}/${issue.projectName}/issue/${issue.issueNumber}`,
+                    )}
+                  >
+                    {issue.title}
+                  </a>
+                  <div className="infos">
+                    <span>{issue.authorLabel || "No author"}</span>
+                    <span>{issue.updatedLabel}</span>
+                    <span>{`Comments: ${issue.commentCount}`}</span>
+                    <span>{`Votes: ${issue.voterCount}`}</span>
+                    <span>{`Watchers: ${issue.watcherCount}`}</span>
+                    <span>{`Assignee: ${issue.assigneeLabel || "none"}`}</span>
+                    <a
+                      className="group-project-name"
+                      href={prefixBasePath(
+                        props.runtimeConfig.basePath,
+                        `/${issue.ownerName}/${issue.projectName}`,
+                      )}
+                    >
+                      {issue.projectName}
+                    </a>
+                    <span>{`#${issue.issueNumber}`}</span>
+                    {issue.labels.map((label) => (
+                      <span key={label.id} style={{ backgroundColor: label.color || "#ddd" }}>
+                        {label.name}
+                      </span>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="error-wrap">
+              <p>Issue is empty.</p>
+            </div>
+          )}
+          <nav aria-label="Issue pagination" id="pagination">
+            <span>{`Page ${issueList?.pageNum ?? 1}`}</span>
+            <span>{`Total ${issueList?.totalCount ?? 0}`}</span>
+          </nav>
+        </section>
+      </section>
     </main>
   );
 }
@@ -346,9 +577,7 @@ export function OrganizationSettingsPage(props: {
             }
           />
         </label>
-        <button type="submit">
-          {props.pending ? "Saving..." : "Save organization"}
-        </button>
+        <button type="submit">{props.pending ? "Saving..." : "Save organization"}</button>
       </form>
     </main>
   );
