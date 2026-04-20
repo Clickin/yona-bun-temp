@@ -5127,6 +5127,7 @@ dependencies = [
  "yona-rust-integrations",
  "yona-rust-persistence",
  "yona-rust-pilot-migration",
+ "yona-rust-vcs",
 ]
 
 [[package]]
@@ -5136,6 +5137,10 @@ version = "0.1.0"
 [[package]]
 name = "yona-rust-vcs"
 version = "0.1.0"
+dependencies = [
+ "mime_guess",
+ "thiserror",
+]
 
 [[package]]
 name = "zerocopy"

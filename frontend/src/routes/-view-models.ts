@@ -192,6 +192,34 @@ export interface ProjectMembersViewModel {
   members: Array<{ loginId: string; role: string; userLabel: string }>;
 }
 
+export interface CodeBrowserViewModel {
+  branches: Array<{ name: string }>;
+  breadcrumbs: Array<{ name: string; path: string }>;
+  entries: Array<{
+    commitDate: string;
+    commitMessage: string;
+    commitShortId: string;
+    kind: string;
+    name: string;
+    path: string;
+    size: number;
+  }>;
+  file?: {
+    isBinary: boolean;
+    isTooLarge: boolean;
+    mimeType: string;
+    name: string;
+    path: string;
+    size: number;
+    text: string;
+  };
+  noHead: boolean;
+  ownerName: string;
+  path: string;
+  projectName: string;
+  selectedBranch: string;
+}
+
 export interface ProjectIssueListItemViewModel {
   assigneeLabel: string;
   authorLabel: string;

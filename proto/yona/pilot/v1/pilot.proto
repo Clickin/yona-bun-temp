@@ -42,6 +42,7 @@ service PilotService {
   rpc ReadProjectSettings(ReadProjectSettingsRequest) returns (ProjectDetail) {}
   rpc ReadProjectMembers(ReadProjectMembersRequest) returns (ReadProjectMembersResponse) {}
   rpc ReadProjectContainer(ReadProjectContainerRequest) returns (ProjectContainer) {}
+  rpc ReadCodeBrowser(ReadCodeBrowserRequest) returns (ReadCodeBrowserResponse) {}
   rpc UpdateProjectOverview(UpdateProjectOverviewRequest) returns (ProjectContainer) {}
   rpc ToggleProjectWatch(ToggleProjectWatchRequest) returns (ProjectContainer) {}
   rpc UpdateProject(UpdateProjectRequest) returns (ProjectDetail) {}
@@ -582,6 +583,54 @@ message ProjectEnrollmentRequest {
 message ReadProjectMembersResponse {
   repeated ProjectMember members = 1;
   repeated ProjectEnrollmentRequest enrollment_requests = 2;
+}
+
+message ReadCodeBrowserRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  string branch = 3;
+  string path = 4;
+}
+
+message CodeBranch {
+  string name = 1;
+}
+
+message CodeBreadcrumb {
+  string name = 1;
+  string path = 2;
+}
+
+message CodeEntry {
+  string name = 1;
+  string path = 2;
+  string kind = 3;
+  int64 size = 4;
+  string commit_short_id = 5;
+  string commit_message = 6;
+  string commit_date = 7;
+}
+
+message CodeFile {
+  string name = 1;
+  string path = 2;
+  int64 size = 3;
+  string mime_type = 4;
+  bool is_binary = 5;
+  bool is_too_large = 6;
+  string text = 7;
+}
+
+message ReadCodeBrowserResponse {
+  string owner_name = 1;
+  string project_name = 2;
+  string selected_branch = 3;
+  string path = 4;
+  bool no_head = 5;
+  repeated CodeBranch branches = 6;
+  repeated CodeBreadcrumb breadcrumbs = 7;
+  repeated CodeEntry entries = 8;
+  CodeFile file = 9;
 }
 
 message ProjectMemberSummary {

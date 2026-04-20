@@ -649,18 +649,18 @@ GET   /:owner/:project/compare/:rev        → 커밋 비교
 
 #### 기능 목록과 상태
 
-| 기능                         | Legacy 동작                         | 현재 상태 | Phase |
-| ---------------------------- | ----------------------------------- | --------- | ----- |
-| 파일/폴더 트리 브라우저      | 디렉토리 탐색, 파일 내용 표시       | gap       | 3     |
-| 브랜치 선택기                | 드롭다운으로 브랜치/태그 전환       | gap       | 3     |
-| 파일 보기 (syntax highlight) | 코드 하이라이트, 라인 번호          | gap       | 3     |
-| Raw 파일 다운로드            | 바이너리/텍스트 직접 다운로드       | gap       | 3     |
-| 이미지 미리보기              | 이미지 파일 인라인 표시             | gap       | 3     |
-| 커밋 이력                    | 커밋 목록, 페이지네이션             | gap       | 3     |
-| 커밋 상세 (diff)             | 변경 파일 목록, unified diff        | gap       | 3     |
-| 커밋 댓글                    | 커밋에 댓글 작성/삭제               | gap       | 3     |
-| 브랜치 관리                  | 브랜치 목록, 삭제, 기본 브랜치 설정 | gap       | 3     |
-| 커밋 비교                    | 두 revision 간 diff                 | gap       | 3     |
+| 기능                         | Legacy 동작                         | 현재 상태             | Phase |
+| ---------------------------- | ----------------------------------- | --------------------- | ----- |
+| 파일/폴더 트리 브라우저      | 디렉토리 탐색, 파일 내용 표시       | ✅ Phase 3A 구현      | 3     |
+| 브랜치 선택기                | 드롭다운으로 브랜치/태그 전환       | ✅ Phase 3A 기본 구현 | 3     |
+| 파일 보기 (syntax highlight) | 코드 하이라이트, 라인 번호          | 🔶 텍스트 보기 구현   | 3     |
+| Raw 파일 다운로드            | 바이너리/텍스트 직접 다운로드       | gap                   | 3     |
+| 이미지 미리보기              | 이미지 파일 인라인 표시             | gap                   | 3     |
+| 커밋 이력                    | 커밋 목록, 페이지네이션             | gap                   | 3     |
+| 커밋 상세 (diff)             | 변경 파일 목록, unified diff        | gap                   | 3     |
+| 커밋 댓글                    | 커밋에 댓글 작성/삭제               | gap                   | 3     |
+| 브랜치 관리                  | 브랜치 목록, 삭제, 기본 브랜치 설정 | gap                   | 3     |
+| 커밋 비교                    | 두 revision 간 diff                 | gap                   | 3     |
 
 #### 검수 기준
 
@@ -1201,7 +1201,7 @@ legacy Yona는 `pageNum` 기반 offset 페이지네이션을 사용한다.
 | 이슈              | ✅ Phase 2A 구현  | CRUD, 댓글, 타임라인, watch/vote/assignee, mass update, Markdown |
 | 게시판            | ❌ 미구현         | placeholder route만                                              |
 | 라벨/마일스톤     | 🔶 부분           | 라벨/카테고리 관리 구현, 마일스톤 관리 미구현                    |
-| 코드 브라우저     | ❌ 미구현         | `crates/vcs` placeholder                                         |
+| 코드 브라우저     | 🔶 Phase 3A 구현  | read-only Git 폴더/파일 보기, 브랜치 선택기                      |
 | Git Smart HTTP    | ❌ 미구현         |                                                                  |
 | PR/리뷰           | ❌ 미구현         | placeholder route만                                              |
 | 검색              | ❌ 미구현         | `crates/search` placeholder                                      |
@@ -1318,7 +1318,8 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/:owner/:project/issue/:number`   | GET      | ConnectRPC `ReadIssueDetail`          | `$owner/$projectName/issue/$issueNumber`      | implemented (기본) |
 | `/:owner/:project/posts`           | GET      | —                                     | `$owner/$projectName/posts`                   | gap                |
 | `/:owner/:project/pullRequests`    | GET      | —                                     | `$owner/$projectName/pullRequests`            | gap                |
-| `/:owner/:project/code`            | GET      | —                                     | `$owner/$projectName/code`                    | gap                |
+| `/:owner/:project/code`            | GET      | ConnectRPC `ReadCodeBrowser`          | `$owner/$projectName/code`                    | implemented (기본) |
+| `/:owner/:project/code/:branch/*`  | GET      | ConnectRPC `ReadCodeBrowser`          | `$owner/$projectName/code/$branch/$`          | implemented (기본) |
 | `/:owner/:project/commits`         | GET      | —                                     | —                                             | gap                |
 | `/:owner/:project/milestones`      | GET      | ConnectRPC `ListProjectMilestones`    | `$owner/$projectName/milestones`              | implemented        |
 | `/:owner/:project/branches`        | GET      | —                                     | —                                             | gap                |
@@ -1352,6 +1353,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | Issue              | ListProjectIssues, ListOrganizationIssues, ReadIssueDetail, UpdateIssueState, CreateIssue, UpdateIssue, DeleteIssue, CreateIssueComment, UpdateIssueComment, DeleteIssueComment, ListIssueTimeline, WatchIssue, UnwatchIssue, VoteIssue, UnvoteIssue, AssignIssue, UnassignIssue, ShareIssue, UnshareIssue, MassUpdateIssues, RenderMarkdown                          | ✅ Phase 2A/2E/2F 구현 |
 | Label              | ListProjectLabels, ListProjectLabelCategories, CreateProjectLabel, UpdateProjectLabel, DeleteProjectLabel, CreateProjectLabelCategory, UpdateProjectLabelCategory, DeleteProjectLabelCategory                                                                                                                                                                         | ✅ Phase 2B 구현       |
 | Milestone          | ListProjectMilestones, ReadProjectMilestone, CreateProjectMilestone, UpdateProjectMilestone, DeleteProjectMilestone, OpenProjectMilestone, CloseProjectMilestone                                                                                                                                                                                                      | ✅ Phase 2C 구현       |
+| Code               | ReadCodeBrowser                                                                                                                                                                                                                                                                                                                                                       | ✅ Phase 3A 구현       |
 
 **추가 필요한 RPC 메서드** (Phase 2~6에서 추가):
 
@@ -1359,7 +1361,7 @@ max_file_size = 2147483454             # application.maxFileSize
 - Board: CreatePosting, UpdatePosting, DeletePosting, ListProjectPostings, ReadPostingDetail, CreatePostingComment
 - Label follow-up: copyLabels Phase 6, REST label/project API parity
 - Milestone follow-up: REST milestone API parity, migration export, search milestone result type
-- Code: ListBranches, BrowseRepository, ReadFileContent, ListCommits, ReadCommitDetail
+- Code follow-up: raw file/download/image routes, syntax highlighting, commit history/detail, branch admin, compare, Smart HTTP
 - PullRequest: CreatePullRequest, ReadPullRequestDetail, ListPullRequests, MergePullRequest, ClosePullRequest, ReopenPullRequest, CreateReviewComment, ReviewPullRequest
 - Search: SearchGlobal, SearchInProject, SearchInOrganization
 - Notification: ListNotifications, MarkNotificationRead

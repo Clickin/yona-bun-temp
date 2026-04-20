@@ -3,15 +3,15 @@
 > Status dashboard. This document is a progress mirror for humans and agents.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, and the narrower provenance docs under `docs/provenance/**`.
 
-Last updated: 2026-04-19
+Last updated: 2026-04-20
 
 ## Progress Estimate
 
 | Scope                                   | Estimate | Basis                                                                                                                         |
 | --------------------------------------- | -------: | ----------------------------------------------------------------------------------------------------------------------------- |
-| Full legacy Yona parity                 |     ~35% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and REST API. |
-| Current first-priority conversion scope |     ~40% | Same as above, but excluding explicitly deferred second-priority items such as SVN, LDAP, and import/export tooling.          |
-| Mechanical SPEC row count               |     ~27% | `SPEC.md` feature/status rows: 38 implemented, 103 gap, 8 deferred, plus supporting/non-feature rows.                         |
+| Full legacy Yona parity                 |     ~36% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and REST API. |
+| Current first-priority conversion scope |     ~41% | Same as above, but excluding explicitly deferred second-priority items such as SVN, LDAP, and import/export tooling.          |
+| Mechanical SPEC row count               |     ~28% | `SPEC.md` feature/status rows: 38 implemented, 1 partial, 99 gap, 8 deferred, plus supporting/non-feature rows.               |
 
 Interpretation:
 
@@ -38,7 +38,7 @@ Interpretation:
 | Auth / Workspace                        | [~] Partially implemented | Core account and settings flows exist; remember-me/admin approval/guest/OAuth/LDAP remain.                               |
 | Organization / Project core             | [~] Partially implemented | CRUD, members, enrollment, watch/favorite basics exist; project admin surfaces remain.                                   |
 | Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/label/milestone/sharer/org issue list exist; mention/favorite/comment vote/REST remain. |
-| VCS / Code hosting                      | [ ] Mostly missing        | Code routes are placeholders; smart HTTP is not parity-ready.                                                            |
+| VCS / Code hosting                      | [~] Started               | Read-only Git code browser exists; smart HTTP, history, raw/image/download, branch admin, and provisioning remain.       |
 | Pull Request / Review                   | [ ] Mostly missing        | PR routes are placeholders.                                                                                              |
 | Board / Posting                         | [ ] Mostly missing        | Board/post routes are placeholders.                                                                                      |
 | Search                                  | [ ] Mostly missing        | Search route is placeholder.                                                                                             |
@@ -221,13 +221,13 @@ Interpretation:
 
 ## Repository / VCS / Code
 
-- [ ] Repository browser
-- [ ] Folder tree
-- [ ] File content view
+- [~] Repository browser
+- [x] Folder tree
+- [x] File content view
 - [ ] Syntax highlight
 - [ ] Raw download
 - [ ] Image preview
-- [ ] Branch/tag selector
+- [~] Branch/tag selector
 - [ ] Commit history
 - [ ] Commit detail/diff
 - [ ] Commit comments

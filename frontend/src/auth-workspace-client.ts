@@ -34,6 +34,7 @@ import {
   ResetApiTokenRequestSchema,
   ResetVisitedProjectsRequestSchema,
   ReadAuthUiCapabilitiesRequestSchema,
+  ReadCodeBrowserRequestSchema,
   ReadCurrentSessionRequestSchema,
   LeaveOrganizationRequestSchema,
   IssueParticipationRequestSchema,
@@ -95,6 +96,7 @@ import {
   type ProjectLabelMutationResponse,
   type ProjectMilestoneDeleteResponse,
   type ProjectMilestoneMutationResponse,
+  type ReadCodeBrowserResponse,
   type ReadIssueDetailResponse,
   type ReadCurrentSessionResponse,
   type ReadOrganizationMembersResponse,
@@ -145,6 +147,11 @@ export interface OrganizationIssueListOptions {
   pageNum?: number;
   projectNames?: string[];
   state?: string;
+}
+
+export interface CodeBrowserOptions {
+  branch?: string;
+  path?: string;
 }
 
 export interface ProjectMilestoneListOptions {
@@ -1122,6 +1129,23 @@ export async function updateProject(
   return createPilotClient(runtimeConfig, fetchImpl).updateProject(
     create(UpdateProjectRequestSchema, input),
     { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function readCodeBrowser(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  input: CodeBrowserOptions = {},
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadCodeBrowserResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).readCodeBrowser(
+    create(ReadCodeBrowserRequestSchema, {
+      branch: input.branch ?? "",
+      ownerName,
+      path: input.path ?? "",
+      projectName,
+    }),
   );
 }
 

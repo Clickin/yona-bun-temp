@@ -31,6 +31,7 @@ use yona_rust_domain::{
     ProjectScope, DEFAULT_LANDING_FALLBACK_PATH,
 };
 use yona_rust_integrations::{deliver, OutboundMail};
+use yona_rust_vcs::{CodeBrowserSnapshot, CodeEntryRecord, CodeFileRecord, VcsError};
 
 #[allow(clippy::missing_panics_doc)]
 pub mod generated {
@@ -661,13 +662,16 @@ fn gravatar_url(email_address: &str) -> String {
     )
 }
 
-fn uploaded_files_root() -> PathBuf {
-    let base = std::env::var("YONA_DATA")
+fn yona_data_root() -> PathBuf {
+    std::env::var("YONA_DATA")
         .ok()
         .filter(|value| !value.trim().is_empty())
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(".yona-data"));
-    base.join("uploads")
+        .unwrap_or_else(|| PathBuf::from(".yona-data"))
+}
+
+fn uploaded_files_root() -> PathBuf {
+    yona_data_root().join("uploads")
 }
 
 fn uploaded_file_path(hash: &str) -> PathBuf {
@@ -5398,6 +5402,55 @@ impl PilotService for PilotServiceImpl {
         ))
     }
 
+    async fn read_code_browser(
+        &self,
+        ctx: Context,
+        request: OwnedView<ReadCodeBrowserRequestView<'static>>,
+    ) -> Result<(ReadCodeBrowserResponse, Context), ConnectError> {
+        let actor_id = self
+            .session_manager
+            .read_session_from_headers(&ctx.headers)
+            .and_then(|session| session.user_id);
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "code browser requires repository backend",
+            ));
+        };
+        let authorization = repository
+            .read_project_authorization(request.owner_name, request.project_name, actor_id)
+            .await
+            .map_err(internal_error)?
+            .ok_or_else(|| ConnectError::not_found("project not found"))?;
+        if !project_read_allowed(&authorization, actor_id.is_none())?
+            || !project_code_menu_visible(&authorization, true)
+        {
+            return if actor_id.is_none() {
+                Err(ConnectError::unauthenticated("project read is not allowed"))
+            } else {
+                Err(ConnectError::permission_denied(
+                    "project read is not allowed",
+                ))
+            };
+        }
+
+        let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+        let snapshot = yona_rust_vcs::read_code_browser(
+            &repo_path,
+            Some(request.branch).filter(|value| !value.trim().is_empty()),
+            request.path,
+        )
+        .map_err(code_browser_error)?;
+
+        Ok((
+            code_browser_response_from_snapshot(
+                &authorization.project.owner_name,
+                &authorization.project.project_name,
+                snapshot,
+            ),
+            ctx,
+        ))
+    }
+
     async fn update_project_overview(
         &self,
         ctx: Context,
@@ -7430,6 +7483,81 @@ fn project_issue_list_item_to_proto(
         updated_label: item.updated_label,
         voter_count: item.voter_count,
         watcher_count: item.watcher_count,
+        ..Default::default()
+    }
+}
+
+fn code_browser_error(error: VcsError) -> ConnectError {
+    match error {
+        VcsError::GitUnavailable => ConnectError::unimplemented("git executable is unavailable"),
+        VcsError::InvalidPath | VcsError::InvalidRepositoryPath => {
+            ConnectError::invalid_argument(error.to_string())
+        }
+        VcsError::NotFound => ConnectError::not_found("repository path not found"),
+        VcsError::GitTimedOut | VcsError::GitFailed(_) => internal_error(error),
+    }
+}
+
+fn code_browser_response_from_snapshot(
+    owner_name: &str,
+    project_name: &str,
+    snapshot: CodeBrowserSnapshot,
+) -> ReadCodeBrowserResponse {
+    ReadCodeBrowserResponse {
+        branches: snapshot
+            .branches
+            .into_iter()
+            .map(|branch| CodeBranch {
+                name: branch.name,
+                ..Default::default()
+            })
+            .collect(),
+        breadcrumbs: snapshot
+            .breadcrumbs
+            .into_iter()
+            .map(|breadcrumb| CodeBreadcrumb {
+                name: breadcrumb.name,
+                path: breadcrumb.path,
+                ..Default::default()
+            })
+            .collect(),
+        entries: snapshot
+            .entries
+            .into_iter()
+            .map(code_entry_to_proto)
+            .collect(),
+        file: snapshot.file.map(code_file_to_proto).into(),
+        no_head: snapshot.no_head,
+        owner_name: owner_name.to_string(),
+        path: snapshot.path,
+        project_name: project_name.to_string(),
+        selected_branch: snapshot.selected_branch,
+        ..Default::default()
+    }
+}
+
+fn code_entry_to_proto(entry: CodeEntryRecord) -> CodeEntry {
+    CodeEntry {
+        commit_date: entry.commit_date,
+        commit_message: entry.commit_message,
+        commit_short_id: entry.commit_short_id,
+        kind: entry.kind,
+        name: entry.name,
+        path: entry.path,
+        size: entry.size,
+        ..Default::default()
+    }
+}
+
+fn code_file_to_proto(file: CodeFileRecord) -> CodeFile {
+    CodeFile {
+        is_binary: file.is_binary,
+        is_too_large: file.is_too_large,
+        mime_type: file.mime_type,
+        name: file.name,
+        path: file.path,
+        size: file.size,
+        text: file.text,
         ..Default::default()
     }
 }

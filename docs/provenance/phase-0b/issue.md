@@ -77,3 +77,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 
 - REST `/-_-api/v1` issue API parity.
 - Sharable user autocomplete/search, shared-with-me issue filter, Issue Sharer changed timeline/notification semantics, mention autocomplete notification semantics, comment vote UI, favorite issue workspace surface, and organization/user aggregate issue lists.
+
+## Shared Surface Notes
+
+- Phase 3A Code Browser changes may touch shared frontend client/view-model files that also serve issue routes. Those edits are contract plumbing only; they do not change issue lifecycle behavior or close any remaining Phase 2 issue follow-up.

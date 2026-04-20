@@ -38,6 +38,7 @@ yona-rust-domain = { path = "../domain" }
 yona-rust-integrations = { path = "../integrations" }
 yona-rust-persistence = { path = "../persistence" }
 yona-rust-pilot-migration = { path = "../migration" }
+yona-rust-vcs = { path = "../vcs" }
 
 [build-dependencies]
 connectrpc-build.workspace = true

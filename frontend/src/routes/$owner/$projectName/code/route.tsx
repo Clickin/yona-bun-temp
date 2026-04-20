@@ -1,11 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { PlaceholderPage } from "../../../-shared";
+import { Outlet, createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/$owner/$projectName/code")({
   component: CodeBrowserRouteComponent,
 });
 
 function CodeBrowserRouteComponent() {
-  const { owner, projectName } = Route.useParams();
-  return <PlaceholderPage href={`/${owner}/${projectName}/code`} title="Code" />;
+  return <Outlet />;
 }

@@ -266,6 +266,67 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
+  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadCodeBrowser", async (route) => {
+    const payload = route.request().postDataJSON();
+    if (payload?.path === "src/main.rs") {
+      await route.fulfill({
+        body: JSON.stringify({
+          branches: [{ name: "main" }],
+          breadcrumbs: [
+            { name: "src", path: "src" },
+            { name: "main.rs", path: "src/main.rs" },
+          ],
+          file: {
+            isBinary: false,
+            mimeType: "text/plain",
+            name: "main.rs",
+            path: "src/main.rs",
+            size: "13",
+            text: "fn main() {}\n",
+          },
+          ownerName: "admin",
+          path: "src/main.rs",
+          projectName: "projectYobi",
+          selectedBranch: "main",
+        }),
+        headers: connectJsonHeaders,
+        status: 200,
+      });
+      return;
+    }
+
+    await route.fulfill({
+      body: JSON.stringify({
+        branches: [{ name: "main" }],
+        breadcrumbs: [],
+        entries: [
+          {
+            commitDate: "2026-04-20",
+            commitMessage: "Initial commit",
+            commitShortId: "abc1234",
+            kind: "folder",
+            name: "src",
+            path: "src",
+          },
+          {
+            commitDate: "2026-04-20",
+            commitMessage: "Initial commit",
+            commitShortId: "abc1234",
+            kind: "file",
+            name: "README.md",
+            path: "README.md",
+            size: "12",
+          },
+        ],
+        ownerName: "admin",
+        projectName: "projectYobi",
+        selectedBranch: "main",
+      }),
+      headers: connectJsonHeaders,
+      status: 200,
+    });
+  });
+
   await page.route("**/rpc/yona.pilot.v1.PilotService/SignOut", async (route) => {
     await route.fulfill({
       body: JSON.stringify({
@@ -450,6 +511,19 @@ test("project issue routes render data-backed issue list and detail screens", as
   await expect(page.getByRole("heading", { name: "Pilot issue" })).toBeVisible();
   await expect(page.getByText("#1")).toBeVisible();
   await expect(page.getByText("open")).toBeVisible();
+});
+
+test("project code routes render branch folder and text file views", async ({ page }) => {
+  await page.goto("/yona/admin/projectYobi/code");
+  await expect(page.getByRole("heading", { name: "Code" })).toBeVisible();
+  await expect(page.getByLabel("Branch")).toHaveValue("main");
+  await expect(page.getByRole("link", { name: "Folder: src" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "File: README.md" })).toBeVisible();
+  await expect(page.getByText("Initial commit").first()).toBeVisible();
+
+  await page.goto("/yona/admin/projectYobi/code/main/src/main.rs");
+  await expect(page.locator(".file-header strong", { hasText: "main.rs" })).toBeVisible();
+  await expect(page.getByText("fn main() {}")).toBeVisible();
 });
 
 test("organization issue route renders cross-project issue inbox", async ({ page }) => {

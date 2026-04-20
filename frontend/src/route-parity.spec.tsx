@@ -56,6 +56,31 @@ describe("file-route parity harness", () => {
     expect(issueDetailRouteSource).not.toContain("PlaceholderPage");
   });
 
+  it("requires a real project code browser route instead of a placeholder page", () => {
+    const codeRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/code/route.tsx"),
+      "utf8",
+    );
+    const codeIndexRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/code/index.tsx"),
+      "utf8",
+    );
+    const codeRouteHelperSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/code/-code-route.tsx"),
+      "utf8",
+    );
+
+    expect(codeRouteSource).not.toContain("PlaceholderPage");
+    expect(codeRouteSource).toContain("Outlet");
+    expect(codeIndexRouteSource).toContain("CodeBrowserRouteView");
+    expect(codeRouteHelperSource).toContain("readCodeBrowser");
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/code/'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/code/$branch'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/code/$branch/'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/code/$branch/$'");
+  });
+
   it("requires a real organization issue route instead of a placeholder page", () => {
     const organizationIssueRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/organizations/$organizationName/issues/route.tsx"),

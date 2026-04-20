@@ -25,7 +25,7 @@
 
 ## Phase 3: 저장소와 VCS
 
-- repository browser
+- Phase 3A complete: read-only Git code browser with existing repo detection, no-head state, branch selector, breadcrumbs, folder entries, and text file view.
 - smart HTTP
 - commit discussion
 - VCS flows

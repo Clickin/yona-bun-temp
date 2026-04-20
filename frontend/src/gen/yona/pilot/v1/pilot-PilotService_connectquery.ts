@@ -190,6 +190,11 @@ export const readProjectMembers = PilotService.method.readProjectMembers;
 export const readProjectContainer = PilotService.method.readProjectContainer;
 
 /**
+ * @generated from rpc yona.pilot.v1.PilotService.ReadCodeBrowser
+ */
+export const readCodeBrowser = PilotService.method.readCodeBrowser;
+
+/**
  * @generated from rpc yona.pilot.v1.PilotService.UpdateProjectOverview
  */
 export const updateProjectOverview = PilotService.method.updateProjectOverview;

@@ -1,5 +1,6 @@
 import type {
   OrganizationAdminViewModel,
+  CodeBrowserViewModel,
   OrganizationDirectoryViewModel,
   OrganizationDetailViewModel,
   OrganizationIssueListViewModel,
@@ -23,6 +24,7 @@ import {
   readOrganizationDetail,
   listOrganizationIssues,
   readOrganizationMembers,
+  readCodeBrowser,
   listOrganizations,
   listProjectIssues,
   listProjectMilestones,
@@ -321,6 +323,43 @@ export function toProjectMembersView(
       role: item.role,
       userLabel: item.userLabel,
     })),
+  };
+}
+
+export function toCodeBrowserView(
+  response: Awaited<ReturnType<typeof readCodeBrowser>>,
+): CodeBrowserViewModel {
+  return {
+    branches: response.branches.map((branch) => ({ name: branch.name })),
+    breadcrumbs: response.breadcrumbs.map((breadcrumb) => ({
+      name: breadcrumb.name,
+      path: breadcrumb.path,
+    })),
+    entries: response.entries.map((entry) => ({
+      commitDate: entry.commitDate,
+      commitMessage: entry.commitMessage,
+      commitShortId: entry.commitShortId,
+      kind: entry.kind,
+      name: entry.name,
+      path: entry.path,
+      size: Number(entry.size),
+    })),
+    file: response.file
+      ? {
+          isBinary: response.file.isBinary,
+          isTooLarge: response.file.isTooLarge,
+          mimeType: response.file.mimeType,
+          name: response.file.name,
+          path: response.file.path,
+          size: Number(response.file.size),
+          text: response.file.text,
+        }
+      : undefined,
+    noHead: response.noHead,
+    ownerName: response.ownerName,
+    path: response.path,
+    projectName: response.projectName,
+    selectedBranch: response.selectedBranch,
   };
 }
 

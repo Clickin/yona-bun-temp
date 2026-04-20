@@ -5,3 +5,5 @@ license.workspace = true
 version.workspace = true
 
 [dependencies]
+mime_guess.workspace = true
+thiserror.workspace = true

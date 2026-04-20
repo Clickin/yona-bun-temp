@@ -16,6 +16,7 @@
 - [`organization.md`](/G:/programming/yona/docs/provenance/phase-0b/organization.md): organization create/read/update provenance
 - [`project.md`](/G:/programming/yona/docs/provenance/phase-0b/project.md): project, enrollment, workspace provenance
 - [`issue.md`](/G:/programming/yona/docs/provenance/phase-0b/issue.md): bounded issue authorization exemplar
+- [`code-browser.md`](/G:/programming/yona/docs/provenance/phase-0b/code-browser.md): read-only Git code browser provenance
 - [`pull-request-review.md`](/G:/programming/yona/docs/provenance/phase-0b/pull-request-review.md): bounded PR/review exemplar
 - [`search.md`](/G:/programming/yona/docs/provenance/phase-0b/search.md): bounded internal search exemplar
 - [`fixture-strategy.md`](/G:/programming/yona/docs/provenance/phase-0b/fixture-strategy.md): legacy fixture naming and modern fixture policy
