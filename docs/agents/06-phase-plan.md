@@ -21,7 +21,9 @@
 - Phase 2C complete: milestone management screens/RPC, legacy direct mutation routes, state toggles, issue aggregation, Markdown description rendering, and milestone attachment binding.
 - Phase 2E complete: core issue sharer read/comment ACL, ConnectRPC share/unshare by login ID, and issue detail sharer sidebar controls.
 - Phase 2F complete: organization issue listing body parity with visible-project aggregation, core filters, and organization shell route.
-- Remaining Phase 2 packets: REST issue/milestone API parity, sharable autocomplete/shared-with-me/sharer notification follow-ups, mention/comment-vote/favorite issue, user aggregate issue list, and Phase 6 label copy flow.
+- Phase 2G complete: favorite issue toggle/detail projection and `/user/issues` personal aggregate list with assigned/authored/commented/mentioned/shared/favorite quick filters.
+- Phase 2H complete: ConnectRPC issue comment vote/unvote, comment voter projection, issue detail comment-row controls, and direct/inherited sharer ACL coverage.
+- Remaining Phase 2 packets: REST issue/milestone API parity, legacy direct comment-vote POST route compatibility, sharable autocomplete/sharer notification follow-ups, mention creation/autocomplete/notification semantics, and Phase 6 label copy flow.
 
 ## Phase 3: 저장소와 VCS
 

@@ -1755,6 +1755,82 @@ impl PilotServiceImpl {
         ))
     }
 
+    async fn issue_comment_participation(
+        &self,
+        ctx: Context,
+        request: OwnedView<IssueCommentParticipationRequestView<'static>>,
+        action: &str,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        if request.issue_number <= 0 || request.comment_id <= 0 {
+            return Err(ConnectError::invalid_argument(
+                "invalid issue comment participation request",
+            ));
+        }
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "issue requires repository backend",
+            ));
+        };
+        let actor = require_authenticated_user(repository, session.user_id).await?;
+        let access = read_issue_access(
+            repository,
+            request.owner_name,
+            request.project_name,
+            request.issue_number,
+            Some(actor.id),
+        )
+        .await?;
+        if !access.viewer_can_comment() {
+            return Err(ConnectError::permission_denied(
+                "issue comment vote is not allowed",
+            ));
+        }
+        if !access
+            .issue
+            .comments
+            .iter()
+            .any(|comment| comment.id == request.comment_id)
+        {
+            return Err(ConnectError::not_found("pilot issue comment not found"));
+        }
+
+        match action {
+            "vote" => repository
+                .vote_issue_comment(request.comment_id, actor.id)
+                .await
+                .map_err(internal_error)?,
+            "unvote" => {
+                if !repository
+                    .unvote_issue_comment(request.comment_id, actor.id)
+                    .await
+                    .map_err(internal_error)?
+                {
+                    return Err(ConnectError::not_found("issue comment vote not found"));
+                }
+            }
+            _ => {
+                return Err(ConnectError::invalid_argument(
+                    "invalid issue comment participation action",
+                ))
+            }
+        }
+
+        let updated = read_issue_access(
+            repository,
+            request.owner_name,
+            request.project_name,
+            request.issue_number,
+            Some(actor.id),
+        )
+        .await?;
+        Ok((
+            issue_detail_response_from_access(&updated, Some(actor.id), &self.base_path),
+            ctx,
+        ))
+    }
+
     async fn issue_sharer_mutation(
         &self,
         ctx: Context,
@@ -2774,6 +2850,25 @@ fn issue_comment_from_record(
         id: record.id,
         viewer_can_delete: viewer_can_manage || viewer_is_author,
         viewer_can_update: viewer_can_manage || viewer_is_author,
+        viewer_has_voted: record.viewer_has_voted,
+        voter_count: record.voter_count,
+        voters: record
+            .voters
+            .iter()
+            .map(issue_comment_voter_from_record)
+            .collect(),
+        ..Default::default()
+    }
+}
+
+fn issue_comment_voter_from_record(
+    record: &persistence::IssueCommentVoterRecord,
+) -> IssueCommentVoter {
+    IssueCommentVoter {
+        avatar_url: gravatar_url(&record.email_address),
+        login_id: record.login_id.clone(),
+        user_id: record.user_id,
+        user_label: record.user_label.clone(),
         ..Default::default()
     }
 }
@@ -2896,6 +2991,133 @@ fn issue_list_filter_from_request(
     }
 }
 
+fn user_issue_filter_name(value: &str) -> Result<String, ConnectError> {
+    let normalized = normalize_identifier(value);
+    let resolved = if normalized.is_empty() {
+        "assigned".to_string()
+    } else {
+        normalized
+    };
+    match resolved.as_str() {
+        "assigned" | "authored" | "commented" | "mentioned" | "shared" | "favorite" => Ok(resolved),
+        _ => Err(ConnectError::invalid_argument("invalid user issue filter")),
+    }
+}
+
+fn user_issue_state(value: &str) -> Result<String, ConnectError> {
+    let normalized = normalize_identifier(value);
+    let resolved = if normalized.is_empty() {
+        "open".to_string()
+    } else {
+        normalized
+    };
+    match resolved.as_str() {
+        "open" | "closed" => Ok(resolved),
+        _ => Err(ConnectError::invalid_argument("invalid user issue state")),
+    }
+}
+
+fn user_issue_list_filter_from_request(
+    request: &ListUserIssuesRequestView<'_>,
+    state: &str,
+    filter: &str,
+) -> persistence::UserIssueListFilter {
+    const DEFAULT_PAGE_SIZE: u32 = 15;
+    const MAX_PAGE_SIZE: u32 = 45;
+    persistence::UserIssueListFilter {
+        filter: filter.to_string(),
+        order_by: if request.order_by.trim().is_empty() {
+            "updatedDate".to_string()
+        } else {
+            request.order_by.trim().to_string()
+        },
+        order_dir: if request.order_dir.trim().is_empty() {
+            "desc".to_string()
+        } else {
+            request.order_dir.trim().to_string()
+        },
+        page_num: request.page_num.max(1),
+        page_size: if request.page_size == 0 {
+            DEFAULT_PAGE_SIZE
+        } else {
+            request.page_size.min(MAX_PAGE_SIZE)
+        },
+        query: (!request.query.trim().is_empty()).then(|| request.query.trim().to_string()),
+        state: state.to_string(),
+    }
+}
+
+async fn visible_user_issue_items(
+    repository: &PilotRepository,
+    user_id: i64,
+    filter: persistence::UserIssueListFilter,
+) -> Result<Vec<persistence::ProjectIssueListItemRecord>, ConnectError> {
+    let candidates = repository
+        .list_user_issue_candidates(user_id, filter)
+        .await
+        .map_err(internal_error)?;
+    let mut visible = Vec::new();
+    for candidate in candidates {
+        if read_issue_access(
+            repository,
+            &candidate.item.owner_name,
+            &candidate.item.project_name,
+            candidate.item.issue_number,
+            Some(user_id),
+        )
+        .await
+        .is_ok()
+        {
+            visible.push(candidate.item);
+        }
+    }
+    Ok(visible)
+}
+
+async fn build_user_issues_response(
+    repository: &PilotRepository,
+    user_id: i64,
+    request: &ListUserIssuesRequestView<'_>,
+) -> Result<ListUserIssuesResponse, ConnectError> {
+    let filter_name = user_issue_filter_name(request.filter)?;
+    let state = user_issue_state(request.state)?;
+    let selected_filter = user_issue_list_filter_from_request(request, &state, &filter_name);
+    let open_filter = user_issue_list_filter_from_request(request, "open", &filter_name);
+    let closed_filter = user_issue_list_filter_from_request(request, "closed", &filter_name);
+
+    let mut selected_items =
+        visible_user_issue_items(repository, user_id, selected_filter.clone()).await?;
+    let open_issue_count = visible_user_issue_items(repository, user_id, open_filter)
+        .await?
+        .len() as u32;
+    let closed_issue_count = visible_user_issue_items(repository, user_id, closed_filter)
+        .await?
+        .len() as u32;
+
+    let page_num = selected_filter.page_num.max(1);
+    let page_size = selected_filter.page_size.max(1);
+    let total_count = selected_items.len() as u32;
+    let offset = ((page_num - 1) * page_size) as usize;
+    let items = selected_items
+        .drain(..)
+        .skip(offset)
+        .take(page_size as usize)
+        .map(project_issue_list_item_to_proto)
+        .collect();
+
+    Ok(ListUserIssuesResponse {
+        closed_issue_count,
+        filter: filter_name,
+        items,
+        open_issue_count,
+        page_num,
+        page_size,
+        state,
+        total_count,
+        ..Default::default()
+    })
+}
+
 fn milestone_list_filter_from_request(
     request: &ListProjectMilestonesRequestView<'_>,
 ) -> persistence::MilestoneListFilter {
@@ -3008,7 +3230,7 @@ async fn read_issue_access(
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
     let issue = repository
-        .read_issue_detail(owner_name, project_name, issue_number)
+        .read_issue_detail_for_viewer(owner_name, project_name, issue_number, actor_id)
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("pilot issue not found"))?;
@@ -3027,7 +3249,14 @@ async fn read_issue_access(
             .map_err(internal_error)?,
         None => persistence::IssueShareStatus::default(),
     };
-    if project_can_read || share_status.direct || share_status.inherited_from_parent {
+    let issue_specific_can_read = actor
+        .as_ref()
+        .is_some_and(|actor| issue_can_mutate(&authorization, &issue, actor));
+    if project_can_read
+        || share_status.direct
+        || share_status.inherited_from_parent
+        || issue_specific_can_read
+    {
         Ok(IssueAccessContext {
             authorization,
             issue,
@@ -3145,6 +3374,7 @@ fn issue_detail_response_from_record_with_sharer_flags(
             })
             .collect(),
         has_voted: issue.has_voted,
+        is_favorited: issue.is_favorited,
         is_watching: issue.is_watching,
         issue_number: issue.issue_number,
         labels: issue.labels.iter().map(issue_label_from_record).collect(),
@@ -6114,6 +6344,22 @@ impl PilotService for PilotServiceImpl {
         ))
     }
 
+    async fn list_user_issues(
+        &self,
+        ctx: Context,
+        request: OwnedView<ListUserIssuesRequestView<'static>>,
+    ) -> Result<(ListUserIssuesResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "user issues require repository backend",
+            ));
+        };
+        let actor = require_authenticated_user(repository, session.user_id).await?;
+        let response = build_user_issues_response(repository, actor.id, &request).await?;
+        Ok((response, ctx))
+    }
+
     async fn read_issue_detail(
         &self,
         ctx: Context,
@@ -6617,6 +6863,62 @@ impl PilotService for PilotServiceImpl {
         request: OwnedView<IssueParticipationRequestView<'static>>,
     ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
         self.issue_participation(ctx, request, "unvote").await
+    }
+
+    async fn vote_issue_comment(
+        &self,
+        ctx: Context,
+        request: OwnedView<IssueCommentParticipationRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        self.issue_comment_participation(ctx, request, "vote").await
+    }
+
+    async fn unvote_issue_comment(
+        &self,
+        ctx: Context,
+        request: OwnedView<IssueCommentParticipationRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        self.issue_comment_participation(ctx, request, "unvote")
+            .await
+    }
+
+    async fn toggle_favorite_issue(
+        &self,
+        ctx: Context,
+        request: OwnedView<IssueParticipationRequestView<'static>>,
+    ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
+        let session = require_session(&self.session_manager, &ctx.headers)?;
+        require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
+        let PilotBackend::Repository(repository) = &self.backend else {
+            return Err(ConnectError::unimplemented(
+                "issue requires repository backend",
+            ));
+        };
+        let actor = require_authenticated_user(repository, session.user_id).await?;
+        let access = read_issue_access(
+            repository,
+            request.owner_name,
+            request.project_name,
+            request.issue_number,
+            Some(actor.id),
+        )
+        .await?;
+        repository
+            .toggle_favorite_issue(access.issue.id, actor.id)
+            .await
+            .map_err(internal_error)?;
+        let updated = read_issue_access(
+            repository,
+            request.owner_name,
+            request.project_name,
+            request.issue_number,
+            Some(actor.id),
+        )
+        .await?;
+        Ok((
+            issue_detail_response_from_access(&updated, Some(actor.id), &self.base_path),
+            ctx,
+        ))
     }
 
     async fn assign_issue(
@@ -7478,6 +7780,8 @@ fn project_issue_list_item_to_proto(
         labels: item.labels.iter().map(issue_label_from_record).collect(),
         milestone_id: item.milestone_id.unwrap_or_default(),
         milestone_title: item.milestone_title,
+        owner_name: item.owner_name,
+        project_name: item.project_name,
         state: item.state,
         title: item.title,
         updated_label: item.updated_label,

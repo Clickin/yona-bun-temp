@@ -8,12 +8,15 @@ import {
   readIssueDetail,
   readProjectContainer,
   shareIssue,
+  toggleFavoriteIssue,
   unvoteIssue,
+  unvoteIssueComment,
   unwatchIssue,
   unshareIssue,
   updateIssueState,
   updateIssueComment,
   voteIssue,
+  voteIssueComment,
   watchIssue,
 } from "../../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../../app-runtime-context";
@@ -131,6 +134,16 @@ function IssueDetailRouteComponent() {
         });
         setIssue(toProjectIssueDetailView(nextIssue));
       }}
+      onCommentVoteToggle={async (commentId, viewerHasVoted) => {
+        const mutation = viewerHasVoted ? unvoteIssueComment : voteIssueComment;
+        const nextIssue = await mutation(runtimeConfig, csrfToken, {
+          commentId: BigInt(commentId),
+          issueNumber: BigInt(Number(issueNumber)),
+          ownerName: owner,
+          projectName,
+        });
+        setIssue(toProjectIssueDetailView(nextIssue));
+      }}
       onDeleteIssue={async () => {
         await deleteIssue(runtimeConfig, csrfToken, {
           issueNumber: BigInt(Number(issueNumber)),
@@ -138,6 +151,14 @@ function IssueDetailRouteComponent() {
           projectName,
         });
         window.location.assign(`/${owner}/${projectName}/issues`);
+      }}
+      onFavoriteToggle={async () => {
+        const nextIssue = await toggleFavoriteIssue(runtimeConfig, csrfToken, {
+          issueNumber: BigInt(Number(issueNumber)),
+          ownerName: owner,
+          projectName,
+        });
+        setIssue(toProjectIssueDetailView(nextIssue));
       }}
       onStateChange={async (state) => {
         const nextIssue = await updateIssueState(runtimeConfig, csrfToken, {

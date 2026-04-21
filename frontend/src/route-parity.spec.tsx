@@ -28,6 +28,7 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain("fullPath: '/projects'");
     expect(routeTreeSource).toContain("fullPath: '/orgs'");
     expect(routeTreeSource).toContain("fullPath: '/user/editform'");
+    expect(routeTreeSource).toContain("fullPath: '/user/issues'");
     expect(routeTreeSource).toContain("fullPath: '/verify/$loginId/$verificationCode'");
     expect(routeTreeSource).toContain("fullPath: '/login'");
     expect(routeTreeSource).toContain("fullPath: '/register'");
@@ -54,6 +55,9 @@ describe("file-route parity harness", () => {
 
     expect(issueListRouteSource).not.toContain("PlaceholderPage");
     expect(issueDetailRouteSource).not.toContain("PlaceholderPage");
+    expect(issueDetailRouteSource).toContain("voteIssueComment");
+    expect(issueDetailRouteSource).toContain("unvoteIssueComment");
+    expect(issueDetailRouteSource).toContain("onCommentVoteToggle");
   });
 
   it("requires a real project code browser route instead of a placeholder page", () => {
@@ -89,6 +93,15 @@ describe("file-route parity harness", () => {
 
     expect(organizationIssueRouteSource).not.toContain("PlaceholderPage");
     expect(organizationIssueRouteSource).toContain("listOrganizationIssues");
+  });
+
+  it("requires a real user issue route instead of a placeholder page", () => {
+    const userIssueRoutePath = path.resolve(__dirname, "routes/user/issues/route.tsx");
+
+    expect(fs.existsSync(userIssueRoutePath)).toBe(true);
+    const userIssueRouteSource = fs.readFileSync(userIssueRoutePath, "utf8");
+    expect(userIssueRouteSource).not.toContain("PlaceholderPage");
+    expect(userIssueRouteSource).toContain("listUserIssues");
   });
 
   it("keeps the public home title and entry CTA/navigation order stable", () => {

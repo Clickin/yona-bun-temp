@@ -54,6 +54,7 @@ service PilotService {
   rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse) {}
   rpc ListOrganizationIssues(ListOrganizationIssuesRequest) returns (ListOrganizationIssuesResponse) {}
   rpc ListProjectIssues(ListProjectIssuesRequest) returns (ListProjectIssuesResponse) {}
+  rpc ListUserIssues(ListUserIssuesRequest) returns (ListUserIssuesResponse) {}
   rpc ReadIssueDetail(ReadIssueDetailRequest) returns (ReadIssueDetailResponse) {}
   rpc UpdateIssueState(UpdateIssueStateRequest) returns (ReadIssueDetailResponse) {}
   rpc CreateIssue(CreateIssueRequest) returns (ReadIssueDetailResponse) {}
@@ -67,6 +68,9 @@ service PilotService {
   rpc UnwatchIssue(IssueParticipationRequest) returns (ReadIssueDetailResponse) {}
   rpc VoteIssue(IssueParticipationRequest) returns (ReadIssueDetailResponse) {}
   rpc UnvoteIssue(IssueParticipationRequest) returns (ReadIssueDetailResponse) {}
+  rpc VoteIssueComment(IssueCommentParticipationRequest) returns (ReadIssueDetailResponse) {}
+  rpc UnvoteIssueComment(IssueCommentParticipationRequest) returns (ReadIssueDetailResponse) {}
+  rpc ToggleFavoriteIssue(IssueParticipationRequest) returns (ReadIssueDetailResponse) {}
   rpc AssignIssue(AssignIssueRequest) returns (ReadIssueDetailResponse) {}
   rpc UnassignIssue(IssueParticipationRequest) returns (ReadIssueDetailResponse) {}
   rpc ShareIssue(IssueShareRequest) returns (ReadIssueDetailResponse) {}
@@ -185,6 +189,8 @@ message ProjectIssueListItem {
   uint32 voter_count = 10;
   uint32 watcher_count = 11;
   repeated IssueLabel labels = 12;
+  string owner_name = 13;
+  string project_name = 14;
 }
 
 message ListProjectIssuesResponse {
@@ -235,6 +241,27 @@ message ListOrganizationIssuesResponse {
   string organization_name = 1;
   repeated OrganizationIssueProjectOption visible_projects = 2;
   repeated OrganizationIssueListItem items = 3;
+  uint32 page_num = 4;
+  uint32 page_size = 5;
+  uint32 total_count = 6;
+  uint32 open_issue_count = 7;
+  uint32 closed_issue_count = 8;
+}
+
+message ListUserIssuesRequest {
+  string state = 1;
+  string filter = 2;
+  string query = 3;
+  string order_by = 4;
+  string order_dir = 5;
+  uint32 page_num = 6;
+  uint32 page_size = 7;
+}
+
+message ListUserIssuesResponse {
+  string state = 1;
+  string filter = 2;
+  repeated ProjectIssueListItem items = 3;
   uint32 page_num = 4;
   uint32 page_size = 5;
   uint32 total_count = 6;
@@ -781,6 +808,7 @@ message ReadIssueDetailResponse {
   bool viewer_is_direct_sharer = 27;
   bool viewer_has_inherited_share = 28;
   bool viewer_can_manage_sharers = 29;
+  bool is_favorited = 30;
 }
 
 message IssueSharer {
@@ -839,6 +867,16 @@ message IssueComment {
   bool viewer_can_update = 7;
   bool viewer_can_delete = 8;
   repeated IssueAttachment attachments = 9;
+  uint32 voter_count = 10;
+  bool viewer_has_voted = 11;
+  repeated IssueCommentVoter voters = 12;
+}
+
+message IssueCommentVoter {
+  int64 user_id = 1;
+  string login_id = 2;
+  string user_label = 3;
+  string avatar_url = 4;
 }
 
 message IssueTimelineItem {
@@ -905,6 +943,13 @@ message UpdateIssueCommentRequest {
 }
 
 message DeleteIssueCommentRequest {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+  int64 comment_id = 4;
+}
+
+message IssueCommentParticipationRequest {
   string owner_name = 1;
   string project_name = 2;
   int64 issue_number = 3;

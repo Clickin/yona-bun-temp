@@ -31,6 +31,7 @@ pub struct IssueRecord {
     pub updated_label: String,
     pub voter_count: u32,
     pub watcher_count: u32,
+    pub is_favorited: bool,
     pub is_watching: bool,
     pub has_voted: bool,
     pub labels: Vec<IssueLabelRecord>,
@@ -118,6 +119,35 @@ pub struct OrganizationIssueListFilter {
     pub page_num: u32,
     pub project_names: Vec<String>,
     pub state: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UserIssueListFilter {
+    pub filter: String,
+    pub order_by: String,
+    pub order_dir: String,
+    pub page_num: u32,
+    pub page_size: u32,
+    pub query: Option<String>,
+    pub state: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UserIssueCandidateRecord {
+    pub issue_id: i64,
+    pub item: ProjectIssueListItemRecord,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UserIssueListRecord {
+    pub closed_issue_count: u32,
+    pub filter: String,
+    pub items: Vec<ProjectIssueListItemRecord>,
+    pub open_issue_count: u32,
+    pub page_num: u32,
+    pub page_size: u32,
+    pub state: String,
+    pub total_count: u32,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -230,6 +260,17 @@ pub struct IssueCommentRecord {
     pub contents_markdown: String,
     pub created_label: String,
     pub id: i64,
+    pub viewer_has_voted: bool,
+    pub voter_count: u32,
+    pub voters: Vec<IssueCommentVoterRecord>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IssueCommentVoterRecord {
+    pub email_address: String,
+    pub login_id: String,
+    pub user_id: i64,
+    pub user_label: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -562,6 +603,12 @@ pub struct ToggleFavoriteProjectResult {
     pub favorited: bool,
     pub owner_name: String,
     pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ToggleFavoriteIssueResult {
+    pub favorited: bool,
+    pub issue_id: i64,
 }
 
 pub type AppUserInput = CreateUserInput;

@@ -27,9 +27,11 @@ import {
   DeleteWorkspaceEmailRequestSchema,
   EnrollOrganizationRequestSchema,
   EnrollProjectRequestSchema,
+  IssueCommentParticipationRequestSchema,
   ListOrganizationIssuesRequestSchema,
   ListOrganizationsRequestSchema,
   ListProjectsRequestSchema,
+  ListUserIssuesRequestSchema,
   PilotService,
   ResetApiTokenRequestSchema,
   ResetVisitedProjectsRequestSchema,
@@ -81,6 +83,7 @@ import {
   type ListProjectLabelCategoriesResponse,
   type ListOrganizationIssuesResponse,
   type ListProjectIssuesResponse,
+  type ListUserIssuesResponse,
   type ListProjectLabelsResponse,
   type ListProjectMilestonesResponse,
   type MassUpdateIssuesResponse,
@@ -146,6 +149,16 @@ export interface OrganizationIssueListOptions {
   orderDir?: string;
   pageNum?: number;
   projectNames?: string[];
+  state?: string;
+}
+
+export interface UserIssueListOptions {
+  filter?: string;
+  orderBy?: string;
+  orderDir?: string;
+  pageNum?: number;
+  pageSize?: number;
+  query?: string;
   state?: string;
 }
 
@@ -391,6 +404,24 @@ export async function listProjectIssues(
   );
 }
 
+export async function listUserIssues(
+  runtimeConfig: RuntimeConfig,
+  input: UserIssueListOptions = {},
+  fetchImpl: typeof fetch = fetch,
+): Promise<ListUserIssuesResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).listUserIssues(
+    create(ListUserIssuesRequestSchema, {
+      filter: input.filter ?? "",
+      orderBy: input.orderBy ?? "",
+      orderDir: input.orderDir ?? "",
+      pageNum: input.pageNum ?? 1,
+      pageSize: input.pageSize ?? 0,
+      query: input.query ?? "",
+      state: input.state ?? "",
+    }),
+  );
+}
+
 export async function readIssueDetail(
   runtimeConfig: RuntimeConfig,
   ownerName: string,
@@ -534,6 +565,42 @@ export async function unvoteIssue(
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return createPilotClient(runtimeConfig, fetchImpl).unvoteIssue(
+    create(IssueParticipationRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function voteIssueComment(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof IssueCommentParticipationRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).voteIssueComment(
+    create(IssueCommentParticipationRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function unvoteIssueComment(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof IssueCommentParticipationRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).unvoteIssueComment(
+    create(IssueCommentParticipationRequestSchema, input),
+    { headers: { "x-csrf-token": csrfToken } },
+  );
+}
+
+export async function toggleFavoriteIssue(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: MessageInitShape<typeof IssueParticipationRequestSchema>,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadIssueDetailResponse> {
+  return createPilotClient(runtimeConfig, fetchImpl).toggleFavoriteIssue(
     create(IssueParticipationRequestSchema, input),
     { headers: { "x-csrf-token": csrfToken } },
   );

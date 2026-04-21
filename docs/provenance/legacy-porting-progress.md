@@ -37,7 +37,7 @@ Interpretation:
 | Foundation / DB / runtime               | [~] Mostly implemented    | Schema, migrations, runtime, RPC, assets are strong; production migration/import/export is not.                          |
 | Auth / Workspace                        | [~] Partially implemented | Core account and settings flows exist; remember-me/admin approval/guest/OAuth/LDAP remain.                               |
 | Organization / Project core             | [~] Partially implemented | CRUD, members, enrollment, watch/favorite basics exist; project admin surfaces remain.                                   |
-| Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/label/milestone/sharer/org issue list exist; mention/favorite/comment vote/REST remain. |
+| Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists and favorite issue exist; mention/direct comment-vote route/REST remain. |
 | VCS / Code hosting                      | [~] Started               | Read-only Git code browser exists; smart HTTP, history, raw/image/download, branch admin, and provisioning remain.       |
 | Pull Request / Review                   | [ ] Mostly missing        | PR routes are placeholders.                                                                                              |
 | Board / Posting                         | [ ] Mostly missing        | Board/post routes are placeholders.                                                                                      |
@@ -94,8 +94,8 @@ Interpretation:
 - [x] Watched project notification preference basics
 - [ ] Public profile route `/:user`
 - [ ] User activity statistics
-- [ ] Favorite issue management
-- [ ] User aggregate issue list
+- [x] Favorite issue management
+- [x] User aggregate issue list
 
 ## Organization
 
@@ -163,15 +163,16 @@ Interpretation:
 - [x] Private issue read/comment ACL for directly shared users
 - [x] Parent-shared child issue read-only inheritance
 - [x] Organization issue aggregate list
-- [ ] Comment vote
+- [x] Comment vote
+- [ ] Legacy direct comment-vote POST routes
 - [ ] Mention autocomplete
 - [ ] Mention notification semantics
-- [ ] Shared-with-me issue filter
+- [x] Shared-with-me issue filter
 - [ ] Sharable user autocomplete/search
 - [ ] Issue sharer timeline events
 - [ ] Issue sharer notifications
-- [ ] Favorite issue
-- [ ] User aggregate issue list
+- [x] Favorite issue
+- [x] User aggregate issue list
 - [ ] Issue Excel export
 - [ ] REST issue API parity
 

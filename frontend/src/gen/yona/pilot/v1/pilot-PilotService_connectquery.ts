@@ -250,6 +250,11 @@ export const listOrganizationIssues = PilotService.method.listOrganizationIssues
 export const listProjectIssues = PilotService.method.listProjectIssues;
 
 /**
+ * @generated from rpc yona.pilot.v1.PilotService.ListUserIssues
+ */
+export const listUserIssues = PilotService.method.listUserIssues;
+
+/**
  * @generated from rpc yona.pilot.v1.PilotService.ReadIssueDetail
  */
 export const readIssueDetail = PilotService.method.readIssueDetail;
@@ -313,6 +318,21 @@ export const voteIssue = PilotService.method.voteIssue;
  * @generated from rpc yona.pilot.v1.PilotService.UnvoteIssue
  */
 export const unvoteIssue = PilotService.method.unvoteIssue;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.VoteIssueComment
+ */
+export const voteIssueComment = PilotService.method.voteIssueComment;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.UnvoteIssueComment
+ */
+export const unvoteIssueComment = PilotService.method.unvoteIssueComment;
+
+/**
+ * @generated from rpc yona.pilot.v1.PilotService.ToggleFavoriteIssue
+ */
+export const toggleFavoriteIssue = PilotService.method.toggleFavoriteIssue;
 
 /**
  * @generated from rpc yona.pilot.v1.PilotService.AssignIssue

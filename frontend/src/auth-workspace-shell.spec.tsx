@@ -456,6 +456,109 @@ describe("auth and workspace views", () => {
     expect(html).not.toContain(">Delete<");
   });
 
+  it("renders the legacy favorite issue star beside the issue title", () => {
+    const html = renderIssueDetailPage(
+      {
+        isFavorited: true,
+        viewerCanComment: true,
+      },
+      {
+        onFavoriteToggle: async () => undefined,
+      },
+    );
+
+    expect(html).toContain("Shared issue");
+    expect(html).toContain("favorite-issue");
+    expect(html).toContain("starred");
+    expect(html).toContain('aria-label="Unfavorite issue"');
+  });
+
+  it("renders issue comment agreement count, voters, and agree action", () => {
+    const html = renderIssueDetailPage(
+      {
+        viewerCanComment: true,
+        timeline: [
+          {
+            comment: {
+              authorLabel: "Owner User",
+              contentsHtml: "<p>Useful comment</p>",
+              contentsMarkdown: "Useful comment",
+              createdLabel: "now",
+              id: 10,
+              viewerCanDelete: false,
+              viewerCanUpdate: false,
+              viewerHasVoted: false,
+              voterCount: 2,
+              voters: [
+                {
+                  avatarUrl: "https://cdn.yona/avatar-guest.png",
+                  loginId: "guest",
+                  userId: 2,
+                  userLabel: "Guest User",
+                },
+              ],
+            },
+            createdLabel: "now",
+            eventType: "",
+            id: 10,
+            kind: "comment",
+          },
+        ],
+      },
+      {
+        onCommentVoteToggle: async () => undefined,
+      },
+    );
+
+    expect(html).toContain("2 Agreements");
+    expect(html).toContain("Guest User");
+    expect(html).toContain("comment-vote");
+    expect(html).toContain('aria-label="Agree with comment"');
+    expect(html).toContain("vote-heart-off");
+  });
+
+  it("renders voted issue comment state as withdraw action", () => {
+    const html = renderIssueDetailPage(
+      {
+        viewerCanComment: true,
+        timeline: [
+          {
+            comment: {
+              authorLabel: "Owner User",
+              contentsHtml: "<p>Already agreed</p>",
+              contentsMarkdown: "Already agreed",
+              createdLabel: "now",
+              id: 11,
+              viewerCanDelete: false,
+              viewerCanUpdate: false,
+              viewerHasVoted: true,
+              voterCount: 1,
+              voters: [
+                {
+                  avatarUrl: "https://cdn.yona/avatar-door.png",
+                  loginId: "door",
+                  userId: 3,
+                  userLabel: "Door User",
+                },
+              ],
+            },
+            createdLabel: "now",
+            eventType: "",
+            id: 11,
+            kind: "comment",
+          },
+        ],
+      },
+      {
+        onCommentVoteToggle: async () => undefined,
+      },
+    );
+
+    expect(html).toContain("1 Agreement");
+    expect(html).toContain('aria-label="Withdraw comment agreement"');
+    expect(html).toContain("vote-heart-on");
+  });
+
   it("creates centered avatar crop defaults and preview styles", () => {
     const crop = createDefaultAvatarCrop(640, 480);
     expect(crop).toEqual({
@@ -513,6 +616,7 @@ function renderIssueDetailPage(
     commentCount: 0,
     comments: [],
     hasVoted: false,
+    isFavorited: false,
     isWatching: false,
     issueNumber: 1,
     labels: [],

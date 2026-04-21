@@ -5,7 +5,9 @@ import type {
   ProjectDetailViewModel,
   ProjectIssueDetailViewModel,
   ProjectIssueListViewModel,
+  UserIssueListViewModel,
 } from "./-view-models";
+import { prefixBasePath } from "../runtime-config";
 
 function fallbackProjectDetail(): ProjectDetailViewModel {
   return {
@@ -112,7 +114,9 @@ export function ProjectIssueDetailPage(props: {
   onCommentDelete?: (commentId: number) => Promise<void>;
   onCommentSubmit?: (contentsMarkdown: string) => Promise<void>;
   onCommentUpdate?: (commentId: number, contentsMarkdown: string) => Promise<void>;
+  onCommentVoteToggle?: (commentId: number, viewerHasVoted: boolean) => Promise<void>;
   onDeleteIssue?: () => Promise<void>;
+  onFavoriteToggle?: () => Promise<void>;
   onShareIssue?: (loginId: string) => Promise<void>;
   onStateChange?: (state: string) => Promise<void>;
   onUnshareIssue?: (loginId: string) => Promise<void>;
@@ -128,7 +132,23 @@ export function ProjectIssueDetailPage(props: {
   return (
     <main className="app-shell">
       <p className="eyebrow">Yona Rust Project</p>
-      <h1>{issue?.title ?? "Issue"}</h1>
+      <h1>
+        {issue?.title ?? "Issue"}
+        {issue && props.onFavoriteToggle ? (
+          <button
+            aria-label={issue.isFavorited ? "Unfavorite issue" : "Favorite issue"}
+            className="favorite-issue"
+            onClick={() => void props.onFavoriteToggle?.()}
+            type="button"
+          >
+            <span
+              className={`${issue.isFavorited ? "starred " : ""}star material-icons va-text-top`}
+            >
+              star
+            </span>
+          </button>
+        ) : null}
+      </h1>
       <p>{`${detail.ownerName}/${detail.projectName}`}</p>
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <section>
@@ -212,6 +232,45 @@ export function ProjectIssueDetailPage(props: {
                   className="comment-body markdown-wrap"
                   dangerouslySetInnerHTML={{ __html: item.comment.contentsHtml }}
                 />
+                <div className="comment-vote-row">
+                  {item.comment.voterCount > 0 ? (
+                    <span className="comment-vote-count">
+                      {commentAgreementLabel(item.comment.voterCount)}
+                    </span>
+                  ) : null}
+                  {item.comment.voters.map((voter) => (
+                    <span className="comment-voter" key={voter.userId} title={voter.userLabel}>
+                      {voter.avatarUrl ? (
+                        <img alt={`${voter.userLabel} avatar`} src={voter.avatarUrl} />
+                      ) : null}
+                      <span>{voter.userLabel || voter.loginId}</span>
+                    </span>
+                  ))}
+                  {issue?.viewerCanComment && props.onCommentVoteToggle ? (
+                    <button
+                      aria-label={
+                        item.comment.viewerHasVoted
+                          ? "Withdraw comment agreement"
+                          : "Agree with comment"
+                      }
+                      className="comment-vote btn-transparent-with-fontsize-lineheight"
+                      onClick={() =>
+                        void props.onCommentVoteToggle?.(
+                          item.comment!.id,
+                          item.comment!.viewerHasVoted,
+                        )
+                      }
+                      title={item.comment.viewerHasVoted ? "Withdraw" : "Agree"}
+                      type="button"
+                    >
+                      <span
+                        className={`yobicon-hearts ${
+                          item.comment.viewerHasVoted ? "vote-heart-on" : "vote-heart-off"
+                        }`}
+                      />
+                    </button>
+                  ) : null}
+                </div>
                 {item.comment.viewerCanUpdate && props.onCommentUpdate ? (
                   <IssueCommentEditForm
                     commentId={item.comment.id}
@@ -237,6 +296,152 @@ export function ProjectIssueDetailPage(props: {
           <IssueCommentForm onSubmit={props.onCommentSubmit} />
         ) : null}
       </section>
+    </main>
+  );
+}
+
+function commentAgreementLabel(count: number): string {
+  return count === 1 ? "1 Agreement" : `${count} Agreements`;
+}
+
+export interface UserIssueListQuery {
+  filter: string;
+  orderBy: string;
+  orderDir: string;
+  pageNum: number;
+  query: string;
+  state: string;
+}
+
+export function UserIssueListPage(props: {
+  issueList: UserIssueListViewModel | null;
+  query: UserIssueListQuery;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const issueList = props.issueList;
+  const query = props.query;
+  const action = prefixBasePath(props.runtimeConfig.basePath, "/user/issues");
+  const filters = [
+    { label: "Assigned to me", value: "assigned" },
+    { label: "Authored by me", value: "authored" },
+    { label: "Commented by me", value: "commented" },
+    { label: "Mentioned of me", value: "mentioned" },
+    { label: "Shared with me", value: "shared" },
+    { label: "Favorite", value: "favorite" },
+  ];
+
+  return (
+    <main className="app-shell">
+      <p className="eyebrow">Yona Rust User Issues</p>
+      <h1>Issue List</h1>
+      <div className="row-fluid issue-list-wrap">
+        <aside className="left-menu span2 span-hard-wrap">
+          <ul className="lst-stacked unstyled">
+            {filters.map((filter) => (
+              <li
+                className={query.filter === filter.value ? "active" : undefined}
+                key={filter.value}
+              >
+                <a href={`${action}?filter=${filter.value}&state=${query.state}`}>
+                  <span className={`${filter.value}-issue`}>{filter.label}</span>
+                  {filter.value === "favorite" && issueList ? (
+                    <span>{` (${issueList.openIssueCount})`}</span>
+                  ) : null}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <form action={action} id="search" method="get" name="search">
+            <input name="filter" type="hidden" value={query.filter} />
+            <input name="orderBy" type="hidden" value={query.orderBy} />
+            <input name="orderDir" type="hidden" value={query.orderDir} />
+            <input name="state" type="hidden" value={query.state} />
+            <div className="search myissues-search-input">
+              <div className="search-bar">
+                <input
+                  className="textbox full"
+                  defaultValue={query.query}
+                  name="query"
+                  placeholder="Search issues"
+                  type="text"
+                />
+                <button className="search-btn" type="submit">
+                  Search
+                </button>
+              </div>
+            </div>
+          </form>
+        </aside>
+        <section className="span10 span-hard-wrap">
+          <ul className="nav nav-tabs nm">
+            {(["open", "closed"] as const).map((state) => (
+              <li className={query.state === state ? "active" : undefined} key={state}>
+                <a href={`${action}?filter=${query.filter}&state=${state}&query=${query.query}`}>
+                  {state === "open" ? "Open" : "Closed"}
+                  <span className="num-badge">
+                    {state === "open"
+                      ? (issueList?.openIssueCount ?? 0)
+                      : (issueList?.closedIssueCount ?? 0)}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          <div className="filter-wrap small-heights">
+            <a
+              className="filter"
+              href={`${action}?filter=${query.filter}&state=${query.state}&orderBy=dueDate&orderDir=desc`}
+            >
+              Due date
+            </a>
+            <a
+              className="filter"
+              href={`${action}?filter=${query.filter}&state=${query.state}&orderBy=updatedDate&orderDir=desc`}
+            >
+              Updated date
+            </a>
+            <a
+              className="filter"
+              href={`${action}?filter=${query.filter}&state=${query.state}&orderBy=createdDate&orderDir=desc`}
+            >
+              Created date
+            </a>
+            <a
+              className="filter"
+              href={`${action}?filter=${query.filter}&state=${query.state}&orderBy=numOfComments&orderDir=desc`}
+            >
+              Comments
+            </a>
+          </div>
+          <p>{`Total ${issueList?.totalCount ?? 0}`}</p>
+          {(issueList?.items ?? []).length === 0 ? (
+            <p>No issues found.</p>
+          ) : (
+            <ul>
+              {(issueList?.items ?? []).map((item) => (
+                <li key={`${item.ownerName}/${item.projectName}/${item.issueNumber}`}>
+                  <a
+                    href={buildProjectHref(
+                      props.runtimeConfig,
+                      item.ownerName,
+                      item.projectName,
+                      `issue/${item.issueNumber}`,
+                    )}
+                  >
+                    {item.title}
+                  </a>
+                  <span>{`${item.ownerName}/${item.projectName}`}</span>
+                  <span>{item.state}</span>
+                  <span>{`Author: ${item.authorLabel || "Unknown"}`}</span>
+                  <span>{`Assignee: ${item.assigneeLabel || "none"}`}</span>
+                  <span>{`Comments: ${item.commentCount}`}</span>
+                  <span>{item.updatedLabel}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </main>
   );
 }

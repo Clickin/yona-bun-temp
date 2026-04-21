@@ -2,29 +2,31 @@ use crate::repo_types::{
     AppUserInput, AppUserRecord, AttachmentRecord, CreateIssueCommentInput, CreateIssueInput,
     CreateOrganizationInput, CreateProjectInput, CreateProjectLabelCategoryInput,
     CreateProjectLabelInput, CreateUserInput, IssueAttachmentRecord, IssueCommentRecord,
-    IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter, IssueMilestoneRecord, IssueRecord,
-    IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, MassUpdateIssuesInput,
-    MilestoneListFilter, MilestoneMutationInput, OrganizationAuthorizationRecord,
-    OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
-    OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
-    OrganizationMemberRecord, OrganizationRecord, OrganizationViewerRecord,
-    ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord, ProjectIssueListItemRecord,
-    ProjectIssueListRecord, ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord,
-    ProjectMenuSettingsRecord, ProjectMilestoneSummaryRecord, ProjectRecord, ProjectViewerRecord,
+    IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter,
+    IssueMilestoneRecord, IssueRecord, IssueShareStatus, IssueSharerRecord,
+    IssueTimelineItemRecord, MassUpdateIssuesInput, MilestoneListFilter, MilestoneMutationInput,
+    OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
+    OrganizationIssueListFilter, OrganizationIssueListRecord, OrganizationIssueProjectOptionRecord,
+    OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationRecord,
+    OrganizationViewerRecord, ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord,
+    ProjectIssueListItemRecord, ProjectIssueListRecord, ProjectListEntry,
+    ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
+    ProjectMilestoneSummaryRecord, ProjectRecord, ProjectViewerRecord, ToggleFavoriteIssueResult,
     ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
     UpdateOrganizationInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
-    UpdateProjectLabelInput, WatchedProjectNotificationsRecord, WorkspaceEmailRecord,
-    WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
-    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    UpdateProjectLabelInput, UserIssueCandidateRecord, UserIssueListFilter,
+    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
+    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
-    assignee, attachment, comment_thread, email, favorite_organization, favorite_project, issue,
-    issue_comment, issue_event, issue_issue_label, issue_label, issue_label_category, issue_sharer,
-    issue_voter, linked_account, milestone, n4user, organization, organization_user, posting,
-    posting_issue_label, project, project_menu_setting, project_user, pull_request, recent_project,
-    role, site_admin, user_credential, user_enrolled_organization, user_enrolled_project,
-    user_project_notification, user_setting, user_verification, watch,
+    assignee, attachment, comment_thread, email, favorite_issue, favorite_organization,
+    favorite_project, issue, issue_comment, issue_comment_voter, issue_event, issue_issue_label,
+    issue_label, issue_label_category, issue_sharer, issue_voter, linked_account, mention,
+    milestone, n4user, organization, organization_user, posting, posting_issue_label, project,
+    project_menu_setting, project_user, pull_request, recent_project, role, site_admin,
+    user_credential, user_enrolled_organization, user_enrolled_project, user_project_notification,
+    user_setting, user_verification, watch,
 };
 use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
@@ -409,6 +411,17 @@ impl AppRepository {
         project_name: &str,
         issue_number: i64,
     ) -> Result<Option<IssueRecord>, DbErr> {
+        self.read_issue_detail_for_viewer(owner_name, project_name, issue_number, None)
+            .await
+    }
+
+    pub async fn read_issue_detail_for_viewer(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        viewer_id: Option<i64>,
+    ) -> Result<Option<IssueRecord>, DbErr> {
         let Some(project) = self
             .read_project_by_owner_and_name(owner_name, project_name)
             .await?
@@ -424,7 +437,7 @@ impl AppRepository {
 
         match issue {
             Some(issue) => self
-                .issue_record_from_model(issue, &project, None)
+                .issue_record_from_model(issue, &project, viewer_id)
                 .await
                 .map(Some),
             None => Ok(None),
@@ -482,6 +495,149 @@ impl AppRepository {
             .await?;
 
         Ok(())
+    }
+
+    pub async fn is_issue_favorited_by(&self, issue_id: i64, user_id: i64) -> Result<bool, DbErr> {
+        Ok(favorite_issue::Entity::find()
+            .filter(favorite_issue::Column::IssueId.eq(Some(issue_id)))
+            .filter(favorite_issue::Column::UserId.eq(Some(user_id)))
+            .one(&self.db)
+            .await?
+            .is_some())
+    }
+
+    pub async fn toggle_favorite_issue(
+        &self,
+        issue_id: i64,
+        user_id: i64,
+    ) -> Result<ToggleFavoriteIssueResult, DbErr> {
+        if let Some(existing) = favorite_issue::Entity::find()
+            .filter(favorite_issue::Column::IssueId.eq(Some(issue_id)))
+            .filter(favorite_issue::Column::UserId.eq(Some(user_id)))
+            .one(&self.db)
+            .await?
+        {
+            favorite_issue::Entity::delete_by_id(existing.id)
+                .exec(&self.db)
+                .await?;
+            return Ok(ToggleFavoriteIssueResult {
+                favorited: false,
+                issue_id,
+            });
+        }
+
+        favorite_issue::ActiveModel {
+            id: NotSet,
+            issue_id: Set(Some(issue_id)),
+            user_id: Set(Some(user_id)),
+        }
+        .insert(&self.db)
+        .await?;
+
+        Ok(ToggleFavoriteIssueResult {
+            favorited: true,
+            issue_id,
+        })
+    }
+
+    pub async fn list_user_issue_candidates(
+        &self,
+        user_id: i64,
+        filter: UserIssueListFilter,
+    ) -> Result<Vec<UserIssueCandidateRecord>, DbErr> {
+        let normalized_filter = normalize_identity(&filter.filter);
+        let assignee_ids = assignee::Entity::find()
+            .filter(assignee::Column::UserId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect::<HashSet<_>>();
+        let commented_issue_ids = issue_comment::Entity::find()
+            .filter(issue_comment::Column::AuthorId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| row.issue_id)
+            .collect::<HashSet<_>>();
+        let mentioned_issue_ids = mention::Entity::find()
+            .filter(mention::Column::UserId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter(|row| {
+                row.resource_type
+                    .as_deref()
+                    .is_some_and(|value| normalize_identity(value) == "issue")
+            })
+            .filter_map(|row| row.resource_id.and_then(|value| value.parse::<i64>().ok()))
+            .collect::<HashSet<_>>();
+        let shared_issue_ids = issue_sharer::Entity::find()
+            .filter(issue_sharer::Column::UserId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| row.issue_id)
+            .collect::<HashSet<_>>();
+        let favorite_issue_ids = favorite_issue::Entity::find()
+            .filter(favorite_issue::Column::UserId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| row.issue_id)
+            .collect::<HashSet<_>>();
+
+        let rows = issue::Entity::find().all(&self.db).await?;
+        let mut matches = Vec::new();
+        for row in rows {
+            if row.is_draft.unwrap_or_default() != 0 {
+                continue;
+            }
+            let issue_id = row.id;
+            let filter_matches = match normalized_filter.as_str() {
+                "authored" => row.author_id == Some(user_id),
+                "commented" => commented_issue_ids.contains(&issue_id),
+                "mentioned" => mentioned_issue_ids.contains(&issue_id),
+                "shared" => shared_issue_ids.contains(&issue_id),
+                "favorite" => favorite_issue_ids.contains(&issue_id),
+                _ => row
+                    .assignee_id
+                    .is_some_and(|assignee_id| assignee_ids.contains(&assignee_id)),
+            };
+            if !filter_matches {
+                continue;
+            }
+            if issue_state_from_raw(row.state) != normalize_identity(&filter.state) {
+                continue;
+            }
+            if let Some(query) = filter.query.as_deref() {
+                if !self.issue_model_matches_text_filter(&row, query).await? {
+                    continue;
+                }
+            }
+            let Some(project_id) = row.project_id else {
+                continue;
+            };
+            let Some(project) = self.read_project_by_id(project_id).await? else {
+                continue;
+            };
+            matches.push((row, project));
+        }
+
+        sort_issue_models_for_organization(&mut matches, &filter.order_by, &filter.order_dir);
+
+        let mut candidates = Vec::new();
+        for (row, project) in matches {
+            let issue_id = row.id;
+            candidates.push(UserIssueCandidateRecord {
+                issue_id,
+                item: self
+                    .project_issue_list_item_from_model(row, &project)
+                    .await?,
+            });
+        }
+
+        Ok(candidates)
     }
 
     pub async fn list_project_issues(
@@ -937,6 +1093,16 @@ impl AppRepository {
             .filter(issue_voter::Column::IssueId.eq(model.id))
             .exec(&self.db)
             .await?;
+        for comment in issue_comment::Entity::find()
+            .filter(issue_comment::Column::IssueId.eq(Some(model.id)))
+            .all(&self.db)
+            .await?
+        {
+            issue_comment_voter::Entity::delete_many()
+                .filter(issue_comment_voter::Column::IssueCommentId.eq(comment.id))
+                .exec(&self.db)
+                .await?;
+        }
         issue_comment::Entity::delete_many()
             .filter(issue_comment::Column::IssueId.eq(Some(model.id)))
             .exec(&self.db)
@@ -1052,6 +1218,10 @@ impl AppRepository {
             .filter(attachment::Column::ContainerId.eq(comment_id))
             .exec(&self.db)
             .await?;
+        issue_comment_voter::Entity::delete_many()
+            .filter(issue_comment_voter::Column::IssueCommentId.eq(comment_id))
+            .exec(&self.db)
+            .await?;
         issue_comment::Entity::delete_by_id(comment_id)
             .exec(&self.db)
             .await?;
@@ -1112,6 +1282,29 @@ impl AppRepository {
             .exec(&self.db)
             .await?;
         Ok(())
+    }
+
+    pub async fn vote_issue_comment(&self, comment_id: i64, user_id: i64) -> Result<(), DbErr> {
+        if issue_comment_voter::Entity::find_by_id((comment_id, user_id))
+            .one(&self.db)
+            .await?
+            .is_none()
+        {
+            issue_comment_voter::ActiveModel {
+                issue_comment_id: Set(comment_id),
+                user_id: Set(user_id),
+            }
+            .insert(&self.db)
+            .await?;
+        }
+        Ok(())
+    }
+
+    pub async fn unvote_issue_comment(&self, comment_id: i64, user_id: i64) -> Result<bool, DbErr> {
+        let result = issue_comment_voter::Entity::delete_by_id((comment_id, user_id))
+            .exec(&self.db)
+            .await?;
+        Ok(result.rows_affected > 0)
     }
 
     pub async fn assign_issue(
@@ -3885,6 +4078,10 @@ impl AppRepository {
                 .is_some(),
             None => false,
         };
+        let is_favorited = match viewer_id {
+            Some(user_id) => self.is_issue_favorited_by(model.id, user_id).await?,
+            None => false,
+        };
         let is_watching = match viewer_id {
             Some(user_id) => self.is_issue_watched_by(model.id, user_id).await?,
             None => false,
@@ -3902,6 +4099,7 @@ impl AppRepository {
             comments,
             has_voted,
             id: model.id,
+            is_favorited,
             is_watching,
             issue_number: model.number.unwrap_or_default(),
             labels,
@@ -4436,7 +4634,7 @@ impl AppRepository {
     async fn list_issue_comments(
         &self,
         issue_id: i64,
-        _viewer_id: Option<i64>,
+        viewer_id: Option<i64>,
     ) -> Result<Vec<IssueCommentRecord>, DbErr> {
         let rows = issue_comment::Entity::find()
             .filter(issue_comment::Column::IssueId.eq(Some(issue_id)))
@@ -4446,7 +4644,7 @@ impl AppRepository {
             .await?;
         let mut comments = Vec::new();
         for row in rows {
-            comments.push(self.issue_comment_record(row).await?);
+            comments.push(self.issue_comment_record(row, viewer_id).await?);
         }
         Ok(comments)
     }
@@ -4454,7 +4652,11 @@ impl AppRepository {
     async fn issue_comment_record(
         &self,
         row: issue_comment::Model,
+        viewer_id: Option<i64>,
     ) -> Result<IssueCommentRecord, DbErr> {
+        let voters = self.list_issue_comment_voters(row.id).await?;
+        let viewer_has_voted = viewer_id
+            .is_some_and(|viewer_id| voters.iter().any(|voter| voter.user_id == viewer_id));
         Ok(IssueCommentRecord {
             attachments: self.list_issue_attachments("ISSUE_COMMENT", row.id).await?,
             author_id: row.author_id,
@@ -4465,7 +4667,40 @@ impl AppRepository {
                 .await?,
             created_label: format_workspace_date_label(row.created_date),
             id: row.id,
+            viewer_has_voted,
+            voter_count: voters.len() as u32,
+            voters,
         })
+    }
+
+    async fn list_issue_comment_voters(
+        &self,
+        comment_id: i64,
+    ) -> Result<Vec<IssueCommentVoterRecord>, DbErr> {
+        let rows = issue_comment_voter::Entity::find()
+            .filter(issue_comment_voter::Column::IssueCommentId.eq(comment_id))
+            .all(&self.db)
+            .await?;
+        let mut voters = Vec::new();
+        for row in rows {
+            if let Some(user) = n4user::Entity::find_by_id(row.user_id)
+                .one(&self.db)
+                .await?
+            {
+                voters.push(IssueCommentVoterRecord {
+                    email_address: user.email.unwrap_or_default(),
+                    login_id: user.login_id.unwrap_or_default(),
+                    user_id: user.id,
+                    user_label: user.name.unwrap_or_default(),
+                });
+            }
+        }
+        voters.sort_by(|left, right| {
+            left.login_id
+                .cmp(&right.login_id)
+                .then(left.user_id.cmp(&right.user_id))
+        });
+        Ok(voters)
     }
 
     async fn list_issue_timeline_items(
@@ -4484,7 +4719,7 @@ impl AppRepository {
             items.push((
                 created,
                 sort_id,
-                IssueTimelineItemRecord::Comment(self.issue_comment_record(row).await?),
+                IssueTimelineItemRecord::Comment(self.issue_comment_record(row, viewer_id).await?),
             ));
         }
         for row in issue_event::Entity::find()

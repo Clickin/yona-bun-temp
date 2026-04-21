@@ -14,6 +14,7 @@ import type {
   ProjectDetailViewModel,
   ProjectMembersViewModel,
   AuthUiCapabilitiesViewModel,
+  UserIssueListViewModel,
   WorkspaceOverviewViewModel,
 } from "./routes/-view-models";
 import {
@@ -23,6 +24,7 @@ import {
   readOrganizationContainer,
   readOrganizationDetail,
   listOrganizationIssues,
+  listUserIssues,
   readOrganizationMembers,
   readCodeBrowser,
   listOrganizations,
@@ -378,6 +380,8 @@ export function toProjectIssueListView(
         name: label.name,
       })),
       milestoneTitle: item.milestoneTitle,
+      ownerName: item.ownerName,
+      projectName: item.projectName,
       state: item.state,
       title: item.title,
       updatedLabel: item.updatedLabel,
@@ -388,6 +392,39 @@ export function toProjectIssueListView(
     pageNum: response.pageNum,
     pageSize: response.pageSize,
     projectName: response.projectName,
+    totalCount: response.totalCount,
+  };
+}
+
+export function toUserIssueListView(
+  response: Awaited<ReturnType<typeof listUserIssues>>,
+): UserIssueListViewModel {
+  return {
+    closedIssueCount: response.closedIssueCount,
+    filter: response.filter,
+    items: response.items.map((item) => ({
+      assigneeLabel: item.assigneeLabel,
+      authorLabel: item.authorLabel,
+      commentCount: Number(item.commentCount),
+      issueNumber: Number(item.issueNumber),
+      labels: item.labels.map((label) => ({
+        color: label.color,
+        id: Number(label.id),
+        name: label.name,
+      })),
+      milestoneTitle: item.milestoneTitle,
+      ownerName: item.ownerName,
+      projectName: item.projectName,
+      state: item.state,
+      title: item.title,
+      updatedLabel: item.updatedLabel,
+      voterCount: item.voterCount,
+      watcherCount: item.watcherCount,
+    })),
+    openIssueCount: response.openIssueCount,
+    pageNum: response.pageNum,
+    pageSize: response.pageSize,
+    state: response.state,
     totalCount: response.totalCount,
   };
 }
@@ -451,8 +488,17 @@ export function toProjectIssueDetailView(
       id: Number(comment.id),
       viewerCanDelete: comment.viewerCanDelete,
       viewerCanUpdate: comment.viewerCanUpdate,
+      viewerHasVoted: comment.viewerHasVoted,
+      voterCount: comment.voterCount,
+      voters: comment.voters.map((voter) => ({
+        avatarUrl: voter.avatarUrl,
+        loginId: voter.loginId,
+        userId: Number(voter.userId),
+        userLabel: voter.userLabel,
+      })),
     })),
     hasVoted: response.hasVoted,
+    isFavorited: response.isFavorited,
     isWatching: response.isWatching,
     issueNumber: Number(response.issueNumber),
     labels: response.labels.map((label) => ({
@@ -479,6 +525,14 @@ export function toProjectIssueDetailView(
             id: Number(item.comment.id),
             viewerCanDelete: item.comment.viewerCanDelete,
             viewerCanUpdate: item.comment.viewerCanUpdate,
+            viewerHasVoted: item.comment.viewerHasVoted,
+            voterCount: item.comment.voterCount,
+            voters: item.comment.voters.map((voter) => ({
+              avatarUrl: voter.avatarUrl,
+              loginId: voter.loginId,
+              userId: Number(voter.userId),
+              userLabel: voter.userLabel,
+            })),
           }
         : undefined,
       createdLabel: item.createdLabel,

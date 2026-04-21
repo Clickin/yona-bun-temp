@@ -227,6 +227,8 @@ export interface ProjectIssueListItemViewModel {
   issueNumber: number;
   labels: Array<{ color: string; id: number; name: string }>;
   milestoneTitle: string;
+  ownerName: string;
+  projectName: string;
   state: string;
   title: string;
   updatedLabel: string;
@@ -240,6 +242,17 @@ export interface ProjectIssueListViewModel {
   pageNum: number;
   pageSize: number;
   projectName: string;
+  totalCount: number;
+}
+
+export interface UserIssueListViewModel {
+  closedIssueCount: number;
+  filter: string;
+  items: ProjectIssueListItemViewModel[];
+  openIssueCount: number;
+  pageNum: number;
+  pageSize: number;
+  state: string;
   totalCount: number;
 }
 
@@ -259,8 +272,12 @@ export interface ProjectIssueDetailViewModel {
     id: number;
     viewerCanDelete: boolean;
     viewerCanUpdate: boolean;
+    viewerHasVoted: boolean;
+    voterCount: number;
+    voters: Array<{ avatarUrl: string; loginId: string; userId: number; userLabel: string }>;
   }>;
   hasVoted: boolean;
+  isFavorited: boolean;
   isWatching: boolean;
   issueNumber: number;
   labels: Array<{ color: string; id: number; name: string }>;
@@ -278,6 +295,9 @@ export interface ProjectIssueDetailViewModel {
       id: number;
       viewerCanDelete: boolean;
       viewerCanUpdate: boolean;
+      viewerHasVoted: boolean;
+      voterCount: number;
+      voters: Array<{ avatarUrl: string; loginId: string; userId: number; userLabel: string }>;
     };
     createdLabel: string;
     eventType: string;
