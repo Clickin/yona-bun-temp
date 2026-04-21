@@ -49,5 +49,8 @@ export default defineConfig(({ mode }) => {
       port: 3101,
       proxy: buildBackendProxy(basePath, backendTarget),
     },
+    build: {
+      chunkSizeWarningLimit: 700,
+    },
   };
 });
