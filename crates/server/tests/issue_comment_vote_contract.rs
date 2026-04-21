@@ -126,6 +126,34 @@ async fn rpc(
         .unwrap()
 }
 
+async fn direct_comment_vote(
+    app: axum::Router,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    issue_number: i64,
+    comment_id: &serde_json::Value,
+    action: &str,
+) -> Response<Body> {
+    let comment_id = comment_id
+        .as_str()
+        .map(str::to_string)
+        .or_else(|| comment_id.as_i64().map(|value| value.to_string()))
+        .expect("comment id");
+    let mut builder = Request::builder().method(Method::POST).uri(format!(
+        "/yona/owner/projectYobi/issue/{issue_number}/comment/{comment_id}/{action}"
+    ));
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+
+    app.oneshot(builder.body(Body::empty()).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i64) {
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let response = rpc(
@@ -460,4 +488,150 @@ async fn issue_comment_vote_contract_allows_direct_share_and_denies_inherited_sh
     )
     .await;
     assert_eq!(inherited_share_vote.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn issue_comment_vote_legacy_post_routes_redirect_and_preserve_unvote_policy() {
+    let (app, _, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (guest_csrf, guest_cookie, _) = register_user(app.clone(), "guest").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(app.clone(), &owner_cookie, &owner_csrf, "Public issue").await;
+    let commented =
+        create_comment(app.clone(), &owner_cookie, &owner_csrf, 1, "direct route").await;
+    let comment_id = commented["comments"][0]["id"].clone();
+    let comment_id_string = comment_id.as_str().unwrap().to_string();
+
+    let vote = direct_comment_vote(
+        app.clone(),
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+        1,
+        &comment_id,
+        "vote",
+    )
+    .await;
+    assert_eq!(vote.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        vote.headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some(format!("/yona/owner/projectYobi/issue/1#comment-{comment_id_string}").as_str())
+    );
+
+    let detail = response_json(
+        rpc(
+            app.clone(),
+            "ReadIssueDetail",
+            Some(&guest_cookie),
+            None,
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(json_u64(&detail["comments"][0], "voterCount"), 1);
+    assert!(json_bool(&detail["comments"][0], "viewerHasVoted"));
+
+    let unvote = direct_comment_vote(
+        app.clone(),
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+        1,
+        &comment_id,
+        "unvote",
+    )
+    .await;
+    assert_eq!(unvote.status(), StatusCode::SEE_OTHER);
+
+    let not_voted = direct_comment_vote(
+        app,
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+        1,
+        &comment_id,
+        "unvote",
+    )
+    .await;
+    assert_eq!(not_voted.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn issue_comment_vote_legacy_post_routes_reject_anonymous_wrong_issue_and_inherited_share() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (guest_csrf, guest_cookie, _) = register_user(app.clone(), "guest").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "private").await;
+    create_issue(app.clone(), &owner_cookie, &owner_csrf, "Parent issue").await;
+    let parent_comment =
+        create_comment(app.clone(), &owner_cookie, &owner_csrf, 1, "parent direct").await;
+    let parent_comment_id = parent_comment["comments"][0]["id"].clone();
+
+    let anonymous =
+        direct_comment_vote(app.clone(), None, None, 1, &parent_comment_id, "vote").await;
+    assert_eq!(anonymous.status(), StatusCode::UNAUTHORIZED);
+
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    let parent = repo
+        .read_issue_detail("owner", "projectYobi", 1)
+        .await
+        .unwrap()
+        .unwrap();
+    issue::ActiveModel {
+        id: NotSet,
+        title: Set(Some("Child issue".to_string())),
+        created_date: Set(None),
+        updated_date: Set(None),
+        author_id: Set(Some(owner_id)),
+        author_login_id: Set(Some("owner".to_string())),
+        author_name: Set(Some("owner".to_string())),
+        project_id: Set(Some(project.id)),
+        number: Set(Some(2)),
+        num_of_comments: Set(Some(0)),
+        state: Set(Some(0)),
+        due_date: Set(None),
+        milestone_id: Set(None),
+        assignee_id: Set(None),
+        parent_id: Set(Some(parent.id)),
+        weight: Set(None),
+        updated_by_author_id: Set(None),
+        is_draft: Set(None),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let child_comment =
+        create_comment(app.clone(), &owner_cookie, &owner_csrf, 2, "child direct").await;
+    let child_comment_id = child_comment["comments"][0]["id"].clone();
+
+    let wrong_issue = direct_comment_vote(
+        app.clone(),
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        2,
+        &parent_comment_id,
+        "vote",
+    )
+    .await;
+    assert_eq!(wrong_issue.status(), StatusCode::NOT_FOUND);
+
+    share_issue(app.clone(), &owner_cookie, &owner_csrf, 1).await;
+    let inherited_share = direct_comment_vote(
+        app,
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+        2,
+        &child_comment_id,
+        "vote",
+    )
+    .await;
+    assert_eq!(inherited_share.status(), StatusCode::FORBIDDEN);
 }

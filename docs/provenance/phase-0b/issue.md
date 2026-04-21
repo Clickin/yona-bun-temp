@@ -69,7 +69,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 - Legacy `VoteApp.voteComment` and `IssueComment.addVoter` add `issue_comment_voter(issue_comment_id, user_id)` idempotently. Rust implements this as ConnectRPC `VoteIssueComment` and returns refreshed `ReadIssueDetailResponse`.
 - Legacy `VoteApp.unvoteComment` fails when the current user has not voted the comment. Rust preserves that policy through ConnectRPC `UnvoteIssueComment` returning NOT_FOUND for a missing voter row.
 - Legacy `partial_comment.scala.html` renders voter count/names/avatars and a heart state in the issue comment row. Rust projects `IssueComment.voterCount`, `viewerHasVoted`, and `voters`, then renders the count/list and vote/unvote heart control in the current React issue detail timeline row.
-- Legacy direct POST routes `/:user/:project/issue/:number/comment/:commentId/vote` and `/unvote` are not mounted in this phase because the canonical surface is ConnectRPC-first; direct route compatibility remains a separate follow-up from REST API parity.
+- Legacy direct POST routes `/:user/:project/issue/:number/comment/:commentId/vote` and `/unvote` are mounted as compatibility wrappers around the same policy, then redirect back to `/:user/:project/issue/:number#comment-:commentId`.
 
 ## Phase 2A Evidence
 
@@ -112,14 +112,13 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | Legacy comment vote source | `yona-original/app/controllers/VoteApp.java#voteComment`, `#unvoteComment`, `yona-original/app/models/IssueComment.java#addVoter`          |
 | Legacy comment UI         | `yona-original/app/views/issue/partial_comment.scala.html`, `yona-original/public/javascripts/service/yobi.issue.View.js`                  |
 | Contract expansion        | `proto/yona/pilot/v1/pilot.proto` `VoteIssueComment`, `UnvoteIssueComment`, `IssueCommentVoter`, comment vote projection fields            |
-| Backend behavior          | `crates/persistence/src/repo.rs`, `crates/persistence/src/repo_types.rs`, `crates/server/src/lib.rs`                                        |
+| Backend behavior          | `crates/persistence/src/repo.rs`, `crates/persistence/src/repo_types.rs`, `crates/server/src/lib.rs`, direct POST compatibility routes       |
 | UI route surface          | `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/-issue-views.tsx`, `frontend/src/app-view-models.ts` |
 | Regression tests          | `cargo test -p yona-rust-pilot-server --test issue_comment_vote_contract`; `pnpm --dir frontend test -- auth-workspace-shell.spec.tsx route-parity.spec.tsx` |
 
 ## Remaining Phase 2 Follow-ups
 
 - REST `/-_-api/v1` issue API parity.
-- Legacy direct comment-vote POST route compatibility.
 - Sharable user autocomplete/search, Issue Sharer changed timeline/notification semantics, and mention autocomplete/creation/notification semantics.
 
 ## Shared Surface Notes

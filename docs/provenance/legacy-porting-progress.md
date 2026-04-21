@@ -37,7 +37,7 @@ Interpretation:
 | Foundation / DB / runtime               | [~] Mostly implemented    | Schema, migrations, runtime, RPC, assets are strong; production migration/import/export is not.                          |
 | Auth / Workspace                        | [~] Partially implemented | Core account and settings flows exist; remember-me/admin approval/guest/OAuth/LDAP remain.                               |
 | Organization / Project core             | [~] Partially implemented | CRUD, members, enrollment, watch/favorite basics exist; project admin surfaces remain.                                   |
-| Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists and favorite issue exist; mention/direct comment-vote route/REST remain. |
+| Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists and favorite issue exist; mention/REST remain. |
 | VCS / Code hosting                      | [~] Started               | Read-only Git code browser exists; smart HTTP, history, raw/image/download, branch admin, and provisioning remain.       |
 | Pull Request / Review                   | [ ] Mostly missing        | PR routes are placeholders.                                                                                              |
 | Board / Posting                         | [ ] Mostly missing        | Board/post routes are placeholders.                                                                                      |
@@ -164,7 +164,7 @@ Interpretation:
 - [x] Parent-shared child issue read-only inheritance
 - [x] Organization issue aggregate list
 - [x] Comment vote
-- [ ] Legacy direct comment-vote POST routes
+- [x] Legacy direct comment-vote POST routes
 - [ ] Mention autocomplete
 - [ ] Mention notification semantics
 - [x] Shared-with-me issue filter

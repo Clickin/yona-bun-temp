@@ -170,6 +170,12 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let milestone_close_backend = route_backend.clone();
     let milestone_close_session_manager = session_manager.clone();
     let milestone_close_base_path = base_path.clone();
+    let comment_vote_backend = route_backend.clone();
+    let comment_vote_session_manager = session_manager.clone();
+    let comment_vote_base_path = base_path.clone();
+    let comment_unvote_backend = route_backend.clone();
+    let comment_unvote_session_manager = session_manager.clone();
+    let comment_unvote_base_path = base_path.clone();
 
     let mut base_router = Router::new()
         .route(
@@ -489,6 +495,44 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         milestone_close_session_manager.clone(),
                         milestone_close_backend.clone(),
                         milestone_close_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/issue/{number}/comment/{comment_id}/vote",
+            post(move |headers: HeaderMap, Path((owner, project, number, comment_id)): Path<(String, String, i64, i64)>| {
+                async move {
+                    direct_issue_comment_vote(
+                        headers,
+                        owner,
+                        project,
+                        number,
+                        comment_id,
+                        "vote",
+                        comment_vote_session_manager.clone(),
+                        comment_vote_backend.clone(),
+                        comment_vote_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/issue/{number}/comment/{comment_id}/unvote",
+            post(move |headers: HeaderMap, Path((owner, project, number, comment_id)): Path<(String, String, i64, i64)>| {
+                async move {
+                    direct_issue_comment_vote(
+                        headers,
+                        owner,
+                        project,
+                        number,
+                        comment_id,
+                        "unvote",
+                        comment_unvote_session_manager.clone(),
+                        comment_unvote_backend.clone(),
+                        comment_unvote_base_path.clone(),
                     )
                     .await
                 }
@@ -1388,6 +1432,98 @@ async fn direct_delete_issue_label_category(
 
 fn redirect_to(base_path: &str, path: &str) -> Response {
     Redirect::to(&base_path_href(base_path, path)).into_response()
+}
+
+fn direct_status_from_connect_error(error: ConnectError) -> StatusCode {
+    let message = error.to_string().to_ascii_lowercase();
+    if message.contains("missing authenticated") {
+        StatusCode::UNAUTHORIZED
+    } else if message.contains("not found") {
+        StatusCode::NOT_FOUND
+    } else if message.contains("permission")
+        || message.contains("forbidden")
+        || message.contains("not allowed")
+        || message.contains("invalid csrf")
+    {
+        StatusCode::FORBIDDEN
+    } else if message.contains("invalid") || message.contains("required") {
+        StatusCode::BAD_REQUEST
+    } else {
+        StatusCode::INTERNAL_SERVER_ERROR
+    }
+}
+
+async fn direct_issue_comment_vote(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    issue_number: i64,
+    comment_id: i64,
+    action: &str,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let session = match session_manager.read_session_from_headers(&headers) {
+        Some(session) if session.user_id.is_some() => session,
+        _ => return StatusCode::UNAUTHORIZED.into_response(),
+    };
+    if require_valid_csrf(&session_manager, &headers, &session).is_err() {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    let actor = match require_authenticated_user(&repository, session.user_id).await {
+        Ok(actor) => actor,
+        Err(error) => return direct_status_from_connect_error(error).into_response(),
+    };
+    let access = match read_issue_access(
+        &repository,
+        &owner,
+        &project,
+        issue_number,
+        Some(actor.id),
+    )
+    .await
+    {
+        Ok(access) => access,
+        Err(error) => return direct_status_from_connect_error(error).into_response(),
+    };
+    if !access.viewer_can_comment() {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    if !access
+        .issue
+        .comments
+        .iter()
+        .any(|comment| comment.id == comment_id)
+    {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+
+    match action {
+        "vote" => {
+            if repository
+                .vote_issue_comment(comment_id, actor.id)
+                .await
+                .is_err()
+            {
+                return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+            }
+        }
+        "unvote" => match repository.unvote_issue_comment(comment_id, actor.id).await {
+            Ok(true) => {}
+            Ok(false) => return StatusCode::NOT_FOUND.into_response(),
+            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        },
+        _ => return StatusCode::BAD_REQUEST.into_response(),
+    }
+
+    redirect_to(
+        &base_path,
+        &format!("/{owner}/{project}/issue/{issue_number}#comment-{comment_id}"),
+    )
 }
 
 fn normalize_milestone_state(value: &str) -> Result<String, ConnectError> {

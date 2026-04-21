@@ -1357,7 +1357,7 @@ max_file_size = 2147483454             # application.maxFileSize
 
 **추가 필요한 RPC 메서드** (Phase 2~6에서 추가):
 
-- Issue follow-up: sharable user autocomplete/search, issue sharer timeline/notification semantics, mention autocomplete/notification semantics, legacy direct comment-vote POST route compatibility, REST issue API parity
+- Issue follow-up: sharable user autocomplete/search, issue sharer timeline/notification semantics, mention autocomplete/notification semantics, REST issue API parity
 - Board: CreatePosting, UpdatePosting, DeletePosting, ListProjectPostings, ReadPostingDetail, CreatePostingComment
 - Label follow-up: copyLabels Phase 6, REST label/project API parity
 - Milestone follow-up: REST milestone API parity, migration export, search milestone result type
