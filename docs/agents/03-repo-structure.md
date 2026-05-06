@@ -9,9 +9,8 @@
 
 ## Canonical Workspace
 
-- `frontend/`: React SPA
 - `frontend/`: REST API client, TanStack Query state, React SPA
-- `proto/`: existing ConnectRPC snapshot/transition surface
+- `proto/`: REST pivot 이전 message schema snapshot; runtime RPC source가 아님
 - `crates/server/`: runtime bootstrap, HTTP/REST, asset delivery, session/auth bootstrap
 - `crates/domain/`: parity-first domain behavior, ACL, invariant
 - `crates/persistence/`: DB access, repositories, dialect handling

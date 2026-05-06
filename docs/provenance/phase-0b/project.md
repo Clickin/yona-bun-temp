@@ -32,8 +32,8 @@
 | Legacy source | Intent | Rust translation target |
 | --- | --- | --- |
 | `ProjectTest.create` | project create persists identity, overview, scope, VCS, and derived site URL semantics | `crates/persistence` repository helper + `crates/domain` create service |
-| `ProjectTest.findByNameAndOwner` and `Project.exists` | public routing keys are owner plus project name | identifiers in `proto` plus lookup helper in `crates/persistence` |
-| `ProjectApp.projects` and `project/list.scala.html` | `/projects` is a public, searchable, paginated directory entry surface and must not fall back to an unsupported route | `frontend` route shell + `PilotService.ListProjects` query + browser smoke |
+| `ProjectTest.findByNameAndOwner` and `Project.exists` | public routing keys are owner plus project name | REST path identifiers plus lookup helper in `crates/persistence` |
+| `ProjectApp.projects` and `project/list.scala.html` | `/projects` is a public, searchable, paginated directory entry surface and must not fall back to an unsupported route | `frontend` route shell + `GET /api/v1/projects` query + browser smoke |
 | `ProjectTest.projectNameChangeable` | rename stays owner-scoped and duplicate project names reject under the same owner | `crates/persistence` conflict helper + `crates/domain` update service |
 | `ProjectApp.newProject` | create under personal owner is allowed; org owner create requires org-admin authority | `crates/domain` create service + `crates/server` mutation contract test |
 | `ProjectApp.project` | detail read is permission filtered and records recent visit semantics | `crates/domain` detail resolution + `frontend` route/UI test |
@@ -57,4 +57,4 @@
 
 - `R0-3` now covers project create/detail/settings, visibility-aware read, guest-only enrollment request/cancel, read-only member summary, and workspace favorite/recent linkage in `repo root`.
 - The Wave 0 route-foundation slice also mounts the public `/projects` directory in `frontend` through file routes under `src/routes/projects/**`, with route-parity tests and a shell-routing Playwright smoke pack.
-- Project detail read records recent visits for authenticated viewers, and `/me` now reflects favorite/recent project state through `ReadWorkspaceOverview`.
+- Project detail read records recent visits for authenticated viewers, and `/me` now reflects favorite/recent project state through `GET /api/v1/workspace`.

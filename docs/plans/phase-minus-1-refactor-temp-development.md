@@ -1,12 +1,12 @@
 # Phase -1: refactor temp development
 
-Status: active planning
+Status: implementation complete; final integration verification pending
 
 ## Purpose
 
 Refactor the existing temporary implementation to match the REST pivot SPEC before starting the next new feature phase.
 
-This phase accepts that existing ConnectRPC/proto-based work can be rewritten. The goal is not to preserve the current transport implementation. The goal is to preserve legacy Yona functional/UX parity while moving the canonical application API to `/api/v1` REST JSON and the frontend server-state boundary to TanStack Query.
+This phase accepted that existing ConnectRPC/proto-based work could be rewritten. The goal was not to preserve the temporary transport implementation. The goal was to preserve legacy Yona functional/UX parity while moving the canonical application API to `/api/v1` REST JSON and the frontend server-state boundary to TanStack Query.
 
 ## Scope
 
@@ -16,7 +16,7 @@ This phase accepts that existing ConnectRPC/proto-based work can be rewritten. T
 - Migrate implemented application flows from ConnectRPC wrappers to REST-backed query/mutation hooks.
 - Keep legacy direct routes only where they represent Play form/deep-link compatibility.
 - Keep `/-_-api/v1/**` separate as legacy external API compatibility, implemented only with legacy external-tool evidence.
-- Remove ConnectRPC/proto dependencies after the migrated flows and tests no longer need them, or quarantine them as transition-only with an explicit removal checklist.
+- Remove ConnectRPC runtime/frontend dependencies after the migrated flows and tests no longer need them. Keep `proto/` only as a historical message schema snapshot.
 
 ## Initial Refactor Packets
 
@@ -41,8 +41,9 @@ This phase accepts that existing ConnectRPC/proto-based work can be rewritten. T
    - Keep raw/download/image/history/Smart HTTP as explicit follow-ups unless implemented in this phase.
 
 6. RPC retirement decision
-   - Remove generated frontend ConnectRPC clients and server registration if no migrated flow needs them.
-   - If removal is too large for this phase, document the remaining RPC calls and assign a removal packet before any new feature phase.
+   - Completed: generated frontend ConnectRPC clients/dependencies and server `/rpc` registration were removed.
+   - Completed: server proto build now generates message types without `connectrpc-build`; no runtime ConnectRPC dependency remains.
+   - Test-only note: debug builds expose `/api/v1/_pilot/{method_name}` as a local compatibility harness for old contract tests. It is not the application contract and must not be used by frontend/runtime code.
 
 ## Exit Criteria
 
@@ -51,4 +52,19 @@ This phase accepts that existing ConnectRPC/proto-based work can be rewritten. T
 - Frontend server state uses TanStack Query rather than ad hoc ConnectRPC wrappers.
 - Legacy direct routes and legacy external REST routes are clearly separated from the application REST API.
 - Tests cover the migrated flows at REST contract, route authorization, frontend unit, and Playwright smoke levels.
-- No new feature phase begins while ConnectRPC remains an unscoped dependency for implemented application flows.
+- No runtime ConnectRPC or frontend ConnectRPC dependency remains for implemented application flows.
+
+## Final Endpoint Evidence
+
+- REST foundation: `GET /api/v1/session`, `GET /api/v1/auth/capabilities`, shared REST error envelopes, CSRF header policy, typed frontend `restFetch`, query keys, and Query provider.
+- Auth/workspace: `/api/v1/auth/*`, `/api/v1/workspace`, `/api/v1/workspace/emails/*`, `/api/v1/workspace/notifications`, `/api/v1/workspace/recent-projects`.
+- Organization/project: `/api/v1/projects`, `/api/v1/organizations`, `/api/v1/organizations/:organizationName/**`, `/api/v1/owners/:ownerName/projects/:projectName/**`.
+- Issues: `/api/v1/projects/:ownerName/:projectName/issues/**`, `/api/v1/organizations/:organizationName/issues`, `/api/v1/user/issues`, `/api/v1/owners/:ownerName/projects/:projectName/issues/:issueNumber/**`.
+- Labels/milestones: `/api/v1/owners/:ownerName/projects/:projectName/labels/**`, `/api/v1/owners/:ownerName/projects/:projectName/milestones/**`.
+- Code browser: `GET /api/v1/projects/:ownerName/:projectName/code`.
+
+## Completion Evidence
+
+- `rg -n "createConnectTransport|createPilotClient|@connectrpc|/rpc/yona\\.pilot|connectrpc|rpcBaseUrl|VITE_YONA_RPC_BASE_URL|/rpc" frontend crates` returns no matches on the integration branch.
+- `cargo test -p yona-rust-pilot-server --test router_contract --test db_router_contract --test rest_contract --test auth_workspace_contract --test org_project_contract --test assets_contract --test issue_core_contract --test issue_label_contract --test issue_sharer_contract --test issue_comment_vote_contract --test milestone_contract --test organization_issue_contract --test user_issue_favorite_contract --test code_browser_contract --test runtime_config_contract` passed in the RPC retirement lane.
+- `pnpm --dir frontend check`, targeted frontend Vitest, and REST-only Playwright route smoke passed in the RPC retirement lane.

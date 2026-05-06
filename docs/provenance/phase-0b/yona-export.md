@@ -54,7 +54,7 @@ The Node tool calls these external surfaces:
 
 - Build as a migration/export CLI or migration tool surface, not as SPA internals.
 - Keep schema validation explicit and versioned.
-- Separate external compatibility adapters from ConnectRPC app-facing APIs.
+- Separate external compatibility adapters from `/api/v1` app-facing REST APIs.
 - Add dry-run, resumable import reports, duplicate policy, and attachment checksum validation before claiming production migration parity.
 
 ## Guardrail

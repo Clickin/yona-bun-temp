@@ -50,7 +50,7 @@
 - 2차 canonical implementation baseline은 [repo root](/G:/programming/yona)다.
 - 3차 migration/reference material은 `reference/mixed-code/**`다. historical spike evidence는 `reference/spikes/**`에 둔다.
 - canonical frontend ownership은 [`frontend/`](/G:/programming/yona/frontend)에 둔다.
-- canonical application API contract는 REST JSON API(`/api/v1`)와 frontend typed API client/TanStack Query 경계에 둔다. `proto/`와 ConnectRPC는 기존 구현 snapshot/historical transition surface로만 다루며 새 기능의 기본 contract source가 아니다.
+- canonical application API contract는 REST JSON API(`/api/v1`)와 frontend typed API client/TanStack Query 경계에 둔다. `proto/`는 REST pivot 이전 message schema snapshot으로만 다루며 runtime ConnectRPC surface나 새 기능의 기본 contract source가 아니다.
 - 최소 ownership은 다음 경계로 고정한다.
   - [`crates/server`](/G:/programming/yona/crates/server): runtime bootstrap, HTTP/REST, asset delivery, session/auth bootstrap
   - [`crates/domain`](/G:/programming/yona/crates/domain): parity-first domain behavior, ACL, invariant

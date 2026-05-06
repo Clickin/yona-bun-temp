@@ -17,7 +17,7 @@
 
 ## Translation Rule
 
-- Legacy `CodeApp.codeBrowser` redirects to the default branch when a repository has `HEAD`; Rust keeps `/code` as the mounted SPA route and renders the default branch result directly from `ReadCodeBrowser`.
+- Legacy `CodeApp.codeBrowser` redirects to the default branch when a repository has `HEAD`; Rust keeps `/code` as the mounted SPA route and renders the default branch result directly from `GET /api/v1/projects/:owner/:project/code`.
 - Legacy repository metadata is translated through `crates/vcs` using the system `git` executable with explicit argv and `--git-dir`.
 - Rust repository location is `YONA_DATA/repo/<project_id>.git`, matching prior repository path hardening evidence while avoiding owner/project rename coupling.
 - Missing or empty repositories return `noHead` and render the legacy no-head empty repository state.
@@ -27,7 +27,7 @@
 
 | Evidence | Rust target |
 | --- | --- |
-| Contract expansion | `proto/yona/pilot/v1/pilot.proto` `ReadCodeBrowser` |
+| REST contract | `GET /api/v1/projects/:owner/:project/code` guarded by `crates/server/tests/code_browser_contract.rs` |
 | Git read adapter | `crates/vcs/src/lib.rs` |
 | Server behavior | `crates/server/src/lib.rs` |
 | UI route surface | `frontend/src/routes/$owner/$projectName/code/**`, `frontend/src/routes/-code-views.tsx` |
