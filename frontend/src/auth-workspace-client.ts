@@ -28,10 +28,8 @@ import {
   EnrollOrganizationRequestSchema,
   EnrollProjectRequestSchema,
   IssueCommentParticipationRequestSchema,
-  ListOrganizationIssuesRequestSchema,
   ListOrganizationsRequestSchema,
   ListProjectsRequestSchema,
-  ListUserIssuesRequestSchema,
   PilotService,
   ResetApiTokenRequestSchema,
   ResetVisitedProjectsRequestSchema,
@@ -41,16 +39,14 @@ import {
   IssueParticipationRequestSchema,
   IssueShareRequestSchema,
   ListProjectLabelsRequestSchema,
-  ListProjectIssuesRequestSchema,
   ListProjectMilestonesRequestSchema,
-  MilestoneStateMutationRequestSchema,
   MassUpdateIssuesRequestSchema,
+  MilestoneStateMutationRequestSchema,
   ReadOrganizationAdminRequestSchema,
   ReadOrganizationContainerRequestSchema,
   ReadOrganizationDetailRequestSchema,
   ReadOrganizationMembersRequestSchema,
   ReadOrganizationSettingsRequestSchema,
-  ReadIssueDetailRequestSchema,
   ReadProjectMilestoneRequestSchema,
   ReadProjectContainerRequestSchema,
   ReadProjectDetailRequestSchema,
@@ -107,6 +103,7 @@ import {
   type RecordRecentProjectVisitResponse,
   type ToggleFavoriteProjectResponse,
 } from "./gen/yona/pilot/v1/pilot_pb";
+import { restFetch } from "./api/rest-client";
 import { readCurrentSessionRest } from "./api/session";
 import { prefixBasePath, type RuntimeConfig } from "./runtime-config";
 
@@ -359,25 +356,112 @@ export async function listOrganizations(
   );
 }
 
+function encodeIssuePathSegment(value: string): string {
+  return encodeURIComponent(value);
+}
+
+function appendIssueQueryParam(
+  searchParams: URLSearchParams,
+  key: string,
+  value: Array<bigint | number | string> | bigint | number | string | null | undefined,
+) {
+  if (value === null || value === undefined) {
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      appendIssueQueryParam(searchParams, key, entry);
+    }
+    return;
+  }
+  if (typeof value === "string" && value.trim() === "") {
+    return;
+  }
+  searchParams.append(key, String(value));
+}
+
+function issueQueryString(
+  values: Record<string, Array<bigint | number | string> | bigint | number | string | null | undefined>,
+): string {
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(values)) {
+    appendIssueQueryParam(searchParams, key, value);
+  }
+  const query = searchParams.toString();
+  return query === "" ? "" : `?${query}`;
+}
+
+function projectIssuesRestPath(ownerName: string, projectName: string): string {
+  return `/projects/${encodeIssuePathSegment(ownerName)}/${encodeIssuePathSegment(projectName)}/issues`;
+}
+
+function projectIssueDetailRestPath(
+  ownerName: string,
+  projectName: string,
+  issueNumber: bigint | number,
+): string {
+  return `${projectIssuesRestPath(ownerName, projectName)}/${String(issueNumber)}`;
+}
+
+function issueMutationRestBody(
+  input:
+    | MessageInitShape<typeof CreateIssueRequestSchema>
+    | MessageInitShape<typeof UpdateIssueRequestSchema>,
+) {
+  return {
+    assigneeLoginId: input.assigneeLoginId ?? "",
+    attachmentIds: input.attachmentIds ?? [],
+    bodyMarkdown: input.bodyMarkdown ?? "",
+    labelIds: input.labelIds ?? [],
+    milestoneId: input.milestoneId && input.milestoneId !== 0n ? input.milestoneId : undefined,
+    title: input.title ?? "",
+  };
+}
+
+function issueCommentRestBody(
+  input:
+    | MessageInitShape<typeof CreateIssueCommentRequestSchema>
+    | MessageInitShape<typeof UpdateIssueCommentRequestSchema>,
+) {
+  return {
+    attachmentIds: input.attachmentIds ?? [],
+    contentsMarkdown: input.contentsMarkdown ?? "",
+  };
+}
+
+function massUpdateIssuesRestBody(input: MessageInitShape<typeof MassUpdateIssuesRequestSchema>) {
+  return {
+    addLabelIds: input.addLabelIds ?? [],
+    assigneeLoginId: input.assigneeLoginId ?? "",
+    assigneeUpdate: input.assigneeUpdate ?? false,
+    issueNumbers: input.issueNumbers ?? [],
+    milestoneId: input.milestoneId && input.milestoneId !== 0n ? input.milestoneId : undefined,
+    milestoneUpdate: input.milestoneUpdate ?? false,
+    removeLabelIds: input.removeLabelIds ?? [],
+    state: input.state ?? "",
+  };
+}
+
 export async function listOrganizationIssues(
   runtimeConfig: RuntimeConfig,
   organizationName: string,
   input: OrganizationIssueListOptions = {},
   fetchImpl: typeof fetch = fetch,
 ): Promise<ListOrganizationIssuesResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).listOrganizationIssues(
-    create(ListOrganizationIssuesRequestSchema, {
-      assigneeId: input.assigneeId ? BigInt(input.assigneeId) : 0n,
-      authorId: input.authorId ? BigInt(input.authorId) : 0n,
-      filter: input.filter ?? "",
-      itemsPerPage: input.itemsPerPage ?? 0,
-      orderBy: input.orderBy ?? "",
-      orderDir: input.orderDir ?? "",
-      organizationName,
+  return restFetch<ListOrganizationIssuesResponse>(
+    runtimeConfig,
+    `/organizations/${encodeIssuePathSegment(organizationName)}/issues${issueQueryString({
+      assigneeId: input.assigneeId,
+      authorId: input.authorId,
+      filter: input.filter,
+      itemsPerPage: input.itemsPerPage,
+      orderBy: input.orderBy,
+      orderDir: input.orderDir,
       pageNum: input.pageNum ?? 1,
-      projectNames: input.projectNames ?? [],
-      state: input.state ?? "",
-    }),
+      projectNames: input.projectNames,
+      state: input.state,
+    })}`,
+    { fetchImpl },
   );
 }
 
@@ -388,17 +472,17 @@ export async function listProjectIssues(
   input: ProjectIssueListOptions = {},
   fetchImpl: typeof fetch = fetch,
 ): Promise<ListProjectIssuesResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).listProjectIssues(
-    create(ListProjectIssuesRequestSchema, {
-      assigneeLoginId: input.assigneeLoginId ?? "",
-      authorLoginId: input.authorLoginId ?? "",
-      labelIds: input.labelIds?.map((value) => BigInt(value)) ?? [],
-      milestoneId: input.milestoneId ? BigInt(input.milestoneId) : 0n,
-      ownerName,
+  return restFetch<ListProjectIssuesResponse>(
+    runtimeConfig,
+    `${projectIssuesRestPath(ownerName, projectName)}${issueQueryString({
+      assigneeLoginId: input.assigneeLoginId,
+      authorLoginId: input.authorLoginId,
+      labelIds: input.labelIds,
+      milestoneId: input.milestoneId,
       pageNum: input.pageNum ?? 1,
-      projectName,
-      state: input.state ?? "",
-    }),
+      state: input.state,
+    })}`,
+    { fetchImpl },
   );
 }
 
@@ -407,16 +491,18 @@ export async function listUserIssues(
   input: UserIssueListOptions = {},
   fetchImpl: typeof fetch = fetch,
 ): Promise<ListUserIssuesResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).listUserIssues(
-    create(ListUserIssuesRequestSchema, {
-      filter: input.filter ?? "",
-      orderBy: input.orderBy ?? "",
-      orderDir: input.orderDir ?? "",
+  return restFetch<ListUserIssuesResponse>(
+    runtimeConfig,
+    `/user/issues${issueQueryString({
+      filter: input.filter,
+      orderBy: input.orderBy,
+      orderDir: input.orderDir,
       pageNum: input.pageNum ?? 1,
-      pageSize: input.pageSize ?? 0,
-      query: input.query ?? "",
-      state: input.state ?? "",
-    }),
+      pageSize: input.pageSize,
+      query: input.query,
+      state: input.state,
+    })}`,
+    { fetchImpl },
   );
 }
 
@@ -427,12 +513,10 @@ export async function readIssueDetail(
   issueNumber: bigint | number,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).readIssueDetail(
-    create(ReadIssueDetailRequestSchema, {
-      issueNumber: BigInt(issueNumber),
-      ownerName,
-      projectName,
-    }),
+  return restFetch<ReadIssueDetailResponse>(
+    runtimeConfig,
+    projectIssueDetailRestPath(ownerName, projectName, issueNumber),
+    { fetchImpl },
   );
 }
 
@@ -442,9 +526,15 @@ export async function updateIssueState(
   input: MessageInitShape<typeof UpdateIssueStateRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).updateIssueState(
-    create(UpdateIssueStateRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
+  return restFetch<ReadIssueDetailResponse>(
+    runtimeConfig,
+    `${projectIssueDetailRestPath(input.ownerName ?? "", input.projectName ?? "", input.issueNumber ?? 0n)}/state`,
+    {
+      body: { state: input.state ?? "" },
+      csrfToken,
+      fetchImpl,
+      method: "PUT",
+    },
   );
 }
 
@@ -454,9 +544,15 @@ export async function createIssue(
   input: MessageInitShape<typeof CreateIssueRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).createIssue(
-    create(CreateIssueRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
+  return restFetch<ReadIssueDetailResponse>(
+    runtimeConfig,
+    projectIssuesRestPath(input.ownerName ?? "", input.projectName ?? ""),
+    {
+      body: issueMutationRestBody(input),
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
   );
 }
 
@@ -466,9 +562,15 @@ export async function updateIssue(
   input: MessageInitShape<typeof UpdateIssueRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).updateIssue(
-    create(UpdateIssueRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
+  return restFetch<ReadIssueDetailResponse>(
+    runtimeConfig,
+    projectIssueDetailRestPath(input.ownerName ?? "", input.projectName ?? "", input.issueNumber ?? 0n),
+    {
+      body: issueMutationRestBody(input),
+      csrfToken,
+      fetchImpl,
+      method: "PUT",
+    },
   );
 }
 
@@ -478,9 +580,14 @@ export async function deleteIssue(
   input: MessageInitShape<typeof DeleteIssueRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<void> {
-  await createPilotClient(runtimeConfig, fetchImpl).deleteIssue(
-    create(DeleteIssueRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
+  await restFetch(
+    runtimeConfig,
+    projectIssueDetailRestPath(input.ownerName ?? "", input.projectName ?? "", input.issueNumber ?? 0n),
+    {
+      csrfToken,
+      fetchImpl,
+      method: "DELETE",
+    },
   );
 }
 
@@ -490,9 +597,15 @@ export async function createIssueComment(
   input: MessageInitShape<typeof CreateIssueCommentRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).createIssueComment(
-    create(CreateIssueCommentRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
+  return restFetch<ReadIssueDetailResponse>(
+    runtimeConfig,
+    `${projectIssueDetailRestPath(input.ownerName ?? "", input.projectName ?? "", input.issueNumber ?? 0n)}/comments`,
+    {
+      body: issueCommentRestBody(input),
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
   );
 }
 
@@ -502,9 +615,15 @@ export async function updateIssueComment(
   input: MessageInitShape<typeof UpdateIssueCommentRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).updateIssueComment(
-    create(UpdateIssueCommentRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
+  return restFetch<ReadIssueDetailResponse>(
+    runtimeConfig,
+    `${projectIssueDetailRestPath(input.ownerName ?? "", input.projectName ?? "", input.issueNumber ?? 0n)}/comments/${String(input.commentId ?? 0n)}`,
+    {
+      body: issueCommentRestBody(input),
+      csrfToken,
+      fetchImpl,
+      method: "PUT",
+    },
   );
 }
 
@@ -514,9 +633,14 @@ export async function deleteIssueComment(
   input: MessageInitShape<typeof DeleteIssueCommentRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).deleteIssueComment(
-    create(DeleteIssueCommentRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
+  return restFetch<ReadIssueDetailResponse>(
+    runtimeConfig,
+    `${projectIssueDetailRestPath(input.ownerName ?? "", input.projectName ?? "", input.issueNumber ?? 0n)}/comments/${String(input.commentId ?? 0n)}`,
+    {
+      csrfToken,
+      fetchImpl,
+      method: "DELETE",
+    },
   );
 }
 
@@ -646,9 +770,15 @@ export async function massUpdateIssues(
   input: MessageInitShape<typeof MassUpdateIssuesRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<MassUpdateIssuesResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).massUpdateIssues(
-    create(MassUpdateIssuesRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
+  return restFetch<MassUpdateIssuesResponse>(
+    runtimeConfig,
+    `${projectIssuesRestPath(input.ownerName ?? "", input.projectName ?? "")}/mass-update`,
+    {
+      body: massUpdateIssuesRestBody(input),
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
   );
 }
 

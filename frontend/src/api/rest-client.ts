@@ -52,6 +52,12 @@ async function parseJson(response: Response): Promise<unknown> {
   return JSON.parse(text) as unknown;
 }
 
+function stringifyJsonBody(body: unknown): string {
+  return JSON.stringify(body, (_key, value) =>
+    typeof value === "bigint" ? value.toString() : value,
+  );
+}
+
 export async function restFetch<T>(
   runtimeConfig: RuntimeConfig,
   path: string,
@@ -65,7 +71,7 @@ export async function restFetch<T>(
   let body: BodyInit | undefined;
   if (options.body !== undefined) {
     headers.set("Content-Type", "application/json");
-    body = JSON.stringify(options.body);
+    body = stringifyJsonBody(options.body);
   }
   if (options.csrfToken) {
     headers.set("x-csrf-token", options.csrfToken);

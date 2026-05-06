@@ -87,6 +87,31 @@ async fn rpc(
         .unwrap()
 }
 
+async fn rest(
+    app: axum::Router,
+    method: Method,
+    uri: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    payload: Option<serde_json::Value>,
+) -> Response<Body> {
+    let mut builder = Request::builder().method(method).uri(uri);
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+    let body = if let Some(payload) = payload {
+        builder = builder.header(http::header::CONTENT_TYPE, "application/json");
+        Body::from(payload.to_string())
+    } else {
+        Body::empty()
+    };
+
+    app.oneshot(builder.body(body).unwrap()).await.unwrap()
+}
+
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i64) {
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let response = rpc(
@@ -113,7 +138,7 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i6
 }
 
 #[tokio::test]
-async fn issue_core_contract_creates_reads_comments_and_sanitizes_markdown() {
+async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
 
@@ -133,17 +158,16 @@ async fn issue_core_contract_creates_reads_comments_and_sanitizes_markdown() {
     response_json(project).await;
 
     let created = response_json(
-        rpc(
+        rest(
             app.clone(),
-            "CreateIssue",
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
             Some(&cookie),
             Some(&csrf),
-            json!({
-                "ownerName": "owner",
-                "projectName": "projectYobi",
+            Some(json!({
                 "title": "Markdown issue",
                 "bodyMarkdown": "Hello **Yona** <script>alert(1)</script>"
-            }),
+            })),
         )
         .await,
     )
@@ -154,18 +178,30 @@ async fn issue_core_contract_creates_reads_comments_and_sanitizes_markdown() {
     assert!(created["bodyHtml"].as_str().unwrap().contains("<strong>Yona</strong>"));
     assert!(!created["bodyHtml"].as_str().unwrap().contains("<script>"));
 
-    let commented = response_json(
-        rpc(
+    let detail = response_json(
+        rest(
             app.clone(),
-            "CreateIssueComment",
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(detail["title"], "Markdown issue");
+
+    let commented = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/comments",
             Some(&cookie),
             Some(&csrf),
-            json!({
-                "ownerName": "owner",
-                "projectName": "projectYobi",
-                "issueNumber": "1",
+            Some(json!({
                 "contentsMarkdown": "A [safe](https://example.com) comment"
-            }),
+            })),
         )
         .await,
     )
@@ -177,24 +213,96 @@ async fn issue_core_contract_creates_reads_comments_and_sanitizes_markdown() {
         .unwrap()
         .contains("https://example.com"));
 
+    let updated_comment = response_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/comments/1",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "contentsMarkdown": "Edited comment"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(updated_comment["comments"][0]["contentsMarkdown"], "Edited comment");
+
+    let state_updated = response_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/state",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "state": "closed"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(state_updated["state"], "closed");
+
     let listed = response_json(
-        rpc(
-            app,
-            "ListProjectIssues",
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues?state=closed&pageNum=1",
             None,
             None,
-            json!({
-                "ownerName": "owner",
-                "projectName": "projectYobi",
-                "state": "open",
-                "pageNum": 1
-            }),
+            None,
         )
         .await,
     )
     .await;
     assert_eq!(listed["items"].as_array().unwrap().len(), 1);
     assert_eq!(listed["items"][0]["commentCount"], 1);
+
+    let deleted_comment = response_json(
+        rest(
+            app.clone(),
+            Method::DELETE,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/comments/1",
+            Some(&cookie),
+            Some(&csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(
+        deleted_comment
+            .get("comments")
+            .and_then(serde_json::Value::as_array)
+            .is_none_or(|comments| comments.is_empty())
+    );
+
+    let deleted_issue = response_json(
+        rest(
+            app.clone(),
+            Method::DELETE,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&cookie),
+            Some(&csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(deleted_issue["issueNumber"], "1");
+
+    let missing = rest(
+        app,
+        Method::GET,
+        "/yona/api/v1/projects/owner/projectYobi/issues/1",
+        Some(&cookie),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(missing.status(), StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
@@ -222,35 +330,32 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
     .await;
 
     let created = response_json(
-        rpc(
+        rest(
             app.clone(),
-            "CreateIssue",
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
             Some(&guest_cookie),
             Some(&guest_csrf),
-            json!({
-                "ownerName": "owner",
-                "projectName": "projectYobi",
+            Some(json!({
                 "title": "Public guest issue",
                 "bodyMarkdown": "body"
-            }),
+            })),
         )
         .await,
     )
     .await;
     assert_eq!(created["issueNumber"], "1");
 
-    let forbidden = rpc(
+    let forbidden = rest(
         app.clone(),
-        "UpdateIssue",
+        Method::PUT,
+        "/yona/api/v1/projects/owner/projectYobi/issues/1",
         Some(&outsider_cookie),
         Some(&outsider_csrf),
-        json!({
-            "ownerName": "owner",
-            "projectName": "projectYobi",
-            "issueNumber": "1",
+        Some(json!({
             "title": "forbidden",
             "bodyMarkdown": "forbidden"
-        }),
+        })),
     )
     .await;
     assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
@@ -265,18 +370,16 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
         .unwrap();
 
     let updated = response_json(
-        rpc(
+        rest(
             app.clone(),
-            "UpdateIssue",
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
             Some(&guest_cookie),
             Some(&guest_csrf),
-            json!({
-                "ownerName": "owner",
-                "projectName": "projectYobi",
-                "issueNumber": "1",
+            Some(json!({
                 "title": "edited by member",
                 "bodyMarkdown": "updated"
-            }),
+            })),
         )
         .await,
     )
@@ -284,17 +387,16 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
     assert_eq!(updated["title"], "edited by member");
 
     let mass_updated = response_json(
-        rpc(
+        rest(
             app,
-            "MassUpdateIssues",
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/mass-update",
             Some(&guest_cookie),
             Some(&guest_csrf),
-            json!({
-                "ownerName": "owner",
-                "projectName": "projectYobi",
+            Some(json!({
                 "issueNumbers": ["1"],
                 "state": "closed"
-            }),
+            })),
         )
         .await,
     )
