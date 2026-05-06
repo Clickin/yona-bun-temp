@@ -35,7 +35,6 @@ import {
   PilotService,
   ResetApiTokenRequestSchema,
   ResetVisitedProjectsRequestSchema,
-  ReadAuthUiCapabilitiesRequestSchema,
   ReadCodeBrowserRequestSchema,
   LeaveOrganizationRequestSchema,
   IssueParticipationRequestSchema,
@@ -107,6 +106,13 @@ import {
   type RecordRecentProjectVisitResponse,
   type ToggleFavoriteProjectResponse,
 } from "./gen/yona/pilot/v1/pilot_pb";
+import {
+  readAuthUiCapabilitiesRest,
+  registerWithPasswordRest,
+  signInWithPasswordRest,
+  signOutRest,
+  verifyUserRest,
+} from "./api/auth";
 import { readCurrentSessionRest } from "./api/session";
 import { prefixBasePath, type RuntimeConfig } from "./runtime-config";
 
@@ -256,9 +262,7 @@ export async function readAuthUiCapabilities(
   runtimeConfig: RuntimeConfig,
   fetchImpl: typeof fetch = fetch,
 ) {
-  return createPilotClient(runtimeConfig, fetchImpl).readAuthUiCapabilities(
-    create(ReadAuthUiCapabilitiesRequestSchema),
-  );
+  return readAuthUiCapabilitiesRest(runtimeConfig, fetchImpl);
 }
 
 export async function signInWithPassword(
@@ -267,10 +271,7 @@ export async function signInWithPassword(
   input: MessageInitShape<typeof SignInWithPasswordRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ) {
-  return createPilotClient(runtimeConfig, fetchImpl).signInWithPassword(
-    create(SignInWithPasswordRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return signInWithPasswordRest(runtimeConfig, csrfToken, input, fetchImpl);
 }
 
 export async function registerWithPassword(
@@ -279,10 +280,7 @@ export async function registerWithPassword(
   input: MessageInitShape<typeof RegisterWithPasswordRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ) {
-  return createPilotClient(runtimeConfig, fetchImpl).registerWithPassword(
-    create(RegisterWithPasswordRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return registerWithPasswordRest(runtimeConfig, csrfToken, input, fetchImpl);
 }
 
 export async function signOut(
@@ -290,9 +288,7 @@ export async function signOut(
   csrfToken: string,
   fetchImpl: typeof fetch = fetch,
 ) {
-  return createPilotClient(runtimeConfig, fetchImpl).signOut(create(SignOutRequestSchema), {
-    headers: { "x-csrf-token": csrfToken },
-  });
+  return signOutRest(runtimeConfig, csrfToken, fetchImpl);
 }
 
 export async function verifyUser(
@@ -300,9 +296,7 @@ export async function verifyUser(
   input: MessageInitShape<typeof VerifyUserRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ) {
-  return createPilotClient(runtimeConfig, fetchImpl).verifyUser(
-    create(VerifyUserRequestSchema, input),
-  );
+  return verifyUserRest(runtimeConfig, input, fetchImpl);
 }
 
 export async function uploadProfileAvatar(

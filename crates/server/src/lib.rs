@@ -9,7 +9,7 @@ use axum::routing::{any, delete, get, post, put};
 use axum::{extract::Path, http::Method};
 use axum::{Json, Router};
 use bcrypt::{hash, verify, DEFAULT_COST};
-use buffa::view::OwnedView;
+use buffa::view::{MessageView, OwnedView};
 use connectrpc::{ConnectError, Context};
 use http::header::SET_COOKIE;
 use http::{HeaderValue, StatusCode};
@@ -17,7 +17,7 @@ use md5::{Digest, Md5};
 use pulldown_cmark::{html, Options, Parser};
 use runtime_config::normalize_base_path;
 use sea_orm::entity::prelude::DateTime;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use session::{SessionConfig, SessionManager};
 use std::sync::Arc;
 use std::{collections::HashMap, path::PathBuf, vec};
@@ -109,16 +109,17 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
         cookie_path: base_path.clone(),
         public_origin: public_origin.clone(),
     });
-    let route_backend = backend.clone();
-    let browser_runtime = BrowserRuntimeConfig::from_base_path(&base_path);
-    let connect_router = Arc::new(PilotServiceImpl {
+    let pilot_service = PilotServiceImpl {
         base_path: base_path.clone(),
         public_origin: public_origin.clone(),
         session_manager: session_manager.clone(),
-        backend,
-    })
-    .register(connectrpc::Router::new())
-    .into_axum_service();
+        backend: backend.clone(),
+    };
+    let route_backend = backend.clone();
+    let browser_runtime = BrowserRuntimeConfig::from_base_path(&base_path);
+    let connect_router = Arc::new(pilot_service.clone())
+        .register(connectrpc::Router::new())
+        .into_axum_service();
     let lost_password_session_manager = session_manager.clone();
     let lost_password_backend = route_backend.clone();
     let lost_password_base_path = base_path.clone();
@@ -176,17 +177,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let comment_unvote_backend = route_backend.clone();
     let comment_unvote_session_manager = session_manager.clone();
     let comment_unvote_base_path = base_path.clone();
-    let rest_session_manager = session_manager.clone();
-    let rest_backend = route_backend.clone();
-
-    let rest_router = Router::new().route(
-        "/session",
-        get(move |headers: HeaderMap| {
-            let session_manager = rest_session_manager.clone();
-            let backend = rest_backend.clone();
-            async move { rest_read_current_session(headers, session_manager, backend).await }
-        }),
-    );
+    let rest_router = build_rest_router(pilot_service.clone());
 
     let mut base_router = Router::new()
         .route(
@@ -1488,8 +1479,11 @@ struct RestRouteError {
 
 impl RestRouteError {
     fn from_connect_error(error: ConnectError) -> Self {
-        let message = error.to_string();
-        let status = direct_status_from_connect_error(error);
+        let status = error.code.http_status();
+        let message = error
+            .message
+            .clone()
+            .unwrap_or_else(|| error.to_string());
         Self { message, status }
     }
 
@@ -1523,6 +1517,206 @@ impl IntoResponse for RestRouteError {
         )
             .into_response()
     }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSignInRequest {
+    identifier: String,
+    password: String,
+    remember_me: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestRegisterRequest {
+    email_address: String,
+    login_id: String,
+    name: String,
+    password: String,
+    retyped_password: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestVerifyUserRequest {
+    login_id: String,
+    verification_code: String,
+}
+
+impl RestRouteError {
+    fn internal(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+}
+
+fn build_rest_router(service: PilotServiceImpl) -> Router {
+    Router::new()
+        .route(
+            "/session",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let session_manager = service.session_manager.clone();
+                    let backend = service.backend.clone();
+                    async move { rest_read_current_session(headers, session_manager, backend).await }
+                }
+            }),
+        )
+        .route(
+            "/auth/capabilities",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_read_auth_ui_capabilities(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/auth/sign-in",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(input): Json<RestSignInRequest>| {
+                    let service = service.clone();
+                    async move { rest_sign_in_with_password(headers, input, service).await }
+                }
+            }),
+        )
+        .route(
+            "/auth/register",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(input): Json<RestRegisterRequest>| {
+                    let service = service.clone();
+                    async move { rest_register_with_password(headers, input, service).await }
+                }
+            }),
+        )
+        .route(
+            "/auth/sign-out",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_sign_out(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/auth/verify",
+            post(move |headers: HeaderMap, Json(input): Json<RestVerifyUserRequest>| {
+                let service = service.clone();
+                async move { rest_verify_user(headers, input, service).await }
+            }),
+        )
+}
+
+fn rest_owned_view<V>(message: &V::Owned) -> Result<OwnedView<V>, RestRouteError>
+where
+    V: MessageView<'static>,
+{
+    OwnedView::<V>::from_owned(message)
+        .map_err(|error| RestRouteError::internal(format!("failed to encode REST request: {error}")))
+}
+
+fn append_response_headers(target: &mut HeaderMap, source: &HeaderMap) {
+    for (name, value) in source {
+        target.append(name, value.clone());
+    }
+}
+
+fn rest_json_response<T: Serialize>(payload: T, ctx: Context) -> Response {
+    let mut response = Json(payload).into_response();
+    append_response_headers(response.headers_mut(), &ctx.response_headers);
+    response
+}
+
+async fn rest_read_auth_ui_capabilities(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadAuthUiCapabilitiesRequest::default();
+    let request = rest_owned_view::<ReadAuthUiCapabilitiesRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_auth_ui_capabilities(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_sign_in_with_password(
+    headers: HeaderMap,
+    input: RestSignInRequest,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = SignInWithPasswordRequest {
+        identifier: input.identifier,
+        password: input.password,
+        remember_me: input.remember_me,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<SignInWithPasswordRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .sign_in_with_password(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_register_with_password(
+    headers: HeaderMap,
+    input: RestRegisterRequest,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = RegisterWithPasswordRequest {
+        email_address: input.email_address,
+        login_id: input.login_id,
+        name: input.name,
+        password: input.password,
+        retyped_password: input.retyped_password,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<RegisterWithPasswordRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .register_with_password(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_verify_user(
+    headers: HeaderMap,
+    input: RestVerifyUserRequest,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = VerifyUserRequest {
+        login_id: input.login_id,
+        verification_code: input.verification_code,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<VerifyUserRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .verify_user(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_sign_out(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = SignOutRequest::default();
+    let request = rest_owned_view::<SignOutRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .sign_out(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
 }
 
 async fn rest_read_current_session(

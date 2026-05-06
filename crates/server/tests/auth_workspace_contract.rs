@@ -183,6 +183,191 @@ async fn read_auth_ui_capabilities_reflects_runtime_env_flags() {
 }
 
 #[tokio::test]
+async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+
+    let (app, _, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let capabilities = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/auth/capabilities")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(capabilities.status(), StatusCode::OK);
+    let capabilities_payload: serde_json::Value =
+        serde_json::from_str(&response_text(capabilities).await).unwrap();
+    assert_ne!(
+        capabilities_payload
+            .get("socialLoginOnly")
+            .and_then(|value| value.as_bool()),
+        Some(true)
+    );
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/register")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+    let register_json = response_text(register).await;
+    assert!(register_json.contains("\"loginId\":\"door\""));
+
+    let current = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/session")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(current.status(), StatusCode::OK);
+    let current_json = response_text(current).await;
+    assert!(current_json.contains("\"loginId\":\"door\""));
+
+    let sign_out = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/sign-out")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(sign_out.status(), StatusCode::OK);
+    let sign_out_json = response_text(sign_out).await;
+    assert!(sign_out_json.contains("\"isAnonymous\":true"));
+
+    let sign_in = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/sign-in")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"door\",\"password\":\"doorpass1\",\"rememberMe\":true}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(sign_in.status(), StatusCode::OK);
+    let sign_in_json = response_text(sign_in).await;
+    assert!(sign_in_json.contains("\"loginId\":\"door\""));
+
+    let invalid_register = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/register")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"loginId\":\"bad\",\"name\":\"Bad\",\"emailAddress\":\"bad@example.com\",\"password\":\"short\",\"retypedPassword\":\"short\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(invalid_register.status(), StatusCode::BAD_REQUEST);
+    let invalid_json: serde_json::Value =
+        serde_json::from_str(&response_text(invalid_register).await).unwrap();
+    assert_eq!(invalid_json["error"]["code"], "bad_request");
+    assert_eq!(
+        invalid_json["error"]["message"],
+        "Password must be at least 8 characters."
+    );
+    assert_eq!(invalid_json["error"]["status"], 400);
+}
+
+#[tokio::test]
+async fn rest_verify_user_confirms_pending_signup() {
+    let _guard = auth_env_lock().lock().unwrap();
+    clear_test_outbox();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::set_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED", "true");
+
+    let (app, _, db) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/register")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let verification = user_verification::Entity::find()
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("signup verification");
+
+    let verify = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/verify")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(Body::from(format!(
+                    "{{\"loginId\":\"door\",\"verificationCode\":\"{}\"}}",
+                    verification.verification_code.unwrap_or_default()
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+
+    assert_eq!(verify.status(), StatusCode::OK);
+    let verify_json = response_text(verify).await;
+    assert!(verify_json.contains("\"loginId\":\"door\""));
+}
+
+#[tokio::test]
 async fn register_requires_confirmation_session_when_signup_confirm_or_email_verification_is_enabled() {
     let _guard = auth_env_lock().lock().unwrap();
     clear_test_outbox();
