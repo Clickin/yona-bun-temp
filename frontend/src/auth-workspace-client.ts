@@ -36,7 +36,6 @@ import {
   ResetApiTokenRequestSchema,
   ResetVisitedProjectsRequestSchema,
   ReadAuthUiCapabilitiesRequestSchema,
-  ReadCodeBrowserRequestSchema,
   LeaveOrganizationRequestSchema,
   IssueParticipationRequestSchema,
   IssueShareRequestSchema,
@@ -107,6 +106,7 @@ import {
   type RecordRecentProjectVisitResponse,
   type ToggleFavoriteProjectResponse,
 } from "./gen/yona/pilot/v1/pilot_pb";
+import { restFetch } from "./api/rest-client";
 import { readCurrentSessionRest } from "./api/session";
 import { prefixBasePath, type RuntimeConfig } from "./runtime-config";
 
@@ -1204,14 +1204,21 @@ export async function readCodeBrowser(
   input: CodeBrowserOptions = {},
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadCodeBrowserResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).readCodeBrowser(
-    create(ReadCodeBrowserRequestSchema, {
-      branch: input.branch ?? "",
-      ownerName,
-      path: input.path ?? "",
-      projectName,
-    }),
-  );
+  const searchParams = new URLSearchParams();
+  if (input.branch) {
+    searchParams.set("branch", input.branch);
+  }
+  if (input.path) {
+    searchParams.set("path", input.path);
+  }
+  const query = searchParams.toString();
+  const path = `/projects/${encodeURIComponent(ownerName)}/${encodeURIComponent(projectName)}/code${
+    query ? `?${query}` : ""
+  }`;
+  return restFetch<ReadCodeBrowserResponse>(runtimeConfig, path, {
+    fetchImpl,
+    method: "GET",
+  });
 }
 
 export async function updateProjectOverview(
