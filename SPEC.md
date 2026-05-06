@@ -75,14 +75,13 @@ Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무�
 | 계층                       | 기술                                  | 결정 이유                                                                                  |
 | -------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Backend runtime            | Rust + Tokio                          | legacy 서버 기능을 single binary로 재구현하고 SFX 배포 기준선을 유지                       |
-| HTTP framework             | Axum 0.8                              | HTTP/RPC/static asset delivery를 같은 Rust runtime에서 단순하게 소유                       |
-| RPC protocol               | ConnectRPC (Protobuf)                 | `proto/`를 canonical contract source로 두고 Rust/frontend 양쪽 타입 생성을 고정            |
+| HTTP framework             | Axum 0.8                              | HTTP/REST/static asset delivery를 같은 Rust runtime에서 단순하게 소유                      |
+| Application API            | REST JSON under `/api/v1`             | legacy 기능을 URL/resource 단위로 추적하고 TanStack Query client에서 명시적으로 캐시/무효화 |
 | ORM                        | SeaORM 1.1                            | legacy schema adopt와 MySQL/PostgreSQL/SQLite day-1 repository 테스트를 지원               |
 | Frontend                   | React 19 SPA                          | legacy 화면을 file-route 기반 SPA로 변환하되 서버 렌더링 구조를 새로 도입하지 않음         |
 | Routing                    | TanStack Router (file-based)          | `frontend/src/routes/**`를 route source로 고정해 legacy deep-link parity를 추적            |
 | Build                      | Vite + `@vitejs/plugin-react`         | SPA build output을 Rust binary에 embed하는 현재 기준선과 맞춤                              |
-| Contract codegen (Rust)    | `connectrpc-build` via `build.rs`     | Rust generated bindings는 빌드 산출물로 유지해 checked-in drift를 방지                     |
-| Contract codegen (Browser) | `buf generate`                        | browser client bindings는 `frontend/src/gen/`에 checked-in해 frontend type contract를 고정 |
+| API typing                 | Typed frontend API client + schema/check tests | REST payload drift를 client wrapper, TypeScript checks, and focused contract tests로 차단 |
 | Deployment                 | Single-file executable (SFX) + Docker | legacy 사용자가 실행파일 교체 + 설정 migration으로 PoC를 검증할 수 있게 함                 |
 
 ### 1.2 Workspace 구조
@@ -90,12 +89,12 @@ Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무�
 ```text
 repo root/
   Cargo.toml              # workspace manifest
-  buf.yaml                # protobuf module manifest
-  buf.gen.yaml            # browser client codegen manifest
+  buf.yaml                # existing protobuf module manifest, transition-only
+  buf.gen.yaml            # existing browser codegen manifest, transition-only
   frontend/               # React SPA
-  proto/                  # canonical contract source
+  proto/                  # existing ConnectRPC snapshot, not source for new application API
   crates/
-    server/               # runtime bootstrap, HTTP/RPC, asset delivery, session/auth
+    server/               # runtime bootstrap, HTTP/REST, asset delivery, session/auth
     domain/               # domain behavior, ACL, invariant
     persistence/          # DB access, entities, repositories, dialect handling
     migration/            # schema, seed, migration
@@ -112,7 +111,8 @@ repo root/
 - static route table, manual route matcher, route-kind registry 재도입 금지.
 - UI layout, copy, CTA, menu, deep-link flow는 `yona-original/` 기준.
 - 상태 관리: React Context API (`AppRuntimeContext`).
-- API 통신: ConnectRPC client + `@connectrpc/connect-web`.
+- API 통신: REST JSON client + TanStack Query.
+- 기존 ConnectRPC/proto 코드는 transition surface로만 취급한다. 명시적인 호환성 migration 계획이 없는 한 새 feature는 REST-first로 설계하고 RPC 메서드를 추가하지 않는다.
 
 ### 1.4 배포 기준선
 
@@ -183,10 +183,11 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 
 | Phase   | 범위                                                 | 목표                                          |
 | ------- | ---------------------------------------------------- | --------------------------------------------- |
-| Phase 0 | Rust workspace promotion, 문서 정리, provenance 갱신 | ✅ **완료**                                   |
-| Phase 1 | 인증, Workspace, 조직, 프로젝트                      | ✅ **완료** (잔여 항목은 이후 Phase로 재분류) |
-| Phase 2 | 이슈, 댓글, 첨부, 라벨, 마일스톤                     | 🔜 다음 착수                                  |
-| Phase 3 | 저장소 브라우저, Smart HTTP, 커밋 토론, VCS          | 후속                                          |
+| Phase -1 | refactor temp development: 기존 임시 구현을 REST pivot SPEC에 맞춰 재기준화 | 🔜 다음 착수                                  |
+| Phase 0  | Rust workspace promotion, 문서 정리, provenance 갱신                         | ✅ **완료**                                   |
+| Phase 1  | 인증, Workspace, 조직, 프로젝트                                                | ✅ **완료** (REST 재기준화 필요)              |
+| Phase 2  | 이슈, 댓글, 첨부, 라벨, 마일스톤                                               | 🔶 부분 구현, REST 재기준화 필요              |
+| Phase 3  | 저장소 브라우저, Smart HTTP, 커밋 토론, VCS                                    | 🔶 Phase 3A 구현, REST 재기준화 필요          |
 | Phase 4 | Pull Request, 코드 리뷰                              | 후속                                          |
 | Phase 5 | 검색, 게시판, 알림, 연동(Webhook)                    | 후속                                          |
 | Phase 6 | 관리자, 마이그레이션 도구, 배포 하드닝               | 후속                                          |
@@ -990,9 +991,9 @@ POST  /markdown                → 마크다운 → HTML 변환
 | Watcher API                   | 감시자 목록        | gap       | 5     |
 | Favorite API                  | 즐겨찾기 관리      | gap       | 2     |
 
-**주의**: 현재 Rust 구현은 ConnectRPC를 주 통신 프로토콜로 사용하지만, legacy REST API 호환성을 위해 `/-_-api/v1/**` 경로도 구현해야 한다. 이는 기존 Yona API를 사용하는 외부 도구와의 호환성을 위한 것이다.
+**주의**: REST에는 두 계층이 있다. 새 React application API는 `/api/v1/**`를 canonical surface로 사용한다. legacy 외부 호환 API는 `/-_-api/v1/**`를 보존하며, 기존 Yona API를 사용하는 외부 도구와의 호환성을 위한 것이다.
 
-REST API는 외부 도구와의 호환이 확인된 경우에만 구현한다. 내부 React 화면, legacy view helper API, 또는 ConnectRPC로 이미 해결되는 issue/milestone 동작을 `/-_-api/v1/**` REST endpoint로 추가하지 않는다.
+`/-_-api/v1/**` legacy API는 외부 도구와의 호환이 확인된 경우에만 구현한다. 내부 React 화면이나 legacy view helper API를 `/-_-api/v1/**`로 확장하지 않는다. 내부 React 화면은 `/api/v1/**` application API와 TanStack Query를 사용한다.
 
 #### 검수 기준
 
@@ -1134,7 +1135,7 @@ legacy Yona는 `pageNum` 기반 offset 페이지네이션을 사용한다.
 | --------------- | -------------------------------- | -------------------------- |
 | Domain unit     | `cargo test -p yona-domain`      | ACL, validation, invariant |
 | Persistence     | `cargo test -p yona-persistence` | repository CRUD, query     |
-| Server contract | `cargo test -p yona-server`      | HTTP/RPC endpoint          |
+| Server contract | `cargo test -p yona-server`      | HTTP/REST endpoint         |
 | Migration       | `cargo test -p yona-migration`   | schema adopt/up/validate   |
 | Frontend unit   | `pnpm --dir frontend test`       | component, API client      |
 | Frontend parity | `src/route-parity.spec.tsx`      | route 커버리지             |
@@ -1187,9 +1188,13 @@ legacy Yona는 `pageNum` 기반 offset 페이지네이션을 사용한다.
 
 ## 9. 현재 구현 상태 요약 (2026-04-19 기준)
 
+REST pivot 이후 현재 구현 상태 표는 기능 완료가 아니라 재기준화 입력으로 읽는다.
+`Phase -1 refactor temp development`가 완료되기 전에는 기존 ConnectRPC 기반
+구현을 다음 신규 phase의 기반으로 삼지 않는다.
+
 | 영역              | 상태              | 세부                                                             |
 | ----------------- | ----------------- | ---------------------------------------------------------------- |
-| HTTP/RPC 서버     | ✅ 구현           | Axum + ConnectRPC, Phase 2A Issue RPC 포함                       |
+| HTTP 서버         | ✅ 구현           | Axum 기반. 기존 ConnectRPC surface가 구현되어 있으나 REST pivot 이후 transition surface로 취급 |
 | 세션/인증         | ✅ 구현           | bcrypt, CSRF, 세션 쿠키                                          |
 | DB 엔티티         | ✅ 구현           | 60+ SeaORM 모델, legacy 스키마 전체 매핑                         |
 | Repository 메서드 | ✅ 구현           | 100+ 쿼리 메서드                                                 |
@@ -1209,7 +1214,7 @@ legacy Yona는 `pageNum` 기반 offset 페이지네이션을 사용한다.
 | 웹훅              | ❌ 미구현         | DB 엔티티만 존재                                                 |
 | 관리자            | ❌ 미구현         |                                                                  |
 | 마크다운          | 🔶 이슈 범위 구현 | Issue body/comment sanitized HTML projection                     |
-| REST API          | ❌ 미구현         | ConnectRPC만 사용 중                                             |
+| REST API          | ❌ 미구현         | `/api/v1` application API와 `/-_-api/v1` legacy external API가 모두 필요 |
 | Frontend 라우트   | ✅ 구현           | legacy issueform/editform 포함                                   |
 | Frontend 테스트   | 🔶 부분           | API client, route parity, E2E smoke                              |
 | i18n              | ❌ 미구현         | hardcoded English/Korean                                         |
@@ -1296,6 +1301,7 @@ max_file_size = 2147483454             # application.maxFileSize
 
 > 이 부록은 legacy `conf/routes` 파일의 모든 라우트가 Rust + React에서 어떻게 대응되는지를 추적한다.
 > `status` 값: `implemented`, `gap`, `deferred`, `not-needed`
+> `Rust 대응`에 ConnectRPC가 적힌 항목은 REST pivot 이전 구현 snapshot이다. 새 개발 또는 재구현 시에는 `/api/v1/**` REST endpoint + TanStack Query client로 대체한다.
 
 | Legacy Route                       | Method   | Rust 대응                             | Frontend Route                                | Status             |
 | ---------------------------------- | -------- | ------------------------------------- | --------------------------------------------- | ------------------ |
@@ -1340,9 +1346,11 @@ max_file_size = 2147483454             # application.maxFileSize
 
 ---
 
-## 부록 C: proto 서비스 정의 현황
+## 부록 C: Existing ConnectRPC 서비스 정의 현황
 
 `proto/yona/pilot/v1/pilot.proto` — PilotService (Phase 2A Issue RPC 포함)
+
+이 부록은 기존 구현 snapshot이다. REST pivot 이후 `proto/`는 새 application contract의 source of truth가 아니며, 새 기능은 RPC 메서드를 추가하지 않고 `/api/v1/**` REST endpoint와 frontend typed client/TanStack Query hook으로 구현한다.
 
 | 카테고리           | 메서드 수                                                                                                                                                                                                                                                                                                                                                             | 구현 상태              |
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
@@ -1355,7 +1363,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | Milestone          | ListProjectMilestones, ReadProjectMilestone, CreateProjectMilestone, UpdateProjectMilestone, DeleteProjectMilestone, OpenProjectMilestone, CloseProjectMilestone                                                                                                                                                                                                      | ✅ Phase 2C 구현       |
 | Code               | ReadCodeBrowser                                                                                                                                                                                                                                                                                                                                                       | ✅ Phase 3A 구현       |
 
-**추가 필요한 RPC 메서드** (Phase 2~6에서 추가):
+**RPC로 추가하지 말고 REST로 구현할 영역**:
 
 - Issue follow-up: sharable user autocomplete/search, issue sharer timeline/notification semantics, mention autocomplete/notification semantics, REST issue API parity
 - Board: CreatePosting, UpdatePosting, DeletePosting, ListProjectPostings, ReadPostingDetail, CreatePostingComment

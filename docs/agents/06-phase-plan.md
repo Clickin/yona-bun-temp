@@ -1,5 +1,19 @@
 # 06) Phase 계획
 
+## Phase -1: refactor temp development
+
+- 목적: REST pivot 이후 기존 임시 개발 내역을 새 canonical SPEC에 맞춰 재기준화한다.
+- 신규 기능 phase를 시작하기 전에 완료해야 하는 선행 phase다.
+- 기존 ConnectRPC/proto 기반 application surface는 migration debt로 분류하고, `/api/v1` REST JSON + TanStack Query + typed frontend API client 기준으로 교체하거나 명시적으로 transition-only로 격리한다.
+- Phase 2/3에서 이미 구현된 issue, label, milestone, organization issue list, user issue list, code browser 흐름은 기능 의미를 유지하되 API/client 경계와 문서/provenance를 REST pivot 기준으로 다시 맞춘다.
+- legacy direct form routes, file routes, Git/SVN transport routes, `/-_-api/v1/**` external compatibility routes는 application REST API와 분리해 보존/재구현 여부를 판단한다.
+- 종료 조건:
+  - `SPEC.md`, `docs/agents/*`, `README.md`, provenance 문서가 REST pivot과 충돌하지 않는다.
+  - frontend server state가 TanStack Query provider/client/hook 경계로 이동한다.
+  - implemented application flows가 `/api/v1/**` REST endpoint를 통해 동작한다.
+  - ConnectRPC/proto generated client는 제거되었거나 transition-only scope와 제거 계획이 문서화되어 있다.
+  - Phase 1~3의 기존 parity tests 또는 동등한 REST/route/Playwright tests가 통과한다.
+
 ## Phase 0: Rust Pivot 정리
 
 - former Rust pilot 경로를 `repo root` canonical workspace로 승격

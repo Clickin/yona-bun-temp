@@ -9,7 +9,7 @@
 
 ## 계층 매핑 규칙
 
-- Play controller test -> Rust HTTP/RPC contract test 또는 route test
+- Play controller test -> Rust HTTP/REST contract test 또는 route test
 - Play model test -> Rust domain test
 - `AccessControlTest` 류 -> domain ACL test + route authorization test
 - `playRepository` test -> protocol integration test

@@ -2,7 +2,7 @@
 
 Yona는 legacy Yona의 기능과 UX parity를 목표로 재구성 중인 워크스페이스다.
 
-현재 canonical 구현 경로는 repo root다. 이 workspace가 `frontend/`, `proto/`, `crates/*`를 포함하는 Rust + React 기준선이다.
+현재 canonical 구현 경로는 repo root다. 이 workspace가 `frontend/`, `crates/*`, REST JSON API, TanStack Query 기반 React client를 포함하는 Rust + React 기준선이다.
 
 ## Canonical Order
 
@@ -14,8 +14,9 @@ Yona는 legacy Yona의 기능과 UX parity를 목표로 재구성 중인 워크�
 ## Workspace Landmarks
 
 - [`frontend/`](/G:/programming/yona/frontend): canonical React SPA ownership
-- [`proto/`](/G:/programming/yona/proto): canonical contract source
-- [`crates/server/`](/G:/programming/yona/crates/server): runtime bootstrap, HTTP/RPC, asset delivery, session/auth bootstrap
+- [`frontend/`](/G:/programming/yona/frontend): REST API client, TanStack Query state, and canonical React SPA ownership
+- [`proto/`](/G:/programming/yona/proto): 기존 ConnectRPC 구현 snapshot. 새 application contract의 기본 source가 아니다.
+- [`crates/server/`](/G:/programming/yona/crates/server): runtime bootstrap, HTTP/REST, asset delivery, session/auth bootstrap
 - [`crates/domain/`](/G:/programming/yona/crates/domain): domain behavior, ACL, invariant
 - [`crates/persistence/`](/G:/programming/yona/crates/persistence): DB access and repositories
 - [`crates/migration/`](/G:/programming/yona/crates/migration): schema, seed, migration
@@ -31,6 +32,8 @@ Yona는 legacy Yona의 기능과 UX parity를 목표로 재구성 중인 워크�
 
 ## Current Deferred Scope Snapshot
 
+- REST pivot 이후 다음 신규 phase 전에 `Phase -1 refactor temp development`를 먼저 수행한다.
+- 이 phase는 기존 ConnectRPC/proto 기반 임시 구현을 `/api/v1` REST JSON + TanStack Query + typed frontend API client 기준으로 재기준화한다.
 - organization Wave 2B 이후에도 다음 항목은 `deferred` 또는 active `gap`으로 남아 있다.
   - `/organizations/:org/issues|boards|pullrequests` 실제 listing body 복원
   - project admin/watchers/webhooks/transfer/change VCS/statistics/delete surface

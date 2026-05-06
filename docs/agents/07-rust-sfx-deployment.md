@@ -15,6 +15,6 @@
 
 ## 운영 규칙
 
-- session/auth bootstrap, asset delivery, HTTP/RPC 진입점은 동일한 runtime 기준을 공유해야 한다.
+- session/auth bootstrap, asset delivery, HTTP/REST 진입점은 동일한 runtime 기준을 공유해야 한다.
 - 환경별 secret과 credential은 실행 파일이 아니라 외부 주입으로 관리한다.
 - single-binary 배포와 container 배포가 동일한 contract를 제공해야 한다.

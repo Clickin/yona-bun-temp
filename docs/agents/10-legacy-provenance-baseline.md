@@ -19,7 +19,7 @@
 
 | Capability | Legacy source paths | Extracted intent | Current mixed-code reference | Rust translation target layer | Canonical owner path |
 | --- | --- | --- | --- | --- | --- |
-| Auth | `UserAppTest.java`, `PasswordResetAppTest.java`, `UserTest.java` | login/register/reset, permission, token, audit, user-state semantics | `reference/mixed-code/frontend/src/lib/auth-trpc.ts`, `reference/mixed-code/packages/auth/*` | domain test, Rust HTTP/RPC contract test, Playwright E2E | `crates/server`, `crates/domain`, `frontend` |
+| Auth | `UserAppTest.java`, `PasswordResetAppTest.java`, `UserTest.java` | login/register/reset, permission, token, audit, user-state semantics | `reference/mixed-code/frontend/src/lib/auth-trpc.ts`, `reference/mixed-code/packages/auth/*` | domain test, Rust HTTP/REST contract test, Playwright E2E | `crates/server`, `crates/domain`, `frontend` |
 | ACL | `AccessControlTest.java`, `RoleTest.java`, `ProjectUserTest.java` | resource-scoped create/read/update/delete matrix | `reference/mixed-code/packages/domain/*authorization*` | Rust domain ACL test, route authorization test | `crates/domain`, `crates/server` |
 | Issue | `IssueAppTest.java`, `IssueTest.java`, `WatchTest.java` | issue lifecycle, watcher/voter/assignee semantics, permission boundaries | `reference/mixed-code/frontend/src/lib/issue-trpc.ts`, `reference/mixed-code/packages/domain`, `reference/mixed-code/packages/db` | Rust domain test, Rust contract test, Playwright E2E | `crates/domain`, `crates/persistence`, `frontend` |
 | Project | `ProjectAppTest.java`, `EnrollProjectAppTest.java`, `ProjectTest.java`, `OrganizationTest.java`, `RecentlyVisitedProjectsTest.java` | project/org CRUD, enrollment, visibility, recent/favorite semantics | `reference/mixed-code/frontend/src/lib/project-trpc.ts`, `organization-trpc.ts`, `enrollment-trpc.ts` | Rust domain test, Rust contract test, Playwright E2E | `crates/domain`, `crates/persistence`, `crates/server`, `frontend` |
@@ -29,7 +29,7 @@
 
 ## Translation Notes
 
-- controller-origin behavior는 Rust HTTP/RPC contract test 또는 route test로 번역한다.
+- controller-origin behavior는 Rust HTTP/REST contract test 또는 route test로 번역한다.
 - model-origin behavior는 isolated domain test로 번역한다.
 - root mixed code는 target architecture가 아니라 contract snapshot과 workflow hint다.
 - provenance는 legacy source와 Rust target을 잇는 다리이지, old stack baseline을 유지하는 장치가 아니다.

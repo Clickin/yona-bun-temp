@@ -10,8 +10,9 @@
 ## Canonical Workspace
 
 - `frontend/`: React SPA
-- `proto/`: canonical contract source
-- `crates/server/`: runtime bootstrap, HTTP/RPC, asset delivery, session/auth bootstrap
+- `frontend/`: REST API client, TanStack Query state, React SPA
+- `proto/`: existing ConnectRPC snapshot/transition surface
+- `crates/server/`: runtime bootstrap, HTTP/REST, asset delivery, session/auth bootstrap
 - `crates/domain/`: parity-first domain behavior, ACL, invariant
 - `crates/persistence/`: DB access, repositories, dialect handling
 - `crates/migration/`: schema, seed, migration

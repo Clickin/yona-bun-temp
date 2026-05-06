@@ -8,17 +8,20 @@
 
 ## G2) Ownership Boundary
 
-- `frontend/`는 UI composition, route tree, client contract consumption만 소유한다.
-- `proto/`는 canonical contract source를 소유한다.
-- `crates/server/`는 runtime bootstrap, HTTP/RPC, asset delivery, session/auth bootstrap을 소유한다.
+- `frontend/`는 UI composition, route tree, REST API client, TanStack Query server-state boundary를 소유한다.
+- `proto/`는 기존 ConnectRPC 구현 snapshot/transition surface일 뿐 새 application contract의 canonical source가 아니다.
+- `crates/server/`는 runtime bootstrap, HTTP/REST, asset delivery, session/auth bootstrap을 소유한다.
 - `crates/domain/`은 ACL, invariant, domain behavior를 소유한다.
 - `crates/persistence/`는 DB access와 repositories를 소유한다.
 - `crates/migration/`은 schema와 migration을 소유한다.
-- legacy 외부 호환 REST API는 임의 확장하지 않는다. ConnectRPC 메서드는 legacy 기능을 구현하기 위한 내부 SPA contract로만 추가한다.
+- 새 application endpoint는 기본적으로 `/api/v1` REST JSON으로 구현한다.
+- `/-_-api/v1/**` legacy external REST compatibility는 legacy external-tool compatibility 근거가 있을 때만 구현한다.
+- 기존 RPC surface를 migration 중 명시적으로 보존하는 계획이 없는 한 feature work에서 새 ConnectRPC method를 추가하지 않는다.
 
 ## G3) Historical Discipline
 
 - `TanStack Start`, in-process `tRPC`, `createServerFn`, Go backend, `connect-go`, `chi`, `uptrace/bun`, `Better Auth`를 current baseline처럼 되살리지 않는다.
+- REST pivot 이후 ConnectRPC/protobuf를 future canonical application API처럼 서술하지 않는다.
 - historical 문서는 status banner 없이 current guidance처럼 남겨 두지 않는다.
 
 ## G4) Parity Discipline
