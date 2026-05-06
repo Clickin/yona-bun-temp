@@ -183,7 +183,7 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 
 | Phase   | 범위                                                 | 목표                                          |
 | ------- | ---------------------------------------------------- | --------------------------------------------- |
-| Phase -1 | refactor temp development: 기존 임시 구현을 REST pivot SPEC에 맞춰 재기준화 | ✅ 구현 완료, 최종 verification 단계          |
+| Phase -1 | refactor temp development: 기존 임시 구현을 REST pivot SPEC에 맞춰 재기준화 | ✅ 완료 (Docker testcontainers 환경 제외)     |
 | Phase 0  | Rust workspace promotion, 문서 정리, provenance 갱신                         | ✅ **완료**                                   |
 | Phase 1  | 인증, Workspace, 조직, 프로젝트                                                | ✅ **완료**                                   |
 | Phase 2  | 이슈, 댓글, 첨부, 라벨, 마일스톤                                               | 🔶 부분 구현                                  |
