@@ -1,11 +1,14 @@
 use axum::body::Body;
 use http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;
-use sea_orm::Database;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter, Set,
+    NotSet,
+};
 use serde_json::json;
 use serde_json::Value;
 use tower::ServiceExt;
-use yona_rust_persistence::AppRepository;
+use yona_rust_persistence::{email, watch, AppRepository, CreateProjectInput};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router, create_router_with_app_repository, RuntimeConfig};
 
@@ -35,6 +38,22 @@ async fn build_app_with_repository() -> (axum::Router, AppRepository) {
         app_repo.clone(),
     );
     (app, app_repo)
+}
+
+async fn build_app_with_repository_and_db() -> (axum::Router, AppRepository, DatabaseConnection) {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let app_repo = AppRepository::new(db.clone());
+    let app = create_router_with_app_repository(
+        RuntimeConfig {
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        app_repo.clone(),
+    );
+    (app, app_repo, db)
 }
 
 async fn response_text(response: axum::response::Response) -> String {
@@ -503,6 +522,418 @@ async fn rest_issue_meta_routes_manage_participation_assignment_sharing_and_comm
     )
     .await;
     assert_eq!(unwatched["isWatching"].as_bool().unwrap_or(false), false);
+}
+
+#[tokio::test]
+async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
+    let (app, repository, db) = build_app_with_repository_and_db().await;
+    let (csrf, cookie_header) = register_user(app.clone(), "owner").await;
+    let user = repository
+        .find_user_by_identifier("owner")
+        .await
+        .unwrap()
+        .expect("registered user");
+    let project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "owner".to_string(),
+            overview: Some("Workspace rest parity".to_string()),
+            project_name: "projectYobi".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+
+    let overview = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/workspace",
+            Some(&cookie_header),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(overview["session"]["loginId"], "owner");
+    assert_eq!(overview["defaultLandingPath"], "/me");
+
+    let set_default = ok_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            "/yona/api/v1/workspace/default-landing-path",
+            Some(&cookie_header),
+            Some(&csrf),
+            Some(json!({ "path": "/search?scope=global&pageSize=20" })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        set_default["defaultLandingPath"],
+        "/search?pageSize=20&scope=global"
+    );
+
+    let updated_profile = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/api/v1/workspace/profile",
+            Some(&cookie_header),
+            Some(&csrf),
+            Some(json!({
+                "name": "Owner Updated",
+                "email": "owner-updated@example.com"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(updated_profile["session"]["userLabel"], "Owner Updated");
+    assert_eq!(
+        updated_profile["session"]["emailAddress"],
+        "owner-updated@example.com"
+    );
+
+    let added_email = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/workspace/emails",
+            Some(&cookie_header),
+            Some(&csrf),
+            Some(json!({ "email": "alt@example.com" })),
+        )
+        .await,
+    )
+    .await;
+    assert!(
+        added_email["emails"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .any(|entry| entry["emailAddress"] == "alt@example.com")
+    );
+
+    let alt_email = email::Entity::find()
+        .filter(email::Column::UserId.eq(Some(user.id)))
+        .filter(email::Column::Email.eq(Some("alt@example.com".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("alt email");
+
+    let validation_sent = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            &format!(
+                "/yona/api/v1/workspace/emails/{}/validation",
+                alt_email.id
+            ),
+            Some(&cookie_header),
+            Some(&csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(
+        validation_sent["emails"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .any(|entry| entry["emailAddress"] == "alt@example.com")
+    );
+
+    let mut alt_email_active = email::ActiveModel::from(
+        email::Entity::find_by_id(alt_email.id)
+            .one(&db)
+            .await
+            .unwrap()
+            .expect("alt email row"),
+    );
+    alt_email_active.valid = Set(Some(1));
+    alt_email_active.update(&db).await.unwrap();
+
+    let set_main = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            &format!("/yona/api/v1/workspace/emails/{}/main", alt_email.id),
+            Some(&cookie_header),
+            Some(&csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(set_main["session"]["emailAddress"], "alt@example.com");
+    assert_eq!(
+        set_main["profile"]["primaryEmailAddress"],
+        "alt@example.com"
+    );
+
+    let recent_visit = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/workspace/recent-projects",
+            Some(&cookie_header),
+            Some(&csrf),
+            Some(json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(recent_visit["ownerName"], "owner");
+    assert_eq!(recent_visit["projectName"], "projectYobi");
+
+    let overview_with_recent = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/workspace",
+            Some(&cookie_header),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        overview_with_recent["recentProjects"]
+            .as_array()
+            .map(Vec::len)
+            .unwrap_or_default(),
+        1
+    );
+
+    watch::ActiveModel {
+        id: NotSet,
+        user_id: Set(Some(user.id)),
+        resource_type: Set(Some("PROJECT".to_string())),
+        resource_id: Set(Some(project.id.to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+
+    let toggled_notification = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/workspace/notifications",
+            Some(&cookie_header),
+            Some(&csrf),
+            Some(json!({
+                "projectId": project.id.to_string(),
+                "eventType": "NEW_COMMENT"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let notifications = toggled_notification["watchedProjects"][0]["notifications"]
+        .as_array()
+        .expect("notifications array");
+    let new_comment = notifications
+        .iter()
+        .find(|entry| entry["eventType"] == "NEW_COMMENT")
+        .expect("new comment notification");
+    assert_eq!(new_comment["enabled"], true);
+
+    let reset_token = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/workspace/api-token/reset",
+            Some(&cookie_header),
+            Some(&csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(
+        reset_token["apiToken"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty())
+    );
+
+    let updated_main_email = email::Entity::find()
+        .filter(email::Column::UserId.eq(Some(user.id)))
+        .filter(email::Column::Email.eq(Some("owner-updated@example.com".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("updated main email");
+    let deleted_email = ok_json(
+        rest(
+            app.clone(),
+            Method::DELETE,
+            &format!("/yona/api/v1/workspace/emails/{}", updated_main_email.id),
+            Some(&cookie_header),
+            Some(&csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(
+        !deleted_email["emails"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .any(|entry| entry["emailAddress"] == "owner-updated@example.com")
+    );
+
+    let reset_recent = ok_json(
+        rest(
+            app.clone(),
+            Method::DELETE,
+            "/yona/api/v1/workspace/recent-projects",
+            Some(&cookie_header),
+            Some(&csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        reset_recent["recentProjects"]
+            .as_array()
+            .map(Vec::len)
+            .unwrap_or_default(),
+        0
+    );
+
+    let changed_password = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/workspace/password",
+            Some(&cookie_header),
+            Some(&csrf),
+            Some(json!({
+                "loginId": "owner",
+                "oldPassword": "doorpass1",
+                "password": "doorpass2",
+                "retypedPassword": "doorpass2"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(changed_password["isAnonymous"], true);
+
+    let (fresh_csrf, fresh_cookie) = bootstrap(app.clone()).await;
+    let signed_in = ok_json(
+        rest(
+            app,
+            Method::POST,
+            "/yona/api/v1/auth/sign-in",
+            Some(&fresh_cookie),
+            Some(&fresh_csrf),
+            Some(json!({
+                "identifier": "owner",
+                "password": "doorpass2",
+                "rememberMe": true
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(signed_in["loginId"], "owner");
+}
+
+#[tokio::test]
+async fn rest_workspace_routes_preserve_error_status_and_envelope() {
+    let (app, repository, _) = build_app_with_repository_and_db().await;
+    let (csrf, cookie_header) = register_user(app.clone(), "door").await;
+    let public_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "admin".to_string(),
+            overview: Some("Public".to_string()),
+            project_name: "publicProject".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+    let private_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "admin".to_string(),
+            overview: Some("Private".to_string()),
+            project_name: "privateProject".to_string(),
+            project_scope: "private".to_string(),
+        })
+        .await
+        .unwrap();
+
+    let invalid_landing = rest(
+        app.clone(),
+        Method::PUT,
+        "/yona/api/v1/workspace/default-landing-path",
+        Some(&cookie_header),
+        Some(&csrf),
+        Some(json!({ "path": "/login" })),
+    )
+    .await;
+    assert_eq!(invalid_landing.status(), StatusCode::BAD_REQUEST);
+    let invalid_landing_body = response_json(invalid_landing).await;
+    assert_eq!(invalid_landing_body["error"]["code"], "bad_request");
+
+    let missing_notification = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/workspace/notifications",
+        Some(&cookie_header),
+        Some(&csrf),
+        Some(json!({ "projectId": "99999", "eventType": "NEW_ISSUE" })),
+    )
+    .await;
+    assert_eq!(missing_notification.status(), StatusCode::NOT_FOUND);
+    let missing_notification_body = response_json(missing_notification).await;
+    assert_eq!(missing_notification_body["error"]["code"], "not_found");
+
+    let forbidden_notification = rest(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/workspace/notifications",
+        Some(&cookie_header),
+        Some(&csrf),
+        Some(json!({
+            "projectId": private_project.id.to_string(),
+            "eventType": "NEW_ISSUE"
+        })),
+    )
+    .await;
+    assert_eq!(forbidden_notification.status(), StatusCode::FORBIDDEN);
+    let forbidden_notification_body = response_json(forbidden_notification).await;
+    assert_eq!(forbidden_notification_body["error"]["code"], "forbidden");
+
+    let unwatched_notification = rest(
+        app,
+        Method::POST,
+        "/yona/api/v1/workspace/notifications",
+        Some(&cookie_header),
+        Some(&csrf),
+        Some(json!({
+            "projectId": public_project.id.to_string(),
+            "eventType": "NEW_ISSUE"
+        })),
+    )
+    .await;
+    assert_eq!(unwatched_notification.status(), StatusCode::BAD_REQUEST);
+    let unwatched_notification_body = response_json(unwatched_notification).await;
+    assert_eq!(unwatched_notification_body["error"]["code"], "bad_request");
 }
 
 #[tokio::test]

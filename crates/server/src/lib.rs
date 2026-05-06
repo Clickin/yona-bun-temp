@@ -1560,6 +1560,50 @@ struct RestVerifyUserRequest {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct RestDefaultLandingPathBody {
+    path: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestUpdateProfileBody {
+    #[serde(default)]
+    avatar_attachment_id: String,
+    email: String,
+    name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestChangePasswordBody {
+    login_id: String,
+    old_password: String,
+    password: String,
+    retyped_password: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestWorkspaceEmailBody {
+    email: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestWorkspaceNotificationBody {
+    event_type: String,
+    project_id: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestRecentProjectVisitBody {
+    owner_name: String,
+    project_name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct RestIssueAssigneeBody {
     assignee_login_id: String,
 }
@@ -1696,9 +1740,131 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
         )
         .route(
             "/auth/verify",
-            post(move |headers: HeaderMap, Json(input): Json<RestVerifyUserRequest>| {
+            post({
                 let service = service.clone();
-                async move { rest_verify_user(headers, input, service).await }
+                move |headers: HeaderMap, Json(input): Json<RestVerifyUserRequest>| {
+                    let service = service.clone();
+                    async move { rest_verify_user(headers, input, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_read_workspace_overview(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/default-landing-path",
+            put({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestDefaultLandingPathBody>| {
+                    let service = service.clone();
+                    async move { rest_set_default_landing_path(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/profile",
+            patch({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestUpdateProfileBody>| {
+                    let service = service.clone();
+                    async move { rest_update_profile(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/password",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestChangePasswordBody>| {
+                    let service = service.clone();
+                    async move { rest_change_password(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/recent-projects",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestRecentProjectVisitBody>| {
+                    let service = service.clone();
+                    async move { rest_record_recent_project_visit(headers, body, service).await }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_reset_visited_projects(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/emails",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestWorkspaceEmailBody>| {
+                    let service = service.clone();
+                    async move { rest_add_workspace_email(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/emails/{email_id}",
+            delete({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(email_id): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_delete_workspace_email(headers, email_id, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/emails/{email_id}/validation",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(email_id): Path<String>| {
+                    let service = service.clone();
+                    async move {
+                        rest_send_workspace_email_validation(headers, email_id, service).await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/workspace/emails/{email_id}/main",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(email_id): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_set_main_workspace_email(headers, email_id, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/api-token/reset",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_reset_api_token(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/notifications",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestWorkspaceNotificationBody>| {
+                    let service = service.clone();
+                    async move { rest_toggle_workspace_notification(headers, body, service).await }
+                }
             }),
         )
         .route(
@@ -2606,6 +2772,205 @@ async fn rest_sign_out(
     let request = rest_owned_view::<SignOutRequestView<'static>>(&request)?;
     let (payload, ctx) = service
         .sign_out(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_read_workspace_overview(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadWorkspaceOverviewRequest::default();
+    let request = rest_owned_view::<ReadWorkspaceOverviewRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_workspace_overview(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_set_default_landing_path(
+    headers: HeaderMap,
+    body: RestDefaultLandingPathBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = SetDefaultLandingPathRequest {
+        path: body.path,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<SetDefaultLandingPathRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .set_default_landing_path(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_profile(
+    headers: HeaderMap,
+    body: RestUpdateProfileBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = UpdateProfileRequest {
+        avatar_attachment_id: body.avatar_attachment_id,
+        email: body.email,
+        name: body.name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<UpdateProfileRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .update_profile(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_change_password(
+    headers: HeaderMap,
+    body: RestChangePasswordBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ChangePasswordRequest {
+        login_id: body.login_id,
+        old_password: body.old_password,
+        password: body.password,
+        retyped_password: body.retyped_password,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ChangePasswordRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .change_password(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_reset_visited_projects(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ResetVisitedProjectsRequest::default();
+    let request = rest_owned_view::<ResetVisitedProjectsRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .reset_visited_projects(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_add_workspace_email(
+    headers: HeaderMap,
+    body: RestWorkspaceEmailBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = AddWorkspaceEmailRequest {
+        email: body.email,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<AddWorkspaceEmailRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .add_workspace_email(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_delete_workspace_email(
+    headers: HeaderMap,
+    email_id: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = DeleteWorkspaceEmailRequest {
+        id: email_id,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<DeleteWorkspaceEmailRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .delete_workspace_email(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_send_workspace_email_validation(
+    headers: HeaderMap,
+    email_id: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = SendWorkspaceEmailValidationRequest {
+        id: email_id,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<SendWorkspaceEmailValidationRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .send_workspace_email_validation(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_set_main_workspace_email(
+    headers: HeaderMap,
+    email_id: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = SetMainWorkspaceEmailRequest {
+        id: email_id,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<SetMainWorkspaceEmailRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .set_main_workspace_email(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_reset_api_token(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ResetApiTokenRequest::default();
+    let request = rest_owned_view::<ResetApiTokenRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .reset_api_token(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_toggle_workspace_notification(
+    headers: HeaderMap,
+    body: RestWorkspaceNotificationBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ToggleWorkspaceNotificationRequest {
+        event_type: body.event_type,
+        project_id: body.project_id,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ToggleWorkspaceNotificationRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .toggle_workspace_notification(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_record_recent_project_visit(
+    headers: HeaderMap,
+    body: RestRecentProjectVisitBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = RecordRecentProjectVisitRequest {
+        owner_name: body.owner_name,
+        project_name: body.project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<RecordRecentProjectVisitRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .record_recent_project_visit(Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
