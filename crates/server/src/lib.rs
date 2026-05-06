@@ -5,7 +5,7 @@ pub mod session;
 use axum::extract::{Form, Multipart};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Redirect, Response};
-use axum::routing::{delete, get, post, put};
+use axum::routing::{any, delete, get, post, put};
 use axum::{extract::Path, http::Method};
 use axum::{Json, Router};
 use bcrypt::{hash, verify, DEFAULT_COST};
@@ -176,6 +176,17 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let comment_unvote_backend = route_backend.clone();
     let comment_unvote_session_manager = session_manager.clone();
     let comment_unvote_base_path = base_path.clone();
+    let rest_session_manager = session_manager.clone();
+    let rest_backend = route_backend.clone();
+
+    let rest_router = Router::new().route(
+        "/session",
+        get(move |headers: HeaderMap| {
+            let session_manager = rest_session_manager.clone();
+            let backend = rest_backend.clone();
+            async move { rest_read_current_session(headers, session_manager, backend).await }
+        }),
+    );
 
     let mut base_router = Router::new()
         .route(
@@ -185,6 +196,11 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                 let backend = route_backend.clone();
                 async move { session_bootstrap(headers, session_manager, backend).await }
             }),
+        )
+        .nest("/api/v1", rest_router)
+        .route(
+            "/api/v1/{*rest_path}",
+            any(|| async { rest_not_found_response() }),
         )
         .route(
             "/lostPassword",
@@ -1451,6 +1467,89 @@ fn direct_status_from_connect_error(error: ConnectError) -> StatusCode {
     } else {
         StatusCode::INTERNAL_SERVER_ERROR
     }
+}
+
+#[derive(Serialize)]
+struct RestErrorEnvelope {
+    error: RestErrorPayload,
+}
+
+#[derive(Serialize)]
+struct RestErrorPayload {
+    code: &'static str,
+    message: String,
+    status: u16,
+}
+
+struct RestRouteError {
+    message: String,
+    status: StatusCode,
+}
+
+impl RestRouteError {
+    fn from_connect_error(error: ConnectError) -> Self {
+        let message = error.to_string();
+        let status = direct_status_from_connect_error(error);
+        Self { message, status }
+    }
+
+    fn not_found(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+            status: StatusCode::NOT_FOUND,
+        }
+    }
+}
+
+impl IntoResponse for RestRouteError {
+    fn into_response(self) -> Response {
+        let code = match self.status {
+            StatusCode::BAD_REQUEST => "bad_request",
+            StatusCode::UNAUTHORIZED => "unauthorized",
+            StatusCode::FORBIDDEN => "forbidden",
+            StatusCode::NOT_FOUND => "not_found",
+            StatusCode::NOT_IMPLEMENTED => "not_implemented",
+            _ => "internal_error",
+        };
+        (
+            self.status,
+            Json(RestErrorEnvelope {
+                error: RestErrorPayload {
+                    code,
+                    message: self.message,
+                    status: self.status.as_u16(),
+                },
+            }),
+        )
+            .into_response()
+    }
+}
+
+async fn rest_read_current_session(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Response, RestRouteError> {
+    let session = session_manager.ensure_anonymous_session(&headers);
+    let payload = resolve_current_session_response(&backend, Some(&session))
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let mut response = Json(payload).into_response();
+    response.headers_mut().insert(
+        "X-CSRF-Token",
+        session.csrf_token.parse().expect("csrf token header"),
+    );
+    for cookie in session_manager.build_set_cookie_headers(&session) {
+        response.headers_mut().append(
+            axum::http::header::SET_COOKIE,
+            cookie.parse().expect("set-cookie header"),
+        );
+    }
+    Ok(response)
+}
+
+fn rest_not_found_response() -> Response {
+    RestRouteError::not_found("REST endpoint not found.").into_response()
 }
 
 async fn direct_issue_comment_vote(

@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Code, ConnectError } from "@connectrpc/connect";
+import { RestApiError } from "../api/rest-client";
 import { prefixBasePath } from "../runtime-config";
 import { useAppRuntime } from "../app-runtime-context";
 
@@ -37,6 +38,14 @@ export function useRequireAuthenticatedRoute(targetHref: string) {
 export type RouteFailureKind = "forbidden" | "not-found";
 
 function readConnectCode(error: unknown): null | Code {
+  if (error instanceof RestApiError) {
+    if (error.status === 403) {
+      return Code.PermissionDenied;
+    }
+    if (error.status === 404) {
+      return Code.NotFound;
+    }
+  }
   if (error instanceof ConnectError) {
     return error.code;
   }

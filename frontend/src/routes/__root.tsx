@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Outlet, createRootRouteWithContext } from "@tanstack/react-router";
 import { AppRuntimeProvider } from "../app-runtime-context";
+import { YonaQueryProvider } from "../query-client";
 import type { RuntimeConfig } from "../runtime-config";
 
 export interface AppRouterContext {
@@ -15,8 +16,10 @@ function RootRouteComponent() {
   const { runtimeConfig } = Route.useRouteContext();
 
   return (
-    <AppRuntimeProvider runtimeConfig={runtimeConfig}>
-      <Outlet />
-    </AppRuntimeProvider>
+    <YonaQueryProvider>
+      <AppRuntimeProvider runtimeConfig={runtimeConfig}>
+        <Outlet />
+      </AppRuntimeProvider>
+    </YonaQueryProvider>
   );
 }

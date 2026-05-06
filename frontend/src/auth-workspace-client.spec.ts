@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { readSessionBootstrap, uploadProfileAvatar } from "./auth-workspace-client";
+import { readCurrentSession, readSessionBootstrap, uploadProfileAvatar } from "./auth-workspace-client";
 import type { RuntimeConfig } from "./runtime-config";
 
 const runtimeConfig: RuntimeConfig = {
@@ -29,6 +29,57 @@ describe("readSessionBootstrap", () => {
       method: "GET",
     });
     expect(result.csrfToken).toBe("csrf-123");
+  });
+});
+
+describe("readCurrentSession", () => {
+  it("reads the REST v1 session endpoint with same-origin credentials", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          defaultLandingPath: "/me",
+          isAnonymous: true,
+        }),
+    }));
+
+    const result = await readCurrentSession(runtimeConfig, fetchMock as unknown as typeof fetch);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { credentials: string; headers: Headers; method: string },
+    ];
+    expect(requestUrl).toBe("/yona/api/v1/session");
+    expect(requestInit.credentials).toBe("same-origin");
+    expect(requestInit.headers.get("Accept")).toBe("application/json");
+    expect(requestInit.method).toBe("GET");
+    expect(result.isAnonymous).toBe(true);
+    expect(result.defaultLandingPath).toBe("/me");
+  });
+
+  it("throws the REST error envelope for failed v1 requests", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: false,
+      status: 404,
+      text: async () =>
+        JSON.stringify({
+          error: {
+            code: "not_found",
+            message: "REST endpoint not found.",
+            status: 404,
+          },
+        }),
+    }));
+
+    await expect(
+      readCurrentSession(runtimeConfig, fetchMock as unknown as typeof fetch),
+    ).rejects.toMatchObject({
+      code: "not_found",
+      message: "REST endpoint not found.",
+      status: 404,
+    });
   });
 });
 

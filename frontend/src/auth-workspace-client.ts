@@ -37,7 +37,6 @@ import {
   ResetVisitedProjectsRequestSchema,
   ReadAuthUiCapabilitiesRequestSchema,
   ReadCodeBrowserRequestSchema,
-  ReadCurrentSessionRequestSchema,
   LeaveOrganizationRequestSchema,
   IssueParticipationRequestSchema,
   IssueShareRequestSchema,
@@ -108,6 +107,7 @@ import {
   type RecordRecentProjectVisitResponse,
   type ToggleFavoriteProjectResponse,
 } from "./gen/yona/pilot/v1/pilot_pb";
+import { readCurrentSessionRest } from "./api/session";
 import { prefixBasePath, type RuntimeConfig } from "./runtime-config";
 
 export interface SessionBootstrapPayload {
@@ -249,9 +249,7 @@ export async function readCurrentSession(
   runtimeConfig: RuntimeConfig,
   fetchImpl: typeof fetch = fetch,
 ) {
-  return createPilotClient(runtimeConfig, fetchImpl).readCurrentSession(
-    create(ReadCurrentSessionRequestSchema),
-  );
+  return readCurrentSessionRest(runtimeConfig, fetchImpl);
 }
 
 export async function readAuthUiCapabilities(
