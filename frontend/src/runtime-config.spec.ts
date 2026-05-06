@@ -16,7 +16,6 @@ describe("readRuntimeConfig", () => {
     expect(readRuntimeConfig()).toEqual({
       apiBaseUrl: "/api",
       basePath: "/",
-      rpcBaseUrl: "/rpc",
     });
   });
 
@@ -25,13 +24,11 @@ describe("readRuntimeConfig", () => {
     window.__YONA_RUNTIME_CONFIG__ = {
       apiBaseUrl: "/yona/api",
       basePath: "/yona/",
-      rpcBaseUrl: "/yona/rpc",
     };
 
     expect(readRuntimeConfig()).toEqual({
       apiBaseUrl: "/yona/api",
       basePath: "/yona",
-      rpcBaseUrl: "/yona/rpc",
     });
   });
 
@@ -42,7 +39,6 @@ describe("readRuntimeConfig", () => {
     expect(readRuntimeConfig()).toEqual({
       apiBaseUrl: "/yona/api",
       basePath: "/yona",
-      rpcBaseUrl: "/yona/rpc",
     });
   });
 });

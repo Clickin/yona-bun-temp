@@ -13,6 +13,8 @@ use yona_rust_persistence::AppRepository;
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
+mod rest_test_support;
+
 fn yona_data_env_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))
@@ -80,11 +82,7 @@ async fn response_json(response: Response<Body>) -> serde_json::Value {
     serde_json::from_str(&text).expect("json response")
 }
 
-async fn rest_get(
-    app: axum::Router,
-    path: &str,
-    cookie_header: Option<&str>,
-) -> Response<Body> {
+async fn rest_get(app: axum::Router, path: &str, cookie_header: Option<&str>) -> Response<Body> {
     let mut builder = Request::builder()
         .method(Method::GET)
         .uri(format!("/yona/api/v1{path}"));
@@ -92,7 +90,9 @@ async fn rest_get(
         builder = builder.header(http::header::COOKIE, cookie_header);
     }
 
-    app.oneshot(builder.body(Body::empty()).unwrap()).await.unwrap()
+    app.oneshot(builder.body(Body::empty()).unwrap())
+        .await
+        .unwrap()
 }
 
 fn json_bool(value: &serde_json::Value, key: &str) -> bool {
@@ -109,22 +109,7 @@ async fn rpc(
     csrf: Option<&str>,
     payload: serde_json::Value,
 ) -> Response<Body> {
-    let mut builder = Request::builder()
-        .method(Method::POST)
-        .uri(format!(
-            "/yona/rpc/yona.pilot.v1.PilotService/{method_name}"
-        ))
-        .header(http::header::CONTENT_TYPE, "application/json");
-    if let Some(cookie_header) = cookie_header {
-        builder = builder.header(http::header::COOKIE, cookie_header);
-    }
-    if let Some(csrf) = csrf {
-        builder = builder.header("x-csrf-token", csrf);
-    }
-
-    app.oneshot(builder.body(Body::from(payload.to_string())).unwrap())
-        .await
-        .unwrap()
+    rest_test_support::pilot_rest(app, method_name, cookie_header, csrf, payload).await
 }
 
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String) {
@@ -326,10 +311,8 @@ async fn rest_code_browser_reads_root_folder_and_text_file_from_git_repo() {
         .unwrap();
     seed_bare_repository(data_dir.path(), project.id);
 
-    let root = response_json(
-        rest_get(app.clone(), "/projects/owner/projectYobi/code", None).await,
-    )
-    .await;
+    let root =
+        response_json(rest_get(app.clone(), "/projects/owner/projectYobi/code", None).await).await;
 
     assert_eq!(root["ownerName"], "owner");
     assert_eq!(root["projectName"], "projectYobi");

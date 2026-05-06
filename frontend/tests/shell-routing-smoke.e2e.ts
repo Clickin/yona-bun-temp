@@ -22,7 +22,6 @@ test.beforeEach(async ({ page }) => {
     window.__YONA_RUNTIME_CONFIG__ = {
       apiBaseUrl: "/yona/api",
       basePath: "/yona",
-      rpcBaseUrl: "/yona/rpc",
     };
   });
 

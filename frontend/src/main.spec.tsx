@@ -7,7 +7,6 @@ describe("createApp", () => {
       runtimeConfig: {
         apiBaseUrl: "/yona/api",
         basePath: "/yona",
-        rpcBaseUrl: "/yona/rpc",
       },
     });
 

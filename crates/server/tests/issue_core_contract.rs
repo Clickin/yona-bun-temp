@@ -8,6 +8,8 @@ use yona_rust_persistence::AppRepository;
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
+mod rest_test_support;
+
 async fn build_app_with_repository() -> (axum::Router, AppRepository) {
     let db = Database::connect("sqlite::memory:")
         .await
@@ -48,7 +50,15 @@ async fn bootstrap(app: axum::Router) -> (String, String) {
         .headers()
         .get_all(http::header::SET_COOKIE)
         .iter()
-        .map(|value| value.to_str().unwrap().split(';').next().unwrap().to_string())
+        .map(|value| {
+            value
+                .to_str()
+                .unwrap()
+                .split(';')
+                .next()
+                .unwrap()
+                .to_string()
+        })
         .collect();
 
     (csrf, cookies.join("; "))
@@ -69,22 +79,7 @@ async fn rpc(
     csrf: Option<&str>,
     payload: serde_json::Value,
 ) -> Response<Body> {
-    let mut builder = Request::builder()
-        .method(Method::POST)
-        .uri(format!(
-            "/yona/rpc/yona.pilot.v1.PilotService/{method_name}"
-        ))
-        .header(http::header::CONTENT_TYPE, "application/json");
-    if let Some(cookie_header) = cookie_header {
-        builder = builder.header(http::header::COOKIE, cookie_header);
-    }
-    if let Some(csrf) = csrf {
-        builder = builder.header("x-csrf-token", csrf);
-    }
-
-    app.oneshot(builder.body(Body::from(payload.to_string())).unwrap())
-        .await
-        .unwrap()
+    rest_test_support::pilot_rest(app, method_name, cookie_header, csrf, payload).await
 }
 
 async fn rest(
@@ -131,7 +126,11 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i6
     let payload = response_json(response).await;
     let actor_id = payload
         .get("actorId")
-        .and_then(|value| value.as_i64().or_else(|| value.as_str().and_then(|value| value.parse().ok())))
+        .and_then(|value| {
+            value
+                .as_i64()
+                .or_else(|| value.as_str().and_then(|value| value.parse().ok()))
+        })
         .expect("actor id");
 
     (csrf, cookie_header, actor_id)
@@ -175,7 +174,10 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     assert_eq!(created["issueNumber"], "1");
     assert_eq!(created["state"], "open");
     assert_eq!(created["isWatching"], true);
-    assert!(created["bodyHtml"].as_str().unwrap().contains("<strong>Yona</strong>"));
+    assert!(created["bodyHtml"]
+        .as_str()
+        .unwrap()
+        .contains("<strong>Yona</strong>"));
     assert!(!created["bodyHtml"].as_str().unwrap().contains("<script>"));
 
     let detail = response_json(
@@ -227,7 +229,10 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         .await,
     )
     .await;
-    assert_eq!(updated_comment["comments"][0]["contentsMarkdown"], "Edited comment");
+    assert_eq!(
+        updated_comment["comments"][0]["contentsMarkdown"],
+        "Edited comment"
+    );
 
     let state_updated = response_json(
         rest(
@@ -272,12 +277,10 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         .await,
     )
     .await;
-    assert!(
-        deleted_comment
-            .get("comments")
-            .and_then(serde_json::Value::as_array)
-            .is_none_or(|comments| comments.is_empty())
-    );
+    assert!(deleted_comment
+        .get("comments")
+        .and_then(serde_json::Value::as_array)
+        .is_none_or(|comments| comments.is_empty()));
 
     let deleted_issue = response_json(
         rest(

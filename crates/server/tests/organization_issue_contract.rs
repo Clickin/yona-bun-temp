@@ -8,6 +8,8 @@ use yona_rust_persistence::AppRepository;
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
+mod rest_test_support;
+
 async fn build_app_with_repository() -> (axum::Router, AppRepository) {
     let db = Database::connect("sqlite::memory:")
         .await
@@ -77,22 +79,7 @@ async fn rpc(
     csrf: Option<&str>,
     payload: serde_json::Value,
 ) -> Response<Body> {
-    let mut builder = Request::builder()
-        .method(Method::POST)
-        .uri(format!(
-            "/yona/rpc/yona.pilot.v1.PilotService/{method_name}"
-        ))
-        .header(http::header::CONTENT_TYPE, "application/json");
-    if let Some(cookie_header) = cookie_header {
-        builder = builder.header(http::header::COOKIE, cookie_header);
-    }
-    if let Some(csrf) = csrf {
-        builder = builder.header("x-csrf-token", csrf);
-    }
-
-    app.oneshot(builder.body(Body::from(payload.to_string())).unwrap())
-        .await
-        .unwrap()
+    rest_test_support::pilot_rest(app, method_name, cookie_header, csrf, payload).await
 }
 
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i64) {

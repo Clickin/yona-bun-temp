@@ -2,7 +2,7 @@ pub mod persistence;
 pub mod runtime_config;
 pub mod session;
 
-use axum::extract::{Form, Multipart, Query};
+use axum::extract::{Form, Multipart, Query, RawQuery};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::routing::{any, delete, get, patch, post, put};
@@ -10,7 +10,6 @@ use axum::{extract::Path, http::Method};
 use axum::{Json, Router};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use buffa::view::{MessageView, OwnedView};
-use connectrpc::{ConnectError, Context};
 use http::header::SET_COOKIE;
 use http::{HeaderValue, StatusCode};
 use md5::{Digest, Md5};
@@ -19,7 +18,6 @@ use runtime_config::normalize_base_path;
 use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Deserializer, Serialize};
 use session::{SessionConfig, SessionManager};
-use std::sync::Arc;
 use std::{collections::HashMap, path::PathBuf, vec};
 
 use generated::yona::pilot::v1::*;
@@ -35,11 +33,101 @@ use yona_rust_vcs::{CodeBrowserSnapshot, CodeEntryRecord, CodeFileRecord, VcsErr
 
 #[allow(clippy::missing_panics_doc)]
 pub mod generated {
-    include!(concat!(env!("OUT_DIR"), "/_connectrpc.rs"));
+    include!(concat!(env!("OUT_DIR"), "/_pilot_proto.rs"));
 }
 
 pub mod embedded_assets {
     include!(concat!(env!("OUT_DIR"), "/_embedded_assets.rs"));
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ErrorCode {
+    InvalidArgument,
+    NotFound,
+    AlreadyExists,
+    Unauthenticated,
+    PermissionDenied,
+    Unimplemented,
+    Internal,
+}
+
+impl ErrorCode {
+    fn http_status(self) -> StatusCode {
+        match self {
+            Self::InvalidArgument => StatusCode::BAD_REQUEST,
+            Self::NotFound => StatusCode::NOT_FOUND,
+            Self::AlreadyExists => StatusCode::CONFLICT,
+            Self::Unauthenticated => StatusCode::UNAUTHORIZED,
+            Self::PermissionDenied => StatusCode::FORBIDDEN,
+            Self::Unimplemented => StatusCode::NOT_IMPLEMENTED,
+            Self::Internal => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+struct ConnectError {
+    code: ErrorCode,
+    message: Option<String>,
+}
+
+impl ConnectError {
+    fn new(code: ErrorCode, message: impl Into<String>) -> Self {
+        Self {
+            code,
+            message: Some(message.into()),
+        }
+    }
+
+    fn invalid_argument(message: impl Into<String>) -> Self {
+        Self::new(ErrorCode::InvalidArgument, message)
+    }
+
+    fn not_found(message: impl Into<String>) -> Self {
+        Self::new(ErrorCode::NotFound, message)
+    }
+
+    fn already_exists(message: impl Into<String>) -> Self {
+        Self::new(ErrorCode::AlreadyExists, message)
+    }
+
+    fn unauthenticated(message: impl Into<String>) -> Self {
+        Self::new(ErrorCode::Unauthenticated, message)
+    }
+
+    fn permission_denied(message: impl Into<String>) -> Self {
+        Self::new(ErrorCode::PermissionDenied, message)
+    }
+
+    fn unimplemented(message: impl Into<String>) -> Self {
+        Self::new(ErrorCode::Unimplemented, message)
+    }
+}
+
+impl std::fmt::Display for ConnectError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.message {
+            Some(message) => formatter.write_str(message),
+            None => write!(formatter, "{:?}", self.code),
+        }
+    }
+}
+
+impl std::error::Error for ConnectError {}
+
+#[derive(Clone, Debug)]
+struct Context {
+    headers: HeaderMap,
+    response_headers: HeaderMap,
+}
+
+impl Context {
+    fn new(headers: HeaderMap) -> Self {
+        Self {
+            headers,
+            response_headers: HeaderMap::new(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -117,9 +205,6 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     };
     let route_backend = backend.clone();
     let browser_runtime = BrowserRuntimeConfig::from_base_path(&base_path);
-    let connect_router = Arc::new(pilot_service.clone())
-        .register(connectrpc::Router::new())
-        .into_axum_service();
     let lost_password_session_manager = session_manager.clone();
     let lost_password_backend = route_backend.clone();
     let lost_password_base_path = base_path.clone();
@@ -544,8 +629,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     .await
                 }
             }),
-        )
-        .nest_service("/rpc", connect_router);
+        );
 
     match assets.clone() {
         AssetMode::Filesystem(asset_root) => {
@@ -1473,6 +1557,7 @@ struct RestErrorPayload {
 }
 
 struct RestRouteError {
+    code: Option<&'static str>,
     message: String,
     status: StatusCode,
 }
@@ -1481,11 +1566,16 @@ impl RestRouteError {
     fn from_connect_error(error: ConnectError) -> Self {
         let status = error.code.http_status();
         let message = error.message.clone().unwrap_or_else(|| error.to_string());
-        Self { message, status }
+        Self {
+            code: None,
+            message,
+            status,
+        }
     }
 
     fn bad_request(message: impl Into<String>) -> Self {
         Self {
+            code: None,
             message: message.into(),
             status: StatusCode::BAD_REQUEST,
         }
@@ -1493,6 +1583,7 @@ impl RestRouteError {
 
     fn not_found(message: impl Into<String>) -> Self {
         Self {
+            code: None,
             message: message.into(),
             status: StatusCode::NOT_FOUND,
         }
@@ -1500,6 +1591,7 @@ impl RestRouteError {
 
     fn not_implemented(message: impl Into<String>) -> Self {
         Self {
+            code: None,
             message: message.into(),
             status: StatusCode::NOT_IMPLEMENTED,
         }
@@ -1508,14 +1600,14 @@ impl RestRouteError {
 
 impl IntoResponse for RestRouteError {
     fn into_response(self) -> Response {
-        let code = match self.status {
+        let code = self.code.unwrap_or(match self.status {
             StatusCode::BAD_REQUEST => "bad_request",
             StatusCode::UNAUTHORIZED => "unauthorized",
             StatusCode::FORBIDDEN => "forbidden",
             StatusCode::NOT_FOUND => "not_found",
             StatusCode::NOT_IMPLEMENTED => "not_implemented",
             _ => "internal_error",
-        };
+        });
         (
             self.status,
             Json(RestErrorEnvelope {
@@ -1712,6 +1804,7 @@ struct RestCodeBrowserQuery {
 impl RestRouteError {
     fn internal(message: impl Into<String>) -> Self {
         Self {
+            code: None,
             message: message.into(),
             status: StatusCode::INTERNAL_SERVER_ERROR,
         }
@@ -1725,7 +1818,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
     let issue_meta_service = service.clone();
     let org_project_service = service.clone();
 
-    Router::new()
+    let router = Router::new()
         .route(
             "/session",
             get({
@@ -2178,10 +2271,11 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 let backend = backend.clone();
                 move |headers: HeaderMap,
                       Path(organization_name): Path<String>,
-                      Query(query): Query<RestOrganizationIssuesQuery>| {
+                      RawQuery(raw_query): RawQuery| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     async move {
+                        let query = RestOrganizationIssuesQuery::from_raw_query(raw_query.as_deref())?;
                         rest_list_organization_issues(
                             headers,
                             organization_name,
@@ -2233,7 +2327,31 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .merge(build_rest_issue_meta_router(issue_meta_service))
-        .merge(build_rest_org_project_router(org_project_service))
+        .merge(build_rest_org_project_router(org_project_service));
+
+    #[cfg(debug_assertions)]
+    {
+        router.merge(build_debug_method_router(service))
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        router
+    }
+}
+
+#[cfg(debug_assertions)]
+fn build_debug_method_router(service: PilotServiceImpl) -> Router {
+    Router::new().route(
+        "/_pilot/{method_name}",
+        post(
+            move |headers: HeaderMap,
+                  Path(method_name): Path<String>,
+                  Json(payload): Json<serde_json::Value>| {
+                let service = service.clone();
+                async move { rest_debug_method(headers, method_name, payload, service).await }
+            },
+        ),
+    )
 }
 
 fn build_rest_org_project_router(service: PilotServiceImpl) -> Router {
@@ -3010,6 +3128,260 @@ fn build_rest_issue_meta_router(service: PilotServiceImpl) -> Router {
                 },
             ),
         )
+}
+
+#[cfg(debug_assertions)]
+async fn rest_debug_method(
+    headers: HeaderMap,
+    method_name: String,
+    payload: serde_json::Value,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    macro_rules! call {
+        ($method:ident, $request:ty, $view:ty) => {{
+            let request: $request = serde_json::from_value(payload).map_err(|error| {
+                RestRouteError::bad_request(format!("invalid debug method request: {error}"))
+            })?;
+            let request = rest_owned_view::<$view>(&request)?;
+            let (payload, ctx) = service
+                .$method(Context::new(headers), request)
+                .await
+                .map_err(RestRouteError::from_connect_error)?;
+            Ok(rest_json_response(payload, ctx))
+        }};
+    }
+
+    match method_name.as_str() {
+        "ReadCurrentSession" => call!(
+            read_current_session,
+            ReadCurrentSessionRequest,
+            ReadCurrentSessionRequestView<'static>
+        ),
+        "ReadAuthUiCapabilities" => call!(
+            read_auth_ui_capabilities,
+            ReadAuthUiCapabilitiesRequest,
+            ReadAuthUiCapabilitiesRequestView<'static>
+        ),
+        "SignInWithPassword" => call!(
+            sign_in_with_password,
+            SignInWithPasswordRequest,
+            SignInWithPasswordRequestView<'static>
+        ),
+        "RegisterWithPassword" => call!(
+            register_with_password,
+            RegisterWithPasswordRequest,
+            RegisterWithPasswordRequestView<'static>
+        ),
+        "VerifyUser" => call!(
+            verify_user,
+            VerifyUserRequest,
+            VerifyUserRequestView<'static>
+        ),
+        "SignOut" => call!(sign_out, SignOutRequest, SignOutRequestView<'static>),
+        "ReadWorkspaceOverview" => call!(
+            read_workspace_overview,
+            ReadWorkspaceOverviewRequest,
+            ReadWorkspaceOverviewRequestView<'static>
+        ),
+        "SetDefaultLandingPath" => call!(
+            set_default_landing_path,
+            SetDefaultLandingPathRequest,
+            SetDefaultLandingPathRequestView<'static>
+        ),
+        "UpdateProfile" => call!(
+            update_profile,
+            UpdateProfileRequest,
+            UpdateProfileRequestView<'static>
+        ),
+        "ChangePassword" => call!(
+            change_password,
+            ChangePasswordRequest,
+            ChangePasswordRequestView<'static>
+        ),
+        "ResetVisitedProjects" => call!(
+            reset_visited_projects,
+            ResetVisitedProjectsRequest,
+            ResetVisitedProjectsRequestView<'static>
+        ),
+        "AddWorkspaceEmail" => call!(
+            add_workspace_email,
+            AddWorkspaceEmailRequest,
+            AddWorkspaceEmailRequestView<'static>
+        ),
+        "DeleteWorkspaceEmail" => call!(
+            delete_workspace_email,
+            DeleteWorkspaceEmailRequest,
+            DeleteWorkspaceEmailRequestView<'static>
+        ),
+        "SendWorkspaceEmailValidation" => call!(
+            send_workspace_email_validation,
+            SendWorkspaceEmailValidationRequest,
+            SendWorkspaceEmailValidationRequestView<'static>
+        ),
+        "SetMainWorkspaceEmail" => call!(
+            set_main_workspace_email,
+            SetMainWorkspaceEmailRequest,
+            SetMainWorkspaceEmailRequestView<'static>
+        ),
+        "ResetApiToken" => call!(
+            reset_api_token,
+            ResetApiTokenRequest,
+            ResetApiTokenRequestView<'static>
+        ),
+        "ToggleWorkspaceNotification" => call!(
+            toggle_workspace_notification,
+            ToggleWorkspaceNotificationRequest,
+            ToggleWorkspaceNotificationRequestView<'static>
+        ),
+        "CreateOrganization" => call!(
+            create_organization,
+            CreateOrganizationRequest,
+            CreateOrganizationRequestView<'static>
+        ),
+        "ReadOrganizationDetail" => call!(
+            read_organization_detail,
+            ReadOrganizationDetailRequest,
+            ReadOrganizationDetailRequestView<'static>
+        ),
+        "ReadOrganizationSettings" => call!(
+            read_organization_settings,
+            ReadOrganizationSettingsRequest,
+            ReadOrganizationSettingsRequestView<'static>
+        ),
+        "ReadOrganizationAdmin" => call!(
+            read_organization_admin,
+            ReadOrganizationAdminRequest,
+            ReadOrganizationAdminRequestView<'static>
+        ),
+        "ReadOrganizationContainer" => call!(
+            read_organization_container,
+            ReadOrganizationContainerRequest,
+            ReadOrganizationContainerRequestView<'static>
+        ),
+        "UpdateOrganization" => call!(
+            update_organization,
+            UpdateOrganizationRequest,
+            UpdateOrganizationRequestView<'static>
+        ),
+        "AddOrganizationMember" => call!(
+            add_organization_member,
+            AddOrganizationMemberRequest,
+            AddOrganizationMemberRequestView<'static>
+        ),
+        "UpdateOrganizationMemberRole" => call!(
+            update_organization_member_role,
+            UpdateOrganizationMemberRoleRequest,
+            UpdateOrganizationMemberRoleRequestView<'static>
+        ),
+        "DeleteOrganizationMember" => call!(
+            delete_organization_member,
+            DeleteOrganizationMemberRequest,
+            DeleteOrganizationMemberRequestView<'static>
+        ),
+        "AcceptOrganizationEnrollment" => call!(
+            accept_organization_enrollment,
+            AcceptOrganizationEnrollmentRequest,
+            AcceptOrganizationEnrollmentRequestView<'static>
+        ),
+        "EnrollOrganization" => call!(
+            enroll_organization,
+            EnrollOrganizationRequest,
+            EnrollOrganizationRequestView<'static>
+        ),
+        "CancelEnrollOrganization" => call!(
+            cancel_enroll_organization,
+            CancelEnrollOrganizationRequest,
+            CancelEnrollOrganizationRequestView<'static>
+        ),
+        "LeaveOrganization" => call!(
+            leave_organization,
+            LeaveOrganizationRequest,
+            LeaveOrganizationRequestView<'static>
+        ),
+        "DeleteOrganization" => call!(
+            delete_organization,
+            DeleteOrganizationRequest,
+            DeleteOrganizationRequestView<'static>
+        ),
+        "CreateProject" => call!(
+            create_project,
+            CreateProjectRequest,
+            CreateProjectRequestView<'static>
+        ),
+        "ReadProjectDetail" => call!(
+            read_project_detail,
+            ReadProjectDetailRequest,
+            ReadProjectDetailRequestView<'static>
+        ),
+        "ReadProjectSettings" => call!(
+            read_project_settings,
+            ReadProjectSettingsRequest,
+            ReadProjectSettingsRequestView<'static>
+        ),
+        "ReadProjectContainer" => call!(
+            read_project_container,
+            ReadProjectContainerRequest,
+            ReadProjectContainerRequestView<'static>
+        ),
+        "UpdateProjectOverview" => call!(
+            update_project_overview,
+            UpdateProjectOverviewRequest,
+            UpdateProjectOverviewRequestView<'static>
+        ),
+        "ToggleProjectWatch" => call!(
+            toggle_project_watch,
+            ToggleProjectWatchRequest,
+            ToggleProjectWatchRequestView<'static>
+        ),
+        "EnrollProject" => call!(
+            enroll_project,
+            EnrollProjectRequest,
+            EnrollProjectRequestView<'static>
+        ),
+        "CancelEnrollProject" => call!(
+            cancel_enroll_project,
+            CancelEnrollProjectRequest,
+            CancelEnrollProjectRequestView<'static>
+        ),
+        "ToggleFavoriteProject" => call!(
+            toggle_favorite_project,
+            ToggleFavoriteProjectRequest,
+            ToggleFavoriteProjectRequestView<'static>
+        ),
+        "ListProjects" => call!(
+            list_projects,
+            ListProjectsRequest,
+            ListProjectsRequestView<'static>
+        ),
+        "ListOrganizations" => call!(
+            list_organizations,
+            ListOrganizationsRequest,
+            ListOrganizationsRequestView<'static>
+        ),
+        "ListOrganizationIssues" => call!(
+            list_organization_issues,
+            ListOrganizationIssuesRequest,
+            ListOrganizationIssuesRequestView<'static>
+        ),
+        "ListProjectIssues" => call!(
+            list_project_issues,
+            ListProjectIssuesRequest,
+            ListProjectIssuesRequestView<'static>
+        ),
+        "ReadIssueDetail" => call!(
+            read_issue_detail,
+            ReadIssueDetailRequest,
+            ReadIssueDetailRequestView<'static>
+        ),
+        "UpdateIssueState" => call!(
+            update_issue_state,
+            UpdateIssueStateRequest,
+            UpdateIssueStateRequestView<'static>
+        ),
+        unknown => Err(RestRouteError::not_found(format!(
+            "debug method not found: {unknown}"
+        ))),
+    }
 }
 
 fn rest_owned_view<V>(message: &V::Owned) -> Result<OwnedView<V>, RestRouteError>
@@ -4561,6 +4933,88 @@ struct RestOrganizationIssuesQuery {
     state: String,
 }
 
+impl RestOrganizationIssuesQuery {
+    fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
+        let mut query = Self::default();
+        let Some(raw_query) = raw_query else {
+            return Ok(query);
+        };
+
+        for pair in raw_query.split('&').filter(|pair| !pair.is_empty()) {
+            let (raw_key, raw_value) = pair.split_once('=').unwrap_or((pair, ""));
+            let key = decode_query_component(raw_key);
+            let value = decode_query_component(raw_value);
+            match key.as_str() {
+                "assigneeId" => query.assignee_id = parse_rest_query_i64(&value)?,
+                "authorId" => query.author_id = parse_rest_query_i64(&value)?,
+                "filter" => query.filter = value,
+                "itemsPerPage" => query.items_per_page = parse_rest_query_u32(&value)?,
+                "orderBy" => query.order_by = value,
+                "orderDir" => query.order_dir = value,
+                "pageNum" => query.page_num = parse_rest_query_u32(&value)?,
+                "projectNames" | "projectNames[]" => {
+                    if !value.trim().is_empty() {
+                        query.project_names.push(value);
+                    }
+                }
+                "state" => query.state = value,
+                _ => {}
+            }
+        }
+
+        Ok(query)
+    }
+}
+
+fn parse_rest_query_i64(value: &str) -> Result<i64, RestRouteError> {
+    if value.trim().is_empty() {
+        return Ok(0);
+    }
+    value
+        .parse()
+        .map_err(|_| RestRouteError::bad_request("invalid organization issue query"))
+}
+
+fn parse_rest_query_u32(value: &str) -> Result<u32, RestRouteError> {
+    if value.trim().is_empty() {
+        return Ok(0);
+    }
+    value
+        .parse()
+        .map_err(|_| RestRouteError::bad_request("invalid organization issue query"))
+}
+
+fn decode_query_component(value: &str) -> String {
+    let bytes = value.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        match bytes[index] {
+            b'+' => {
+                decoded.push(b' ');
+                index += 1;
+            }
+            b'%' if index + 2 < bytes.len() => {
+                let high = (bytes[index + 1] as char).to_digit(16);
+                let low = (bytes[index + 2] as char).to_digit(16);
+                if let (Some(high), Some(low)) = (high, low) {
+                    decoded.push(((high << 4) | low) as u8);
+                    index += 3;
+                } else {
+                    decoded.push(bytes[index]);
+                    index += 1;
+                }
+            }
+            byte => {
+                decoded.push(byte);
+                index += 1;
+            }
+        }
+    }
+
+    String::from_utf8_lossy(&decoded).into_owned()
+}
+
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestUserIssuesQuery {
@@ -6033,8 +6487,6 @@ struct BrowserRuntimeConfig {
     api_base_url: String,
     #[serde(rename = "basePath")]
     base_path: String,
-    #[serde(rename = "rpcBaseUrl")]
-    rpc_base_url: String,
 }
 
 #[derive(Clone, Serialize)]
@@ -6074,16 +6526,9 @@ impl BrowserRuntimeConfig {
         } else {
             format!("{base_path}/api")
         };
-        let rpc_base_url = if base_path == "/" {
-            "/rpc".to_string()
-        } else {
-            format!("{base_path}/rpc")
-        };
-
         Self {
             api_base_url,
             base_path,
-            rpc_base_url,
         }
     }
 }
@@ -6214,7 +6659,7 @@ async fn build_session_route_payload(
 }
 
 fn internal_error(error: impl ToString) -> ConnectError {
-    ConnectError::new(connectrpc::ErrorCode::Internal, error.to_string())
+    ConnectError::new(ErrorCode::Internal, error.to_string())
 }
 
 fn require_session<'a>(
@@ -7981,7 +8426,7 @@ async fn build_project_container_response(
     })
 }
 
-impl PilotService for PilotServiceImpl {
+impl PilotServiceImpl {
     async fn read_current_session(
         &self,
         ctx: Context,
@@ -10194,9 +10639,7 @@ impl PilotService for PilotServiceImpl {
             let items = repository
                 .list_projects()
                 .await
-                .map_err(|error| {
-                    ConnectError::new(connectrpc::ErrorCode::Internal, error.to_string())
-                })?
+                .map_err(|error| ConnectError::new(ErrorCode::Internal, error.to_string()))?
                 .into_iter()
                 .map(|item| ProjectListItem {
                     owner_name: item.owner_name,
@@ -10241,9 +10684,7 @@ impl PilotService for PilotServiceImpl {
             let items = repository
                 .list_organizations()
                 .await
-                .map_err(|error| {
-                    ConnectError::new(connectrpc::ErrorCode::Internal, error.to_string())
-                })?
+                .map_err(|error| ConnectError::new(ErrorCode::Internal, error.to_string()))?
                 .into_iter()
                 .map(|item| OrganizationListItem {
                     organization_name: item.organization_name,

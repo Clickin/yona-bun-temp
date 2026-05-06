@@ -66,7 +66,16 @@ async fn bootstrap(app: axum::Router) -> (String, String) {
 }
 
 async fn response_json(response: Response<Body>) -> String {
-    String::from_utf8(response.into_body().collect().await.unwrap().to_bytes().to_vec()).unwrap()
+    String::from_utf8(
+        response
+            .into_body()
+            .collect()
+            .await
+            .unwrap()
+            .to_bytes()
+            .to_vec(),
+    )
+    .unwrap()
 }
 
 async fn register_user(app: axum::Router, cookie_header: &str, csrf: &str, login_id: &str) -> i64 {
@@ -74,7 +83,7 @@ async fn register_user(app: axum::Router, cookie_header: &str, csrf: &str, login
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, cookie_header)
                 .header("x-csrf-token", csrf)
@@ -110,7 +119,7 @@ async fn create_organization(
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/CreateOrganization")
+                .uri("/yona/api/v1/_pilot/CreateOrganization")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, cookie_header)
                 .header("x-csrf-token", csrf)
@@ -138,7 +147,7 @@ async fn create_project(
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/CreateProject")
+                .uri("/yona/api/v1/_pilot/CreateProject")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, cookie_header)
                 .header("x-csrf-token", csrf)
@@ -168,7 +177,7 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/CreateOrganization")
+                .uri("/yona/api/v1/_pilot/CreateOrganization")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
@@ -186,7 +195,7 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadOrganizationDetail")
+                .uri("/yona/api/v1/_pilot/ReadOrganizationDetail")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from("{\"organizationName\":\"weblabs\"}"))
                 .unwrap(),
@@ -200,7 +209,7 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadOrganizationSettings")
+                .uri("/yona/api/v1/_pilot/ReadOrganizationSettings")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from("{\"organizationName\":\"weblabs\"}"))
                 .unwrap(),
@@ -214,7 +223,7 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadOrganizationSettings")
+                .uri("/yona/api/v1/_pilot/ReadOrganizationSettings")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .body(Body::from("{\"organizationName\":\"weblabs\"}"))
@@ -229,7 +238,7 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/CreateProject")
+                .uri("/yona/api/v1/_pilot/CreateProject")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
@@ -244,7 +253,7 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadProjectSettings")
+                .uri("/yona/api/v1/_pilot/ReadProjectSettings")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &guest_cookie)
                 .body(Body::from(
@@ -272,7 +281,7 @@ async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/CreateProject")
+                .uri("/yona/api/v1/_pilot/CreateProject")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
@@ -288,7 +297,7 @@ async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadProjectDetail")
+                .uri("/yona/api/v1/_pilot/ReadProjectDetail")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &guest_cookie)
                 .body(Body::from(
@@ -305,7 +314,7 @@ async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/EnrollProject")
+                .uri("/yona/api/v1/_pilot/EnrollProject")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &guest_cookie)
                 .header("x-csrf-token", &guest_csrf)
@@ -323,7 +332,7 @@ async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ToggleFavoriteProject")
+                .uri("/yona/api/v1/_pilot/ToggleFavoriteProject")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &guest_cookie)
                 .header("x-csrf-token", &guest_csrf)
@@ -341,7 +350,7 @@ async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadWorkspaceOverview")
+                .uri("/yona/api/v1/_pilot/ReadWorkspaceOverview")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &guest_cookie)
                 .body(Body::from("{}"))
@@ -361,7 +370,7 @@ async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/CancelEnrollProject")
+                .uri("/yona/api/v1/_pilot/CancelEnrollProject")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &guest_cookie)
                 .header("x-csrf-token", &guest_csrf)
@@ -385,7 +394,14 @@ async fn organization_container_contract_returns_project_cards_and_gated_rosters
     let (guest_csrf, guest_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &guest_cookie, &guest_csrf, "guest").await;
 
-    create_organization(app.clone(), &admin_cookie, &admin_csrf, "weblabs", "web labs").await;
+    create_organization(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "weblabs",
+        "web labs",
+    )
+    .await;
     create_project(
         app.clone(),
         &admin_cookie,
@@ -402,7 +418,7 @@ async fn organization_container_contract_returns_project_cards_and_gated_rosters
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadOrganizationContainer")
+                .uri("/yona/api/v1/_pilot/ReadOrganizationContainer")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from("{\"organizationName\":\"weblabs\"}"))
                 .unwrap(),
@@ -432,7 +448,7 @@ async fn organization_container_contract_returns_project_cards_and_gated_rosters
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadOrganizationContainer")
+                .uri("/yona/api/v1/_pilot/ReadOrganizationContainer")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .body(Body::from("{\"organizationName\":\"weblabs\"}"))
@@ -483,7 +499,7 @@ async fn project_container_contract_returns_header_menu_and_summary_shells() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadProjectContainer")
+                .uri("/yona/api/v1/_pilot/ReadProjectContainer")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &guest_cookie)
                 .body(Body::from(
@@ -495,8 +511,16 @@ async fn project_container_contract_returns_header_menu_and_summary_shells() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
 
-    let json = String::from_utf8(response.into_body().collect().await.unwrap().to_bytes().to_vec())
-        .unwrap();
+    let json = String::from_utf8(
+        response
+            .into_body()
+            .collect()
+            .await
+            .unwrap()
+            .to_bytes()
+            .to_vec(),
+    )
+    .unwrap();
     assert!(json.contains("\"ownerName\":\"admin\""));
     assert!(json.contains("\"projectName\":\"projectYobi\""));
     assert!(json.contains("\"defaultTab\":\"readme\""));
@@ -526,7 +550,7 @@ async fn update_project_overview_returns_refreshed_project_container() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/UpdateProjectOverview")
+                .uri("/yona/api/v1/_pilot/UpdateProjectOverview")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
@@ -539,8 +563,16 @@ async fn update_project_overview_returns_refreshed_project_container() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
 
-    let json = String::from_utf8(response.into_body().collect().await.unwrap().to_bytes().to_vec())
-        .unwrap();
+    let json = String::from_utf8(
+        response
+            .into_body()
+            .collect()
+            .await
+            .unwrap()
+            .to_bytes()
+            .to_vec(),
+    )
+    .unwrap();
     assert!(json.contains("\"overview\":\"After overview update\""));
 }
 
@@ -569,7 +601,7 @@ async fn toggle_project_watch_returns_refreshed_project_container() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ToggleProjectWatch")
+                .uri("/yona/api/v1/_pilot/ToggleProjectWatch")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &guest_cookie)
                 .header("x-csrf-token", &guest_csrf)
@@ -582,8 +614,16 @@ async fn toggle_project_watch_returns_refreshed_project_container() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
 
-    let json = String::from_utf8(response.into_body().collect().await.unwrap().to_bytes().to_vec())
-        .unwrap();
+    let json = String::from_utf8(
+        response
+            .into_body()
+            .collect()
+            .await
+            .unwrap()
+            .to_bytes()
+            .to_vec(),
+    )
+    .unwrap();
     assert!(json.contains("\"isWatching\":true"));
     assert!(json.contains("\"watchCount\":1"));
 }
@@ -601,7 +641,14 @@ async fn organization_container_contract_returns_guest_member_and_last_admin_cta
     let (guest_csrf, guest_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &guest_cookie, &guest_csrf, "guest").await;
 
-    create_organization(app.clone(), &admin_cookie, &admin_csrf, "weblabs", "web labs").await;
+    create_organization(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "weblabs",
+        "web labs",
+    )
+    .await;
 
     let organization = repository
         .read_organization_by_name("weblabs")
@@ -618,7 +665,7 @@ async fn organization_container_contract_returns_guest_member_and_last_admin_cta
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadOrganizationContainer")
+                .uri("/yona/api/v1/_pilot/ReadOrganizationContainer")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &guest_cookie)
                 .body(Body::from("{\"organizationName\":\"weblabs\"}"))
@@ -637,7 +684,7 @@ async fn organization_container_contract_returns_guest_member_and_last_admin_cta
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadOrganizationContainer")
+                .uri("/yona/api/v1/_pilot/ReadOrganizationContainer")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &member_cookie)
                 .body(Body::from("{\"organizationName\":\"weblabs\"}"))
@@ -654,7 +701,7 @@ async fn organization_container_contract_returns_guest_member_and_last_admin_cta
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadOrganizationContainer")
+                .uri("/yona/api/v1/_pilot/ReadOrganizationContainer")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .body(Body::from("{\"organizationName\":\"weblabs\"}"))
@@ -681,7 +728,14 @@ async fn organization_admin_contract_requires_update_permission_and_exposes_memb
     let (outsider_csrf, outsider_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &outsider_cookie, &outsider_csrf, "outsider").await;
 
-    create_organization(app.clone(), &admin_cookie, &admin_csrf, "weblabs", "web labs").await;
+    create_organization(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "weblabs",
+        "web labs",
+    )
+    .await;
 
     let organization = repository
         .read_organization_by_name("weblabs")
@@ -698,7 +752,7 @@ async fn organization_admin_contract_requires_update_permission_and_exposes_memb
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadOrganizationAdmin")
+                .uri("/yona/api/v1/_pilot/ReadOrganizationAdmin")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &outsider_cookie)
                 .body(Body::from("{\"organizationName\":\"weblabs\"}"))
@@ -712,7 +766,7 @@ async fn organization_admin_contract_requires_update_permission_and_exposes_memb
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadOrganizationAdmin")
+                .uri("/yona/api/v1/_pilot/ReadOrganizationAdmin")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .body(Body::from("{\"organizationName\":\"weblabs\"}"))
@@ -740,14 +794,21 @@ async fn organization_enrollment_mutations_toggle_guest_request_state() {
     let (guest_csrf, guest_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &guest_cookie, &guest_csrf, "guest").await;
 
-    create_organization(app.clone(), &admin_cookie, &admin_csrf, "weblabs", "web labs").await;
+    create_organization(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "weblabs",
+        "web labs",
+    )
+    .await;
 
     let enroll_response = app
         .clone()
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/EnrollOrganization")
+                .uri("/yona/api/v1/_pilot/EnrollOrganization")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &guest_cookie)
                 .header("x-csrf-token", &guest_csrf)
@@ -765,7 +826,7 @@ async fn organization_enrollment_mutations_toggle_guest_request_state() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/CancelEnrollOrganization")
+                .uri("/yona/api/v1/_pilot/CancelEnrollOrganization")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &guest_cookie)
                 .header("x-csrf-token", &guest_csrf)
@@ -793,14 +854,21 @@ async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
     let (guest_csrf, guest_cookie) = bootstrap(app.clone()).await;
     let guest_id = register_user(app.clone(), &guest_cookie, &guest_csrf, "guest").await;
 
-    create_organization(app.clone(), &admin_cookie, &admin_csrf, "weblabs", "web labs").await;
+    create_organization(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "weblabs",
+        "web labs",
+    )
+    .await;
 
     let add_member_response = app
         .clone()
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/AddOrganizationMember")
+                .uri("/yona/api/v1/_pilot/AddOrganizationMember")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
@@ -821,7 +889,7 @@ async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/EnrollOrganization")
+                .uri("/yona/api/v1/_pilot/EnrollOrganization")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &guest_cookie)
                 .header("x-csrf-token", &guest_csrf)
@@ -837,7 +905,7 @@ async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadOrganizationAdmin")
+                .uri("/yona/api/v1/_pilot/ReadOrganizationAdmin")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .body(Body::from("{\"organizationName\":\"weblabs\"}"))
@@ -854,7 +922,7 @@ async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/AcceptOrganizationEnrollment")
+                .uri("/yona/api/v1/_pilot/AcceptOrganizationEnrollment")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
@@ -875,7 +943,7 @@ async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/UpdateOrganizationMemberRole")
+                .uri("/yona/api/v1/_pilot/UpdateOrganizationMemberRole")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
@@ -895,7 +963,7 @@ async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/DeleteOrganizationMember")
+                .uri("/yona/api/v1/_pilot/DeleteOrganizationMember")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
@@ -919,8 +987,14 @@ async fn organization_admin_mutations_add_accept_promote_and_delete_members() {
         .read_organization_members(&organization.organization_name)
         .await
         .expect("read members after delete");
-    assert!(directory.members.iter().any(|member| member.login_id == "guest"));
-    assert!(!directory.members.iter().any(|member| member.login_id == "member"));
+    assert!(directory
+        .members
+        .iter()
+        .any(|member| member.login_id == "guest"));
+    assert!(!directory
+        .members
+        .iter()
+        .any(|member| member.login_id == "member"));
 }
 
 #[tokio::test]
@@ -933,7 +1007,14 @@ async fn organization_leave_mutation_redirects_members_and_blocks_last_admins() 
     let (member_csrf, member_cookie) = bootstrap(app.clone()).await;
     let member_id = register_user(app.clone(), &member_cookie, &member_csrf, "member").await;
 
-    create_organization(app.clone(), &admin_cookie, &admin_csrf, "weblabs", "web labs").await;
+    create_organization(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "weblabs",
+        "web labs",
+    )
+    .await;
     let organization = repository
         .read_organization_by_name("weblabs")
         .await
@@ -949,7 +1030,7 @@ async fn organization_leave_mutation_redirects_members_and_blocks_last_admins() 
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/LeaveOrganization")
+                .uri("/yona/api/v1/_pilot/LeaveOrganization")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &member_cookie)
                 .header("x-csrf-token", &member_csrf)
@@ -967,7 +1048,7 @@ async fn organization_leave_mutation_redirects_members_and_blocks_last_admins() 
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/LeaveOrganization")
+                .uri("/yona/api/v1/_pilot/LeaveOrganization")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
@@ -986,7 +1067,14 @@ async fn organization_delete_mutation_redirects_root_and_blocks_orgs_with_projec
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
 
-    create_organization(app.clone(), &admin_cookie, &admin_csrf, "weblabs", "web labs").await;
+    create_organization(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "weblabs",
+        "web labs",
+    )
+    .await;
     create_project(
         app.clone(),
         &admin_cookie,
@@ -1003,7 +1091,7 @@ async fn organization_delete_mutation_redirects_root_and_blocks_orgs_with_projec
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/DeleteOrganization")
+                .uri("/yona/api/v1/_pilot/DeleteOrganization")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
@@ -1014,12 +1102,19 @@ async fn organization_delete_mutation_redirects_root_and_blocks_orgs_with_projec
         .unwrap();
     assert_eq!(blocked_delete.status(), StatusCode::BAD_REQUEST);
 
-    create_organization(app.clone(), &admin_cookie, &admin_csrf, "emptylabs", "empty labs").await;
+    create_organization(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "emptylabs",
+        "empty labs",
+    )
+    .await;
     let success_delete = app
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/DeleteOrganization")
+                .uri("/yona/api/v1/_pilot/DeleteOrganization")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)

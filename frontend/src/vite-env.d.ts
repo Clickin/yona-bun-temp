@@ -4,6 +4,5 @@ interface Window {
   __YONA_RUNTIME_CONFIG__?: {
     apiBaseUrl?: string;
     basePath?: string;
-    rpcBaseUrl?: string;
   };
 }
