@@ -11,6 +11,7 @@ import {
   listUserIssues,
   massUpdateIssues,
   readAuthUiCapabilities,
+  readCodeBrowser,
   readCurrentSession,
   readIssueDetail,
   readSessionBootstrap,
@@ -113,6 +114,51 @@ describe("readCurrentSession", () => {
       message: "REST endpoint not found.",
       status: 404,
     });
+  });
+});
+
+describe("readCodeBrowser", () => {
+  it("reads the REST v1 code browser endpoint with encoded branch and path query params", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          branches: [{ name: "main" }],
+          breadcrumbs: [{ name: "src", path: "src" }],
+          entries: [],
+          noHead: false,
+          ownerName: "owner",
+          path: "src/main.rs",
+          projectName: "projectYobi",
+          selectedBranch: "main",
+        }),
+    }));
+
+    const result = await readCodeBrowser(
+      runtimeConfig,
+      "owner",
+      "projectYobi",
+      {
+        branch: "feature/main",
+        path: "src/main.rs",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { credentials: string; headers: Headers; method: string },
+    ];
+    expect(requestUrl).toBe(
+      "/yona/api/v1/projects/owner/projectYobi/code?branch=feature%2Fmain&path=src%2Fmain.rs",
+    );
+    expect(requestInit.credentials).toBe("same-origin");
+    expect(requestInit.headers.get("Accept")).toBe("application/json");
+    expect(requestInit.method).toBe("GET");
+    expect(result.selectedBranch).toBe("main");
+    expect(result.path).toBe("src/main.rs");
   });
 });
 

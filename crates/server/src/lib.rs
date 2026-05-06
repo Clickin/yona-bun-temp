@@ -1620,6 +1620,13 @@ struct RestProjectMilestoneStateBody {
     state: String,
 }
 
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestCodeBrowserQuery {
+    branch: String,
+    path: String,
+}
+
 impl RestRouteError {
     fn internal(message: impl Into<String>) -> Self {
         Self {
@@ -1992,6 +1999,30 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                     let backend = backend.clone();
                     async move {
                         rest_list_user_issues(headers, query, session_manager, backend).await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/code",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestCodeBrowserQuery>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_read_code_browser(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            session_manager,
+                            backend,
+                        )
+                        .await
                     }
                 }
             }),
@@ -3179,6 +3210,59 @@ async fn rest_read_current_session(
 
 fn rest_not_found_response() -> Response {
     RestRouteError::not_found("REST endpoint not found.").into_response()
+}
+
+async fn rest_read_code_browser(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: RestCodeBrowserQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<ReadCodeBrowserResponse>, RestRouteError> {
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::from_connect_error(ConnectError::unimplemented(
+            "code browser requires repository backend",
+        )));
+    };
+    let authorization = repository
+        .read_project_authorization(&owner_name, &project_name, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::from_connect_error(ConnectError::not_found("project not found")))?;
+    if !project_read_allowed(&authorization, actor_id.is_none())
+        .map_err(RestRouteError::from_connect_error)?
+        || !project_code_menu_visible(&authorization, true)
+    {
+        return if actor_id.is_none() {
+            Err(RestRouteError::from_connect_error(ConnectError::unauthenticated(
+                "project read is not allowed",
+            )))
+        } else {
+            Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
+                "project read is not allowed",
+            )))
+        };
+    }
+
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let snapshot = yona_rust_vcs::read_code_browser(
+        &repo_path,
+        Some(query.branch.as_str()).filter(|value| !value.trim().is_empty()),
+        &query.path,
+    )
+    .map_err(code_browser_error)
+    .map_err(RestRouteError::from_connect_error)?;
+
+    Ok(Json(code_browser_response_from_snapshot(
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+        snapshot,
+    )))
 }
 
 #[derive(Deserialize)]

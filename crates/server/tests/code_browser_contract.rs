@@ -80,6 +80,21 @@ async fn response_json(response: Response<Body>) -> serde_json::Value {
     serde_json::from_str(&text).expect("json response")
 }
 
+async fn rest_get(
+    app: axum::Router,
+    path: &str,
+    cookie_header: Option<&str>,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(Method::GET)
+        .uri(format!("/yona/api/v1{path}"));
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+
+    app.oneshot(builder.body(Body::empty()).unwrap()).await.unwrap()
+}
+
 fn json_bool(value: &serde_json::Value, key: &str) -> bool {
     value
         .get(key)
@@ -295,6 +310,64 @@ async fn code_browser_reads_root_folder_and_text_file_from_git_repo() {
 }
 
 #[tokio::test]
+async fn rest_code_browser_reads_root_folder_and_text_file_from_git_repo() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+
+    let root = response_json(
+        rest_get(app.clone(), "/projects/owner/projectYobi/code", None).await,
+    )
+    .await;
+
+    assert_eq!(root["ownerName"], "owner");
+    assert_eq!(root["projectName"], "projectYobi");
+    assert_eq!(root["selectedBranch"], "main");
+    assert!(!json_bool(&root, "noHead"));
+    assert!(root["branches"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|branch| branch["name"] == "main"));
+    assert!(root["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|entry| entry["name"] == "src" && entry["kind"] == "folder"));
+    assert!(root["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|entry| entry["name"] == "README.md" && entry["kind"] == "file"));
+
+    let file = response_json(
+        rest_get(
+            app,
+            "/projects/owner/projectYobi/code?branch=main&path=src%2Fmain.rs",
+            None,
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(file["file"]["name"], "main.rs");
+    assert_eq!(file["file"]["path"], "src/main.rs");
+    assert_eq!(file["file"]["text"], "fn main() {}\n");
+    assert!(!json_bool(&file["file"], "isBinary"));
+}
+
+#[tokio::test]
 async fn code_browser_reports_no_head_for_missing_repository() {
     let _guard = yona_data_env_lock()
         .lock()
@@ -321,6 +394,33 @@ async fn code_browser_reports_no_head_for_missing_repository() {
     .await;
 
     assert_eq!(response["noHead"], true);
+}
+
+#[tokio::test]
+async fn rest_code_browser_rejects_path_traversal() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+
+    let response = rest_get(
+        app,
+        "/projects/owner/projectYobi/code?branch=main&path=..%2Fsecret.txt",
+        None,
+    )
+    .await;
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
 
 #[tokio::test]
