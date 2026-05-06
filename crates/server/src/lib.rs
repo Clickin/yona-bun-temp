@@ -2,10 +2,10 @@ pub mod persistence;
 pub mod runtime_config;
 pub mod session;
 
-use axum::extract::{Form, Multipart};
+use axum::extract::{Form, Multipart, Query, State};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Redirect, Response};
-use axum::routing::{any, delete, get, post, put};
+use axum::routing::{any, delete, get, patch, post, put};
 use axum::{extract::Path, http::Method};
 use axum::{Json, Router};
 use bcrypt::{hash, verify, DEFAULT_COST};
@@ -17,7 +17,7 @@ use md5::{Digest, Md5};
 use pulldown_cmark::{html, Options, Parser};
 use runtime_config::normalize_base_path;
 use sea_orm::entity::prelude::DateTime;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use session::{SessionConfig, SessionManager};
 use std::sync::Arc;
 use std::{collections::HashMap, path::PathBuf, vec};
@@ -176,17 +176,71 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let comment_unvote_backend = route_backend.clone();
     let comment_unvote_session_manager = session_manager.clone();
     let comment_unvote_base_path = base_path.clone();
-    let rest_session_manager = session_manager.clone();
-    let rest_backend = route_backend.clone();
-
-    let rest_router = Router::new().route(
-        "/session",
-        get(move |headers: HeaderMap| {
-            let session_manager = rest_session_manager.clone();
-            let backend = rest_backend.clone();
-            async move { rest_read_current_session(headers, session_manager, backend).await }
-        }),
-    );
+    let rest_router = Router::new()
+        .route("/session", get(rest_read_current_session))
+        .route(
+            "/owners/{owner}/projects/{project}/issues/{issue_number}/watch",
+            post(rest_watch_issue).delete(rest_unwatch_issue),
+        )
+        .route(
+            "/owners/{owner}/projects/{project}/issues/{issue_number}/vote",
+            post(rest_vote_issue).delete(rest_unvote_issue),
+        )
+        .route(
+            "/owners/{owner}/projects/{project}/issues/{issue_number}/favorite",
+            post(rest_toggle_favorite_issue),
+        )
+        .route(
+            "/owners/{owner}/projects/{project}/issues/{issue_number}/assignee",
+            put(rest_assign_issue),
+        )
+        .route(
+            "/owners/{owner}/projects/{project}/issues/{issue_number}/sharers",
+            post(rest_share_issue),
+        )
+        .route(
+            "/owners/{owner}/projects/{project}/issues/{issue_number}/sharers/{login_id}",
+            delete(rest_unshare_issue),
+        )
+        .route(
+            "/owners/{owner}/projects/{project}/issues/{issue_number}/comments/{comment_id}/vote",
+            post(rest_vote_issue_comment).delete(rest_unvote_issue_comment),
+        )
+        .route(
+            "/owners/{owner}/projects/{project}/labels/categories",
+            get(rest_list_project_label_categories).post(rest_create_project_label_category),
+        )
+        .route(
+            "/owners/{owner}/projects/{project}/labels/categories/{category_id}",
+            patch(rest_update_project_label_category).delete(rest_delete_project_label_category),
+        )
+        .route(
+            "/owners/{owner}/projects/{project}/labels",
+            get(rest_list_project_labels).post(rest_create_project_label),
+        )
+        .route(
+            "/owners/{owner}/projects/{project}/labels/{label_id}",
+            patch(rest_update_project_label).delete(rest_delete_project_label),
+        )
+        .route(
+            "/owners/{owner}/projects/{project}/milestones",
+            get(rest_list_project_milestones).post(rest_create_project_milestone),
+        )
+        .route(
+            "/owners/{owner}/projects/{project}/milestones/{milestone_id}/state",
+            patch(rest_set_project_milestone_state),
+        )
+        .route(
+            "/owners/{owner}/projects/{project}/milestones/{milestone_id}",
+            get(rest_read_project_milestone)
+                .patch(rest_update_project_milestone)
+                .delete(rest_delete_project_milestone),
+        )
+        .with_state(RestRouteContext {
+            base_path: base_path.clone(),
+            session_manager: session_manager.clone(),
+            backend: route_backend.clone(),
+        });
 
     let mut base_router = Router::new()
         .route(
@@ -1452,7 +1506,10 @@ fn redirect_to(base_path: &str, path: &str) -> Response {
 
 fn direct_status_from_connect_error(error: ConnectError) -> StatusCode {
     let message = error.to_string().to_ascii_lowercase();
-    if message.contains("missing authenticated") {
+    if message.contains("missing authenticated")
+        || message.contains("missing pilot session")
+        || message.contains("unauthenticated")
+    {
         StatusCode::UNAUTHORIZED
     } else if message.contains("not found") {
         StatusCode::NOT_FOUND
@@ -1487,6 +1544,13 @@ struct RestRouteError {
 }
 
 impl RestRouteError {
+    fn new(status: StatusCode, message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+            status,
+        }
+    }
+
     fn from_connect_error(error: ConnectError) -> Self {
         let message = error.to_string();
         let status = direct_status_from_connect_error(error);
@@ -1499,6 +1563,13 @@ impl RestRouteError {
             status: StatusCode::NOT_FOUND,
         }
     }
+}
+
+#[derive(Clone)]
+struct RestRouteContext {
+    base_path: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
 }
 
 impl IntoResponse for RestRouteError {
@@ -1525,13 +1596,95 @@ impl IntoResponse for RestRouteError {
     }
 }
 
+#[derive(Deserialize)]
+struct RestIssueAssigneeBody {
+    #[serde(rename = "assigneeLoginId")]
+    assignee_login_id: String,
+}
+
+#[derive(Deserialize)]
+struct RestIssueSharerBody {
+    #[serde(rename = "loginId")]
+    login_id: String,
+}
+
+#[derive(Deserialize)]
+struct RestProjectLabelCreateBody {
+    #[serde(rename = "categoryIsExclusive", default)]
+    category_is_exclusive: bool,
+    #[serde(rename = "categoryName")]
+    category_name: String,
+    #[serde(rename = "labelColor")]
+    label_color: String,
+    #[serde(rename = "labelName")]
+    label_name: String,
+}
+
+#[derive(Deserialize)]
+struct RestProjectLabelUpdateBody {
+    #[serde(rename = "categoryId")]
+    category_id: i64,
+    #[serde(rename = "labelColor")]
+    label_color: String,
+    #[serde(rename = "labelName")]
+    label_name: String,
+}
+
+#[derive(Deserialize)]
+struct RestProjectLabelCategoryBody {
+    #[serde(rename = "categoryIsExclusive", default)]
+    category_is_exclusive: bool,
+    #[serde(rename = "categoryName")]
+    category_name: String,
+}
+
+#[derive(Deserialize, Default)]
+struct RestMilestoneListQuery {
+    #[serde(rename = "orderBy")]
+    order_by: Option<String>,
+    #[serde(rename = "orderDir")]
+    order_dir: Option<String>,
+    state: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct RestProjectMilestoneBody {
+    #[serde(rename = "attachmentIds", default)]
+    attachment_ids: Vec<i64>,
+    #[serde(rename = "contentsMarkdown", default)]
+    contents_markdown: String,
+    #[serde(rename = "dueDate", default)]
+    due_date: String,
+    #[serde(default)]
+    state: String,
+    title: String,
+}
+
+#[derive(Deserialize)]
+struct RestProjectMilestoneStateBody {
+    state: String,
+}
+
+fn rest_repository(backend: &PilotBackend) -> Result<&PilotRepository, RestRouteError> {
+    match backend {
+        PilotBackend::Repository(repository) => Ok(repository),
+        PilotBackend::Static => Err(RestRouteError::new(
+            StatusCode::NOT_IMPLEMENTED,
+            "REST endpoint requires repository backend.",
+        )),
+    }
+}
+
+fn rest_missing_issue(message: &str) -> RestRouteError {
+    RestRouteError::new(StatusCode::NOT_FOUND, message)
+}
+
 async fn rest_read_current_session(
+    State(ctx): State<RestRouteContext>,
     headers: HeaderMap,
-    session_manager: SessionManager,
-    backend: PilotBackend,
 ) -> Result<Response, RestRouteError> {
-    let session = session_manager.ensure_anonymous_session(&headers);
-    let payload = resolve_current_session_response(&backend, Some(&session))
+    let session = ctx.session_manager.ensure_anonymous_session(&headers);
+    let payload = resolve_current_session_response(&ctx.backend, Some(&session))
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let mut response = Json(payload).into_response();
@@ -1539,7 +1692,7 @@ async fn rest_read_current_session(
         "X-CSRF-Token",
         session.csrf_token.parse().expect("csrf token header"),
     );
-    for cookie in session_manager.build_set_cookie_headers(&session) {
+    for cookie in ctx.session_manager.build_set_cookie_headers(&session) {
         response.headers_mut().append(
             axum::http::header::SET_COOKIE,
             cookie.parse().expect("set-cookie header"),
@@ -1550,6 +1703,1200 @@ async fn rest_read_current_session(
 
 fn rest_not_found_response() -> Response {
     RestRouteError::not_found("REST endpoint not found.").into_response()
+}
+
+async fn rest_issue_participation_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    issue_number: i64,
+    action: &str,
+) -> Result<ReadIssueDetailResponse, RestRouteError> {
+    let session = require_session(&ctx.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&ctx.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&ctx.backend)?;
+    require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    require_project_read(repository, &owner, &project, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let user_id = session.user_id.expect("authenticated user id");
+    let access = read_issue_access(repository, &owner, &project, issue_number, Some(user_id))
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    match action {
+        "watch" => repository
+            .watch_issue(access.issue.id, user_id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?,
+        "unwatch" => repository
+            .unwatch_issue(access.issue.id, user_id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?,
+        "vote" => repository
+            .vote_issue(access.issue.id, user_id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?,
+        "unvote" => repository
+            .unvote_issue(access.issue.id, user_id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?,
+        _ => {
+            return Err(RestRouteError::new(
+                StatusCode::BAD_REQUEST,
+                "invalid issue participation action",
+            ))
+        }
+    }
+    let updated = read_issue_access(repository, &owner, &project, issue_number, Some(user_id))
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(issue_detail_response_from_access(
+        &updated,
+        Some(user_id),
+        &ctx.base_path,
+    ))
+}
+
+async fn rest_issue_comment_participation_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    issue_number: i64,
+    comment_id: i64,
+    action: &str,
+) -> Result<ReadIssueDetailResponse, RestRouteError> {
+    let session = require_session(&ctx.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&ctx.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    if issue_number <= 0 || comment_id <= 0 {
+        return Err(RestRouteError::new(
+            StatusCode::BAD_REQUEST,
+            "invalid issue comment participation request",
+        ));
+    }
+    let repository = rest_repository(&ctx.backend)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let access = read_issue_access(repository, &owner, &project, issue_number, Some(actor.id))
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !access.viewer_can_comment() {
+        return Err(RestRouteError::new(
+            StatusCode::FORBIDDEN,
+            "issue comment vote is not allowed",
+        ));
+    }
+    if !access
+        .issue
+        .comments
+        .iter()
+        .any(|comment| comment.id == comment_id)
+    {
+        return Err(rest_missing_issue("pilot issue comment not found"));
+    }
+
+    match action {
+        "vote" => repository
+            .vote_issue_comment(comment_id, actor.id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?,
+        "unvote" => {
+            if !repository
+                .unvote_issue_comment(comment_id, actor.id)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+            {
+                return Err(rest_missing_issue("issue comment vote not found"));
+            }
+        }
+        _ => {
+            return Err(RestRouteError::new(
+                StatusCode::BAD_REQUEST,
+                "invalid issue comment participation action",
+            ))
+        }
+    }
+
+    let updated = read_issue_access(repository, &owner, &project, issue_number, Some(actor.id))
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(issue_detail_response_from_access(
+        &updated,
+        Some(actor.id),
+        &ctx.base_path,
+    ))
+}
+
+async fn rest_toggle_favorite_issue_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    issue_number: i64,
+) -> Result<ReadIssueDetailResponse, RestRouteError> {
+    let session = require_session(&ctx.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&ctx.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&ctx.backend)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let access = read_issue_access(repository, &owner, &project, issue_number, Some(actor.id))
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    repository
+        .toggle_favorite_issue(access.issue.id, actor.id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let updated = read_issue_access(repository, &owner, &project, issue_number, Some(actor.id))
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(issue_detail_response_from_access(
+        &updated,
+        Some(actor.id),
+        &ctx.base_path,
+    ))
+}
+
+async fn rest_assign_issue_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    issue_number: i64,
+    assignee_login_id: String,
+) -> Result<ReadIssueDetailResponse, RestRouteError> {
+    let session = require_session(&ctx.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&ctx.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&ctx.backend)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_read(repository, &owner, &project, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let existing = repository
+        .read_issue_detail(&owner, &project, issue_number)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| rest_missing_issue("pilot issue not found"))?;
+    if !issue_can_mutate(&authorization, &existing, &actor) {
+        return Err(RestRouteError::new(
+            StatusCode::FORBIDDEN,
+            "issue assign is not allowed",
+        ));
+    }
+    let issue = repository
+        .assign_issue(
+            &owner,
+            &project,
+            issue_number,
+            Some(assignee_login_id)
+                .filter(|value| !value.trim().is_empty())
+                .as_deref(),
+            &actor.login_id,
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| rest_missing_issue("pilot issue not found"))?;
+    Ok(issue_detail_response_from_record(
+        &issue,
+        true,
+        true,
+        session.user_id,
+        &ctx.base_path,
+    ))
+}
+
+async fn rest_issue_sharer_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    issue_number: i64,
+    login_id: String,
+    action: &str,
+) -> Result<ReadIssueDetailResponse, RestRouteError> {
+    let session = require_session(&ctx.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&ctx.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    if owner.trim().is_empty()
+        || project.trim().is_empty()
+        || issue_number <= 0
+        || login_id.trim().is_empty()
+    {
+        return Err(RestRouteError::new(
+            StatusCode::BAD_REQUEST,
+            "invalid issue sharer request",
+        ));
+    }
+    let repository = rest_repository(&ctx.backend)?;
+    let access = read_issue_access(repository, &owner, &project, issue_number, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !access.viewer_can_manage() {
+        return Err(RestRouteError::new(
+            StatusCode::FORBIDDEN,
+            "issue sharer update is not allowed",
+        ));
+    }
+    let target = repository
+        .find_user_by_login_id(&login_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| rest_missing_issue("issue sharer user not found"))?;
+    match action {
+        "share" => repository
+            .add_issue_sharer(access.issue.id, target.id, &target.login_id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?,
+        "unshare" => repository
+            .remove_issue_sharer(access.issue.id, target.id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?,
+        _ => {
+            return Err(RestRouteError::new(
+                StatusCode::BAD_REQUEST,
+                "invalid issue sharer action",
+            ))
+        }
+    }
+    let updated = repository
+        .read_issue_detail(&owner, &project, issue_number)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| rest_missing_issue("pilot issue not found"))?;
+    let share_status = match session.user_id {
+        Some(user_id) => repository
+            .read_issue_share_status(updated.id, user_id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?,
+        None => persistence::IssueShareStatus::default(),
+    };
+    Ok(issue_detail_response_from_record_with_sharer_flags(
+        &updated,
+        true,
+        true,
+        share_status.direct,
+        share_status.inherited_from_parent,
+        session.user_id,
+        &ctx.base_path,
+    ))
+}
+
+async fn rest_list_project_labels_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+) -> Result<ListProjectLabelsResponse, RestRouteError> {
+    let repository = rest_repository(&ctx.backend)?;
+    let actor_id = ctx
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    require_project_read(repository, &owner, &project, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let labels = repository
+        .list_project_labels(&owner, &project)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(ListProjectLabelsResponse {
+        labels: labels.iter().map(issue_label_from_record).collect(),
+        ..Default::default()
+    })
+}
+
+async fn rest_list_project_label_categories_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+) -> Result<ListProjectLabelCategoriesResponse, RestRouteError> {
+    let repository = rest_repository(&ctx.backend)?;
+    let actor_id = ctx
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    require_project_read(repository, &owner, &project, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let categories = repository
+        .list_project_label_categories(&owner, &project)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(ListProjectLabelCategoriesResponse {
+        categories: categories
+            .iter()
+            .map(issue_label_category_from_record)
+            .collect(),
+        ..Default::default()
+    })
+}
+
+async fn rest_create_project_label_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    body: RestProjectLabelCreateBody,
+) -> Result<ProjectLabelMutationResponse, RestRouteError> {
+    let session = require_session(&ctx.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&ctx.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&ctx.backend)?;
+    require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_read(repository, &owner, &project, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::new(
+            StatusCode::FORBIDDEN,
+            "issue label create is not allowed",
+        ));
+    }
+    let color = normalize_issue_label_color(&body.label_color)
+        .map_err(RestRouteError::from_connect_error)?;
+    let created = repository
+        .create_project_label(persistence::CreateProjectLabelInput {
+            category_is_exclusive: body.category_is_exclusive,
+            category_name: body.category_name.trim().to_string(),
+            label_color: color,
+            label_name: body.label_name.trim().to_string(),
+            owner_name: owner,
+            project_name: project,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| rest_missing_issue("project not found"))?;
+    Ok(ProjectLabelMutationResponse {
+        created: created.1,
+        label: Some(issue_label_from_record(&created.0)).into(),
+        ..Default::default()
+    })
+}
+
+async fn rest_update_project_label_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    label_id: i64,
+    body: RestProjectLabelUpdateBody,
+) -> Result<ProjectLabelMutationResponse, RestRouteError> {
+    let session = require_session(&ctx.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&ctx.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&ctx.backend)?;
+    require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_read(repository, &owner, &project, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::new(
+            StatusCode::FORBIDDEN,
+            "issue label update is not allowed",
+        ));
+    }
+    let color = normalize_issue_label_color(&body.label_color)
+        .map_err(RestRouteError::from_connect_error)?;
+    let label = repository
+        .update_project_label(persistence::UpdateProjectLabelInput {
+            category_id: body.category_id,
+            label_color: color,
+            label_id,
+            label_name: body.label_name.trim().to_string(),
+            owner_name: owner,
+            project_name: project,
+        })
+        .await
+        .map_err(|error| RestRouteError::new(StatusCode::BAD_REQUEST, error.to_string()))?
+        .ok_or_else(|| rest_missing_issue("issue label not found"))?;
+    Ok(ProjectLabelMutationResponse {
+        created: false,
+        label: Some(issue_label_from_record(&label)).into(),
+        ..Default::default()
+    })
+}
+
+async fn rest_delete_project_label_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    label_id: i64,
+) -> Result<ProjectLabelDeleteResponse, RestRouteError> {
+    let session = require_session(&ctx.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&ctx.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&ctx.backend)?;
+    require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_read(repository, &owner, &project, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::new(
+            StatusCode::FORBIDDEN,
+            "issue label delete is not allowed",
+        ));
+    }
+    let ok = repository
+        .delete_project_label(&owner, &project, label_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    if !ok {
+        return Err(rest_missing_issue("issue label not found"));
+    }
+    Ok(ProjectLabelDeleteResponse {
+        ok,
+        ..Default::default()
+    })
+}
+
+async fn rest_create_project_label_category_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    body: RestProjectLabelCategoryBody,
+) -> Result<ProjectLabelCategoryMutationResponse, RestRouteError> {
+    let session = require_session(&ctx.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&ctx.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&ctx.backend)?;
+    require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_read(repository, &owner, &project, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::new(
+            StatusCode::FORBIDDEN,
+            "issue label category create is not allowed",
+        ));
+    }
+    let created = repository
+        .create_project_label_category(persistence::CreateProjectLabelCategoryInput {
+            category_is_exclusive: body.category_is_exclusive,
+            category_name: body.category_name.trim().to_string(),
+            owner_name: owner,
+            project_name: project,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| rest_missing_issue("project not found"))?;
+    Ok(ProjectLabelCategoryMutationResponse {
+        category: Some(issue_label_category_from_record(&created.0)).into(),
+        created: created.1,
+        ..Default::default()
+    })
+}
+
+async fn rest_update_project_label_category_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    category_id: i64,
+    body: RestProjectLabelCategoryBody,
+) -> Result<ProjectLabelCategoryMutationResponse, RestRouteError> {
+    let session = require_session(&ctx.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&ctx.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&ctx.backend)?;
+    require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_read(repository, &owner, &project, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::new(
+            StatusCode::FORBIDDEN,
+            "issue label category update is not allowed",
+        ));
+    }
+    let category = repository
+        .update_project_label_category(persistence::UpdateProjectLabelCategoryInput {
+            category_id,
+            category_is_exclusive: body.category_is_exclusive,
+            category_name: body.category_name.trim().to_string(),
+            owner_name: owner,
+            project_name: project,
+        })
+        .await
+        .map_err(|error| RestRouteError::new(StatusCode::BAD_REQUEST, error.to_string()))?
+        .ok_or_else(|| rest_missing_issue("issue label category not found"))?;
+    Ok(ProjectLabelCategoryMutationResponse {
+        category: Some(issue_label_category_from_record(&category)).into(),
+        created: false,
+        ..Default::default()
+    })
+}
+
+async fn rest_delete_project_label_category_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    category_id: i64,
+) -> Result<ProjectLabelDeleteResponse, RestRouteError> {
+    let session = require_session(&ctx.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&ctx.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&ctx.backend)?;
+    require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_read(repository, &owner, &project, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::new(
+            StatusCode::FORBIDDEN,
+            "issue label category delete is not allowed",
+        ));
+    }
+    let ok = repository
+        .delete_project_label_category(&owner, &project, category_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    if !ok {
+        return Err(rest_missing_issue("issue label category not found"));
+    }
+    Ok(ProjectLabelDeleteResponse {
+        ok,
+        ..Default::default()
+    })
+}
+
+async fn rest_list_project_milestones_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    query: RestMilestoneListQuery,
+) -> Result<ListProjectMilestonesResponse, RestRouteError> {
+    let repository = rest_repository(&ctx.backend)?;
+    let actor_id = ctx
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    require_project_read(repository, &owner, &project, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let filter = persistence::MilestoneListFilter {
+        order_by: query.order_by.unwrap_or_else(|| "dueDate".to_string()),
+        order_dir: query.order_dir.unwrap_or_else(|| "asc".to_string()),
+        state: query.state.unwrap_or_else(|| "open".to_string()),
+    };
+    let milestones = repository
+        .list_project_milestones(&owner, &project, filter)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .iter()
+        .map(|record| issue_milestone_from_record(record, &ctx.base_path))
+        .collect();
+    Ok(ListProjectMilestonesResponse {
+        milestones,
+        ..Default::default()
+    })
+}
+
+async fn rest_read_project_milestone_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    milestone_id: i64,
+) -> Result<ProjectMilestoneMutationResponse, RestRouteError> {
+    let repository = rest_repository(&ctx.backend)?;
+    let actor_id = ctx
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let authorization = require_project_read(repository, &owner, &project, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let viewer_can_update = project_update_allowed(&authorization).unwrap_or(false);
+    let milestone = repository
+        .read_project_milestone(&owner, &project, milestone_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| rest_missing_issue("milestone not found"))?;
+    let mut milestone = issue_milestone_from_record(&milestone, &ctx.base_path);
+    milestone.viewer_can_update = viewer_can_update;
+    milestone.viewer_can_delete = viewer_can_update;
+    Ok(ProjectMilestoneMutationResponse {
+        milestone: Some(milestone).into(),
+        ..Default::default()
+    })
+}
+
+fn rest_milestone_input(
+    owner: &str,
+    project: &str,
+    body: RestProjectMilestoneBody,
+) -> Result<persistence::MilestoneMutationInput, RestRouteError> {
+    milestone_mutation_input(
+        owner,
+        project,
+        &body.title,
+        &body.contents_markdown,
+        &body.due_date,
+        &body.state,
+        &body.attachment_ids,
+    )
+    .map_err(RestRouteError::from_connect_error)
+}
+
+async fn rest_create_project_milestone_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    body: RestProjectMilestoneBody,
+) -> Result<ProjectMilestoneMutationResponse, RestRouteError> {
+    let session = require_session(&ctx.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&ctx.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&ctx.backend)?;
+    require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_read(repository, &owner, &project, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::new(
+            StatusCode::FORBIDDEN,
+            "milestone create is not allowed",
+        ));
+    }
+    let input = rest_milestone_input(&owner, &project, body)?;
+    if repository
+        .project_milestone_title_exists(&owner, &project, &input.title, None)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+    {
+        return Err(RestRouteError::new(
+            StatusCode::BAD_REQUEST,
+            "milestone title is duplicated",
+        ));
+    }
+    let milestone = repository
+        .create_project_milestone(input)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| rest_missing_issue("project not found"))?;
+    let mut milestone = issue_milestone_from_record(&milestone, &ctx.base_path);
+    milestone.viewer_can_update = true;
+    milestone.viewer_can_delete = true;
+    Ok(ProjectMilestoneMutationResponse {
+        milestone: Some(milestone).into(),
+        ..Default::default()
+    })
+}
+
+async fn rest_update_project_milestone_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    milestone_id: i64,
+    body: RestProjectMilestoneBody,
+) -> Result<ProjectMilestoneMutationResponse, RestRouteError> {
+    let session = require_session(&ctx.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&ctx.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&ctx.backend)?;
+    require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_read(repository, &owner, &project, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::new(
+            StatusCode::FORBIDDEN,
+            "milestone update is not allowed",
+        ));
+    }
+    let input = rest_milestone_input(&owner, &project, body)?;
+    if repository
+        .project_milestone_title_exists(&owner, &project, &input.title, Some(milestone_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+    {
+        return Err(RestRouteError::new(
+            StatusCode::BAD_REQUEST,
+            "milestone title is duplicated",
+        ));
+    }
+    let milestone = repository
+        .update_project_milestone(persistence::UpdateMilestoneInput {
+            milestone_id,
+            values: input,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| rest_missing_issue("milestone not found"))?;
+    let mut milestone = issue_milestone_from_record(&milestone, &ctx.base_path);
+    milestone.viewer_can_update = true;
+    milestone.viewer_can_delete = true;
+    Ok(ProjectMilestoneMutationResponse {
+        milestone: Some(milestone).into(),
+        ..Default::default()
+    })
+}
+
+async fn rest_delete_project_milestone_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    milestone_id: i64,
+) -> Result<ProjectMilestoneDeleteResponse, RestRouteError> {
+    let session = require_session(&ctx.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&ctx.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&ctx.backend)?;
+    require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_read(repository, &owner, &project, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::new(
+            StatusCode::FORBIDDEN,
+            "milestone delete is not allowed",
+        ));
+    }
+    let ok = repository
+        .delete_project_milestone(&owner, &project, milestone_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    if !ok {
+        return Err(rest_missing_issue("milestone not found"));
+    }
+    Ok(ProjectMilestoneDeleteResponse {
+        ok,
+        ..Default::default()
+    })
+}
+
+async fn rest_set_project_milestone_state_response(
+    ctx: &RestRouteContext,
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    milestone_id: i64,
+    state: String,
+) -> Result<ProjectMilestoneMutationResponse, RestRouteError> {
+    let session = require_session(&ctx.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&ctx.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&ctx.backend)?;
+    require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_read(repository, &owner, &project, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::new(
+            StatusCode::FORBIDDEN,
+            "milestone update is not allowed",
+        ));
+    }
+    let state = normalize_milestone_state(&state).map_err(RestRouteError::from_connect_error)?;
+    let milestone = repository
+        .update_project_milestone_state(&owner, &project, milestone_id, &state)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| rest_missing_issue("milestone not found"))?;
+    let mut milestone = issue_milestone_from_record(&milestone, &ctx.base_path);
+    milestone.viewer_can_update = true;
+    milestone.viewer_can_delete = true;
+    Ok(ProjectMilestoneMutationResponse {
+        milestone: Some(milestone).into(),
+        ..Default::default()
+    })
+}
+
+async fn rest_watch_issue(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, issue_number)): Path<(String, String, i64)>,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    Ok(Json(
+        rest_issue_participation_response(&ctx, headers, owner, project, issue_number, "watch")
+            .await?,
+    ))
+}
+
+async fn rest_unwatch_issue(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, issue_number)): Path<(String, String, i64)>,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    Ok(Json(
+        rest_issue_participation_response(&ctx, headers, owner, project, issue_number, "unwatch")
+            .await?,
+    ))
+}
+
+async fn rest_vote_issue(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, issue_number)): Path<(String, String, i64)>,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    Ok(Json(
+        rest_issue_participation_response(&ctx, headers, owner, project, issue_number, "vote")
+            .await?,
+    ))
+}
+
+async fn rest_unvote_issue(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, issue_number)): Path<(String, String, i64)>,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    Ok(Json(
+        rest_issue_participation_response(&ctx, headers, owner, project, issue_number, "unvote")
+            .await?,
+    ))
+}
+
+async fn rest_toggle_favorite_issue(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, issue_number)): Path<(String, String, i64)>,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    Ok(Json(
+        rest_toggle_favorite_issue_response(&ctx, headers, owner, project, issue_number).await?,
+    ))
+}
+
+async fn rest_assign_issue(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, issue_number)): Path<(String, String, i64)>,
+    Json(body): Json<RestIssueAssigneeBody>,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    Ok(Json(
+        rest_assign_issue_response(
+            &ctx,
+            headers,
+            owner,
+            project,
+            issue_number,
+            body.assignee_login_id,
+        )
+        .await?,
+    ))
+}
+
+async fn rest_share_issue(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, issue_number)): Path<(String, String, i64)>,
+    Json(body): Json<RestIssueSharerBody>,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    Ok(Json(
+        rest_issue_sharer_response(
+            &ctx,
+            headers,
+            owner,
+            project,
+            issue_number,
+            body.login_id,
+            "share",
+        )
+        .await?,
+    ))
+}
+
+async fn rest_unshare_issue(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, issue_number, login_id)): Path<(String, String, i64, String)>,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    Ok(Json(
+        rest_issue_sharer_response(
+            &ctx,
+            headers,
+            owner,
+            project,
+            issue_number,
+            login_id,
+            "unshare",
+        )
+        .await?,
+    ))
+}
+
+async fn rest_vote_issue_comment(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, issue_number, comment_id)): Path<(String, String, i64, i64)>,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    Ok(Json(
+        rest_issue_comment_participation_response(
+            &ctx,
+            headers,
+            owner,
+            project,
+            issue_number,
+            comment_id,
+            "vote",
+        )
+        .await?,
+    ))
+}
+
+async fn rest_unvote_issue_comment(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, issue_number, comment_id)): Path<(String, String, i64, i64)>,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    Ok(Json(
+        rest_issue_comment_participation_response(
+            &ctx,
+            headers,
+            owner,
+            project,
+            issue_number,
+            comment_id,
+            "unvote",
+        )
+        .await?,
+    ))
+}
+
+async fn rest_list_project_labels(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project)): Path<(String, String)>,
+) -> Result<Json<ListProjectLabelsResponse>, RestRouteError> {
+    Ok(Json(
+        rest_list_project_labels_response(&ctx, headers, owner, project).await?,
+    ))
+}
+
+async fn rest_create_project_label(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project)): Path<(String, String)>,
+    Json(body): Json<RestProjectLabelCreateBody>,
+) -> Result<Json<ProjectLabelMutationResponse>, RestRouteError> {
+    Ok(Json(
+        rest_create_project_label_response(&ctx, headers, owner, project, body).await?,
+    ))
+}
+
+async fn rest_update_project_label(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, label_id)): Path<(String, String, i64)>,
+    Json(body): Json<RestProjectLabelUpdateBody>,
+) -> Result<Json<ProjectLabelMutationResponse>, RestRouteError> {
+    Ok(Json(
+        rest_update_project_label_response(&ctx, headers, owner, project, label_id, body).await?,
+    ))
+}
+
+async fn rest_delete_project_label(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, label_id)): Path<(String, String, i64)>,
+) -> Result<Json<ProjectLabelDeleteResponse>, RestRouteError> {
+    Ok(Json(
+        rest_delete_project_label_response(&ctx, headers, owner, project, label_id).await?,
+    ))
+}
+
+async fn rest_list_project_label_categories(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project)): Path<(String, String)>,
+) -> Result<Json<ListProjectLabelCategoriesResponse>, RestRouteError> {
+    Ok(Json(
+        rest_list_project_label_categories_response(&ctx, headers, owner, project).await?,
+    ))
+}
+
+async fn rest_create_project_label_category(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project)): Path<(String, String)>,
+    Json(body): Json<RestProjectLabelCategoryBody>,
+) -> Result<Json<ProjectLabelCategoryMutationResponse>, RestRouteError> {
+    Ok(Json(
+        rest_create_project_label_category_response(&ctx, headers, owner, project, body).await?,
+    ))
+}
+
+async fn rest_update_project_label_category(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, category_id)): Path<(String, String, i64)>,
+    Json(body): Json<RestProjectLabelCategoryBody>,
+) -> Result<Json<ProjectLabelCategoryMutationResponse>, RestRouteError> {
+    Ok(Json(
+        rest_update_project_label_category_response(
+            &ctx,
+            headers,
+            owner,
+            project,
+            category_id,
+            body,
+        )
+        .await?,
+    ))
+}
+
+async fn rest_delete_project_label_category(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, category_id)): Path<(String, String, i64)>,
+) -> Result<Json<ProjectLabelDeleteResponse>, RestRouteError> {
+    Ok(Json(
+        rest_delete_project_label_category_response(&ctx, headers, owner, project, category_id)
+            .await?,
+    ))
+}
+
+async fn rest_list_project_milestones(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project)): Path<(String, String)>,
+    Query(query): Query<RestMilestoneListQuery>,
+) -> Result<Json<ListProjectMilestonesResponse>, RestRouteError> {
+    Ok(Json(
+        rest_list_project_milestones_response(&ctx, headers, owner, project, query).await?,
+    ))
+}
+
+async fn rest_read_project_milestone(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, milestone_id)): Path<(String, String, i64)>,
+) -> Result<Json<ProjectMilestoneMutationResponse>, RestRouteError> {
+    Ok(Json(
+        rest_read_project_milestone_response(&ctx, headers, owner, project, milestone_id).await?,
+    ))
+}
+
+async fn rest_create_project_milestone(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project)): Path<(String, String)>,
+    Json(body): Json<RestProjectMilestoneBody>,
+) -> Result<Json<ProjectMilestoneMutationResponse>, RestRouteError> {
+    Ok(Json(
+        rest_create_project_milestone_response(&ctx, headers, owner, project, body).await?,
+    ))
+}
+
+async fn rest_update_project_milestone(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, milestone_id)): Path<(String, String, i64)>,
+    Json(body): Json<RestProjectMilestoneBody>,
+) -> Result<Json<ProjectMilestoneMutationResponse>, RestRouteError> {
+    Ok(Json(
+        rest_update_project_milestone_response(&ctx, headers, owner, project, milestone_id, body)
+            .await?,
+    ))
+}
+
+async fn rest_delete_project_milestone(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, milestone_id)): Path<(String, String, i64)>,
+) -> Result<Json<ProjectMilestoneDeleteResponse>, RestRouteError> {
+    Ok(Json(
+        rest_delete_project_milestone_response(&ctx, headers, owner, project, milestone_id).await?,
+    ))
+}
+
+async fn rest_set_project_milestone_state(
+    State(ctx): State<RestRouteContext>,
+    headers: HeaderMap,
+    Path((owner, project, milestone_id)): Path<(String, String, i64)>,
+    Json(body): Json<RestProjectMilestoneStateBody>,
+) -> Result<Json<ProjectMilestoneMutationResponse>, RestRouteError> {
+    Ok(Json(
+        rest_set_project_milestone_state_response(
+            &ctx,
+            headers,
+            owner,
+            project,
+            milestone_id,
+            body.state,
+        )
+        .await?,
+    ))
 }
 
 async fn direct_issue_comment_vote(
