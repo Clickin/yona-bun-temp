@@ -1,23 +1,35 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  addWorkspaceEmail,
+  changePassword,
   createIssue,
   createIssueComment,
   createProjectLabel,
   deleteIssue,
   deleteIssueComment,
+  deleteWorkspaceEmail,
   listOrganizationIssues,
   listProjectIssues,
   listProjectMilestones,
   listUserIssues,
   massUpdateIssues,
+  readWorkspaceOverview,
   readAuthUiCapabilities,
   readCodeBrowser,
   readCurrentSession,
   readIssueDetail,
   readSessionBootstrap,
+  recordRecentProjectVisit,
   registerWithPassword,
+  resetApiToken,
+  resetVisitedProjects,
+  sendWorkspaceEmailValidation,
+  setDefaultLandingPath,
+  setMainWorkspaceEmail,
   signInWithPassword,
   signOut,
+  toggleWorkspaceNotification,
+  updateProfile,
   updateIssue,
   updateIssueComment,
   updateIssueState,
@@ -159,6 +171,168 @@ describe("readCodeBrowser", () => {
     expect(requestInit.method).toBe("GET");
     expect(result.selectedBranch).toBe("main");
     expect(result.path).toBe("src/main.rs");
+  });
+});
+
+describe("workspace REST clients", () => {
+  it("reads workspace overview from the v1 workspace endpoint", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ defaultLandingPath: "/me", loginId: "door" }),
+    }));
+
+    const result = await readWorkspaceOverview(runtimeConfig, fetchMock as unknown as typeof fetch);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { credentials: string; headers: Headers; method: string },
+    ];
+    expect(requestUrl).toBe("/yona/api/v1/workspace");
+    expect(requestInit.credentials).toBe("same-origin");
+    expect(requestInit.headers.get("Accept")).toBe("application/json");
+    expect(requestInit.method).toBe("GET");
+    expect(result.defaultLandingPath).toBe("/me");
+  });
+
+  it("routes workspace settings mutations through REST v1 endpoints", async () => {
+    const fetchMock = vi.fn(async () => okJsonResponse({ ok: true }));
+
+    await setDefaultLandingPath(
+      runtimeConfig,
+      "csrf-1",
+      "/search?scope=global&pageSize=20",
+      fetchMock as unknown as typeof fetch,
+    );
+    await updateProfile(
+      runtimeConfig,
+      "csrf-2",
+      {
+        avatarAttachmentId: "55",
+        email: "door@example.com",
+        name: "Door",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+    await changePassword(
+      runtimeConfig,
+      "csrf-3",
+      {
+        loginId: "door",
+        oldPassword: "doorpass1",
+        password: "doorpass2",
+        retypedPassword: "doorpass2",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+    await resetVisitedProjects(runtimeConfig, "csrf-4", fetchMock as unknown as typeof fetch);
+    await addWorkspaceEmail(
+      runtimeConfig,
+      "csrf-5",
+      "alt@example.com",
+      fetchMock as unknown as typeof fetch,
+    );
+    await deleteWorkspaceEmail(runtimeConfig, "csrf-6", "7", fetchMock as unknown as typeof fetch);
+    await sendWorkspaceEmailValidation(
+      runtimeConfig,
+      "csrf-7",
+      "7",
+      fetchMock as unknown as typeof fetch,
+    );
+    await setMainWorkspaceEmail(runtimeConfig, "csrf-8", "7", fetchMock as unknown as typeof fetch);
+    await resetApiToken(runtimeConfig, "csrf-9", fetchMock as unknown as typeof fetch);
+    await toggleWorkspaceNotification(
+      runtimeConfig,
+      "csrf-10",
+      "13",
+      "NEW_COMMENT",
+      fetchMock as unknown as typeof fetch,
+    );
+
+    const calls = fetchMock.mock.calls as unknown as Array<
+      [string, { body?: string; credentials: string; headers: Headers; method: string }]
+    >;
+    expect(calls[0]![0]).toBe("/yona/api/v1/workspace/default-landing-path");
+    expect(calls[0]![1].method).toBe("PUT");
+    expect(JSON.parse(calls[0]![1].body ?? "")).toEqual({
+      path: "/search?scope=global&pageSize=20",
+    });
+
+    expect(calls[1]![0]).toBe("/yona/api/v1/workspace/profile");
+    expect(calls[1]![1].method).toBe("PATCH");
+    expect(JSON.parse(calls[1]![1].body ?? "")).toEqual({
+      avatarAttachmentId: "55",
+      email: "door@example.com",
+      name: "Door",
+    });
+
+    expect(calls[2]![0]).toBe("/yona/api/v1/workspace/password");
+    expect(calls[2]![1].method).toBe("POST");
+    expect(JSON.parse(calls[2]![1].body ?? "")).toEqual({
+      loginId: "door",
+      oldPassword: "doorpass1",
+      password: "doorpass2",
+      retypedPassword: "doorpass2",
+    });
+
+    expect(calls[3]![0]).toBe("/yona/api/v1/workspace/recent-projects");
+    expect(calls[3]![1].method).toBe("DELETE");
+    expect(calls[4]![0]).toBe("/yona/api/v1/workspace/emails");
+    expect(calls[4]![1].method).toBe("POST");
+    expect(JSON.parse(calls[4]![1].body ?? "")).toEqual({ email: "alt@example.com" });
+    expect(calls[5]![0]).toBe("/yona/api/v1/workspace/emails/7");
+    expect(calls[5]![1].method).toBe("DELETE");
+    expect(calls[6]![0]).toBe("/yona/api/v1/workspace/emails/7/validation");
+    expect(calls[6]![1].method).toBe("POST");
+    expect(calls[7]![0]).toBe("/yona/api/v1/workspace/emails/7/main");
+    expect(calls[7]![1].method).toBe("POST");
+    expect(calls[8]![0]).toBe("/yona/api/v1/workspace/api-token/reset");
+    expect(calls[8]![1].method).toBe("POST");
+    expect(calls[9]![0]).toBe("/yona/api/v1/workspace/notifications");
+    expect(calls[9]![1].method).toBe("POST");
+    expect(JSON.parse(calls[9]![1].body ?? "")).toEqual({
+      eventType: "NEW_COMMENT",
+      projectId: "13",
+    });
+
+    for (const [, requestInit] of calls) {
+      expect(requestInit.credentials).toBe("same-origin");
+      expect(requestInit.headers.get("Accept")).toBe("application/json");
+      expect(requestInit.headers.get("x-csrf-token")).toMatch(/^csrf-/);
+    }
+  });
+
+  it("posts recent project visits to the REST v1 workspace endpoint", async () => {
+    const fetchMock = vi.fn(async () =>
+      okJsonResponse({
+        ownerName: "owner",
+        projectName: "projectYobi",
+      }),
+    );
+
+    const result = await recordRecentProjectVisit(
+      runtimeConfig,
+      "csrf-11",
+      "owner",
+      "projectYobi",
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { body: string; credentials: string; headers: Headers; method: string },
+    ];
+    expect(requestUrl).toBe("/yona/api/v1/workspace/recent-projects");
+    expect(requestInit.method).toBe("POST");
+    expect(requestInit.headers.get("x-csrf-token")).toBe("csrf-11");
+    expect(JSON.parse(requestInit.body)).toEqual({
+      ownerName: "owner",
+      projectName: "projectYobi",
+    });
+    expect(result.ownerName).toBe("owner");
+    expect(result.projectName).toBe("projectYobi");
   });
 });
 
