@@ -2,7 +2,7 @@ pub mod persistence;
 pub mod runtime_config;
 pub mod session;
 
-use axum::extract::{Form, Multipart};
+use axum::extract::{Form, Multipart, Query};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::routing::{any, delete, get, post, put};
@@ -17,7 +17,7 @@ use md5::{Digest, Md5};
 use pulldown_cmark::{html, Options, Parser};
 use runtime_config::normalize_base_path;
 use sea_orm::entity::prelude::DateTime;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use session::{SessionConfig, SessionManager};
 use std::sync::Arc;
 use std::{collections::HashMap, path::PathBuf, vec};
@@ -1487,10 +1487,24 @@ impl RestRouteError {
         Self { message, status }
     }
 
+    fn bad_request(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+            status: StatusCode::BAD_REQUEST,
+        }
+    }
+
     fn not_found(message: impl Into<String>) -> Self {
         Self {
             message: message.into(),
             status: StatusCode::NOT_FOUND,
+        }
+    }
+
+    fn not_implemented(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+            status: StatusCode::NOT_IMPLEMENTED,
         }
     }
 }
@@ -1554,6 +1568,10 @@ impl RestRouteError {
 }
 
 fn build_rest_router(service: PilotServiceImpl) -> Router {
+    let session_manager = service.session_manager.clone();
+    let backend = service.backend.clone();
+    let base_path = service.base_path.clone();
+
     Router::new()
         .route(
             "/session",
@@ -1611,6 +1629,308 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             post(move |headers: HeaderMap, Json(input): Json<RestVerifyUserRequest>| {
                 let service = service.clone();
                 async move { rest_verify_user(headers, input, service).await }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/issues",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestProjectIssuesQuery>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_list_project_issues(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            })
+            .post({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                let base_path = base_path.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestIssueMutationBody>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    let base_path = base_path.clone();
+                    async move {
+                        rest_create_issue(
+                            headers,
+                            owner_name,
+                            project_name,
+                            body,
+                            session_manager,
+                            backend,
+                            base_path,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/issues/mass-update",
+            post({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                let base_path = base_path.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestMassUpdateIssuesBody>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    let base_path = base_path.clone();
+                    async move {
+                        rest_mass_update_issues(
+                            headers,
+                            owner_name,
+                            project_name,
+                            body,
+                            session_manager,
+                            backend,
+                            base_path,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/issues/{issue_number}",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                let base_path = base_path.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    let base_path = base_path.clone();
+                    async move {
+                        rest_read_issue_detail(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            session_manager,
+                            backend,
+                            base_path,
+                        )
+                        .await
+                    }
+                }
+            })
+            .put({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                let base_path = base_path.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
+                      Json(body): Json<RestIssueMutationBody>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    let base_path = base_path.clone();
+                    async move {
+                        rest_update_issue(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            body,
+                            session_manager,
+                            backend,
+                            base_path,
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_delete_issue(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/issues/{issue_number}/state",
+            put({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                let base_path = base_path.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
+                      Json(body): Json<RestIssueStateBody>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    let base_path = base_path.clone();
+                    async move {
+                        rest_update_issue_state(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            body,
+                            session_manager,
+                            backend,
+                            base_path,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/issues/{issue_number}/comments",
+            post({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                let base_path = base_path.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
+                      Json(body): Json<RestIssueCommentBody>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    let base_path = base_path.clone();
+                    async move {
+                        rest_create_issue_comment(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            body,
+                            session_manager,
+                            backend,
+                            base_path,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/issues/{issue_number}/comments/{comment_id}",
+            put({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                let base_path = base_path.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number, comment_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    i64,
+                )>,
+                      Json(body): Json<RestIssueCommentBody>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    let base_path = base_path.clone();
+                    async move {
+                        rest_update_issue_comment(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            comment_id,
+                            body,
+                            session_manager,
+                            backend,
+                            base_path,
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                let base_path = base_path.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number, comment_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    i64,
+                )>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    let base_path = base_path.clone();
+                    async move {
+                        rest_delete_issue_comment(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            comment_id,
+                            session_manager,
+                            backend,
+                            base_path,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/organizations/{organization_name}/issues",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap,
+                      Path(organization_name): Path<String>,
+                      Query(query): Query<RestOrganizationIssuesQuery>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_list_organization_issues(
+                            headers,
+                            organization_name,
+                            query,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/user/issues",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap, Query(query): Query<RestUserIssuesQuery>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_list_user_issues(headers, query, session_manager, backend).await
+                    }
+                }
             }),
         )
 }
@@ -1744,6 +2064,879 @@ async fn rest_read_current_session(
 
 fn rest_not_found_response() -> Response {
     RestRouteError::not_found("REST endpoint not found.").into_response()
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum RestStringOrNumber {
+    String(String),
+    Signed(i64),
+    Unsigned(u64),
+}
+
+fn parse_rest_i64(value: RestStringOrNumber) -> Result<i64, String> {
+    match value {
+        RestStringOrNumber::String(value) => value
+            .trim()
+            .parse::<i64>()
+            .map_err(|_| format!("invalid integer value: {value}")),
+        RestStringOrNumber::Signed(value) => Ok(value),
+        RestStringOrNumber::Unsigned(value) => {
+            i64::try_from(value).map_err(|_| format!("integer is too large: {value}"))
+        }
+    }
+}
+
+fn deserialize_optional_i64_from_string_or_number<'de, D>(
+    deserializer: D,
+) -> Result<Option<i64>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = Option::<RestStringOrNumber>::deserialize(deserializer)?;
+    value
+        .map(parse_rest_i64)
+        .transpose()
+        .map_err(serde::de::Error::custom)
+}
+
+fn deserialize_i64_vec_from_strings_or_numbers<'de, D>(deserializer: D) -> Result<Vec<i64>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let values = Vec::<RestStringOrNumber>::deserialize(deserializer)?;
+    values
+        .into_iter()
+        .map(parse_rest_i64)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(serde::de::Error::custom)
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestProjectIssuesQuery {
+    assignee_login_id: String,
+    author_login_id: String,
+    label_ids: Vec<i64>,
+    milestone_id: Option<i64>,
+    page_num: u32,
+    state: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestOrganizationIssuesQuery {
+    assignee_id: i64,
+    author_id: i64,
+    filter: String,
+    items_per_page: u32,
+    order_by: String,
+    order_dir: String,
+    page_num: u32,
+    project_names: Vec<String>,
+    state: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestUserIssuesQuery {
+    filter: String,
+    order_by: String,
+    order_dir: String,
+    page_num: u32,
+    page_size: u32,
+    query: String,
+    state: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestIssueMutationBody {
+    assignee_login_id: String,
+    #[serde(default, deserialize_with = "deserialize_i64_vec_from_strings_or_numbers")]
+    attachment_ids: Vec<i64>,
+    body_markdown: String,
+    #[serde(default, deserialize_with = "deserialize_i64_vec_from_strings_or_numbers")]
+    label_ids: Vec<i64>,
+    #[serde(default, deserialize_with = "deserialize_optional_i64_from_string_or_number")]
+    milestone_id: Option<i64>,
+    title: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestIssueStateBody {
+    state: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestIssueCommentBody {
+    #[serde(default, deserialize_with = "deserialize_i64_vec_from_strings_or_numbers")]
+    attachment_ids: Vec<i64>,
+    contents_markdown: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestMassUpdateIssuesBody {
+    #[serde(default, deserialize_with = "deserialize_i64_vec_from_strings_or_numbers")]
+    add_label_ids: Vec<i64>,
+    assignee_login_id: String,
+    assignee_update: bool,
+    #[serde(default, deserialize_with = "deserialize_i64_vec_from_strings_or_numbers")]
+    issue_numbers: Vec<i64>,
+    #[serde(default, deserialize_with = "deserialize_optional_i64_from_string_or_number")]
+    milestone_id: Option<i64>,
+    milestone_update: bool,
+    #[serde(default, deserialize_with = "deserialize_i64_vec_from_strings_or_numbers")]
+    remove_label_ids: Vec<i64>,
+    state: String,
+}
+
+fn rest_issue_mutation_input_from_body(body: RestIssueMutationBody) -> persistence::IssueMutationInput {
+    persistence::IssueMutationInput {
+        assignee_login_id: (!body.assignee_login_id.trim().is_empty())
+            .then(|| body.assignee_login_id.trim().to_string()),
+        attachment_ids: body.attachment_ids,
+        body_markdown: body.body_markdown,
+        label_ids: body.label_ids,
+        milestone_id: body.milestone_id.filter(|value| *value > 0),
+        title: body.title.trim().to_string(),
+    }
+}
+
+fn rest_project_issue_filter_from_query(query: RestProjectIssuesQuery) -> persistence::IssueListFilter {
+    persistence::IssueListFilter {
+        assignee_login_id: (!query.assignee_login_id.trim().is_empty())
+            .then(|| query.assignee_login_id.trim().to_string()),
+        author_login_id: (!query.author_login_id.trim().is_empty())
+            .then(|| query.author_login_id.trim().to_string()),
+        label_ids: query.label_ids,
+        milestone_id: query.milestone_id.filter(|value| *value > 0),
+        page_num: query.page_num.max(1),
+        state: (!query.state.trim().is_empty()).then(|| query.state.trim().to_string()),
+    }
+}
+
+async fn rest_list_project_issues(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: RestProjectIssuesQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<ListProjectIssuesResponse>, RestRouteError> {
+    if owner_name.trim().is_empty() || project_name.trim().is_empty() {
+        return Err(RestRouteError::bad_request(
+            "invalid pilot project issue list request",
+        ));
+    }
+
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "project issues require repository backend",
+        ));
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let authorization =
+        require_project_read(repository, &owner_name, &project_name, actor_id)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+    let record = repository
+        .list_project_issues_filtered(
+            &owner_name,
+            &project_name,
+            rest_project_issue_filter_from_query(query),
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+
+    Ok(Json(ListProjectIssuesResponse {
+        items: record
+            .items
+            .into_iter()
+            .map(project_issue_list_item_to_proto)
+            .collect(),
+        owner_name: authorization.project.owner_name,
+        page_num: record.page_num,
+        page_size: record.page_size,
+        project_name: authorization.project.project_name,
+        total_count: record.total_count,
+        ..Default::default()
+    }))
+}
+
+async fn rest_list_organization_issues(
+    headers: HeaderMap,
+    organization_name: String,
+    query: RestOrganizationIssuesQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<ListOrganizationIssuesResponse>, RestRouteError> {
+    if organization_name.trim().is_empty() {
+        return Err(RestRouteError::bad_request(
+            "invalid organization issue list request",
+        ));
+    }
+    let state = if query.state.trim().is_empty() {
+        "open".to_string()
+    } else {
+        normalize_identifier(&query.state)
+    };
+    if !matches!(state.as_str(), "open" | "closed") {
+        return Err(RestRouteError::bad_request(
+            "invalid organization issue state",
+        ));
+    }
+
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "organization issues require repository backend",
+        ));
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let authorization = repository
+        .read_organization_authorization(&organization_name, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("organization not found"))?;
+    let visible_projects =
+        visible_projects_for_organization(repository, authorization.organization.id, actor_id)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+    let current_user_filter = |value: i64| if value > 0 { actor_id.or(Some(-1)) } else { None };
+    let record = repository
+        .list_organization_issues_filtered(
+            &authorization.organization.organization_name,
+            visible_projects,
+            persistence::OrganizationIssueListFilter {
+                assignee_user_id: current_user_filter(query.assignee_id),
+                author_id: current_user_filter(query.author_id),
+                filter: Some(query.filter).filter(|value| !value.trim().is_empty()),
+                items_per_page: query.items_per_page,
+                order_by: query.order_by,
+                order_dir: query.order_dir,
+                page_num: query.page_num,
+                project_names: query.project_names,
+                state,
+            },
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+
+    Ok(Json(ListOrganizationIssuesResponse {
+        closed_issue_count: record.closed_issue_count,
+        items: record
+            .items
+            .into_iter()
+            .map(organization_issue_list_item_to_proto)
+            .collect(),
+        open_issue_count: record.open_issue_count,
+        organization_name: record.organization_name,
+        page_num: record.page_num,
+        page_size: record.page_size,
+        total_count: record.total_count,
+        visible_projects: record
+            .visible_projects
+            .into_iter()
+            .map(|project| OrganizationIssueProjectOption {
+                owner_name: project.owner_name,
+                project_name: project.project_name,
+                ..Default::default()
+            })
+            .collect(),
+        ..Default::default()
+    }))
+}
+
+async fn rest_list_user_issues(
+    headers: HeaderMap,
+    query: RestUserIssuesQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<ListUserIssuesResponse>, RestRouteError> {
+    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "user issues require repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let filter_name =
+        user_issue_filter_name(&query.filter).map_err(RestRouteError::from_connect_error)?;
+    let state = user_issue_state(&query.state).map_err(RestRouteError::from_connect_error)?;
+    const DEFAULT_PAGE_SIZE: u32 = 15;
+    const MAX_PAGE_SIZE: u32 = 45;
+    let build_filter = |state: &str| persistence::UserIssueListFilter {
+        filter: filter_name.clone(),
+        order_by: if query.order_by.trim().is_empty() {
+            "updatedDate".to_string()
+        } else {
+            query.order_by.trim().to_string()
+        },
+        order_dir: if query.order_dir.trim().is_empty() {
+            "desc".to_string()
+        } else {
+            query.order_dir.trim().to_string()
+        },
+        page_num: query.page_num.max(1),
+        page_size: if query.page_size == 0 {
+            DEFAULT_PAGE_SIZE
+        } else {
+            query.page_size.min(MAX_PAGE_SIZE)
+        },
+        query: (!query.query.trim().is_empty()).then(|| query.query.trim().to_string()),
+        state: state.to_string(),
+    };
+    let selected_filter = build_filter(&state);
+    let open_filter = build_filter("open");
+    let closed_filter = build_filter("closed");
+
+    let mut selected_items = visible_user_issue_items(repository, actor.id, selected_filter.clone())
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let open_issue_count = visible_user_issue_items(repository, actor.id, open_filter)
+        .await
+        .map_err(RestRouteError::from_connect_error)?
+        .len() as u32;
+    let closed_issue_count = visible_user_issue_items(repository, actor.id, closed_filter)
+        .await
+        .map_err(RestRouteError::from_connect_error)?
+        .len() as u32;
+    let page_num = selected_filter.page_num.max(1);
+    let page_size = selected_filter.page_size.max(1);
+    let total_count = selected_items.len() as u32;
+    let offset = ((page_num - 1) * page_size) as usize;
+    let items = selected_items
+        .drain(..)
+        .skip(offset)
+        .take(page_size as usize)
+        .map(project_issue_list_item_to_proto)
+        .collect();
+
+    Ok(Json(ListUserIssuesResponse {
+        closed_issue_count,
+        filter: filter_name,
+        items,
+        open_issue_count,
+        page_num,
+        page_size,
+        state,
+        total_count,
+        ..Default::default()
+    }))
+}
+
+async fn rest_read_issue_detail(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    if owner_name.trim().is_empty() || project_name.trim().is_empty() || issue_number <= 0 {
+        return Err(RestRouteError::bad_request(
+            "invalid pilot issue detail request",
+        ));
+    }
+
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "issue requires repository backend",
+        ));
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let access = read_issue_access(repository, &owner_name, &project_name, issue_number, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(issue_detail_response_from_access(
+        &access,
+        actor_id,
+        &base_path,
+    )))
+}
+
+async fn rest_update_issue_state(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    body: RestIssueStateBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    let state = normalize_identifier(&body.state);
+    if issue_number <= 0 || !matches!(state.as_str(), "open" | "closed") {
+        return Err(RestRouteError::bad_request(
+            "invalid pilot issue state request",
+        ));
+    }
+
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "issue requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        require_project_read(repository, &owner_name, &project_name, session.user_id)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+    let existing = repository
+        .read_issue_detail(&owner_name, &project_name, issue_number)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+    if !issue_can_mutate(&authorization, &existing, &actor) {
+        return Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
+            "issue state update is not allowed",
+        )));
+    }
+    let issue = repository
+        .update_issue_state(&owner_name, &project_name, issue_number, &state)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+    Ok(Json(issue_detail_response_from_record(
+        &issue,
+        true,
+        true,
+        session.user_id,
+        &base_path,
+    )))
+}
+
+async fn rest_create_issue(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestIssueMutationBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    if body.title.trim().is_empty() {
+        return Err(RestRouteError::bad_request("issue title is required"));
+    }
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "issue requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    require_project_read(repository, &owner_name, &project_name, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let issue = repository
+        .create_issue(persistence::CreateIssueInput {
+            actor_display_name: actor.display_name.clone(),
+            actor_id: actor.id,
+            actor_login_id: actor.login_id.clone(),
+            owner_name,
+            project_name,
+            values: rest_issue_mutation_input_from_body(body),
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    Ok(Json(issue_detail_response_from_record(
+        &issue,
+        true,
+        true,
+        session.user_id,
+        &base_path,
+    )))
+}
+
+async fn rest_update_issue(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    body: RestIssueMutationBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    if issue_number <= 0 || body.title.trim().is_empty() {
+        return Err(RestRouteError::bad_request(
+            "invalid issue update request",
+        ));
+    }
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "issue requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        require_project_read(repository, &owner_name, &project_name, session.user_id)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+    let existing = repository
+        .read_issue_detail(&owner_name, &project_name, issue_number)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+    if !issue_can_mutate(&authorization, &existing, &actor) {
+        return Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
+            "issue update is not allowed",
+        )));
+    }
+    let issue = repository
+        .update_issue(persistence::UpdateIssueInput {
+            actor_login_id: actor.login_id,
+            issue_number,
+            owner_name,
+            project_name,
+            values: rest_issue_mutation_input_from_body(body),
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+    Ok(Json(issue_detail_response_from_record(
+        &issue,
+        true,
+        true,
+        session.user_id,
+        &base_path,
+    )))
+}
+
+async fn rest_delete_issue(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<DeleteIssueResponse>, RestRouteError> {
+    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "issue requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        require_project_read(repository, &owner_name, &project_name, session.user_id)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+    let existing = repository
+        .read_issue_detail(&owner_name, &project_name, issue_number)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+    if !issue_can_mutate(&authorization, &existing, &actor) {
+        return Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
+            "issue delete is not allowed",
+        )));
+    }
+    if !repository
+        .delete_issue(&owner_name, &project_name, issue_number)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+    {
+        return Err(RestRouteError::not_found("pilot issue not found"));
+    }
+    Ok(Json(DeleteIssueResponse {
+        issue_number,
+        owner_name,
+        project_name,
+        ..Default::default()
+    }))
+}
+
+async fn rest_create_issue_comment(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    body: RestIssueCommentBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    if issue_number <= 0 || body.contents_markdown.trim().is_empty() {
+        return Err(RestRouteError::bad_request(
+            "invalid issue comment request",
+        ));
+    }
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "issue requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let access = read_issue_access(
+        repository,
+        &owner_name,
+        &project_name,
+        issue_number,
+        Some(actor.id),
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+    if !access.viewer_can_comment() {
+        return Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
+            "issue comment create is not allowed",
+        )));
+    }
+    let issue = repository
+        .create_issue_comment(persistence::CreateIssueCommentInput {
+            actor_display_name: actor.display_name.clone(),
+            actor_id: actor.id,
+            actor_login_id: actor.login_id.clone(),
+            attachment_ids: body.attachment_ids,
+            contents_markdown: body.contents_markdown,
+            issue_number,
+            owner_name,
+            project_name,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+    Ok(Json(issue_detail_response_from_record(
+        &issue,
+        true,
+        true,
+        session.user_id,
+        &base_path,
+    )))
+}
+
+async fn rest_update_issue_comment(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    comment_id: i64,
+    body: RestIssueCommentBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    if issue_number <= 0 || comment_id <= 0 {
+        return Err(RestRouteError::bad_request(
+            "invalid issue comment request",
+        ));
+    }
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "issue requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let access = read_issue_access(
+        repository,
+        &owner_name,
+        &project_name,
+        issue_number,
+        Some(actor.id),
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+    let comment_author = access
+        .issue
+        .comments
+        .iter()
+        .find(|comment| comment.id == comment_id)
+        .and_then(|comment| comment.author_id);
+    if comment_author != Some(actor.id) && !access.viewer_can_manage() {
+        return Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
+            "issue comment update is not allowed",
+        )));
+    }
+    let issue = repository
+        .update_issue_comment(persistence::UpdateIssueCommentInput {
+            attachment_ids: body.attachment_ids,
+            comment_id,
+            contents_markdown: body.contents_markdown,
+            issue_number,
+            owner_name,
+            project_name,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+    Ok(Json(issue_detail_response_from_record_with_sharer_flags(
+        &issue,
+        access.viewer_can_manage(),
+        access.viewer_can_comment(),
+        access.share_status.direct,
+        access.share_status.inherited_from_parent,
+        session.user_id,
+        &base_path,
+    )))
+}
+
+async fn rest_delete_issue_comment(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    comment_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "issue requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let access = read_issue_access(
+        repository,
+        &owner_name,
+        &project_name,
+        issue_number,
+        Some(actor.id),
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+    let comment_author = access
+        .issue
+        .comments
+        .iter()
+        .find(|comment| comment.id == comment_id)
+        .and_then(|comment| comment.author_id);
+    if comment_author != Some(actor.id) && !access.viewer_can_manage() {
+        return Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
+            "issue comment delete is not allowed",
+        )));
+    }
+    let issue = repository
+        .delete_issue_comment(&owner_name, &project_name, issue_number, comment_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+    Ok(Json(issue_detail_response_from_record_with_sharer_flags(
+        &issue,
+        access.viewer_can_manage(),
+        access.viewer_can_comment(),
+        access.share_status.direct,
+        access.share_status.inherited_from_parent,
+        session.user_id,
+        &base_path,
+    )))
+}
+
+async fn rest_mass_update_issues(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestMassUpdateIssuesBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Result<Json<MassUpdateIssuesResponse>, RestRouteError> {
+    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "issue requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        require_project_read(repository, &owner_name, &project_name, session.user_id)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+    for issue_number in body.issue_numbers.iter().copied() {
+        let issue = repository
+            .read_issue_detail(&owner_name, &project_name, issue_number)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+            .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+        if !issue_can_mutate(&authorization, &issue, &actor) {
+            return Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
+                "issue mass update is not allowed",
+            )));
+        }
+    }
+    let items = repository
+        .mass_update_issues(
+            persistence::MassUpdateIssuesInput {
+                add_label_ids: body.add_label_ids,
+                assignee_login_id: (!body.assignee_login_id.trim().is_empty())
+                    .then(|| body.assignee_login_id.trim().to_string()),
+                assignee_update: body.assignee_update,
+                issue_numbers: body.issue_numbers,
+                milestone_id: body.milestone_id.filter(|value| *value > 0),
+                milestone_update: body.milestone_update,
+                owner_name,
+                project_name,
+                remove_label_ids: body.remove_label_ids,
+                state: (!body.state.trim().is_empty()).then(|| body.state.trim().to_string()),
+            },
+            &actor.login_id,
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .into_iter()
+        .map(|issue| issue_detail_response_from_record(&issue, true, true, session.user_id, &base_path))
+        .collect();
+    Ok(Json(MassUpdateIssuesResponse {
+        items,
+        ..Default::default()
+    }))
 }
 
 async fn direct_issue_comment_vote(
