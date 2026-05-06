@@ -650,7 +650,7 @@ function renderIssueDetailPage(
         viewerCanUpdate: true,
       },
       issue,
-      runtimeConfig: { apiBaseUrl: "/yona/api", basePath: "/yona", rpcBaseUrl: "/yona/rpc" },
+      runtimeConfig: { apiBaseUrl: "/yona/api", basePath: "/yona" },
       ...extraProps,
     }),
   );

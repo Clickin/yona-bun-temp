@@ -1,16 +1,27 @@
 import { expect, test } from "@playwright/test";
 
-const connectJsonHeaders = {
+const restJsonHeaders = {
   "access-control-allow-origin": "*",
   "content-type": "application/json",
 };
+
+const apiV1Route = (path: string) => `**/api/v1${path}`;
+
+function restErrorEnvelope(code: string, message: string, status: number) {
+  return {
+    error: {
+      code,
+      message,
+      status,
+    },
+  };
+}
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.__YONA_RUNTIME_CONFIG__ = {
       apiBaseUrl: "/yona/api",
       basePath: "/yona",
-      rpcBaseUrl: "/yona/rpc",
     };
   });
 
@@ -21,25 +32,25 @@ test.beforeEach(async ({ page }) => {
         user: null,
       }),
       headers: {
-        ...connectJsonHeaders,
+        ...restJsonHeaders,
         "x-csrf-token": "csrf-123",
       },
       status: 200,
     });
   });
 
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadCurrentSession", async (route) => {
+  await page.route(apiV1Route("/session"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         defaultLandingPath: "/me",
         isAnonymous: true,
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
 
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadAuthUiCapabilities", async (route) => {
+  await page.route(apiV1Route("/auth/capabilities"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         emailVerificationEnabled: false,
@@ -47,12 +58,12 @@ test.beforeEach(async ({ page }) => {
         signupRequireConfirm: false,
         socialLoginOnly: false,
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
 
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ListProjects", async (route) => {
+  await page.route(apiV1Route("/projects"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         items: [
@@ -64,12 +75,12 @@ test.beforeEach(async ({ page }) => {
           },
         ],
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
 
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ListOrganizations", async (route) => {
+  await page.route(apiV1Route("/organizations"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         items: [
@@ -79,56 +90,65 @@ test.beforeEach(async ({ page }) => {
           },
         ],
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
 
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ListProjectIssues", async (route) => {
+  await page.route(/\/api\/v1\/projects\/admin\/projectYobi\/issues(?:\?.*)?$/, async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         items: [
           {
+            assigneeLabel: "",
             authorLabel: "Nori",
             commentCount: 3,
             issueNumber: "1",
+            labels: [],
+            milestoneTitle: "",
+            ownerName: "admin",
+            projectName: "projectYobi",
             state: "open",
             title: "Pilot issue",
             updatedLabel: "2026-04-15",
+            voterCount: 0,
+            watcherCount: 0,
           },
         ],
         ownerName: "admin",
+        pageNum: 1,
+        pageSize: 15,
         projectName: "projectYobi",
+        totalCount: 1,
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
 
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ListProjectLabels", async (route) => {
+  await page.route(apiV1Route("/owners/admin/projects/projectYobi/labels"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         labels: [],
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.route(apiV1Route("/owners/admin/projects/projectYobi/labels/categories"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        categories: [],
+      }),
+      headers: restJsonHeaders,
       status: 200,
     });
   });
 
   await page.route(
-    "**/rpc/yona.pilot.v1.PilotService/ListProjectLabelCategories",
+    /\/api\/v1\/owners\/admin\/projects\/projectYobi\/milestones(?:\?.*)?$/,
     async (route) => {
-      await route.fulfill({
-        body: JSON.stringify({
-          categories: [],
-        }),
-        headers: connectJsonHeaders,
-        status: 200,
-      });
-    },
-  );
-
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ListProjectMilestones", async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         milestones: [
@@ -165,12 +185,13 @@ test.beforeEach(async ({ page }) => {
           },
         ],
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
-  });
+    },
+  );
 
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadProjectMilestone", async (route) => {
+  await page.route(apiV1Route("/owners/admin/projects/projectYobi/milestones/7"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         milestone: {
@@ -209,12 +230,12 @@ test.beforeEach(async ({ page }) => {
           viewerCanUpdate: true,
         },
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
 
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadProjectContainer", async (route) => {
+  await page.route(apiV1Route("/owners/admin/projects/projectYobi/container"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         boardCount: 0,
@@ -247,28 +268,51 @@ test.beforeEach(async ({ page }) => {
         viewerCanWatch: false,
         watchCount: 0,
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
 
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadIssueDetail", async (route) => {
+  await page.route(apiV1Route("/projects/admin/projectYobi/issues/1"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
+        assigneeLabel: "",
+        assigneeLoginId: "",
+        attachments: [],
+        authorLabel: "Nori",
+        bodyHtml: "<p>Issue body</p>",
+        bodyMarkdown: "Issue body",
+        commentCount: 0,
+        comments: [],
+        hasVoted: false,
+        isFavorited: false,
+        isWatching: false,
         issueNumber: "1",
+        labels: [],
+        milestoneTitle: "",
         ownerName: "admin",
         projectName: "projectYobi",
+        sharers: [],
         state: "open",
+        timeline: [],
         title: "Pilot issue",
+        viewerCanComment: true,
+        viewerCanDelete: false,
+        viewerCanManageSharers: false,
+        viewerCanUpdate: false,
+        viewerHasInheritedShare: false,
+        viewerIsDirectSharer: false,
+        voterCount: 0,
+        watcherCount: 0,
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
 
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadCodeBrowser", async (route) => {
-    const payload = route.request().postDataJSON();
-    if (payload?.path === "src/main.rs") {
+  await page.route(/\/api\/v1\/projects\/admin\/projectYobi\/code(?:\?.*)?$/, async (route) => {
+    const requestUrl = new URL(route.request().url());
+    if (requestUrl.searchParams.has("path")) {
       await route.fulfill({
         body: JSON.stringify({
           branches: [{ name: "main" }],
@@ -276,6 +320,7 @@ test.beforeEach(async ({ page }) => {
             { name: "src", path: "src" },
             { name: "main.rs", path: "src/main.rs" },
           ],
+          entries: [],
           file: {
             isBinary: false,
             mimeType: "text/plain",
@@ -284,12 +329,13 @@ test.beforeEach(async ({ page }) => {
             size: "13",
             text: "fn main() {}\n",
           },
+          noHead: false,
           ownerName: "admin",
           path: "src/main.rs",
           projectName: "projectYobi",
           selectedBranch: "main",
         }),
-        headers: connectJsonHeaders,
+        headers: restJsonHeaders,
         status: 200,
       });
       return;
@@ -322,18 +368,18 @@ test.beforeEach(async ({ page }) => {
         projectName: "projectYobi",
         selectedBranch: "main",
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
 
-  await page.route("**/rpc/yona.pilot.v1.PilotService/SignOut", async (route) => {
+  await page.route(apiV1Route("/auth/sign-out"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         defaultLandingPath: "/me",
         isAnonymous: true,
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
@@ -366,7 +412,7 @@ test("shell routing smoke covers home, auth, public directories, and deep placeh
 test("programmatic internal navigation keeps browser URL in sync under the mounted base path", async ({
   page,
 }) => {
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadCurrentSession", async (route) => {
+  await page.route(apiV1Route("/session"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         defaultLandingPath: "/me",
@@ -377,11 +423,11 @@ test("programmatic internal navigation keeps browser URL in sync under the mount
         loginId: "door",
         userLabel: "Door",
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadWorkspaceOverview", async (route) => {
+  await page.route(apiV1Route("/workspace"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         defaultLandingPath: "/me",
@@ -397,7 +443,7 @@ test("programmatic internal navigation keeps browser URL in sync under the mount
           userLabel: "Door",
         },
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
@@ -434,7 +480,7 @@ test("organization admin routes redirect anonymous viewers to login with a retur
 test("organization admin routes render forbidden and not-found shells for authenticated viewers", async ({
   page,
 }) => {
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadCurrentSession", async (route) => {
+  await page.route(apiV1Route("/session"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         defaultLandingPath: "/me",
@@ -445,11 +491,11 @@ test("organization admin routes render forbidden and not-found shells for authen
         loginId: "door",
         userLabel: "Door",
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadWorkspaceOverview", async (route) => {
+  await page.route(apiV1Route("/workspace"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         defaultLandingPath: "/me",
@@ -465,30 +511,26 @@ test("organization admin routes render forbidden and not-found shells for authen
           userLabel: "Door",
         },
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
 
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadOrganizationAdmin", async (route) => {
-    if (route.request().postDataJSON()?.organizationName === "missinglabs") {
+  await page.route(apiV1Route("/organizations/*/admin"), async (route) => {
+    if (route.request().url().includes("/organizations/missinglabs/admin")) {
       await route.fulfill({
-        body: JSON.stringify({
-          code: "not_found",
-          message: "organization not found",
-        }),
-        headers: connectJsonHeaders,
+        body: JSON.stringify(restErrorEnvelope("not_found", "organization not found", 404)),
+        headers: restJsonHeaders,
         status: 404,
       });
       return;
     }
 
     await route.fulfill({
-      body: JSON.stringify({
-        code: "permission_denied",
-        message: "organization update is not allowed",
-      }),
-      headers: connectJsonHeaders,
+      body: JSON.stringify(
+        restErrorEnvelope("permission_denied", "organization update is not allowed", 403),
+      ),
+      headers: restJsonHeaders,
       status: 403,
     });
   });
@@ -527,33 +569,51 @@ test("project code routes render branch folder and text file views", async ({ pa
 });
 
 test("organization issue route renders cross-project issue inbox", async ({ page }) => {
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadOrganizationContainer", async (route) => {
+  await page.route(apiV1Route("/organizations/weblabs/container"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
+        adminMembers: [],
         description: "web labs",
+        enrollmentRequested: false,
+        memberMembers: [],
         organizationName: "weblabs",
+        viewerCanCreateProject: false,
+        viewerCanEnroll: false,
+        viewerCanLeave: false,
         viewerCanUpdate: false,
         visibleProjects: [
           {
+            createdLabel: "2026-04-18",
+            isWatching: false,
+            lastPushedLabel: "2026-04-19",
+            logoUrl: "",
+            memberCount: 3,
+            originOwnerName: "",
+            originProjectName: "",
+            overview: "Alpha overview",
             ownerName: "weblabs",
             projectName: "projectAlpha",
             projectScope: "public",
+            watchCount: 3,
           },
         ],
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ListOrganizationIssues", async (route) => {
+  await page.route(/\/api\/v1\/organizations\/weblabs\/issues(?:\?.*)?$/, async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         closedIssueCount: 1,
         items: [
           {
+            assigneeLabel: "",
             authorLabel: "Nori",
             commentCount: 2,
             issueNumber: "7",
+            labels: [],
+            milestoneTitle: "",
             ownerName: "weblabs",
             projectName: "projectAlpha",
             state: "open",
@@ -570,7 +630,7 @@ test("organization issue route renders cross-project issue inbox", async ({ page
         totalCount: 1,
         visibleProjects: [{ ownerName: "weblabs", projectName: "projectAlpha" }],
       }),
-      headers: connectJsonHeaders,
+      headers: restJsonHeaders,
       status: 200,
     });
   });
@@ -621,49 +681,41 @@ test("project milestone routes render list detail and form shells", async ({ pag
 test("project issue routes render forbidden and not-found shells when issue reads fail", async ({
   page,
 }) => {
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ListProjectIssues", async (route) => {
-    const payload = route.request().postDataJSON();
-    if (payload?.ownerName === "missing" || payload?.projectName === "missingYobi") {
+  await page.route(/\/api\/v1\/projects\/[^/]+\/[^/]+\/issues(?:\?.*)?$/, async (route) => {
+    const requestUrl = new URL(route.request().url());
+    if (requestUrl.pathname.includes("/projects/missing/") || requestUrl.pathname.includes("/projects/admin/missingYobi/")) {
       await route.fulfill({
-        body: JSON.stringify({
-          code: "not_found",
-          message: "project not found",
-        }),
-        headers: connectJsonHeaders,
+        body: JSON.stringify(restErrorEnvelope("not_found", "project not found", 404)),
+        headers: restJsonHeaders,
         status: 404,
       });
       return;
     }
 
     await route.fulfill({
-      body: JSON.stringify({
-        code: "permission_denied",
-        message: "issue list is not allowed",
-      }),
-      headers: connectJsonHeaders,
+      body: JSON.stringify(
+        restErrorEnvelope("permission_denied", "issue list is not allowed", 403),
+      ),
+      headers: restJsonHeaders,
       status: 403,
     });
   });
 
-  await page.route("**/rpc/yona.pilot.v1.PilotService/ReadIssueDetail", async (route) => {
-    if (route.request().postDataJSON()?.issueNumber === "999") {
+  await page.route(/\/api\/v1\/projects\/[^/]+\/[^/]+\/issues\/[^/?]+(?:\?.*)?$/, async (route) => {
+    if (route.request().url().endsWith("/issues/999")) {
       await route.fulfill({
-        body: JSON.stringify({
-          code: "not_found",
-          message: "issue not found",
-        }),
-        headers: connectJsonHeaders,
+        body: JSON.stringify(restErrorEnvelope("not_found", "issue not found", 404)),
+        headers: restJsonHeaders,
         status: 404,
       });
       return;
     }
 
     await route.fulfill({
-      body: JSON.stringify({
-        code: "permission_denied",
-        message: "issue read is not allowed",
-      }),
-      headers: connectJsonHeaders,
+      body: JSON.stringify(
+        restErrorEnvelope("permission_denied", "issue read is not allowed", 403),
+      ),
+      headers: restJsonHeaders,
       status: 403,
     });
   });

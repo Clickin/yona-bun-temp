@@ -2,8 +2,8 @@ use axum::body::Body;
 use http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter, Set,
-    NotSet,
+    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
+    Set,
 };
 use serde_json::json;
 use serde_json::Value;
@@ -11,6 +11,8 @@ use tower::ServiceExt;
 use yona_rust_persistence::{email, watch, AppRepository, CreateProjectInput};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router, create_router_with_app_repository, RuntimeConfig};
+
+mod rest_test_support;
 
 fn build_router() -> axum::Router {
     create_router(RuntimeConfig {
@@ -118,21 +120,7 @@ async fn rpc(
     csrf: Option<&str>,
     payload: Value,
 ) -> axum::response::Response {
-    let mut builder = Request::builder()
-        .method(Method::POST)
-        .uri(format!(
-            "/yona/rpc/yona.pilot.v1.PilotService/{method_name}"
-        ))
-        .header(http::header::CONTENT_TYPE, "application/json");
-    if let Some(cookie_header) = cookie_header {
-        builder = builder.header(http::header::COOKIE, cookie_header);
-    }
-    if let Some(csrf) = csrf {
-        builder = builder.header("x-csrf-token", csrf);
-    }
-    app.oneshot(builder.body(Body::from(payload.to_string())).unwrap())
-        .await
-        .unwrap()
+    rest_test_support::pilot_rest(app, method_name, cookie_header, csrf, payload).await
 }
 
 async fn rest(
@@ -348,7 +336,7 @@ async fn rest_session_route_coexists_with_bootstrap_and_rpc() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadCurrentSession")
+                .uri("/yona/api/v1/_pilot/ReadCurrentSession")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from("{}"))
                 .unwrap(),
@@ -1167,13 +1155,11 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
         .await,
     )
     .await;
-    assert!(
-        added_email["emails"]
-            .as_array()
-            .into_iter()
-            .flatten()
-            .any(|entry| entry["emailAddress"] == "alt@example.com")
-    );
+    assert!(added_email["emails"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .any(|entry| entry["emailAddress"] == "alt@example.com"));
 
     let alt_email = email::Entity::find()
         .filter(email::Column::UserId.eq(Some(user.id)))
@@ -1187,10 +1173,7 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
         rest(
             app.clone(),
             Method::POST,
-            &format!(
-                "/yona/api/v1/workspace/emails/{}/validation",
-                alt_email.id
-            ),
+            &format!("/yona/api/v1/workspace/emails/{}/validation", alt_email.id),
             Some(&cookie_header),
             Some(&csrf),
             None,
@@ -1198,13 +1181,11 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
         .await,
     )
     .await;
-    assert!(
-        validation_sent["emails"]
-            .as_array()
-            .into_iter()
-            .flatten()
-            .any(|entry| entry["emailAddress"] == "alt@example.com")
-    );
+    assert!(validation_sent["emails"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .any(|entry| entry["emailAddress"] == "alt@example.com"));
 
     let mut alt_email_active = email::ActiveModel::from(
         email::Entity::find_by_id(alt_email.id)
@@ -1318,11 +1299,9 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
         .await,
     )
     .await;
-    assert!(
-        reset_token["apiToken"]
-            .as_str()
-            .is_some_and(|value| !value.is_empty())
-    );
+    assert!(reset_token["apiToken"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
 
     let updated_main_email = email::Entity::find()
         .filter(email::Column::UserId.eq(Some(user.id)))
@@ -1343,13 +1322,11 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
         .await,
     )
     .await;
-    assert!(
-        !deleted_email["emails"]
-            .as_array()
-            .into_iter()
-            .flatten()
-            .any(|entry| entry["emailAddress"] == "owner-updated@example.com")
-    );
+    assert!(!deleted_email["emails"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .any(|entry| entry["emailAddress"] == "owner-updated@example.com"));
 
     let reset_recent = ok_json(
         rest(

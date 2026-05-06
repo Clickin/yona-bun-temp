@@ -71,7 +71,6 @@ import type { RuntimeConfig } from "./runtime-config";
 const runtimeConfig: RuntimeConfig = {
   apiBaseUrl: "/yona/api",
   basePath: "/yona",
-  rpcBaseUrl: "/yona/rpc",
 };
 
 function okJsonResponse(payload: unknown) {

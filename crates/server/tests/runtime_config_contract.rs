@@ -22,7 +22,7 @@ fn joins_base_paths_without_double_slashes() {
         join_base_path("/", "/api/auth/session"),
         "/api/auth/session"
     );
-    assert_eq!(join_base_path("/yona", "/rpc"), "/yona/rpc");
+    assert_eq!(join_base_path("/yona", "/api/v1"), "/yona/api/v1");
 }
 
 #[test]

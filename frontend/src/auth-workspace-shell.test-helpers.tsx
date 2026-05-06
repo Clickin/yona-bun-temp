@@ -45,7 +45,6 @@ import type {
 export const testRuntimeConfig: RuntimeConfig = {
   apiBaseUrl: "/yona/api",
   basePath: "/yona",
-  rpcBaseUrl: "/yona/rpc",
 };
 
 export function renderHome(runtimeConfig: RuntimeConfig = testRuntimeConfig): string {

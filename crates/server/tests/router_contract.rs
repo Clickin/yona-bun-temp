@@ -76,7 +76,7 @@ async fn read_current_session_works_over_connect_json() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadCurrentSession")
+                .uri("/yona/api/v1/_pilot/ReadCurrentSession")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from("{}"))
                 .unwrap(),
@@ -102,7 +102,7 @@ async fn list_projects_works_over_connect_json() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ListProjects")
+                .uri("/yona/api/v1/_pilot/ListProjects")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from("{}"))
                 .unwrap(),
@@ -129,7 +129,7 @@ async fn list_organizations_works_over_connect_json() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ListOrganizations")
+                .uri("/yona/api/v1/_pilot/ListOrganizations")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from("{}"))
                 .unwrap(),
@@ -156,7 +156,7 @@ async fn read_issue_detail_applies_the_go_pilot_status_contract() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadIssueDetail")
+                .uri("/yona/api/v1/_pilot/ReadIssueDetail")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from(
                     "{\"ownerName\":\"pilot\",\"projectName\":\"yona\",\"issueNumber\":\"0\"}",
@@ -171,7 +171,7 @@ async fn read_issue_detail_applies_the_go_pilot_status_contract() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadIssueDetail")
+                .uri("/yona/api/v1/_pilot/ReadIssueDetail")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from(
                     "{\"ownerName\":\"missing\",\"projectName\":\"yona\",\"issueNumber\":\"1\"}",
@@ -195,7 +195,7 @@ async fn update_issue_state_requires_bootstrapped_csrf() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/UpdateIssueState")
+                .uri("/yona/api/v1/_pilot/UpdateIssueState")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from("{\"ownerName\":\"pilot\",\"projectName\":\"yona\",\"issueNumber\":\"1\",\"state\":\"closed\"}"))
                 .unwrap(),
@@ -243,7 +243,7 @@ async fn update_issue_state_requires_bootstrapped_csrf() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/UpdateIssueState")
+                .uri("/yona/api/v1/_pilot/UpdateIssueState")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", "wrong-csrf")
@@ -258,7 +258,7 @@ async fn update_issue_state_requires_bootstrapped_csrf() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/UpdateIssueState")
+                .uri("/yona/api/v1/_pilot/UpdateIssueState")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", csrf)

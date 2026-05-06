@@ -6,12 +6,12 @@ use http_body_util::BodyExt;
 use sea_orm::{Database, DatabaseConnection};
 use tempfile::tempdir;
 use tower::ServiceExt;
+use yona_rust_persistence::AppRepository;
+use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
     create_router_with_app_repository, create_router_with_embedded_assets,
     create_router_with_filesystem_assets, RuntimeConfig,
 };
-use yona_rust_persistence::AppRepository;
-use yona_rust_pilot_migration::Migrator;
 
 async fn build_auth_router() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -124,7 +124,6 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
     let html = String::from_utf8(index_body.to_vec()).unwrap();
     assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"));
     assert!(html.contains("\"basePath\":\"/yona\""));
-    assert!(html.contains("\"rpcBaseUrl\":\"/yona/rpc\""));
     assert!(html.contains("\"apiBaseUrl\":\"/yona/api\""));
 
     let asset = app
@@ -246,7 +245,7 @@ async fn avatar_file_upload_requires_auth_and_rejects_non_image_or_oversized_pay
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -309,7 +308,7 @@ async fn avatar_file_upload_returns_metadata_and_serves_bytes_for_owner() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -342,10 +341,19 @@ async fn avatar_file_upload_returns_metadata_and_serves_bytes_for_owner() {
     assert_eq!(upload.status(), StatusCode::CREATED);
     let upload_body = upload.into_body().collect().await.unwrap().to_bytes();
     let upload_json: serde_json::Value = serde_json::from_slice(&upload_body).unwrap();
-    let file_id = upload_json.get("id").and_then(|value| value.as_i64()).unwrap();
+    let file_id = upload_json
+        .get("id")
+        .and_then(|value| value.as_i64())
+        .unwrap();
     let expected_url = format!("/yona/files/{file_id}");
-    assert_eq!(upload_json.get("mimeType").and_then(|value| value.as_str()), Some("image/png"));
-    assert_eq!(upload_json.get("name").and_then(|value| value.as_str()), Some("avatar.png"));
+    assert_eq!(
+        upload_json.get("mimeType").and_then(|value| value.as_str()),
+        Some("image/png")
+    );
+    assert_eq!(
+        upload_json.get("name").and_then(|value| value.as_str()),
+        Some("avatar.png")
+    );
     assert_eq!(
         upload_json.get("url").and_then(|value| value.as_str()),
         Some(expected_url.as_str()),

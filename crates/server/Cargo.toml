@@ -14,7 +14,6 @@ bcrypt.workspace = true
 buffa.workspace = true
 buffa-types.workspace = true
 bytes.workspace = true
-connectrpc.workspace = true
 futures.workspace = true
 http.workspace = true
 http-body.workspace = true
@@ -41,7 +40,8 @@ yona-rust-pilot-migration = { path = "../migration" }
 yona-rust-vcs = { path = "../vcs" }
 
 [build-dependencies]
-connectrpc-build.workspace = true
+buffa.workspace = true
+buffa-codegen.workspace = true
 protoc-bin-vendored.workspace = true
 
 [dev-dependencies]

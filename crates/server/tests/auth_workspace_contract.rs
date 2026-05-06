@@ -3,16 +3,17 @@ use http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::{
     entity::prelude::{DateTime, DateTimeUtc},
-    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet,
-    QueryFilter, Set,
+    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
+    Set,
 };
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, SystemTime};
 use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
-    assignee, attachment, comment_thread, email, issue, linked_account, n4user, project, pull_request, user_credential,
-    user_project_notification, user_verification, watch, AppRepository, CreateProjectInput,
+    assignee, attachment, comment_thread, email, issue, linked_account, n4user, project,
+    pull_request, user_credential, user_project_notification, user_verification, watch,
+    AppRepository, CreateProjectInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -101,7 +102,7 @@ async fn read_auth_ui_capabilities_returns_local_password_flags() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadAuthUiCapabilities")
+                .uri("/yona/api/v1/_pilot/ReadAuthUiCapabilities")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from("{}"))
                 .unwrap(),
@@ -146,7 +147,7 @@ async fn read_auth_ui_capabilities_reflects_runtime_env_flags() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadAuthUiCapabilities")
+                .uri("/yona/api/v1/_pilot/ReadAuthUiCapabilities")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from("{}"))
                 .unwrap(),
@@ -368,7 +369,8 @@ async fn rest_verify_user_confirms_pending_signup() {
 }
 
 #[tokio::test]
-async fn register_requires_confirmation_session_when_signup_confirm_or_email_verification_is_enabled() {
+async fn register_requires_confirmation_session_when_signup_confirm_or_email_verification_is_enabled(
+) {
     let _guard = auth_env_lock().lock().unwrap();
     clear_test_outbox();
     std::env::set_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM", "true");
@@ -379,7 +381,7 @@ async fn register_requires_confirmation_session_when_signup_confirm_or_email_ver
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -394,7 +396,11 @@ async fn register_requires_confirmation_session_when_signup_confirm_or_email_ver
     assert_eq!(register.status(), StatusCode::OK);
     let register_json = response_text(register).await;
     assert!(register_json.contains("\"isAnonymous\":true"));
-    assert!(user_verification::Entity::find().all(&db).await.unwrap().is_empty());
+    assert!(user_verification::Entity::find()
+        .all(&db)
+        .await
+        .unwrap()
+        .is_empty());
     assert!(snapshot_test_outbox().is_empty());
 }
 
@@ -411,7 +417,7 @@ async fn register_with_email_verification_creates_signup_verification_and_mail_d
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -457,7 +463,7 @@ async fn register_sign_in_sign_out_and_current_session_round_trip() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -473,7 +479,7 @@ async fn register_sign_in_sign_out_and_current_session_round_trip() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadCurrentSession")
+                .uri("/yona/api/v1/_pilot/ReadCurrentSession")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .body(Body::from("{}"))
@@ -491,7 +497,7 @@ async fn register_sign_in_sign_out_and_current_session_round_trip() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/SignOut")
+                .uri("/yona/api/v1/_pilot/SignOut")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -506,7 +512,7 @@ async fn register_sign_in_sign_out_and_current_session_round_trip() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/SignInWithPassword")
+                .uri("/yona/api/v1/_pilot/SignInWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -533,7 +539,7 @@ async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -544,7 +550,7 @@ async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
         .unwrap();
     assert_eq!(short_password.status(), StatusCode::BAD_REQUEST);
     let short_password_json = response_text(short_password).await;
-    assert!(short_password_json.contains("\"code\":\"invalid_argument\""));
+    assert!(short_password_json.contains("\"code\":\"bad_request\""));
     assert!(short_password_json.contains("Password must be at least 8 characters."));
 
     let mismatch = app
@@ -552,7 +558,7 @@ async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -563,7 +569,7 @@ async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
         .unwrap();
     assert_eq!(mismatch.status(), StatusCode::BAD_REQUEST);
     let mismatch_json = response_text(mismatch).await;
-    assert!(mismatch_json.contains("\"code\":\"invalid_argument\""));
+    assert!(mismatch_json.contains("\"code\":\"bad_request\""));
     assert!(mismatch_json.contains("Passwords do not match."));
 
     let register = app
@@ -571,7 +577,7 @@ async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -586,7 +592,7 @@ async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/SignInWithPassword")
+                .uri("/yona/api/v1/_pilot/SignInWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -599,7 +605,7 @@ async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
         .unwrap();
     assert_eq!(sign_in.status(), StatusCode::UNAUTHORIZED);
     let sign_in_json = response_text(sign_in).await;
-    assert!(sign_in_json.contains("\"code\":\"unauthenticated\""));
+    assert!(sign_in_json.contains("\"code\":\"unauthorized\""));
     assert!(sign_in_json.contains("Invalid login ID, email, or password."));
 }
 
@@ -615,7 +621,7 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -632,7 +638,10 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
             Request::builder()
                 .method(Method::POST)
                 .uri("/yona/lostPassword")
-                .header(http::header::CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
                 .body(Body::from("loginId=door&emailAddress=door%40example.com"))
                 .unwrap(),
         )
@@ -668,7 +677,10 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
             Request::builder()
                 .method(Method::POST)
                 .uri("/yona/resetPassword")
-                .header(http::header::CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
                 .body(Body::from(format!(
                     "hashString={reset_code}&password=renewpass1&retypedPassword=renewpass1"
                 )))
@@ -691,7 +703,11 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
         .unwrap()
         .expect("user after reset");
     assert!(bcrypt::verify("renewpass1", &user.password_hash).unwrap());
-    assert!(user_verification::Entity::find().all(&db).await.unwrap().is_empty());
+    assert!(user_verification::Entity::find()
+        .all(&db)
+        .await
+        .unwrap()
+        .is_empty());
 }
 
 #[tokio::test]
@@ -706,7 +722,7 @@ async fn direct_email_validation_send_and_confirm_routes_round_trip() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -740,9 +756,15 @@ async fn direct_email_validation_send_and_confirm_routes_round_trip() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri(&format!("/yona/user/email/sendValidationEmail/{}", email_before.id))
+                .uri(&format!(
+                    "/yona/user/email/sendValidationEmail/{}",
+                    email_before.id
+                ))
                 .header(http::header::COOKIE, &cookie_header)
-                .header(http::header::CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
                 .body(Body::from(format!("csrfToken={csrf}")))
                 .unwrap(),
         )
@@ -815,7 +837,7 @@ async fn verify_user_activates_pending_account_and_rejects_invalid_or_expired_li
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -831,9 +853,11 @@ async fn verify_user_activates_pending_account_and_rejects_invalid_or_expired_li
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/VerifyUser")
+                .uri("/yona/api/v1/_pilot/VerifyUser")
                 .header(http::header::CONTENT_TYPE, "application/json")
-                .body(Body::from("{\"loginId\":\"door\",\"verificationCode\":\"signup:missing\"}"))
+                .body(Body::from(
+                    "{\"loginId\":\"door\",\"verificationCode\":\"signup:missing\"}",
+                ))
                 .unwrap(),
         )
         .await
@@ -855,7 +879,7 @@ async fn verify_user_activates_pending_account_and_rejects_invalid_or_expired_li
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/VerifyUser")
+                .uri("/yona/api/v1/_pilot/VerifyUser")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from(format!(
                     "{{\"loginId\":\"door\",\"verificationCode\":\"{verification_code}\"}}"
@@ -867,7 +891,11 @@ async fn verify_user_activates_pending_account_and_rejects_invalid_or_expired_li
     assert_eq!(verify.status(), StatusCode::OK);
     let verify_json = response_text(verify).await;
     assert!(verify_json.contains("\"loginId\":\"door\""));
-    assert!(user_verification::Entity::find().all(&db).await.unwrap().is_empty());
+    assert!(user_verification::Entity::find()
+        .all(&db)
+        .await
+        .unwrap()
+        .is_empty());
 
     let activated_user = repository
         .find_user_by_identifier("door")
@@ -881,7 +909,7 @@ async fn verify_user_activates_pending_account_and_rejects_invalid_or_expired_li
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/SignInWithPassword")
+                .uri("/yona/api/v1/_pilot/SignInWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -906,8 +934,7 @@ async fn verify_user_activates_pending_account_and_rejects_invalid_or_expired_li
     let expired_code = expired.verification_code.clone().expect("expired code");
     let mut expired_active = user_verification::ActiveModel::from(expired);
     expired_active.timestamp = Set(Some(
-        DateTimeUtc::from(SystemTime::now() - Duration::from_secs(25 * 60 * 60))
-            .timestamp_millis(),
+        DateTimeUtc::from(SystemTime::now() - Duration::from_secs(25 * 60 * 60)).timestamp_millis(),
     ));
     expired_active.update(&db).await.unwrap();
 
@@ -915,7 +942,7 @@ async fn verify_user_activates_pending_account_and_rejects_invalid_or_expired_li
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/VerifyUser")
+                .uri("/yona/api/v1/_pilot/VerifyUser")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from(format!(
                     "{{\"loginId\":\"door\",\"verificationCode\":\"{expired_code}\"}}"
@@ -941,7 +968,7 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -986,11 +1013,13 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/UpdateProfile")
+                .uri("/yona/api/v1/_pilot/UpdateProfile")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
-                .body(Body::from("{\"name\":\"Door Updated\",\"email\":\"door-updated@example.com\"}"))
+                .body(Body::from(
+                    "{\"name\":\"Door Updated\",\"email\":\"door-updated@example.com\"}",
+                ))
                 .unwrap(),
         )
         .await
@@ -1021,7 +1050,7 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/UpdateProfile")
+                .uri("/yona/api/v1/_pilot/UpdateProfile")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1035,14 +1064,17 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .unwrap();
     assert_eq!(updated_avatar.status(), StatusCode::OK);
     let updated_avatar_json = response_text(updated_avatar).await;
-    assert!(updated_avatar_json.contains(&format!("\"avatarUrl\":\"/yona/files/{}\"", avatar_attachment.id)));
+    assert!(updated_avatar_json.contains(&format!(
+        "\"avatarUrl\":\"/yona/files/{}\"",
+        avatar_attachment.id
+    )));
 
     let added_email = app
         .clone()
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/AddWorkspaceEmail")
+                .uri("/yona/api/v1/_pilot/AddWorkspaceEmail")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1068,7 +1100,7 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/SendWorkspaceEmailValidation")
+                .uri("/yona/api/v1/_pilot/SendWorkspaceEmailValidation")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1079,8 +1111,13 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .unwrap();
     assert_eq!(validation_sent.status(), StatusCode::OK);
 
-    let mut alt_email_active =
-        email::ActiveModel::from(email::Entity::find_by_id(alt_email.id).one(&db).await.unwrap().unwrap());
+    let mut alt_email_active = email::ActiveModel::from(
+        email::Entity::find_by_id(alt_email.id)
+            .one(&db)
+            .await
+            .unwrap()
+            .unwrap(),
+    );
     alt_email_active.valid = Set(Some(1));
     alt_email_active.update(&db).await.unwrap();
 
@@ -1089,7 +1126,7 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/SetMainWorkspaceEmail")
+                .uri("/yona/api/v1/_pilot/SetMainWorkspaceEmail")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1107,7 +1144,7 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ResetApiToken")
+                .uri("/yona/api/v1/_pilot/ResetApiToken")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1125,7 +1162,7 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ToggleWorkspaceNotification")
+                .uri("/yona/api/v1/_pilot/ToggleWorkspaceNotification")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1147,7 +1184,7 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ResetVisitedProjects")
+                .uri("/yona/api/v1/_pilot/ResetVisitedProjects")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1172,7 +1209,7 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/DeleteWorkspaceEmail")
+                .uri("/yona/api/v1/_pilot/DeleteWorkspaceEmail")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1188,7 +1225,7 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ChangePassword")
+                .uri("/yona/api/v1/_pilot/ChangePassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1205,7 +1242,7 @@ async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/SignInWithPassword")
+                .uri("/yona/api/v1/_pilot/SignInWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1232,7 +1269,7 @@ async fn toggle_workspace_notification_preserves_missing_forbidden_and_unwatched
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1269,11 +1306,13 @@ async fn toggle_workspace_notification_preserves_missing_forbidden_and_unwatched
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ToggleWorkspaceNotification")
+                .uri("/yona/api/v1/_pilot/ToggleWorkspaceNotification")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
-                .body(Body::from("{\"projectId\":\"99999\",\"eventType\":\"NEW_ISSUE\"}"))
+                .body(Body::from(
+                    "{\"projectId\":\"99999\",\"eventType\":\"NEW_ISSUE\"}",
+                ))
                 .unwrap(),
         )
         .await
@@ -1285,7 +1324,7 @@ async fn toggle_workspace_notification_preserves_missing_forbidden_and_unwatched
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ToggleWorkspaceNotification")
+                .uri("/yona/api/v1/_pilot/ToggleWorkspaceNotification")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1303,7 +1342,7 @@ async fn toggle_workspace_notification_preserves_missing_forbidden_and_unwatched
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ToggleWorkspaceNotification")
+                .uri("/yona/api/v1/_pilot/ToggleWorkspaceNotification")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1329,7 +1368,7 @@ async fn update_profile_replaces_existing_avatar_attachment() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1378,7 +1417,7 @@ async fn update_profile_replaces_existing_avatar_attachment() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/UpdateProfile")
+                .uri("/yona/api/v1/_pilot/UpdateProfile")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1415,7 +1454,7 @@ async fn workspace_overview_reads_and_updates_default_landing() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1430,7 +1469,7 @@ async fn workspace_overview_reads_and_updates_default_landing() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadWorkspaceOverview")
+                .uri("/yona/api/v1/_pilot/ReadWorkspaceOverview")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .body(Body::from("{}"))
@@ -1449,7 +1488,7 @@ async fn workspace_overview_reads_and_updates_default_landing() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/SetDefaultLandingPath")
+                .uri("/yona/api/v1/_pilot/SetDefaultLandingPath")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1472,7 +1511,7 @@ async fn workspace_overview_reads_and_updates_default_landing() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/SetDefaultLandingPath")
+                .uri("/yona/api/v1/_pilot/SetDefaultLandingPath")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -1886,7 +1925,7 @@ async fn workspace_overview_reads_and_updates_default_landing() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadWorkspaceOverview")
+                .uri("/yona/api/v1/_pilot/ReadWorkspaceOverview")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .body(Body::from("{}"))
@@ -1895,7 +1934,12 @@ async fn workspace_overview_reads_and_updates_default_landing() {
         .await
         .unwrap();
     assert_eq!(enriched_overview.status(), StatusCode::OK);
-    let enriched_body = enriched_overview.into_body().collect().await.unwrap().to_bytes();
+    let enriched_body = enriched_overview
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
     let enriched_json = String::from_utf8(enriched_body.to_vec()).unwrap();
     let enriched_payload: serde_json::Value = serde_json::from_str(&enriched_json).unwrap();
     assert!(enriched_json.contains("\"apiToken\":\"door-token\""));
@@ -1939,12 +1983,10 @@ async fn workspace_overview_reads_and_updates_default_landing() {
         .and_then(|value| value.as_array())
         .expect("watched projects array");
     let profile = enriched_payload.get("profile").expect("profile payload");
-    assert!(
-        profile
-            .get("sinceLabel")
-            .and_then(|value| value.as_str())
-            .is_some_and(|value| !value.trim().is_empty())
-    );
+    assert!(profile
+        .get("sinceLabel")
+        .and_then(|value| value.as_str())
+        .is_some_and(|value| !value.trim().is_empty()));
     let first_project = watched_projects.first().expect("watched project");
     let notifications = first_project
         .get("notifications")
@@ -1952,7 +1994,9 @@ async fn workspace_overview_reads_and_updates_default_landing() {
         .expect("notifications array");
     let new_comment = notifications
         .iter()
-        .find(|value| value.get("eventType").and_then(|field| field.as_str()) == Some("NEW_COMMENT"))
+        .find(|value| {
+            value.get("eventType").and_then(|field| field.as_str()) == Some("NEW_COMMENT")
+        })
         .expect("NEW_COMMENT notification");
     assert_eq!(
         new_comment

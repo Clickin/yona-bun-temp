@@ -16,10 +16,12 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
     seed_pilot_data(&db).await.expect("seed pilot data");
 
     let repo = PilotRepository::new(db);
-    repo.create_organization(yona_rust_pilot_server::persistence::CreateOrganizationInput {
-        description: Some("Seeded pilot organization".to_string()),
-        organization_name: "weblabs".to_string(),
-    })
+    repo.create_organization(
+        yona_rust_pilot_server::persistence::CreateOrganizationInput {
+            description: Some("Seeded pilot organization".to_string()),
+            organization_name: "weblabs".to_string(),
+        },
+    )
     .await
     .expect("create seeded organization");
     let app = create_router_with_repository(
@@ -35,7 +37,7 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ListProjects")
+                .uri("/yona/api/v1/_pilot/ListProjects")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from("{}"))
                 .unwrap(),
@@ -49,7 +51,7 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ListProjectIssues")
+                .uri("/yona/api/v1/_pilot/ListProjectIssues")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from(
                     "{\"ownerName\":\"pilot\",\"projectName\":\"yona\"}",
@@ -59,7 +61,12 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
         .await
         .unwrap();
     assert_eq!(issue_list_response.status(), StatusCode::OK);
-    let issue_list_body = issue_list_response.into_body().collect().await.unwrap().to_bytes();
+    let issue_list_body = issue_list_response
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
     let issue_list_json = String::from_utf8(issue_list_body.to_vec()).unwrap();
     assert!(issue_list_json.contains("\"title\":\"Pilot issue\""));
     assert!(issue_list_json.contains("\"state\":\"open\""));
@@ -69,7 +76,7 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ListOrganizations")
+                .uri("/yona/api/v1/_pilot/ListOrganizations")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from("{}"))
                 .unwrap(),
@@ -120,7 +127,7 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/RegisterWithPassword")
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
@@ -130,12 +137,21 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
         .await
         .unwrap();
     assert_eq!(register_response.status(), StatusCode::OK);
-    let register_body = register_response.into_body().collect().await.unwrap().to_bytes();
+    let register_body = register_response
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
     let register_json: serde_json::Value =
         serde_json::from_slice(&register_body).expect("register response json");
     let actor_id = register_json
         .get("actorId")
-        .and_then(|value| value.as_i64().or_else(|| value.as_str().and_then(|value| value.parse().ok())))
+        .and_then(|value| {
+            value
+                .as_i64()
+                .or_else(|| value.as_str().and_then(|value| value.parse().ok()))
+        })
         .expect("registered actor id");
     let project = repo
         .read_project_by_owner_and_name("pilot", "yona")
@@ -151,7 +167,7 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/UpdateIssueState")
+                .uri("/yona/api/v1/_pilot/UpdateIssueState")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", csrf)
@@ -166,7 +182,7 @@ async fn db_backed_router_reads_and_updates_seeded_data() {
         .oneshot(
             Request::builder()
                 .method(Method::POST)
-                .uri("/yona/rpc/yona.pilot.v1.PilotService/ReadIssueDetail")
+                .uri("/yona/api/v1/_pilot/ReadIssueDetail")
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from(
                     "{\"ownerName\":\"pilot\",\"projectName\":\"yona\",\"issueNumber\":\"1\"}",

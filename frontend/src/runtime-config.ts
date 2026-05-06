@@ -1,14 +1,12 @@
 export interface RuntimeConfig {
   apiBaseUrl: string;
   basePath: string;
-  rpcBaseUrl: string;
 }
 
 declare global {
   interface ImportMetaEnv {
     readonly VITE_YONA_API_BASE_URL?: string;
     readonly VITE_YONA_BASE_PATH?: string;
-    readonly VITE_YONA_RPC_BASE_URL?: string;
   }
 
   interface ImportMeta {
@@ -39,7 +37,6 @@ export function resolveRuntimeConfig(
   return {
     apiBaseUrl: input.apiBaseUrl ?? joinBasePath(basePath, "api"),
     basePath,
-    rpcBaseUrl: input.rpcBaseUrl ?? joinBasePath(basePath, "rpc"),
   };
 }
 
@@ -47,7 +44,6 @@ function readViteRuntimeConfig(): Partial<RuntimeConfig> {
   return {
     apiBaseUrl: import.meta.env.VITE_YONA_API_BASE_URL ?? process.env.VITE_YONA_API_BASE_URL,
     basePath: import.meta.env.VITE_YONA_BASE_PATH ?? process.env.VITE_YONA_BASE_PATH,
-    rpcBaseUrl: import.meta.env.VITE_YONA_RPC_BASE_URL ?? process.env.VITE_YONA_RPC_BASE_URL,
   };
 }
 
