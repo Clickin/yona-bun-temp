@@ -1,13 +1,8 @@
-import { createClient } from "@connectrpc/connect";
-import { createConnectTransport } from "@connectrpc/connect-web";
 import type { MessageInitShape } from "@bufbuild/protobuf";
-import { create } from "@bufbuild/protobuf";
 import {
   AcceptOrganizationEnrollmentRequestSchema,
   AddOrganizationMemberRequestSchema,
   ChangePasswordRequestSchema,
-  CancelEnrollOrganizationRequestSchema,
-  CancelEnrollProjectRequestSchema,
   AssignIssueRequestSchema,
   CreateIssueCommentRequestSchema,
   CreateIssueRequestSchema,
@@ -22,35 +17,13 @@ import {
   DeleteProjectLabelCategoryRequestSchema,
   DeleteProjectLabelRequestSchema,
   DeleteOrganizationMemberRequestSchema,
-  DeleteOrganizationRequestSchema,
-  EnrollOrganizationRequestSchema,
-  EnrollProjectRequestSchema,
   IssueCommentParticipationRequestSchema,
-  ListOrganizationsRequestSchema,
-  ListProjectsRequestSchema,
-  PilotService,
-  LeaveOrganizationRequestSchema,
   IssueParticipationRequestSchema,
   IssueShareRequestSchema,
-  ListProjectLabelsRequestSchema,
-  ListProjectMilestonesRequestSchema,
   MassUpdateIssuesRequestSchema,
   MilestoneStateMutationRequestSchema,
-  ReadOrganizationAdminRequestSchema,
-  ReadOrganizationContainerRequestSchema,
-  ReadOrganizationDetailRequestSchema,
-  ReadOrganizationMembersRequestSchema,
-  ReadOrganizationSettingsRequestSchema,
-  ReadProjectMilestoneRequestSchema,
-  ReadProjectContainerRequestSchema,
-  ReadProjectDetailRequestSchema,
-  ReadProjectMembersRequestSchema,
-  ReadProjectSettingsRequestSchema,
   RegisterWithPasswordRequestSchema,
   SignInWithPasswordRequestSchema,
-  SignOutRequestSchema,
-  ToggleFavoriteProjectRequestSchema,
-  ToggleProjectWatchRequestSchema,
   UpdateOrganizationMemberRoleRequestSchema,
   UpdateProfileRequestSchema,
   UpdateOrganizationRequestSchema,
@@ -119,6 +92,36 @@ import {
   readProjectMilestoneRest,
   updateProjectMilestoneRest,
 } from "./api/milestones";
+import {
+  acceptOrganizationEnrollmentRest,
+  addOrganizationMemberRest,
+  cancelEnrollOrganizationRest,
+  cancelEnrollProjectRest,
+  createOrganizationRest,
+  createProjectRest,
+  deleteOrganizationMemberRest,
+  deleteOrganizationRest,
+  enrollOrganizationRest,
+  enrollProjectRest,
+  leaveOrganizationRest,
+  listOrganizationsRest,
+  listProjectsRest,
+  readOrganizationAdminRest,
+  readOrganizationContainerRest,
+  readOrganizationDetailRest,
+  readOrganizationMembersRest,
+  readOrganizationSettingsRest,
+  readProjectContainerRest,
+  readProjectDetailRest,
+  readProjectMembersRest,
+  readProjectSettingsRest,
+  toggleFavoriteProjectRest,
+  toggleProjectWatchRest,
+  updateOrganizationMemberRoleRest,
+  updateOrganizationRest,
+  updateProjectOverviewRest,
+  updateProjectRest,
+} from "./api/org-project";
 import {
   createProjectLabelCategoryRest,
   createProjectLabelRest,
@@ -208,23 +211,6 @@ export interface ProjectMilestoneListOptions {
   orderBy?: string;
   orderDir?: string;
   state?: string;
-}
-
-function createFetchWithCredentials(fetchImpl: typeof fetch): typeof fetch {
-  return (input, init) =>
-    fetchImpl(input, {
-      ...init,
-      credentials: "include",
-    });
-}
-
-function createPilotClient(runtimeConfig: RuntimeConfig, fetchImpl: typeof fetch = fetch) {
-  const transport = createConnectTransport({
-    baseUrl: runtimeConfig.rpcBaseUrl,
-    fetch: createFetchWithCredentials(fetchImpl),
-    useBinaryFormat: false,
-  });
-  return createClient(PilotService, transport);
 }
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
@@ -368,18 +354,14 @@ export async function listProjects(
   runtimeConfig: RuntimeConfig,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ListProjectsResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).listProjects(
-    create(ListProjectsRequestSchema),
-  );
+  return listProjectsRest(runtimeConfig, fetchImpl);
 }
 
 export async function listOrganizations(
   runtimeConfig: RuntimeConfig,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ListOrganizationsResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).listOrganizations(
-    create(ListOrganizationsRequestSchema),
-  );
+  return listOrganizationsRest(runtimeConfig, fetchImpl);
 }
 
 function encodeIssuePathSegment(value: string): string {
@@ -1122,10 +1104,10 @@ export async function createOrganization(
   input: MessageInitShape<typeof CreateOrganizationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationDetail> {
-  return createPilotClient(runtimeConfig, fetchImpl).createOrganization(
-    create(CreateOrganizationRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return createOrganizationRest(runtimeConfig, csrfToken, {
+    description: input.description ?? "",
+    organizationName: input.organizationName ?? "",
+  }, fetchImpl);
 }
 
 export async function readOrganizationDetail(
@@ -1133,9 +1115,7 @@ export async function readOrganizationDetail(
   organizationName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationDetail> {
-  return createPilotClient(runtimeConfig, fetchImpl).readOrganizationDetail(
-    create(ReadOrganizationDetailRequestSchema, { organizationName }),
-  );
+  return readOrganizationDetailRest(runtimeConfig, organizationName, fetchImpl);
 }
 
 export async function readOrganizationAdmin(
@@ -1143,9 +1123,7 @@ export async function readOrganizationAdmin(
   organizationName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationAdminView> {
-  return createPilotClient(runtimeConfig, fetchImpl).readOrganizationAdmin(
-    create(ReadOrganizationAdminRequestSchema, { organizationName }),
-  );
+  return readOrganizationAdminRest(runtimeConfig, organizationName, fetchImpl);
 }
 
 export async function readOrganizationContainer(
@@ -1153,9 +1131,7 @@ export async function readOrganizationContainer(
   organizationName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationContainer> {
-  return createPilotClient(runtimeConfig, fetchImpl).readOrganizationContainer(
-    create(ReadOrganizationContainerRequestSchema, { organizationName }),
-  );
+  return readOrganizationContainerRest(runtimeConfig, organizationName, fetchImpl);
 }
 
 export async function readOrganizationSettings(
@@ -1163,9 +1139,7 @@ export async function readOrganizationSettings(
   organizationName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationDetail> {
-  return createPilotClient(runtimeConfig, fetchImpl).readOrganizationSettings(
-    create(ReadOrganizationSettingsRequestSchema, { organizationName }),
-  );
+  return readOrganizationSettingsRest(runtimeConfig, organizationName, fetchImpl);
 }
 
 export async function readOrganizationMembers(
@@ -1173,9 +1147,7 @@ export async function readOrganizationMembers(
   organizationName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadOrganizationMembersResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).readOrganizationMembers(
-    create(ReadOrganizationMembersRequestSchema, { organizationName }),
-  );
+  return readOrganizationMembersRest(runtimeConfig, organizationName, fetchImpl);
 }
 
 export async function updateOrganization(
@@ -1184,9 +1156,15 @@ export async function updateOrganization(
   input: MessageInitShape<typeof UpdateOrganizationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationDetail> {
-  return createPilotClient(runtimeConfig, fetchImpl).updateOrganization(
-    create(UpdateOrganizationRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
+  return updateOrganizationRest(
+    runtimeConfig,
+    csrfToken,
+    input.currentOrganizationName ?? "",
+    {
+      description: input.description ?? "",
+      organizationName: input.organizationName ?? "",
+    },
+    fetchImpl,
   );
 }
 
@@ -1196,10 +1174,10 @@ export async function addOrganizationMember(
   input: MessageInitShape<typeof AddOrganizationMemberRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationAdminView> {
-  return createPilotClient(runtimeConfig, fetchImpl).addOrganizationMember(
-    create(AddOrganizationMemberRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return addOrganizationMemberRest(runtimeConfig, csrfToken, {
+    loginId: input.loginId ?? "",
+    organizationName: input.organizationName ?? "",
+  }, fetchImpl);
 }
 
 export async function updateOrganizationMemberRole(
@@ -1208,10 +1186,11 @@ export async function updateOrganizationMemberRole(
   input: MessageInitShape<typeof UpdateOrganizationMemberRoleRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationAdminView> {
-  return createPilotClient(runtimeConfig, fetchImpl).updateOrganizationMemberRole(
-    create(UpdateOrganizationMemberRoleRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return updateOrganizationMemberRoleRest(runtimeConfig, csrfToken, {
+    organizationName: input.organizationName ?? "",
+    role: input.role ?? "",
+    userId: input.userId ?? 0n,
+  }, fetchImpl);
 }
 
 export async function deleteOrganizationMember(
@@ -1220,10 +1199,10 @@ export async function deleteOrganizationMember(
   input: MessageInitShape<typeof DeleteOrganizationMemberRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationAdminView> {
-  return createPilotClient(runtimeConfig, fetchImpl).deleteOrganizationMember(
-    create(DeleteOrganizationMemberRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return deleteOrganizationMemberRest(runtimeConfig, csrfToken, {
+    organizationName: input.organizationName ?? "",
+    userId: input.userId ?? 0n,
+  }, fetchImpl);
 }
 
 export async function acceptOrganizationEnrollment(
@@ -1232,10 +1211,10 @@ export async function acceptOrganizationEnrollment(
   input: MessageInitShape<typeof AcceptOrganizationEnrollmentRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationAdminView> {
-  return createPilotClient(runtimeConfig, fetchImpl).acceptOrganizationEnrollment(
-    create(AcceptOrganizationEnrollmentRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return acceptOrganizationEnrollmentRest(runtimeConfig, csrfToken, {
+    organizationName: input.organizationName ?? "",
+    userId: input.userId ?? 0n,
+  }, fetchImpl);
 }
 
 export async function enrollOrganization(
@@ -1244,10 +1223,7 @@ export async function enrollOrganization(
   organizationName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationContainer> {
-  return createPilotClient(runtimeConfig, fetchImpl).enrollOrganization(
-    create(EnrollOrganizationRequestSchema, { organizationName }),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return enrollOrganizationRest(runtimeConfig, csrfToken, organizationName, fetchImpl);
 }
 
 export async function cancelEnrollOrganization(
@@ -1256,10 +1232,7 @@ export async function cancelEnrollOrganization(
   organizationName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationContainer> {
-  return createPilotClient(runtimeConfig, fetchImpl).cancelEnrollOrganization(
-    create(CancelEnrollOrganizationRequestSchema, { organizationName }),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return cancelEnrollOrganizationRest(runtimeConfig, csrfToken, organizationName, fetchImpl);
 }
 
 export async function leaveOrganization(
@@ -1268,10 +1241,7 @@ export async function leaveOrganization(
   organizationName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationRedirectResult> {
-  return createPilotClient(runtimeConfig, fetchImpl).leaveOrganization(
-    create(LeaveOrganizationRequestSchema, { organizationName }),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return leaveOrganizationRest(runtimeConfig, csrfToken, organizationName, fetchImpl);
 }
 
 export async function deleteOrganization(
@@ -1280,10 +1250,7 @@ export async function deleteOrganization(
   organizationName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationRedirectResult> {
-  return createPilotClient(runtimeConfig, fetchImpl).deleteOrganization(
-    create(DeleteOrganizationRequestSchema, { organizationName }),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return deleteOrganizationRest(runtimeConfig, csrfToken, organizationName, fetchImpl);
 }
 
 export async function createProject(
@@ -1292,10 +1259,11 @@ export async function createProject(
   input: MessageInitShape<typeof CreateProjectRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectDetail> {
-  return createPilotClient(runtimeConfig, fetchImpl).createProject(
-    create(CreateProjectRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return createProjectRest(runtimeConfig, csrfToken, input.ownerName ?? "", {
+    overview: input.overview ?? "",
+    projectName: input.projectName ?? "",
+    projectScope: input.projectScope ?? "",
+  }, fetchImpl);
 }
 
 export async function readProjectDetail(
@@ -1304,9 +1272,7 @@ export async function readProjectDetail(
   projectName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectDetail> {
-  return createPilotClient(runtimeConfig, fetchImpl).readProjectDetail(
-    create(ReadProjectDetailRequestSchema, { ownerName, projectName }),
-  );
+  return readProjectDetailRest(runtimeConfig, ownerName, projectName, fetchImpl);
 }
 
 export async function readProjectContainer(
@@ -1315,9 +1281,7 @@ export async function readProjectContainer(
   projectName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectContainer> {
-  return createPilotClient(runtimeConfig, fetchImpl).readProjectContainer(
-    create(ReadProjectContainerRequestSchema, { ownerName, projectName }),
-  );
+  return readProjectContainerRest(runtimeConfig, ownerName, projectName, fetchImpl);
 }
 
 export async function readProjectSettings(
@@ -1326,9 +1290,7 @@ export async function readProjectSettings(
   projectName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectDetail> {
-  return createPilotClient(runtimeConfig, fetchImpl).readProjectSettings(
-    create(ReadProjectSettingsRequestSchema, { ownerName, projectName }),
-  );
+  return readProjectSettingsRest(runtimeConfig, ownerName, projectName, fetchImpl);
 }
 
 export async function readProjectMembers(
@@ -1337,9 +1299,7 @@ export async function readProjectMembers(
   projectName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadProjectMembersResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).readProjectMembers(
-    create(ReadProjectMembersRequestSchema, { ownerName, projectName }),
-  );
+  return readProjectMembersRest(runtimeConfig, ownerName, projectName, fetchImpl);
 }
 
 export async function updateProject(
@@ -1348,9 +1308,18 @@ export async function updateProject(
   input: MessageInitShape<typeof UpdateProjectRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectDetail> {
-  return createPilotClient(runtimeConfig, fetchImpl).updateProject(
-    create(UpdateProjectRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
+  return updateProjectRest(
+    runtimeConfig,
+    csrfToken,
+    input.currentOwnerName ?? "",
+    input.currentProjectName ?? "",
+    {
+      ownerName: input.ownerName ?? "",
+      overview: input.overview ?? "",
+      projectName: input.projectName ?? "",
+      projectScope: input.projectScope ?? "",
+    },
+    fetchImpl,
   );
 }
 
@@ -1384,9 +1353,13 @@ export async function updateProjectOverview(
   input: MessageInitShape<typeof UpdateProjectOverviewRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectContainer> {
-  return createPilotClient(runtimeConfig, fetchImpl).updateProjectOverview(
-    create(UpdateProjectOverviewRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
+  return updateProjectOverviewRest(
+    runtimeConfig,
+    csrfToken,
+    input.ownerName ?? "",
+    input.projectName ?? "",
+    input.overview ?? "",
+    fetchImpl,
   );
 }
 
@@ -1397,10 +1370,7 @@ export async function enrollProject(
   projectName: string,
   fetchImpl: typeof fetch = fetch,
 ) {
-  return createPilotClient(runtimeConfig, fetchImpl).enrollProject(
-    create(EnrollProjectRequestSchema, { ownerName, projectName }),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return enrollProjectRest(runtimeConfig, csrfToken, ownerName, projectName, fetchImpl);
 }
 
 export async function cancelEnrollProject(
@@ -1410,10 +1380,7 @@ export async function cancelEnrollProject(
   projectName: string,
   fetchImpl: typeof fetch = fetch,
 ) {
-  return createPilotClient(runtimeConfig, fetchImpl).cancelEnrollProject(
-    create(CancelEnrollProjectRequestSchema, { ownerName, projectName }),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return cancelEnrollProjectRest(runtimeConfig, csrfToken, ownerName, projectName, fetchImpl);
 }
 
 export async function toggleFavoriteProject(
@@ -1423,10 +1390,7 @@ export async function toggleFavoriteProject(
   projectName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ToggleFavoriteProjectResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).toggleFavoriteProject(
-    create(ToggleFavoriteProjectRequestSchema, { ownerName, projectName }),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return toggleFavoriteProjectRest(runtimeConfig, csrfToken, ownerName, projectName, fetchImpl);
 }
 
 export async function toggleProjectWatch(
@@ -1437,9 +1401,13 @@ export async function toggleProjectWatch(
   watching: boolean,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectContainer> {
-  return createPilotClient(runtimeConfig, fetchImpl).toggleProjectWatch(
-    create(ToggleProjectWatchRequestSchema, { ownerName, projectName, watching }),
-    { headers: { "x-csrf-token": csrfToken } },
+  return toggleProjectWatchRest(
+    runtimeConfig,
+    csrfToken,
+    ownerName,
+    projectName,
+    watching,
+    fetchImpl,
   );
 }
 

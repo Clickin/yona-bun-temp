@@ -201,6 +201,57 @@ async fn create_project(app: axum::Router, cookie: &str, csrf: &str, scope: &str
     assert_eq!(response.status(), StatusCode::OK);
 }
 
+async fn create_organization_rest(
+    app: axum::Router,
+    cookie: &str,
+    csrf: &str,
+    organization_name: &str,
+    description: &str,
+) -> Value {
+    ok_json(
+        rest(
+            app,
+            Method::POST,
+            "/yona/api/v1/organizations",
+            Some(cookie),
+            Some(csrf),
+            Some(json!({
+                "organizationName": organization_name,
+                "description": description,
+            })),
+        )
+        .await,
+    )
+    .await
+}
+
+async fn create_project_rest(
+    app: axum::Router,
+    cookie: &str,
+    csrf: &str,
+    owner_name: &str,
+    project_name: &str,
+    overview: &str,
+    project_scope: &str,
+) -> Value {
+    ok_json(
+        rest(
+            app,
+            Method::POST,
+            &format!("/yona/api/v1/owners/{owner_name}/projects"),
+            Some(cookie),
+            Some(csrf),
+            Some(json!({
+                "overview": overview,
+                "projectName": project_name,
+                "projectScope": project_scope,
+            })),
+        )
+        .await,
+    )
+    .await
+}
+
 async fn create_issue(app: axum::Router, cookie: &str, csrf: &str, title: &str) -> Value {
     ok_json(
         rpc(
@@ -326,6 +377,513 @@ async fn unknown_rest_route_returns_shared_json_error_envelope() {
     assert_eq!(body["error"]["code"], "not_found");
     assert_eq!(body["error"]["message"], "REST endpoint not found.");
     assert_eq!(body["error"]["status"], 404);
+}
+
+#[tokio::test]
+async fn rest_organization_routes_cover_directory_views_and_membership_mutations() {
+    let (app, repository) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie) = register_user(app.clone(), "admin").await;
+    let (_member_csrf, _member_cookie) = register_user(app.clone(), "member").await;
+    let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
+    let (_outsider_csrf, outsider_cookie) = register_user(app.clone(), "outsider").await;
+
+    let created = create_organization_rest(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "weblabs",
+        "web labs",
+    )
+    .await;
+    assert_eq!(created["organizationName"], "weblabs");
+
+    let listed = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/organizations",
+            None,
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(listed["items"].as_array().unwrap().len(), 1);
+    assert_eq!(listed["items"][0]["organizationName"], "weblabs");
+
+    let detail = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/organizations/weblabs",
+            None,
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(detail["organizationName"], "weblabs");
+    assert_eq!(detail["viewerCanUpdate"].as_bool().unwrap_or(false), false);
+
+    let updated = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/api/v1/organizations/weblabs",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            Some(json!({
+                "organizationName": "weblabs",
+                "description": "updated labs",
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(updated["description"], "updated labs");
+
+    let container = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/organizations/weblabs/container",
+            Some(&guest_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(container["organizationName"], "weblabs");
+    assert_eq!(container["viewerCanEnroll"], true);
+
+    let forbidden_admin = rest(
+        app.clone(),
+        Method::GET,
+        "/yona/api/v1/organizations/weblabs/admin",
+        Some(&outsider_cookie),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(forbidden_admin.status(), StatusCode::FORBIDDEN);
+
+    let admin_view = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/organizations/weblabs/admin",
+            Some(&admin_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(admin_view["organizationName"], "weblabs");
+    assert_eq!(admin_view["viewerCanUpdate"], true);
+
+    let settings = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/organizations/weblabs/settings",
+            Some(&admin_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(settings["organizationName"], "weblabs");
+
+    let members = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/organizations/weblabs/members",
+            Some(&admin_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(members["members"].as_array().unwrap().len(), 1);
+
+    let added_member = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/organizations/weblabs/members",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            Some(json!({
+                "loginId": "member",
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert!(added_member["members"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|member| member["loginId"] == "member"));
+
+    let enroll = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/organizations/weblabs/enroll",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(enroll["enrollmentRequested"], true);
+
+    let cancelled = ok_json(
+        rest(
+            app.clone(),
+            Method::DELETE,
+            "/yona/api/v1/organizations/weblabs/enroll",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        cancelled["enrollmentRequested"].as_bool().unwrap_or(false),
+        false
+    );
+
+    let reenrolled = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/organizations/weblabs/enroll",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(reenrolled["enrollmentRequested"], true);
+
+    let guest_id = repository
+        .find_user_by_login_id("guest")
+        .await
+        .expect("lookup guest")
+        .expect("guest exists")
+        .id;
+    let member_id = repository
+        .find_user_by_login_id("member")
+        .await
+        .expect("lookup member")
+        .expect("member exists")
+        .id;
+
+    let accepted = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            &format!("/yona/api/v1/organizations/weblabs/enrollments/{guest_id}/accept"),
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(accepted["members"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|member| member["loginId"] == "guest"));
+
+    let promoted = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            &format!("/yona/api/v1/organizations/weblabs/members/{member_id}"),
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            Some(json!({
+                "role": "org_admin",
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert!(promoted["members"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|member| member["loginId"] == "member" && member["role"] == "org_admin"));
+
+    let deleted_member = ok_json(
+        rest(
+            app.clone(),
+            Method::DELETE,
+            &format!("/yona/api/v1/organizations/weblabs/members/{member_id}"),
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(!deleted_member["members"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|member| member["loginId"] == "member"));
+
+    let guest_leave = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/organizations/weblabs/leave",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(guest_leave["ok"], true);
+    assert_eq!(guest_leave["redirectPath"], "/organizations/weblabs");
+
+    let deleted = ok_json(
+        rest(
+            app,
+            Method::DELETE,
+            "/yona/api/v1/organizations/weblabs",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(deleted["ok"], true);
+    assert_eq!(deleted["redirectPath"], "/");
+}
+
+#[tokio::test]
+async fn rest_project_routes_cover_directory_views_and_mutations() {
+    let (app, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
+
+    let created = create_project_rest(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "projectYobi",
+        "rest parity",
+        "public",
+    )
+    .await;
+    assert_eq!(created["projectName"], "projectYobi");
+
+    let listed = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects",
+            None,
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(listed["items"].as_array().unwrap().len(), 1);
+    assert_eq!(listed["items"][0]["projectName"], "projectYobi");
+
+    let detail = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi",
+            Some(&guest_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(detail["projectName"], "projectYobi");
+
+    let container = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/container",
+            Some(&guest_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(container["projectName"], "projectYobi");
+
+    let forbidden_settings = rest(
+        app.clone(),
+        Method::GET,
+        "/yona/api/v1/owners/owner/projects/projectYobi/settings",
+        Some(&guest_cookie),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(forbidden_settings.status(), StatusCode::FORBIDDEN);
+
+    let settings = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/settings",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(settings["projectName"], "projectYobi");
+
+    let members = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/members",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert!(members["members"].is_array());
+
+    let updated = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/api/v1/owners/owner/projects/projectYobi",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "overview": "rest parity updated",
+                "projectName": "projectYobi",
+                "projectScope": "public",
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(updated["overview"], "rest parity updated");
+    assert_eq!(updated["projectScope"], "public");
+
+    let overview = ok_json(
+        rest(
+            app.clone(),
+            Method::PATCH,
+            "/yona/api/v1/owners/owner/projects/projectYobi/overview",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "overview": "overview only",
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(overview["overview"], "overview only");
+
+    let enrolled = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/enroll",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(enrolled["ok"], true);
+
+    let canceled = ok_json(
+        rest(
+            app.clone(),
+            Method::DELETE,
+            "/yona/api/v1/owners/owner/projects/projectYobi/enroll",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(canceled["ok"], true);
+
+    let favorited = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/favorite",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(favorited["favorited"], true);
+
+    let watched = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/watch",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(watched["isWatching"], true);
+    assert_eq!(watched["watchCount"], 1);
+
+    let unwatched = ok_json(
+        rest(
+            app,
+            Method::DELETE,
+            "/yona/api/v1/owners/owner/projects/projectYobi/watch",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(unwatched["isWatching"].as_bool().unwrap_or(false), false);
+    assert_eq!(unwatched["watchCount"].as_u64().unwrap_or_default(), 0);
 }
 
 #[tokio::test]

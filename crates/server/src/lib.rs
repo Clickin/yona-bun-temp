@@ -1480,10 +1480,7 @@ struct RestRouteError {
 impl RestRouteError {
     fn from_connect_error(error: ConnectError) -> Self {
         let status = error.code.http_status();
-        let message = error
-            .message
-            .clone()
-            .unwrap_or_else(|| error.to_string());
+        let message = error.message.clone().unwrap_or_else(|| error.to_string());
         Self { message, status }
     }
 
@@ -1616,6 +1613,47 @@ struct RestIssueSharerBody {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct RestOrganizationBody {
+    description: String,
+    organization_name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestOrganizationMemberBody {
+    login_id: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestOrganizationMemberRoleBody {
+    role: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectCreateBody {
+    overview: String,
+    project_name: String,
+    project_scope: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectUpdateBody {
+    overview: String,
+    project_name: String,
+    project_scope: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectOverviewBody {
+    overview: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct RestProjectLabelCreateBody {
     #[serde(default)]
     category_is_exclusive: bool,
@@ -1685,6 +1723,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
     let backend = service.backend.clone();
     let base_path = service.base_path.clone();
     let issue_meta_service = service.clone();
+    let org_project_service = service.clone();
 
     Router::new()
         .route(
@@ -2194,6 +2233,306 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .merge(build_rest_issue_meta_router(issue_meta_service))
+        .merge(build_rest_org_project_router(org_project_service))
+}
+
+fn build_rest_org_project_router(service: PilotServiceImpl) -> Router {
+    Router::new()
+        .route(
+            "/projects",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_list_projects(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/organizations",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_list_organizations(headers, service).await }
+                }
+            })
+            .post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestOrganizationBody>| {
+                    let service = service.clone();
+                    async move { rest_create_organization(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/organizations/{organization_name}",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(organization_name): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_read_organization_detail(headers, organization_name, service).await }
+                }
+            })
+            .patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path(organization_name): Path<String>,
+                      Json(body): Json<RestOrganizationBody>| {
+                    let service = service.clone();
+                    async move { rest_update_organization(headers, organization_name, body, service).await }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(organization_name): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_delete_organization(headers, organization_name, service).await }
+                }
+            }),
+        )
+        .route(
+            "/organizations/{organization_name}/admin",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(organization_name): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_read_organization_admin(headers, organization_name, service).await }
+                }
+            }),
+        )
+        .route(
+            "/organizations/{organization_name}/container",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(organization_name): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_read_organization_container(headers, organization_name, service).await }
+                }
+            }),
+        )
+        .route(
+            "/organizations/{organization_name}/settings",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(organization_name): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_read_organization_settings(headers, organization_name, service).await }
+                }
+            }),
+        )
+        .route(
+            "/organizations/{organization_name}/members",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(organization_name): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_read_organization_members(headers, organization_name, service).await }
+                }
+            })
+            .post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path(organization_name): Path<String>,
+                      Json(body): Json<RestOrganizationMemberBody>| {
+                    let service = service.clone();
+                    async move { rest_add_organization_member(headers, organization_name, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/organizations/{organization_name}/members/{user_id}",
+            patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((organization_name, user_id)): Path<(String, i64)>,
+                      Json(body): Json<RestOrganizationMemberRoleBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_organization_member_role(
+                            headers,
+                            organization_name,
+                            user_id,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap, Path((organization_name, user_id)): Path<(String, i64)>| {
+                    let service = service.clone();
+                    async move { rest_delete_organization_member(headers, organization_name, user_id, service).await }
+                }
+            }),
+        )
+        .route(
+            "/organizations/{organization_name}/enrollments/{user_id}/accept",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path((organization_name, user_id)): Path<(String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_accept_organization_enrollment(
+                            headers,
+                            organization_name,
+                            user_id,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/organizations/{organization_name}/enroll",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(organization_name): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_enroll_organization(headers, organization_name, service).await }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(organization_name): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_cancel_enroll_organization(headers, organization_name, service).await }
+                }
+            }),
+        )
+        .route(
+            "/organizations/{organization_name}/leave",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(organization_name): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_leave_organization(headers, organization_name, service).await }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path(owner_name): Path<String>,
+                      Json(body): Json<RestProjectCreateBody>| {
+                    let service = service.clone();
+                    async move { rest_create_project(headers, owner_name, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move { rest_read_project_detail(headers, owner_name, project_name, service).await }
+                }
+            })
+            .patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestProjectUpdateBody>| {
+                    let service = service.clone();
+                    async move { rest_update_project(headers, owner_name, project_name, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/container",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move { rest_read_project_container(headers, owner_name, project_name, service).await }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/settings",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move { rest_read_project_settings(headers, owner_name, project_name, service).await }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/members",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move { rest_read_project_members(headers, owner_name, project_name, service).await }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/overview",
+            patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestProjectOverviewBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_project_overview(headers, owner_name, project_name, body, service)
+                            .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/enroll",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move { rest_enroll_project(headers, owner_name, project_name, service).await }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move { rest_cancel_enroll_project(headers, owner_name, project_name, service).await }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/favorite",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move { rest_toggle_favorite_project(headers, owner_name, project_name, service).await }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/watch",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move { rest_toggle_project_watch(headers, owner_name, project_name, true, service).await }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move { rest_toggle_project_watch(headers, owner_name, project_name, false, service).await }
+                }
+            }),
+        )
 }
 
 fn build_rest_issue_meta_router(service: PilotServiceImpl) -> Router {
@@ -2677,8 +3016,9 @@ fn rest_owned_view<V>(message: &V::Owned) -> Result<OwnedView<V>, RestRouteError
 where
     V: MessageView<'static>,
 {
-    OwnedView::<V>::from_owned(message)
-        .map_err(|error| RestRouteError::internal(format!("failed to encode REST request: {error}")))
+    OwnedView::<V>::from_owned(message).map_err(|error| {
+        RestRouteError::internal(format!("failed to encode REST request: {error}"))
+    })
 }
 
 fn append_response_headers(target: &mut HeaderMap, source: &HeaderMap) {
@@ -2971,6 +3311,522 @@ async fn rest_record_recent_project_visit(
     let request = rest_owned_view::<RecordRecentProjectVisitRequestView<'static>>(&request)?;
     let (payload, ctx) = service
         .record_recent_project_visit(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_list_projects(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ListProjectsRequest::default();
+    let request = rest_owned_view::<ListProjectsRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .list_projects(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_list_organizations(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ListOrganizationsRequest::default();
+    let request = rest_owned_view::<ListOrganizationsRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .list_organizations(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_create_organization(
+    headers: HeaderMap,
+    body: RestOrganizationBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = CreateOrganizationRequest {
+        description: body.description,
+        organization_name: body.organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<CreateOrganizationRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .create_organization(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_read_organization_detail(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadOrganizationDetailRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadOrganizationDetailRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_organization_detail(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_read_organization_admin(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadOrganizationAdminRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadOrganizationAdminRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_organization_admin(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_read_organization_container(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadOrganizationContainerRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadOrganizationContainerRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_organization_container(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_read_organization_settings(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadOrganizationSettingsRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadOrganizationSettingsRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_organization_settings(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_read_organization_members(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadOrganizationMembersRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadOrganizationMembersRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_organization_members(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_organization(
+    headers: HeaderMap,
+    current_organization_name: String,
+    body: RestOrganizationBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = UpdateOrganizationRequest {
+        current_organization_name,
+        description: body.description,
+        organization_name: body.organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<UpdateOrganizationRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .update_organization(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_add_organization_member(
+    headers: HeaderMap,
+    organization_name: String,
+    body: RestOrganizationMemberBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = AddOrganizationMemberRequest {
+        login_id: body.login_id,
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<AddOrganizationMemberRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .add_organization_member(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_organization_member_role(
+    headers: HeaderMap,
+    organization_name: String,
+    user_id: i64,
+    body: RestOrganizationMemberRoleBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = UpdateOrganizationMemberRoleRequest {
+        organization_name,
+        role: body.role,
+        user_id,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<UpdateOrganizationMemberRoleRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .update_organization_member_role(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_delete_organization_member(
+    headers: HeaderMap,
+    organization_name: String,
+    user_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = DeleteOrganizationMemberRequest {
+        organization_name,
+        user_id,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<DeleteOrganizationMemberRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .delete_organization_member(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_accept_organization_enrollment(
+    headers: HeaderMap,
+    organization_name: String,
+    user_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = AcceptOrganizationEnrollmentRequest {
+        organization_name,
+        user_id,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<AcceptOrganizationEnrollmentRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .accept_organization_enrollment(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_enroll_organization(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = EnrollOrganizationRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<EnrollOrganizationRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .enroll_organization(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_cancel_enroll_organization(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = CancelEnrollOrganizationRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<CancelEnrollOrganizationRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .cancel_enroll_organization(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_leave_organization(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = LeaveOrganizationRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<LeaveOrganizationRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .leave_organization(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_delete_organization(
+    headers: HeaderMap,
+    organization_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = DeleteOrganizationRequest {
+        organization_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<DeleteOrganizationRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .delete_organization(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_create_project(
+    headers: HeaderMap,
+    owner_name: String,
+    body: RestProjectCreateBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = CreateProjectRequest {
+        owner_name,
+        overview: body.overview,
+        project_name: body.project_name,
+        project_scope: body.project_scope,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<CreateProjectRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .create_project(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_read_project_detail(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadProjectDetailRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadProjectDetailRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_project_detail(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_read_project_container(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadProjectContainerRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadProjectContainerRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_project_container(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_read_project_settings(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadProjectSettingsRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadProjectSettingsRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_project_settings(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_read_project_members(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadProjectMembersRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadProjectMembersRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_project_members(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_project(
+    headers: HeaderMap,
+    current_owner_name: String,
+    current_project_name: String,
+    body: RestProjectUpdateBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let owner_name = current_owner_name.clone();
+    let request = UpdateProjectRequest {
+        current_owner_name,
+        current_project_name,
+        owner_name,
+        overview: body.overview,
+        project_name: body.project_name,
+        project_scope: body.project_scope,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<UpdateProjectRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .update_project(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_project_overview(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectOverviewBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = UpdateProjectOverviewRequest {
+        owner_name,
+        overview: body.overview,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<UpdateProjectOverviewRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .update_project_overview(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_enroll_project(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = EnrollProjectRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<EnrollProjectRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .enroll_project(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_cancel_enroll_project(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = CancelEnrollProjectRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<CancelEnrollProjectRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .cancel_enroll_project(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_toggle_favorite_project(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ToggleFavoriteProjectRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ToggleFavoriteProjectRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .toggle_favorite_project(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_toggle_project_watch(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    watching: bool,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ToggleProjectWatchRequest {
+        owner_name,
+        project_name,
+        watching,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ToggleProjectWatchRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .toggle_project_watch(Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
@@ -3589,28 +4445,30 @@ async fn rest_read_code_browser(
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
     let PilotBackend::Repository(repository) = &backend else {
-        return Err(RestRouteError::from_connect_error(ConnectError::unimplemented(
-            "code browser requires repository backend",
-        )));
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unimplemented("code browser requires repository backend"),
+        ));
     };
     let authorization = repository
         .read_project_authorization(&owner_name, &project_name, actor_id)
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
-        .ok_or_else(|| RestRouteError::from_connect_error(ConnectError::not_found("project not found")))?;
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
     if !project_read_allowed(&authorization, actor_id.is_none())
         .map_err(RestRouteError::from_connect_error)?
         || !project_code_menu_visible(&authorization, true)
     {
         return if actor_id.is_none() {
-            Err(RestRouteError::from_connect_error(ConnectError::unauthenticated(
-                "project read is not allowed",
-            )))
+            Err(RestRouteError::from_connect_error(
+                ConnectError::unauthenticated("project read is not allowed"),
+            ))
         } else {
-            Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
-                "project read is not allowed",
-            )))
+            Err(RestRouteError::from_connect_error(
+                ConnectError::permission_denied("project read is not allowed"),
+            ))
         };
     }
 
@@ -3664,7 +4522,9 @@ where
         .map_err(serde::de::Error::custom)
 }
 
-fn deserialize_i64_vec_from_strings_or_numbers<'de, D>(deserializer: D) -> Result<Vec<i64>, D::Error>
+fn deserialize_i64_vec_from_strings_or_numbers<'de, D>(
+    deserializer: D,
+) -> Result<Vec<i64>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -3717,12 +4577,21 @@ struct RestUserIssuesQuery {
 #[serde(rename_all = "camelCase", default)]
 struct RestIssueMutationBody {
     assignee_login_id: String,
-    #[serde(default, deserialize_with = "deserialize_i64_vec_from_strings_or_numbers")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
     attachment_ids: Vec<i64>,
     body_markdown: String,
-    #[serde(default, deserialize_with = "deserialize_i64_vec_from_strings_or_numbers")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
     label_ids: Vec<i64>,
-    #[serde(default, deserialize_with = "deserialize_optional_i64_from_string_or_number")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_i64_from_string_or_number"
+    )]
     milestone_id: Option<i64>,
     title: String,
 }
@@ -3736,7 +4605,10 @@ struct RestIssueStateBody {
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestIssueCommentBody {
-    #[serde(default, deserialize_with = "deserialize_i64_vec_from_strings_or_numbers")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
     attachment_ids: Vec<i64>,
     contents_markdown: String,
 }
@@ -3744,21 +4616,35 @@ struct RestIssueCommentBody {
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestMassUpdateIssuesBody {
-    #[serde(default, deserialize_with = "deserialize_i64_vec_from_strings_or_numbers")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
     add_label_ids: Vec<i64>,
     assignee_login_id: String,
     assignee_update: bool,
-    #[serde(default, deserialize_with = "deserialize_i64_vec_from_strings_or_numbers")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
     issue_numbers: Vec<i64>,
-    #[serde(default, deserialize_with = "deserialize_optional_i64_from_string_or_number")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_i64_from_string_or_number"
+    )]
     milestone_id: Option<i64>,
     milestone_update: bool,
-    #[serde(default, deserialize_with = "deserialize_i64_vec_from_strings_or_numbers")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
+    )]
     remove_label_ids: Vec<i64>,
     state: String,
 }
 
-fn rest_issue_mutation_input_from_body(body: RestIssueMutationBody) -> persistence::IssueMutationInput {
+fn rest_issue_mutation_input_from_body(
+    body: RestIssueMutationBody,
+) -> persistence::IssueMutationInput {
     persistence::IssueMutationInput {
         assignee_login_id: (!body.assignee_login_id.trim().is_empty())
             .then(|| body.assignee_login_id.trim().to_string()),
@@ -3770,7 +4656,9 @@ fn rest_issue_mutation_input_from_body(body: RestIssueMutationBody) -> persisten
     }
 }
 
-fn rest_project_issue_filter_from_query(query: RestProjectIssuesQuery) -> persistence::IssueListFilter {
+fn rest_project_issue_filter_from_query(
+    query: RestProjectIssuesQuery,
+) -> persistence::IssueListFilter {
     persistence::IssueListFilter {
         assignee_login_id: (!query.assignee_login_id.trim().is_empty())
             .then(|| query.assignee_login_id.trim().to_string()),
@@ -3805,10 +4693,9 @@ async fn rest_list_project_issues(
     let actor_id = session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    let authorization =
-        require_project_read(repository, &owner_name, &project_name, actor_id)
-            .await
-            .map_err(RestRouteError::from_connect_error)?;
+    let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
     let record = repository
         .list_project_issues_filtered(
             &owner_name,
@@ -3875,7 +4762,13 @@ async fn rest_list_organization_issues(
         visible_projects_for_organization(repository, authorization.organization.id, actor_id)
             .await
             .map_err(RestRouteError::from_connect_error)?;
-    let current_user_filter = |value: i64| if value > 0 { actor_id.or(Some(-1)) } else { None };
+    let current_user_filter = |value: i64| {
+        if value > 0 {
+            actor_id.or(Some(-1))
+        } else {
+            None
+        }
+    };
     let record = repository
         .list_organization_issues_filtered(
             &authorization.organization.organization_name,
@@ -3927,7 +4820,8 @@ async fn rest_list_user_issues(
     session_manager: SessionManager,
     backend: PilotBackend,
 ) -> Result<Json<ListUserIssuesResponse>, RestRouteError> {
-    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
     let PilotBackend::Repository(repository) = &backend else {
         return Err(RestRouteError::not_implemented(
             "user issues require repository backend",
@@ -3966,9 +4860,10 @@ async fn rest_list_user_issues(
     let open_filter = build_filter("open");
     let closed_filter = build_filter("closed");
 
-    let mut selected_items = visible_user_issue_items(repository, actor.id, selected_filter.clone())
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
+    let mut selected_items =
+        visible_user_issue_items(repository, actor.id, selected_filter.clone())
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
     let open_issue_count = visible_user_issue_items(repository, actor.id, open_filter)
         .await
         .map_err(RestRouteError::from_connect_error)?
@@ -4024,13 +4919,17 @@ async fn rest_read_issue_detail(
     let actor_id = session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
-    let access = read_issue_access(repository, &owner_name, &project_name, issue_number, actor_id)
-        .await
-        .map_err(RestRouteError::from_connect_error)?;
-    Ok(Json(issue_detail_response_from_access(
-        &access,
+    let access = read_issue_access(
+        repository,
+        &owner_name,
+        &project_name,
+        issue_number,
         actor_id,
-        &base_path,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(issue_detail_response_from_access(
+        &access, actor_id, &base_path,
     )))
 }
 
@@ -4044,8 +4943,10 @@ async fn rest_update_issue_state(
     backend: PilotBackend,
     base_path: String,
 ) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
-    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
     let state = normalize_identifier(&body.state);
     if issue_number <= 0 || !matches!(state.as_str(), "open" | "closed") {
         return Err(RestRouteError::bad_request(
@@ -4072,9 +4973,9 @@ async fn rest_update_issue_state(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
     if !issue_can_mutate(&authorization, &existing, &actor) {
-        return Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
-            "issue state update is not allowed",
-        )));
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("issue state update is not allowed"),
+        ));
     }
     let issue = repository
         .update_issue_state(&owner_name, &project_name, issue_number, &state)
@@ -4100,8 +5001,10 @@ async fn rest_create_issue(
     backend: PilotBackend,
     base_path: String,
 ) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
-    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
     if body.title.trim().is_empty() {
         return Err(RestRouteError::bad_request("issue title is required"));
     }
@@ -4148,12 +5051,12 @@ async fn rest_update_issue(
     backend: PilotBackend,
     base_path: String,
 ) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
-    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
     if issue_number <= 0 || body.title.trim().is_empty() {
-        return Err(RestRouteError::bad_request(
-            "invalid issue update request",
-        ));
+        return Err(RestRouteError::bad_request("invalid issue update request"));
     }
     let PilotBackend::Repository(repository) = &backend else {
         return Err(RestRouteError::not_implemented(
@@ -4174,9 +5077,9 @@ async fn rest_update_issue(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
     if !issue_can_mutate(&authorization, &existing, &actor) {
-        return Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
-            "issue update is not allowed",
-        )));
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("issue update is not allowed"),
+        ));
     }
     let issue = repository
         .update_issue(persistence::UpdateIssueInput {
@@ -4207,8 +5110,10 @@ async fn rest_delete_issue(
     session_manager: SessionManager,
     backend: PilotBackend,
 ) -> Result<Json<DeleteIssueResponse>, RestRouteError> {
-    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
     let PilotBackend::Repository(repository) = &backend else {
         return Err(RestRouteError::not_implemented(
             "issue requires repository backend",
@@ -4228,9 +5133,9 @@ async fn rest_delete_issue(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
     if !issue_can_mutate(&authorization, &existing, &actor) {
-        return Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
-            "issue delete is not allowed",
-        )));
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("issue delete is not allowed"),
+        ));
     }
     if !repository
         .delete_issue(&owner_name, &project_name, issue_number)
@@ -4258,12 +5163,12 @@ async fn rest_create_issue_comment(
     backend: PilotBackend,
     base_path: String,
 ) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
-    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
     if issue_number <= 0 || body.contents_markdown.trim().is_empty() {
-        return Err(RestRouteError::bad_request(
-            "invalid issue comment request",
-        ));
+        return Err(RestRouteError::bad_request("invalid issue comment request"));
     }
     let PilotBackend::Repository(repository) = &backend else {
         return Err(RestRouteError::not_implemented(
@@ -4283,9 +5188,9 @@ async fn rest_create_issue_comment(
     .await
     .map_err(RestRouteError::from_connect_error)?;
     if !access.viewer_can_comment() {
-        return Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
-            "issue comment create is not allowed",
-        )));
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("issue comment create is not allowed"),
+        ));
     }
     let issue = repository
         .create_issue_comment(persistence::CreateIssueCommentInput {
@@ -4322,12 +5227,12 @@ async fn rest_update_issue_comment(
     backend: PilotBackend,
     base_path: String,
 ) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
-    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
     if issue_number <= 0 || comment_id <= 0 {
-        return Err(RestRouteError::bad_request(
-            "invalid issue comment request",
-        ));
+        return Err(RestRouteError::bad_request("invalid issue comment request"));
     }
     let PilotBackend::Repository(repository) = &backend else {
         return Err(RestRouteError::not_implemented(
@@ -4353,9 +5258,9 @@ async fn rest_update_issue_comment(
         .find(|comment| comment.id == comment_id)
         .and_then(|comment| comment.author_id);
     if comment_author != Some(actor.id) && !access.viewer_can_manage() {
-        return Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
-            "issue comment update is not allowed",
-        )));
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("issue comment update is not allowed"),
+        ));
     }
     let issue = repository
         .update_issue_comment(persistence::UpdateIssueCommentInput {
@@ -4391,8 +5296,10 @@ async fn rest_delete_issue_comment(
     backend: PilotBackend,
     base_path: String,
 ) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
-    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
     let PilotBackend::Repository(repository) = &backend else {
         return Err(RestRouteError::not_implemented(
             "issue requires repository backend",
@@ -4417,9 +5324,9 @@ async fn rest_delete_issue_comment(
         .find(|comment| comment.id == comment_id)
         .and_then(|comment| comment.author_id);
     if comment_author != Some(actor.id) && !access.viewer_can_manage() {
-        return Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
-            "issue comment delete is not allowed",
-        )));
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("issue comment delete is not allowed"),
+        ));
     }
     let issue = repository
         .delete_issue_comment(&owner_name, &project_name, issue_number, comment_id)
@@ -4447,8 +5354,10 @@ async fn rest_mass_update_issues(
     backend: PilotBackend,
     base_path: String,
 ) -> Result<Json<MassUpdateIssuesResponse>, RestRouteError> {
-    let session = require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
-    require_valid_csrf(&session_manager, &headers, &session).map_err(RestRouteError::from_connect_error)?;
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
     let PilotBackend::Repository(repository) = &backend else {
         return Err(RestRouteError::not_implemented(
             "issue requires repository backend",
@@ -4469,9 +5378,9 @@ async fn rest_mass_update_issues(
             .map_err(RestRouteError::from_connect_error)?
             .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
         if !issue_can_mutate(&authorization, &issue, &actor) {
-            return Err(RestRouteError::from_connect_error(ConnectError::permission_denied(
-                "issue mass update is not allowed",
-            )));
+            return Err(RestRouteError::from_connect_error(
+                ConnectError::permission_denied("issue mass update is not allowed"),
+            ));
         }
     }
     let items = repository
@@ -4495,7 +5404,9 @@ async fn rest_mass_update_issues(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .into_iter()
-        .map(|issue| issue_detail_response_from_record(&issue, true, true, session.user_id, &base_path))
+        .map(|issue| {
+            issue_detail_response_from_record(&issue, true, true, session.user_id, &base_path)
+        })
         .collect();
     Ok(Json(MassUpdateIssuesResponse {
         items,

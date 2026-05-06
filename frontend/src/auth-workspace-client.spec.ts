@@ -1,14 +1,27 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  acceptOrganizationEnrollment,
+  addOrganizationMember,
   addWorkspaceEmail,
+  cancelEnrollOrganization,
+  cancelEnrollProject,
   changePassword,
+  createOrganization,
   createIssue,
   createIssueComment,
+  createProject,
   createProjectLabel,
+  deleteOrganization,
+  deleteOrganizationMember,
   deleteIssue,
   deleteIssueComment,
   deleteWorkspaceEmail,
+  enrollOrganization,
+  enrollProject,
+  leaveOrganization,
+  listOrganizations,
   listOrganizationIssues,
+  listProjects,
   listProjectIssues,
   listProjectMilestones,
   listUserIssues,
@@ -18,6 +31,15 @@ import {
   readCodeBrowser,
   readCurrentSession,
   readIssueDetail,
+  readOrganizationAdmin,
+  readOrganizationContainer,
+  readOrganizationDetail,
+  readOrganizationMembers,
+  readOrganizationSettings,
+  readProjectContainer,
+  readProjectDetail,
+  readProjectMembers,
+  readProjectSettings,
   readSessionBootstrap,
   recordRecentProjectVisit,
   registerWithPassword,
@@ -28,8 +50,14 @@ import {
   setMainWorkspaceEmail,
   signInWithPassword,
   signOut,
+  toggleFavoriteProject,
+  toggleProjectWatch,
   toggleWorkspaceNotification,
+  updateOrganization,
+  updateOrganizationMemberRole,
   updateProfile,
+  updateProject,
+  updateProjectOverview,
   updateIssue,
   updateIssueComment,
   updateIssueState,
@@ -75,6 +103,347 @@ describe("readSessionBootstrap", () => {
       method: "GET",
     });
     expect(result.csrfToken).toBe("csrf-123");
+  });
+});
+
+describe("organization and project REST wrappers", () => {
+  it("uses REST read endpoints for organization and project directory/detail flows", async () => {
+    const fetchMock = vi.fn(async () => okJsonResponse({}));
+
+    await listProjects(runtimeConfig, fetchMock as unknown as typeof fetch);
+    await listOrganizations(runtimeConfig, fetchMock as unknown as typeof fetch);
+    await readOrganizationDetail(
+      runtimeConfig,
+      "web labs",
+      fetchMock as unknown as typeof fetch,
+    );
+    await readOrganizationAdmin(
+      runtimeConfig,
+      "web labs",
+      fetchMock as unknown as typeof fetch,
+    );
+    await readOrganizationContainer(
+      runtimeConfig,
+      "web labs",
+      fetchMock as unknown as typeof fetch,
+    );
+    await readOrganizationSettings(
+      runtimeConfig,
+      "web labs",
+      fetchMock as unknown as typeof fetch,
+    );
+    await readOrganizationMembers(
+      runtimeConfig,
+      "web labs",
+      fetchMock as unknown as typeof fetch,
+    );
+    await readProjectDetail(
+      runtimeConfig,
+      "owner space",
+      "project/name",
+      fetchMock as unknown as typeof fetch,
+    );
+    await readProjectContainer(
+      runtimeConfig,
+      "owner space",
+      "project/name",
+      fetchMock as unknown as typeof fetch,
+    );
+    await readProjectSettings(
+      runtimeConfig,
+      "owner space",
+      "project/name",
+      fetchMock as unknown as typeof fetch,
+    );
+    await readProjectMembers(
+      runtimeConfig,
+      "owner space",
+      "project/name",
+      fetchMock as unknown as typeof fetch,
+    );
+
+    const readCalls = fetchMock.mock.calls as unknown as Array<
+      [string, { credentials: string; headers: Headers; method: string }]
+    >;
+    expect(readCalls.map(([url]) => url)).toEqual([
+      "/yona/api/v1/projects",
+      "/yona/api/v1/organizations",
+      "/yona/api/v1/organizations/web%20labs",
+      "/yona/api/v1/organizations/web%20labs/admin",
+      "/yona/api/v1/organizations/web%20labs/container",
+      "/yona/api/v1/organizations/web%20labs/settings",
+      "/yona/api/v1/organizations/web%20labs/members",
+      "/yona/api/v1/owners/owner%20space/projects/project%2Fname",
+      "/yona/api/v1/owners/owner%20space/projects/project%2Fname/container",
+      "/yona/api/v1/owners/owner%20space/projects/project%2Fname/settings",
+      "/yona/api/v1/owners/owner%20space/projects/project%2Fname/members",
+    ]);
+    for (const [, init] of readCalls) {
+      expect(init.credentials).toBe("same-origin");
+      expect(init.headers.get("Accept")).toBe("application/json");
+      expect(init.method).toBe("GET");
+    }
+  });
+
+  it("uses REST mutation endpoints for organization and project flows", async () => {
+    const fetchMock = vi.fn(async () => okJsonResponse({ ok: true }));
+
+    await createOrganization(
+      runtimeConfig,
+      "csrf-org-create",
+      {
+        description: "web labs",
+        organizationName: "weblabs",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+    await updateOrganization(
+      runtimeConfig,
+      "csrf-org-update",
+      {
+        currentOrganizationName: "weblabs",
+        description: "updated labs",
+        organizationName: "weblabs",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+    await addOrganizationMember(
+      runtimeConfig,
+      "csrf-org-member",
+      {
+        loginId: "guest",
+        organizationName: "weblabs",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+    await updateOrganizationMemberRole(
+      runtimeConfig,
+      "csrf-org-role",
+      {
+        organizationName: "weblabs",
+        role: "org_admin",
+        userId: 7n,
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+    await deleteOrganizationMember(
+      runtimeConfig,
+      "csrf-org-delete-member",
+      {
+        organizationName: "weblabs",
+        userId: 7n,
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+    await acceptOrganizationEnrollment(
+      runtimeConfig,
+      "csrf-org-accept",
+      {
+        organizationName: "weblabs",
+        userId: 9n,
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+    await enrollOrganization(
+      runtimeConfig,
+      "csrf-org-enroll",
+      "weblabs",
+      fetchMock as unknown as typeof fetch,
+    );
+    await cancelEnrollOrganization(
+      runtimeConfig,
+      "csrf-org-cancel",
+      "weblabs",
+      fetchMock as unknown as typeof fetch,
+    );
+    await leaveOrganization(
+      runtimeConfig,
+      "csrf-org-leave",
+      "weblabs",
+      fetchMock as unknown as typeof fetch,
+    );
+    await deleteOrganization(
+      runtimeConfig,
+      "csrf-org-delete",
+      "weblabs",
+      fetchMock as unknown as typeof fetch,
+    );
+    await createProject(
+      runtimeConfig,
+      "csrf-project-create",
+      {
+        ownerName: "owner space",
+        overview: "project overview",
+        projectName: "project/name",
+        projectScope: "public",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+    await updateProject(
+      runtimeConfig,
+      "csrf-project-update",
+      {
+        currentOwnerName: "owner space",
+        currentProjectName: "project/name",
+        ownerName: "owner space",
+        overview: "updated overview",
+        projectName: "project/name",
+        projectScope: "private",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+    await updateProjectOverview(
+      runtimeConfig,
+      "csrf-project-overview",
+      {
+        ownerName: "owner space",
+        overview: "overview only",
+        projectName: "project/name",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+    await enrollProject(
+      runtimeConfig,
+      "csrf-project-enroll",
+      "owner space",
+      "project/name",
+      fetchMock as unknown as typeof fetch,
+    );
+    await cancelEnrollProject(
+      runtimeConfig,
+      "csrf-project-cancel",
+      "owner space",
+      "project/name",
+      fetchMock as unknown as typeof fetch,
+    );
+    await toggleFavoriteProject(
+      runtimeConfig,
+      "csrf-project-favorite",
+      "owner space",
+      "project/name",
+      fetchMock as unknown as typeof fetch,
+    );
+    await toggleProjectWatch(
+      runtimeConfig,
+      "csrf-project-watch",
+      "owner space",
+      "project/name",
+      true,
+      fetchMock as unknown as typeof fetch,
+    );
+    await toggleProjectWatch(
+      runtimeConfig,
+      "csrf-project-unwatch",
+      "owner space",
+      "project/name",
+      false,
+      fetchMock as unknown as typeof fetch,
+    );
+
+    const mutationCalls = fetchMock.mock.calls as unknown as Array<
+      [string, { body?: string; credentials: string; headers: Headers; method: string }]
+    >;
+    expect(mutationCalls.map(([url]) => url)).toEqual([
+      "/yona/api/v1/organizations",
+      "/yona/api/v1/organizations/weblabs",
+      "/yona/api/v1/organizations/weblabs/members",
+      "/yona/api/v1/organizations/weblabs/members/7",
+      "/yona/api/v1/organizations/weblabs/members/7",
+      "/yona/api/v1/organizations/weblabs/enrollments/9/accept",
+      "/yona/api/v1/organizations/weblabs/enroll",
+      "/yona/api/v1/organizations/weblabs/enroll",
+      "/yona/api/v1/organizations/weblabs/leave",
+      "/yona/api/v1/organizations/weblabs",
+      "/yona/api/v1/owners/owner%20space/projects",
+      "/yona/api/v1/owners/owner%20space/projects/project%2Fname",
+      "/yona/api/v1/owners/owner%20space/projects/project%2Fname/overview",
+      "/yona/api/v1/owners/owner%20space/projects/project%2Fname/enroll",
+      "/yona/api/v1/owners/owner%20space/projects/project%2Fname/enroll",
+      "/yona/api/v1/owners/owner%20space/projects/project%2Fname/favorite",
+      "/yona/api/v1/owners/owner%20space/projects/project%2Fname/watch",
+      "/yona/api/v1/owners/owner%20space/projects/project%2Fname/watch",
+    ]);
+    expect(mutationCalls.map(([, init]) => init.method)).toEqual([
+      "POST",
+      "PATCH",
+      "POST",
+      "PATCH",
+      "DELETE",
+      "POST",
+      "POST",
+      "DELETE",
+      "POST",
+      "DELETE",
+      "POST",
+      "PATCH",
+      "PATCH",
+      "POST",
+      "DELETE",
+      "POST",
+      "POST",
+      "DELETE",
+    ]);
+
+    const createOrgCall = mutationCalls[0]!;
+    expect(createOrgCall[1].headers.get("x-csrf-token")).toBe("csrf-org-create");
+    expect(JSON.parse(createOrgCall[1].body ?? "")).toEqual({
+      description: "web labs",
+      organizationName: "weblabs",
+    });
+
+    const updateOrgCall = mutationCalls[1]!;
+    expect(JSON.parse(updateOrgCall[1].body ?? "")).toEqual({
+      description: "updated labs",
+      organizationName: "weblabs",
+    });
+
+    const addMemberCall = mutationCalls[2]!;
+    expect(JSON.parse(addMemberCall[1].body ?? "")).toEqual({
+      loginId: "guest",
+    });
+
+    const updateRoleCall = mutationCalls[3]!;
+    expect(JSON.parse(updateRoleCall[1].body ?? "")).toEqual({
+      role: "org_admin",
+    });
+
+    expect(mutationCalls[4]![1].body).toBeUndefined();
+    expect(mutationCalls[5]![1].body).toBeUndefined();
+    expect(mutationCalls[6]![1].body).toBeUndefined();
+    expect(mutationCalls[7]![1].body).toBeUndefined();
+    expect(mutationCalls[8]![1].body).toBeUndefined();
+    expect(mutationCalls[9]![1].body).toBeUndefined();
+
+    const createProjectCall = mutationCalls[10]!;
+    expect(JSON.parse(createProjectCall[1].body ?? "")).toEqual({
+      overview: "project overview",
+      projectName: "project/name",
+      projectScope: "public",
+    });
+
+    const updateProjectCall = mutationCalls[11]!;
+    expect(JSON.parse(updateProjectCall[1].body ?? "")).toEqual({
+      overview: "updated overview",
+      projectName: "project/name",
+      projectScope: "private",
+    });
+
+    const updateOverviewCall = mutationCalls[12]!;
+    expect(JSON.parse(updateOverviewCall[1].body ?? "")).toEqual({
+      overview: "overview only",
+    });
+
+    expect(mutationCalls[13]![1].body).toBeUndefined();
+    expect(mutationCalls[14]![1].body).toBeUndefined();
+    expect(mutationCalls[15]![1].body).toBeUndefined();
+    expect(mutationCalls[16]![1].body).toBeUndefined();
+    expect(mutationCalls[17]![1].body).toBeUndefined();
+
+    for (const [, init] of mutationCalls) {
+      expect(init.credentials).toBe("same-origin");
+      expect(init.headers.get("Accept")).toBe("application/json");
+      expect(init.headers.get("x-csrf-token")).toMatch(/^csrf-/);
+    }
   });
 });
 
