@@ -109,6 +109,37 @@ import {
   signOutRest,
   verifyUserRest,
 } from "./api/auth";
+import {
+  assignIssueRest,
+  shareIssueRest,
+  toggleFavoriteIssueRest,
+  unshareIssueRest,
+  unvoteIssueCommentRest,
+  unvoteIssueRest,
+  unwatchIssueRest,
+  voteIssueCommentRest,
+  voteIssueRest,
+  watchIssueRest,
+} from "./api/issue-meta";
+import {
+  closeProjectMilestoneRest,
+  createProjectMilestoneRest,
+  deleteProjectMilestoneRest,
+  listProjectMilestonesRest,
+  openProjectMilestoneRest,
+  readProjectMilestoneRest,
+  updateProjectMilestoneRest,
+} from "./api/milestones";
+import {
+  createProjectLabelCategoryRest,
+  createProjectLabelRest,
+  deleteProjectLabelCategoryRest,
+  deleteProjectLabelRest,
+  listProjectLabelCategoriesRest,
+  listProjectLabelsRest,
+  updateProjectLabelCategoryRest,
+  updateProjectLabelRest,
+} from "./api/project-labels";
 import { restFetch } from "./api/rest-client";
 import { readCurrentSessionRest } from "./api/session";
 import { prefixBasePath, type RuntimeConfig } from "./runtime-config";
@@ -644,10 +675,11 @@ export async function watchIssue(
   input: MessageInitShape<typeof IssueParticipationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).watchIssue(
-    create(IssueParticipationRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return watchIssueRest(runtimeConfig, csrfToken, {
+    issueNumber: input.issueNumber ?? 0n,
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function unwatchIssue(
@@ -656,10 +688,11 @@ export async function unwatchIssue(
   input: MessageInitShape<typeof IssueParticipationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).unwatchIssue(
-    create(IssueParticipationRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return unwatchIssueRest(runtimeConfig, csrfToken, {
+    issueNumber: input.issueNumber ?? 0n,
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function voteIssue(
@@ -668,10 +701,11 @@ export async function voteIssue(
   input: MessageInitShape<typeof IssueParticipationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).voteIssue(
-    create(IssueParticipationRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return voteIssueRest(runtimeConfig, csrfToken, {
+    issueNumber: input.issueNumber ?? 0n,
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function unvoteIssue(
@@ -680,10 +714,11 @@ export async function unvoteIssue(
   input: MessageInitShape<typeof IssueParticipationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).unvoteIssue(
-    create(IssueParticipationRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return unvoteIssueRest(runtimeConfig, csrfToken, {
+    issueNumber: input.issueNumber ?? 0n,
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function voteIssueComment(
@@ -692,10 +727,12 @@ export async function voteIssueComment(
   input: MessageInitShape<typeof IssueCommentParticipationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).voteIssueComment(
-    create(IssueCommentParticipationRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return voteIssueCommentRest(runtimeConfig, csrfToken, {
+    commentId: input.commentId ?? 0n,
+    issueNumber: input.issueNumber ?? 0n,
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function unvoteIssueComment(
@@ -704,10 +741,12 @@ export async function unvoteIssueComment(
   input: MessageInitShape<typeof IssueCommentParticipationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).unvoteIssueComment(
-    create(IssueCommentParticipationRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return unvoteIssueCommentRest(runtimeConfig, csrfToken, {
+    commentId: input.commentId ?? 0n,
+    issueNumber: input.issueNumber ?? 0n,
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function toggleFavoriteIssue(
@@ -716,10 +755,11 @@ export async function toggleFavoriteIssue(
   input: MessageInitShape<typeof IssueParticipationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).toggleFavoriteIssue(
-    create(IssueParticipationRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return toggleFavoriteIssueRest(runtimeConfig, csrfToken, {
+    issueNumber: input.issueNumber ?? 0n,
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function assignIssue(
@@ -728,10 +768,12 @@ export async function assignIssue(
   input: MessageInitShape<typeof AssignIssueRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).assignIssue(
-    create(AssignIssueRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return assignIssueRest(runtimeConfig, csrfToken, {
+    assigneeLoginId: input.assigneeLoginId ?? "",
+    issueNumber: input.issueNumber ?? 0n,
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function shareIssue(
@@ -740,10 +782,12 @@ export async function shareIssue(
   input: MessageInitShape<typeof IssueShareRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).shareIssue(
-    create(IssueShareRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return shareIssueRest(runtimeConfig, csrfToken, {
+    issueNumber: input.issueNumber ?? 0n,
+    loginId: input.loginId ?? "",
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function unshareIssue(
@@ -752,10 +796,12 @@ export async function unshareIssue(
   input: MessageInitShape<typeof IssueShareRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).unshareIssue(
-    create(IssueShareRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return unshareIssueRest(runtimeConfig, csrfToken, {
+    issueNumber: input.issueNumber ?? 0n,
+    loginId: input.loginId ?? "",
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function massUpdateIssues(
@@ -782,9 +828,7 @@ export async function listProjectLabels(
   projectName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ListProjectLabelsResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).listProjectLabels(
-    create(ListProjectLabelsRequestSchema, { ownerName, projectName }),
-  );
+  return listProjectLabelsRest(runtimeConfig, ownerName, projectName, fetchImpl);
 }
 
 export async function listProjectLabelCategories(
@@ -793,9 +837,7 @@ export async function listProjectLabelCategories(
   projectName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ListProjectLabelCategoriesResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).listProjectLabelCategories(
-    create(ListProjectLabelsRequestSchema, { ownerName, projectName }),
-  );
+  return listProjectLabelCategoriesRest(runtimeConfig, ownerName, projectName, fetchImpl);
 }
 
 export async function createProjectLabel(
@@ -804,10 +846,14 @@ export async function createProjectLabel(
   input: MessageInitShape<typeof CreateProjectLabelRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectLabelMutationResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).createProjectLabel(
-    create(CreateProjectLabelRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return createProjectLabelRest(runtimeConfig, csrfToken, {
+    categoryIsExclusive: input.categoryIsExclusive ?? false,
+    categoryName: input.categoryName ?? "",
+    labelColor: input.labelColor ?? "",
+    labelName: input.labelName ?? "",
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function updateProjectLabel(
@@ -816,10 +862,14 @@ export async function updateProjectLabel(
   input: MessageInitShape<typeof UpdateProjectLabelRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectLabelMutationResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).updateProjectLabel(
-    create(UpdateProjectLabelRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return updateProjectLabelRest(runtimeConfig, csrfToken, {
+    categoryId: input.categoryId ?? 0n,
+    labelColor: input.labelColor ?? "",
+    labelId: input.labelId ?? 0n,
+    labelName: input.labelName ?? "",
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function deleteProjectLabel(
@@ -828,10 +878,11 @@ export async function deleteProjectLabel(
   input: MessageInitShape<typeof DeleteProjectLabelRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<void> {
-  await createPilotClient(runtimeConfig, fetchImpl).deleteProjectLabel(
-    create(DeleteProjectLabelRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  await deleteProjectLabelRest(runtimeConfig, csrfToken, {
+    labelId: input.labelId ?? 0n,
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function createProjectLabelCategory(
@@ -840,10 +891,12 @@ export async function createProjectLabelCategory(
   input: MessageInitShape<typeof CreateProjectLabelCategoryRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectLabelCategoryMutationResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).createProjectLabelCategory(
-    create(CreateProjectLabelCategoryRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return createProjectLabelCategoryRest(runtimeConfig, csrfToken, {
+    categoryIsExclusive: input.categoryIsExclusive ?? false,
+    categoryName: input.categoryName ?? "",
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function updateProjectLabelCategory(
@@ -852,10 +905,13 @@ export async function updateProjectLabelCategory(
   input: MessageInitShape<typeof UpdateProjectLabelCategoryRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectLabelCategoryMutationResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).updateProjectLabelCategory(
-    create(UpdateProjectLabelCategoryRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return updateProjectLabelCategoryRest(runtimeConfig, csrfToken, {
+    categoryId: input.categoryId ?? 0n,
+    categoryIsExclusive: input.categoryIsExclusive ?? false,
+    categoryName: input.categoryName ?? "",
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function deleteProjectLabelCategory(
@@ -864,10 +920,11 @@ export async function deleteProjectLabelCategory(
   input: MessageInitShape<typeof DeleteProjectLabelCategoryRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<void> {
-  await createPilotClient(runtimeConfig, fetchImpl).deleteProjectLabelCategory(
-    create(DeleteProjectLabelCategoryRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  await deleteProjectLabelCategoryRest(runtimeConfig, csrfToken, {
+    categoryId: input.categoryId ?? 0n,
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function listProjectMilestones(
@@ -877,15 +934,7 @@ export async function listProjectMilestones(
   input: ProjectMilestoneListOptions = {},
   fetchImpl: typeof fetch = fetch,
 ): Promise<ListProjectMilestonesResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).listProjectMilestones(
-    create(ListProjectMilestonesRequestSchema, {
-      orderBy: input.orderBy ?? "dueDate",
-      orderDir: input.orderDir ?? "asc",
-      ownerName,
-      projectName,
-      state: input.state ?? "open",
-    }),
-  );
+  return listProjectMilestonesRest(runtimeConfig, ownerName, projectName, input, fetchImpl);
 }
 
 export async function readProjectMilestone(
@@ -895,13 +944,7 @@ export async function readProjectMilestone(
   milestoneId: bigint | number,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneMutationResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).readProjectMilestone(
-    create(ReadProjectMilestoneRequestSchema, {
-      milestoneId: BigInt(milestoneId),
-      ownerName,
-      projectName,
-    }),
-  );
+  return readProjectMilestoneRest(runtimeConfig, ownerName, projectName, milestoneId, fetchImpl);
 }
 
 export async function createProjectMilestone(
@@ -910,10 +953,15 @@ export async function createProjectMilestone(
   input: MessageInitShape<typeof CreateProjectMilestoneRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneMutationResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).createProjectMilestone(
-    create(CreateProjectMilestoneRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return createProjectMilestoneRest(runtimeConfig, csrfToken, {
+    attachmentIds: input.attachmentIds,
+    contentsMarkdown: input.contentsMarkdown,
+    dueDate: input.dueDate,
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+    state: input.state,
+    title: input.title ?? "",
+  }, fetchImpl);
 }
 
 export async function updateProjectMilestone(
@@ -922,10 +970,16 @@ export async function updateProjectMilestone(
   input: MessageInitShape<typeof UpdateProjectMilestoneRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneMutationResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).updateProjectMilestone(
-    create(UpdateProjectMilestoneRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return updateProjectMilestoneRest(runtimeConfig, csrfToken, {
+    attachmentIds: input.attachmentIds,
+    contentsMarkdown: input.contentsMarkdown,
+    dueDate: input.dueDate,
+    milestoneId: input.milestoneId ?? 0n,
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+    state: input.state,
+    title: input.title ?? "",
+  }, fetchImpl);
 }
 
 export async function deleteProjectMilestone(
@@ -934,10 +988,11 @@ export async function deleteProjectMilestone(
   input: MessageInitShape<typeof DeleteProjectMilestoneRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneDeleteResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).deleteProjectMilestone(
-    create(DeleteProjectMilestoneRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return deleteProjectMilestoneRest(runtimeConfig, csrfToken, {
+    milestoneId: input.milestoneId ?? 0n,
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function openProjectMilestone(
@@ -946,10 +1001,11 @@ export async function openProjectMilestone(
   input: MessageInitShape<typeof MilestoneStateMutationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneMutationResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).openProjectMilestone(
-    create(MilestoneStateMutationRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return openProjectMilestoneRest(runtimeConfig, csrfToken, {
+    milestoneId: input.milestoneId ?? 0n,
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function closeProjectMilestone(
@@ -958,10 +1014,11 @@ export async function closeProjectMilestone(
   input: MessageInitShape<typeof MilestoneStateMutationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneMutationResponse> {
-  return createPilotClient(runtimeConfig, fetchImpl).closeProjectMilestone(
-    create(MilestoneStateMutationRequestSchema, input),
-    { headers: { "x-csrf-token": csrfToken } },
-  );
+  return closeProjectMilestoneRest(runtimeConfig, csrfToken, {
+    milestoneId: input.milestoneId ?? 0n,
+    ownerName: input.ownerName ?? "",
+    projectName: input.projectName ?? "",
+  }, fetchImpl);
 }
 
 export async function setDefaultLandingPath(

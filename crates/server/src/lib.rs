@@ -5,7 +5,7 @@ pub mod session;
 use axum::extract::{Form, Multipart, Query};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Redirect, Response};
-use axum::routing::{any, delete, get, post, put};
+use axum::routing::{any, delete, get, patch, post, put};
 use axum::{extract::Path, http::Method};
 use axum::{Json, Router};
 use bcrypt::{hash, verify, DEFAULT_COST};
@@ -1558,6 +1558,68 @@ struct RestVerifyUserRequest {
     verification_code: String,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueAssigneeBody {
+    assignee_login_id: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueSharerBody {
+    login_id: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectLabelCreateBody {
+    #[serde(default)]
+    category_is_exclusive: bool,
+    category_name: String,
+    label_color: String,
+    label_name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectLabelUpdateBody {
+    category_id: i64,
+    label_color: String,
+    label_name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectLabelCategoryBody {
+    #[serde(default)]
+    category_is_exclusive: bool,
+    category_name: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestMilestoneListQuery {
+    order_by: String,
+    order_dir: String,
+    state: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestProjectMilestoneBody {
+    attachment_ids: Vec<i64>,
+    contents_markdown: String,
+    due_date: String,
+    state: String,
+    title: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectMilestoneStateBody {
+    state: String,
+}
+
 impl RestRouteError {
     fn internal(message: impl Into<String>) -> Self {
         Self {
@@ -1571,6 +1633,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
     let session_manager = service.session_manager.clone();
     let backend = service.backend.clone();
     let base_path = service.base_path.clone();
+    let issue_meta_service = service.clone();
 
     Router::new()
         .route(
@@ -1933,6 +1996,484 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 }
             }),
         )
+        .merge(build_rest_issue_meta_router(issue_meta_service))
+}
+
+fn build_rest_issue_meta_router(service: PilotServiceImpl) -> Router {
+    Router::new()
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/watch",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_issue_participation(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            service,
+                            "watch",
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_issue_participation(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            service,
+                            "unwatch",
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/vote",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_issue_participation(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            service,
+                            "vote",
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_issue_participation(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            service,
+                            "unvote",
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/favorite",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_toggle_favorite_issue(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/assignee",
+            put({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
+                      Json(body): Json<RestIssueAssigneeBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_assign_issue(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/sharers",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
+                      Json(body): Json<RestIssueSharerBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_share_issue(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/sharers/{login_id}",
+            delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number, login_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    String,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_unshare_issue(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            login_id,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/comments/{comment_id}/vote",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number, comment_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_issue_comment_participation(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            comment_id,
+                            service,
+                            "vote",
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number, comment_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_issue_comment_participation(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            comment_id,
+                            service,
+                            "unvote",
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/labels/categories",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_list_project_label_categories(
+                            headers,
+                            owner_name,
+                            project_name,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestProjectLabelCategoryBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_create_project_label_category(
+                            headers,
+                            owner_name,
+                            project_name,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/labels/categories/{category_id}",
+            patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, category_id)): Path<(String, String, i64)>,
+                      Json(body): Json<RestProjectLabelCategoryBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_project_label_category(
+                            headers,
+                            owner_name,
+                            project_name,
+                            category_id,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, category_id)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_delete_project_label_category(
+                            headers,
+                            owner_name,
+                            project_name,
+                            category_id,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/labels",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move { rest_list_project_labels(headers, owner_name, project_name, service).await }
+                }
+            })
+            .post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestProjectLabelCreateBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_create_project_label(headers, owner_name, project_name, body, service)
+                            .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/labels/{label_id}",
+            patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, label_id)): Path<(String, String, i64)>,
+                      Json(body): Json<RestProjectLabelUpdateBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_project_label(
+                            headers,
+                            owner_name,
+                            project_name,
+                            label_id,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, label_id)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_delete_project_label(
+                            headers,
+                            owner_name,
+                            project_name,
+                            label_id,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/milestones",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestMilestoneListQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_list_project_milestones(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestProjectMilestoneBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_create_project_milestone(
+                            headers,
+                            owner_name,
+                            project_name,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/milestones/{milestone_id}/state",
+            patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, milestone_id)): Path<(String, String, i64)>,
+                      Json(body): Json<RestProjectMilestoneStateBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_set_project_milestone_state(
+                            headers,
+                            owner_name,
+                            project_name,
+                            milestone_id,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/milestones/{milestone_id}",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, milestone_id)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_read_project_milestone(
+                            headers,
+                            owner_name,
+                            project_name,
+                            milestone_id,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, milestone_id)): Path<(String, String, i64)>,
+                      Json(body): Json<RestProjectMilestoneBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_project_milestone(
+                            headers,
+                            owner_name,
+                            project_name,
+                            milestone_id,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, milestone_id)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_delete_project_milestone(
+                            headers,
+                            owner_name,
+                            project_name,
+                            milestone_id,
+                            service,
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
 }
 
 fn rest_owned_view<V>(message: &V::Owned) -> Result<OwnedView<V>, RestRouteError>
@@ -2036,6 +2577,580 @@ async fn rest_sign_out(
         .sign_out(Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_issue_participation(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    service: PilotServiceImpl,
+    action: &str,
+) -> Result<Response, RestRouteError> {
+    let refresh_headers = headers.clone();
+    let refresh_owner_name = owner_name.clone();
+    let refresh_project_name = project_name.clone();
+    let request = IssueParticipationRequest {
+        issue_number,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<IssueParticipationRequestView<'static>>(&request)?;
+    let context = Context::new(headers);
+    let (payload, ctx) = match action {
+        "watch" => service.watch_issue(context, request).await,
+        "unwatch" => service.unwatch_issue(context, request).await,
+        "vote" => service.vote_issue(context, request).await,
+        "unvote" => service.unvote_issue(context, request).await,
+        _ => Err(ConnectError::invalid_argument(
+            "invalid issue participation action",
+        )),
+    }
+    .map_err(RestRouteError::from_connect_error)?;
+    let payload = rest_refreshed_issue_detail(
+        &refresh_headers,
+        &refresh_owner_name,
+        &refresh_project_name,
+        issue_number,
+        &service,
+        payload,
+    )
+    .await?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_issue_comment_participation(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    comment_id: i64,
+    service: PilotServiceImpl,
+    action: &str,
+) -> Result<Response, RestRouteError> {
+    let refresh_headers = headers.clone();
+    let refresh_owner_name = owner_name.clone();
+    let refresh_project_name = project_name.clone();
+    let request = IssueCommentParticipationRequest {
+        comment_id,
+        issue_number,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<IssueCommentParticipationRequestView<'static>>(&request)?;
+    let context = Context::new(headers);
+    let (payload, ctx) = match action {
+        "vote" => service.vote_issue_comment(context, request).await,
+        "unvote" => service.unvote_issue_comment(context, request).await,
+        _ => Err(ConnectError::invalid_argument(
+            "invalid issue comment participation action",
+        )),
+    }
+    .map_err(RestRouteError::from_connect_error)?;
+    let payload = rest_refreshed_issue_detail(
+        &refresh_headers,
+        &refresh_owner_name,
+        &refresh_project_name,
+        issue_number,
+        &service,
+        payload,
+    )
+    .await?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_toggle_favorite_issue(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let refresh_headers = headers.clone();
+    let refresh_owner_name = owner_name.clone();
+    let refresh_project_name = project_name.clone();
+    let request = IssueParticipationRequest {
+        issue_number,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<IssueParticipationRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .toggle_favorite_issue(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let payload = rest_refreshed_issue_detail(
+        &refresh_headers,
+        &refresh_owner_name,
+        &refresh_project_name,
+        issue_number,
+        &service,
+        payload,
+    )
+    .await?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_assign_issue(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    body: RestIssueAssigneeBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let refresh_headers = headers.clone();
+    let refresh_owner_name = owner_name.clone();
+    let refresh_project_name = project_name.clone();
+    let request = AssignIssueRequest {
+        assignee_login_id: body.assignee_login_id,
+        issue_number,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<AssignIssueRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .assign_issue(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let payload = rest_refreshed_issue_detail(
+        &refresh_headers,
+        &refresh_owner_name,
+        &refresh_project_name,
+        issue_number,
+        &service,
+        payload,
+    )
+    .await?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_share_issue(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    body: RestIssueSharerBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let refresh_headers = headers.clone();
+    let refresh_owner_name = owner_name.clone();
+    let refresh_project_name = project_name.clone();
+    let request = IssueShareRequest {
+        issue_number,
+        login_id: body.login_id,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<IssueShareRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .share_issue(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let payload = rest_refreshed_issue_detail(
+        &refresh_headers,
+        &refresh_owner_name,
+        &refresh_project_name,
+        issue_number,
+        &service,
+        payload,
+    )
+    .await?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_unshare_issue(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    login_id: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let refresh_headers = headers.clone();
+    let refresh_owner_name = owner_name.clone();
+    let refresh_project_name = project_name.clone();
+    let request = IssueShareRequest {
+        issue_number,
+        login_id,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<IssueShareRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .unshare_issue(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let payload = rest_refreshed_issue_detail(
+        &refresh_headers,
+        &refresh_owner_name,
+        &refresh_project_name,
+        issue_number,
+        &service,
+        payload,
+    )
+    .await?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_refreshed_issue_detail(
+    headers: &HeaderMap,
+    owner_name: &str,
+    project_name: &str,
+    issue_number: i64,
+    service: &PilotServiceImpl,
+    fallback: ReadIssueDetailResponse,
+) -> Result<ReadIssueDetailResponse, RestRouteError> {
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Ok(fallback);
+    };
+    let access = read_issue_access(repository, owner_name, project_name, issue_number, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(issue_detail_response_from_access(
+        &access,
+        actor_id,
+        &service.base_path,
+    ))
+}
+
+async fn rest_list_project_labels(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ListProjectLabelsRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ListProjectLabelsRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .list_project_labels(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_list_project_label_categories(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ListProjectLabelsRequest {
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ListProjectLabelsRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .list_project_label_categories(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_create_project_label(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectLabelCreateBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = CreateProjectLabelRequest {
+        category_is_exclusive: body.category_is_exclusive,
+        category_name: body.category_name,
+        label_color: body.label_color,
+        label_name: body.label_name,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<CreateProjectLabelRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .create_project_label(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_project_label(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    label_id: i64,
+    body: RestProjectLabelUpdateBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = UpdateProjectLabelRequest {
+        category_id: body.category_id,
+        label_color: body.label_color,
+        label_id,
+        label_name: body.label_name,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<UpdateProjectLabelRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .update_project_label(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_delete_project_label(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    label_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = DeleteProjectLabelRequest {
+        label_id,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<DeleteProjectLabelRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .delete_project_label(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_create_project_label_category(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectLabelCategoryBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = CreateProjectLabelCategoryRequest {
+        category_is_exclusive: body.category_is_exclusive,
+        category_name: body.category_name,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<CreateProjectLabelCategoryRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .create_project_label_category(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_project_label_category(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    category_id: i64,
+    body: RestProjectLabelCategoryBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = UpdateProjectLabelCategoryRequest {
+        category_id,
+        category_is_exclusive: body.category_is_exclusive,
+        category_name: body.category_name,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<UpdateProjectLabelCategoryRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .update_project_label_category(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_delete_project_label_category(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    category_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = DeleteProjectLabelCategoryRequest {
+        category_id,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<DeleteProjectLabelCategoryRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .delete_project_label_category(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_list_project_milestones(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: RestMilestoneListQuery,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ListProjectMilestonesRequest {
+        order_by: if query.order_by.trim().is_empty() {
+            "dueDate".to_string()
+        } else {
+            query.order_by
+        },
+        order_dir: if query.order_dir.trim().is_empty() {
+            "asc".to_string()
+        } else {
+            query.order_dir
+        },
+        owner_name,
+        project_name,
+        state: if query.state.trim().is_empty() {
+            "open".to_string()
+        } else {
+            query.state
+        },
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ListProjectMilestonesRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .list_project_milestones(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_read_project_milestone(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    milestone_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = ReadProjectMilestoneRequest {
+        milestone_id,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<ReadProjectMilestoneRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .read_project_milestone(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_create_project_milestone(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectMilestoneBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = CreateProjectMilestoneRequest {
+        attachment_ids: body.attachment_ids,
+        contents_markdown: body.contents_markdown,
+        due_date: body.due_date,
+        owner_name,
+        project_name,
+        state: body.state,
+        title: body.title,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<CreateProjectMilestoneRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .create_project_milestone(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_project_milestone(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    milestone_id: i64,
+    body: RestProjectMilestoneBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = UpdateProjectMilestoneRequest {
+        attachment_ids: body.attachment_ids,
+        contents_markdown: body.contents_markdown,
+        due_date: body.due_date,
+        milestone_id,
+        owner_name,
+        project_name,
+        state: body.state,
+        title: body.title,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<UpdateProjectMilestoneRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .update_project_milestone(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_delete_project_milestone(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    milestone_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = DeleteProjectMilestoneRequest {
+        milestone_id,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<DeleteProjectMilestoneRequestView<'static>>(&request)?;
+    let (payload, ctx) = service
+        .delete_project_milestone(Context::new(headers), request)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_set_project_milestone_state(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    milestone_id: i64,
+    body: RestProjectMilestoneStateBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let request = MilestoneStateMutationRequest {
+        milestone_id,
+        owner_name,
+        project_name,
+        ..Default::default()
+    };
+    let request = rest_owned_view::<MilestoneStateMutationRequestView<'static>>(&request)?;
+    let context = Context::new(headers);
+    let (payload, ctx) = match normalize_identifier(&body.state).as_str() {
+        "open" => service.open_project_milestone(context, request).await,
+        "closed" | "close" => service.close_project_milestone(context, request).await,
+        _ => Err(ConnectError::invalid_argument("invalid milestone state")),
+    }
+    .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
 }
 

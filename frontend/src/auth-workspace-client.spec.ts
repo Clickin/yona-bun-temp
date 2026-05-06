@@ -2,10 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createIssue,
   createIssueComment,
+  createProjectLabel,
   deleteIssue,
   deleteIssueComment,
   listOrganizationIssues,
   listProjectIssues,
+  listProjectMilestones,
   listUserIssues,
   massUpdateIssues,
   readAuthUiCapabilities,
@@ -20,6 +22,8 @@ import {
   updateIssueState,
   uploadProfileAvatar,
   verifyUser,
+  voteIssueComment,
+  watchIssue,
 } from "./auth-workspace-client";
 import type { RuntimeConfig } from "./runtime-config";
 
@@ -253,6 +257,116 @@ describe("REST auth wrappers", () => {
     expect(requestInit.method).toBe("POST");
     expect(requestInit.body).toBeUndefined();
     expect(result.isAnonymous).toBe(true);
+  });
+});
+
+describe("issue metadata REST clients", () => {
+  it("posts watchIssue and voteIssueComment to owner/project v1 endpoints with csrf", async () => {
+    const fetchMock = vi.fn(async () =>
+      okJsonResponse({
+        issueNumber: "7",
+      }),
+    );
+
+    await watchIssue(
+      runtimeConfig,
+      "csrf-watch",
+      {
+        issueNumber: 7n,
+        ownerName: "owner",
+        projectName: "projectYobi",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+    await voteIssueComment(
+      runtimeConfig,
+      "csrf-vote",
+      {
+        commentId: 11n,
+        issueNumber: 7n,
+        ownerName: "owner",
+        projectName: "projectYobi",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    const calls = fetchMock.mock.calls as unknown as Array<
+      [string, { credentials: string; headers: Headers; method: string }]
+    >;
+    expect(calls[0]![0]).toBe(
+      "/yona/api/v1/owners/owner/projects/projectYobi/issues/7/watch",
+    );
+    expect(calls[0]![1].headers.get("x-csrf-token")).toBe("csrf-watch");
+    expect(calls[0]![1].method).toBe("POST");
+    expect(calls[1]![0]).toBe(
+      "/yona/api/v1/owners/owner/projects/projectYobi/issues/7/comments/11/vote",
+    );
+    expect(calls[1]![1].headers.get("x-csrf-token")).toBe("csrf-vote");
+    expect(calls[1]![1].method).toBe("POST");
+  });
+
+  it("posts createProjectLabel to the v1 labels endpoint with a json body", async () => {
+    const fetchMock = vi.fn(async () =>
+      okJsonResponse({
+        created: true,
+        label: { id: "3", name: "Bug" },
+      }),
+    );
+
+    await createProjectLabel(
+      runtimeConfig,
+      "csrf-label",
+      {
+        categoryIsExclusive: false,
+        categoryName: "Type",
+        labelColor: "#f44336",
+        labelName: "Bug",
+        ownerName: "owner",
+        projectName: "projectYobi",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { body: string; headers: Headers; method: string },
+    ];
+    expect(requestUrl).toBe("/yona/api/v1/owners/owner/projects/projectYobi/labels");
+    expect(requestInit.headers.get("x-csrf-token")).toBe("csrf-label");
+    expect(requestInit.method).toBe("POST");
+    expect(JSON.parse(requestInit.body)).toEqual({
+      categoryIsExclusive: false,
+      categoryName: "Type",
+      labelColor: "#f44336",
+      labelName: "Bug",
+    });
+  });
+
+  it("reads listProjectMilestones from the v1 milestones endpoint with query params", async () => {
+    const fetchMock = vi.fn(async () => okJsonResponse({ milestones: [] }));
+
+    const result = await listProjectMilestones(
+      runtimeConfig,
+      "owner",
+      "projectYobi",
+      {
+        orderBy: "dueDate",
+        orderDir: "desc",
+        state: "closed",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { credentials: string; headers: Headers; method: string },
+    ];
+    expect(requestUrl).toBe(
+      "/yona/api/v1/owners/owner/projects/projectYobi/milestones?orderBy=dueDate&orderDir=desc&state=closed",
+    );
+    expect(requestInit.credentials).toBe("same-origin");
+    expect(requestInit.method).toBe("GET");
+    expect(result.milestones).toEqual([]);
   });
 });
 
