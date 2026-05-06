@@ -22,7 +22,7 @@
 - 3차 migration/reference material은 `reference/mixed-code/**`다. historical spike evidence는 `reference/spikes/**`에 둔다.
 - canonical frontend ownership은 `frontend/`다.
 - canonical application API contract는 REST JSON API(`/api/v1`)와 frontend typed API client/TanStack Query 경계다.
-- `proto/`와 ConnectRPC는 기존 구현 snapshot/historical transition surface로만 다루며 새 기능의 기본 contract source가 아니다.
+- `proto/`는 REST pivot 이전 message schema snapshot으로만 다루며 runtime ConnectRPC surface나 새 기능의 기본 contract source가 아니다.
 - 최소 ownership은 `crates/server`, `domain`, `persistence`, `migration`, `vcs`, `search`, `integrations`로 고정한다.
 - `reference/mixed-code/**`와 `reference/spikes/**`는 reference-only다.
 - historical 문서는 삭제하지 않고 status banner와 Rust pivot 이후 설명을 붙인다.

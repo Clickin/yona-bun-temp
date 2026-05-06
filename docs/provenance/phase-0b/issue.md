@@ -55,19 +55,19 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 
 - Legacy `IssueSharer.createSharer` stores `loginId`, `user`, `issue`, and `created`; Rust resolves `login_id` to `n4user.id` and writes direct `issue_sharer(issue_id, user_id, login_id, created)` rows.
 - Legacy `AccessControl.isAllowedIfSharer` grants direct issue read and parent-to-child issue/comment read. Rust mirrors this with separate direct and inherited share flags, and allows comments only on directly shared issues.
-- Legacy `IssueApi.updateSharer` is an internal screen mutation. Rust implements this as ConnectRPC `ShareIssue` and `UnshareIssue`; no new REST endpoint is added in this phase.
+- Legacy `IssueApi.updateSharer` is an internal screen mutation. Rust implements this through `/api/v1/owners/:owner/projects/:project/issues/:number/sharers`; no `/-_-api/v1` external compatibility endpoint is added in this phase.
 - Legacy `issue/view.scala.html` renders the `sharer-list` sidebar near issue metadata. Rust issue detail renders the direct sharer count/list and login ID add/remove controls when `viewerCanManageSharers` is true.
 
 ## Phase 2G Favorite/User Issue Translation Rule
 
-- Legacy `UserApi.toggleFoveriteIssue` toggles `favorite_issue(user, issue)` rows and updates the issue detail star. Rust implements this as ConnectRPC `ToggleFavoriteIssue` and projects `ReadIssueDetailResponse.isFavorited`; no `/-_-api/v1/favoriteIssues` endpoint is added in this phase.
-- Legacy `IssueApp.userIssues` defaults to assigned-to-me when no condition is supplied and renders the personal quick filters from `my_partial_list_quicksearch.scala.html`. Rust implements `/user/issues` with assigned/authored/commented/mentioned/shared/favorite filters over ConnectRPC `ListUserIssues`.
+- Legacy `UserApi.toggleFoveriteIssue` toggles `favorite_issue(user, issue)` rows and updates the issue detail star. Rust implements this through `POST /api/v1/owners/:owner/projects/:project/issues/:number/favorite` and projects `ReadIssueDetailResponse.isFavorited`; no `/-_-api/v1/favoriteIssues` endpoint is added in this phase.
+- Legacy `IssueApp.userIssues` defaults to assigned-to-me when no condition is supplied and renders the personal quick filters from `my_partial_list_quicksearch.scala.html`. Rust implements `/user/issues` with assigned/authored/commented/mentioned/shared/favorite filters over `GET /api/v1/user/issues`.
 - The mentioned filter reads existing `mention` rows only. Mention parsing, autocomplete, and notification semantics remain separate follow-ups.
 
 ## Phase 2H Issue Comment Vote Translation Rule
 
-- Legacy `VoteApp.voteComment` and `IssueComment.addVoter` add `issue_comment_voter(issue_comment_id, user_id)` idempotently. Rust implements this as ConnectRPC `VoteIssueComment` and returns refreshed `ReadIssueDetailResponse`.
-- Legacy `VoteApp.unvoteComment` fails when the current user has not voted the comment. Rust preserves that policy through ConnectRPC `UnvoteIssueComment` returning NOT_FOUND for a missing voter row.
+- Legacy `VoteApp.voteComment` and `IssueComment.addVoter` add `issue_comment_voter(issue_comment_id, user_id)` idempotently. Rust implements this through `POST /api/v1/owners/:owner/projects/:project/issues/:number/comments/:commentId/vote` and returns refreshed issue detail data.
+- Legacy `VoteApp.unvoteComment` fails when the current user has not voted the comment. Rust preserves that policy through `DELETE /api/v1/owners/:owner/projects/:project/issues/:number/comments/:commentId/vote` returning not found for a missing voter row.
 - Legacy `partial_comment.scala.html` renders voter count/names/avatars and a heart state in the issue comment row. Rust projects `IssueComment.voterCount`, `viewerHasVoted`, and `voters`, then renders the count/list and vote/unvote heart control in the current React issue detail timeline row.
 - Legacy direct POST routes `/:user/:project/issue/:number/comment/:commentId/vote` and `/unvote` are mounted as compatibility wrappers around the same policy, then redirect back to `/:user/:project/issue/:number#comment-:commentId`.
 
@@ -76,7 +76,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | Evidence                                    | Rust target                                                                                                                                                                               |
 | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Legacy route/controller/view source checked | `IssueApp.java`, `issue/list.scala.html`, `issue/view.scala.html`, `issue/create.scala.html`, `issue/edit.scala.html`, `partial_comments.scala.html`, `partial_event_timeline.scala.html` |
-| Contract expansion                          | `proto/yona/pilot/v1/pilot.proto` Issue RPCs and generated frontend bindings                                                                                                              |
+| REST contract                               | `/api/v1/projects/:owner/:project/issues/**`, `/api/v1/owners/:owner/projects/:project/issues/:number/**`, `crates/server/tests/issue_core_contract.rs`                                  |
 | Backend behavior                            | `crates/persistence/src/repo.rs`, `crates/server/src/lib.rs`                                                                                                                              |
 | UI route surface                            | `frontend/src/routes/$owner/$projectName/issues`, `issueform`, `issue/$issueNumber`, `issue/$issueNumber/editform`                                                                        |
 | Regression tests                            | `cargo test -p yona-rust-pilot-server --test issue_core_contract`                                                                                                                         |
@@ -89,7 +89,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | Legacy ACL rule          | `yona-original/app/utils/AccessControl.java#isAllowedIfSharer`                                                                   |
 | Legacy mutation endpoint | `yona-original/app/controllers/api/IssueApi.java#updateSharer`                                                                   |
 | Legacy sidebar view      | `yona-original/app/views/issue/view.scala.html#sharer-list`                                                                      |
-| Contract expansion       | `proto/yona/pilot/v1/pilot.proto` `IssueSharer`, `ShareIssue`, `UnshareIssue`                                                    |
+| REST contract            | `/api/v1/owners/:owner/projects/:project/issues/:number/sharers`, `crates/server/tests/issue_sharer_contract.rs`                  |
 | Backend behavior         | `crates/persistence/src/repo.rs`, `crates/server/src/lib.rs`                                                                     |
 | UI route surface         | `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/-issue-views.tsx`                   |
 | Regression tests         | `cargo test -p yona-rust-pilot-server --test issue_sharer_contract`; `pnpm --dir frontend test -- auth-workspace-shell.spec.tsx` |
@@ -100,7 +100,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | Legacy favorite API/model | `yona-original/app/controllers/api/UserApi.java#toggleFoveriteIssue`, `yona-original/app/models/FavoriteIssue.java`                            |
 | Legacy user issue UI      | `IssueApp.userIssues`, `issue/my_partial_search.scala.html`, `issue/my_partial_list_quicksearch.scala.html`, `issue/view.scala.html`           |
-| Contract expansion        | `proto/yona/pilot/v1/pilot.proto` `ListUserIssues`, `ToggleFavoriteIssue`, `ReadIssueDetailResponse.isFavorited`                               |
+| REST contract             | `/api/v1/user/issues`, `/api/v1/owners/:owner/projects/:project/issues/:number/favorite`, `ReadIssueDetailResponse.isFavorited`                 |
 | Backend behavior          | `crates/persistence/src/repo.rs`, `crates/server/src/lib.rs`                                                                                   |
 | UI route surface          | `frontend/src/routes/user/issues/route.tsx`, `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/-issue-views.tsx` |
 | Regression tests          | `cargo test -p yona-rust-pilot-server --test user_issue_favorite_contract`; `pnpm --dir frontend test -- route-parity.spec.tsx auth-workspace-shell.spec.tsx` |
@@ -111,14 +111,14 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | Legacy comment vote source | `yona-original/app/controllers/VoteApp.java#voteComment`, `#unvoteComment`, `yona-original/app/models/IssueComment.java#addVoter`          |
 | Legacy comment UI         | `yona-original/app/views/issue/partial_comment.scala.html`, `yona-original/public/javascripts/service/yobi.issue.View.js`                  |
-| Contract expansion        | `proto/yona/pilot/v1/pilot.proto` `VoteIssueComment`, `UnvoteIssueComment`, `IssueCommentVoter`, comment vote projection fields            |
+| REST contract             | `/api/v1/owners/:owner/projects/:project/issues/:number/comments/:commentId/vote`, `IssueCommentVoter`, comment vote projection fields     |
 | Backend behavior          | `crates/persistence/src/repo.rs`, `crates/persistence/src/repo_types.rs`, `crates/server/src/lib.rs`, direct POST compatibility routes       |
 | UI route surface          | `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/-issue-views.tsx`, `frontend/src/app-view-models.ts` |
 | Regression tests          | `cargo test -p yona-rust-pilot-server --test issue_comment_vote_contract`; `pnpm --dir frontend test -- auth-workspace-shell.spec.tsx route-parity.spec.tsx` |
 
 ## Remaining Phase 2 Follow-ups
 
-- REST `/-_-api/v1` issue API parity.
+- Legacy external `/-_-api/v1` issue API parity.
 - Sharable user autocomplete/search, Issue Sharer changed timeline/notification semantics, and mention autocomplete/creation/notification semantics.
 
 ## Shared Surface Notes

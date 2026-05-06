@@ -3,15 +3,15 @@
 > Status dashboard. This document is a progress mirror for humans and agents.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, and the narrower provenance docs under `docs/provenance/**`.
 
-Last updated: 2026-04-20
+Last updated: 2026-05-06
 
 ## Progress Estimate
 
 | Scope                                   | Estimate | Basis                                                                                                                         |
 | --------------------------------------- | -------: | ----------------------------------------------------------------------------------------------------------------------------- |
-| Full legacy Yona parity                 |     ~36% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and REST API. |
-| Current first-priority conversion scope |     ~41% | Same as above, but excluding explicitly deferred second-priority items such as SVN, LDAP, and import/export tooling.          |
-| Mechanical SPEC row count               |     ~28% | `SPEC.md` feature/status rows: 38 implemented, 1 partial, 99 gap, 8 deferred, plus supporting/non-feature rows.               |
+| Full legacy Yona parity                 |     ~39% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and legacy external REST API. |
+| Current first-priority conversion scope |     ~45% | Same as above, but excluding explicitly deferred second-priority items such as SVN, LDAP, and import/export tooling.          |
+| Mechanical SPEC row count               |     ~31% | Phase -1 moved implemented application flows to `/api/v1` REST and removed runtime RPC, but many product rows remain gaps.    |
 
 Interpretation:
 
@@ -34,20 +34,20 @@ Interpretation:
 
 | Area                                    | Status                    | Notes                                                                                                                    |
 | --------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Foundation / DB / runtime               | [~] Mostly implemented    | Schema, migrations, runtime, RPC, assets are strong; production migration/import/export is not.                          |
+| Foundation / DB / runtime               | [~] Mostly implemented    | Schema, migrations, `/api/v1` REST runtime, assets are strong; production migration/import/export is not.                |
 | Auth / Workspace                        | [~] Partially implemented | Core account and settings flows exist; remember-me/admin approval/guest/OAuth/LDAP remain.                               |
 | Organization / Project core             | [~] Partially implemented | CRUD, members, enrollment, watch/favorite basics exist; project admin surfaces remain.                                   |
-| Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists and favorite issue exist; mention/REST remain. |
+| Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists and favorite issue exist over `/api/v1`; mention and legacy external REST parity remain. |
 | VCS / Code hosting                      | [~] Started               | Read-only Git code browser exists; smart HTTP, history, raw/image/download, branch admin, and provisioning remain.       |
 | Pull Request / Review                   | [ ] Mostly missing        | PR routes are placeholders.                                                                                              |
 | Board / Posting                         | [ ] Mostly missing        | Board/post routes are placeholders.                                                                                      |
 | Search                                  | [ ] Mostly missing        | Search route is placeholder.                                                                                             |
-| Notifications / Webhooks / Admin / REST | [ ] Mostly missing        | Some infrastructure exists, but parity surfaces are mostly gaps.                                                         |
+| Notifications / Webhooks / Admin / External REST | [ ] Mostly missing | Some infrastructure exists, but parity surfaces and `/-_-api/v1` external compatibility are mostly gaps.                |
 
 ## Foundation / Deployment / DB
 
 - [x] Rust workspace canonical root
-- [x] Axum + ConnectRPC server
+- [x] Axum + `/api/v1` REST server
 - [x] React SPA route foundation
 - [x] Legacy schema based SeaORM entities
 - [x] SQLite runtime migration/adopt/validate

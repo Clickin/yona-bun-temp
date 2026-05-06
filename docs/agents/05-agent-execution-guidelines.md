@@ -21,7 +21,7 @@
 
 - 새 frontend 장기 구현은 `frontend/`에 둔다.
 - 새 application API contract는 REST JSON API(`/api/v1`)와 frontend typed API client/TanStack Query 경계에 둔다.
-- `proto/`/ConnectRPC 변경은 기존 RPC surface를 보존하거나 제거하는 migration task에서만 다룬다.
+- `proto/` 변경은 historical schema snapshot 유지가 필요할 때만 다룬다. runtime RPC surface나 frontend ConnectRPC client를 새로 추가하지 않는다.
 - 새 backend 장기 구현은 `crates/*`에 둔다.
 - `reference/mixed-code/**` 경로에는 새 canonical ownership을 추가하지 않는다.
 - provenance 문서는 legacy source, mixed-code reference, Rust target layer를 함께 남긴다.

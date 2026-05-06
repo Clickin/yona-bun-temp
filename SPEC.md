@@ -1,7 +1,7 @@
 # Yona Rust + React Migration SPEC — 기능 변환 명세서
 
-Status: Canonical v3.1
-Date: 2026-04-19
+Status: Canonical v3.2
+Date: 2026-05-06
 Language: Korean-first, English identifiers
 Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무지시서 + 검수내역서를 대체한다
 
@@ -34,7 +34,7 @@ Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무�
 | N-01 | legacy에 없는 UI 요소/화면/기능을 "개선"이라는 이름으로 추가                                | 기능 변환의 범위 초과    |
 | N-02 | legacy의 레이블, 메뉴 구조, 버튼 텍스트, 동선을 임의 변경                                   | UX parity 위반           |
 | N-03 | `SPEC.md` Section 1의 고정 결정 밖에서 새 패턴이나 추상화 도입                              | 구조 변환 범위 초과      |
-| N-04 | legacy 외부 호환 REST API를 임의 확장하거나, legacy 기능 근거 없이 ConnectRPC 메서드를 추가 | contract 범위 초과       |
+| N-04 | legacy 외부 호환 REST API를 임의 확장하거나, legacy 기능 근거 없이 runtime RPC surface를 추가 | contract 범위 초과       |
 | N-05 | 검색 결과 UI, 페이지네이션 방식, 정렬 기준 등을 legacy와 다르게 구현                        | UX parity 위반           |
 | N-06 | 에러 메시지, 빈 상태 텍스트, placeholder 등을 legacy와 다르게 작성                          | copy parity 위반         |
 | N-07 | legacy에서 사용하는 URL 경로 패턴을 변경 (예: `/issues` → `/tickets`)                       | deep-link parity 위반    |
@@ -89,10 +89,10 @@ Audience: Codex CLI 에이전트 및 개발자 — 이 문서는 외주 업무�
 ```text
 repo root/
   Cargo.toml              # workspace manifest
-  buf.yaml                # existing protobuf module manifest, transition-only
-  buf.gen.yaml            # existing browser codegen manifest, transition-only
+  buf.yaml                # existing protobuf module manifest, historical schema snapshot
+  buf.gen.yaml            # existing browser codegen manifest, historical schema snapshot
   frontend/               # React SPA
-  proto/                  # existing ConnectRPC snapshot, not source for new application API
+  proto/                  # REST pivot 이전 message schema snapshot, not runtime application API
   crates/
     server/               # runtime bootstrap, HTTP/REST, asset delivery, session/auth
     domain/               # domain behavior, ACL, invariant
@@ -112,7 +112,7 @@ repo root/
 - UI layout, copy, CTA, menu, deep-link flow는 `yona-original/` 기준.
 - 상태 관리: React Context API (`AppRuntimeContext`).
 - API 통신: REST JSON client + TanStack Query.
-- 기존 ConnectRPC/proto 코드는 transition surface로만 취급한다. 명시적인 호환성 migration 계획이 없는 한 새 feature는 REST-first로 설계하고 RPC 메서드를 추가하지 않는다.
+- `proto/`는 REST pivot 이전 message schema snapshot으로만 취급한다. runtime RPC registration과 frontend ConnectRPC client는 Phase -1에서 제거되었으며, 새 feature는 REST-first로 설계한다.
 
 ### 1.4 배포 기준선
 
@@ -183,11 +183,11 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 
 | Phase   | 범위                                                 | 목표                                          |
 | ------- | ---------------------------------------------------- | --------------------------------------------- |
-| Phase -1 | refactor temp development: 기존 임시 구현을 REST pivot SPEC에 맞춰 재기준화 | 🔜 다음 착수                                  |
+| Phase -1 | refactor temp development: 기존 임시 구현을 REST pivot SPEC에 맞춰 재기준화 | ✅ 구현 완료, 최종 verification 단계          |
 | Phase 0  | Rust workspace promotion, 문서 정리, provenance 갱신                         | ✅ **완료**                                   |
-| Phase 1  | 인증, Workspace, 조직, 프로젝트                                                | ✅ **완료** (REST 재기준화 필요)              |
-| Phase 2  | 이슈, 댓글, 첨부, 라벨, 마일스톤                                               | 🔶 부분 구현, REST 재기준화 필요              |
-| Phase 3  | 저장소 브라우저, Smart HTTP, 커밋 토론, VCS                                    | 🔶 Phase 3A 구현, REST 재기준화 필요          |
+| Phase 1  | 인증, Workspace, 조직, 프로젝트                                                | ✅ **완료**                                   |
+| Phase 2  | 이슈, 댓글, 첨부, 라벨, 마일스톤                                               | 🔶 부분 구현                                  |
+| Phase 3  | 저장소 브라우저, Smart HTTP, 커밋 토론, VCS                                    | 🔶 Phase 3A 구현                              |
 | Phase 4 | Pull Request, 코드 리뷰                              | 후속                                          |
 | Phase 5 | 검색, 게시판, 알림, 연동(Webhook)                    | 후속                                          |
 | Phase 6 | 관리자, 마이그레이션 도구, 배포 하드닝               | 후속                                          |
@@ -471,7 +471,7 @@ POST  /watch                                → 이슈 감시
 POST  /unwatch                              → 이슈 감시 해제
 POST  /:owner/:project/issue/:number/vote   → 이슈 투표
 POST  /:owner/:project/issue/:number/unvote → 이슈 투표 취소
-POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → 이슈 공유 변경(legacy REST, Rust는 ConnectRPC 내부 화면 기능)
+POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → 이슈 공유 변경(legacy external REST; Rust 화면 기능은 `/api/v1/.../sharers`)
 ```
 
 #### 기능 목록과 상태
@@ -622,7 +622,7 @@ POST  /:owner/:project/milestone/:id/close  → 마일스톤 닫기
 - [x] 마감일: `yyyy-MM-dd` 형식 저장/표시
 - [x] 마일스톤 상세: 소속 이슈 목록이 legacy `milestone/view.scala.html`과 동일
 
-**Phase 2C 구현 메모**: ConnectRPC와 SPA/direct legacy mutation route parity를 구현했다. REST `/-_-api/v1/.../milestones`, migration export, search milestone result type은 각각 REST/API, migration/export, search packet에 남긴다.
+**Phase 2C 구현 메모**: `/api/v1` REST와 SPA/direct legacy mutation route parity를 구현했다. Legacy external `/-_-api/v1/.../milestones`, migration export, search milestone result type은 각각 legacy external API, migration/export, search packet에 남긴다.
 
 ---
 
@@ -1186,15 +1186,15 @@ legacy Yona는 `pageNum` 기반 offset 페이지네이션을 사용한다.
 
 ---
 
-## 9. 현재 구현 상태 요약 (2026-04-19 기준)
+## 9. 현재 구현 상태 요약 (2026-05-06 기준)
 
-REST pivot 이후 현재 구현 상태 표는 기능 완료가 아니라 재기준화 입력으로 읽는다.
-`Phase -1 refactor temp development`가 완료되기 전에는 기존 ConnectRPC 기반
-구현을 다음 신규 phase의 기반으로 삼지 않는다.
+Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 입력 기준이다.
+기존 runtime ConnectRPC surface와 frontend ConnectRPC client/dependency는 제거되었고,
+`proto/`는 historical message schema snapshot으로만 남는다.
 
 | 영역              | 상태              | 세부                                                             |
 | ----------------- | ----------------- | ---------------------------------------------------------------- |
-| HTTP 서버         | ✅ 구현           | Axum 기반. 기존 ConnectRPC surface가 구현되어 있으나 REST pivot 이후 transition surface로 취급 |
+| HTTP 서버         | ✅ 구현           | Axum 기반. `/api/v1` REST, session bootstrap, static asset delivery |
 | 세션/인증         | ✅ 구현           | bcrypt, CSRF, 세션 쿠키                                          |
 | DB 엔티티         | ✅ 구현           | 60+ SeaORM 모델, legacy 스키마 전체 매핑                         |
 | Repository 메서드 | ✅ 구현           | 100+ 쿼리 메서드                                                 |
@@ -1205,7 +1205,7 @@ REST pivot 이후 현재 구현 상태 표는 기능 완료가 아니라 재기�
 | 프로젝트 CRUD     | ✅ 구현           | 생성/수정/설정/감시/즐겨찾기                                     |
 | 이슈              | ✅ Phase 2A 구현  | CRUD, 댓글, 타임라인, watch/vote/assignee, mass update, Markdown |
 | 게시판            | ❌ 미구현         | placeholder route만                                              |
-| 라벨/마일스톤     | 🔶 부분           | 라벨/카테고리 관리 구현, 마일스톤 관리 미구현                    |
+| 라벨/마일스톤     | ✅ 구현           | 라벨/카테고리 관리, 마일스톤 CRUD/state 구현                     |
 | 코드 브라우저     | 🔶 Phase 3A 구현  | read-only Git 폴더/파일 보기, 브랜치 선택기                      |
 | Git Smart HTTP    | ❌ 미구현         |                                                                  |
 | PR/리뷰           | ❌ 미구현         | placeholder route만                                              |
@@ -1214,7 +1214,7 @@ REST pivot 이후 현재 구현 상태 표는 기능 완료가 아니라 재기�
 | 웹훅              | ❌ 미구현         | DB 엔티티만 존재                                                 |
 | 관리자            | ❌ 미구현         |                                                                  |
 | 마크다운          | 🔶 이슈 범위 구현 | Issue body/comment sanitized HTML projection                     |
-| REST API          | ❌ 미구현         | `/api/v1` application API와 `/-_-api/v1` legacy external API가 모두 필요 |
+| REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1` legacy external API parity는 후속 |
 | Frontend 라우트   | ✅ 구현           | legacy issueform/editform 포함                                   |
 | Frontend 테스트   | 🔶 부분           | API client, route parity, E2E smoke                              |
 | i18n              | ❌ 미구현         | hardcoded English/Korean                                         |
@@ -1301,39 +1301,39 @@ max_file_size = 2147483454             # application.maxFileSize
 
 > 이 부록은 legacy `conf/routes` 파일의 모든 라우트가 Rust + React에서 어떻게 대응되는지를 추적한다.
 > `status` 값: `implemented`, `gap`, `deferred`, `not-needed`
-> `Rust 대응`에 ConnectRPC가 적힌 항목은 REST pivot 이전 구현 snapshot이다. 새 개발 또는 재구현 시에는 `/api/v1/**` REST endpoint + TanStack Query client로 대체한다.
+> `Rust 대응`은 runtime handler 또는 frontend route 기준이다. `proto/` method names are historical only and are not the application contract.
 
 | Legacy Route                       | Method   | Rust 대응                             | Frontend Route                                | Status             |
 | ---------------------------------- | -------- | ------------------------------------- | --------------------------------------------- | ------------------ |
 | `/`                                | GET      | SPA fallback                          | `__root.tsx`                                  | implemented        |
 | `/users/loginform`                 | GET      | SPA                                   | `legacy-auth/users/loginform`                 | implemented        |
 | `/users/signupform`                | GET      | SPA                                   | `legacy-auth/users/signupform`                | implemented        |
-| `/users/login`                     | POST     | ConnectRPC `SignInWithPassword`       | —                                             | implemented        |
-| `/users/signup`                    | POST     | ConnectRPC `RegisterWithPassword`     | —                                             | implemented        |
+| `/users/login`                     | POST     | `POST /api/v1/auth/sign-in`           | —                                             | implemented        |
+| `/users/signup`                    | POST     | `POST /api/v1/auth/register`          | —                                             | implemented        |
 | `/lostPassword`                    | GET/POST | `POST /lostPassword` direct           | `lostPassword/`                               | implemented        |
 | `/resetPassword`                   | GET/POST | `POST /resetPassword` direct          | `resetPassword/`                              | implemented        |
-| `/verify/:loginId/:code`           | GET      | ConnectRPC `VerifyUser`               | `verify/$loginId/$code`                       | implemented        |
-| `/logout`                          | GET      | ConnectRPC `SignOut`                  | —                                             | implemented        |
+| `/verify/:loginId/:code`           | GET      | `POST /api/v1/auth/verify`            | `verify/$loginId/$code`                       | implemented        |
+| `/logout`                          | GET      | `POST /api/v1/auth/sign-out`          | —                                             | implemented        |
 | `/me`                              | GET      | SPA                                   | `me/`                                         | implemented        |
 | `/user/editform`                   | GET      | SPA                                   | `user/editform/`                              | implemented        |
-| `/projects`                        | GET      | ConnectRPC `ListProjects`             | `projects/`                                   | implemented        |
+| `/projects`                        | GET      | `GET /api/v1/projects`                | `projects/`                                   | implemented        |
 | `/projectform`                     | GET      | SPA                                   | `projects/new`                                | implemented        |
-| `/:owner/:project`                 | GET      | ConnectRPC `ReadProjectDetail`        | `$owner/$projectName/`                        | implemented        |
-| `/:owner/:project/settingform`     | GET      | ConnectRPC `ReadProjectSettings`      | `$owner/$projectName/settingform`             | implemented        |
-| `/:owner/:project/issues`          | GET      | ConnectRPC `ListProjectIssues`        | `$owner/$projectName/issues`                  | implemented (기본) |
-| `/:owner/:project/issue/:number`   | GET      | ConnectRPC `ReadIssueDetail`          | `$owner/$projectName/issue/$issueNumber`      | implemented (기본) |
+| `/:owner/:project`                 | GET      | `GET /api/v1/owners/:owner/projects/:project` | `$owner/$projectName/`                        | implemented        |
+| `/:owner/:project/settingform`     | GET      | `GET /api/v1/owners/:owner/projects/:project/settings` | `$owner/$projectName/settingform`             | implemented        |
+| `/:owner/:project/issues`          | GET      | `GET /api/v1/projects/:owner/:project/issues` | `$owner/$projectName/issues`                  | implemented        |
+| `/:owner/:project/issue/:number`   | GET      | `GET /api/v1/projects/:owner/:project/issues/:number` | `$owner/$projectName/issue/$issueNumber`      | implemented        |
 | `/:owner/:project/posts`           | GET      | —                                     | `$owner/$projectName/posts`                   | gap                |
 | `/:owner/:project/pullRequests`    | GET      | —                                     | `$owner/$projectName/pullRequests`            | gap                |
-| `/:owner/:project/code`            | GET      | ConnectRPC `ReadCodeBrowser`          | `$owner/$projectName/code`                    | implemented (기본) |
-| `/:owner/:project/code/:branch/*`  | GET      | ConnectRPC `ReadCodeBrowser`          | `$owner/$projectName/code/$branch/$`          | implemented (기본) |
+| `/:owner/:project/code`            | GET      | `GET /api/v1/projects/:owner/:project/code` | `$owner/$projectName/code`                    | implemented (기본) |
+| `/:owner/:project/code/:branch/*`  | GET      | `GET /api/v1/projects/:owner/:project/code?branch=&path=` | `$owner/$projectName/code/$branch/$`          | implemented (기본) |
 | `/:owner/:project/commits`         | GET      | —                                     | —                                             | gap                |
-| `/:owner/:project/milestones`      | GET      | ConnectRPC `ListProjectMilestones`    | `$owner/$projectName/milestones`              | implemented        |
+| `/:owner/:project/milestones`      | GET      | `GET /api/v1/owners/:owner/projects/:project/milestones` | `$owner/$projectName/milestones`              | implemented        |
 | `/:owner/:project/branches`        | GET      | —                                     | —                                             | gap                |
 | `/organizations/new`               | GET      | SPA                                   | `organizations/new`                           | implemented        |
-| `/organizations/:name`             | GET      | ConnectRPC `ReadOrganizationDetail`   | `organizations/$organizationName/`            | implemented        |
-| `/organizations/:name/members`     | GET      | ConnectRPC `ReadOrganizationMembers`  | `organizations/$organizationName/members`     | implemented        |
-| `/organizations/:name/settingform` | GET      | ConnectRPC `ReadOrganizationSettings` | `organizations/$organizationName/settingform` | implemented        |
-| `/organizations/:name/issues`      | GET      | —                                     | `organizations/$organizationName/issues`      | gap                |
+| `/organizations/:name`             | GET      | `GET /api/v1/organizations/:name`     | `organizations/$organizationName/`            | implemented        |
+| `/organizations/:name/members`     | GET      | `GET /api/v1/organizations/:name/members` | `organizations/$organizationName/members`     | implemented        |
+| `/organizations/:name/settingform` | GET      | `GET /api/v1/organizations/:name/settings` | `organizations/$organizationName/settingform` | implemented        |
+| `/organizations/:name/issues`      | GET      | `GET /api/v1/organizations/:name/issues` | `organizations/$organizationName/issues`      | implemented        |
 | `/organizations/:name/boards`      | GET      | —                                     | `organizations/$organizationName/boards`      | gap                |
 | `/search`                          | GET      | —                                     | `search/`                                     | gap                |
 | `/files`                           | POST     | `POST /files` direct                  | —                                             | implemented        |
@@ -1346,35 +1346,35 @@ max_file_size = 2147483454             # application.maxFileSize
 
 ---
 
-## 부록 C: Existing ConnectRPC 서비스 정의 현황
+## 부록 C: Existing Proto Schema Snapshot
 
-`proto/yona/pilot/v1/pilot.proto` — PilotService (Phase 2A Issue RPC 포함)
+`proto/yona/pilot/v1/pilot.proto`는 REST pivot 이전 임시 구현의 message schema snapshot이다.
+Phase -1 이후 runtime `/rpc` registration, frontend ConnectRPC generated client, and ConnectRPC package dependencies are removed.
+서버 build는 필요한 legacy message shape만 `buffa-codegen`으로 생성한다.
 
-이 부록은 기존 구현 snapshot이다. REST pivot 이후 `proto/`는 새 application contract의 source of truth가 아니며, 새 기능은 RPC 메서드를 추가하지 않고 `/api/v1/**` REST endpoint와 frontend typed client/TanStack Query hook으로 구현한다.
+Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기반 contract tests를 REST route로 우회시키기 위해 `/api/v1/_pilot/{method_name}` harness가 있다. 이 route는 application contract가 아니며 frontend/runtime code에서 사용하면 안 된다.
 
-| 카테고리           | 메서드 수                                                                                                                                                                                                                                                                                                                                                             | 구현 상태              |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
-| Auth (7)           | ReadCurrentSession, ReadAuthUiCapabilities, SignInWithPassword, RegisterWithPassword, VerifyUser, SignOut, ChangePassword                                                                                                                                                                                                                                             | ✅ 전체 구현           |
-| Workspace (10)     | ReadWorkspaceOverview, SetDefaultLandingPath, UpdateProfile, ResetVisitedProjects, AddWorkspaceEmail, DeleteWorkspaceEmail, SendWorkspaceEmailValidation, SetMainWorkspaceEmail, ResetApiToken, ToggleWorkspaceNotification                                                                                                                                           | ✅ 전체 구현           |
-| Organization (12+) | CreateOrganization, ReadOrganizationDetail, ReadOrganizationSettings, UpdateOrganization, ReadOrganizationMembers, ReadOrganizationAdmin, ReadOrganizationContainer, AddOrganizationMember, UpdateOrganizationMemberRole, DeleteOrganizationMember, AcceptOrganizationEnrollment, EnrollOrganization, CancelEnrollOrganization, LeaveOrganization, DeleteOrganization | ✅ 전체 구현           |
-| Project (14)       | CreateProject, ReadProjectDetail, ReadProjectSettings, UpdateProject, UpdateProjectOverview, ReadProjectMembers, ReadProjectContainer, ToggleProjectWatch, EnrollProject, CancelEnrollProject, ToggleFavoriteProject, RecordRecentProjectVisit, ListProjects, ListOrganizations                                                                                       | ✅ 전체 구현           |
-| Issue              | ListProjectIssues, ListOrganizationIssues, ListUserIssues, ReadIssueDetail, UpdateIssueState, CreateIssue, UpdateIssue, DeleteIssue, CreateIssueComment, UpdateIssueComment, DeleteIssueComment, VoteIssueComment, UnvoteIssueComment, ListIssueTimeline, WatchIssue, UnwatchIssue, VoteIssue, UnvoteIssue, ToggleFavoriteIssue, AssignIssue, UnassignIssue, ShareIssue, UnshareIssue, MassUpdateIssues, RenderMarkdown | ✅ Phase 2A/2E/2F/2G/2H 구현 |
-| Label              | ListProjectLabels, ListProjectLabelCategories, CreateProjectLabel, UpdateProjectLabel, DeleteProjectLabel, CreateProjectLabelCategory, UpdateProjectLabelCategory, DeleteProjectLabelCategory                                                                                                                                                                         | ✅ Phase 2B 구현       |
-| Milestone          | ListProjectMilestones, ReadProjectMilestone, CreateProjectMilestone, UpdateProjectMilestone, DeleteProjectMilestone, OpenProjectMilestone, CloseProjectMilestone                                                                                                                                                                                                      | ✅ Phase 2C 구현       |
-| Code               | ReadCodeBrowser                                                                                                                                                                                                                                                                                                                                                       | ✅ Phase 3A 구현       |
+| Snapshot category | REST replacement status |
+| ----------------- | ----------------------- |
+| Auth/session      | `/api/v1/session`, `/api/v1/auth/*` implemented |
+| Workspace         | `/api/v1/workspace/**` implemented |
+| Organization/project | `/api/v1/organizations/**`, `/api/v1/owners/:owner/projects/**`, `/api/v1/projects` implemented |
+| Issue core/meta   | `/api/v1/projects/:owner/:project/issues/**`, `/api/v1/organizations/:org/issues`, `/api/v1/user/issues`, `/api/v1/owners/:owner/projects/:project/issues/:number/**` implemented |
+| Label/milestone   | `/api/v1/owners/:owner/projects/:project/labels/**`, `/api/v1/owners/:owner/projects/:project/milestones/**` implemented |
+| Code browser      | `GET /api/v1/projects/:owner/:project/code` implemented |
 
-**RPC로 추가하지 말고 REST로 구현할 영역**:
+**새 runtime API는 REST로 구현할 영역**:
 
-- Issue follow-up: sharable user autocomplete/search, issue sharer timeline/notification semantics, mention autocomplete/notification semantics, REST issue API parity
-- Board: CreatePosting, UpdatePosting, DeletePosting, ListProjectPostings, ReadPostingDetail, CreatePostingComment
-- Label follow-up: copyLabels Phase 6, REST label/project API parity
-- Milestone follow-up: REST milestone API parity, migration export, search milestone result type
+- Issue follow-up: sharable user autocomplete/search, issue sharer timeline/notification semantics, mention autocomplete/notification semantics, legacy external `/-_-api/v1` issue API parity
+- Board: posting list/detail/create/update/delete/comment flows
+- Label follow-up: copyLabels Phase 6 and legacy external label/project API parity
+- Milestone follow-up: migration export and search milestone result type
 - Code follow-up: raw file/download/image routes, syntax highlighting, commit history/detail, branch admin, compare, Smart HTTP
-- PullRequest: CreatePullRequest, ReadPullRequestDetail, ListPullRequests, MergePullRequest, ClosePullRequest, ReopenPullRequest, CreateReviewComment, ReviewPullRequest
-- Search: SearchGlobal, SearchInProject, SearchInOrganization
-- Notification: ListNotifications, MarkNotificationRead
-- Webhook: CreateWebhook, DeleteWebhook, ListProjectWebhooks
-- Admin: ListUsers, ListAllProjects, ToggleSiteAdmin, ToggleAccountLock, SendTestMail
-- Markdown: RenderMarkdown
+- PullRequest: create/detail/list/merge/close/reopen/review comment/reviewer lifecycle
+- Search: global/project/organization search
+- Notification: list/read state/mail notification surface
+- Webhook: project webhook CRUD
+- Admin: users/projects/site-admin/account-lock/test-mail surfaces
+- Markdown: app-level markdown preview API if legacy evidence requires it
 
 ---
