@@ -17,7 +17,7 @@ async function getWithStartupRetry(request: APIRequestContext, path: string) {
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
-test("mounted reverse proxy forwards session bootstrap and rpc requests", async ({ request }) => {
+test("mounted reverse proxy forwards session bootstrap and REST requests", async ({ request }) => {
   const sessionResponse = await getWithStartupRetry(request, "/yona/api/auth/session");
   expect(sessionResponse.status()).toBe(200);
   expect(sessionResponse.headers()["x-csrf-token"]).toBeTruthy();
@@ -26,16 +26,8 @@ test("mounted reverse proxy forwards session bootstrap and rpc requests", async 
     user: null,
   });
 
-  const rpcResponse = await request.post(
-    "/yona/rpc/yona.pilot.v1.PilotService/ListProjects",
-    {
-      data: {},
-      headers: {
-        "content-type": "application/json",
-      },
-    },
-  );
-  expect(rpcResponse.status()).toBe(200);
-  const rpcBody = await rpcResponse.text();
-  expect(rpcBody).toContain('"projectName":"yona"');
+  const projectsResponse = await request.get("/yona/api/v1/projects");
+  expect(projectsResponse.status()).toBe(200);
+  const projectsBody = await projectsResponse.text();
+  expect(projectsBody).toContain('"projectName":"yona"');
 });

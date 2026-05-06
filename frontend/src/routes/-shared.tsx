@@ -1,5 +1,4 @@
 import * as React from "react";
-import { Code, ConnectError } from "@connectrpc/connect";
 import { RestApiError } from "../api/rest-client";
 import { prefixBasePath } from "../runtime-config";
 import { useAppRuntime } from "../app-runtime-context";
@@ -37,41 +36,44 @@ export function useRequireAuthenticatedRoute(targetHref: string) {
 
 export type RouteFailureKind = "forbidden" | "not-found";
 
-function readConnectCode(error: unknown): null | Code {
+function readHttpStatus(error: unknown): number | null {
   if (error instanceof RestApiError) {
-    if (error.status === 403) {
-      return Code.PermissionDenied;
-    }
-    if (error.status === 404) {
-      return Code.NotFound;
-    }
+    return error.status;
   }
-  if (error instanceof ConnectError) {
-    return error.code;
-  }
-  if (typeof error !== "object" || error === null || !("code" in error)) {
+  if (typeof error !== "object" || error === null) {
     return null;
   }
 
-  const code = (error as { code?: unknown }).code;
-  if (typeof code === "number") {
-    return code as Code;
+  const status = (error as { status?: unknown }).status;
+  if (typeof status === "number") {
+    return status;
   }
-  if (code === "permission_denied") {
-    return Code.PermissionDenied;
+
+  const nestedError = (error as { error?: unknown }).error;
+  if (typeof nestedError === "object" && nestedError !== null) {
+    const nestedStatus = (nestedError as { status?: unknown }).status;
+    if (typeof nestedStatus === "number") {
+      return nestedStatus;
+    }
   }
-  if (code === "not_found") {
-    return Code.NotFound;
+
+  const response = (error as { response?: unknown }).response;
+  if (typeof response === "object" && response !== null) {
+    const responseStatus = (response as { status?: unknown }).status;
+    if (typeof responseStatus === "number") {
+      return responseStatus;
+    }
   }
+
   return null;
 }
 
 export function classifyConnectFailure(error: unknown): null | RouteFailureKind {
-  const code = readConnectCode(error);
-  if (code === Code.PermissionDenied) {
+  const status = readHttpStatus(error);
+  if (status === 403) {
     return "forbidden";
   }
-  if (code === Code.NotFound) {
+  if (status === 404) {
     return "not-found";
   }
   return null;
