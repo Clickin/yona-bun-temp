@@ -486,7 +486,7 @@ POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → �
 | 이슈 상태 변경     | open ↔ closed                                       | ✅ Phase 2A 구현      | 2     |
 | 댓글 CRUD          | 작성/수정/삭제, 마크다운 지원                       | ✅ Phase 2A 구현      | 2     |
 | 이슈 타임라인      | 상태 변경, 담당자 변경, 라벨 변경 등 이벤트 목록    | ✅ Phase 2A 구현      | 2     |
-| 담당자 (Assignee)  | 프로젝트 멤버 중 선택, 다중 담당자                  | ✅ Phase 2J 상세 검색 보강 | 2     |
+| 담당자 (Assignee)  | 프로젝트 멤버 중 선택, 다중 담당자                  | ✅ Phase 2J/2K 검색 보강 | 2     |
 | 이슈 감시 (Watch)  | 알림 수신 토글                                      | ✅ Phase 2A 구현      | 2     |
 | 이슈 투표 (Vote)   | 이슈에 투표/취소                                    | ✅ Phase 2A 구현      | 2     |
 | 댓글 투표          | 댓글에 투표/취소                                    | ✅ Phase 2H 구현      | 2     |
@@ -1359,7 +1359,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 | Auth/session      | `/api/v1/session`, `/api/v1/auth/*` implemented |
 | Workspace         | `/api/v1/workspace/**` implemented |
 | Organization/project | `/api/v1/organizations/**`, `/api/v1/owners/:owner/projects/**`, `/api/v1/projects` implemented |
-| Issue core/meta   | `/api/v1/projects/:owner/:project/issues/**`, `/api/v1/organizations/:org/issues`, `/api/v1/user/issues`, `/api/v1/owners/:owner/projects/:project/issues/:number/**` implemented |
+| Issue core/meta   | `/api/v1/projects/:owner/:project/issues/**`, `/api/v1/organizations/:org/issues`, `/api/v1/user/issues`, `/api/v1/owners/:owner/projects/:project/assignable-users`, `/api/v1/owners/:owner/projects/:project/issues/:number/**` implemented |
 | Label/milestone   | `/api/v1/owners/:owner/projects/:project/labels/**`, `/api/v1/owners/:owner/projects/:project/milestones/**` implemented |
 | Code browser      | `GET /api/v1/projects/:owner/:project/code` implemented |
 

@@ -581,12 +581,14 @@ export function IssueAssignableUserSuggestions(props: {
   );
 }
 
-function IssueAssignForm(props: {
-  initialAssignee: string;
+function IssueAssigneeAutocompleteField(props: {
+  name: string;
+  onChange: (value: string) => void;
   onSearchAssignableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
-  onSubmit: (assigneeLoginId: string) => Promise<void>;
+  onSelect: (suggestion: IssueAssignableUserItem) => void;
+  placeholder: string;
+  value: string;
 }) {
-  const [assigneeLoginId, setAssigneeLoginId] = React.useState(props.initialAssignee);
   const [searchState, setSearchState] = React.useState<IssueAssigneeSearchState>({
     items: [],
     status: "idle",
@@ -594,11 +596,7 @@ function IssueAssignForm(props: {
   });
 
   React.useEffect(() => {
-    setAssigneeLoginId(props.initialAssignee);
-  }, [props.initialAssignee]);
-
-  React.useEffect(() => {
-    const query = assigneeLoginId.trim();
+    const query = props.value.trim();
     if (!props.onSearchAssignableUsers || !shouldSearchIssueAssignee(query)) {
       setSearchState({ items: [], status: "idle", truncated: false });
       return undefined;
@@ -629,7 +627,31 @@ function IssueAssignForm(props: {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [assigneeLoginId, props.onSearchAssignableUsers]);
+  }, [props.value, props.onSearchAssignableUsers]);
+
+  return (
+    <>
+      <input
+        name={props.name}
+        onChange={(event) => props.onChange(event.currentTarget.value)}
+        placeholder={props.placeholder}
+        value={props.value}
+      />
+      <IssueAssignableUserSuggestions onSelect={props.onSelect} state={searchState} />
+    </>
+  );
+}
+
+function IssueAssignForm(props: {
+  initialAssignee: string;
+  onSearchAssignableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
+  onSubmit: (assigneeLoginId: string) => Promise<void>;
+}) {
+  const [assigneeLoginId, setAssigneeLoginId] = React.useState(props.initialAssignee);
+
+  React.useEffect(() => {
+    setAssigneeLoginId(props.initialAssignee);
+  }, [props.initialAssignee]);
 
   const selectSuggestion = (suggestion: IssueAssignableUserItem) => {
     setAssigneeLoginId(suggestion.loginId);
@@ -643,14 +665,15 @@ function IssueAssignForm(props: {
         void submitIssueAssigneeText(assigneeLoginId, props.onSubmit);
       }}
     >
-      <input
+      <IssueAssigneeAutocompleteField
         name="assigneeLoginId"
-        onChange={(event) => setAssigneeLoginId(event.currentTarget.value)}
+        onChange={setAssigneeLoginId}
+        onSearchAssignableUsers={props.onSearchAssignableUsers}
+        onSelect={selectSuggestion}
         placeholder="Assignee"
         value={assigneeLoginId}
       />
       <button type="submit">Assign</button>
-      <IssueAssignableUserSuggestions onSelect={selectSuggestion} state={searchState} />
     </form>
   );
 }
@@ -727,13 +750,32 @@ export function ProjectIssueFormPage(props: {
   detail: ProjectDetailViewModel | null;
   initialIssue?: ProjectIssueDetailViewModel | null;
   mode: "create" | "edit";
-  onSubmit: (input: { bodyMarkdown: string; title: string }) => Promise<void>;
+  onSearchAssignableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
+  onSubmit: (input: ProjectIssueFormSubmitInput) => Promise<void>;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
   const [title, setTitle] = React.useState(props.initialIssue?.title ?? "");
   const [bodyMarkdown, setBodyMarkdown] = React.useState(props.initialIssue?.bodyMarkdown ?? "");
+  const [assigneeLoginId, setAssigneeLoginId] = React.useState(
+    props.initialIssue?.assigneeLoginId ?? "",
+  );
   const [submitting, setSubmitting] = React.useState(false);
+
+  React.useEffect(() => {
+    setTitle(props.initialIssue?.title ?? "");
+    setBodyMarkdown(props.initialIssue?.bodyMarkdown ?? "");
+    setAssigneeLoginId(props.initialIssue?.assigneeLoginId ?? "");
+  }, [
+    props.initialIssue?.assigneeLoginId,
+    props.initialIssue?.bodyMarkdown,
+    props.initialIssue?.title,
+  ]);
+
+  const selectAssigneeSuggestion = (suggestion: IssueAssignableUserItem) => {
+    setAssigneeLoginId(suggestion.loginId);
+  };
+
   return (
     <main className="app-shell">
       <p className="eyebrow">Yona Rust Project</p>
@@ -744,14 +786,16 @@ export function ProjectIssueFormPage(props: {
         id="issue-form"
         onSubmit={(event) => {
           event.preventDefault();
-          const nextTitle = title.trim();
-          if (!nextTitle) {
+          const input = buildProjectIssueFormSubmitInput({
+            assigneeLoginId,
+            bodyMarkdown,
+            title,
+          });
+          if (!input) {
             return;
           }
           setSubmitting(true);
-          void props
-            .onSubmit({ bodyMarkdown, title: nextTitle })
-            .finally(() => setSubmitting(false));
+          void props.onSubmit(input).finally(() => setSubmitting(false));
         }}
       >
         <input
@@ -759,6 +803,14 @@ export function ProjectIssueFormPage(props: {
           onChange={(event) => setTitle(event.currentTarget.value)}
           placeholder="Title"
           value={title}
+        />
+        <IssueAssigneeAutocompleteField
+          name="assigneeLoginId"
+          onChange={setAssigneeLoginId}
+          onSearchAssignableUsers={props.onSearchAssignableUsers}
+          onSelect={selectAssigneeSuggestion}
+          placeholder="Assignee"
+          value={assigneeLoginId}
         />
         <textarea
           className="editorSeries content"
@@ -773,4 +825,27 @@ export function ProjectIssueFormPage(props: {
       </form>
     </main>
   );
+}
+
+export type ProjectIssueFormSubmitInput = {
+  assigneeLoginId: string;
+  bodyMarkdown: string;
+  title: string;
+};
+
+export function buildProjectIssueFormSubmitInput(input: {
+  assigneeLoginId: string;
+  bodyMarkdown: string;
+  title: string;
+}): ProjectIssueFormSubmitInput | null {
+  const title = input.title.trim();
+  if (!title) {
+    return null;
+  }
+
+  return {
+    assigneeLoginId: input.assigneeLoginId.trim(),
+    bodyMarkdown: input.bodyMarkdown,
+    title,
+  };
 }

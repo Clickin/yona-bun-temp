@@ -51,6 +51,7 @@ import {
   signInWithPassword,
   signOut,
   searchIssueAssignableUsers,
+  searchProjectAssignableUsers,
   toggleFavoriteProject,
   toggleProjectWatch,
   toggleWorkspaceNotification,
@@ -736,6 +737,57 @@ describe("issue assignable user REST client", () => {
       ],
       total: 1,
       truncated: false,
+    });
+  });
+
+  it("encodes project assignable-user search queries separately from issue-scoped search", async () => {
+    const fetchMock = vi.fn(async () =>
+      okJsonResponse({
+        items: [
+          {
+            displayName: "Door User",
+            loginId: "door",
+          },
+        ],
+        total: 12,
+        truncated: true,
+      }),
+    );
+
+    const result = await searchProjectAssignableUsers(
+      runtimeConfig,
+      {
+        ownerName: "owner space",
+        projectName: "project/Yobi",
+        query: "Door Name",
+        type: "name",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { credentials: string; headers: Headers; method: string },
+    ];
+    expect(requestUrl).toBe(
+      "/yona/api/v1/owners/owner%20space/projects/project%2FYobi/assignable-users?query=Door+Name&type=name",
+    );
+    expect(requestInit.credentials).toBe("same-origin");
+    expect(requestInit.headers.get("Accept")).toBe("application/json");
+    expect(requestInit.method).toBe("GET");
+    expect(result).toEqual({
+      items: [
+        {
+          avatarUrl: "",
+          displayName: "Door User",
+          loginId: "door",
+          pureNameOnly: "",
+          type: "user",
+        },
+      ],
+      total: 12,
+      truncated: true,
     });
   });
 });

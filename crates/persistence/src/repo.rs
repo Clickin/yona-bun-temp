@@ -514,41 +514,27 @@ impl AppRepository {
         })
     }
 
-    pub async fn list_issue_assignable_users(
+    async fn list_assignable_users_for_project(
         &self,
-        owner_name: &str,
-        project_name: &str,
-        issue_number: i64,
+        project_record: &ProjectRecord,
+        current_assignee_user_id: Option<i64>,
         query: &str,
         search_type: &str,
         limit: usize,
-    ) -> Result<Option<IssueAssignableUserSearchRecord>, DbErr> {
-        let Some((project_record, issue_model)) = self
-            .read_project_issue_model(owner_name, project_name, issue_number)
-            .await?
-        else {
-            return Ok(None);
-        };
+    ) -> Result<IssueAssignableUserSearchRecord, DbErr> {
         let query = query.trim();
         if query.is_empty() {
-            return Ok(Some(IssueAssignableUserSearchRecord {
+            return Ok(IssueAssignableUserSearchRecord {
                 items: vec![],
                 total: 0,
                 truncated: false,
-            }));
+            });
         }
 
-        let current_assignee_user_id = match issue_model.assignee_id {
-            Some(assignee_id) => assignee::Entity::find_by_id(assignee_id)
-                .one(&self.db)
-                .await?
-                .and_then(|row| row.user_id),
-            None => None,
-        };
         let visible_user_ids = if normalize_identity(&project_record.project_scope) == "public" {
             None
         } else {
-            Some(self.assignable_member_user_ids(&project_record).await?)
+            Some(self.assignable_member_user_ids(project_record).await?)
         };
         let mut matches = n4user::Entity::find()
             .order_by_asc(n4user::Column::LoginId)
@@ -579,11 +565,66 @@ impl AppRepository {
         let truncated = matches.len() > limit;
         matches.truncate(limit);
 
-        Ok(Some(IssueAssignableUserSearchRecord {
+        Ok(IssueAssignableUserSearchRecord {
             items: matches,
             total,
             truncated,
-        }))
+        })
+    }
+
+    pub async fn list_project_assignable_users(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        query: &str,
+        search_type: &str,
+        limit: usize,
+    ) -> Result<Option<IssueAssignableUserSearchRecord>, DbErr> {
+        let Some(project_record) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+
+        self.list_assignable_users_for_project(&project_record, None, query, search_type, limit)
+            .await
+            .map(Some)
+    }
+
+    pub async fn list_issue_assignable_users(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        query: &str,
+        search_type: &str,
+        limit: usize,
+    ) -> Result<Option<IssueAssignableUserSearchRecord>, DbErr> {
+        let Some((project_record, issue_model)) = self
+            .read_project_issue_model(owner_name, project_name, issue_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+
+        let current_assignee_user_id = match issue_model.assignee_id {
+            Some(assignee_id) => assignee::Entity::find_by_id(assignee_id)
+                .one(&self.db)
+                .await?
+                .and_then(|row| row.user_id),
+            None => None,
+        };
+
+        self.list_assignable_users_for_project(
+            &project_record,
+            current_assignee_user_id,
+            query,
+            search_type,
+            limit,
+        )
+        .await
+        .map(Some)
     }
 
     pub async fn add_issue_sharer(

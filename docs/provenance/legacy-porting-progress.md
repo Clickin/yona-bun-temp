@@ -157,7 +157,7 @@ Interpretation:
 - [x] Unvote issue
 - [x] Assignee assign/unassign basics
 - [x] Issue detail assignee autocomplete/search
-- [ ] Create/edit assignee autocomplete/search
+- [x] Create/edit assignee autocomplete/search
 - [x] Mass update
 - [x] Issue label consumption in list/detail
 - [x] Issue milestone consumption in list/detail

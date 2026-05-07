@@ -1,10 +1,23 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { readIssueDetail, readProjectContainer, updateIssue } from "../../../../../../auth-workspace-client";
+import {
+  readIssueDetail,
+  readProjectContainer,
+  searchProjectAssignableUsers,
+  updateIssue,
+} from "../../../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../../../app-runtime-context";
-import { toProjectContainerView, toProjectIssueDetailView } from "../../../../../../app-view-models";
+import {
+  toProjectContainerView,
+  toProjectIssueDetailView,
+} from "../../../../../../app-view-models";
 import { ProjectIssueFormPage } from "../../../../../-issue-views";
-import { classifyConnectFailure, ForbiddenPage, NotFoundPage, useDocumentTitle } from "../../../../../-shared";
+import {
+  classifyConnectFailure,
+  ForbiddenPage,
+  NotFoundPage,
+  useDocumentTitle,
+} from "../../../../../-shared";
 
 export const Route = createFileRoute("/$owner/$projectName/issue/$issueNumber/editform")({
   component: IssueEditRouteComponent,
@@ -14,8 +27,12 @@ function IssueEditRouteComponent() {
   const { owner, projectName, issueNumber } = Route.useParams();
   const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/issue/${issueNumber}/editform`;
-  const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(null);
-  const [issue, setIssue] = React.useState<ReturnType<typeof toProjectIssueDetailView> | null>(null);
+  const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
+    null,
+  );
+  const [issue, setIssue] = React.useState<ReturnType<typeof toProjectIssueDetailView> | null>(
+    null,
+  );
   const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
 
   useDocumentTitle(issue?.title ? `Edit ${issue.title}` : "Edit Issue");
@@ -51,7 +68,11 @@ function IssueEditRouteComponent() {
   }, [issueNumber, owner, projectName, runtimeConfig, setErrorMessage]);
 
   if (bootstrapping) {
-    return <main className="app-shell"><h1>Loading...</h1></main>;
+    return (
+      <main className="app-shell">
+        <h1>Loading...</h1>
+      </main>
+    );
   }
   if (failureKind === "forbidden") {
     return <ForbiddenPage href={routeHref} />;
@@ -65,8 +86,16 @@ function IssueEditRouteComponent() {
       detail={detail}
       initialIssue={issue}
       mode="edit"
-      onSubmit={async ({ bodyMarkdown, title }) => {
+      onSearchAssignableUsers={(query) =>
+        searchProjectAssignableUsers(runtimeConfig, {
+          ownerName: owner,
+          projectName,
+          query,
+        })
+      }
+      onSubmit={async ({ assigneeLoginId, bodyMarkdown, title }) => {
         const updated = await updateIssue(runtimeConfig, csrfToken, {
+          assigneeLoginId,
           bodyMarkdown,
           issueNumber: BigInt(Number(issueNumber)),
           ownerName: owner,

@@ -25,7 +25,9 @@ import {
 import {
   ISSUE_ASSIGNEE_SEARCH_DEBOUNCE_MS,
   IssueAssignableUserSuggestions,
+  ProjectIssueFormPage,
   ProjectIssueDetailPage,
+  buildProjectIssueFormSubmitInput,
   shouldSearchIssueAssignee,
   submitIssueAssigneeSuggestion,
   submitIssueAssigneeText,
@@ -514,6 +516,95 @@ describe("auth and workspace views", () => {
     expect(shouldSearchIssueAssignee("")).toBe(false);
     expect(shouldSearchIssueAssignee("   ")).toBe(false);
     expect(shouldSearchIssueAssignee("do")).toBe(true);
+  });
+
+  it("renders create and edit issue forms with project-scoped assignee autocomplete input", () => {
+    const createHtml = renderToStaticMarkup(
+      <ProjectIssueFormPage
+        detail={{
+          enrollmentRequested: false,
+          isFavorited: false,
+          organizationName: "",
+          overview: "",
+          ownerName: "owner",
+          projectName: "projectYobi",
+          projectScope: "public",
+          viewerCanEnroll: false,
+          viewerCanUpdate: true,
+        }}
+        mode="create"
+        onSearchAssignableUsers={async () => ({ items: [], total: 0, truncated: false })}
+        onSubmit={async () => undefined}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+    expect(createHtml).toContain('name="assigneeLoginId"');
+    expect(createHtml).toContain('placeholder="Assignee"');
+    expect(createHtml).not.toContain("Searching...");
+
+    const editHtml = renderToStaticMarkup(
+      <ProjectIssueFormPage
+        detail={null}
+        initialIssue={
+          {
+            assigneeLoginId: "guest",
+            bodyMarkdown: "Existing body",
+            title: "Existing issue",
+          } as ProjectIssueDetailViewModel
+        }
+        mode="edit"
+        onSearchAssignableUsers={async () => ({ items: [], total: 0, truncated: false })}
+        onSubmit={async () => undefined}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+    expect(editHtml).toContain('value="guest"');
+  });
+
+  it("builds create and edit issue submit payloads with selected, manual, and blank assignee values", () => {
+    expect(
+      buildProjectIssueFormSubmitInput({
+        assigneeLoginId: "guest",
+        bodyMarkdown: "Body",
+        title: "  New issue  ",
+      }),
+    ).toEqual({
+      assigneeLoginId: "guest",
+      bodyMarkdown: "Body",
+      title: "New issue",
+    });
+
+    expect(
+      buildProjectIssueFormSubmitInput({
+        assigneeLoginId: "  member  ",
+        bodyMarkdown: "Updated",
+        title: "Edit issue",
+      }),
+    ).toEqual({
+      assigneeLoginId: "member",
+      bodyMarkdown: "Updated",
+      title: "Edit issue",
+    });
+
+    expect(
+      buildProjectIssueFormSubmitInput({
+        assigneeLoginId: "   ",
+        bodyMarkdown: "Updated",
+        title: "Edit issue",
+      }),
+    ).toEqual({
+      assigneeLoginId: "",
+      bodyMarkdown: "Updated",
+      title: "Edit issue",
+    });
+
+    expect(
+      buildProjectIssueFormSubmitInput({
+        assigneeLoginId: "guest",
+        bodyMarkdown: "Body",
+        title: "   ",
+      }),
+    ).toBeNull();
   });
 
   it("keeps shared issue viewers on read/comment controls without issue mutation controls", () => {

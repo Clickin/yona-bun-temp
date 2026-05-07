@@ -2780,6 +2780,29 @@ fn build_rest_issue_meta_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/owners/{owner_name}/projects/{project_name}/assignable-users",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestIssueAssignableUsersQuery>| {
+                    let session_manager = service.session_manager.clone();
+                    let backend = service.backend.clone();
+                    async move {
+                        rest_list_project_assignable_users(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
             "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/assignable-users",
             get({
                 let service = service.clone();
@@ -5437,6 +5460,67 @@ async fn rest_read_issue_detail(
     )))
 }
 
+fn rest_issue_assignable_users_response(
+    record: persistence::IssueAssignableUserSearchRecord,
+) -> RestIssueAssignableUsersResponse {
+    RestIssueAssignableUsersResponse {
+        items: record
+            .items
+            .into_iter()
+            .map(|item| RestIssueAssignableUserItem {
+                avatar_url: item.avatar_url,
+                display_name: item.display_name,
+                login_id: item.login_id,
+                pure_name_only: item.pure_name_only,
+                r#type: "user".to_string(),
+            })
+            .collect(),
+        total: record.total,
+        truncated: record.truncated,
+    }
+}
+
+async fn rest_list_project_assignable_users(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: RestIssueAssignableUsersQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestIssueAssignableUsersResponse>, RestRouteError> {
+    if owner_name.trim().is_empty() || project_name.trim().is_empty() {
+        return Err(RestRouteError::bad_request(
+            "invalid project assignable users request",
+        ));
+    }
+
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "project assignable users require repository backend",
+        ));
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    require_project_read(repository, &owner_name, &project_name, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let record = repository
+        .list_project_assignable_users(
+            &owner_name,
+            &project_name,
+            &query.query,
+            &query.search_type,
+            10,
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pilot project not found"))?;
+
+    Ok(Json(rest_issue_assignable_users_response(record)))
+}
+
 async fn rest_list_issue_assignable_users(
     headers: HeaderMap,
     owner_name: String,
@@ -5483,21 +5567,7 @@ async fn rest_list_issue_assignable_users(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
 
-    Ok(Json(RestIssueAssignableUsersResponse {
-        items: record
-            .items
-            .into_iter()
-            .map(|item| RestIssueAssignableUserItem {
-                avatar_url: item.avatar_url,
-                display_name: item.display_name,
-                login_id: item.login_id,
-                pure_name_only: item.pure_name_only,
-                r#type: "user".to_string(),
-            })
-            .collect(),
-        total: record.total,
-        truncated: record.truncated,
-    }))
+    Ok(Json(rest_issue_assignable_users_response(record)))
 }
 
 async fn rest_update_issue_state(

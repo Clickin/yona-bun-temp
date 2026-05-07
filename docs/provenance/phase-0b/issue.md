@@ -81,12 +81,19 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 - The API intentionally returns only real user suggestions. Legacy custom pseudo candidates such as assign-to-me, assign-to-author, and no-assignee remain outside this slice; the existing blank manual submit path stays the unassign fallback.
 - Issue read ACL is reused for search, and the existing assignment mutation policy remains unchanged.
 
+## Phase 2K Issue Create/Edit Assignee Search Translation Rule
+
+- Legacy `IssueApi.findAssignableUsersOfProject` backs create/edit assignee selection without requiring an issue number. Rust implements the project-scoped search through `GET /api/v1/owners/:owner/projects/:project/assignable-users?query=&type=`.
+- The response shape and matching semantics stay aligned with the Phase 2J detail endpoint: active real users only, `loginId`/`name`/`englishName` matching, exact field matching when `type` is present, 10 visible results, and `total`/`truncated` metadata.
+- Project-scoped search does not include an inactive or otherwise non-assignable current assignee. Edit form initialization comes from issue detail, and unchanged submit preserves the current `assigneeLoginId` through the existing update mutation.
+- Project read ACL is reused for search, and create/update assignment mutation policy remains unchanged.
+
 ## Phase 2A Evidence
 
 | Evidence                                    | Rust target                                                                                                                                                                               |
 | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Legacy route/controller/view source checked | `IssueApp.java`, `issue/list.scala.html`, `issue/view.scala.html`, `issue/create.scala.html`, `issue/edit.scala.html`, `partial_comments.scala.html`, `partial_event_timeline.scala.html` |
-| REST contract                               | `/api/v1/projects/:owner/:project/issues/**`, `/api/v1/owners/:owner/projects/:project/issues/:number/**`, `crates/server/tests/issue_core_contract.rs`                                  |
+| REST contract                               | `/api/v1/projects/:owner/:project/issues/**`, `/api/v1/owners/:owner/projects/:project/assignable-users`, `/api/v1/owners/:owner/projects/:project/issues/:number/**`, `crates/server/tests/issue_core_contract.rs`, `crates/server/tests/issue_assignable_contract.rs`                                  |
 | Backend behavior                            | `crates/persistence/src/repo.rs`, `crates/server/src/lib.rs`                                                                                                                              |
 | UI route surface                            | `frontend/src/routes/$owner/$projectName/issues`, `issueform`, `issue/$issueNumber`, `issue/$issueNumber/editform`                                                                        |
 | Regression tests                            | `cargo test -p yona-rust-pilot-server --test issue_core_contract`                                                                                                                         |
@@ -137,10 +144,20 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | UI route surface         | `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/-issue-views.tsx`, `frontend/src/api/issue-meta.ts` |
 | Regression tests         | `cargo test -p yona-rust-pilot-server --test issue_assignable_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts auth-workspace-shell.spec.tsx` |
 
+## Phase 2K Evidence
+
+| Evidence                 | Rust target                                                                                                                                 |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Legacy assignable source | `yona-original/app/controllers/api/IssueApi.java#findAssignableUsersOfProject`, `yona-original/app/views/issue/partial_assignee.scala.html` |
+| REST contract            | `/api/v1/owners/:owner/projects/:project/assignable-users`, `crates/server/tests/issue_assignable_contract.rs`                              |
+| Backend behavior         | `crates/persistence/src/repo.rs`, `crates/persistence/src/repo_types.rs`, `crates/server/src/lib.rs`                                        |
+| UI route surface         | `frontend/src/routes/$owner/$projectName/issueform/route.tsx`, `frontend/src/routes/$owner/$projectName/issue/$issueNumber/editform/route.tsx`, `frontend/src/routes/-issue-views.tsx`, `frontend/src/api/issue-meta.ts` |
+| Regression tests         | `cargo test -p yona-rust-pilot-server --test issue_assignable_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts auth-workspace-shell.spec.tsx` |
+
 ## Remaining Phase 2 Follow-ups
 
 - Legacy external `/-_-api/v1` issue API parity.
-- Create/edit assignee autocomplete/search, Issue Sharer changed timeline/notification semantics, and mention autocomplete/creation/notification semantics.
+- Issue Sharer changed timeline/notification semantics and mention autocomplete/creation/notification semantics.
 
 ## Shared Surface Notes
 

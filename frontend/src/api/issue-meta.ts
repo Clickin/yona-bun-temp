@@ -8,6 +8,11 @@ type IssueScopeInput = {
   projectName: string;
 };
 
+type ProjectScopeInput = {
+  ownerName: string;
+  projectName: string;
+};
+
 type IssueCommentScopeInput = IssueScopeInput & {
   commentId: bigint | number;
 };
@@ -19,6 +24,11 @@ type IssueAssigneeInput = IssueScopeInput & {
 export type IssueAssignableUserSearchType = "englishName" | "loginId" | "name";
 
 export type IssueAssignableUsersInput = IssueScopeInput & {
+  query: string;
+  type?: IssueAssignableUserSearchType | string;
+};
+
+export type ProjectAssignableUsersInput = ProjectScopeInput & {
   query: string;
   type?: IssueAssignableUserSearchType | string;
 };
@@ -45,10 +55,14 @@ function toInt64Number(value: bigint | number): number {
   return Number(value);
 }
 
-function issuePath(input: IssueScopeInput, suffix = ""): string {
+function projectPath(input: ProjectScopeInput, suffix = ""): string {
   return `/owners/${encodeURIComponent(input.ownerName)}/projects/${encodeURIComponent(
     input.projectName,
-  )}/issues/${toInt64Number(input.issueNumber)}${suffix}`;
+  )}${suffix}`;
+}
+
+function issuePath(input: IssueScopeInput, suffix = ""): string {
+  return `${projectPath(input)}/issues/${toInt64Number(input.issueNumber)}${suffix}`;
 }
 
 function issueCommentPath(input: IssueCommentScopeInput, suffix = ""): string {
@@ -250,6 +264,25 @@ export function searchIssueAssignableUsersRest(
   return restFetch<Partial<IssueAssignableUsersResponse>>(
     runtimeConfig,
     `${issuePath(input)}/assignable-users?${query.toString()}`,
+    {
+      fetchImpl,
+    },
+  ).then(normalizeIssueAssignableUsersResponse);
+}
+
+export function searchProjectAssignableUsersRest(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectAssignableUsersInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<IssueAssignableUsersResponse> {
+  const query = new URLSearchParams();
+  query.set("query", input.query);
+  if (input.type) {
+    query.set("type", input.type);
+  }
+  return restFetch<Partial<IssueAssignableUsersResponse>>(
+    runtimeConfig,
+    `${projectPath(input)}/assignable-users?${query.toString()}`,
     {
       fetchImpl,
     },

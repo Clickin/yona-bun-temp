@@ -1,10 +1,19 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { createIssue, readProjectContainer } from "../../../../auth-workspace-client";
+import {
+  createIssue,
+  readProjectContainer,
+  searchProjectAssignableUsers,
+} from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
 import { ProjectIssueFormPage } from "../../../-issue-views";
-import { classifyConnectFailure, ForbiddenPage, NotFoundPage, useDocumentTitle } from "../../../-shared";
+import {
+  classifyConnectFailure,
+  ForbiddenPage,
+  NotFoundPage,
+  useDocumentTitle,
+} from "../../../-shared";
 
 export const Route = createFileRoute("/$owner/$projectName/issueform")({
   component: IssueCreateRouteComponent,
@@ -14,7 +23,9 @@ function IssueCreateRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/issueform`;
-  const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(null);
+  const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
+    null,
+  );
   const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
 
   useDocumentTitle("New Issue");
@@ -46,7 +57,11 @@ function IssueCreateRouteComponent() {
   }, [owner, projectName, runtimeConfig, setErrorMessage]);
 
   if (bootstrapping) {
-    return <main className="app-shell"><h1>Loading...</h1></main>;
+    return (
+      <main className="app-shell">
+        <h1>Loading...</h1>
+      </main>
+    );
   }
   if (failureKind === "forbidden") {
     return <ForbiddenPage href={routeHref} />;
@@ -59,8 +74,16 @@ function IssueCreateRouteComponent() {
     <ProjectIssueFormPage
       detail={detail}
       mode="create"
-      onSubmit={async ({ bodyMarkdown, title }) => {
+      onSearchAssignableUsers={(query) =>
+        searchProjectAssignableUsers(runtimeConfig, {
+          ownerName: owner,
+          projectName,
+          query,
+        })
+      }
+      onSubmit={async ({ assigneeLoginId, bodyMarkdown, title }) => {
         const issue = await createIssue(runtimeConfig, csrfToken, {
+          assigneeLoginId,
           bodyMarkdown,
           ownerName: owner,
           projectName,
