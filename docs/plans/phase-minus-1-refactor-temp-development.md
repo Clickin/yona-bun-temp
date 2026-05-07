@@ -67,7 +67,7 @@ This phase accepted that existing ConnectRPC/proto-based work could be rewritten
 
 - `rg -n "createConnectTransport|createPilotClient|@connectrpc|/rpc/yona\\.pilot|connectrpc|rpcBaseUrl|VITE_YONA_RPC_BASE_URL|/rpc" frontend crates` returns no matches on the integration branch after production build output is regenerated.
 - `cargo test -p yona-rust-pilot-server --test router_contract --test db_router_contract --test rest_contract --test auth_workspace_contract --test org_project_contract --test assets_contract --test issue_core_contract --test issue_label_contract --test issue_sharer_contract --test issue_comment_vote_contract --test milestone_contract --test organization_issue_contract --test user_issue_favorite_contract --test code_browser_contract --test runtime_config_contract` passed on the integration branch.
-- `cargo test --workspace` passed non-Docker/unit/contract suites but is blocked by local Docker/testcontainers availability at `crates/server/tests/db_matrix_testcontainers.rs` with `postgres container: Client(CreateContainer(... os error 2 ...))`.
+- `cargo test --workspace` passed on the integration branch, including `crates/server/tests/db_matrix_testcontainers.rs` testcontainers coverage.
 - `pnpm --dir frontend check` passed on the integration branch.
 - `pnpm --dir frontend test` passed on the integration branch: 10 files, 72 tests.
 - `pnpm --dir frontend test:e2e` passed on the integration branch: 12 tests.

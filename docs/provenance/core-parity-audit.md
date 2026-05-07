@@ -80,4 +80,4 @@
 - `pnpm --dir frontend test:e2e` is green for `tests/shell-routing-smoke.e2e.ts`.
 - `cargo test --manifest-path Cargo.toml -p yona-rust-pilot-server --test router_contract --test db_router_contract` is green.
 - `/api/v1/organizations` now provides the additive public organization directory feed used by the Rust route shell.
-- Non-Docker Rust workspace verification is green; Docker/testcontainers coverage still depends on host permissions.
+- Rust workspace verification is green, including Docker/testcontainers coverage.
