@@ -16,6 +16,27 @@ type IssueAssigneeInput = IssueScopeInput & {
   assigneeLoginId: string;
 };
 
+export type IssueAssignableUserSearchType = "englishName" | "loginId" | "name";
+
+export type IssueAssignableUsersInput = IssueScopeInput & {
+  query: string;
+  type?: IssueAssignableUserSearchType | string;
+};
+
+export type IssueAssignableUserItem = {
+  avatarUrl: string;
+  displayName: string;
+  loginId: string;
+  pureNameOnly: string;
+  type: "user";
+};
+
+export type IssueAssignableUsersResponse = {
+  items: IssueAssignableUserItem[];
+  total: number;
+  truncated: boolean;
+};
+
 type IssueShareInput = IssueScopeInput & {
   loginId: string;
 };
@@ -34,9 +55,7 @@ function issueCommentPath(input: IssueCommentScopeInput, suffix = ""): string {
   return `${issuePath(input)}/comments/${toInt64Number(input.commentId)}${suffix}`;
 }
 
-function normalizeIssueDetailResponse(
-  response: ReadIssueDetailResponse,
-): ReadIssueDetailResponse {
+function normalizeIssueDetailResponse(response: ReadIssueDetailResponse): ReadIssueDetailResponse {
   return {
     ...response,
     assigneeLabel: response.assigneeLabel ?? "",
@@ -107,6 +126,23 @@ function normalizeIssueDetailResponse(
           }
         : item.comment,
     })),
+  };
+}
+
+function normalizeIssueAssignableUsersResponse(
+  response: Partial<IssueAssignableUsersResponse>,
+): IssueAssignableUsersResponse {
+  const items = (response.items ?? []).map((item) => ({
+    avatarUrl: item.avatarUrl ?? "",
+    displayName: item.displayName ?? "",
+    loginId: item.loginId ?? "",
+    pureNameOnly: item.pureNameOnly ?? "",
+    type: "user" as const,
+  }));
+  return {
+    items,
+    total: response.total ?? items.length,
+    truncated: response.truncated ?? false,
   };
 }
 
@@ -199,6 +235,25 @@ export function toggleFavoriteIssueRest(
     fetchImpl,
     method: "POST",
   }).then(normalizeIssueDetailResponse);
+}
+
+export function searchIssueAssignableUsersRest(
+  runtimeConfig: RuntimeConfig,
+  input: IssueAssignableUsersInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<IssueAssignableUsersResponse> {
+  const query = new URLSearchParams();
+  query.set("query", input.query);
+  if (input.type) {
+    query.set("type", input.type);
+  }
+  return restFetch<Partial<IssueAssignableUsersResponse>>(
+    runtimeConfig,
+    `${issuePath(input)}/assignable-users?${query.toString()}`,
+    {
+      fetchImpl,
+    },
+  ).then(normalizeIssueAssignableUsersResponse);
 }
 
 export function assignIssueRest(

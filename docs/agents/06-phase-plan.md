@@ -38,7 +38,8 @@
 - Phase 2F complete: organization issue listing body parity with visible-project aggregation, core filters, and organization shell route.
 - Phase 2G complete: favorite issue toggle/detail projection and `/user/issues` personal aggregate list with assigned/authored/commented/mentioned/shared/favorite quick filters.
 - Phase 2H complete: REST issue comment vote/unvote, legacy direct comment-vote POST route compatibility, comment voter projection, issue detail comment-row controls, and direct/inherited sharer ACL coverage.
-- Remaining Phase 2 packets: legacy external `/-_-api/v1` issue API parity, sharable autocomplete/sharer notification follow-ups, mention creation/autocomplete/notification semantics, and Phase 6 label copy flow.
+- Phase 2J complete: issue detail assignee autocomplete/search over `/api/v1/owners/:owner/projects/:project/issues/:number/assignable-users`, with legacy visibility rules, current-assignee inclusion, and existing assignment mutation fallback.
+- Remaining Phase 2 packets: legacy external `/-_-api/v1` issue API parity, create/edit assignee autocomplete/search, sharable autocomplete/sharer notification follow-ups, mention creation/autocomplete/notification semantics, and Phase 6 label copy flow.
 
 ## Phase 3: 저장소와 VCS
 

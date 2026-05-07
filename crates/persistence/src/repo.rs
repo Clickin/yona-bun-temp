@@ -1,7 +1,8 @@
 use crate::repo_types::{
     AppUserInput, AppUserRecord, AttachmentRecord, CreateIssueCommentInput, CreateIssueInput,
     CreateOrganizationInput, CreateProjectInput, CreateProjectLabelCategoryInput,
-    CreateProjectLabelInput, CreateUserInput, IssueAttachmentRecord, IssueCommentRecord,
+    CreateProjectLabelInput, CreateUserInput, IssueAssignableUserRecord,
+    IssueAssignableUserSearchRecord, IssueAttachmentRecord, IssueCommentRecord,
     IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter,
     IssueMilestoneRecord, IssueRecord, IssueShareStatus, IssueSharerRecord,
     IssueTimelineItemRecord, MassUpdateIssuesInput, MilestoneListFilter, MilestoneMutationInput,
@@ -57,6 +58,55 @@ fn empty_to_none(value: Option<String>) -> Option<String> {
 
 fn user_state_from_confirmed(is_confirmed: bool) -> Option<String> {
     Some(if is_confirmed { "active" } else { "pending" }.to_string())
+}
+
+fn issue_assignable_user_matches(user: &n4user::Model, query: &str, search_type: &str) -> bool {
+    let query = query.trim();
+    let normalized_query = normalize_identity(query);
+    match search_type {
+        "loginId" => {
+            normalize_optional(user.login_id.as_deref()).as_deref()
+                == Some(normalized_query.as_str())
+        }
+        "name" => user
+            .name
+            .as_deref()
+            .is_some_and(|value| value.trim().eq_ignore_ascii_case(query)),
+        "englishName" => user
+            .english_name
+            .as_deref()
+            .is_some_and(|value| value.trim().eq_ignore_ascii_case(query)),
+        _ => {
+            let contains_query = |value: Option<&str>| {
+                normalize_optional(value)
+                    .is_some_and(|value| value.contains(normalized_query.as_str()))
+            };
+            contains_query(user.login_id.as_deref())
+                || contains_query(user.name.as_deref())
+                || contains_query(user.english_name.as_deref())
+        }
+    }
+}
+
+fn issue_assignable_user_record(user: n4user::Model) -> IssueAssignableUserRecord {
+    let login_id = user.login_id.unwrap_or_default();
+    let display_name = user.name.unwrap_or_else(|| login_id.clone());
+    let pure_name_only = pure_user_name(&display_name);
+    IssueAssignableUserRecord {
+        avatar_url: String::new(),
+        display_name,
+        login_id,
+        pure_name_only,
+    }
+}
+
+fn pure_user_name(display_name: &str) -> String {
+    let bracket_index = ["[", "("]
+        .iter()
+        .filter_map(|marker| display_name.find(marker))
+        .min()
+        .unwrap_or(display_name.len());
+    display_name[..bracket_index].trim().to_string()
 }
 
 fn issue_state_to_raw(value: &str) -> i32 {
@@ -462,6 +512,78 @@ impl AppRepository {
             direct,
             inherited_from_parent,
         })
+    }
+
+    pub async fn list_issue_assignable_users(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        query: &str,
+        search_type: &str,
+        limit: usize,
+    ) -> Result<Option<IssueAssignableUserSearchRecord>, DbErr> {
+        let Some((project_record, issue_model)) = self
+            .read_project_issue_model(owner_name, project_name, issue_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let query = query.trim();
+        if query.is_empty() {
+            return Ok(Some(IssueAssignableUserSearchRecord {
+                items: vec![],
+                total: 0,
+                truncated: false,
+            }));
+        }
+
+        let current_assignee_user_id = match issue_model.assignee_id {
+            Some(assignee_id) => assignee::Entity::find_by_id(assignee_id)
+                .one(&self.db)
+                .await?
+                .and_then(|row| row.user_id),
+            None => None,
+        };
+        let visible_user_ids = if normalize_identity(&project_record.project_scope) == "public" {
+            None
+        } else {
+            Some(self.assignable_member_user_ids(&project_record).await?)
+        };
+        let mut matches = n4user::Entity::find()
+            .order_by_asc(n4user::Column::LoginId)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter(|user| issue_assignable_user_matches(user, query, search_type))
+            .filter(|user| {
+                let is_current_assignee = current_assignee_user_id == Some(user.id);
+                let is_active =
+                    normalize_optional(user.state.as_deref()).as_deref() == Some("active");
+                let is_visible = visible_user_ids
+                    .as_ref()
+                    .is_none_or(|user_ids| user_ids.contains(&user.id));
+                is_current_assignee || (is_active && is_visible)
+            })
+            .map(issue_assignable_user_record)
+            .collect::<Vec<_>>();
+
+        matches.sort_by(|left, right| {
+            normalize_identity(&left.display_name)
+                .cmp(&normalize_identity(&right.display_name))
+                .then_with(|| {
+                    normalize_identity(&left.login_id).cmp(&normalize_identity(&right.login_id))
+                })
+        });
+        let total = matches.len() as u32;
+        let truncated = matches.len() > limit;
+        matches.truncate(limit);
+
+        Ok(Some(IssueAssignableUserSearchRecord {
+            items: matches,
+            total,
+            truncated,
+        }))
     }
 
     pub async fn add_issue_sharer(
@@ -2268,6 +2390,32 @@ impl AppRepository {
         .await?;
 
         Ok(())
+    }
+
+    async fn assignable_member_user_ids(
+        &self,
+        project_record: &ProjectRecord,
+    ) -> Result<HashSet<i64>, DbErr> {
+        let mut user_ids = project_user::Entity::find()
+            .filter(project_user::Column::ProjectId.eq(Some(project_record.id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|membership| membership.user_id)
+            .collect::<HashSet<_>>();
+
+        if let Some(organization_id) = project_record.organization_id {
+            user_ids.extend(
+                organization_user::Entity::find()
+                    .filter(organization_user::Column::OrganizationId.eq(Some(organization_id)))
+                    .all(&self.db)
+                    .await?
+                    .into_iter()
+                    .filter_map(|membership| membership.user_id),
+            );
+        }
+
+        Ok(user_ids)
     }
 
     pub async fn update_project(

@@ -7,6 +7,7 @@ import {
   deleteIssue,
   readIssueDetail,
   readProjectContainer,
+  searchIssueAssignableUsers,
   shareIssue,
   toggleFavoriteIssue,
   unvoteIssue,
@@ -106,6 +107,14 @@ function IssueDetailRouteComponent() {
         });
         setIssue(toProjectIssueDetailView(nextIssue));
       }}
+      onSearchAssignableUsers={(query) =>
+        searchIssueAssignableUsers(runtimeConfig, {
+          issueNumber: BigInt(Number(issueNumber)),
+          ownerName: owner,
+          projectName,
+          query,
+        })
+      }
       onCommentDelete={async (commentId) => {
         const nextIssue = await deleteIssueComment(runtimeConfig, csrfToken, {
           commentId: BigInt(commentId),

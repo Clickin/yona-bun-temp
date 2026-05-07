@@ -50,6 +50,7 @@ import {
   setMainWorkspaceEmail,
   signInWithPassword,
   signOut,
+  searchIssueAssignableUsers,
   toggleFavoriteProject,
   toggleProjectWatch,
   toggleWorkspaceNotification,
@@ -111,31 +112,15 @@ describe("organization and project REST wrappers", () => {
 
     await listProjects(runtimeConfig, fetchMock as unknown as typeof fetch);
     await listOrganizations(runtimeConfig, fetchMock as unknown as typeof fetch);
-    await readOrganizationDetail(
-      runtimeConfig,
-      "web labs",
-      fetchMock as unknown as typeof fetch,
-    );
-    await readOrganizationAdmin(
-      runtimeConfig,
-      "web labs",
-      fetchMock as unknown as typeof fetch,
-    );
+    await readOrganizationDetail(runtimeConfig, "web labs", fetchMock as unknown as typeof fetch);
+    await readOrganizationAdmin(runtimeConfig, "web labs", fetchMock as unknown as typeof fetch);
     await readOrganizationContainer(
       runtimeConfig,
       "web labs",
       fetchMock as unknown as typeof fetch,
     );
-    await readOrganizationSettings(
-      runtimeConfig,
-      "web labs",
-      fetchMock as unknown as typeof fetch,
-    );
-    await readOrganizationMembers(
-      runtimeConfig,
-      "web labs",
-      fetchMock as unknown as typeof fetch,
-    );
+    await readOrganizationSettings(runtimeConfig, "web labs", fetchMock as unknown as typeof fetch);
+    await readOrganizationMembers(runtimeConfig, "web labs", fetchMock as unknown as typeof fetch);
     await readProjectDetail(
       runtimeConfig,
       "owner space",
@@ -704,6 +689,57 @@ describe("workspace REST clients", () => {
   });
 });
 
+describe("issue assignable user REST client", () => {
+  it("encodes assignable-user search queries and normalizes sparse responses", async () => {
+    const fetchMock = vi.fn(async () =>
+      okJsonResponse({
+        items: [
+          {
+            loginId: "door",
+          },
+        ],
+      }),
+    );
+
+    const result = await searchIssueAssignableUsers(
+      runtimeConfig,
+      {
+        issueNumber: 7n,
+        ownerName: "owner space",
+        projectName: "project/Yobi",
+        query: "Door Name",
+        type: "name",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { credentials: string; headers: Headers; method: string },
+    ];
+    expect(requestUrl).toBe(
+      "/yona/api/v1/owners/owner%20space/projects/project%2FYobi/issues/7/assignable-users?query=Door+Name&type=name",
+    );
+    expect(requestInit.credentials).toBe("same-origin");
+    expect(requestInit.headers.get("Accept")).toBe("application/json");
+    expect(requestInit.method).toBe("GET");
+    expect(result).toEqual({
+      items: [
+        {
+          avatarUrl: "",
+          displayName: "",
+          loginId: "door",
+          pureNameOnly: "",
+          type: "user",
+        },
+      ],
+      total: 1,
+      truncated: false,
+    });
+  });
+});
+
 describe("REST auth wrappers", () => {
   it("reads auth capabilities from the v1 REST endpoint", async () => {
     const fetchMock = vi.fn(async () => ({
@@ -717,7 +753,10 @@ describe("REST auth wrappers", () => {
         }),
     }));
 
-    const result = await readAuthUiCapabilities(runtimeConfig, fetchMock as unknown as typeof fetch);
+    const result = await readAuthUiCapabilities(
+      runtimeConfig,
+      fetchMock as unknown as typeof fetch,
+    );
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
@@ -828,11 +867,7 @@ describe("REST auth wrappers", () => {
       text: async () => JSON.stringify({ isAnonymous: true }),
     }));
 
-    const result = await signOut(
-      runtimeConfig,
-      "csrf-789",
-      fetchMock as unknown as typeof fetch,
-    );
+    const result = await signOut(runtimeConfig, "csrf-789", fetchMock as unknown as typeof fetch);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
@@ -881,9 +916,7 @@ describe("issue metadata REST clients", () => {
     const calls = fetchMock.mock.calls as unknown as Array<
       [string, { credentials: string; headers: Headers; method: string }]
     >;
-    expect(calls[0]![0]).toBe(
-      "/yona/api/v1/owners/owner/projects/projectYobi/issues/7/watch",
-    );
+    expect(calls[0]![0]).toBe("/yona/api/v1/owners/owner/projects/projectYobi/issues/7/watch");
     expect(calls[0]![1].headers.get("x-csrf-token")).toBe("csrf-watch");
     expect(calls[0]![1].method).toBe("POST");
     expect(calls[1]![0]).toBe(
@@ -1057,9 +1090,7 @@ describe("issue REST clients", () => {
     expect(readCalls[2]![0]).toBe(
       "/yona/api/v1/user/issues?filter=assigned&orderBy=updatedDate&orderDir=desc&pageNum=4&pageSize=15&query=pilot&state=open",
     );
-    expect(readCalls[3]![0]).toBe(
-      "/yona/api/v1/projects/owner%20space/project%2Fname/issues/11",
-    );
+    expect(readCalls[3]![0]).toBe("/yona/api/v1/projects/owner%20space/project%2Fname/issues/11");
     for (const [, requestInit] of readCalls) {
       expect(requestInit.credentials).toBe("same-origin");
       expect(requestInit.headers.get("Accept")).toBe("application/json");
@@ -1189,9 +1220,7 @@ describe("issue REST clients", () => {
       string,
       { body: string; method: string },
     ];
-    expect(massUpdateCall[0]).toBe(
-      "/yona/api/v1/projects/owner/projectYobi/issues/mass-update",
-    );
+    expect(massUpdateCall[0]).toBe("/yona/api/v1/projects/owner/projectYobi/issues/mass-update");
     expect(massUpdateCall[1].method).toBe("POST");
     expect(JSON.parse(massUpdateCall[1].body)).toEqual({
       addLabelIds: [],
@@ -1234,15 +1263,9 @@ describe("issue REST clients", () => {
       fetchMock as unknown as typeof fetch,
     );
 
-    const deleteCalls = fetchMock.mock.calls as unknown as Array<
-      [string, { method: string }]
-    >;
-    expect(deleteCalls[0]![0]).toBe(
-      "/yona/api/v1/projects/owner/projectYobi/issues/5",
-    );
-    expect(deleteCalls[1]![0]).toBe(
-      "/yona/api/v1/projects/owner/projectYobi/issues/5/comments/8",
-    );
+    const deleteCalls = fetchMock.mock.calls as unknown as Array<[string, { method: string }]>;
+    expect(deleteCalls[0]![0]).toBe("/yona/api/v1/projects/owner/projectYobi/issues/5");
+    expect(deleteCalls[1]![0]).toBe("/yona/api/v1/projects/owner/projectYobi/issues/5/comments/8");
     expect(deleteCalls[0]![1].method).toBe("DELETE");
     expect(deleteCalls[1]![1].method).toBe("DELETE");
   });

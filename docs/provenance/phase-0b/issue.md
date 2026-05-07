@@ -3,7 +3,7 @@
 ## Scope
 
 - Phase 2A issue core parity slice
-- Issue list/detail/create/edit/delete, comments, comment vote, state mutation, watch/vote/favorite/assignee, mass update, Markdown rendering, issue/comment attachment binding, core Issue Sharer read/comment authorization, and `/user/issues` personal issue aggregation now have Rust canonical coverage.
+- Issue list/detail/create/edit/delete, comments, comment vote, state mutation, watch/vote/favorite/assignee, issue detail assignee autocomplete/search, mass update, Markdown rendering, issue/comment attachment binding, core Issue Sharer read/comment authorization, and `/user/issues` personal issue aggregation now have Rust canonical coverage.
 - Label/category and milestone management screens are now covered by Phase 2B/2C provenance. Phase 2A issue core only owns issue CRUD and issue-linked label/milestone consumption.
 
 ## Legacy Sources
@@ -12,6 +12,7 @@
 - `yona-original/test/models/IssueTest.java`
 - `yona-original/app/controllers/IssueApp.java`
 - `yona-original/app/controllers/VoteApp.java`
+- `yona-original/app/models/Project.java`
 - `yona-original/app/models/IssueComment.java`
 - `yona-original/app/models/IssueSharer.java`
 - `yona-original/app/utils/AccessControl.java`
@@ -19,6 +20,7 @@
 - `yona-original/app/controllers/api/UserApi.java`
 - `yona-original/app/models/FavoriteIssue.java`
 - `yona-original/app/views/issue/view.scala.html`
+- `yona-original/app/views/issue/partial_assignee.scala.html`
 - `yona-original/app/views/issue/partial_comment.scala.html`
 - `yona-original/app/views/issue/my_partial_search.scala.html`
 - `yona-original/app/views/issue/my_partial_list_quicksearch.scala.html`
@@ -71,6 +73,14 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 - Legacy `partial_comment.scala.html` renders voter count/names/avatars and a heart state in the issue comment row. Rust projects `IssueComment.voterCount`, `viewerHasVoted`, and `voters`, then renders the count/list and vote/unvote heart control in the current React issue detail timeline row.
 - Legacy direct POST routes `/:user/:project/issue/:number/comment/:commentId/vote` and `/unvote` are mounted as compatibility wrappers around the same policy, then redirect back to `/:user/:project/issue/:number#comment-:commentId`.
 
+## Phase 2J Issue Detail Assignee Search Translation Rule
+
+- Legacy `IssueApi.findAssignableUsers` searches active users by `loginId`, `name`, or `englishName`, caps suggestions, and filters candidates by project visibility. Rust implements the detail-sidebar search through `GET /api/v1/owners/:owner/projects/:project/issues/:number/assignable-users?query=&type=`.
+- Public projects expose active matching users as assignable suggestions. Private/protected projects expose active matching project members, plus organization members/admins when the project belongs to an organization.
+- The current assignee remains selectable when it matches the query even if it is no longer active or otherwise assignable, matching legacy `Project.getAssignableUsersAndAssignee(issue)` intent.
+- The API intentionally returns only real user suggestions. Legacy custom pseudo candidates such as assign-to-me, assign-to-author, and no-assignee remain outside this slice; the existing blank manual submit path stays the unassign fallback.
+- Issue read ACL is reused for search, and the existing assignment mutation policy remains unchanged.
+
 ## Phase 2A Evidence
 
 | Evidence                                    | Rust target                                                                                                                                                                               |
@@ -116,10 +126,21 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | UI route surface          | `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/-issue-views.tsx`, `frontend/src/app-view-models.ts` |
 | Regression tests          | `cargo test -p yona-rust-pilot-server --test issue_comment_vote_contract`; `pnpm --dir frontend test -- auth-workspace-shell.spec.tsx route-parity.spec.tsx` |
 
+## Phase 2J Evidence
+
+| Evidence                 | Rust target                                                                                                                                 |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Legacy assignable source | `yona-original/app/controllers/api/IssueApi.java#findAssignableUsers`, `yona-original/app/models/Project.java#getAssignableUsersAndAssignee` |
+| Legacy assignee UI       | `yona-original/app/views/issue/partial_assignee.scala.html`, `yona-original/app/views/issue/view.scala.html`                                |
+| REST contract            | `/api/v1/owners/:owner/projects/:project/issues/:number/assignable-users`, `crates/server/tests/issue_assignable_contract.rs`               |
+| Backend behavior         | `crates/persistence/src/repo.rs`, `crates/persistence/src/repo_types.rs`, `crates/server/src/lib.rs`                                        |
+| UI route surface         | `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/-issue-views.tsx`, `frontend/src/api/issue-meta.ts` |
+| Regression tests         | `cargo test -p yona-rust-pilot-server --test issue_assignable_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts auth-workspace-shell.spec.tsx` |
+
 ## Remaining Phase 2 Follow-ups
 
 - Legacy external `/-_-api/v1` issue API parity.
-- Issue Sharer changed timeline/notification semantics and mention autocomplete/creation/notification semantics.
+- Create/edit assignee autocomplete/search, Issue Sharer changed timeline/notification semantics, and mention autocomplete/creation/notification semantics.
 
 ## Shared Surface Notes
 

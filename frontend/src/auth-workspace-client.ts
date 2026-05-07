@@ -73,6 +73,7 @@ import {
 } from "./api/auth";
 import {
   assignIssueRest,
+  searchIssueAssignableUsersRest,
   shareIssueRest,
   toggleFavoriteIssueRest,
   unshareIssueRest,
@@ -82,6 +83,8 @@ import {
   voteIssueCommentRest,
   voteIssueRest,
   watchIssueRest,
+  type IssueAssignableUsersInput,
+  type IssueAssignableUsersResponse,
 } from "./api/issue-meta";
 import {
   closeProjectMilestoneRest,
@@ -389,7 +392,10 @@ function appendIssueQueryParam(
 }
 
 function issueQueryString(
-  values: Record<string, Array<bigint | number | string> | bigint | number | string | null | undefined>,
+  values: Record<
+    string,
+    Array<bigint | number | string> | bigint | number | string | null | undefined
+  >,
 ): string {
   const searchParams = new URLSearchParams();
   for (const [key, value] of Object.entries(values)) {
@@ -572,7 +578,11 @@ export async function updateIssue(
 ): Promise<ReadIssueDetailResponse> {
   return restFetch<ReadIssueDetailResponse>(
     runtimeConfig,
-    projectIssueDetailRestPath(input.ownerName ?? "", input.projectName ?? "", input.issueNumber ?? 0n),
+    projectIssueDetailRestPath(
+      input.ownerName ?? "",
+      input.projectName ?? "",
+      input.issueNumber ?? 0n,
+    ),
     {
       body: issueMutationRestBody(input),
       csrfToken,
@@ -590,7 +600,11 @@ export async function deleteIssue(
 ): Promise<void> {
   await restFetch(
     runtimeConfig,
-    projectIssueDetailRestPath(input.ownerName ?? "", input.projectName ?? "", input.issueNumber ?? 0n),
+    projectIssueDetailRestPath(
+      input.ownerName ?? "",
+      input.projectName ?? "",
+      input.issueNumber ?? 0n,
+    ),
     {
       csrfToken,
       fetchImpl,
@@ -658,11 +672,16 @@ export async function watchIssue(
   input: MessageInitShape<typeof IssueParticipationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return watchIssueRest(runtimeConfig, csrfToken, {
-    issueNumber: input.issueNumber ?? 0n,
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return watchIssueRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      issueNumber: input.issueNumber ?? 0n,
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function unwatchIssue(
@@ -671,11 +690,16 @@ export async function unwatchIssue(
   input: MessageInitShape<typeof IssueParticipationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return unwatchIssueRest(runtimeConfig, csrfToken, {
-    issueNumber: input.issueNumber ?? 0n,
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return unwatchIssueRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      issueNumber: input.issueNumber ?? 0n,
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function voteIssue(
@@ -684,11 +708,16 @@ export async function voteIssue(
   input: MessageInitShape<typeof IssueParticipationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return voteIssueRest(runtimeConfig, csrfToken, {
-    issueNumber: input.issueNumber ?? 0n,
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return voteIssueRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      issueNumber: input.issueNumber ?? 0n,
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function unvoteIssue(
@@ -697,11 +726,16 @@ export async function unvoteIssue(
   input: MessageInitShape<typeof IssueParticipationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return unvoteIssueRest(runtimeConfig, csrfToken, {
-    issueNumber: input.issueNumber ?? 0n,
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return unvoteIssueRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      issueNumber: input.issueNumber ?? 0n,
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function voteIssueComment(
@@ -710,12 +744,17 @@ export async function voteIssueComment(
   input: MessageInitShape<typeof IssueCommentParticipationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return voteIssueCommentRest(runtimeConfig, csrfToken, {
-    commentId: input.commentId ?? 0n,
-    issueNumber: input.issueNumber ?? 0n,
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return voteIssueCommentRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      commentId: input.commentId ?? 0n,
+      issueNumber: input.issueNumber ?? 0n,
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function unvoteIssueComment(
@@ -724,12 +763,17 @@ export async function unvoteIssueComment(
   input: MessageInitShape<typeof IssueCommentParticipationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return unvoteIssueCommentRest(runtimeConfig, csrfToken, {
-    commentId: input.commentId ?? 0n,
-    issueNumber: input.issueNumber ?? 0n,
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return unvoteIssueCommentRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      commentId: input.commentId ?? 0n,
+      issueNumber: input.issueNumber ?? 0n,
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function toggleFavoriteIssue(
@@ -738,11 +782,16 @@ export async function toggleFavoriteIssue(
   input: MessageInitShape<typeof IssueParticipationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return toggleFavoriteIssueRest(runtimeConfig, csrfToken, {
-    issueNumber: input.issueNumber ?? 0n,
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return toggleFavoriteIssueRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      issueNumber: input.issueNumber ?? 0n,
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function assignIssue(
@@ -751,12 +800,25 @@ export async function assignIssue(
   input: MessageInitShape<typeof AssignIssueRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return assignIssueRest(runtimeConfig, csrfToken, {
-    assigneeLoginId: input.assigneeLoginId ?? "",
-    issueNumber: input.issueNumber ?? 0n,
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return assignIssueRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      assigneeLoginId: input.assigneeLoginId ?? "",
+      issueNumber: input.issueNumber ?? 0n,
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
+}
+
+export async function searchIssueAssignableUsers(
+  runtimeConfig: RuntimeConfig,
+  input: IssueAssignableUsersInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<IssueAssignableUsersResponse> {
+  return searchIssueAssignableUsersRest(runtimeConfig, input, fetchImpl);
 }
 
 export async function shareIssue(
@@ -765,12 +827,17 @@ export async function shareIssue(
   input: MessageInitShape<typeof IssueShareRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return shareIssueRest(runtimeConfig, csrfToken, {
-    issueNumber: input.issueNumber ?? 0n,
-    loginId: input.loginId ?? "",
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return shareIssueRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      issueNumber: input.issueNumber ?? 0n,
+      loginId: input.loginId ?? "",
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function unshareIssue(
@@ -779,12 +846,17 @@ export async function unshareIssue(
   input: MessageInitShape<typeof IssueShareRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
-  return unshareIssueRest(runtimeConfig, csrfToken, {
-    issueNumber: input.issueNumber ?? 0n,
-    loginId: input.loginId ?? "",
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return unshareIssueRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      issueNumber: input.issueNumber ?? 0n,
+      loginId: input.loginId ?? "",
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function massUpdateIssues(
@@ -829,14 +901,19 @@ export async function createProjectLabel(
   input: MessageInitShape<typeof CreateProjectLabelRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectLabelMutationResponse> {
-  return createProjectLabelRest(runtimeConfig, csrfToken, {
-    categoryIsExclusive: input.categoryIsExclusive ?? false,
-    categoryName: input.categoryName ?? "",
-    labelColor: input.labelColor ?? "",
-    labelName: input.labelName ?? "",
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return createProjectLabelRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      categoryIsExclusive: input.categoryIsExclusive ?? false,
+      categoryName: input.categoryName ?? "",
+      labelColor: input.labelColor ?? "",
+      labelName: input.labelName ?? "",
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function updateProjectLabel(
@@ -845,14 +922,19 @@ export async function updateProjectLabel(
   input: MessageInitShape<typeof UpdateProjectLabelRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectLabelMutationResponse> {
-  return updateProjectLabelRest(runtimeConfig, csrfToken, {
-    categoryId: input.categoryId ?? 0n,
-    labelColor: input.labelColor ?? "",
-    labelId: input.labelId ?? 0n,
-    labelName: input.labelName ?? "",
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return updateProjectLabelRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      categoryId: input.categoryId ?? 0n,
+      labelColor: input.labelColor ?? "",
+      labelId: input.labelId ?? 0n,
+      labelName: input.labelName ?? "",
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function deleteProjectLabel(
@@ -861,11 +943,16 @@ export async function deleteProjectLabel(
   input: MessageInitShape<typeof DeleteProjectLabelRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<void> {
-  await deleteProjectLabelRest(runtimeConfig, csrfToken, {
-    labelId: input.labelId ?? 0n,
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  await deleteProjectLabelRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      labelId: input.labelId ?? 0n,
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function createProjectLabelCategory(
@@ -874,12 +961,17 @@ export async function createProjectLabelCategory(
   input: MessageInitShape<typeof CreateProjectLabelCategoryRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectLabelCategoryMutationResponse> {
-  return createProjectLabelCategoryRest(runtimeConfig, csrfToken, {
-    categoryIsExclusive: input.categoryIsExclusive ?? false,
-    categoryName: input.categoryName ?? "",
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return createProjectLabelCategoryRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      categoryIsExclusive: input.categoryIsExclusive ?? false,
+      categoryName: input.categoryName ?? "",
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function updateProjectLabelCategory(
@@ -888,13 +980,18 @@ export async function updateProjectLabelCategory(
   input: MessageInitShape<typeof UpdateProjectLabelCategoryRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectLabelCategoryMutationResponse> {
-  return updateProjectLabelCategoryRest(runtimeConfig, csrfToken, {
-    categoryId: input.categoryId ?? 0n,
-    categoryIsExclusive: input.categoryIsExclusive ?? false,
-    categoryName: input.categoryName ?? "",
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return updateProjectLabelCategoryRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      categoryId: input.categoryId ?? 0n,
+      categoryIsExclusive: input.categoryIsExclusive ?? false,
+      categoryName: input.categoryName ?? "",
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function deleteProjectLabelCategory(
@@ -903,11 +1000,16 @@ export async function deleteProjectLabelCategory(
   input: MessageInitShape<typeof DeleteProjectLabelCategoryRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<void> {
-  await deleteProjectLabelCategoryRest(runtimeConfig, csrfToken, {
-    categoryId: input.categoryId ?? 0n,
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  await deleteProjectLabelCategoryRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      categoryId: input.categoryId ?? 0n,
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function listProjectMilestones(
@@ -936,15 +1038,20 @@ export async function createProjectMilestone(
   input: MessageInitShape<typeof CreateProjectMilestoneRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneMutationResponse> {
-  return createProjectMilestoneRest(runtimeConfig, csrfToken, {
-    attachmentIds: input.attachmentIds,
-    contentsMarkdown: input.contentsMarkdown,
-    dueDate: input.dueDate,
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-    state: input.state,
-    title: input.title ?? "",
-  }, fetchImpl);
+  return createProjectMilestoneRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      attachmentIds: input.attachmentIds,
+      contentsMarkdown: input.contentsMarkdown,
+      dueDate: input.dueDate,
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+      state: input.state,
+      title: input.title ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function updateProjectMilestone(
@@ -953,16 +1060,21 @@ export async function updateProjectMilestone(
   input: MessageInitShape<typeof UpdateProjectMilestoneRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneMutationResponse> {
-  return updateProjectMilestoneRest(runtimeConfig, csrfToken, {
-    attachmentIds: input.attachmentIds,
-    contentsMarkdown: input.contentsMarkdown,
-    dueDate: input.dueDate,
-    milestoneId: input.milestoneId ?? 0n,
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-    state: input.state,
-    title: input.title ?? "",
-  }, fetchImpl);
+  return updateProjectMilestoneRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      attachmentIds: input.attachmentIds,
+      contentsMarkdown: input.contentsMarkdown,
+      dueDate: input.dueDate,
+      milestoneId: input.milestoneId ?? 0n,
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+      state: input.state,
+      title: input.title ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function deleteProjectMilestone(
@@ -971,11 +1083,16 @@ export async function deleteProjectMilestone(
   input: MessageInitShape<typeof DeleteProjectMilestoneRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneDeleteResponse> {
-  return deleteProjectMilestoneRest(runtimeConfig, csrfToken, {
-    milestoneId: input.milestoneId ?? 0n,
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return deleteProjectMilestoneRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      milestoneId: input.milestoneId ?? 0n,
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function openProjectMilestone(
@@ -984,11 +1101,16 @@ export async function openProjectMilestone(
   input: MessageInitShape<typeof MilestoneStateMutationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneMutationResponse> {
-  return openProjectMilestoneRest(runtimeConfig, csrfToken, {
-    milestoneId: input.milestoneId ?? 0n,
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return openProjectMilestoneRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      milestoneId: input.milestoneId ?? 0n,
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function closeProjectMilestone(
@@ -997,11 +1119,16 @@ export async function closeProjectMilestone(
   input: MessageInitShape<typeof MilestoneStateMutationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectMilestoneMutationResponse> {
-  return closeProjectMilestoneRest(runtimeConfig, csrfToken, {
-    milestoneId: input.milestoneId ?? 0n,
-    ownerName: input.ownerName ?? "",
-    projectName: input.projectName ?? "",
-  }, fetchImpl);
+  return closeProjectMilestoneRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      milestoneId: input.milestoneId ?? 0n,
+      ownerName: input.ownerName ?? "",
+      projectName: input.projectName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function setDefaultLandingPath(
@@ -1104,10 +1231,15 @@ export async function createOrganization(
   input: MessageInitShape<typeof CreateOrganizationRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationDetail> {
-  return createOrganizationRest(runtimeConfig, csrfToken, {
-    description: input.description ?? "",
-    organizationName: input.organizationName ?? "",
-  }, fetchImpl);
+  return createOrganizationRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      description: input.description ?? "",
+      organizationName: input.organizationName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function readOrganizationDetail(
@@ -1174,10 +1306,15 @@ export async function addOrganizationMember(
   input: MessageInitShape<typeof AddOrganizationMemberRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationAdminView> {
-  return addOrganizationMemberRest(runtimeConfig, csrfToken, {
-    loginId: input.loginId ?? "",
-    organizationName: input.organizationName ?? "",
-  }, fetchImpl);
+  return addOrganizationMemberRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      loginId: input.loginId ?? "",
+      organizationName: input.organizationName ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function updateOrganizationMemberRole(
@@ -1186,11 +1323,16 @@ export async function updateOrganizationMemberRole(
   input: MessageInitShape<typeof UpdateOrganizationMemberRoleRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationAdminView> {
-  return updateOrganizationMemberRoleRest(runtimeConfig, csrfToken, {
-    organizationName: input.organizationName ?? "",
-    role: input.role ?? "",
-    userId: input.userId ?? 0n,
-  }, fetchImpl);
+  return updateOrganizationMemberRoleRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      organizationName: input.organizationName ?? "",
+      role: input.role ?? "",
+      userId: input.userId ?? 0n,
+    },
+    fetchImpl,
+  );
 }
 
 export async function deleteOrganizationMember(
@@ -1199,10 +1341,15 @@ export async function deleteOrganizationMember(
   input: MessageInitShape<typeof DeleteOrganizationMemberRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationAdminView> {
-  return deleteOrganizationMemberRest(runtimeConfig, csrfToken, {
-    organizationName: input.organizationName ?? "",
-    userId: input.userId ?? 0n,
-  }, fetchImpl);
+  return deleteOrganizationMemberRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      organizationName: input.organizationName ?? "",
+      userId: input.userId ?? 0n,
+    },
+    fetchImpl,
+  );
 }
 
 export async function acceptOrganizationEnrollment(
@@ -1211,10 +1358,15 @@ export async function acceptOrganizationEnrollment(
   input: MessageInitShape<typeof AcceptOrganizationEnrollmentRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationAdminView> {
-  return acceptOrganizationEnrollmentRest(runtimeConfig, csrfToken, {
-    organizationName: input.organizationName ?? "",
-    userId: input.userId ?? 0n,
-  }, fetchImpl);
+  return acceptOrganizationEnrollmentRest(
+    runtimeConfig,
+    csrfToken,
+    {
+      organizationName: input.organizationName ?? "",
+      userId: input.userId ?? 0n,
+    },
+    fetchImpl,
+  );
 }
 
 export async function enrollOrganization(
@@ -1259,11 +1411,17 @@ export async function createProject(
   input: MessageInitShape<typeof CreateProjectRequestSchema>,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectDetail> {
-  return createProjectRest(runtimeConfig, csrfToken, input.ownerName ?? "", {
-    overview: input.overview ?? "",
-    projectName: input.projectName ?? "",
-    projectScope: input.projectScope ?? "",
-  }, fetchImpl);
+  return createProjectRest(
+    runtimeConfig,
+    csrfToken,
+    input.ownerName ?? "",
+    {
+      overview: input.overview ?? "",
+      projectName: input.projectName ?? "",
+      projectScope: input.projectScope ?? "",
+    },
+    fetchImpl,
+  );
 }
 
 export async function readProjectDetail(

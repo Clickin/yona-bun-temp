@@ -48,6 +48,21 @@ pub struct IssueSharerRecord {
     pub user_label: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IssueAssignableUserRecord {
+    pub avatar_url: String,
+    pub display_name: String,
+    pub login_id: String,
+    pub pure_name_only: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IssueAssignableUserSearchRecord {
+    pub items: Vec<IssueAssignableUserRecord>,
+    pub total: u32,
+    pub truncated: bool,
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct IssueShareStatus {
     pub direct: bool,

@@ -22,7 +22,14 @@ import {
   renderWorkspace,
   renderWorkspaceSettings,
 } from "./auth-workspace-shell.test-helpers";
-import { ProjectIssueDetailPage } from "./routes/-issue-views";
+import {
+  ISSUE_ASSIGNEE_SEARCH_DEBOUNCE_MS,
+  IssueAssignableUserSuggestions,
+  ProjectIssueDetailPage,
+  shouldSearchIssueAssignee,
+  submitIssueAssigneeSuggestion,
+  submitIssueAssigneeText,
+} from "./routes/-issue-views";
 import type { ProjectIssueDetailViewModel } from "./routes/-view-models";
 
 describe("auth and workspace views", () => {
@@ -432,6 +439,81 @@ describe("auth and workspace views", () => {
     expect(html).toContain('placeholder="Issue sharer login ID"');
     expect(html).toContain(">Share<");
     expect(html).toContain(">Remove sharer<");
+  });
+
+  it("renders issue assignee autocomplete loading, empty, error, and suggestion states", () => {
+    expect(ISSUE_ASSIGNEE_SEARCH_DEBOUNCE_MS).toBe(300);
+
+    const loadingHtml = renderToStaticMarkup(
+      <IssueAssignableUserSuggestions
+        onSelect={() => undefined}
+        state={{ items: [], status: "loading", truncated: false }}
+      />,
+    );
+    expect(loadingHtml).toContain("Searching...");
+
+    const emptyHtml = renderToStaticMarkup(
+      <IssueAssignableUserSuggestions
+        onSelect={() => undefined}
+        state={{ items: [], status: "loaded", truncated: false }}
+      />,
+    );
+    expect(emptyHtml).toContain("No matching users");
+
+    const errorHtml = renderToStaticMarkup(
+      <IssueAssignableUserSuggestions
+        onSelect={() => undefined}
+        state={{ items: [], status: "error", truncated: false }}
+      />,
+    );
+    expect(errorHtml).toContain("Assignable user search failed.");
+
+    const suggestionHtml = renderToStaticMarkup(
+      <IssueAssignableUserSuggestions
+        onSelect={() => undefined}
+        state={{
+          items: [
+            {
+              avatarUrl: "/avatars/door.png",
+              displayName: "Door User",
+              loginId: "door",
+              pureNameOnly: "Door",
+              type: "user",
+            },
+          ],
+          status: "loaded",
+          truncated: true,
+        }}
+      />,
+    );
+    expect(suggestionHtml).toContain("Door User");
+    expect(suggestionHtml).toContain("@door");
+    expect(suggestionHtml).toContain("More matches available");
+  });
+
+  it("keeps assignee suggestion selection, manual assign, and blank unassign on the existing submit flow", async () => {
+    const assigned: string[] = [];
+    const onSubmit = async (loginId: string) => {
+      assigned.push(loginId);
+    };
+
+    await submitIssueAssigneeSuggestion(
+      {
+        avatarUrl: "",
+        displayName: "Guest User",
+        loginId: "guest",
+        pureNameOnly: "Guest",
+        type: "user",
+      },
+      onSubmit,
+    );
+    await submitIssueAssigneeText("  member  ", onSubmit);
+    await submitIssueAssigneeText("   ", onSubmit);
+
+    expect(assigned).toEqual(["guest", "member", ""]);
+    expect(shouldSearchIssueAssignee("")).toBe(false);
+    expect(shouldSearchIssueAssignee("   ")).toBe(false);
+    expect(shouldSearchIssueAssignee("do")).toBe(true);
   });
 
   it("keeps shared issue viewers on read/comment controls without issue mutation controls", () => {

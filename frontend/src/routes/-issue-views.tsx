@@ -1,4 +1,5 @@
 import * as React from "react";
+import type { IssueAssignableUserItem, IssueAssignableUsersResponse } from "../api/issue-meta";
 import type { RuntimeConfig } from "../runtime-config";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
 import type {
@@ -111,6 +112,7 @@ export function ProjectIssueDetailPage(props: {
   detail: ProjectDetailViewModel | null;
   issue: ProjectIssueDetailViewModel | null;
   onAssign?: (assigneeLoginId: string) => Promise<void>;
+  onSearchAssignableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
   onCommentDelete?: (commentId: number) => Promise<void>;
   onCommentSubmit?: (contentsMarkdown: string) => Promise<void>;
   onCommentUpdate?: (commentId: number, contentsMarkdown: string) => Promise<void>;
@@ -195,7 +197,11 @@ export function ProjectIssueDetailPage(props: {
           </button>
         ) : null}
         {issue?.viewerCanUpdate && props.onAssign ? (
-          <IssueAssignForm initialAssignee={issue.assigneeLoginId} onSubmit={props.onAssign} />
+          <IssueAssignForm
+            initialAssignee={issue.assigneeLoginId}
+            onSearchAssignableUsers={props.onSearchAssignableUsers}
+            onSubmit={props.onAssign}
+          />
         ) : null}
         {issue?.viewerCanDelete && onDeleteIssue ? (
           <button onClick={() => void onDeleteIssue()} type="button">
@@ -510,16 +516,131 @@ function IssueSharerPanel(props: {
   );
 }
 
+export const ISSUE_ASSIGNEE_SEARCH_DEBOUNCE_MS = 300;
+
+type IssueAssigneeSearchState = {
+  items: IssueAssignableUserItem[];
+  status: "error" | "idle" | "loaded" | "loading";
+  truncated: boolean;
+};
+
+export function shouldSearchIssueAssignee(value: string): boolean {
+  return value.trim() !== "";
+}
+
+export function submitIssueAssigneeText(
+  value: string,
+  onSubmit: (assigneeLoginId: string) => Promise<void>,
+): Promise<void> {
+  return onSubmit(value.trim());
+}
+
+export function submitIssueAssigneeSuggestion(
+  suggestion: IssueAssignableUserItem,
+  onSubmit: (assigneeLoginId: string) => Promise<void>,
+): Promise<void> {
+  return onSubmit(suggestion.loginId);
+}
+
+export function IssueAssignableUserSuggestions(props: {
+  onSelect: (suggestion: IssueAssignableUserItem) => void;
+  state: IssueAssigneeSearchState;
+}) {
+  if (props.state.status === "idle") {
+    return null;
+  }
+  if (props.state.status === "loading") {
+    return <p className="assignee-autocomplete-status">Searching...</p>;
+  }
+  if (props.state.status === "error") {
+    return <p className="assignee-autocomplete-status">Assignable user search failed.</p>;
+  }
+  if (props.state.items.length === 0) {
+    return <p className="assignee-autocomplete-status">No matching users</p>;
+  }
+
+  return (
+    <div className="assignee-autocomplete">
+      <ul>
+        {props.state.items.map((item) => (
+          <li key={item.loginId}>
+            <button onClick={() => props.onSelect(item)} type="button">
+              {item.avatarUrl ? (
+                <img alt={`${item.displayName} avatar`} src={item.avatarUrl} />
+              ) : null}
+              <span>{item.displayName || item.loginId}</span>
+              <span>{`@${item.loginId}`}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {props.state.truncated ? (
+        <p className="assignee-autocomplete-status">More matches available</p>
+      ) : null}
+    </div>
+  );
+}
+
 function IssueAssignForm(props: {
   initialAssignee: string;
+  onSearchAssignableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
   onSubmit: (assigneeLoginId: string) => Promise<void>;
 }) {
   const [assigneeLoginId, setAssigneeLoginId] = React.useState(props.initialAssignee);
+  const [searchState, setSearchState] = React.useState<IssueAssigneeSearchState>({
+    items: [],
+    status: "idle",
+    truncated: false,
+  });
+
+  React.useEffect(() => {
+    setAssigneeLoginId(props.initialAssignee);
+  }, [props.initialAssignee]);
+
+  React.useEffect(() => {
+    const query = assigneeLoginId.trim();
+    if (!props.onSearchAssignableUsers || !shouldSearchIssueAssignee(query)) {
+      setSearchState({ items: [], status: "idle", truncated: false });
+      return undefined;
+    }
+
+    let cancelled = false;
+    setSearchState({ items: [], status: "loading", truncated: false });
+    const timer = window.setTimeout(() => {
+      props
+        .onSearchAssignableUsers?.(query)
+        .then((response) => {
+          if (!cancelled) {
+            setSearchState({
+              items: response.items,
+              status: "loaded",
+              truncated: response.truncated,
+            });
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setSearchState({ items: [], status: "error", truncated: false });
+          }
+        });
+    }, ISSUE_ASSIGNEE_SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [assigneeLoginId, props.onSearchAssignableUsers]);
+
+  const selectSuggestion = (suggestion: IssueAssignableUserItem) => {
+    setAssigneeLoginId(suggestion.loginId);
+    void submitIssueAssigneeSuggestion(suggestion, props.onSubmit);
+  };
+
   return (
     <form
       onSubmit={(event) => {
         event.preventDefault();
-        void props.onSubmit(assigneeLoginId.trim());
+        void submitIssueAssigneeText(assigneeLoginId, props.onSubmit);
       }}
     >
       <input
@@ -529,6 +650,7 @@ function IssueAssignForm(props: {
         value={assigneeLoginId}
       />
       <button type="submit">Assign</button>
+      <IssueAssignableUserSuggestions onSelect={selectSuggestion} state={searchState} />
     </form>
   );
 }
