@@ -37,7 +37,7 @@ Interpretation:
 | Foundation / DB / runtime               | [~] Mostly implemented    | Schema, migrations, `/api/v1` REST runtime, assets are strong; production migration/import/export is not.                |
 | Auth / Workspace                        | [~] Partially implemented | Core account and settings flows exist; remember-me/admin approval/guest/OAuth/LDAP remain.                               |
 | Organization / Project core             | [~] Partially implemented | CRUD, members, enrollment, watch/favorite basics exist; project admin surfaces remain.                                   |
-| Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists and favorite issue exist over `/api/v1`; mention and legacy external REST parity remain. |
+| Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists, favorite issue, direct sharer row effects, and issue/comment mention row effects exist over `/api/v1`; legacy external REST parity remains. |
 | VCS / Code hosting                      | [~] Started               | Read-only Git code browser exists; smart HTTP, history, raw/image/download, branch admin, and provisioning remain.       |
 | Pull Request / Review                   | [ ] Mostly missing        | PR routes are placeholders.                                                                                              |
 | Board / Posting                         | [ ] Mostly missing        | Board/post routes are placeholders.                                                                                      |
@@ -167,12 +167,12 @@ Interpretation:
 - [x] Organization issue aggregate list
 - [x] Comment vote
 - [x] Legacy direct comment-vote POST routes
-- [ ] Mention autocomplete
-- [ ] Mention notification semantics
+- [x] Mention autocomplete
+- [x] Mention notification semantics
 - [x] Shared-with-me issue filter
-- [ ] Sharable user autocomplete/search
-- [ ] Issue sharer timeline events
-- [ ] Issue sharer notifications
+- [x] Sharable user autocomplete/search
+- [x] Issue sharer timeline events
+- [x] Issue sharer notifications
 - [x] Favorite issue
 - [x] User aggregate issue list
 - [ ] Issue Excel export

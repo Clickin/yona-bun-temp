@@ -63,6 +63,28 @@ pub struct IssueAssignableUserSearchRecord {
     pub truncated: bool,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IssueMentionUserRecord {
+    pub avatar_url: String,
+    pub display_name: String,
+    pub login_id: String,
+    pub search_text: String,
+    pub item_type: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IssueMentionUserSearchRecord {
+    pub items: Vec<IssueMentionUserRecord>,
+    pub total: u32,
+    pub truncated: bool,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct MentionSyncResult {
+    pub mentioned_user_ids: Vec<i64>,
+    pub newly_mentioned_user_ids: Vec<i64>,
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct IssueShareStatus {
     pub direct: bool,
@@ -344,6 +366,7 @@ pub struct CreateIssueCommentInput {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpdateIssueCommentInput {
+    pub actor_id: i64,
     pub attachment_ids: Vec<i64>,
     pub comment_id: i64,
     pub contents_markdown: String,

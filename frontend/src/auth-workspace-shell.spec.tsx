@@ -24,10 +24,14 @@ import {
 } from "./auth-workspace-shell.test-helpers";
 import {
   ISSUE_ASSIGNEE_SEARCH_DEBOUNCE_MS,
+  ISSUE_MENTION_SEARCH_DEBOUNCE_MS,
   IssueAssignableUserSuggestions,
   ProjectIssueFormPage,
   ProjectIssueDetailPage,
   buildProjectIssueFormSubmitInput,
+  findIssueMentionQuery,
+  insertIssueMentionText,
+  issueMentionTextForItem,
   shouldSearchIssueAssignee,
   submitIssueAssigneeSuggestion,
   submitIssueAssigneeText,
@@ -431,6 +435,7 @@ describe("auth and workspace views", () => {
       },
       {
         onShareIssue: async () => undefined,
+        onSearchSharableUsers: async () => ({ items: [], total: 0, truncated: false }),
         onUnshareIssue: async () => undefined,
       },
     );
@@ -441,6 +446,7 @@ describe("auth and workspace views", () => {
     expect(html).toContain('placeholder="Issue sharer login ID"');
     expect(html).toContain(">Share<");
     expect(html).toContain(">Remove sharer<");
+    expect(html).not.toContain("Searching...");
   });
 
   it("renders issue assignee autocomplete loading, empty, error, and suggestion states", () => {
@@ -518,6 +524,28 @@ describe("auth and workspace views", () => {
     expect(shouldSearchIssueAssignee("do")).toBe(true);
   });
 
+  it("detects and inserts issue mention tokens without triggering issue-number autocomplete", () => {
+    expect(ISSUE_MENTION_SEARCH_DEBOUNCE_MS).toBe(300);
+    expect(findIssueMentionQuery("cc @do")).toBe("do");
+    expect(findIssueMentionQuery("cc @")).toBe("");
+    expect(findIssueMentionQuery("cc #12")).toBeNull();
+    expect(findIssueMentionQuery("mail@example.com")).toBeNull();
+
+    const projectMention = {
+      avatarUrl: "",
+      displayName: "projectYobi",
+      loginId: "owner/projectYobi",
+      searchText: "owner/projectYobi/project/member/all",
+      type: "project" as const,
+    };
+
+    expect(issueMentionTextForItem(projectMention)).toBe("@owner/projectYobi");
+    expect(insertIssueMentionText("cc @owner/pro please", 13, projectMention)).toEqual({
+      cursorIndex: 21,
+      value: "cc @owner/projectYobi please",
+    });
+  });
+
   it("renders create and edit issue forms with project-scoped assignee autocomplete input", () => {
     const createHtml = renderToStaticMarkup(
       <ProjectIssueFormPage
@@ -539,6 +567,7 @@ describe("auth and workspace views", () => {
       />,
     );
     expect(createHtml).toContain('name="assigneeLoginId"');
+    expect(createHtml).toContain('name="body"');
     expect(createHtml).toContain('placeholder="Assignee"');
     expect(createHtml).not.toContain("Searching...");
 

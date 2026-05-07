@@ -4,8 +4,9 @@ use crate::repo_types::{
     CreateProjectLabelInput, CreateUserInput, IssueAssignableUserRecord,
     IssueAssignableUserSearchRecord, IssueAttachmentRecord, IssueCommentRecord,
     IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter,
-    IssueMilestoneRecord, IssueRecord, IssueShareStatus, IssueSharerRecord,
-    IssueTimelineItemRecord, MassUpdateIssuesInput, MilestoneListFilter, MilestoneMutationInput,
+    IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueRecord,
+    IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, MassUpdateIssuesInput,
+    MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
     OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
     OrganizationIssueListFilter, OrganizationIssueListRecord, OrganizationIssueProjectOptionRecord,
     OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationRecord,
@@ -24,10 +25,10 @@ use crate::{
     assignee, attachment, comment_thread, email, favorite_issue, favorite_organization,
     favorite_project, issue, issue_comment, issue_comment_voter, issue_event, issue_issue_label,
     issue_label, issue_label_category, issue_sharer, issue_voter, linked_account, mention,
-    milestone, n4user, organization, organization_user, posting, posting_issue_label, project,
-    project_menu_setting, project_user, pull_request, recent_project, role, site_admin,
-    user_credential, user_enrolled_organization, user_enrolled_project, user_project_notification,
-    user_setting, user_verification, watch,
+    milestone, n4user, notification_event, notification_event_n4user, organization,
+    organization_user, posting, posting_issue_label, project, project_menu_setting, project_user,
+    pull_request, recent_project, role, site_admin, user_credential, user_enrolled_organization,
+    user_enrolled_project, user_project_notification, user_setting, user_verification, watch,
 };
 use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
@@ -98,6 +99,82 @@ fn issue_assignable_user_record(user: n4user::Model) -> IssueAssignableUserRecor
         login_id,
         pure_name_only,
     }
+}
+
+fn n4user_is_active(user: &n4user::Model) -> bool {
+    normalize_optional(user.state.as_deref()).as_deref() == Some("active")
+}
+
+fn issue_mention_user_record(user: n4user::Model) -> IssueMentionUserRecord {
+    let login_id = user.login_id.unwrap_or_default();
+    let display_name = user.name.unwrap_or_else(|| login_id.clone());
+    let search_text = format!("{display_name}{login_id}");
+    IssueMentionUserRecord {
+        avatar_url: String::new(),
+        display_name,
+        login_id,
+        search_text,
+        item_type: "user".to_string(),
+    }
+}
+
+fn mention_text_matches(record: &IssueMentionUserRecord, query: &str) -> bool {
+    let normalized = normalize_identity(query);
+    normalized.is_empty()
+        || normalize_identity(&record.login_id).contains(&normalized)
+        || normalize_identity(&record.display_name).contains(&normalized)
+        || normalize_identity(&record.search_text).contains(&normalized)
+}
+
+fn push_unique_user_id(user_ids: &mut Vec<i64>, seen: &mut HashSet<i64>, user_id: Option<i64>) {
+    if let Some(user_id) = user_id {
+        if seen.insert(user_id) {
+            user_ids.push(user_id);
+        }
+    }
+}
+
+fn extract_mention_tokens(text: &str) -> Vec<String> {
+    let chars = text.char_indices().collect::<Vec<_>>();
+    let mut tokens = Vec::new();
+    let mut index = 0;
+    while index < chars.len() {
+        let (_, ch) = chars[index];
+        if ch != '@' {
+            index += 1;
+            continue;
+        }
+        if index > 0 {
+            let previous_ch = chars[index - 1].1;
+            if previous_ch.is_ascii_alphanumeric() || matches!(previous_ch, '-' | '_' | '.') {
+                index += 1;
+                continue;
+            }
+        }
+        let start = index + 1;
+        let mut end = start;
+        while end < chars.len() {
+            let (_, token_ch) = chars[end];
+            if token_ch.is_ascii_alphanumeric() || matches!(token_ch, '-' | '_' | '.' | '/') {
+                end += 1;
+            } else {
+                break;
+            }
+        }
+        if end > start {
+            let byte_start = chars[start].0;
+            let byte_end = chars
+                .get(end)
+                .map(|(byte_index, _)| *byte_index)
+                .unwrap_or(text.len());
+            let token = text[byte_start..byte_end].trim_matches('/').to_string();
+            if !token.is_empty() {
+                tokens.push(token);
+            }
+        }
+        index = end.max(index + 1);
+    }
+    tokens
 }
 
 fn pure_user_name(display_name: &str) -> String {
@@ -627,14 +704,111 @@ impl AppRepository {
         .map(Some)
     }
 
+    pub async fn list_issue_sharable_users(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        query: &str,
+        search_type: &str,
+        limit: usize,
+    ) -> Result<Option<IssueAssignableUserSearchRecord>, DbErr> {
+        if self
+            .read_project_issue_model(owner_name, project_name, issue_number)
+            .await?
+            .is_none()
+        {
+            return Ok(None);
+        }
+
+        let query = query.trim();
+        if query.is_empty() {
+            return Ok(Some(IssueAssignableUserSearchRecord {
+                items: vec![],
+                total: 0,
+                truncated: false,
+            }));
+        }
+
+        let mut matches = n4user::Entity::find()
+            .order_by_asc(n4user::Column::LoginId)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter(n4user_is_active)
+            .filter(|user| issue_assignable_user_matches(user, query, search_type))
+            .map(issue_assignable_user_record)
+            .collect::<Vec<_>>();
+        let total = matches.len() as u32;
+        let truncated = matches.len() > limit;
+        matches.truncate(limit);
+
+        Ok(Some(IssueAssignableUserSearchRecord {
+            items: matches,
+            total,
+            truncated,
+        }))
+    }
+
+    pub async fn list_issue_mention_users(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        actor_id: Option<i64>,
+        query: &str,
+        _context: &str,
+        limit: usize,
+    ) -> Result<Option<IssueMentionUserSearchRecord>, DbErr> {
+        let Some((project_record, issue_model)) = self
+            .read_project_issue_model(owner_name, project_name, issue_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+
+        let query = query.trim();
+        let mut records =
+            if query.is_empty() || normalize_identity(&project_record.project_scope) != "public" {
+                self.contextual_issue_mention_users(&project_record, &issue_model, actor_id)
+                    .await?
+            } else {
+                n4user::Entity::find()
+                    .order_by_asc(n4user::Column::LoginId)
+                    .all(&self.db)
+                    .await?
+                    .into_iter()
+                    .filter(n4user_is_active)
+                    .filter(|user| issue_assignable_user_matches(user, query, ""))
+                    .map(issue_mention_user_record)
+                    .collect::<Vec<_>>()
+            };
+
+        if !query.is_empty() {
+            records.retain(|record| mention_text_matches(record, query));
+        }
+        self.append_project_mention_targets(&project_record, query, &mut records)
+            .await?;
+
+        let total = records.len() as u32;
+        let truncated = records.len() > limit;
+        records.truncate(limit);
+
+        Ok(Some(IssueMentionUserSearchRecord {
+            items: records,
+            total,
+            truncated,
+        }))
+    }
+
     pub async fn add_issue_sharer(
         &self,
         issue_id: i64,
         user_id: i64,
         login_id: &str,
-    ) -> Result<(), DbErr> {
+    ) -> Result<bool, DbErr> {
         if self.has_direct_issue_share(issue_id, user_id).await? {
-            return Ok(());
+            return Ok(false);
         }
 
         issue_sharer::ActiveModel {
@@ -647,17 +821,51 @@ impl AppRepository {
         .insert(&self.db)
         .await?;
 
-        Ok(())
+        Ok(true)
     }
 
-    pub async fn remove_issue_sharer(&self, issue_id: i64, user_id: i64) -> Result<(), DbErr> {
-        issue_sharer::Entity::delete_many()
+    pub async fn remove_issue_sharer(&self, issue_id: i64, user_id: i64) -> Result<bool, DbErr> {
+        let result = issue_sharer::Entity::delete_many()
             .filter(issue_sharer::Column::IssueId.eq(Some(issue_id)))
             .filter(issue_sharer::Column::UserId.eq(Some(user_id)))
             .exec(&self.db)
             .await?;
 
-        Ok(())
+        Ok(result.rows_affected > 0)
+    }
+
+    pub async fn record_issue_sharer_changed(
+        &self,
+        issue_id: i64,
+        actor_id: i64,
+        actor_login_id: &str,
+        sharer_user_id: i64,
+        sharer_login_id: &str,
+        action: &str,
+    ) -> Result<(), DbErr> {
+        let (old_value, new_value) = if action == "share" {
+            ("", sharer_login_id)
+        } else {
+            (sharer_login_id, "")
+        };
+        self.create_issue_event(
+            issue_id,
+            actor_login_id,
+            "ISSUE_SHARER_CHANGED",
+            old_value,
+            new_value,
+        )
+        .await?;
+        self.create_notification_event_for_receivers(
+            actor_id,
+            "issue",
+            &issue_id.to_string(),
+            "ISSUE_SHARER_CHANGED",
+            old_value,
+            new_value,
+            &[sharer_user_id],
+        )
+        .await
     }
 
     pub async fn is_issue_favorited_by(&self, issue_id: i64, user_id: i64) -> Result<bool, DbErr> {
@@ -723,18 +931,39 @@ impl AppRepository {
             .into_iter()
             .filter_map(|row| row.issue_id)
             .collect::<HashSet<_>>();
-        let mentioned_issue_ids = mention::Entity::find()
+        let mention_rows = mention::Entity::find()
             .filter(mention::Column::UserId.eq(Some(user_id)))
             .all(&self.db)
+            .await?;
+        let mut mentioned_issue_ids = HashSet::new();
+        let mut mentioned_comment_ids = Vec::new();
+        for row in mention_rows {
+            let Some(resource_id) = row.resource_id.and_then(|value| value.parse::<i64>().ok())
+            else {
+                continue;
+            };
+            let resource_type = row
+                .resource_type
+                .as_deref()
+                .map(normalize_identity)
+                .unwrap_or_default();
+            match resource_type.as_str() {
+                "issue" | "issue_post" => {
+                    mentioned_issue_ids.insert(resource_id);
+                }
+                "issue_comment" => mentioned_comment_ids.push(resource_id),
+                _ => {}
+            }
+        }
+        for comment in issue_comment::Entity::find()
+            .filter(issue_comment::Column::Id.is_in(mentioned_comment_ids))
+            .all(&self.db)
             .await?
-            .into_iter()
-            .filter(|row| {
-                row.resource_type
-                    .as_deref()
-                    .is_some_and(|value| normalize_identity(value) == "issue")
-            })
-            .filter_map(|row| row.resource_id.and_then(|value| value.parse::<i64>().ok()))
-            .collect::<HashSet<_>>();
+        {
+            if let Some(issue_id) = comment.issue_id {
+                mentioned_issue_ids.insert(issue_id);
+            }
+        }
         let shared_issue_ids = issue_sharer::Entity::find()
             .filter(issue_sharer::Column::UserId.eq(Some(user_id)))
             .all(&self.db)
@@ -1148,6 +1377,16 @@ impl AppRepository {
         .await?;
         self.write_text_column("issue", "body", created.id, &input.values.body_markdown)
             .await?;
+        self.sync_mentions_and_notify(
+            input.actor_id,
+            "issue_post",
+            created.id,
+            &input.values.body_markdown,
+            "NEW_ISSUE",
+            "",
+            &input.values.body_markdown,
+        )
+        .await?;
 
         let mut project_active = project::ActiveModel {
             id: Set(project_record.id),
@@ -1182,6 +1421,12 @@ impl AppRepository {
         let old_state = issue_state_from_raw(model.state);
         let old_assignee = model.assignee_id;
         let old_milestone = model.milestone_id;
+        let old_body = self.read_text_column("issue", "body", model.id).await?;
+        let actor_id = self
+            .find_user_by_login_id(&input.actor_login_id)
+            .await?
+            .map(|user| user.id)
+            .unwrap_or_default();
         let mut active = issue::ActiveModel::from(model);
         active.title = Set(Some(input.values.title.trim().to_string()));
         active.assignee_id = Set(assignee_id);
@@ -1190,6 +1435,16 @@ impl AppRepository {
         let updated = active.update(&self.db).await?;
         self.write_text_column("issue", "body", updated.id, &input.values.body_markdown)
             .await?;
+        self.sync_mentions_and_notify(
+            actor_id,
+            "issue_post",
+            updated.id,
+            &input.values.body_markdown,
+            "ISSUE_BODY_CHANGED",
+            &old_body,
+            &input.values.body_markdown,
+        )
+        .await?;
 
         self.replace_issue_labels(updated.id, project_record.id, &input.values.label_ids)
             .await?;
@@ -1313,6 +1568,16 @@ impl AppRepository {
             &input.contents_markdown,
         )
         .await?;
+        self.sync_mentions_and_notify(
+            input.actor_id,
+            "issue_comment",
+            created.id,
+            &input.contents_markdown,
+            "NEW_COMMENT",
+            "",
+            &input.contents_markdown,
+        )
+        .await?;
         self.bind_attachments("ISSUE_COMMENT", created.id, &input.attachment_ids)
             .await?;
         self.recount_issue_comments(issue_model.id).await?;
@@ -1339,12 +1604,25 @@ impl AppRepository {
         if comment.issue_id != Some(issue_model.id) {
             return Ok(None);
         }
+        let old_contents = self
+            .read_text_column("issue_comment", "contents", comment.id)
+            .await?;
         let active = issue_comment::ActiveModel::from(comment);
         let updated = active.update(&self.db).await?;
         self.write_text_column(
             "issue_comment",
             "contents",
             updated.id,
+            &input.contents_markdown,
+        )
+        .await?;
+        self.sync_mentions_and_notify(
+            input.actor_id,
+            "issue_comment",
+            updated.id,
+            &input.contents_markdown,
+            "COMMENT_UPDATED",
+            &old_contents,
             &input.contents_markdown,
         )
         .await?;
@@ -4381,6 +4659,113 @@ impl AppRepository {
             .is_some())
     }
 
+    async fn find_user_model_by_id(&self, user_id: i64) -> Result<Option<n4user::Model>, DbErr> {
+        n4user::Entity::find_by_id(user_id).one(&self.db).await
+    }
+
+    async fn contextual_issue_mention_users(
+        &self,
+        project_record: &ProjectRecord,
+        issue_model: &issue::Model,
+        actor_id: Option<i64>,
+    ) -> Result<Vec<IssueMentionUserRecord>, DbErr> {
+        let mut user_ids = Vec::new();
+        let mut seen = HashSet::new();
+        push_unique_user_id(&mut user_ids, &mut seen, issue_model.author_id);
+
+        let comments = issue_comment::Entity::find()
+            .filter(issue_comment::Column::IssueId.eq(Some(issue_model.id)))
+            .order_by_desc(issue_comment::Column::CreatedDate)
+            .order_by_desc(issue_comment::Column::Id)
+            .all(&self.db)
+            .await?;
+        for comment in comments {
+            push_unique_user_id(&mut user_ids, &mut seen, comment.author_id);
+        }
+
+        for membership in project_user::Entity::find()
+            .filter(project_user::Column::ProjectId.eq(Some(project_record.id)))
+            .all(&self.db)
+            .await?
+        {
+            push_unique_user_id(&mut user_ids, &mut seen, membership.user_id);
+        }
+
+        if let Some(organization_id) = project_record.organization_id {
+            for membership in organization_user::Entity::find()
+                .filter(organization_user::Column::OrganizationId.eq(Some(organization_id)))
+                .all(&self.db)
+                .await?
+            {
+                push_unique_user_id(&mut user_ids, &mut seen, membership.user_id);
+            }
+        }
+
+        for sharer in issue_sharer::Entity::find()
+            .filter(issue_sharer::Column::IssueId.eq(Some(issue_model.id)))
+            .all(&self.db)
+            .await?
+        {
+            push_unique_user_id(&mut user_ids, &mut seen, sharer.user_id);
+        }
+
+        if let Some(actor_id) = actor_id {
+            user_ids.retain(|user_id| *user_id != actor_id);
+            user_ids.push(actor_id);
+        }
+
+        let mut records = Vec::new();
+        let mut emitted = HashSet::new();
+        for user_id in user_ids {
+            if !emitted.insert(user_id) {
+                continue;
+            }
+            if let Some(user) = self.find_user_model_by_id(user_id).await? {
+                if n4user_is_active(&user) {
+                    records.push(issue_mention_user_record(user));
+                }
+            }
+        }
+        Ok(records)
+    }
+
+    async fn append_project_mention_targets(
+        &self,
+        project_record: &ProjectRecord,
+        query: &str,
+        records: &mut Vec<IssueMentionUserRecord>,
+    ) -> Result<(), DbErr> {
+        let project_login_id = format!(
+            "{}/{}",
+            project_record.owner_name, project_record.project_name
+        );
+        let project_record_item = IssueMentionUserRecord {
+            avatar_url: String::new(),
+            display_name: project_record.project_name.clone(),
+            login_id: project_login_id.clone(),
+            search_text: format!("{project_login_id}/project/member/all"),
+            item_type: "project".to_string(),
+        };
+        if mention_text_matches(&project_record_item, query) {
+            records.push(project_record_item);
+        }
+
+        if let Some(organization_name) = project_record.organization_name.as_deref() {
+            let organization_record_item = IssueMentionUserRecord {
+                avatar_url: String::new(),
+                display_name: organization_name.to_string(),
+                login_id: organization_name.to_string(),
+                search_text: format!("{organization_name}/group/org/member/all"),
+                item_type: "organization".to_string(),
+            };
+            if mention_text_matches(&organization_record_item, query) {
+                records.push(organization_record_item);
+            }
+        }
+
+        Ok(())
+    }
+
     async fn list_issue_sharers(&self, issue_id: i64) -> Result<Vec<IssueSharerRecord>, DbErr> {
         let rows = issue_sharer::Entity::find()
             .filter(issue_sharer::Column::IssueId.eq(Some(issue_id)))
@@ -5065,6 +5450,193 @@ impl AppRepository {
         self.write_text_column("issue_event", "new_value", created.id, new_value)
             .await?;
         Ok(())
+    }
+
+    async fn create_notification_event_for_receivers(
+        &self,
+        sender_id: i64,
+        resource_type: &str,
+        resource_id: &str,
+        event_type: &str,
+        old_value: &str,
+        new_value: &str,
+        receiver_ids: &[i64],
+    ) -> Result<(), DbErr> {
+        let mut unique_receiver_ids = receiver_ids.to_vec();
+        unique_receiver_ids.sort_unstable();
+        unique_receiver_ids.dedup();
+        unique_receiver_ids.retain(|user_id| *user_id != sender_id);
+        if unique_receiver_ids.is_empty() {
+            return Ok(());
+        }
+
+        let created = notification_event::ActiveModel {
+            id: NotSet,
+            title: Set(None),
+            sender_id: Set(Some(sender_id)),
+            created: Set(Some(current_datetime())),
+            resource_type: Set(Some(resource_type.to_string())),
+            resource_id: Set(Some(resource_id.to_string())),
+            event_type: Set(Some(event_type.to_string())),
+        }
+        .insert(&self.db)
+        .await?;
+        self.write_text_column("notification_event", "old_value", created.id, old_value)
+            .await?;
+        self.write_text_column("notification_event", "new_value", created.id, new_value)
+            .await?;
+
+        for receiver_id in unique_receiver_ids {
+            notification_event_n4user::ActiveModel {
+                notification_event_id: Set(created.id),
+                n4user_id: Set(receiver_id),
+            }
+            .insert(&self.db)
+            .await?;
+        }
+
+        Ok(())
+    }
+
+    async fn sync_mentions_for_resource(
+        &self,
+        resource_type: &str,
+        resource_id: i64,
+        mentioned_user_ids: HashSet<i64>,
+    ) -> Result<MentionSyncResult, DbErr> {
+        let resource_id_string = resource_id.to_string();
+        let existing = mention::Entity::find()
+            .filter(mention::Column::ResourceType.eq(Some(resource_type.to_string())))
+            .filter(mention::Column::ResourceId.eq(Some(resource_id_string.clone())))
+            .all(&self.db)
+            .await?;
+        let existing_user_ids = existing
+            .iter()
+            .filter_map(|row| row.user_id)
+            .collect::<HashSet<_>>();
+
+        for row in existing {
+            if !row
+                .user_id
+                .is_some_and(|user_id| mentioned_user_ids.contains(&user_id))
+            {
+                mention::Entity::delete_by_id(row.id).exec(&self.db).await?;
+            }
+        }
+
+        let mut newly_mentioned_user_ids = Vec::new();
+        for user_id in mentioned_user_ids.iter().copied() {
+            if existing_user_ids.contains(&user_id) {
+                continue;
+            }
+            mention::ActiveModel {
+                id: NotSet,
+                resource_type: Set(Some(resource_type.to_string())),
+                resource_id: Set(Some(resource_id_string.clone())),
+                user_id: Set(Some(user_id)),
+            }
+            .insert(&self.db)
+            .await?;
+            newly_mentioned_user_ids.push(user_id);
+        }
+
+        let mut mentioned_user_ids = mentioned_user_ids.into_iter().collect::<Vec<_>>();
+        mentioned_user_ids.sort_unstable();
+        newly_mentioned_user_ids.sort_unstable();
+
+        Ok(MentionSyncResult {
+            mentioned_user_ids,
+            newly_mentioned_user_ids,
+        })
+    }
+
+    async fn mentioned_active_user_ids(&self, text: &str) -> Result<HashSet<i64>, DbErr> {
+        let mut user_ids = HashSet::new();
+        for token in extract_mention_tokens(text) {
+            if let Some((owner_name, project_name)) = token.split_once('/') {
+                if let Some(project_record) = self
+                    .read_project_by_owner_and_name(owner_name, project_name)
+                    .await?
+                {
+                    for membership in project_user::Entity::find()
+                        .filter(project_user::Column::ProjectId.eq(Some(project_record.id)))
+                        .all(&self.db)
+                        .await?
+                    {
+                        self.insert_active_mentioned_user_id(&mut user_ids, membership.user_id)
+                            .await?;
+                    }
+                }
+                continue;
+            }
+
+            if let Some(user) = n4user::Entity::find()
+                .filter(n4user::Column::LoginId.eq(Some(normalize_identity(&token))))
+                .one(&self.db)
+                .await?
+            {
+                if n4user_is_active(&user) {
+                    user_ids.insert(user.id);
+                }
+            }
+
+            if let Some(organization_record) = self.read_organization_by_name(&token).await? {
+                for membership in organization_user::Entity::find()
+                    .filter(
+                        organization_user::Column::OrganizationId.eq(Some(organization_record.id)),
+                    )
+                    .all(&self.db)
+                    .await?
+                {
+                    self.insert_active_mentioned_user_id(&mut user_ids, membership.user_id)
+                        .await?;
+                }
+            }
+        }
+        Ok(user_ids)
+    }
+
+    async fn insert_active_mentioned_user_id(
+        &self,
+        user_ids: &mut HashSet<i64>,
+        user_id: Option<i64>,
+    ) -> Result<(), DbErr> {
+        let Some(user_id) = user_id else {
+            return Ok(());
+        };
+        if let Some(user) = self.find_user_model_by_id(user_id).await? {
+            if n4user_is_active(&user) {
+                user_ids.insert(user_id);
+            }
+        }
+        Ok(())
+    }
+
+    async fn sync_mentions_and_notify(
+        &self,
+        sender_id: i64,
+        resource_type: &str,
+        resource_id: i64,
+        text: &str,
+        event_type: &str,
+        old_value: &str,
+        new_value: &str,
+    ) -> Result<MentionSyncResult, DbErr> {
+        let mentioned_user_ids = self.mentioned_active_user_ids(text).await?;
+        let sync_result = self
+            .sync_mentions_for_resource(resource_type, resource_id, mentioned_user_ids)
+            .await?;
+        self.create_notification_event_for_receivers(
+            sender_id,
+            resource_type,
+            &resource_id.to_string(),
+            event_type,
+            old_value,
+            new_value,
+            &sync_result.newly_mentioned_user_ids,
+        )
+        .await?;
+        Ok(sync_result)
     }
 
     async fn ensure_site_admin(&self, user_id: i64) -> Result<(), DbErr> {

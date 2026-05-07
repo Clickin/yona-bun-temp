@@ -8,6 +8,8 @@ import {
   readIssueDetail,
   readProjectContainer,
   searchIssueAssignableUsers,
+  searchIssueMentionUsers,
+  searchIssueSharableUsers,
   shareIssue,
   toggleFavoriteIssue,
   unvoteIssue,
@@ -109,6 +111,23 @@ function IssueDetailRouteComponent() {
       }}
       onSearchAssignableUsers={(query) =>
         searchIssueAssignableUsers(runtimeConfig, {
+          issueNumber: BigInt(Number(issueNumber)),
+          ownerName: owner,
+          projectName,
+          query,
+        })
+      }
+      onSearchMentionUsers={(query, context) =>
+        searchIssueMentionUsers(runtimeConfig, {
+          context,
+          issueNumber: BigInt(Number(issueNumber)),
+          ownerName: owner,
+          projectName,
+          query,
+        })
+      }
+      onSearchSharableUsers={(query) =>
+        searchIssueSharableUsers(runtimeConfig, {
           issueNumber: BigInt(Number(issueNumber)),
           ownerName: owner,
           projectName,

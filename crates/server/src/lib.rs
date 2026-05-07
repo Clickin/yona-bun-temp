@@ -1723,6 +1723,31 @@ struct RestIssueAssignableUsersResponse {
     truncated: bool,
 }
 
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestIssueMentionUsersQuery {
+    context: String,
+    query: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueMentionUserItem {
+    avatar_url: String,
+    display_name: String,
+    login_id: String,
+    search_text: String,
+    r#type: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueMentionUsersResponse {
+    items: Vec<RestIssueMentionUserItem>,
+    total: u32,
+    truncated: bool,
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RestIssueSharerBody {
@@ -2813,6 +2838,54 @@ fn build_rest_issue_meta_router(service: PilotServiceImpl) -> Router {
                     let backend = service.backend.clone();
                     async move {
                         rest_list_issue_assignable_users(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            query,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/sharable-users",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
+                      Query(query): Query<RestIssueAssignableUsersQuery>| {
+                    let session_manager = service.session_manager.clone();
+                    let backend = service.backend.clone();
+                    async move {
+                        rest_list_issue_sharable_users(
+                            headers,
+                            owner_name,
+                            project_name,
+                            issue_number,
+                            query,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issues/{issue_number}/mention-users",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
+                      Query(query): Query<RestIssueMentionUsersQuery>| {
+                    let session_manager = service.session_manager.clone();
+                    let backend = service.backend.clone();
+                    async move {
+                        rest_list_issue_mention_users(
                             headers,
                             owner_name,
                             project_name,
@@ -5570,6 +5643,134 @@ async fn rest_list_issue_assignable_users(
     Ok(Json(rest_issue_assignable_users_response(record)))
 }
 
+async fn rest_list_issue_sharable_users(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    query: RestIssueAssignableUsersQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestIssueAssignableUsersResponse>, RestRouteError> {
+    if owner_name.trim().is_empty() || project_name.trim().is_empty() || issue_number <= 0 {
+        return Err(RestRouteError::bad_request(
+            "invalid issue sharable users request",
+        ));
+    }
+
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "issue sharable users require repository backend",
+        ));
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    read_issue_access(
+        repository,
+        &owner_name,
+        &project_name,
+        issue_number,
+        actor_id,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+    let record = repository
+        .list_issue_sharable_users(
+            &owner_name,
+            &project_name,
+            issue_number,
+            &query.query,
+            &query.search_type,
+            10,
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+
+    Ok(Json(rest_issue_assignable_users_response(record)))
+}
+
+fn rest_issue_mention_users_response(
+    record: persistence::IssueMentionUserSearchRecord,
+) -> RestIssueMentionUsersResponse {
+    RestIssueMentionUsersResponse {
+        items: record
+            .items
+            .into_iter()
+            .map(|item| RestIssueMentionUserItem {
+                avatar_url: item.avatar_url,
+                display_name: item.display_name,
+                login_id: item.login_id,
+                search_text: item.search_text,
+                r#type: item.item_type,
+            })
+            .collect(),
+        total: record.total,
+        truncated: record.truncated,
+    }
+}
+
+async fn rest_list_issue_mention_users(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    query: RestIssueMentionUsersQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestIssueMentionUsersResponse>, RestRouteError> {
+    if owner_name.trim().is_empty() || project_name.trim().is_empty() || issue_number <= 0 {
+        return Err(RestRouteError::bad_request(
+            "invalid issue mention users request",
+        ));
+    }
+
+    let context = if query.context.trim().is_empty() {
+        "issue-comment"
+    } else {
+        query.context.trim()
+    };
+    if !matches!(context, "issue-body" | "issue-comment") {
+        return Err(RestRouteError::bad_request("invalid issue mention context"));
+    }
+
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "issue mention users require repository backend",
+        ));
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    read_issue_access(
+        repository,
+        &owner_name,
+        &project_name,
+        issue_number,
+        actor_id,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+    let record = repository
+        .list_issue_mention_users(
+            &owner_name,
+            &project_name,
+            issue_number,
+            actor_id,
+            &query.query,
+            context,
+            10,
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+
+    Ok(Json(rest_issue_mention_users_response(record)))
+}
+
 async fn rest_update_issue_state(
     headers: HeaderMap,
     owner_name: String,
@@ -5901,6 +6102,7 @@ async fn rest_update_issue_comment(
     }
     let issue = repository
         .update_issue_comment(persistence::UpdateIssueCommentInput {
+            actor_id: actor.id,
             attachment_ids: body.attachment_ids,
             comment_id,
             contents_markdown: body.contents_markdown,
@@ -6600,12 +6802,13 @@ impl PilotServiceImpl {
                 "issue sharer update is not allowed",
             ));
         }
+        let actor = access.actor.as_ref().expect("authenticated issue actor");
         let target = repository
             .find_user_by_login_id(request.login_id)
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("issue sharer user not found"))?;
-        match action {
+        let changed = match action {
             "share" => repository
                 .add_issue_sharer(access.issue.id, target.id, &target.login_id)
                 .await
@@ -6619,6 +6822,19 @@ impl PilotServiceImpl {
                     "invalid issue sharer action",
                 ))
             }
+        };
+        if changed {
+            repository
+                .record_issue_sharer_changed(
+                    access.issue.id,
+                    actor.id,
+                    &actor.login_id,
+                    target.id,
+                    &target.login_id,
+                    action,
+                )
+                .await
+                .map_err(internal_error)?;
         }
         let updated = repository
             .read_issue_detail(
@@ -11437,6 +11653,7 @@ impl PilotServiceImpl {
         }
         let issue = repository
             .update_issue_comment(persistence::UpdateIssueCommentInput {
+                actor_id: actor.id,
                 attachment_ids: request.attachment_ids.to_vec(),
                 comment_id: request.comment_id,
                 contents_markdown: request.contents_markdown.to_string(),

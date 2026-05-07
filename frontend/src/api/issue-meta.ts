@@ -28,6 +28,11 @@ export type IssueAssignableUsersInput = IssueScopeInput & {
   type?: IssueAssignableUserSearchType | string;
 };
 
+export type IssueSharableUsersInput = IssueScopeInput & {
+  query: string;
+  type?: IssueAssignableUserSearchType | string;
+};
+
 export type ProjectAssignableUsersInput = ProjectScopeInput & {
   query: string;
   type?: IssueAssignableUserSearchType | string;
@@ -43,6 +48,27 @@ export type IssueAssignableUserItem = {
 
 export type IssueAssignableUsersResponse = {
   items: IssueAssignableUserItem[];
+  total: number;
+  truncated: boolean;
+};
+
+export type IssueMentionUserSearchContext = "issue-body" | "issue-comment";
+
+export type IssueMentionUsersInput = IssueScopeInput & {
+  context: IssueMentionUserSearchContext | string;
+  query: string;
+};
+
+export type IssueMentionUserItem = {
+  avatarUrl: string;
+  displayName: string;
+  loginId: string;
+  searchText: string;
+  type: "organization" | "project" | "user";
+};
+
+export type IssueMentionUsersResponse = {
+  items: IssueMentionUserItem[];
   total: number;
   truncated: boolean;
 };
@@ -160,6 +186,23 @@ function normalizeIssueAssignableUsersResponse(
   };
 }
 
+function normalizeIssueMentionUsersResponse(
+  response: Partial<IssueMentionUsersResponse>,
+): IssueMentionUsersResponse {
+  const items = (response.items ?? []).map((item) => ({
+    avatarUrl: item.avatarUrl ?? "",
+    displayName: item.displayName ?? "",
+    loginId: item.loginId ?? "",
+    searchText: item.searchText ?? "",
+    type: item.type ?? "user",
+  }));
+  return {
+    items,
+    total: response.total ?? items.length,
+    truncated: response.truncated ?? false,
+  };
+}
+
 export function watchIssueRest(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
@@ -268,6 +311,42 @@ export function searchIssueAssignableUsersRest(
       fetchImpl,
     },
   ).then(normalizeIssueAssignableUsersResponse);
+}
+
+export function searchIssueSharableUsersRest(
+  runtimeConfig: RuntimeConfig,
+  input: IssueSharableUsersInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<IssueAssignableUsersResponse> {
+  const query = new URLSearchParams();
+  query.set("query", input.query);
+  if (input.type) {
+    query.set("type", input.type);
+  }
+  return restFetch<Partial<IssueAssignableUsersResponse>>(
+    runtimeConfig,
+    `${issuePath(input)}/sharable-users?${query.toString()}`,
+    {
+      fetchImpl,
+    },
+  ).then(normalizeIssueAssignableUsersResponse);
+}
+
+export function searchIssueMentionUsersRest(
+  runtimeConfig: RuntimeConfig,
+  input: IssueMentionUsersInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<IssueMentionUsersResponse> {
+  const query = new URLSearchParams();
+  query.set("query", input.query);
+  query.set("context", input.context);
+  return restFetch<Partial<IssueMentionUsersResponse>>(
+    runtimeConfig,
+    `${issuePath(input)}/mention-users?${query.toString()}`,
+    {
+      fetchImpl,
+    },
+  ).then(normalizeIssueMentionUsersResponse);
 }
 
 export function searchProjectAssignableUsersRest(

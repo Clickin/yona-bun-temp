@@ -1,10 +1,15 @@
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
-use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, NotSet, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet,
+    PaginatorTrait, QueryFilter, Set,
+};
 use serde_json::json;
 use tower::ServiceExt;
-use yona_rust_persistence::{issue, AppRepository};
+use yona_rust_persistence::{
+    issue, issue_event, n4user, notification_event, notification_event_n4user, AppRepository,
+};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
@@ -109,6 +114,22 @@ async fn rpc(
     rest_test_support::pilot_rest(app, method_name, cookie_header, csrf, payload).await
 }
 
+async fn rest(
+    app: axum::Router,
+    method: Method,
+    uri: &str,
+    cookie_header: Option<&str>,
+) -> Response<Body> {
+    let mut builder = Request::builder().method(method).uri(uri);
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+
+    app.oneshot(builder.body(Body::empty()).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i64) {
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let response = rpc(
@@ -136,6 +157,26 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i6
         .expect("actor id");
 
     (csrf, cookie_header, actor_id)
+}
+
+async fn update_user_profile(
+    db: &DatabaseConnection,
+    login_id: &str,
+    name: &str,
+    english_name: Option<&str>,
+    state: &str,
+) {
+    let user = n4user::Entity::find()
+        .filter(n4user::Column::LoginId.eq(Some(login_id.to_string())))
+        .one(db)
+        .await
+        .unwrap()
+        .expect("user");
+    let mut active = n4user::ActiveModel::from(user);
+    active.name = Set(Some(name.to_string()));
+    active.english_name = Set(english_name.map(str::to_string));
+    active.state = Set(Some(state.to_string()));
+    active.update(db).await.unwrap();
 }
 
 async fn create_project(app: axum::Router, cookie: &str, csrf: &str, scope: &str) {
@@ -179,6 +220,227 @@ async fn create_issue(
         .await,
     )
     .await
+}
+
+fn login_ids(payload: &serde_json::Value) -> Vec<String> {
+    payload["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| item["loginId"].as_str().unwrap().to_string())
+        .collect()
+}
+
+#[tokio::test]
+async fn issue_sharer_contract_searches_sharable_active_users_with_issue_read_acl() {
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_, outsider_cookie, _) = register_user(app.clone(), "outsider").await;
+    register_user(app.clone(), "matchterm-login").await;
+    register_user(app.clone(), "name-holder").await;
+    register_user(app.clone(), "english-holder").await;
+    register_user(app.clone(), "matchterm-locked").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "private").await;
+    create_issue(app.clone(), &owner_cookie, &owner_csrf, "Private issue").await;
+
+    update_user_profile(&db, "name-holder", "Matchterm Name", None, "active").await;
+    update_user_profile(
+        &db,
+        "english-holder",
+        "Plain Name",
+        Some("Matchterm English"),
+        "active",
+    )
+    .await;
+    update_user_profile(&db, "matchterm-locked", "Matchterm Locked", None, "locked").await;
+
+    let blank = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharable-users?query=",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(blank["total"], 0);
+    assert_eq!(blank["items"].as_array().unwrap().len(), 0);
+
+    let broad = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharable-users?query=matchterm",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(broad["total"], 3);
+    assert_eq!(broad["truncated"], false);
+    let broad_login_ids = login_ids(&broad);
+    assert!(broad_login_ids.contains(&"matchterm-login".to_string()));
+    assert!(broad_login_ids.contains(&"name-holder".to_string()));
+    assert!(broad_login_ids.contains(&"english-holder".to_string()));
+    assert!(!broad_login_ids.contains(&"matchterm-locked".to_string()));
+
+    let exact_name = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharable-users?query=Matchterm%20Name&type=name",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(login_ids(&exact_name), vec!["name-holder".to_string()]);
+
+    let denied = rest(
+        app,
+        Method::GET,
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharable-users?query=matchterm",
+        Some(&outsider_cookie),
+    )
+    .await;
+    assert_eq!(denied.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn issue_sharer_contract_records_timeline_and_notification_only_on_changed_rows() {
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, _, guest_id) = register_user(app.clone(), "guest").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "private").await;
+    create_issue(app.clone(), &owner_cookie, &owner_csrf, "Private issue").await;
+
+    response_json(
+        rpc(
+            app.clone(),
+            "ShareIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1",
+                "loginId": "guest"
+            }),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rpc(
+            app.clone(),
+            "ShareIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1",
+                "loginId": "guest"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    let after_duplicate = response_json(
+        rpc(
+            app.clone(),
+            "ReadIssueDetail",
+            Some(&owner_cookie),
+            None,
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let share_events = after_duplicate["timeline"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|item| item["eventType"] == "ISSUE_SHARER_CHANGED")
+        .collect::<Vec<_>>();
+    assert_eq!(share_events.len(), 1);
+    assert_eq!(
+        share_events[0]
+            .get("oldValue")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default(),
+        ""
+    );
+    assert_eq!(share_events[0]["newValue"], "guest");
+
+    let noti_events = notification_event::Entity::find()
+        .filter(notification_event::Column::EventType.eq(Some("ISSUE_SHARER_CHANGED".to_string())))
+        .all(&db)
+        .await
+        .unwrap();
+    assert_eq!(noti_events.len(), 1);
+    assert_eq!(noti_events[0].sender_id, Some(owner_id));
+    let receiver = notification_event_n4user::Entity::find_by_id((noti_events[0].id, guest_id))
+        .one(&db)
+        .await
+        .unwrap();
+    assert!(receiver.is_some());
+
+    response_json(
+        rpc(
+            app.clone(),
+            "UnshareIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1",
+                "loginId": "guest"
+            }),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rpc(
+            app.clone(),
+            "UnshareIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1",
+                "loginId": "guest"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    let all_events = issue_event::Entity::find()
+        .filter(issue_event::Column::EventType.eq(Some("ISSUE_SHARER_CHANGED".to_string())))
+        .all(&db)
+        .await
+        .unwrap();
+    assert_eq!(all_events.len(), 2);
+    assert_eq!(
+        notification_event::Entity::find()
+            .filter(
+                notification_event::Column::EventType.eq(Some("ISSUE_SHARER_CHANGED".to_string()))
+            )
+            .count(&db)
+            .await
+            .unwrap(),
+        2
+    );
 }
 
 #[tokio::test]

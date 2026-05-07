@@ -490,8 +490,8 @@ POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → �
 | 이슈 감시 (Watch)  | 알림 수신 토글                                      | ✅ Phase 2A 구현      | 2     |
 | 이슈 투표 (Vote)   | 이슈에 투표/취소                                    | ✅ Phase 2A 구현      | 2     |
 | 댓글 투표          | 댓글에 투표/취소                                    | ✅ Phase 2H 구현      | 2     |
-| @멘션              | `@username` 자동 완성 + 알림                        | gap                   | 2     |
-| 이슈 공유 (Sharer) | 비멤버에게 이슈 읽기 권한 부여                      | ✅ Phase 2E 핵심 구현 | 2     |
+| @멘션              | `@username` 자동 완성 + 알림                        | ✅ Phase 2L 핵심 구현 | 2     |
+| 이슈 공유 (Sharer) | 비멤버에게 이슈 읽기 권한 부여                      | ✅ Phase 2E/2L 구현   | 2     |
 | Mass Update        | 이슈 일괄 상태/담당자/마일스톤/라벨 변경            | ✅ Phase 2A 구현      | 2     |
 | 이슈 엑셀 내보내기 | xlsx 다운로드                                       | deferred              | 2차   |
 | 즐겨찾기 이슈      | workspace에서 즐겨찾기 관리                         | ✅ Phase 2G 구현      | 2     |
@@ -508,6 +508,8 @@ POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → �
 - [ ] Mass Update: 체크박스로 다중 선택 → 상태/담당자/마일스톤 일괄 변경 (legacy `IssueMassUpdate` 동일)
 - [ ] 이슈 삭제: 작성자 또는 프로젝트 관리자만 가능
 - [ ] 이슈 공유: 직접 공유된 사용자는 비공개/제한 이슈와 댓글을 읽고 해당 이슈에 댓글 작성 가능, parent issue 공유는 child issue 읽기만 허용
+- [ ] 이슈 공유 검색은 읽기 ACL을 재사용하고, 실제 공유 추가/삭제시에만 `ISSUE_SHARER_CHANGED` 타임라인/notification row side effect를 남긴다
+- [ ] @멘션은 이슈 본문과 댓글에서 `@user`, `@org`, `@owner/project`를 해석하고 신규 활성 사용자 mention만 기존 이슈/댓글 이벤트 타입으로 알림 row를 만든다
 - [ ] 첨부파일: 이슈 본문/댓글에 파일 첨부 가능 (`/files` 엔드포인트)
 
 ---
@@ -1365,7 +1367,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 
 **새 runtime API는 REST로 구현할 영역**:
 
-- Issue follow-up: sharable user autocomplete/search, issue sharer timeline/notification semantics, mention autocomplete/notification semantics, legacy external `/-_-api/v1` issue API parity
+- Issue follow-up: legacy external `/-_-api/v1` issue API parity, notification inbox/read state/mail batching, `#issue` autocomplete, project/group sharer mutation
 - Board: posting list/detail/create/update/delete/comment flows
 - Label follow-up: copyLabels Phase 6 and legacy external label/project API parity
 - Milestone follow-up: migration export and search milestone result type

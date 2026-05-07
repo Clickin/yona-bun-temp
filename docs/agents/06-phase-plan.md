@@ -40,7 +40,8 @@
 - Phase 2H complete: REST issue comment vote/unvote, legacy direct comment-vote POST route compatibility, comment voter projection, issue detail comment-row controls, and direct/inherited sharer ACL coverage.
 - Phase 2J complete: issue detail assignee autocomplete/search over `/api/v1/owners/:owner/projects/:project/issues/:number/assignable-users`, with legacy visibility rules, current-assignee inclusion, and existing assignment mutation fallback.
 - Phase 2K complete: issue create/edit assignee autocomplete/search over `/api/v1/owners/:owner/projects/:project/assignable-users`, with project-scoped visibility rules and unchanged create/update assignment mutation semantics.
-- Remaining Phase 2 packets: legacy external `/-_-api/v1` issue API parity, sharable autocomplete/sharer notification follow-ups, mention creation/autocomplete/notification semantics, and Phase 6 label copy flow.
+- Phase 2L complete: issue sharable-user search over `/api/v1/owners/:owner/projects/:project/issues/:number/sharable-users`, direct sharer timeline/notification row side effects, and issue/comment `@user`/`@org`/`@owner/project` mention indexing, suggestions, and notification rows.
+- Remaining Phase 2 packets: legacy external `/-_-api/v1` issue API parity, notification inbox/read state/mail batching, `#issue` autocomplete, project/group sharer mutation, and Phase 6 label copy flow.
 
 ## Phase 3: 저장소와 VCS
 

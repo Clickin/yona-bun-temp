@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   readIssueDetail,
   readProjectContainer,
+  searchIssueMentionUsers,
   searchProjectAssignableUsers,
   updateIssue,
 } from "../../../../../../auth-workspace-client";
@@ -88,6 +89,15 @@ function IssueEditRouteComponent() {
       mode="edit"
       onSearchAssignableUsers={(query) =>
         searchProjectAssignableUsers(runtimeConfig, {
+          ownerName: owner,
+          projectName,
+          query,
+        })
+      }
+      onSearchMentionUsers={(query, context) =>
+        searchIssueMentionUsers(runtimeConfig, {
+          context,
+          issueNumber: BigInt(Number(issueNumber)),
           ownerName: owner,
           projectName,
           query,

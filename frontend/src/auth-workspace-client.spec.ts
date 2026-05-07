@@ -51,6 +51,8 @@ import {
   signInWithPassword,
   signOut,
   searchIssueAssignableUsers,
+  searchIssueMentionUsers,
+  searchIssueSharableUsers,
   searchProjectAssignableUsers,
   toggleFavoriteProject,
   toggleProjectWatch,
@@ -737,6 +739,107 @@ describe("issue assignable user REST client", () => {
       ],
       total: 1,
       truncated: false,
+    });
+  });
+
+  it("encodes sharable-user search queries and normalizes sparse responses", async () => {
+    const fetchMock = vi.fn(async () =>
+      okJsonResponse({
+        items: [
+          {
+            loginId: "guest",
+          },
+        ],
+      }),
+    );
+
+    const result = await searchIssueSharableUsers(
+      runtimeConfig,
+      {
+        issueNumber: 7n,
+        ownerName: "owner space",
+        projectName: "project/Yobi",
+        query: "Guest Name",
+        type: "name",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { credentials: string; headers: Headers; method: string },
+    ];
+    expect(requestUrl).toBe(
+      "/yona/api/v1/owners/owner%20space/projects/project%2FYobi/issues/7/sharable-users?query=Guest+Name&type=name",
+    );
+    expect(requestInit.credentials).toBe("same-origin");
+    expect(requestInit.headers.get("Accept")).toBe("application/json");
+    expect(requestInit.method).toBe("GET");
+    expect(result).toEqual({
+      items: [
+        {
+          avatarUrl: "",
+          displayName: "",
+          loginId: "guest",
+          pureNameOnly: "",
+          type: "user",
+        },
+      ],
+      total: 1,
+      truncated: false,
+    });
+  });
+
+  it("encodes issue mention search context and normalizes sparse responses", async () => {
+    const fetchMock = vi.fn(async () =>
+      okJsonResponse({
+        items: [
+          {
+            displayName: "Project Yobi",
+            loginId: "owner/projectYobi",
+            type: "project",
+          },
+        ],
+        truncated: true,
+      }),
+    );
+
+    const result = await searchIssueMentionUsers(
+      runtimeConfig,
+      {
+        context: "issue-comment",
+        issueNumber: 9n,
+        ownerName: "owner space",
+        projectName: "project/Yobi",
+        query: "owner/project",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { credentials: string; headers: Headers; method: string },
+    ];
+    expect(requestUrl).toBe(
+      "/yona/api/v1/owners/owner%20space/projects/project%2FYobi/issues/9/mention-users?query=owner%2Fproject&context=issue-comment",
+    );
+    expect(requestInit.credentials).toBe("same-origin");
+    expect(requestInit.headers.get("Accept")).toBe("application/json");
+    expect(requestInit.method).toBe("GET");
+    expect(result).toEqual({
+      items: [
+        {
+          avatarUrl: "",
+          displayName: "Project Yobi",
+          loginId: "owner/projectYobi",
+          searchText: "",
+          type: "project",
+        },
+      ],
+      total: 1,
+      truncated: true,
     });
   });
 

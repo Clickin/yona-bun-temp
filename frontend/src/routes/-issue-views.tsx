@@ -1,5 +1,11 @@
 import * as React from "react";
-import type { IssueAssignableUserItem, IssueAssignableUsersResponse } from "../api/issue-meta";
+import type {
+  IssueAssignableUserItem,
+  IssueAssignableUsersResponse,
+  IssueMentionUserItem,
+  IssueMentionUserSearchContext,
+  IssueMentionUsersResponse,
+} from "../api/issue-meta";
 import type { RuntimeConfig } from "../runtime-config";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
 import type {
@@ -113,6 +119,11 @@ export function ProjectIssueDetailPage(props: {
   issue: ProjectIssueDetailViewModel | null;
   onAssign?: (assigneeLoginId: string) => Promise<void>;
   onSearchAssignableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
+  onSearchMentionUsers?: (
+    query: string,
+    context: IssueMentionUserSearchContext,
+  ) => Promise<IssueMentionUsersResponse>;
+  onSearchSharableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
   onCommentDelete?: (commentId: number) => Promise<void>;
   onCommentSubmit?: (contentsMarkdown: string) => Promise<void>;
   onCommentUpdate?: (commentId: number, contentsMarkdown: string) => Promise<void>;
@@ -211,6 +222,7 @@ export function ProjectIssueDetailPage(props: {
         {issue ? (
           <IssueSharerPanel
             issue={issue}
+            onSearchSharableUsers={props.onSearchSharableUsers}
             onShareIssue={issue.viewerCanManageSharers ? props.onShareIssue : undefined}
             onUnshareIssue={issue.viewerCanManageSharers ? props.onUnshareIssue : undefined}
           />
@@ -281,6 +293,7 @@ export function ProjectIssueDetailPage(props: {
                   <IssueCommentEditForm
                     commentId={item.comment.id}
                     initialContents={item.comment.contentsMarkdown}
+                    onSearchMentionUsers={props.onSearchMentionUsers}
                     onSubmit={props.onCommentUpdate}
                   />
                 ) : null}
@@ -299,7 +312,10 @@ export function ProjectIssueDetailPage(props: {
           </article>
         ))}
         {issue?.viewerCanComment && props.onCommentSubmit ? (
-          <IssueCommentForm onSubmit={props.onCommentSubmit} />
+          <IssueCommentForm
+            onSearchMentionUsers={props.onSearchMentionUsers}
+            onSubmit={props.onCommentSubmit}
+          />
         ) : null}
       </section>
     </main>
@@ -454,6 +470,7 @@ export function UserIssueListPage(props: {
 
 function IssueSharerPanel(props: {
   issue: ProjectIssueDetailViewModel;
+  onSearchSharableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
   onShareIssue?: (loginId: string) => Promise<void>;
   onUnshareIssue?: (loginId: string) => Promise<void>;
 }) {
@@ -466,6 +483,23 @@ function IssueSharerPanel(props: {
   if (!hasSharers && !canManage) {
     return null;
   }
+
+  const submitSharerLoginId = (nextLoginId: string) => {
+    const trimmedLoginId = nextLoginId.trim();
+    if (!trimmedLoginId || submitting || !onShareIssue) {
+      return;
+    }
+    setSubmitting(true);
+    void onShareIssue(trimmedLoginId).finally(() => {
+      setLoginId("");
+      setSubmitting(false);
+    });
+  };
+
+  const selectSharerSuggestion = (suggestion: IssueAssignableUserItem) => {
+    setLoginId(suggestion.loginId);
+    submitSharerLoginId(suggestion.loginId);
+  };
 
   return (
     <div className="sharer-list">
@@ -490,22 +524,18 @@ function IssueSharerPanel(props: {
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            const nextLoginId = loginId.trim();
-            if (!nextLoginId) {
-              return;
-            }
-            setSubmitting(true);
-            void onShareIssue(nextLoginId).finally(() => {
-              setLoginId("");
-              setSubmitting(false);
-            });
+            submitSharerLoginId(loginId);
           }}
         >
-          <input
+          <IssueAssigneeAutocompleteField
             name="issueSharer"
-            onChange={(event) => setLoginId(event.currentTarget.value)}
+            onChange={setLoginId}
+            onSearchAssignableUsers={props.onSearchSharableUsers}
+            onSelect={selectSharerSuggestion}
             placeholder="Issue sharer login ID"
             value={loginId}
+            emptyMessage="No matching users"
+            errorMessage="Sharable user search failed."
           />
           <button disabled={submitting} type="submit">
             Share
@@ -543,6 +573,8 @@ export function submitIssueAssigneeSuggestion(
 }
 
 export function IssueAssignableUserSuggestions(props: {
+  emptyMessage?: string;
+  errorMessage?: string;
   onSelect: (suggestion: IssueAssignableUserItem) => void;
   state: IssueAssigneeSearchState;
 }) {
@@ -553,10 +585,16 @@ export function IssueAssignableUserSuggestions(props: {
     return <p className="assignee-autocomplete-status">Searching...</p>;
   }
   if (props.state.status === "error") {
-    return <p className="assignee-autocomplete-status">Assignable user search failed.</p>;
+    return (
+      <p className="assignee-autocomplete-status">
+        {props.errorMessage ?? "Assignable user search failed."}
+      </p>
+    );
   }
   if (props.state.items.length === 0) {
-    return <p className="assignee-autocomplete-status">No matching users</p>;
+    return (
+      <p className="assignee-autocomplete-status">{props.emptyMessage ?? "No matching users"}</p>
+    );
   }
 
   return (
@@ -582,6 +620,8 @@ export function IssueAssignableUserSuggestions(props: {
 }
 
 function IssueAssigneeAutocompleteField(props: {
+  emptyMessage?: string;
+  errorMessage?: string;
   name: string;
   onChange: (value: string) => void;
   onSearchAssignableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
@@ -637,7 +677,12 @@ function IssueAssigneeAutocompleteField(props: {
         placeholder={props.placeholder}
         value={props.value}
       />
-      <IssueAssignableUserSuggestions onSelect={props.onSelect} state={searchState} />
+      <IssueAssignableUserSuggestions
+        emptyMessage={props.emptyMessage}
+        errorMessage={props.errorMessage}
+        onSelect={props.onSelect}
+        state={searchState}
+      />
     </>
   );
 }
@@ -678,7 +723,197 @@ function IssueAssignForm(props: {
   );
 }
 
-function IssueCommentForm(props: { onSubmit: (contentsMarkdown: string) => Promise<void> }) {
+export const ISSUE_MENTION_SEARCH_DEBOUNCE_MS = 300;
+
+type IssueMentionSearchMatch = {
+  end: number;
+  query: string;
+  start: number;
+};
+
+type IssueMentionSearchState = {
+  items: IssueMentionUserItem[];
+  status: "error" | "idle" | "loaded" | "loading";
+  truncated: boolean;
+};
+
+function findIssueMentionSearchMatch(
+  value: string,
+  cursorIndex = value.length,
+): IssueMentionSearchMatch | null {
+  const end = Math.max(0, Math.min(cursorIndex, value.length));
+  const beforeCursor = value.slice(0, end);
+  const match = /(^|[\s([{<])@([A-Za-z0-9_.\-/]*)$/.exec(beforeCursor);
+  if (!match || match.index === undefined) {
+    return null;
+  }
+  const start = match.index + match[1].length;
+  return {
+    end,
+    query: match[2] ?? "",
+    start,
+  };
+}
+
+export function findIssueMentionQuery(value: string, cursorIndex = value.length): null | string {
+  return findIssueMentionSearchMatch(value, cursorIndex)?.query ?? null;
+}
+
+export function issueMentionTextForItem(item: IssueMentionUserItem): string {
+  return `@${item.loginId}`;
+}
+
+export function insertIssueMentionText(
+  value: string,
+  cursorIndex: number,
+  item: IssueMentionUserItem,
+): { cursorIndex: number; value: string } {
+  const match = findIssueMentionSearchMatch(value, cursorIndex);
+  const start = match?.start ?? Math.max(0, Math.min(cursorIndex, value.length));
+  const end = match?.end ?? start;
+  const mentionText = `${issueMentionTextForItem(item)}${/\s/.test(value[end] ?? "") ? "" : " "}`;
+  const nextValue = `${value.slice(0, start)}${mentionText}${value.slice(end)}`;
+  return {
+    cursorIndex: start + mentionText.length,
+    value: nextValue,
+  };
+}
+
+function IssueMentionUserSuggestions(props: {
+  onSelect: (suggestion: IssueMentionUserItem) => void;
+  state: IssueMentionSearchState;
+}) {
+  if (props.state.status === "idle") {
+    return null;
+  }
+  if (props.state.status === "loading") {
+    return <p className="mention-autocomplete-status">Searching...</p>;
+  }
+  if (props.state.status === "error") {
+    return <p className="mention-autocomplete-status">Mention user search failed.</p>;
+  }
+  if (props.state.items.length === 0) {
+    return <p className="mention-autocomplete-status">No matching mentions</p>;
+  }
+
+  return (
+    <div className="mention-autocomplete">
+      <ul>
+        {props.state.items.map((item) => (
+          <li key={`${item.type}-${item.loginId}`}>
+            <button onClick={() => props.onSelect(item)} type="button">
+              {item.avatarUrl ? (
+                <img alt={`${item.displayName} avatar`} src={item.avatarUrl} />
+              ) : null}
+              <span>{item.displayName || item.loginId}</span>
+              <span>{issueMentionTextForItem(item)}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {props.state.truncated ? (
+        <p className="mention-autocomplete-status">More matches available</p>
+      ) : null}
+    </div>
+  );
+}
+
+function IssueMentionTextarea(props: {
+  className?: string;
+  context: IssueMentionUserSearchContext;
+  name?: string;
+  onChange: (value: string) => void;
+  onSearchMentionUsers?: (
+    query: string,
+    context: IssueMentionUserSearchContext,
+  ) => Promise<IssueMentionUsersResponse>;
+  placeholder: string;
+  value: string;
+}) {
+  const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
+  const [cursorIndex, setCursorIndex] = React.useState(props.value.length);
+  const [searchState, setSearchState] = React.useState<IssueMentionSearchState>({
+    items: [],
+    status: "idle",
+    truncated: false,
+  });
+
+  React.useEffect(() => {
+    const query = findIssueMentionQuery(props.value, cursorIndex);
+    if (query === null || !props.onSearchMentionUsers) {
+      setSearchState({ items: [], status: "idle", truncated: false });
+      return undefined;
+    }
+
+    let cancelled = false;
+    setSearchState({ items: [], status: "loading", truncated: false });
+    const timer = window.setTimeout(() => {
+      props
+        .onSearchMentionUsers?.(query, props.context)
+        .then((response) => {
+          if (!cancelled) {
+            setSearchState({
+              items: response.items,
+              status: "loaded",
+              truncated: response.truncated,
+            });
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setSearchState({ items: [], status: "error", truncated: false });
+          }
+        });
+    }, ISSUE_MENTION_SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [cursorIndex, props.context, props.onSearchMentionUsers, props.value]);
+
+  const updateCursorIndex = (textarea: HTMLTextAreaElement) => {
+    setCursorIndex(textarea.selectionStart ?? textarea.value.length);
+  };
+  const selectMention = (suggestion: IssueMentionUserItem) => {
+    const cursor = textareaRef.current?.selectionStart ?? cursorIndex;
+    const inserted = insertIssueMentionText(props.value, cursor, suggestion);
+    props.onChange(inserted.value);
+    setCursorIndex(inserted.cursorIndex);
+    setSearchState({ items: [], status: "idle", truncated: false });
+    window.requestAnimationFrame(() => {
+      textareaRef.current?.setSelectionRange(inserted.cursorIndex, inserted.cursorIndex);
+      textareaRef.current?.focus();
+    });
+  };
+
+  return (
+    <>
+      <textarea
+        className={props.className}
+        name={props.name}
+        onChange={(event) => {
+          props.onChange(event.currentTarget.value);
+          updateCursorIndex(event.currentTarget);
+        }}
+        onClick={(event) => updateCursorIndex(event.currentTarget)}
+        onKeyUp={(event) => updateCursorIndex(event.currentTarget)}
+        placeholder={props.placeholder}
+        ref={textareaRef}
+        value={props.value}
+      />
+      <IssueMentionUserSuggestions onSelect={selectMention} state={searchState} />
+    </>
+  );
+}
+
+function IssueCommentForm(props: {
+  onSearchMentionUsers?: (
+    query: string,
+    context: IssueMentionUserSearchContext,
+  ) => Promise<IssueMentionUsersResponse>;
+  onSubmit: (contentsMarkdown: string) => Promise<void>;
+}) {
   const [contentsMarkdown, setContentsMarkdown] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
   return (
@@ -696,9 +931,11 @@ function IssueCommentForm(props: { onSubmit: (contentsMarkdown: string) => Promi
         });
       }}
     >
-      <textarea
+      <IssueMentionTextarea
+        context="issue-comment"
         name="contents"
-        onChange={(event) => setContentsMarkdown(event.currentTarget.value)}
+        onChange={setContentsMarkdown}
+        onSearchMentionUsers={props.onSearchMentionUsers}
         placeholder="Leave a comment"
         value={contentsMarkdown}
       />
@@ -712,6 +949,10 @@ function IssueCommentForm(props: { onSubmit: (contentsMarkdown: string) => Promi
 function IssueCommentEditForm(props: {
   commentId: number;
   initialContents: string;
+  onSearchMentionUsers?: (
+    query: string,
+    context: IssueMentionUserSearchContext,
+  ) => Promise<IssueMentionUsersResponse>;
   onSubmit: (commentId: number, contentsMarkdown: string) => Promise<void>;
 }) {
   const [editing, setEditing] = React.useState(false);
@@ -734,8 +975,11 @@ function IssueCommentEditForm(props: {
         void props.onSubmit(props.commentId, nextContents).then(() => setEditing(false));
       }}
     >
-      <textarea
-        onChange={(event) => setContentsMarkdown(event.currentTarget.value)}
+      <IssueMentionTextarea
+        context="issue-comment"
+        onChange={setContentsMarkdown}
+        onSearchMentionUsers={props.onSearchMentionUsers}
+        placeholder="Leave a comment"
         value={contentsMarkdown}
       />
       <button type="submit">Save comment</button>
@@ -751,6 +995,10 @@ export function ProjectIssueFormPage(props: {
   initialIssue?: ProjectIssueDetailViewModel | null;
   mode: "create" | "edit";
   onSearchAssignableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
+  onSearchMentionUsers?: (
+    query: string,
+    context: IssueMentionUserSearchContext,
+  ) => Promise<IssueMentionUsersResponse>;
   onSubmit: (input: ProjectIssueFormSubmitInput) => Promise<void>;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -812,10 +1060,12 @@ export function ProjectIssueFormPage(props: {
           placeholder="Assignee"
           value={assigneeLoginId}
         />
-        <textarea
+        <IssueMentionTextarea
           className="editorSeries content"
+          context="issue-body"
           name="body"
-          onChange={(event) => setBodyMarkdown(event.currentTarget.value)}
+          onChange={setBodyMarkdown}
+          onSearchMentionUsers={props.onSearchMentionUsers}
           placeholder="Leave a comment"
           value={bodyMarkdown}
         />
