@@ -72,3 +72,5 @@ This phase accepted that existing ConnectRPC/proto-based work could be rewritten
 - `pnpm --dir frontend test` passed on the integration branch: 10 files, 72 tests.
 - `pnpm --dir frontend test:e2e` passed on the integration branch: 12 tests.
 - `pnpm --dir frontend build` passed on the integration branch.
+- Follow-up closeout audit removed stale current-doc/script/test references from `docs/shared/protobuf-codegen.md`, `proto/README.md`, `scripts/smoke-embedded-assets.ps1`, and `tests/precommit-hook-contract.test.mjs`.
+- `pwsh -NoProfile -File scripts\smoke-embedded-assets.ps1` passed with embedded assets and REST `/api/v1/projects` smoke coverage.

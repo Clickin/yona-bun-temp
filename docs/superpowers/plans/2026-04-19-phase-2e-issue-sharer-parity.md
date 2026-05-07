@@ -1,5 +1,8 @@
 # Phase 2E Issue Sharer Parity Implementation Plan
 
+> Status: superseded by Phase -1 REST pivot
+> This plan describes the pre-REST implementation packet. Treat its transport references as historical; current application work uses `/api/v1` REST and TanStack Query.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans or direct TDD execution. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Implement legacy Issue Sharer parity for directly sharing a restricted/private issue with a user by login ID.

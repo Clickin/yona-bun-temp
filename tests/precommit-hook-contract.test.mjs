@@ -47,7 +47,14 @@ test("external REST harness requires yona-export provenance for issue and milest
 
   assert.doesNotMatch(serverSource, /\/-_-api\/v1\/owners\/[^"]*\/issues/u);
   assert.doesNotMatch(serverSource, /\/-_-api\/v1\/owners\/[^"]*\/milestones/u);
-  assert.match(specSource, /ConnectRPC를 주 통신 프로토콜로 사용/u);
+  assert.match(
+    specSource,
+    /새 React application API는 `\/api\/v1\/\*\*`를 canonical surface로 사용/u,
+  );
+  assert.match(
+    specSource,
+    /내부 React 화면은 `\/api\/v1\/\*\*` application API와 TanStack Query를 사용/u,
+  );
   assert.match(specSource, /외부 도구와의 호환/u);
   assert.match(specSource, /내부 React 화면/u);
   assert.match(provenanceSource, /migration-facing project export\/import tool contract/u);

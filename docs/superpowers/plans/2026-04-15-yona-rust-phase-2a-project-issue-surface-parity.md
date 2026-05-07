@@ -1,5 +1,8 @@
 # Yona Rust Phase 2A Project Issue Surface Parity Implementation Plan
 
+> Status: superseded by Phase -1 REST pivot
+> This plan describes the pre-REST implementation packet. Treat its transport references as historical; current application work uses `/api/v1` REST and TanStack Query.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the canonical repo-root placeholder issue screens with legacy-parity project issue list and issue detail flows, using the existing Rust workspace foundations and preserving legacy Yona UI/UX exactly.
@@ -98,7 +101,7 @@ These files define the required list structure, filters, tab semantics, issue me
 
 ### Contract
 
-- `proto/` issue-related service definitions **only if** list/detail contracts are still missing from the canonical contract source
+- `proto/` issue-related service definitions were considered in this historical plan only because the runtime contract had not yet been moved to REST
 
 ### Server
 
