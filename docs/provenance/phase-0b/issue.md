@@ -119,7 +119,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 ## Remaining Phase 2 Follow-ups
 
 - Legacy external `/-_-api/v1` issue API parity.
-- Sharable user autocomplete/search, Issue Sharer changed timeline/notification semantics, and mention autocomplete/creation/notification semantics.
+- Issue Sharer changed timeline/notification semantics and mention autocomplete/creation/notification semantics.
 
 ## Shared Surface Notes
 
