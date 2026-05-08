@@ -181,7 +181,9 @@ async function fetchReady(url) {
     const response = await fetch(url, {
       signal: AbortSignal.timeout(2_000),
     });
-    return response.status < 500;
+    const ready = response.status < 500;
+    await response.arrayBuffer().catch(() => {});
+    return ready;
   } catch {
     return false;
   }
@@ -266,10 +268,10 @@ async function main() {
   try {
     console.log(`[playwright-e2e] backend: ${runtime.backendSessionUrl}`);
     console.log(`[playwright-e2e] frontend: ${runtime.frontendUrl}`);
-    await Promise.all([
-      waitForReady("backend", runtime.backendSessionUrl, serverStates),
-      waitForReady("frontend", runtime.frontendUrl, serverStates),
-    ]);
+    console.log(`[playwright-e2e] frontend session: ${runtime.frontendSessionUrl}`);
+    await waitForReady("backend", runtime.backendSessionUrl, serverStates);
+    await waitForReady("frontend", runtime.frontendUrl, serverStates);
+    await waitForReady("frontend session", runtime.frontendSessionUrl, serverStates);
     const exitCode = await runPlaywright(forwardedArgs, env);
     console.log(`[playwright-e2e] playwright exited with code ${exitCode}`);
     return exitCode;

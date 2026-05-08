@@ -19,6 +19,7 @@ test("buildPlaywrightE2eRuntime derives isolated origins and runtime paths for o
     {
       backendOrigin: runtime.backendOrigin,
       backendSessionUrl: runtime.backendSessionUrl,
+      frontendSessionUrl: runtime.frontendSessionUrl,
       frontendOrigin: runtime.frontendOrigin,
       frontendUrl: runtime.frontendUrl,
       runtimeDirectory: path.relative(repoRoot, runtime.runtimeDirectory),
@@ -26,14 +27,16 @@ test("buildPlaywrightE2eRuntime derives isolated origins and runtime paths for o
     {
       backendOrigin: "http://127.0.0.1:43102",
       backendSessionUrl: "http://127.0.0.1:43102/yona/api/auth/session",
+      frontendSessionUrl: "http://127.0.0.1:43101/yona/api/auth/session",
       frontendOrigin: "http://127.0.0.1:43101",
       frontendUrl: "http://127.0.0.1:43101/yona/",
       runtimeDirectory: path.join(".yona-data", "e2e", "run-a"),
     },
   );
+  assert.equal(runtime.backendEnv.YONA_DEV_RUNTIME_DIR, runtime.runtimeDirectory);
   assert.equal(
-    runtime.backendEnv.YONA_DEV_RUNTIME_DIR,
-    runtime.runtimeDirectory,
+    runtime.frontendEnv.YONA_E2E_FRONTEND_SESSION_URL,
+    "http://127.0.0.1:43101/yona/api/auth/session",
   );
 });
 
