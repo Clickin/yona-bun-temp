@@ -79,6 +79,20 @@ pub struct IssueMentionUserSearchRecord {
     pub truncated: bool,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectIssueReferenceRecord {
+    pub issue_number: i64,
+    pub state: String,
+    pub title: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectIssueReferenceSearchRecord {
+    pub items: Vec<ProjectIssueReferenceRecord>,
+    pub total: u32,
+    pub truncated: bool,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct MentionSyncResult {
     pub mentioned_user_ids: Vec<i64>,

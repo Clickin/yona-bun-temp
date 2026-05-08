@@ -22,6 +22,7 @@ import {
   voteIssueComment,
   watchIssue,
 } from "../../../../../auth-workspace-client";
+import { projectIssueReferencesQueryOptions } from "../../../../../api/issue-meta";
 import { useAppRuntime } from "../../../../../app-runtime-context";
 import { toProjectContainerView, toProjectIssueDetailView } from "../../../../../app-view-models";
 import { ProjectIssueDetailPage } from "../../../../-issue-views";
@@ -99,6 +100,13 @@ function IssueDetailRouteComponent() {
   return (
     <ProjectIssueDetailPage
       detail={detail}
+      getIssueReferencesQueryOptions={(query) =>
+        projectIssueReferencesQueryOptions(runtimeConfig, {
+          ownerName: owner,
+          projectName,
+          query,
+        })
+      }
       issue={issue}
       onAssign={async (assigneeLoginId) => {
         const nextIssue = await assignIssue(runtimeConfig, csrfToken, {

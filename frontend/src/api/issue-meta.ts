@@ -1,5 +1,7 @@
+import { queryOptions } from "@tanstack/react-query";
 import type { ReadIssueDetailResponse } from "../gen/yona/pilot/v1/pilot_pb";
 import type { RuntimeConfig } from "../runtime-config";
+import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
 
 type IssueScopeInput = {
@@ -38,6 +40,10 @@ export type ProjectAssignableUsersInput = ProjectScopeInput & {
   type?: IssueAssignableUserSearchType | string;
 };
 
+export type ProjectIssueReferencesInput = ProjectScopeInput & {
+  query: string;
+};
+
 export type IssueAssignableUserItem = {
   avatarUrl: string;
   displayName: string;
@@ -69,6 +75,18 @@ export type IssueMentionUserItem = {
 
 export type IssueMentionUsersResponse = {
   items: IssueMentionUserItem[];
+  total: number;
+  truncated: boolean;
+};
+
+export type ProjectIssueReferenceItem = {
+  issueNumber: number;
+  state: string;
+  title: string;
+};
+
+export type ProjectIssueReferencesResponse = {
+  items: ProjectIssueReferenceItem[];
   total: number;
   truncated: boolean;
 };
@@ -195,6 +213,21 @@ function normalizeIssueMentionUsersResponse(
     loginId: item.loginId ?? "",
     searchText: item.searchText ?? "",
     type: item.type ?? "user",
+  }));
+  return {
+    items,
+    total: response.total ?? items.length,
+    truncated: response.truncated ?? false,
+  };
+}
+
+function normalizeProjectIssueReferencesResponse(
+  response: Partial<ProjectIssueReferencesResponse>,
+): ProjectIssueReferencesResponse {
+  const items = (response.items ?? []).map((item) => ({
+    issueNumber: item.issueNumber ?? 0,
+    state: item.state ?? "",
+    title: item.title ?? "",
   }));
   return {
     items,
@@ -366,6 +399,45 @@ export function searchProjectAssignableUsersRest(
       fetchImpl,
     },
   ).then(normalizeIssueAssignableUsersResponse);
+}
+
+export function searchProjectIssueReferencesRest(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectIssueReferencesInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectIssueReferencesResponse> {
+  const query = new URLSearchParams();
+  query.set("query", input.query);
+  return restFetch<Partial<ProjectIssueReferencesResponse>>(
+    runtimeConfig,
+    `${projectPath(input)}/issue-references?${query.toString()}`,
+    {
+      fetchImpl,
+    },
+  ).then(normalizeProjectIssueReferencesResponse);
+}
+
+export type ProjectIssueReferencesQueryOptions = {
+  queryFn: () => Promise<ProjectIssueReferencesResponse>;
+  queryKey: ReturnType<typeof apiQueryKeys.project.issueReferences>;
+};
+
+export function projectIssueReferencesQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectIssueReferencesInput,
+): ProjectIssueReferencesQueryOptions {
+  const queryKey = apiQueryKeys.project.issueReferences(input.ownerName, input.projectName, {
+    query: input.query,
+  });
+  const queryFn = () => searchProjectIssueReferencesRest(runtimeConfig, input);
+  const options = queryOptions({
+    queryFn,
+    queryKey,
+  });
+  return {
+    queryFn,
+    queryKey: options.queryKey,
+  };
 }
 
 export function assignIssueRest(

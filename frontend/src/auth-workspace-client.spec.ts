@@ -54,6 +54,7 @@ import {
   searchIssueMentionUsers,
   searchIssueSharableUsers,
   searchProjectAssignableUsers,
+  searchProjectIssueReferences,
   toggleFavoriteProject,
   toggleProjectWatch,
   toggleWorkspaceNotification,
@@ -836,6 +837,53 @@ describe("issue assignable user REST client", () => {
           loginId: "owner/projectYobi",
           searchText: "",
           type: "project",
+        },
+      ],
+      total: 1,
+      truncated: true,
+    });
+  });
+
+  it("encodes project issue-reference search and normalizes sparse responses", async () => {
+    const fetchMock = vi.fn(async () =>
+      okJsonResponse({
+        items: [
+          {
+            issueNumber: 12,
+            title: "Referenced issue",
+          },
+        ],
+        truncated: true,
+      }),
+    );
+
+    const result = await searchProjectIssueReferences(
+      runtimeConfig,
+      {
+        ownerName: "owner space",
+        projectName: "project/Yobi",
+        query: "#12 title",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { credentials: string; headers: Headers; method: string },
+    ];
+    expect(requestUrl).toBe(
+      "/yona/api/v1/owners/owner%20space/projects/project%2FYobi/issue-references?query=%2312+title",
+    );
+    expect(requestInit.credentials).toBe("same-origin");
+    expect(requestInit.headers.get("Accept")).toBe("application/json");
+    expect(requestInit.method).toBe("GET");
+    expect(result).toEqual({
+      items: [
+        {
+          issueNumber: 12,
+          state: "",
+          title: "Referenced issue",
         },
       ],
       total: 1,

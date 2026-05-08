@@ -11,14 +11,15 @@ use crate::repo_types::{
     OrganizationIssueListFilter, OrganizationIssueListRecord, OrganizationIssueProjectOptionRecord,
     OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationRecord,
     OrganizationViewerRecord, ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord,
-    ProjectIssueListItemRecord, ProjectIssueListRecord, ProjectListEntry,
-    ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
-    ProjectMilestoneSummaryRecord, ProjectRecord, ProjectViewerRecord, ToggleFavoriteIssueResult,
-    ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
-    UpdateOrganizationInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
-    UpdateProjectLabelInput, UserIssueCandidateRecord, UserIssueListFilter,
-    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
-    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    ProjectIssueListItemRecord, ProjectIssueListRecord, ProjectIssueReferenceRecord,
+    ProjectIssueReferenceSearchRecord, ProjectListEntry, ProjectMemberDirectoryRecord,
+    ProjectMemberRecord, ProjectMenuSettingsRecord, ProjectMilestoneSummaryRecord, ProjectRecord,
+    ProjectViewerRecord, ToggleFavoriteIssueResult, ToggleFavoriteProjectResult,
+    UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput,
+    UpdateProjectInput, UpdateProjectLabelCategoryInput, UpdateProjectLabelInput,
+    UserIssueCandidateRecord, UserIssueListFilter, WatchedProjectNotificationsRecord,
+    WorkspaceEmailRecord, WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
+    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
@@ -124,6 +125,14 @@ fn mention_text_matches(record: &IssueMentionUserRecord, query: &str) -> bool {
         || normalize_identity(&record.login_id).contains(&normalized)
         || normalize_identity(&record.display_name).contains(&normalized)
         || normalize_identity(&record.search_text).contains(&normalized)
+}
+
+fn project_issue_reference_record(model: &issue::Model) -> ProjectIssueReferenceRecord {
+    ProjectIssueReferenceRecord {
+        issue_number: model.number.unwrap_or_default(),
+        state: issue_state_from_raw(model.state),
+        title: model.title.clone().unwrap_or_default(),
+    }
 }
 
 fn push_unique_user_id(user_ids: &mut Vec<i64>, seen: &mut HashSet<i64>, user_id: Option<i64>) {
@@ -799,6 +808,87 @@ impl AppRepository {
             total,
             truncated,
         }))
+    }
+
+    pub async fn list_project_issue_references(
+        &self,
+        project_id: i64,
+        query: &str,
+        limit: usize,
+    ) -> Result<ProjectIssueReferenceSearchRecord, DbErr> {
+        let query = query.trim();
+        let normalized_query = normalize_identity(query);
+        let mut models = issue::Entity::find()
+            .filter(issue::Column::ProjectId.eq(Some(project_id)))
+            .all(&self.db)
+            .await?;
+
+        if query.is_empty() {
+            models.sort_by(|left, right| {
+                right.created_date.cmp(&left.created_date).then_with(|| {
+                    right
+                        .number
+                        .unwrap_or_default()
+                        .cmp(&left.number.unwrap_or_default())
+                })
+            });
+            let total = models.len() as u32;
+            let truncated = models.len() > limit;
+            models.truncate(limit);
+            return Ok(ProjectIssueReferenceSearchRecord {
+                items: models.iter().map(project_issue_reference_record).collect(),
+                total,
+                truncated,
+            });
+        }
+
+        let mut matches = models
+            .into_iter()
+            .filter_map(|model| {
+                let issue_number = model.number.unwrap_or_default().to_string();
+                let exact_number_match = issue_number == normalized_query;
+                let number_prefix_match = issue_number.starts_with(&normalized_query);
+                let title_match = model
+                    .title
+                    .as_deref()
+                    .is_some_and(|title| normalize_identity(title).contains(&normalized_query));
+                (number_prefix_match || title_match).then_some((
+                    model,
+                    exact_number_match,
+                    number_prefix_match,
+                    title_match,
+                ))
+            })
+            .collect::<Vec<_>>();
+
+        matches.sort_by(|left, right| {
+            right
+                .1
+                .cmp(&left.1)
+                .then_with(|| right.2.cmp(&left.2))
+                .then_with(|| right.3.cmp(&left.3))
+                .then_with(|| right.0.created_date.cmp(&left.0.created_date))
+                .then_with(|| {
+                    right
+                        .0
+                        .number
+                        .unwrap_or_default()
+                        .cmp(&left.0.number.unwrap_or_default())
+                })
+        });
+
+        let total = matches.len() as u32;
+        let truncated = matches.len() > limit;
+        matches.truncate(limit);
+
+        Ok(ProjectIssueReferenceSearchRecord {
+            items: matches
+                .iter()
+                .map(|(model, _, _, _)| project_issue_reference_record(model))
+                .collect(),
+            total,
+            truncated,
+        })
     }
 
     pub async fn add_issue_sharer(

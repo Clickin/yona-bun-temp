@@ -5,6 +5,8 @@ import type {
   IssueMentionUserItem,
   IssueMentionUserSearchContext,
   IssueMentionUsersResponse,
+  ProjectIssueReferenceItem,
+  ProjectIssueReferencesResponse,
 } from "../api/issue-meta";
 import type { RuntimeConfig } from "../runtime-config";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
@@ -116,6 +118,7 @@ export function ProjectIssueListPage(props: {
 
 export function ProjectIssueDetailPage(props: {
   detail: ProjectDetailViewModel | null;
+  getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
   issue: ProjectIssueDetailViewModel | null;
   onAssign?: (assigneeLoginId: string) => Promise<void>;
   onSearchAssignableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
@@ -292,6 +295,7 @@ export function ProjectIssueDetailPage(props: {
                 {item.comment.viewerCanUpdate && props.onCommentUpdate ? (
                   <IssueCommentEditForm
                     commentId={item.comment.id}
+                    getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
                     initialContents={item.comment.contentsMarkdown}
                     onSearchMentionUsers={props.onSearchMentionUsers}
                     onSubmit={props.onCommentUpdate}
@@ -313,6 +317,7 @@ export function ProjectIssueDetailPage(props: {
         ))}
         {issue?.viewerCanComment && props.onCommentSubmit ? (
           <IssueCommentForm
+            getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
             onSearchMentionUsers={props.onSearchMentionUsers}
             onSubmit={props.onCommentSubmit}
           />
@@ -725,6 +730,11 @@ function IssueAssignForm(props: {
 
 export const ISSUE_MENTION_SEARCH_DEBOUNCE_MS = 300;
 
+type IssueReferenceQueryOptionsFactory = (query: string) => {
+  queryFn: () => Promise<ProjectIssueReferencesResponse>;
+  queryKey: readonly unknown[];
+};
+
 type IssueMentionSearchMatch = {
   end: number;
   query: string;
@@ -733,6 +743,12 @@ type IssueMentionSearchMatch = {
 
 type IssueMentionSearchState = {
   items: IssueMentionUserItem[];
+  status: "error" | "idle" | "loaded" | "loading";
+  truncated: boolean;
+};
+
+type IssueReferenceSearchState = {
+  items: ProjectIssueReferenceItem[];
   status: "error" | "idle" | "loaded" | "loading";
   truncated: boolean;
 };
@@ -759,8 +775,34 @@ export function findIssueMentionQuery(value: string, cursorIndex = value.length)
   return findIssueMentionSearchMatch(value, cursorIndex)?.query ?? null;
 }
 
+function findIssueReferenceSearchMatch(
+  value: string,
+  cursorIndex = value.length,
+): IssueMentionSearchMatch | null {
+  const end = Math.max(0, Math.min(cursorIndex, value.length));
+  const beforeCursor = value.slice(0, end);
+  const match = /(^|[\s([{<])#([^\s#@]*)$/u.exec(beforeCursor);
+  if (!match || match.index === undefined) {
+    return null;
+  }
+  const start = match.index + match[1].length;
+  return {
+    end,
+    query: match[2] ?? "",
+    start,
+  };
+}
+
+export function findIssueReferenceQuery(value: string, cursorIndex = value.length): null | string {
+  return findIssueReferenceSearchMatch(value, cursorIndex)?.query ?? null;
+}
+
 export function issueMentionTextForItem(item: IssueMentionUserItem): string {
   return `@${item.loginId}`;
+}
+
+export function issueReferenceTextForItem(item: ProjectIssueReferenceItem): string {
+  return `#${item.issueNumber}`;
 }
 
 export function insertIssueMentionText(
@@ -775,6 +817,22 @@ export function insertIssueMentionText(
   const nextValue = `${value.slice(0, start)}${mentionText}${value.slice(end)}`;
   return {
     cursorIndex: start + mentionText.length,
+    value: nextValue,
+  };
+}
+
+export function insertIssueReferenceText(
+  value: string,
+  cursorIndex: number,
+  item: ProjectIssueReferenceItem,
+): { cursorIndex: number; value: string } {
+  const match = findIssueReferenceSearchMatch(value, cursorIndex);
+  const start = match?.start ?? Math.max(0, Math.min(cursorIndex, value.length));
+  const end = match?.end ?? start;
+  const referenceText = `${issueReferenceTextForItem(item)}${/\s/.test(value[end] ?? "") ? "" : " "}`;
+  const nextValue = `${value.slice(0, start)}${referenceText}${value.slice(end)}`;
+  return {
+    cursorIndex: start + referenceText.length,
     value: nextValue,
   };
 }
@@ -818,9 +876,47 @@ function IssueMentionUserSuggestions(props: {
   );
 }
 
+function IssueReferenceSuggestions(props: {
+  onSelect: (suggestion: ProjectIssueReferenceItem) => void;
+  state: IssueReferenceSearchState;
+}) {
+  if (props.state.status === "idle") {
+    return null;
+  }
+  if (props.state.status === "loading") {
+    return <p className="mention-autocomplete-status">Searching...</p>;
+  }
+  if (props.state.status === "error") {
+    return <p className="mention-autocomplete-status">Issue reference search failed.</p>;
+  }
+  if (props.state.items.length === 0) {
+    return <p className="mention-autocomplete-status">No matching issues</p>;
+  }
+
+  return (
+    <div className="mention-autocomplete">
+      <ul>
+        {props.state.items.map((item) => (
+          <li key={item.issueNumber}>
+            <button onClick={() => props.onSelect(item)} type="button">
+              <span>{issueReferenceTextForItem(item)}</span>
+              <span>{item.title}</span>
+              <span>{item.state}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {props.state.truncated ? (
+        <p className="mention-autocomplete-status">More matches available</p>
+      ) : null}
+    </div>
+  );
+}
+
 function IssueMentionTextarea(props: {
   className?: string;
   context: IssueMentionUserSearchContext;
+  getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
   name?: string;
   onChange: (value: string) => void;
   onSearchMentionUsers?: (
@@ -832,27 +928,34 @@ function IssueMentionTextarea(props: {
 }) {
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
   const [cursorIndex, setCursorIndex] = React.useState(props.value.length);
-  const [searchState, setSearchState] = React.useState<IssueMentionSearchState>({
+  const [mentionSearchState, setMentionSearchState] = React.useState<IssueMentionSearchState>({
     items: [],
     status: "idle",
     truncated: false,
   });
+  const [issueReferenceSearchState, setIssueReferenceSearchState] =
+    React.useState<IssueReferenceSearchState>({
+      items: [],
+      status: "idle",
+      truncated: false,
+    });
 
   React.useEffect(() => {
-    const query = findIssueMentionQuery(props.value, cursorIndex);
+    const referenceQuery = findIssueReferenceQuery(props.value, cursorIndex);
+    const query = referenceQuery === null ? findIssueMentionQuery(props.value, cursorIndex) : null;
     if (query === null || !props.onSearchMentionUsers) {
-      setSearchState({ items: [], status: "idle", truncated: false });
+      setMentionSearchState({ items: [], status: "idle", truncated: false });
       return undefined;
     }
 
     let cancelled = false;
-    setSearchState({ items: [], status: "loading", truncated: false });
+    setMentionSearchState({ items: [], status: "loading", truncated: false });
     const timer = window.setTimeout(() => {
       props
         .onSearchMentionUsers?.(query, props.context)
         .then((response) => {
           if (!cancelled) {
-            setSearchState({
+            setMentionSearchState({
               items: response.items,
               status: "loaded",
               truncated: response.truncated,
@@ -861,7 +964,7 @@ function IssueMentionTextarea(props: {
         })
         .catch(() => {
           if (!cancelled) {
-            setSearchState({ items: [], status: "error", truncated: false });
+            setMentionSearchState({ items: [], status: "error", truncated: false });
           }
         });
     }, ISSUE_MENTION_SEARCH_DEBOUNCE_MS);
@@ -872,15 +975,65 @@ function IssueMentionTextarea(props: {
     };
   }, [cursorIndex, props.context, props.onSearchMentionUsers, props.value]);
 
+  React.useEffect(() => {
+    const query = findIssueReferenceQuery(props.value, cursorIndex);
+    const getIssueReferencesQueryOptions = props.getIssueReferencesQueryOptions;
+    if (query === null || !getIssueReferencesQueryOptions) {
+      setIssueReferenceSearchState({ items: [], status: "idle", truncated: false });
+      return undefined;
+    }
+
+    let cancelled = false;
+    setIssueReferenceSearchState({ items: [], status: "loading", truncated: false });
+    const timer = window.setTimeout(() => {
+      getIssueReferencesQueryOptions(query)
+        .queryFn()
+        .then((response: ProjectIssueReferencesResponse) => {
+          if (!cancelled) {
+            setIssueReferenceSearchState({
+              items: response.items,
+              status: "loaded",
+              truncated: response.truncated,
+            });
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setIssueReferenceSearchState({ items: [], status: "error", truncated: false });
+          }
+        });
+    }, ISSUE_MENTION_SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [cursorIndex, props.getIssueReferencesQueryOptions, props.value]);
+
   const updateCursorIndex = (textarea: HTMLTextAreaElement) => {
     setCursorIndex(textarea.selectionStart ?? textarea.value.length);
   };
+
+  const selectIssueReference = (suggestion: ProjectIssueReferenceItem) => {
+    const cursor = textareaRef.current?.selectionStart ?? cursorIndex;
+    const inserted = insertIssueReferenceText(props.value, cursor, suggestion);
+    props.onChange(inserted.value);
+    setCursorIndex(inserted.cursorIndex);
+    setMentionSearchState({ items: [], status: "idle", truncated: false });
+    setIssueReferenceSearchState({ items: [], status: "idle", truncated: false });
+    window.requestAnimationFrame(() => {
+      textareaRef.current?.setSelectionRange(inserted.cursorIndex, inserted.cursorIndex);
+      textareaRef.current?.focus();
+    });
+  };
+
   const selectMention = (suggestion: IssueMentionUserItem) => {
     const cursor = textareaRef.current?.selectionStart ?? cursorIndex;
     const inserted = insertIssueMentionText(props.value, cursor, suggestion);
     props.onChange(inserted.value);
     setCursorIndex(inserted.cursorIndex);
-    setSearchState({ items: [], status: "idle", truncated: false });
+    setMentionSearchState({ items: [], status: "idle", truncated: false });
+    setIssueReferenceSearchState({ items: [], status: "idle", truncated: false });
     window.requestAnimationFrame(() => {
       textareaRef.current?.setSelectionRange(inserted.cursorIndex, inserted.cursorIndex);
       textareaRef.current?.focus();
@@ -902,12 +1055,17 @@ function IssueMentionTextarea(props: {
         ref={textareaRef}
         value={props.value}
       />
-      <IssueMentionUserSuggestions onSelect={selectMention} state={searchState} />
+      <IssueMentionUserSuggestions onSelect={selectMention} state={mentionSearchState} />
+      <IssueReferenceSuggestions
+        onSelect={selectIssueReference}
+        state={issueReferenceSearchState}
+      />
     </>
   );
 }
 
 function IssueCommentForm(props: {
+  getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
   onSearchMentionUsers?: (
     query: string,
     context: IssueMentionUserSearchContext,
@@ -933,6 +1091,7 @@ function IssueCommentForm(props: {
     >
       <IssueMentionTextarea
         context="issue-comment"
+        getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
         name="contents"
         onChange={setContentsMarkdown}
         onSearchMentionUsers={props.onSearchMentionUsers}
@@ -948,6 +1107,7 @@ function IssueCommentForm(props: {
 
 function IssueCommentEditForm(props: {
   commentId: number;
+  getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
   initialContents: string;
   onSearchMentionUsers?: (
     query: string,
@@ -977,6 +1137,7 @@ function IssueCommentEditForm(props: {
     >
       <IssueMentionTextarea
         context="issue-comment"
+        getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
         onChange={setContentsMarkdown}
         onSearchMentionUsers={props.onSearchMentionUsers}
         placeholder="Leave a comment"
@@ -992,6 +1153,7 @@ function IssueCommentEditForm(props: {
 
 export function ProjectIssueFormPage(props: {
   detail: ProjectDetailViewModel | null;
+  getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
   initialIssue?: ProjectIssueDetailViewModel | null;
   mode: "create" | "edit";
   onSearchAssignableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
@@ -1063,6 +1225,7 @@ export function ProjectIssueFormPage(props: {
         <IssueMentionTextarea
           className="editorSeries content"
           context="issue-body"
+          getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
           name="body"
           onChange={setBodyMarkdown}
           onSearchMentionUsers={props.onSearchMentionUsers}

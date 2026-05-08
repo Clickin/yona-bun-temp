@@ -5,6 +5,7 @@ import {
   readProjectContainer,
   searchProjectAssignableUsers,
 } from "../../../../auth-workspace-client";
+import { projectIssueReferencesQueryOptions } from "../../../../api/issue-meta";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
 import { ProjectIssueFormPage } from "../../../-issue-views";
@@ -73,6 +74,13 @@ function IssueCreateRouteComponent() {
   return (
     <ProjectIssueFormPage
       detail={detail}
+      getIssueReferencesQueryOptions={(query) =>
+        projectIssueReferencesQueryOptions(runtimeConfig, {
+          ownerName: owner,
+          projectName,
+          query,
+        })
+      }
       mode="create"
       onSearchAssignableUsers={(query) =>
         searchProjectAssignableUsers(runtimeConfig, {

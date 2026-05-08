@@ -1748,6 +1748,28 @@ struct RestIssueMentionUsersResponse {
     truncated: bool,
 }
 
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestProjectIssueReferencesQuery {
+    query: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectIssueReferenceItem {
+    issue_number: i64,
+    state: String,
+    title: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectIssueReferencesResponse {
+    items: Vec<RestProjectIssueReferenceItem>,
+    total: u32,
+    truncated: bool,
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RestIssueSharerBody {
@@ -2815,6 +2837,29 @@ fn build_rest_issue_meta_router(service: PilotServiceImpl) -> Router {
                     let backend = service.backend.clone();
                     async move {
                         rest_list_project_assignable_users(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/issue-references",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestProjectIssueReferencesQuery>| {
+                    let session_manager = service.session_manager.clone();
+                    let backend = service.backend.clone();
+                    async move {
+                        rest_list_project_issue_references(
                             headers,
                             owner_name,
                             project_name,
@@ -5769,6 +5814,99 @@ async fn rest_list_issue_mention_users(
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
 
     Ok(Json(rest_issue_mention_users_response(record)))
+}
+
+fn rest_project_issue_references_response(
+    record: persistence::ProjectIssueReferenceSearchRecord,
+) -> RestProjectIssueReferencesResponse {
+    RestProjectIssueReferencesResponse {
+        items: record
+            .items
+            .into_iter()
+            .map(|item| RestProjectIssueReferenceItem {
+                issue_number: item.issue_number,
+                state: item.state,
+                title: item.title,
+            })
+            .collect(),
+        total: record.total,
+        truncated: record.truncated,
+    }
+}
+
+async fn resolve_issue_reference_search_project(
+    repository: &PilotRepository,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor_id: Option<i64>,
+) -> Result<persistence::ProjectRecord, ConnectError> {
+    let Some(origin_project_id) = authorization.project.original_project_id else {
+        return Ok(authorization.project.clone());
+    };
+    let Some(origin_project) = repository
+        .read_project_by_id(origin_project_id)
+        .await
+        .map_err(internal_error)?
+    else {
+        return Ok(authorization.project.clone());
+    };
+
+    match require_project_read(
+        repository,
+        &origin_project.owner_name,
+        &origin_project.project_name,
+        actor_id,
+    )
+    .await
+    {
+        Ok(origin_authorization) => Ok(origin_authorization.project),
+        Err(error)
+            if matches!(
+                error.code,
+                ErrorCode::NotFound | ErrorCode::PermissionDenied
+            ) =>
+        {
+            Ok(authorization.project.clone())
+        }
+        Err(error) => Err(error),
+    }
+}
+
+async fn rest_list_project_issue_references(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: RestProjectIssueReferencesQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestProjectIssueReferencesResponse>, RestRouteError> {
+    if owner_name.trim().is_empty() || project_name.trim().is_empty() {
+        return Err(RestRouteError::bad_request(
+            "invalid project issue references request",
+        ));
+    }
+
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "project issue references require repository backend",
+        ));
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let search_project =
+        resolve_issue_reference_search_project(repository, &authorization, actor_id)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+    let record = repository
+        .list_project_issue_references(search_project.id, &query.query, 10)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+
+    Ok(Json(rest_project_issue_references_response(record)))
 }
 
 async fn rest_update_issue_state(

@@ -30,8 +30,11 @@ import {
   ProjectIssueDetailPage,
   buildProjectIssueFormSubmitInput,
   findIssueMentionQuery,
+  findIssueReferenceQuery,
   insertIssueMentionText,
+  insertIssueReferenceText,
   issueMentionTextForItem,
+  issueReferenceTextForItem,
   shouldSearchIssueAssignee,
   submitIssueAssigneeSuggestion,
   submitIssueAssigneeText,
@@ -529,6 +532,9 @@ describe("auth and workspace views", () => {
     expect(findIssueMentionQuery("cc @do")).toBe("do");
     expect(findIssueMentionQuery("cc @")).toBe("");
     expect(findIssueMentionQuery("cc #12")).toBeNull();
+    expect(findIssueReferenceQuery("cc #12")).toBe("12");
+    expect(findIssueReferenceQuery("cc #")).toBe("");
+    expect(findIssueReferenceQuery("mail@example.com")).toBeNull();
     expect(findIssueMentionQuery("mail@example.com")).toBeNull();
 
     const projectMention = {
@@ -544,9 +550,28 @@ describe("auth and workspace views", () => {
       cursorIndex: 21,
       value: "cc @owner/projectYobi please",
     });
+
+    const issueReference = {
+      issueNumber: 12,
+      state: "open",
+      title: "Issue reference target",
+    };
+    expect(issueReferenceTextForItem(issueReference)).toBe("#12");
+    expect(insertIssueReferenceText("cc #1 please", 5, issueReference)).toEqual({
+      cursorIndex: 6,
+      value: "cc #12 please",
+    });
+    expect(insertIssueReferenceText("cc #1", 5, issueReference)).toEqual({
+      cursorIndex: 7,
+      value: "cc #12 ",
+    });
   });
 
-  it("renders create and edit issue forms with project-scoped assignee autocomplete input", () => {
+  it("renders create and edit issue forms with project-scoped autocomplete wiring", () => {
+    const getIssueReferencesQueryOptions = (query: string) => ({
+      queryFn: async () => ({ items: [], total: 0, truncated: false }),
+      queryKey: ["test", query] as const,
+    });
     const createHtml = renderToStaticMarkup(
       <ProjectIssueFormPage
         detail={{
@@ -560,6 +585,7 @@ describe("auth and workspace views", () => {
           viewerCanEnroll: false,
           viewerCanUpdate: true,
         }}
+        getIssueReferencesQueryOptions={getIssueReferencesQueryOptions}
         mode="create"
         onSearchAssignableUsers={async () => ({ items: [], total: 0, truncated: false })}
         onSubmit={async () => undefined}
@@ -581,6 +607,7 @@ describe("auth and workspace views", () => {
             title: "Existing issue",
           } as ProjectIssueDetailViewModel
         }
+        getIssueReferencesQueryOptions={getIssueReferencesQueryOptions}
         mode="edit"
         onSearchAssignableUsers={async () => ({ items: [], total: 0, truncated: false })}
         onSubmit={async () => undefined}

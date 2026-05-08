@@ -101,6 +101,7 @@ const PARITY_SLICES = [
     implementationPatterns: [
       /^frontend\/src\/app-view-models\.ts$/i,
       /^frontend\/src\/auth-workspace-client\.ts$/i,
+      /^frontend\/src\/api\/query-keys\.ts$/i,
       /^frontend\/src\/routes\/-view-models\.ts$/i,
       /^frontend\/src\/routes\/-milestone-views\.tsx$/i,
       /^frontend\/.*issues?/i,

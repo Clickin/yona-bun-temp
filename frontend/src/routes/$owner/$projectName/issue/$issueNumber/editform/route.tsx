@@ -7,6 +7,7 @@ import {
   searchProjectAssignableUsers,
   updateIssue,
 } from "../../../../../../auth-workspace-client";
+import { projectIssueReferencesQueryOptions } from "../../../../../../api/issue-meta";
 import { useAppRuntime } from "../../../../../../app-runtime-context";
 import {
   toProjectContainerView,
@@ -85,6 +86,13 @@ function IssueEditRouteComponent() {
   return (
     <ProjectIssueFormPage
       detail={detail}
+      getIssueReferencesQueryOptions={(query) =>
+        projectIssueReferencesQueryOptions(runtimeConfig, {
+          ownerName: owner,
+          projectName,
+          query,
+        })
+      }
       initialIssue={issue}
       mode="edit"
       onSearchAssignableUsers={(query) =>

@@ -3,7 +3,7 @@
 ## Scope
 
 - Phase 2A issue core parity slice
-- Issue list/detail/create/edit/delete, comments, comment vote, state mutation, watch/vote/favorite/assignee, issue detail assignee autocomplete/search, mass update, Markdown rendering, issue/comment attachment binding, core Issue Sharer read/comment authorization, sharable-user search, direct sharer row-level timeline/notification side effects, issue/comment `@user`/`@org`/`@owner/project` mention indexing/search/notification semantics, and `/user/issues` personal issue aggregation now have Rust canonical coverage.
+- Issue list/detail/create/edit/delete, comments, comment vote, state mutation, watch/vote/favorite/assignee, issue detail assignee autocomplete/search, mass update, Markdown rendering, issue/comment attachment binding, core Issue Sharer read/comment authorization, sharable-user search, direct sharer row-level timeline/notification side effects, issue/comment `@user`/`@org`/`@owner/project` mention indexing/search/notification semantics, issue reference `#issue` autocomplete, and `/user/issues` personal issue aggregation now have Rust canonical coverage.
 - Label/category and milestone management screens are now covered by Phase 2B/2C provenance. Phase 2A issue core only owns issue CRUD and issue-linked label/milestone consumption.
 
 ## Legacy Sources
@@ -18,12 +18,14 @@
 - `yona-original/app/utils/AccessControl.java`
 - `yona-original/app/controllers/api/IssueApi.java`
 - `yona-original/app/controllers/api/UserApi.java`
+- `yona-original/app/controllers/ProjectApp.java`
 - `yona-original/app/models/FavoriteIssue.java`
 - `yona-original/app/views/issue/view.scala.html`
 - `yona-original/app/views/issue/partial_assignee.scala.html`
 - `yona-original/app/views/issue/partial_comment.scala.html`
 - `yona-original/app/views/issue/my_partial_search.scala.html`
 - `yona-original/app/views/issue/my_partial_list_quicksearch.scala.html`
+- `yona-original/public/javascripts/common/yobi.Mention.js`
 - `yona-original/public/javascripts/service/yobi.issue.View.js`
 
 ## Current Baseline And Canonical Target
@@ -94,7 +96,15 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 - Direct share/unshare mutation remains manager-only and idempotent. Rust writes `ISSUE_SHARER_CHANGED` `issue_event` and one `notification_event` plus `notification_event_n4user` receiver row only when the direct `issue_sharer` row actually changes.
 - Legacy `yobi.Mention` and `ProjectApp.mentionList` expose `@` candidates for users, the project token, and organization token. Rust implements issue-scoped mention suggestions through `GET /api/v1/owners/:owner/projects/:project/issues/:number/mention-users?query=&context=issue-body|issue-comment`; blank query returns contextual issue/project candidates, public nonblank search may include active global users, and private/protected nonblank search stays contextual.
 - Legacy mention persistence uses resource-specific rows and existing event types rather than a standalone mention event. Rust parses `@login`, `@org`, and `@owner/project` on issue create/update and comment create/update, expands org/project tokens to active user rows, stores `issue_post` and `issue_comment` mention rows, notifies newly mentioned active users with `NEW_ISSUE`, `ISSUE_BODY_CHANGED`, `NEW_COMMENT`, or `COMMENT_UPDATED`, and excludes the actor.
-- Legacy `#issue` autocomplete, external `/-_-api/v1` issue API compatibility, notification inbox/mail batching, and project/group sharer mutation remain follow-ups.
+
+## Phase 2M Issue Reference Autocomplete Translation Rule
+
+- Legacy `yobi.Mention` wires the `#` atwho trigger to `ProjectApp.mentionList(... mentionType=issue)`, displaying `#${issueNo}` and inserting the `#number` token only.
+- Legacy `ProjectApp.getMentionIssueList` searches the project issue set, uses the origin project when the current project is forked, returns the latest 10 issues for a blank query, and searches by issue-number prefix or title contains for nonblank queries.
+- Rust implements the screen lookup through `GET /api/v1/owners/:owner/projects/:project/issue-references?query=` with project read ACL, anonymous public-project reads, private/protected 403s, 404 for missing projects, and readable fork-origin search with current-fork fallback when the origin is not readable.
+- The REST response stays frontend-local (`issueNumber`, `title`, `state`, `total`, `truncated`) rather than adding proto/ConnectRPC codegen. Nonblank results sort exact issue number first, then number-prefix matches, then title matches, with latest issue recency as the tie-breaker.
+- Create/edit/detail/comment textareas now support insertion-only `#${issueNumber}` autocomplete using the same 300ms debounce boundary as `@` mention suggestions. Markdown auto-link rendering beyond the inserted token remains a separate follow-up if the existing renderer does not already cover it.
+- Legacy external `/-_-api/v1` issue API compatibility, notification inbox/mail batching, and project/group sharer mutation remain follow-ups.
 
 ## Phase 2A Evidence
 
@@ -173,11 +183,20 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | UI route surface            | `frontend/src/api/issue-meta.ts`, `frontend/src/auth-workspace-client.ts`, `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/$owner/$projectName/issue/$issueNumber/editform/route.tsx`, `frontend/src/routes/-issue-views.tsx` |
 | Regression tests            | `cargo test -p yona-rust-pilot-server --test issue_sharer_contract --test issue_mention_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts auth-workspace-shell.spec.tsx` |
 
+## Phase 2M Evidence
+
+| Evidence                       | Rust target                                                                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Legacy issue reference source  | `yona-original/public/javascripts/common/yobi.Mention.js`, `yona-original/app/controllers/ProjectApp.java#mentionList`, `#getMentionIssueList` |
+| REST contract                  | `/api/v1/owners/:owner/projects/:project/issue-references`, `crates/server/tests/issue_reference_autocomplete_contract.rs`                  |
+| Backend behavior               | `crates/persistence/src/repo.rs`, `crates/persistence/src/repo_types.rs`, `crates/server/src/lib.rs`                                        |
+| UI route surface               | `frontend/src/api/issue-meta.ts`, `frontend/src/api/query-keys.ts`, `frontend/src/auth-workspace-client.ts`, `frontend/src/routes/$owner/$projectName/issueform/route.tsx`, `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/$owner/$projectName/issue/$issueNumber/editform/route.tsx`, `frontend/src/routes/-issue-views.tsx` |
+| Regression tests               | `cargo test -p yona-rust-pilot-server --test issue_reference_autocomplete_contract --test issue_mention_contract --test rest_contract`; `pnpm --dir frontend test -- auth-workspace-shell.spec.tsx api-query.spec.ts` |
+
 ## Remaining Phase 2 Follow-ups
 
 - Legacy external `/-_-api/v1` issue API parity.
 - Notification inbox/read-state/mail batching parity.
-- `#issue` autocomplete.
 - Project/group sharer mutation.
 
 ## Shared Surface Notes

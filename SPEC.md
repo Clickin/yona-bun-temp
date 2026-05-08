@@ -510,6 +510,7 @@ POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → �
 - [ ] 이슈 공유: 직접 공유된 사용자는 비공개/제한 이슈와 댓글을 읽고 해당 이슈에 댓글 작성 가능, parent issue 공유는 child issue 읽기만 허용
 - [ ] 이슈 공유 검색은 읽기 ACL을 재사용하고, 실제 공유 추가/삭제시에만 `ISSUE_SHARER_CHANGED` 타임라인/notification row side effect를 남긴다
 - [ ] @멘션은 이슈 본문과 댓글에서 `@user`, `@org`, `@owner/project`를 해석하고 신규 활성 사용자 mention만 기존 이슈/댓글 이벤트 타입으로 알림 row를 만든다
+- [ ] `#issue` 자동완성은 프로젝트 읽기 ACL을 재사용하고, legacy `ProjectApp.mentionList(... mentionType=issue)`처럼 이슈 번호/제목 후보를 보여준 뒤 `#번호` 토큰만 삽입한다
 - [ ] 첨부파일: 이슈 본문/댓글에 파일 첨부 가능 (`/files` 엔드포인트)
 
 ---
@@ -1361,13 +1362,13 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 | Auth/session      | `/api/v1/session`, `/api/v1/auth/*` implemented |
 | Workspace         | `/api/v1/workspace/**` implemented |
 | Organization/project | `/api/v1/organizations/**`, `/api/v1/owners/:owner/projects/**`, `/api/v1/projects` implemented |
-| Issue core/meta   | `/api/v1/projects/:owner/:project/issues/**`, `/api/v1/organizations/:org/issues`, `/api/v1/user/issues`, `/api/v1/owners/:owner/projects/:project/assignable-users`, `/api/v1/owners/:owner/projects/:project/issues/:number/**` implemented |
+| Issue core/meta   | `/api/v1/projects/:owner/:project/issues/**`, `/api/v1/organizations/:org/issues`, `/api/v1/user/issues`, `/api/v1/owners/:owner/projects/:project/assignable-users`, `/api/v1/owners/:owner/projects/:project/issue-references`, `/api/v1/owners/:owner/projects/:project/issues/:number/**` implemented |
 | Label/milestone   | `/api/v1/owners/:owner/projects/:project/labels/**`, `/api/v1/owners/:owner/projects/:project/milestones/**` implemented |
 | Code browser      | `GET /api/v1/projects/:owner/:project/code` implemented |
 
 **새 runtime API는 REST로 구현할 영역**:
 
-- Issue follow-up: legacy external `/-_-api/v1` issue API parity, notification inbox/read state/mail batching, `#issue` autocomplete, project/group sharer mutation
+- Issue follow-up: legacy external `/-_-api/v1` issue API parity, notification inbox/read state/mail batching, project/group sharer mutation
 - Board: posting list/detail/create/update/delete/comment flows
 - Label follow-up: copyLabels Phase 6 and legacy external label/project API parity
 - Milestone follow-up: migration export and search milestone result type

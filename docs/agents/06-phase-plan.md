@@ -41,7 +41,8 @@
 - Phase 2J complete: issue detail assignee autocomplete/search over `/api/v1/owners/:owner/projects/:project/issues/:number/assignable-users`, with legacy visibility rules, current-assignee inclusion, and existing assignment mutation fallback.
 - Phase 2K complete: issue create/edit assignee autocomplete/search over `/api/v1/owners/:owner/projects/:project/assignable-users`, with project-scoped visibility rules and unchanged create/update assignment mutation semantics.
 - Phase 2L complete: issue sharable-user search over `/api/v1/owners/:owner/projects/:project/issues/:number/sharable-users`, direct sharer timeline/notification row side effects, and issue/comment `@user`/`@org`/`@owner/project` mention indexing, suggestions, and notification rows.
-- Remaining Phase 2 packets: legacy external `/-_-api/v1` issue API parity, notification inbox/read state/mail batching, `#issue` autocomplete, project/group sharer mutation, and Phase 6 label copy flow.
+- Phase 2M complete: issue reference `#issue` autocomplete over `/api/v1/owners/:owner/projects/:project/issue-references`, with project read ACL, readable fork-origin issue search, exact-number-first ordering, and create/edit/detail/comment textarea insertion.
+- Remaining Phase 2 packets: legacy external `/-_-api/v1` issue API parity, notification inbox/read state/mail batching, project/group sharer mutation, and Phase 6 label copy flow.
 
 ## Phase 3: 저장소와 VCS
 
