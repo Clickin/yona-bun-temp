@@ -51,6 +51,7 @@ test("ignores repo tooling and bootstrap files that do not define parity semanti
   const result = runGate([
     ".gitignore",
     ".husky/pre-commit",
+    "DESIGN.md",
     "package.json",
     "pnpm-lock.yaml",
     "pnpm-workspace.yaml",
@@ -162,7 +163,9 @@ test("treats wave-0 route-foundation files as mapped canonical work", () => {
     "frontend/src/router.tsx",
     "frontend/src/runtime-config.ts",
     "frontend/src/main.tsx",
+    "frontend/src/routes/__root.tsx",
     "frontend/src/auth-workspace-client.ts",
+    "frontend/src/api/workspace.ts",
     "frontend/src/auth-workspace-client.spec.ts",
     "frontend/src/auth-workspace-shell.spec.tsx",
     "frontend/src/route-parity.spec.tsx",
@@ -191,6 +194,14 @@ test("treats wave-0 route-foundation files as mapped canonical work", () => {
   );
   assert.equal(
     result.unmappedImplementationFiles.includes("frontend/src/main.tsx"),
+    false,
+  );
+  assert.equal(
+    result.unmappedImplementationFiles.includes("frontend/src/routes/__root.tsx"),
+    false,
+  );
+  assert.equal(
+    result.unmappedImplementationFiles.includes("frontend/src/api/workspace.ts"),
     false,
   );
   assert.equal(

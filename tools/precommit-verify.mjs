@@ -7,6 +7,11 @@ import {
   formatParitySummary,
   shouldBlockForStrictGate,
 } from "./yona-parity-gate.mjs";
+import {
+  evaluateDesignHarness,
+  formatDesignHarnessSummary,
+  shouldBlockDesignHarness,
+} from "./yona-design-harness.mjs";
 
 const STAGED_CMD = ["diff", "--cached", "--name-only", "--diff-filter=ACMR"];
 const IGNORED_PREFIXES = [
@@ -146,6 +151,15 @@ if (formatTargets.length > 0) {
     console.log(`precommit: running oxfmt --check on ${formatTargets.length} staged file(s)`);
     run(oxfmt.command, ["--check", ...formatTargets], oxfmt.argsPrefix);
   }
+}
+
+const designResult = evaluateDesignHarness({
+  changedFiles: stagedFiles,
+  repoRoot: process.cwd(),
+});
+console.log(formatDesignHarnessSummary(designResult));
+if (shouldBlockDesignHarness(designResult)) {
+  process.exit(1);
 }
 
 const parityResult = evaluateParityGate({

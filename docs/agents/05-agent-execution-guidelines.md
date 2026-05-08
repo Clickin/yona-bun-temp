@@ -11,11 +11,12 @@
 
 1. 관련 `AGENTS.md`, `SPEC.md`, `docs/agents/*` mirror를 읽는다.
 2. `yona-original/`에서 대응 legacy reference를 찾는다.
-3. `reference/mixed-code/**`도 reference-only migration material로 읽는다.
-4. 보호해야 하는 intent, permission result, state transition을 추출한다.
-5. failing Red test를 먼저 작성한다.
-6. `repo root` ownership 경계 안에서 Green 구현을 작성한다.
-7. `deferred`, `gap`, `deviation`과 historical/banner 영향까지 함께 갱신한다.
+3. frontend component design 또는 화면 styling 작업이면 `DESIGN.md`와 legacy LESS/view 근거를 함께 확인한다.
+4. `reference/mixed-code/**`도 reference-only migration material로 읽는다.
+5. 보호해야 하는 intent, permission result, state transition을 추출한다.
+6. failing Red test를 먼저 작성한다.
+7. `repo root` ownership 경계 안에서 Green 구현을 작성한다.
+8. `deferred`, `gap`, `deviation`과 historical/banner 영향까지 함께 갱신한다.
 
 ## 코드 및 문서 배치 규칙
 
@@ -32,4 +33,4 @@
 - `reference/mixed-code/**`를 canonical path처럼 문서화하는 행위
 - 누락 기능을 기록 없이 숨기는 행위
 - provenance 없이 기능 완료를 주장하는 행위
-
+- `DESIGN.md`와 `yona-original/` 근거 없이 새 화면 톤/색상/타이포그래피를 도입하는 행위

@@ -6,6 +6,7 @@ import path from "node:path";
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const hookPath = path.join(repoRoot, ".husky", "pre-commit");
 const verifyToolPath = path.join(repoRoot, "tools", "precommit-verify.mjs");
+const designHarnessPath = path.join(repoRoot, "tools", "yona-design-harness.mjs");
 const serverSourcePath = path.join(repoRoot, "crates", "server", "src", "lib.rs");
 const specPath = path.join(repoRoot, "SPEC.md");
 const yonaExportProvenancePath = path.join(
@@ -26,11 +27,20 @@ function readExtensionSet(source, name) {
 test("pre-commit hook points at the canonical root verification tool", () => {
   assert.equal(existsSync(hookPath), true, ".husky/pre-commit must exist");
   assert.equal(existsSync(verifyToolPath), true, "tools/precommit-verify.mjs must exist");
+  assert.equal(existsSync(designHarnessPath), true, "tools/yona-design-harness.mjs must exist");
 
   const hookSource = readFileSync(hookPath, "utf8");
 
   assert.match(hookSource, /node\s+\.\/tools\/precommit-verify\.mjs/);
   assert.doesNotMatch(hookSource, /bun\s+run\s+precommit:verify/);
+});
+
+test("pre-commit verification runs the legacy Yona design harness", () => {
+  const verifySource = readFileSync(verifyToolPath, "utf8");
+
+  assert.match(verifySource, /from "\.\/yona-design-harness\.mjs"/);
+  assert.match(verifySource, /evaluateDesignHarness/u);
+  assert.match(verifySource, /shouldBlockDesignHarness/u);
 });
 
 test("pre-commit ox tools only target frontend JavaScript and TypeScript files", () => {

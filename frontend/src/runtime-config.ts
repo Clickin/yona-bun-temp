@@ -29,9 +29,7 @@ export function normalizeBasePath(input: string | null | undefined): string {
   return normalized === "" ? "/" : normalized;
 }
 
-export function resolveRuntimeConfig(
-  input: Partial<RuntimeConfig> = {},
-): RuntimeConfig {
+export function resolveRuntimeConfig(input: Partial<RuntimeConfig> = {}): RuntimeConfig {
   const basePath = normalizeBasePath(input.basePath);
 
   return {
@@ -42,8 +40,8 @@ export function resolveRuntimeConfig(
 
 function readViteRuntimeConfig(): Partial<RuntimeConfig> {
   return {
-    apiBaseUrl: import.meta.env.VITE_YONA_API_BASE_URL ?? process.env.VITE_YONA_API_BASE_URL,
-    basePath: import.meta.env.VITE_YONA_BASE_PATH ?? process.env.VITE_YONA_BASE_PATH,
+    apiBaseUrl: import.meta.env.VITE_YONA_API_BASE_URL,
+    basePath: import.meta.env.VITE_YONA_BASE_PATH,
   };
 }
 

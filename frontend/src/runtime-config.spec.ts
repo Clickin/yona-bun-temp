@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { readRuntimeConfig } from "./runtime-config";
 
 const originalImportMetaEnv = { ...(import.meta as { env?: Record<string, string> }).env };
@@ -40,5 +41,11 @@ describe("readRuntimeConfig", () => {
       apiBaseUrl: "/yona/api",
       basePath: "/yona",
     });
+  });
+
+  it("does not reference node process env in browser runtime source", () => {
+    const source = readFileSync(new URL("./runtime-config.ts", import.meta.url), "utf8");
+
+    expect(source).not.toContain("process.env");
   });
 });

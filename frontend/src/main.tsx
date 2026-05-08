@@ -2,6 +2,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import { createRoot } from "react-dom/client";
 import { readRuntimeConfig, type RuntimeConfig } from "./runtime-config";
 import { getRouter } from "./router";
+import "./app.css";
 
 export interface CreateAppOptions {
   runtimeConfig?: RuntimeConfig;

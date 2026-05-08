@@ -1,60 +1,212 @@
 :root {
-  color: #111827;
-  background: #f5f1e8;
-  font-family: Georgia, "Times New Roman", serif;
+  color: #333;
+  background: #fff;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 13px;
+  line-height: 18px;
 }
 
 body {
   margin: 0;
+  background-color: #fff;
+  overflow-y: scroll;
+  text-rendering: auto;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover,
+a:focus {
+  color: #f36c22;
+  text-decoration: underline;
+}
+
+button,
+input,
+select {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+textarea {
+  font-family: Consolas, Menlo, Monaco, "Ubuntu Mono", "source-code-pro", monospace;
+}
+
+input,
+textarea,
+select {
+  box-sizing: border-box;
+  min-height: 30px;
+  padding: 4px 6px;
+  color: #333;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #f36c22;
+  outline: 0;
+  box-shadow: 0 0 3px rgba(243, 108, 34, 0.35);
+}
+
+button,
+.ybtn {
+  display: inline-block;
+  padding: 4px 12px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: #333;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+}
+
+button:hover,
+button:focus,
+.ybtn:hover,
+.ybtn:focus {
+  color: #292929;
+  text-decoration: none;
+  background-color: #f1f1f1;
+  border-color: rgba(0, 0, 0, 0.25);
+}
+
+.ybtn-primary,
+.ybtn-success,
+.btn-primary,
+button[type="submit"] {
+  color: #fff;
+  background-color: #ff7332;
+  border-color: #e95e01;
+}
+
+.ybtn-primary:hover,
+.ybtn-primary:focus,
+.ybtn-success:hover,
+.ybtn-success:focus,
+.btn-primary:hover,
+.btn-primary:focus,
+button[type="submit"]:hover,
+button[type="submit"]:focus {
+  color: #fff;
+  background-color: #e95e01;
+}
+
+.runtime-error-banner {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 760px;
+  margin: 16px auto 0;
+  padding: 12px 16px;
+  color: #b13427;
+  background: #fbe9e7;
+  border: 1px solid #ef9a9a;
+  border-radius: 3px;
+}
+
+.runtime-error-banner button {
+  background: #fff;
+  border-color: #ef9a9a;
+  color: #b13427;
 }
 
 .app-shell {
-  max-width: 760px;
+  width: 95%;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 64px 24px 80px;
+  padding: 24px 0 60px;
 }
 
 .eyebrow {
   margin: 0 0 12px;
-  font-size: 0.875rem;
-  letter-spacing: 0.12em;
+  font-size: 12px;
+  letter-spacing: 0;
   text-transform: uppercase;
-  color: #7c2d12;
+  color: #878787;
 }
 
 h1 {
-  margin: 0 0 16px;
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
-  line-height: 0.95;
+  margin: 0 0 18px;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.25;
+  color: #333;
 }
 
 .lede {
-  margin: 0 0 32px;
+  margin: 0 0 18px;
   max-width: 52ch;
-  font-size: 1.1rem;
-  line-height: 1.6;
+  color: #666;
+  font-size: 13px;
+  line-height: 18px;
 }
 
 .runtime-grid {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .runtime-grid div {
-  padding: 16px 18px;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(17, 24, 39, 0.12);
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid #ececec;
+  border-radius: 3px;
 }
 
 .runtime-grid dt {
   margin-bottom: 6px;
-  font-size: 0.875rem;
+  font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #7c2d12;
+  letter-spacing: 0;
+  color: #878787;
 }
 
 .runtime-grid dd {
   margin: 0;
-  font-family: "Courier New", monospace;
+  font-family: Consolas, Menlo, Monaco, "Ubuntu Mono", "source-code-pro", monospace;
+}
+
+.nav-tabs {
+  padding-left: 0;
+  margin: 0 0 15px;
+  border-bottom: 1px solid #ddd;
+  list-style: none;
+}
+
+.nav-tabs > li {
+  display: inline-block;
+  margin-bottom: -1px;
+}
+
+.nav-tabs > li > a {
+  display: block;
+  padding: 8px 12px;
+  color: #666;
+  border: 1px solid transparent;
+  border-radius: 3px 3px 0 0;
+}
+
+.nav-tabs > li.active > a,
+.nav-tabs > li > a:hover,
+.nav-tabs > li > a:focus {
+  color: #f36c22;
+  background-color: #f2f2f2;
+  border-color: #ddd #ddd transparent;
+  text-decoration: none;
 }

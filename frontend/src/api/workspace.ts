@@ -4,7 +4,7 @@ import type {
   RecordRecentProjectVisitResponse,
 } from "../gen/yona/pilot/v1/pilot_pb";
 import type { RuntimeConfig } from "../runtime-config";
-import { restFetch } from "./rest-client";
+import { restFetch, type RestFetchOptions } from "./rest-client";
 
 type WorkspaceRecentProjectVisitInput = {
   ownerName: string;
@@ -16,11 +16,52 @@ type WorkspaceNotificationInput = {
   projectId: string;
 };
 
+function normalizeWorkspaceOverview(
+  response: ReadWorkspaceOverviewResponse,
+): ReadWorkspaceOverviewResponse {
+  return {
+    ...response,
+    emails: response.emails ?? [],
+    favoriteProjects: response.favoriteProjects ?? [],
+    issueItems: response.issueItems ?? [],
+    memberProjects: response.memberProjects ?? [],
+    profile: response.profile
+      ? {
+          ...response.profile,
+          avatarUrl: response.profile.avatarUrl ?? "",
+          connectedSocialProviders: response.profile.connectedSocialProviders ?? [],
+          displayName: response.profile.displayName ?? "",
+          englishName: response.profile.englishName ?? "",
+          isBlocked: response.profile.isBlocked ?? false,
+          isSiteAdmin: response.profile.isSiteAdmin ?? false,
+          loginId: response.profile.loginId ?? "",
+          primaryEmailAddress: response.profile.primaryEmailAddress ?? "",
+          sinceLabel: response.profile.sinceLabel ?? "",
+        }
+      : undefined,
+    pullRequestItems: response.pullRequestItems ?? [],
+    recentProjects: response.recentProjects ?? [],
+    watchedProjects: (response.watchedProjects ?? []).map((project) => ({
+      ...project,
+      notifications: project.notifications ?? [],
+    })),
+  };
+}
+
+async function workspaceOverviewRest(
+  runtimeConfig: RuntimeConfig,
+  path: string,
+  options: RestFetchOptions = {},
+): Promise<ReadWorkspaceOverviewResponse> {
+  const response = await restFetch<ReadWorkspaceOverviewResponse>(runtimeConfig, path, options);
+  return normalizeWorkspaceOverview(response);
+}
+
 export function readWorkspaceOverviewRest(
   runtimeConfig: RuntimeConfig,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadWorkspaceOverviewResponse> {
-  return restFetch<ReadWorkspaceOverviewResponse>(runtimeConfig, "/workspace", {
+  return workspaceOverviewRest(runtimeConfig, "/workspace", {
     fetchImpl,
   });
 }
@@ -31,16 +72,12 @@ export function setDefaultLandingPathRest(
   path: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadWorkspaceOverviewResponse> {
-  return restFetch<ReadWorkspaceOverviewResponse>(
-    runtimeConfig,
-    "/workspace/default-landing-path",
-    {
-      body: { path },
-      csrfToken,
-      fetchImpl,
-      method: "PUT",
-    },
-  );
+  return workspaceOverviewRest(runtimeConfig, "/workspace/default-landing-path", {
+    body: { path },
+    csrfToken,
+    fetchImpl,
+    method: "PUT",
+  });
 }
 
 export function updateProfileRest<TInput extends object>(
@@ -49,7 +86,7 @@ export function updateProfileRest<TInput extends object>(
   input: TInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadWorkspaceOverviewResponse> {
-  return restFetch<ReadWorkspaceOverviewResponse>(runtimeConfig, "/workspace/profile", {
+  return workspaceOverviewRest(runtimeConfig, "/workspace/profile", {
     body: input,
     csrfToken,
     fetchImpl,
@@ -76,7 +113,7 @@ export function resetVisitedProjectsRest(
   csrfToken: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadWorkspaceOverviewResponse> {
-  return restFetch<ReadWorkspaceOverviewResponse>(runtimeConfig, "/workspace/recent-projects", {
+  return workspaceOverviewRest(runtimeConfig, "/workspace/recent-projects", {
     csrfToken,
     fetchImpl,
     method: "DELETE",
@@ -89,7 +126,7 @@ export function addWorkspaceEmailRest(
   email: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadWorkspaceOverviewResponse> {
-  return restFetch<ReadWorkspaceOverviewResponse>(runtimeConfig, "/workspace/emails", {
+  return workspaceOverviewRest(runtimeConfig, "/workspace/emails", {
     body: { email },
     csrfToken,
     fetchImpl,
@@ -103,15 +140,11 @@ export function deleteWorkspaceEmailRest(
   id: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadWorkspaceOverviewResponse> {
-  return restFetch<ReadWorkspaceOverviewResponse>(
-    runtimeConfig,
-    `/workspace/emails/${encodeURIComponent(id)}`,
-    {
-      csrfToken,
-      fetchImpl,
-      method: "DELETE",
-    },
-  );
+  return workspaceOverviewRest(runtimeConfig, `/workspace/emails/${encodeURIComponent(id)}`, {
+    csrfToken,
+    fetchImpl,
+    method: "DELETE",
+  });
 }
 
 export function sendWorkspaceEmailValidationRest(
@@ -120,7 +153,7 @@ export function sendWorkspaceEmailValidationRest(
   id: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadWorkspaceOverviewResponse> {
-  return restFetch<ReadWorkspaceOverviewResponse>(
+  return workspaceOverviewRest(
     runtimeConfig,
     `/workspace/emails/${encodeURIComponent(id)}/validation`,
     {
@@ -137,15 +170,11 @@ export function setMainWorkspaceEmailRest(
   id: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadWorkspaceOverviewResponse> {
-  return restFetch<ReadWorkspaceOverviewResponse>(
-    runtimeConfig,
-    `/workspace/emails/${encodeURIComponent(id)}/main`,
-    {
-      csrfToken,
-      fetchImpl,
-      method: "POST",
-    },
-  );
+  return workspaceOverviewRest(runtimeConfig, `/workspace/emails/${encodeURIComponent(id)}/main`, {
+    csrfToken,
+    fetchImpl,
+    method: "POST",
+  });
 }
 
 export function resetApiTokenRest(
@@ -153,7 +182,7 @@ export function resetApiTokenRest(
   csrfToken: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadWorkspaceOverviewResponse> {
-  return restFetch<ReadWorkspaceOverviewResponse>(runtimeConfig, "/workspace/api-token/reset", {
+  return workspaceOverviewRest(runtimeConfig, "/workspace/api-token/reset", {
     csrfToken,
     fetchImpl,
     method: "POST",
@@ -166,7 +195,7 @@ export function toggleWorkspaceNotificationRest(
   input: WorkspaceNotificationInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadWorkspaceOverviewResponse> {
-  return restFetch<ReadWorkspaceOverviewResponse>(runtimeConfig, "/workspace/notifications", {
+  return workspaceOverviewRest(runtimeConfig, "/workspace/notifications", {
     body: input,
     csrfToken,
     fetchImpl,
@@ -180,14 +209,10 @@ export function recordRecentProjectVisitRest(
   input: WorkspaceRecentProjectVisitInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<RecordRecentProjectVisitResponse> {
-  return restFetch<RecordRecentProjectVisitResponse>(
-    runtimeConfig,
-    "/workspace/recent-projects",
-    {
-      body: input,
-      csrfToken,
-      fetchImpl,
-      method: "POST",
-    },
-  );
+  return restFetch<RecordRecentProjectVisitResponse>(runtimeConfig, "/workspace/recent-projects", {
+    body: input,
+    csrfToken,
+    fetchImpl,
+    method: "POST",
+  });
 }

@@ -553,6 +553,42 @@ describe("workspace REST clients", () => {
     expect(result.defaultLandingPath).toBe("/me");
   });
 
+  it("normalizes sparse workspace overview arrays omitted by REST JSON", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          defaultLandingPath: "/me",
+          profile: {
+            displayName: "Door",
+            loginId: "door",
+          },
+          watchedProjects: [
+            {
+              ownerName: "owner",
+              projectId: "1",
+              projectName: "projectYobi",
+            },
+          ],
+        }),
+    }));
+
+    const result = await readWorkspaceOverview(runtimeConfig, fetchMock as unknown as typeof fetch);
+
+    expect(result.emails).toEqual([]);
+    expect(result.favoriteProjects).toEqual([]);
+    expect(result.issueItems).toEqual([]);
+    expect(result.memberProjects).toEqual([]);
+    expect(result.pullRequestItems).toEqual([]);
+    expect(result.recentProjects).toEqual([]);
+    expect(result.watchedProjects[0]?.notifications).toEqual([]);
+    expect(result.profile?.avatarUrl).toBe("");
+    expect(result.profile?.connectedSocialProviders).toEqual([]);
+    expect(result.profile?.englishName).toBe("");
+    expect(result.profile?.primaryEmailAddress).toBe("");
+  });
+
   it("routes workspace settings mutations through REST v1 endpoints", async () => {
     const fetchMock = vi.fn(async () => okJsonResponse({ ok: true }));
 

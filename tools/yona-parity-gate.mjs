@@ -44,6 +44,7 @@ const NON_IMPLEMENTATION_FILES = new Set([
   "Cargo.lock",
   "Cargo.toml",
   "CLAUDE.md",
+  "DESIGN.md",
   "README.md",
   "SPEC.md",
   "buf.yaml",
@@ -205,6 +206,7 @@ const DOMAIN_BUCKETS = [
     status: "partial",
     implementationPatterns: [
       /^frontend\/.*\/me/i,
+      /^frontend\/src\/api\/workspace\.ts$/i,
       /^crates\/(?:domain|persistence|server)\/.*(workspace|default-landing|favorite|recent)/i,
     ],
     testKeywords: ["workspace", "default-landing", "favorite", "recent", "me"],
@@ -295,6 +297,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/(?:README\.md|package\.json|pnpm-lock\.yaml|index\.html|tsconfig\.json|vite\.config\.ts)$/i,
       /^crates\/(?:server|domain|search|vcs)\//i,
       /^frontend\/src\/(?:main|router|runtime-config)\.tsx?$/i,
+      /^frontend\/src\/routes\/__root\.tsx$/i,
       /^reports\//i,
       /^scripts\//i,
     ],

@@ -11,6 +11,7 @@
 - canonical API contract: REST JSON API(`/api/v1`) + frontend typed API client/TanStack Query hooks
 - generated ConnectRPC clients are removed from `frontend/`; `proto/` stays outside frontend runtime as a historical schema snapshot.
 - canonical implementation path: `frontend/`
+- component design 기준선: repo root `DESIGN.md` + `yona-original/app/views/**` + legacy LESS
 
 ## 데이터 경계
 
@@ -22,5 +23,6 @@
 ## 화면 원칙
 
 - 레이아웃, copy, CTA, 메뉴, deep-link flow는 `yona-original/` 기준을 우선한다.
+- 화면 styling/component design 작업은 먼저 `DESIGN.md`의 legacy Yona baseline을 확인하고, `tools/yona-design-harness.mjs` precommit gate를 통과해야 한다.
 - 의도적 차이는 provenance 문서에 `deviation`으로 남긴다.
 - 임시 parity shell이나 축소형 UX를 canonical baseline으로 굳히지 않는다.

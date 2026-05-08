@@ -136,58 +136,61 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
-  await page.route(apiV1Route("/owners/admin/projects/projectYobi/labels/categories"), async (route) => {
-    await route.fulfill({
-      body: JSON.stringify({
-        categories: [],
-      }),
-      headers: restJsonHeaders,
-      status: 200,
-    });
-  });
+  await page.route(
+    apiV1Route("/owners/admin/projects/projectYobi/labels/categories"),
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({
+          categories: [],
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
 
   await page.route(
     /\/api\/v1\/owners\/admin\/projects\/projectYobi\/milestones(?:\?.*)?$/,
     async (route) => {
-    await route.fulfill({
-      body: JSON.stringify({
-        milestones: [
-          {
-            closedIssueCount: 1,
-            closedIssues: [
-              {
-                assigneeLabel: "Nori",
-                commentCount: 0,
-                issueNumber: "2",
-                labels: [],
-                state: "closed",
-                title: "Closed milestone issue",
-                updatedLabel: "2026-04-16",
-              },
-            ],
-            completionPercent: 50,
-            dueDateLabel: "2026-05-09",
-            id: "7",
-            openIssueCount: 1,
-            openIssues: [
-              {
-                assigneeLabel: "Nori",
-                commentCount: 1,
-                issueNumber: "1",
-                labels: [],
-                state: "open",
-                title: "Open milestone issue",
-                updatedLabel: "2026-04-15",
-              },
-            ],
-            state: "open",
-            title: "v1.0",
-          },
-        ],
-      }),
-      headers: restJsonHeaders,
-      status: 200,
-    });
+      await route.fulfill({
+        body: JSON.stringify({
+          milestones: [
+            {
+              closedIssueCount: 1,
+              closedIssues: [
+                {
+                  assigneeLabel: "Nori",
+                  commentCount: 0,
+                  issueNumber: "2",
+                  labels: [],
+                  state: "closed",
+                  title: "Closed milestone issue",
+                  updatedLabel: "2026-04-16",
+                },
+              ],
+              completionPercent: 50,
+              dueDateLabel: "2026-05-09",
+              id: "7",
+              openIssueCount: 1,
+              openIssues: [
+                {
+                  assigneeLabel: "Nori",
+                  commentCount: 1,
+                  issueNumber: "1",
+                  labels: [],
+                  state: "open",
+                  title: "Open milestone issue",
+                  updatedLabel: "2026-04-15",
+                },
+              ],
+              state: "open",
+              title: "v1.0",
+            },
+          ],
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
     },
   );
 
@@ -407,6 +410,86 @@ test("shell routing smoke covers home, auth, public directories, and deep placeh
   await page.goto("/yona/admin/projectYobi/issues?pageNum=2");
   await expect(page).toHaveTitle("Issues");
   await expect(page.getByRole("heading", { name: "Issue List" })).toBeVisible();
+});
+
+test("signup submit refreshes a sparse workspace overview without client map errors", async ({
+  page,
+}) => {
+  const pageErrors: string[] = [];
+  let authenticated = false;
+
+  page.on("pageerror", (error) => {
+    pageErrors.push(error.message);
+  });
+
+  await page.route(apiV1Route("/session"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        defaultLandingPath: "/me",
+        emailAddress: authenticated ? "door@example.com" : "",
+        isAnonymous: !authenticated,
+        isConfirmed: authenticated,
+        isSiteAdmin: false,
+        loginId: authenticated ? "door" : "",
+        userLabel: authenticated ? "Door" : "",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.route(apiV1Route("/auth/register"), async (route) => {
+    authenticated = true;
+    await route.fulfill({
+      body: JSON.stringify({
+        defaultLandingPath: "/me",
+        emailAddress: "door@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "door",
+        userLabel: "Door",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.route(apiV1Route("/workspace"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        defaultLandingPath: "/me",
+        profile: {
+          displayName: "Door",
+          loginId: "door",
+        },
+        watchedProjects: [
+          {
+            ownerName: "owner",
+            projectId: "1",
+            projectName: "projectYobi",
+          },
+        ],
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/users/signupform");
+  await page.getByLabel("Login ID").fill("door");
+  await page.getByLabel("Name").fill("Door");
+  await page.getByLabel("Email").fill("door@example.com");
+  await page.getByLabel("Password", { exact: true }).fill("doorpass1");
+  await page.getByLabel("Retype password").fill("doorpass1");
+
+  await Promise.all([
+    page.waitForURL(/\/yona\/me$/),
+    page.getByRole("button", { name: "Sign up" }).click(),
+  ]);
+
+  await expect(page.getByRole("heading", { name: "Door" })).toBeVisible();
+  expect(pageErrors).toEqual([]);
 });
 
 test("programmatic internal navigation keeps browser URL in sync under the mounted base path", async ({
@@ -683,7 +766,10 @@ test("project issue routes render forbidden and not-found shells when issue read
 }) => {
   await page.route(/\/api\/v1\/projects\/[^/]+\/[^/]+\/issues(?:\?.*)?$/, async (route) => {
     const requestUrl = new URL(route.request().url());
-    if (requestUrl.pathname.includes("/projects/missing/") || requestUrl.pathname.includes("/projects/admin/missingYobi/")) {
+    if (
+      requestUrl.pathname.includes("/projects/missing/") ||
+      requestUrl.pathname.includes("/projects/admin/missingYobi/")
+    ) {
       await route.fulfill({
         body: JSON.stringify(restErrorEnvelope("not_found", "project not found", 404)),
         headers: restJsonHeaders,

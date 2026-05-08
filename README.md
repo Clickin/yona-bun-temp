@@ -14,6 +14,7 @@ Yona는 legacy Yona의 기능과 UX parity를 목표로 재구성 중인 워크�
 ## Workspace Landmarks
 
 - [`frontend/`](/G:/programming/yona/frontend): REST API client, TanStack Query state, and canonical React SPA ownership
+- [`DESIGN.md`](/G:/programming/yona/DESIGN.md): legacy Yona UI baseline and component design harness contract
 - [`proto/`](/G:/programming/yona/proto): REST pivot 이전 message schema snapshot. runtime RPC surface나 새 application contract의 source가 아니다.
 - [`crates/server/`](/G:/programming/yona/crates/server): runtime bootstrap, HTTP/REST, asset delivery, session/auth bootstrap
 - [`crates/domain/`](/G:/programming/yona/crates/domain): domain behavior, ACL, invariant
@@ -26,6 +27,7 @@ Yona는 legacy Yona의 기능과 UX parity를 목표로 재구성 중인 워크�
 
 - canonical execution rules는 [`AGENTS.md`](/G:/programming/yona/AGENTS.md)와 [`SPEC.md`](/G:/programming/yona/SPEC.md)에 있다.
 - 구현 전에는 `yona-original/`에서 대응 legacy route/test/model을 먼저 식별한다.
+- frontend component design 또는 화면 styling 작업 전에는 `DESIGN.md`와 legacy LESS/view 근거를 확인한다.
 - `reference/mixed-code/**`는 reference-only migration material로 읽고, 새 canonical ownership은 repo root에 둔다.
 - 일부 기능 누락은 허용되지만 반드시 `deferred`, `gap`, `deviation`으로 기록한다.
 

@@ -64,6 +64,7 @@
 
 - 작업 전 이 문서의 변환 원칙, 관련 `SPEC.md` 섹션, `docs/agents/*` mirror를 먼저 확인한다.
 - 구현 전 대응 legacy route/test/model과 UI 기준을 `yona-original/`에서 식별한다.
+- frontend component design 또는 화면 styling 작업 전에는 [`DESIGN.md`](/G:/programming/yona/DESIGN.md)를 확인하고, `yona-original/`의 view/LESS 근거를 우선한다.
 - 구현 전 `reference/mixed-code/**`의 대응 경로도 함께 읽되, reference-only migration material로 다룬다.
 - 새 canonical 구현이나 문서 기준선은 `repo root`를 기준으로 적는다.
 - root Bun/Go 혼합 코드, `TanStack Start`, in-process `tRPC`, `createServerFn`, Go backend 관련 결정은 현재 baseline처럼 서술하지 않는다.
@@ -77,6 +78,7 @@
 ## Document Index
 
 - `docs/agents/00-goals-and-fixed-decisions.md`
+- `DESIGN.md`
 - `docs/agents/01-frontend-architecture.md`
 - `docs/agents/02-testing-migration.md`
 - `docs/agents/03-repo-structure.md`
