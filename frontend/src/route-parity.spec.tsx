@@ -115,6 +115,90 @@ describe("file-route parity harness", () => {
     expect(notificationRouteSource).toContain("listNotificationsQueryOptions");
   });
 
+  it("requires real PR/review read routes while leaving create/edit placeholders deferred", () => {
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/pullRequests'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/closedPullRequests'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/sentPullRequests'");
+    expect(routeTreeSource).toContain(
+      "fullPath: '/$owner/$projectName/pullRequest/$pullRequestNumber'",
+    );
+    expect(routeTreeSource).toContain(
+      "fullPath: '/$owner/$projectName/pullRequest/$pullRequestNumber/changes'",
+    );
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/reviews'");
+    expect(routeTreeSource).toContain("fullPath: '/organizations/$organizationName/pullrequests'");
+    expect(routeTreeSource).toContain(
+      "fullPath: '/organizations/$organizationName/closedPullrequests'",
+    );
+
+    const routePaths = [
+      "routes/$owner/$projectName/pullRequests/route.tsx",
+      "routes/$owner/$projectName/closedPullRequests/route.tsx",
+      "routes/$owner/$projectName/sentPullRequests/route.tsx",
+      "routes/$owner/$projectName/pullRequest/$pullRequestNumber/route.tsx",
+      "routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/route.tsx",
+      "routes/$owner/$projectName/reviews/route.tsx",
+      "routes/organizations/$organizationName/pullrequests/route.tsx",
+      "routes/organizations/$organizationName/closedPullrequests/route.tsx",
+    ];
+    for (const routePath of routePaths) {
+      const source = fs.readFileSync(path.resolve(__dirname, routePath), "utf8");
+      expect(source).not.toContain("PlaceholderPage");
+      expect(source).toContain("useQuery");
+    }
+
+    const pullRequestListRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/pullRequests/route.tsx"),
+      "utf8",
+    );
+    const closedPullRequestListRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/closedPullRequests/route.tsx"),
+      "utf8",
+    );
+    const sentPullRequestListRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/sentPullRequests/route.tsx"),
+      "utf8",
+    );
+    const pullRequestViewsSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-pull-request-views.tsx"),
+      "utf8",
+    );
+    expect(pullRequestListRouteSource).toContain('searchParams.get("contributorId")');
+    expect(closedPullRequestListRouteSource).toContain('searchParams.get("contributorId")');
+    expect(sentPullRequestListRouteSource).not.toContain("currentSession");
+    expect(pullRequestViewsSource).toContain("props.detail.isForked");
+    expect(pullRequestViewsSource).toContain("pullRequestQueryString");
+    expect(pullRequestViewsSource).toContain('category !== "sent"');
+    expect(pullRequestViewsSource).toContain('name="contributorId"');
+    expect(pullRequestViewsSource).toContain('name="state"');
+    expect(pullRequestViewsSource).toContain('name="participantId"');
+    expect(pullRequestViewsSource).toContain('name="orderBy"');
+
+    const detailRouteSource = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "routes/$owner/$projectName/pullRequest/$pullRequestNumber/route.tsx",
+      ),
+      "utf8",
+    );
+    expect(detailRouteSource).toContain("pullRequestDetailQueryOptions");
+
+    const deferredCreateRoute = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/newPullRequestForm/route.tsx"),
+      "utf8",
+    );
+    const deferredEditRoute = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "routes/$owner/$projectName/pullRequest/$pullRequestNumber/editform/route.tsx",
+      ),
+      "utf8",
+    );
+    expect(deferredCreateRoute).toContain("PlaceholderPage");
+    expect(deferredEditRoute).toContain("PlaceholderPage");
+  });
+
   it("keeps the public home title and entry CTA/navigation order stable", () => {
     const html = renderHome();
 

@@ -63,7 +63,7 @@ export interface OrganizationIssueListQuery {
   state: string;
 }
 
-function OrganizationMenu(props: {
+export function OrganizationMenu(props: {
   active?: "boards" | "home" | "issues" | "pullrequests" | "settings";
   detail: OrganizationDetailViewModel;
   runtimeConfig: RuntimeConfig;

@@ -102,7 +102,6 @@ const PARITY_SLICES = [
     implementationPatterns: [
       /^frontend\/src\/app-view-models\.ts$/i,
       /^frontend\/src\/auth-workspace-client\.ts$/i,
-      /^frontend\/src\/api\/query-keys\.ts$/i,
       /^frontend\/src\/routes\/-view-models\.ts$/i,
       /^frontend\/src\/routes\/-milestone-views\.tsx$/i,
       /^frontend\/.*issues?/i,
@@ -114,6 +113,27 @@ const PARITY_SLICES = [
 ];
 
 const DOMAIN_BUCKETS = [
+  {
+    id: "frontend-api-query-boundary",
+    label: "Frontend API query boundary",
+    status: "partial",
+    implementationPatterns: [/^frontend\/src\/api\/query-keys\.ts$/i],
+    testKeywords: [
+      "api-query",
+      "query",
+      "issue",
+      "milestone",
+      "pull-request",
+      "review",
+      "project",
+      "organization",
+    ],
+    provenanceDocs: [
+      "docs/provenance/core-parity-audit.md",
+      "docs/provenance/phase-0b/issue.md",
+      "docs/provenance/phase-0b/pull-request-review.md",
+    ],
+  },
   {
     id: "canonical-schema-and-persistence-foundation",
     label: "Canonical schema and persistence foundation",
@@ -172,6 +192,20 @@ const DOMAIN_BUCKETS = [
     ],
   },
   {
+    id: "pull-request-and-review",
+    label: "Pull request and review",
+    status: "gap",
+    implementationPatterns: [
+      /^frontend\/.*(pulls|pull-requests?|pullrequests?|pull-request|reviews?)/i,
+      /^crates\/(?:domain|server)\/.*(pull-requests?|pull_request|review)/i,
+    ],
+    testKeywords: ["pull-request", "pull_request", "pulls", "review", "reviews"],
+    provenanceDocs: [
+      "docs/provenance/phase-0b/pull-request-review.md",
+      "docs/provenance/core-parity-audit.md",
+    ],
+  },
+  {
     id: "organization-core-cru",
     label: "Organization core CRU",
     status: "partial",
@@ -179,7 +213,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/.*organization/i,
       /^crates\/(?:domain|persistence|server)\/.*organization/i,
     ],
-    testKeywords: ["organization", "org"],
+    testKeywords: ["organization", "org", "route-parity"],
     provenanceDocs: [
       "docs/provenance/phase-0b/organization.md",
       "docs/provenance/core-parity-audit.md",
@@ -193,7 +227,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/.*project/i,
       /^crates\/(?:domain|persistence|server)\/.*(project|enrollment)/i,
     ],
-    testKeywords: ["project", "projects", "enroll", "enrollment", "milestone"],
+    testKeywords: ["project", "projects", "enroll", "enrollment", "milestone", "route-parity"],
     provenanceDocs: [
       "docs/provenance/phase-0b/project.md",
       "docs/provenance/phase-0b/milestone.md",
@@ -242,20 +276,6 @@ const DOMAIN_BUCKETS = [
     ],
     testKeywords: ["issue", "issues", "label", "milestone"],
     provenanceDocs: ["docs/provenance/phase-0b/issue.md", "docs/provenance/core-parity-audit.md"],
-  },
-  {
-    id: "pull-request-and-review",
-    label: "Pull request and review",
-    status: "gap",
-    implementationPatterns: [
-      /^frontend\/.*(pulls|pull-request|reviews?)/i,
-      /^crates\/(?:domain|server)\/.*(pull-request|review)/i,
-    ],
-    testKeywords: ["pull-request", "pulls", "review", "reviews"],
-    provenanceDocs: [
-      "docs/provenance/phase-0b/pull-request-review.md",
-      "docs/provenance/core-parity-audit.md",
-    ],
   },
   {
     id: "search",

@@ -50,6 +50,28 @@ pub struct CodeFileRecord {
     pub text: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestDiffSnapshot {
+    pub commits: Vec<PullRequestDiffCommitRecord>,
+    pub files: Vec<PullRequestChangedFileRecord>,
+    pub no_head: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestDiffCommitRecord {
+    pub author_date_label: String,
+    pub author_email: String,
+    pub commit_id: String,
+    pub commit_message: String,
+    pub commit_short_id: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestChangedFileRecord {
+    pub path: String,
+    pub patch: String,
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum VcsError {
     #[error("git executable is unavailable")]
@@ -118,6 +140,41 @@ pub fn read_code_browser(
     }
 }
 
+pub fn read_pull_request_diff(
+    repo_path: &Path,
+    from_branch: &str,
+    to_branch: &str,
+) -> Result<PullRequestDiffSnapshot, VcsError> {
+    if !repo_path.exists() {
+        return Ok(no_head_pull_request_diff());
+    }
+    let branches = list_branches(repo_path)?;
+    if branches.is_empty() || !has_head(repo_path) {
+        return Ok(no_head_pull_request_diff());
+    }
+    if !branch_exists(&branches, from_branch) || !branch_exists(&branches, to_branch) {
+        return Ok(no_head_pull_request_diff());
+    }
+
+    let commits = list_pull_request_commits(repo_path, from_branch, to_branch)?;
+    let diff = git_output(
+        repo_path,
+        &[
+            "diff",
+            "--find-renames",
+            "--patch",
+            "--unified=3",
+            to_branch,
+            from_branch,
+        ],
+    )?;
+    Ok(PullRequestDiffSnapshot {
+        commits,
+        files: parse_diff_files(&diff),
+        no_head: false,
+    })
+}
+
 fn no_head_snapshot() -> CodeBrowserSnapshot {
     CodeBrowserSnapshot {
         branches: Vec::new(),
@@ -127,6 +184,14 @@ fn no_head_snapshot() -> CodeBrowserSnapshot {
         no_head: true,
         path: String::new(),
         selected_branch: String::new(),
+    }
+}
+
+fn no_head_pull_request_diff() -> PullRequestDiffSnapshot {
+    PullRequestDiffSnapshot {
+        commits: Vec::new(),
+        files: Vec::new(),
+        no_head: true,
     }
 }
 
@@ -143,6 +208,11 @@ fn list_branches(repo_path: &Path) -> Result<Vec<CodeBranchRecord>, VcsError> {
             name: name.to_string(),
         })
         .collect())
+}
+
+fn branch_exists(branches: &[CodeBranchRecord], name: &str) -> bool {
+    let normalized = name.trim();
+    !normalized.is_empty() && branches.iter().any(|branch| branch.name == normalized)
 }
 
 fn has_head(repo_path: &Path) -> bool {
@@ -212,6 +282,102 @@ fn latest_commit_for_path(repo_path: &Path, branch: &str, path: &str) -> (String
         parts.next().unwrap_or_default().to_string(),
         parts.next().unwrap_or_default().to_string(),
     )
+}
+
+fn list_pull_request_commits(
+    repo_path: &Path,
+    from_branch: &str,
+    to_branch: &str,
+) -> Result<Vec<PullRequestDiffCommitRecord>, VcsError> {
+    let range = format!("{to_branch}..{from_branch}");
+    let output = git_output(
+        repo_path,
+        &[
+            "log",
+            "--format=%H%x1f%h%x1f%s%x1f%ae%x1f%ad",
+            "--date=short",
+            &range,
+        ],
+    )?;
+    Ok(output
+        .lines()
+        .filter_map(|line| {
+            let mut parts = line.split('\x1f');
+            let commit_id = parts.next()?.to_string();
+            let commit_short_id = parts.next().unwrap_or_default().to_string();
+            let commit_message = parts.next().unwrap_or_default().to_string();
+            let author_email = parts.next().unwrap_or_default().to_string();
+            let author_date_label = parts.next().unwrap_or_default().to_string();
+            Some(PullRequestDiffCommitRecord {
+                author_date_label,
+                author_email,
+                commit_id,
+                commit_message,
+                commit_short_id,
+            })
+        })
+        .collect())
+}
+
+fn parse_diff_files(diff: &str) -> Vec<PullRequestChangedFileRecord> {
+    let mut files = Vec::new();
+    let mut current_path = String::new();
+    let mut current_patch = Vec::new();
+
+    for line in diff.lines() {
+        if line.starts_with("diff --git ") {
+            if !current_patch.is_empty() {
+                files.push(PullRequestChangedFileRecord {
+                    path: current_path.clone(),
+                    patch: current_patch.join("\n"),
+                });
+                current_patch.clear();
+            }
+            current_path = line
+                .split_whitespace()
+                .nth(3)
+                .map(clean_diff_path)
+                .unwrap_or_default();
+        }
+        if let Some(path) = line.strip_prefix("+++ ") {
+            let path = clean_diff_path(path);
+            if !path.is_empty() {
+                current_path = path;
+            }
+        } else if current_path.is_empty() && line.starts_with("--- ") {
+            current_path = line
+                .strip_prefix("--- ")
+                .map(clean_diff_path)
+                .unwrap_or_default();
+        }
+        if !line.is_empty() || !current_patch.is_empty() {
+            current_patch.push(line.to_string());
+        }
+    }
+
+    if !current_patch.is_empty() {
+        files.push(PullRequestChangedFileRecord {
+            path: current_path,
+            patch: current_patch.join("\n"),
+        });
+    }
+
+    files
+}
+
+fn clean_diff_path(path: &str) -> String {
+    let cleaned = path
+        .trim()
+        .trim_matches('"')
+        .strip_prefix("b/")
+        .or_else(|| path.trim().trim_matches('"').strip_prefix("a/"))
+        .unwrap_or_else(|| path.trim().trim_matches('"'))
+        .to_string();
+    if cleaned == "/dev/null" {
+        String::new()
+    } else {
+        cleaned
+    }
 }
 
 fn read_file(repo_path: &Path, branch: &str, path: &str) -> Result<CodeFileRecord, VcsError> {

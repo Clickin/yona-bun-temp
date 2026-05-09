@@ -666,6 +666,148 @@ pub struct WorkspacePullRequestListItemRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestListFilter {
+    pub category: String,
+    pub contributor_id: Option<i64>,
+    pub filter: Option<String>,
+    pub page_num: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestListItemRecord {
+    pub comment_thread_count: u32,
+    pub conflict: bool,
+    pub contributor_label: String,
+    pub contributor_login_id: String,
+    pub created_label: String,
+    pub from_branch: String,
+    pub from_owner_name: String,
+    pub from_project_name: String,
+    pub id: i64,
+    pub owner_name: String,
+    pub project_name: String,
+    pub pull_request_number: i64,
+    pub receiver_label: String,
+    pub receiver_login_id: String,
+    pub reviewer_count: u32,
+    pub state: String,
+    pub title: String,
+    pub to_branch: String,
+    pub updated_label: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestListRecord {
+    pub category: String,
+    pub items: Vec<PullRequestListItemRecord>,
+    pub page_num: u32,
+    pub page_size: u32,
+    pub total_count: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestUserRecord {
+    pub login_id: String,
+    pub user_id: i64,
+    pub user_label: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestEventRecord {
+    pub created_label: String,
+    pub event_type: String,
+    pub id: i64,
+    pub new_value: String,
+    pub old_value: String,
+    pub sender_login_id: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReviewCommentRecord {
+    pub author_id: Option<i64>,
+    pub author_label: String,
+    pub author_login_id: String,
+    pub contents_markdown: String,
+    pub created_label: String,
+    pub id: i64,
+    pub thread_id: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReviewThreadRecord {
+    pub author_id: Option<i64>,
+    pub author_label: String,
+    pub author_login_id: String,
+    pub comments: Vec<ReviewCommentRecord>,
+    pub commit_id: String,
+    pub created_label: String,
+    pub end_line: Option<i32>,
+    pub id: i64,
+    pub path: String,
+    pub prev_commit_id: String,
+    pub start_line: Option<i32>,
+    pub state: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestCommitRecord {
+    pub author_date_label: String,
+    pub author_email: String,
+    pub commit_id: String,
+    pub commit_message: String,
+    pub commit_short_id: String,
+    pub state: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestDetailRecord {
+    pub body_markdown: String,
+    pub commits: Vec<PullRequestCommitRecord>,
+    pub conflict: bool,
+    pub contributor: PullRequestUserRecord,
+    pub created_label: String,
+    pub events: Vec<PullRequestEventRecord>,
+    pub from_branch: String,
+    pub from_owner_name: String,
+    pub from_project_name: String,
+    pub id: i64,
+    pub is_watching: bool,
+    pub owner_name: String,
+    pub project_name: String,
+    pub pull_request_number: i64,
+    pub receiver: PullRequestUserRecord,
+    pub reviewers: Vec<PullRequestUserRecord>,
+    pub state: String,
+    pub threads: Vec<ReviewThreadRecord>,
+    pub title: String,
+    pub to_branch: String,
+    pub updated_label: String,
+    pub watcher_count: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReviewThreadListFilter {
+    pub author_id: Option<i64>,
+    pub filter: Option<String>,
+    pub order_by: String,
+    pub order_dir: String,
+    pub page_num: u32,
+    pub participant_id: Option<i64>,
+    pub state: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReviewThreadListRecord {
+    pub closed_count: u32,
+    pub items: Vec<ReviewThreadRecord>,
+    pub open_count: u32,
+    pub page_num: u32,
+    pub page_size: u32,
+    pub state: String,
+    pub total_count: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WorkspaceMemberProjectRecord {
     pub created_label: String,
     pub last_pushed_label: String,

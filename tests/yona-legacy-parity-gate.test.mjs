@@ -131,6 +131,51 @@ test("maps notification inbox frontend files to the issue notification slice", (
   );
 });
 
+test("maps shared frontend query keys to the API query boundary", () => {
+  const result = runGate([
+    "frontend/src/api/query-keys.ts",
+    "frontend/src/api-query.spec.ts",
+    "docs/provenance/core-parity-audit.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["frontend-api-query-boundary"],
+  );
+});
+
+test("maps project scoped pull request routes before generic project routes", () => {
+  const result = runGate([
+    "frontend/src/routes/$owner/$projectName/pullRequests/route.tsx",
+    "frontend/tests/pull-request-review-read-parity.e2e.ts",
+    "docs/provenance/core-parity-audit.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["pull-request-and-review"],
+  );
+});
+
+test("maps organization pull request routes before generic organization routes", () => {
+  const result = runGate([
+    "frontend/src/routes/organizations/$organizationName/pullrequests/route.tsx",
+    "frontend/tests/pull-request-review-read-parity.e2e.ts",
+    "docs/provenance/core-parity-audit.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["pull-request-and-review"],
+  );
+});
+
 test("treats canonical migration crate as active canonical work, not deferred scope", () => {
   const result = runGate([
     "crates/migration/src/m20260407_000003_create_org_project_baseline_tables.rs",

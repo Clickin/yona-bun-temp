@@ -9,14 +9,14 @@ Last updated: 2026-05-09
 
 | Scope                                   | Estimate | Basis                                                                                                                         |
 | --------------------------------------- | -------: | ----------------------------------------------------------------------------------------------------------------------------- |
-| Full legacy Yona parity                 |     ~40% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and separate migrator/external API compatibility. |
-| Current first-priority conversion scope |     ~46% | Same as above, but excluding explicitly deferred second-priority items such as SVN, LDAP, import/export tooling, and legacy external API compatibility. |
-| Mechanical SPEC row count               |     ~31% | Phase -1 moved implemented application flows to `/api/v1` REST and removed runtime RPC, but many product rows remain gaps.    |
+| Full legacy Yona parity                 |     ~42% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and separate migrator/external API compatibility. |
+| Current first-priority conversion scope |     ~49% | Same as above, but excluding explicitly deferred second-priority items such as SVN, LDAP, import/export tooling, and legacy external API compatibility. |
+| Mechanical SPEC row count               |     ~33% | Phase 4A moved PR/review read surfaces to `/api/v1` REST, but mutation-heavy product rows remain gaps.    |
 
 Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace, organization/project ownership, and issue-tracker core behavior.
-- The largest remaining gaps are still code hosting/VCS, pull requests/reviews, board/posting, search, notification fan-out/read state, webhooks, site admin, and separate migrator/external API compatibility.
+- The largest remaining gaps are still code hosting/VCS write/serve flows, PR/review mutations and merge/fork lifecycle, board/posting follow-ups, search, notification fan-out/read state, webhooks, site admin, and separate migrator/external API compatibility.
 - Percentages are approximate. Update them only when a slice lands with tests and provenance updates.
 
 ## Update Protocol
@@ -39,7 +39,7 @@ Interpretation:
 | Organization / Project core             | [~] Partially implemented | CRUD, members, enrollment, watch/favorite basics exist; project admin surfaces remain.                                   |
 | Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists, favorite issue, direct/project sharer effects, and issue/comment mention row effects exist over `/api/v1`; legacy external REST parity is separate migrator scope. |
 | VCS / Code hosting                      | [~] Started               | Read-only Git code browser exists; smart HTTP, history, raw/image/download, branch admin, and provisioning remain.       |
-| Pull Request / Review                   | [ ] Mostly missing        | PR routes are placeholders.                                                                                              |
+| Pull Request / Review                   | [~] Started               | Phase 4A restores read-only project/org PR lists, PR detail, changes, and review lists; PR/review mutations remain deferred. |
 | Board / Posting                         | [ ] Mostly missing        | Board/post routes are placeholders.                                                                                      |
 | Search                                  | [ ] Mostly missing        | Search route is placeholder.                                                                                             |
 | Notifications / Webhooks / Admin / External REST | [ ] Mostly missing | Notification inbox/list and mail queue staging exist; webhooks/admin remain missing, and `/-_-api/v1` compatibility is separate migrator scope. |
@@ -113,7 +113,7 @@ Interpretation:
 - [x] Leave organization
 - [x] Organization issue list body parity
 - [ ] Organization board list body
-- [ ] Organization pull request list body
+- [x] Organization pull request list body
 - [ ] Organization scoped search
 
 ## Project
@@ -246,12 +246,14 @@ Interpretation:
 
 ## Pull Request / Review
 
-- [ ] PR open list
-- [ ] PR closed list
-- [ ] PR sent list
+- [x] PR open list
+- [x] PR closed list
+- [x] PR sent list
 - [ ] PR creation
-- [ ] PR detail
-- [ ] PR diff
+- [x] PR detail read
+- [~] PR diff read
+- [x] Project review list read
+- [x] Organization PR open/closed aggregate read
 - [ ] Open/close/reopen
 - [ ] Merge
 - [ ] Merge conflict handling

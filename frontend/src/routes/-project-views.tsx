@@ -39,7 +39,7 @@ export function ProjectMenu(props: {
       show: detail.showPullRequest,
     },
     {
-      href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "pullRequests"),
+      href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "reviews"),
       label: `Reviews ${detail.reviewCount ?? 0}`,
       show: detail.showReview,
     },

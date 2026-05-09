@@ -1,11 +1,14 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { projectPullRequestListQueryOptions } from "../../../../api/pull-requests";
+import {
+  projectReviewsQueryOptions,
+  type ReviewThreadListQuery,
+} from "../../../../api/pull-requests";
 import { readProjectContainer } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../app-view-models";
-import { ProjectPullRequestListPage } from "../../../-pull-request-views";
+import { ProjectReviewsPage } from "../../../-pull-request-views";
 import {
   classifyConnectFailure,
   ForbiddenPage,
@@ -13,42 +16,45 @@ import {
   useDocumentTitle,
 } from "../../../-shared";
 
-export const Route = createFileRoute("/$owner/$projectName/pullRequests")({
-  component: ProjectPullRequestsRouteComponent,
+export const Route = createFileRoute("/$owner/$projectName/reviews")({
+  component: ProjectReviewsRouteComponent,
 });
 
-function ProjectPullRequestsRouteComponent() {
+function ProjectReviewsRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
   const searchParams = new URLSearchParams(window.location.search);
-  const filter = searchParams.get("filter") ?? "";
-  const pageNum = Number(searchParams.get("pageNum") || "1");
-  const contributorId = Number(searchParams.get("contributorId") || "0");
+  const query: ReviewThreadListQuery = {
+    authorId: Number(searchParams.get("authorId") || "0"),
+    filter: searchParams.get("filter") ?? "",
+    orderBy: searchParams.get("orderBy") ?? "createdDate",
+    orderDir: searchParams.get("orderDir") ?? "desc",
+    pageNum: Number(searchParams.get("pageNum") || "1"),
+    participantId: Number(searchParams.get("participantId") || "0"),
+    state: searchParams.get("state") ?? "open",
+  };
   const containerQuery = useQuery({
     queryFn: () => readProjectContainer(runtimeConfig, owner, projectName),
     queryKey: ["api", "v1", "owners", owner, "projects", projectName, "container"],
   });
-  const listQuery = useQuery(
-    projectPullRequestListQueryOptions(runtimeConfig, {
-      category: "open",
-      contributorId,
-      filter,
+  const reviewsQuery = useQuery(
+    projectReviewsQueryOptions(runtimeConfig, {
+      ...query,
       ownerName: owner,
-      pageNum,
       projectName,
     }),
   );
-  const error = containerQuery.error ?? listQuery.error;
+  const error = containerQuery.error ?? reviewsQuery.error;
   const failureKind = classifyConnectFailure(error);
 
-  useDocumentTitle("Pull Requests");
+  useDocumentTitle("Reviews");
   React.useEffect(() => {
     if (error && !classifyConnectFailure(error)) {
-      setErrorMessage(error instanceof Error ? error.message : "Read pull requests failed.");
+      setErrorMessage(error instanceof Error ? error.message : "Read reviews failed.");
     }
   }, [error, setErrorMessage]);
 
-  if (bootstrapping || containerQuery.isLoading || listQuery.isLoading) {
+  if (bootstrapping || containerQuery.isLoading || reviewsQuery.isLoading) {
     return (
       <main className="app-shell">
         <h1>Loading&hellip;</h1>
@@ -56,18 +62,17 @@ function ProjectPullRequestsRouteComponent() {
     );
   }
   if (failureKind === "forbidden") {
-    return <ForbiddenPage href={`/${owner}/${projectName}/pullRequests`} />;
+    return <ForbiddenPage href={`/${owner}/${projectName}/reviews`} />;
   }
   if (failureKind === "not-found") {
-    return <NotFoundPage href={`/${owner}/${projectName}/pullRequests`} />;
+    return <NotFoundPage href={`/${owner}/${projectName}/reviews`} />;
   }
 
   return (
-    <ProjectPullRequestListPage
-      category="open"
+    <ProjectReviewsPage
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
-      list={listQuery.data}
-      query={{ category: "open", contributorId, filter, pageNum }}
+      query={query}
+      reviews={reviewsQuery.data}
       runtimeConfig={runtimeConfig}
     />
   );

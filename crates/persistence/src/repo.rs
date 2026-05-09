@@ -14,7 +14,10 @@ use crate::repo_types::{
     ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord, ProjectIssueListItemRecord,
     ProjectIssueListRecord, ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord,
     ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
-    ProjectMilestoneSummaryRecord, ProjectRecord, ProjectViewerRecord, ToggleFavoriteIssueResult,
+    ProjectMilestoneSummaryRecord, ProjectRecord, ProjectViewerRecord, PullRequestCommitRecord,
+    PullRequestDetailRecord, PullRequestEventRecord, PullRequestListFilter,
+    PullRequestListItemRecord, PullRequestListRecord, PullRequestUserRecord, ReviewCommentRecord,
+    ReviewThreadListFilter, ReviewThreadListRecord, ReviewThreadRecord, ToggleFavoriteIssueResult,
     ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
     UpdateOrganizationInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
     UpdateProjectLabelInput, UserIssueCandidateRecord, UserIssueListFilter,
@@ -28,9 +31,9 @@ use crate::{
     issue_label, issue_label_category, issue_sharer, issue_voter, linked_account, mention,
     milestone, n4user, notification_event, notification_event_n4user, notification_mail,
     organization, organization_user, posting, posting_issue_label, project, project_menu_setting,
-    project_user, pull_request, recent_project, role, site_admin, user_credential,
-    user_enrolled_organization, user_enrolled_project, user_project_notification, user_setting,
-    user_verification, watch,
+    project_user, pull_request, pull_request_commit, pull_request_event, pull_request_reviewers,
+    recent_project, review_comment, role, site_admin, user_credential, user_enrolled_organization,
+    user_enrolled_project, user_project_notification, user_setting, user_verification, watch,
 };
 use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
@@ -413,11 +416,44 @@ fn pull_request_state_from_raw(value: Option<i32>, is_conflict: Option<i16>) -> 
         return "conflict".to_string();
     }
 
+    pull_request_lifecycle_state(value)
+}
+
+fn pull_request_lifecycle_state(value: Option<i32>) -> String {
     match value.unwrap_or(0) {
         2 => "merged".to_string(),
         1 => "closed".to_string(),
         _ => "open".to_string(),
     }
+}
+
+fn pull_request_open_condition() -> Condition {
+    Condition::any()
+        .add(pull_request::Column::State.eq(Some(0)))
+        .add(pull_request::Column::State.is_null())
+}
+
+fn pull_request_closed_condition() -> Condition {
+    Condition::any()
+        .add(pull_request::Column::State.eq(Some(1)))
+        .add(pull_request::Column::State.eq(Some(2)))
+}
+
+fn review_thread_state(value: Option<&str>) -> String {
+    match value.map(normalize_identity).as_deref() {
+        Some("closed") => "closed".to_string(),
+        _ => "open".to_string(),
+    }
+}
+
+fn review_thread_open_condition() -> Condition {
+    Condition::any()
+        .add(comment_thread::Column::State.is_null())
+        .add(comment_thread::Column::State.ne(Some("closed".to_string())))
+}
+
+fn review_thread_closed_condition() -> Condition {
+    Condition::all().add(comment_thread::Column::State.eq(Some("closed".to_string())))
 }
 
 #[derive(Debug, FromQueryResult)]
@@ -3768,6 +3804,394 @@ impl AppRepository {
         Ok(pull_requests)
     }
 
+    pub async fn list_project_pull_requests(
+        &self,
+        project: &ProjectRecord,
+        filter: PullRequestListFilter,
+    ) -> Result<PullRequestListRecord, DbErr> {
+        const PAGE_SIZE: u32 = 15;
+        let page_num = filter.page_num.max(1);
+        let category = match normalize_identity(&filter.category).as_str() {
+            "closed" => "closed".to_string(),
+            "sent" => "sent".to_string(),
+            _ => "open".to_string(),
+        };
+        let text_filter = filter
+            .filter
+            .as_deref()
+            .map(normalize_identity)
+            .filter(|value| !value.is_empty());
+        let project_column = if category == "sent" {
+            pull_request::Column::FromProjectId
+        } else {
+            pull_request::Column::ToProjectId
+        };
+        let mut select = pull_request::Entity::find().filter(project_column.eq(Some(project.id)));
+        select = match category.as_str() {
+            "closed" => select.filter(pull_request_closed_condition()),
+            "sent" => select,
+            _ => select.filter(pull_request_open_condition()),
+        };
+        if category != "sent" {
+            if let Some(contributor_id) = filter.contributor_id {
+                select =
+                    select.filter(pull_request::Column::ContributorId.eq(Some(contributor_id)));
+            }
+        }
+        if text_filter.is_none() {
+            let total_count = select.clone().count(&self.db).await? as u32;
+            let select = if category == "closed" {
+                select
+                    .order_by_desc(pull_request::Column::Updated)
+                    .order_by_desc(pull_request::Column::Number)
+            } else {
+                select
+                    .order_by_desc(pull_request::Column::Created)
+                    .order_by_desc(pull_request::Column::Number)
+            };
+            let rows = select
+                .paginate(&self.db, PAGE_SIZE as u64)
+                .fetch_page((page_num - 1) as u64)
+                .await?;
+            let mut items = Vec::new();
+            for row in rows {
+                items.push(self.pull_request_list_item_from_model(row, project).await?);
+            }
+            return Ok(PullRequestListRecord {
+                category,
+                items,
+                page_num,
+                page_size: PAGE_SIZE,
+                total_count,
+            });
+        }
+        let rows = select.all(&self.db).await?;
+        let mut filtered = Vec::new();
+        for row in rows {
+            if let Some(text_filter) = text_filter.as_deref() {
+                let title_matches = row
+                    .title
+                    .as_deref()
+                    .is_some_and(|title| normalize_identity(title).contains(text_filter));
+                let body_matches = normalize_identity(
+                    &self
+                        .read_text_column("pull_request", "body", row.id)
+                        .await?,
+                )
+                .contains(text_filter);
+                if !title_matches && !body_matches {
+                    continue;
+                }
+            }
+            filtered.push(row);
+        }
+        filtered.sort_by(|left, right| {
+            if category == "closed" {
+                right
+                    .updated
+                    .cmp(&left.updated)
+                    .then_with(|| right.number.cmp(&left.number))
+            } else {
+                right
+                    .created
+                    .cmp(&left.created)
+                    .then_with(|| right.number.cmp(&left.number))
+            }
+        });
+        let total_count = filtered.len() as u32;
+        let offset = ((page_num - 1) * PAGE_SIZE) as usize;
+        let mut items = Vec::new();
+        for row in filtered.into_iter().skip(offset).take(PAGE_SIZE as usize) {
+            items.push(self.pull_request_list_item_from_model(row, project).await?);
+        }
+        Ok(PullRequestListRecord {
+            category,
+            items,
+            page_num,
+            page_size: PAGE_SIZE,
+            total_count,
+        })
+    }
+
+    pub async fn list_organization_pull_requests(
+        &self,
+        visible_projects: Vec<ProjectRecord>,
+        filter: PullRequestListFilter,
+    ) -> Result<PullRequestListRecord, DbErr> {
+        const PAGE_SIZE: u32 = 15;
+        let page_num = filter.page_num.max(1);
+        let category = match normalize_identity(&filter.category).as_str() {
+            "closed" => "closed".to_string(),
+            _ => "open".to_string(),
+        };
+        let project_by_id = visible_projects
+            .into_iter()
+            .map(|project| (project.id, project))
+            .collect::<HashMap<_, _>>();
+        if project_by_id.is_empty() {
+            return Ok(PullRequestListRecord {
+                category,
+                items: Vec::new(),
+                page_num,
+                page_size: PAGE_SIZE,
+                total_count: 0,
+            });
+        }
+        let text_filter = filter
+            .filter
+            .as_deref()
+            .map(normalize_identity)
+            .filter(|value| !value.is_empty());
+        let mut select = pull_request::Entity::find().filter(
+            pull_request::Column::ToProjectId.is_in(project_by_id.keys().copied().map(Some)),
+        );
+        select = if category == "closed" {
+            select.filter(pull_request_closed_condition())
+        } else {
+            select.filter(pull_request_open_condition())
+        };
+        if text_filter.is_none() {
+            let total_count = select.clone().count(&self.db).await? as u32;
+            let rows = select
+                .order_by_desc(pull_request::Column::Updated)
+                .order_by_desc(pull_request::Column::Created)
+                .order_by_desc(pull_request::Column::Number)
+                .paginate(&self.db, PAGE_SIZE as u64)
+                .fetch_page((page_num - 1) as u64)
+                .await?;
+            let mut items = Vec::new();
+            for row in rows {
+                if let Some(project_id) = row.to_project_id {
+                    if let Some(project) = project_by_id.get(&project_id) {
+                        items.push(self.pull_request_list_item_from_model(row, project).await?);
+                    }
+                }
+            }
+            return Ok(PullRequestListRecord {
+                category,
+                items,
+                page_num,
+                page_size: PAGE_SIZE,
+                total_count,
+            });
+        }
+        let rows = select.all(&self.db).await?;
+        let mut filtered = Vec::new();
+        for row in rows {
+            if let Some(text_filter) = text_filter.as_deref() {
+                let title_matches = row
+                    .title
+                    .as_deref()
+                    .is_some_and(|title| normalize_identity(title).contains(text_filter));
+                let body_matches = normalize_identity(
+                    &self
+                        .read_text_column("pull_request", "body", row.id)
+                        .await?,
+                )
+                .contains(text_filter);
+                if !title_matches && !body_matches {
+                    continue;
+                }
+            }
+            if let Some(project_id) = row.to_project_id {
+                if let Some(project) = project_by_id.get(&project_id) {
+                    filtered.push((row, project.clone()));
+                }
+            }
+        }
+        filtered.sort_by(|(left, _), (right, _)| {
+            right
+                .updated
+                .cmp(&left.updated)
+                .then_with(|| right.created.cmp(&left.created))
+                .then_with(|| right.number.cmp(&left.number))
+        });
+        let total_count = filtered.len() as u32;
+        let offset = ((page_num - 1) * PAGE_SIZE) as usize;
+        let mut items = Vec::new();
+        for (row, project) in filtered.into_iter().skip(offset).take(PAGE_SIZE as usize) {
+            items.push(
+                self.pull_request_list_item_from_model(row, &project)
+                    .await?,
+            );
+        }
+        Ok(PullRequestListRecord {
+            category,
+            items,
+            page_num,
+            page_size: PAGE_SIZE,
+            total_count,
+        })
+    }
+
+    pub async fn read_pull_request_detail(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        pull_request_number: i64,
+        viewer_id: Option<i64>,
+    ) -> Result<Option<PullRequestDetailRecord>, DbErr> {
+        let Some((project, model)) = self
+            .read_project_pull_request_model(owner_name, project_name, pull_request_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        self.pull_request_detail_from_model(model, &project, viewer_id)
+            .await
+            .map(Some)
+    }
+
+    pub async fn list_project_review_threads(
+        &self,
+        project: &ProjectRecord,
+        filter: ReviewThreadListFilter,
+    ) -> Result<ReviewThreadListRecord, DbErr> {
+        const PAGE_SIZE: u32 = 15;
+        let page_num = filter.page_num.max(1);
+        let state = match normalize_identity(&filter.state).as_str() {
+            "closed" => "closed".to_string(),
+            _ => "open".to_string(),
+        };
+        let text_filter = filter
+            .filter
+            .as_deref()
+            .map(normalize_identity)
+            .filter(|value| !value.is_empty());
+        let order_by_updated = normalize_identity(&filter.order_by) == "updateddate";
+        if text_filter.is_none() && filter.participant_id.is_none() && !order_by_updated {
+            let mut base = comment_thread::Entity::find()
+                .filter(comment_thread::Column::ProjectId.eq(Some(project.id)))
+                .filter(comment_thread::Column::PullRequestId.is_not_null());
+            if let Some(author_id) = filter.author_id {
+                base = base.filter(comment_thread::Column::AuthorId.eq(Some(author_id)));
+            }
+            let open_count = base
+                .clone()
+                .filter(review_thread_open_condition())
+                .count(&self.db)
+                .await? as u32;
+            let closed_count = base
+                .clone()
+                .filter(review_thread_closed_condition())
+                .count(&self.db)
+                .await? as u32;
+            let mut page_select = if state == "closed" {
+                base.filter(review_thread_closed_condition())
+            } else {
+                base.filter(review_thread_open_condition())
+            };
+            let total_count = page_select.clone().count(&self.db).await? as u32;
+            page_select = if normalize_identity(&filter.order_dir) == "asc" {
+                page_select
+                    .order_by_asc(comment_thread::Column::CreatedDate)
+                    .order_by_asc(comment_thread::Column::Id)
+            } else {
+                page_select
+                    .order_by_desc(comment_thread::Column::CreatedDate)
+                    .order_by_desc(comment_thread::Column::Id)
+            };
+            let rows = page_select
+                .paginate(&self.db, PAGE_SIZE as u64)
+                .fetch_page((page_num - 1) as u64)
+                .await?;
+            let mut items = Vec::new();
+            for row in rows {
+                let comments = self.list_review_comments(row.id).await?;
+                items.push(self.review_thread_record(row, comments).await?);
+            }
+            return Ok(ReviewThreadListRecord {
+                closed_count,
+                items,
+                open_count,
+                page_num,
+                page_size: PAGE_SIZE,
+                state,
+                total_count,
+            });
+        }
+        let rows = comment_thread::Entity::find()
+            .filter(comment_thread::Column::ProjectId.eq(Some(project.id)))
+            .filter(comment_thread::Column::PullRequestId.is_not_null())
+            .all(&self.db)
+            .await?;
+        let mut matched = Vec::new();
+        for row in rows {
+            if filter.author_id.is_some() && row.author_id != filter.author_id {
+                continue;
+            }
+            let (comments, latest_comment_created) =
+                self.list_review_comments_with_latest(row.id).await?;
+            if filter.participant_id.is_some()
+                && row.author_id != filter.participant_id
+                && !comments
+                    .iter()
+                    .any(|comment| comment.author_id == filter.participant_id)
+            {
+                continue;
+            }
+            if let Some(text_filter) = text_filter.as_deref() {
+                let path_matches = row
+                    .path
+                    .as_deref()
+                    .is_some_and(|path| normalize_identity(path).contains(text_filter));
+                let comment_matches = comments.iter().any(|comment| {
+                    normalize_identity(&comment.contents_markdown).contains(text_filter)
+                });
+                if !path_matches && !comment_matches {
+                    continue;
+                }
+            }
+            matched.push((row, comments, latest_comment_created));
+        }
+        let open_count = matched
+            .iter()
+            .filter(|(row, _, _)| review_thread_state(row.state.as_deref()) == "open")
+            .count() as u32;
+        let closed_count = matched
+            .iter()
+            .filter(|(row, _, _)| review_thread_state(row.state.as_deref()) == "closed")
+            .count() as u32;
+        matched.retain(|(row, _, _)| review_thread_state(row.state.as_deref()) == state);
+        let descending = normalize_identity(&filter.order_dir) != "asc";
+        let order_by_updated = normalize_identity(&filter.order_by) == "updateddate";
+        matched.sort_by(|(left, _, left_updated), (right, _, right_updated)| {
+            let left_key = if order_by_updated {
+                left_updated.or(left.created_date)
+            } else {
+                left.created_date
+            };
+            let right_key = if order_by_updated {
+                right_updated.or(right.created_date)
+            } else {
+                right.created_date
+            };
+            let ordering = right_key
+                .cmp(&left_key)
+                .then_with(|| right.id.cmp(&left.id));
+            if descending {
+                ordering
+            } else {
+                ordering.reverse()
+            }
+        });
+        let total_count = matched.len() as u32;
+        let offset = ((page_num - 1) * PAGE_SIZE) as usize;
+        let mut items = Vec::new();
+        for (row, comments, _) in matched.into_iter().skip(offset).take(PAGE_SIZE as usize) {
+            items.push(self.review_thread_record(row, comments).await?);
+        }
+        Ok(ReviewThreadListRecord {
+            closed_count,
+            items,
+            open_count,
+            page_num,
+            page_size: PAGE_SIZE,
+            state,
+            total_count,
+        })
+    }
+
     pub async fn list_workspace_emails_for_user(
         &self,
         user_id: i64,
@@ -4853,6 +5277,293 @@ impl AppRepository {
         })
     }
 
+    async fn read_project_pull_request_model(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        pull_request_number: i64,
+    ) -> Result<Option<(ProjectRecord, pull_request::Model)>, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let row = pull_request::Entity::find()
+            .filter(pull_request::Column::ToProjectId.eq(Some(project.id)))
+            .filter(pull_request::Column::Number.eq(Some(pull_request_number)))
+            .one(&self.db)
+            .await?;
+        Ok(row.map(|row| (project, row)))
+    }
+
+    async fn user_record_for_optional_id(
+        &self,
+        user_id: Option<i64>,
+    ) -> Result<PullRequestUserRecord, DbErr> {
+        let Some(user_id) = user_id else {
+            return Ok(PullRequestUserRecord {
+                login_id: String::new(),
+                user_id: 0,
+                user_label: String::new(),
+            });
+        };
+        Ok(self
+            .find_user_by_id(user_id)
+            .await?
+            .map(|user| PullRequestUserRecord {
+                login_id: user.login_id,
+                user_id: user.id,
+                user_label: user.display_name,
+            })
+            .unwrap_or(PullRequestUserRecord {
+                login_id: String::new(),
+                user_id,
+                user_label: String::new(),
+            }))
+    }
+
+    async fn pull_request_list_item_from_model(
+        &self,
+        row: pull_request::Model,
+        project: &ProjectRecord,
+    ) -> Result<PullRequestListItemRecord, DbErr> {
+        let contributor = self.user_record_for_optional_id(row.contributor_id).await?;
+        let receiver = self.user_record_for_optional_id(row.receiver_id).await?;
+        let from_project = match row.from_project_id {
+            Some(from_project_id) => self.read_project_by_id(from_project_id).await?,
+            None => None,
+        }
+        .unwrap_or_else(|| project.clone());
+        let comment_thread_count = comment_thread::Entity::find()
+            .filter(comment_thread::Column::PullRequestId.eq(Some(row.id)))
+            .count(&self.db)
+            .await? as u32;
+        let reviewer_count = pull_request_reviewers::Entity::find()
+            .filter(pull_request_reviewers::Column::PullRequestId.eq(row.id))
+            .count(&self.db)
+            .await? as u32;
+
+        Ok(PullRequestListItemRecord {
+            comment_thread_count,
+            conflict: row.is_conflict.unwrap_or_default() != 0,
+            contributor_label: contributor.user_label,
+            contributor_login_id: contributor.login_id,
+            created_label: format_workspace_date_label(row.created),
+            from_branch: row.from_branch.unwrap_or_default(),
+            from_owner_name: from_project.owner_name,
+            from_project_name: from_project.project_name,
+            id: row.id,
+            owner_name: project.owner_name.clone(),
+            project_name: project.project_name.clone(),
+            pull_request_number: row.number.unwrap_or_default(),
+            receiver_label: receiver.user_label,
+            receiver_login_id: receiver.login_id,
+            reviewer_count,
+            state: pull_request_state_from_raw(row.state, row.is_conflict),
+            title: row.title.unwrap_or_default(),
+            to_branch: row.to_branch.unwrap_or_default(),
+            updated_label: format_workspace_date_label(row.updated.or(row.created)),
+        })
+    }
+
+    async fn pull_request_detail_from_model(
+        &self,
+        row: pull_request::Model,
+        project: &ProjectRecord,
+        viewer_id: Option<i64>,
+    ) -> Result<PullRequestDetailRecord, DbErr> {
+        let list_item = self
+            .pull_request_list_item_from_model(row.clone(), project)
+            .await?;
+        let contributor = self.user_record_for_optional_id(row.contributor_id).await?;
+        let receiver = self.user_record_for_optional_id(row.receiver_id).await?;
+        let reviewers = self.list_pull_request_reviewers(row.id).await?;
+        let threads = self.list_pull_request_review_threads(row.id).await?;
+        let commits = self.list_pull_request_commits(row.id).await?;
+        let events = self.list_pull_request_events(row.id).await?;
+        let watcher_count = self.count_pull_request_watchers(row.id).await?;
+        let is_watching = match viewer_id {
+            Some(user_id) => self.is_pull_request_watched_by(row.id, user_id).await?,
+            None => false,
+        };
+
+        Ok(PullRequestDetailRecord {
+            body_markdown: self
+                .read_text_column("pull_request", "body", row.id)
+                .await?,
+            commits,
+            conflict: list_item.conflict,
+            contributor,
+            created_label: list_item.created_label,
+            events,
+            from_branch: list_item.from_branch,
+            from_owner_name: list_item.from_owner_name,
+            from_project_name: list_item.from_project_name,
+            id: row.id,
+            is_watching,
+            owner_name: project.owner_name.clone(),
+            project_name: project.project_name.clone(),
+            pull_request_number: list_item.pull_request_number,
+            receiver,
+            reviewers,
+            state: list_item.state,
+            threads,
+            title: list_item.title,
+            to_branch: list_item.to_branch,
+            updated_label: list_item.updated_label,
+            watcher_count,
+        })
+    }
+
+    async fn list_pull_request_reviewers(
+        &self,
+        pull_request_id: i64,
+    ) -> Result<Vec<PullRequestUserRecord>, DbErr> {
+        let rows = pull_request_reviewers::Entity::find()
+            .filter(pull_request_reviewers::Column::PullRequestId.eq(pull_request_id))
+            .all(&self.db)
+            .await?;
+        let mut reviewers = Vec::new();
+        for row in rows {
+            reviewers.push(self.user_record_for_optional_id(Some(row.user_id)).await?);
+        }
+        reviewers.sort_by(|left, right| {
+            left.login_id
+                .cmp(&right.login_id)
+                .then_with(|| left.user_id.cmp(&right.user_id))
+        });
+        Ok(reviewers)
+    }
+
+    async fn list_pull_request_review_threads(
+        &self,
+        pull_request_id: i64,
+    ) -> Result<Vec<ReviewThreadRecord>, DbErr> {
+        let rows = comment_thread::Entity::find()
+            .filter(comment_thread::Column::PullRequestId.eq(Some(pull_request_id)))
+            .order_by_asc(comment_thread::Column::CreatedDate)
+            .order_by_asc(comment_thread::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut threads = Vec::new();
+        for row in rows {
+            let comments = self.list_review_comments(row.id).await?;
+            threads.push(self.review_thread_record(row, comments).await?);
+        }
+        Ok(threads)
+    }
+
+    async fn list_review_comments(
+        &self,
+        thread_id: i64,
+    ) -> Result<Vec<ReviewCommentRecord>, DbErr> {
+        Ok(self.list_review_comments_with_latest(thread_id).await?.0)
+    }
+
+    async fn list_review_comments_with_latest(
+        &self,
+        thread_id: i64,
+    ) -> Result<(Vec<ReviewCommentRecord>, Option<DateTime>), DbErr> {
+        let rows = review_comment::Entity::find()
+            .filter(review_comment::Column::ThreadId.eq(Some(thread_id)))
+            .order_by_asc(review_comment::Column::CreatedDate)
+            .order_by_asc(review_comment::Column::Id)
+            .all(&self.db)
+            .await?;
+        let latest_comment_created = rows.iter().filter_map(|row| row.created_date).max();
+        let mut comments = Vec::new();
+        for row in rows {
+            comments.push(ReviewCommentRecord {
+                author_id: row.author_id,
+                author_label: row.author_name.unwrap_or_default(),
+                author_login_id: row.author_login_id.unwrap_or_default(),
+                contents_markdown: self
+                    .read_text_column("review_comment", "contents", row.id)
+                    .await?,
+                created_label: format_workspace_date_label(row.created_date),
+                id: row.id,
+                thread_id,
+            });
+        }
+        Ok((comments, latest_comment_created))
+    }
+
+    async fn review_thread_record(
+        &self,
+        row: comment_thread::Model,
+        comments: Vec<ReviewCommentRecord>,
+    ) -> Result<ReviewThreadRecord, DbErr> {
+        Ok(ReviewThreadRecord {
+            author_id: row.author_id,
+            author_label: row.author_name.unwrap_or_default(),
+            author_login_id: row.author_login_id.unwrap_or_default(),
+            comments,
+            commit_id: row.commit_id.unwrap_or_default(),
+            created_label: format_workspace_date_label(row.created_date),
+            end_line: row.end_line,
+            id: row.id,
+            path: row.path.unwrap_or_default(),
+            prev_commit_id: row.prev_commit_id.unwrap_or_default(),
+            start_line: row.start_line,
+            state: review_thread_state(row.state.as_deref()),
+        })
+    }
+
+    async fn list_pull_request_commits(
+        &self,
+        pull_request_id: i64,
+    ) -> Result<Vec<PullRequestCommitRecord>, DbErr> {
+        let rows = pull_request_commit::Entity::find()
+            .filter(pull_request_commit::Column::PullRequestId.eq(Some(pull_request_id)))
+            .order_by_asc(pull_request_commit::Column::AuthorDate)
+            .order_by_asc(pull_request_commit::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut commits = Vec::new();
+        for row in rows {
+            commits.push(PullRequestCommitRecord {
+                author_date_label: format_workspace_date_label(row.author_date.or(row.created)),
+                author_email: row.author_email.unwrap_or_default(),
+                commit_id: row.commit_id.unwrap_or_default(),
+                commit_message: self
+                    .read_text_column("pull_request_commit", "commit_message", row.id)
+                    .await?,
+                commit_short_id: row.commit_short_id.unwrap_or_default(),
+                state: row.state.unwrap_or_default(),
+            });
+        }
+        Ok(commits)
+    }
+
+    async fn list_pull_request_events(
+        &self,
+        pull_request_id: i64,
+    ) -> Result<Vec<PullRequestEventRecord>, DbErr> {
+        let rows = pull_request_event::Entity::find()
+            .filter(pull_request_event::Column::PullRequestId.eq(Some(pull_request_id)))
+            .order_by_asc(pull_request_event::Column::Created)
+            .order_by_asc(pull_request_event::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut events = Vec::new();
+        for row in rows {
+            events.push(PullRequestEventRecord {
+                created_label: format_workspace_date_label(row.created),
+                event_type: row.event_type.unwrap_or_default(),
+                id: row.id,
+                new_value: self
+                    .read_text_column("pull_request_event", "new_value", row.id)
+                    .await?,
+                old_value: self
+                    .read_text_column("pull_request_event", "old_value", row.id)
+                    .await?,
+                sender_login_id: row.sender_login_id.unwrap_or_default(),
+            });
+        }
+        Ok(events)
+    }
+
     async fn project_issue_list_item_from_model(
         &self,
         model: issue::Model,
@@ -5671,11 +6382,33 @@ impl AppRepository {
             .await? as u32)
     }
 
+    async fn count_pull_request_watchers(&self, pull_request_id: i64) -> Result<u32, DbErr> {
+        Ok(watch::Entity::find()
+            .filter(watch::Column::ResourceType.eq(Some("PULL_REQUEST".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(pull_request_id.to_string())))
+            .count(&self.db)
+            .await? as u32)
+    }
+
     async fn is_issue_watched_by(&self, issue_id: i64, user_id: i64) -> Result<bool, DbErr> {
         Ok(watch::Entity::find()
             .filter(watch::Column::UserId.eq(Some(user_id)))
             .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))
             .filter(watch::Column::ResourceId.eq(Some(issue_id.to_string())))
+            .one(&self.db)
+            .await?
+            .is_some())
+    }
+
+    async fn is_pull_request_watched_by(
+        &self,
+        pull_request_id: i64,
+        user_id: i64,
+    ) -> Result<bool, DbErr> {
+        Ok(watch::Entity::find()
+            .filter(watch::Column::UserId.eq(Some(user_id)))
+            .filter(watch::Column::ResourceType.eq(Some("PULL_REQUEST".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(pull_request_id.to_string())))
             .one(&self.db)
             .await?
             .is_some())

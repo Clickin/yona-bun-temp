@@ -54,15 +54,14 @@
 
 ## Phase 4: 풀 리퀘스트와 리뷰
 
-- PR lifecycle
-- reviewer rules
-- review thread lifecycle
-- merge and conflict handling
+- Phase 4A complete: PR/Review read surface parity over `/api/v1` REST for project open/closed/sent PR lists, PR detail, PR changes, project reviews, and organization open/closed PR lists. Read ACL combines project READ with code-accessible-member-only visibility; missing Git repo/HEAD returns an empty changes diff instead of a synthetic diff. Frontend routes use typed PR REST query options and TanStack Query. Verification: `pull_request_read_contract`, frontend unit/check/build, and `pull-request-review-read-parity.e2e.ts`.
+- Phase 4B+ deferred: PR creation/edit, open/close/reopen, merge/conflict acceptance, review/unreview, watch mutation, review comment mutation, review thread open/close mutation, fork/branch cleanup, webhook/search integration.
+- Progress checkpoint after Phase 5A baseline and Phase 4A read surface: full legacy parity ~42%, current first-priority conversion scope ~49%, mechanical SPEC row count ~33%.
 
 ## Phase 5: 검색, 보드, 알림, 연동
 
 - search
-- board
+- Phase 5A complete: board/posting posting surface baseline was promoted before Phase 4A planning; future board packets should start from that committed baseline.
 - notifications
 - integrations
 

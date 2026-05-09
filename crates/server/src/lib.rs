@@ -1919,6 +1919,197 @@ struct RestCodeBrowserQuery {
     path: String,
 }
 
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestPullRequestListQuery {
+    category: String,
+    contributor_id: i64,
+    filter: String,
+    page_num: u32,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestOrganizationPullRequestListQuery {
+    category: String,
+    filter: String,
+    page_num: u32,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestReviewThreadListQuery {
+    author_id: i64,
+    filter: String,
+    order_by: String,
+    order_dir: String,
+    page_num: u32,
+    participant_id: i64,
+    state: String,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestUser {
+    login_id: String,
+    user_id: i64,
+    user_label: String,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestReviewComment {
+    author_id: i64,
+    author_label: String,
+    author_login_id: String,
+    contents_html: String,
+    contents_markdown: String,
+    created_label: String,
+    id: i64,
+    thread_id: i64,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestReviewThread {
+    author_id: i64,
+    author_label: String,
+    author_login_id: String,
+    comments: Vec<RestReviewComment>,
+    commit_id: String,
+    created_label: String,
+    end_line: Option<i32>,
+    id: i64,
+    path: String,
+    prev_commit_id: String,
+    start_line: Option<i32>,
+    state: String,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestCommit {
+    author_date_label: String,
+    author_email: String,
+    commit_id: String,
+    commit_message: String,
+    commit_short_id: String,
+    state: String,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestEvent {
+    created_label: String,
+    event_type: String,
+    id: i64,
+    new_value: String,
+    old_value: String,
+    sender_login_id: String,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestListItem {
+    comment_thread_count: u32,
+    conflict: bool,
+    contributor_label: String,
+    contributor_login_id: String,
+    created_label: String,
+    from_branch: String,
+    from_owner_name: String,
+    from_project_name: String,
+    id: i64,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    receiver_label: String,
+    receiver_login_id: String,
+    reviewer_count: u32,
+    state: String,
+    title: String,
+    to_branch: String,
+    updated_label: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestListResponse {
+    category: String,
+    items: Vec<RestPullRequestListItem>,
+    page_num: u32,
+    page_size: u32,
+    total_count: u32,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestPermissions {
+    can_comment: bool,
+    can_read: bool,
+    can_read_changes: bool,
+    can_review: bool,
+    can_update: bool,
+    can_update_state: bool,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestDetailResponse {
+    body_html: String,
+    body_markdown: String,
+    commits: Vec<RestPullRequestCommit>,
+    conflict: bool,
+    contributor: RestPullRequestUser,
+    created_label: String,
+    events: Vec<RestPullRequestEvent>,
+    from_branch: String,
+    from_owner_name: String,
+    from_project_name: String,
+    id: i64,
+    is_watching: bool,
+    owner_name: String,
+    permissions: RestPullRequestPermissions,
+    project_name: String,
+    pull_request_number: i64,
+    receiver: RestPullRequestUser,
+    reviewers: Vec<RestPullRequestUser>,
+    state: String,
+    threads: Vec<RestReviewThread>,
+    title: String,
+    to_branch: String,
+    updated_label: String,
+    watcher_count: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestChangesResponse {
+    commits: Vec<RestPullRequestCommit>,
+    files: Vec<RestPullRequestChangedFile>,
+    pull_request: RestPullRequestDetailResponse,
+    threads: Vec<RestReviewThread>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestChangedFile {
+    path: String,
+    patch: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestReviewThreadListResponse {
+    closed_count: u32,
+    items: Vec<RestReviewThread>,
+    open_count: u32,
+    page_num: u32,
+    page_size: u32,
+    state: String,
+    total_count: u32,
+}
+
 impl RestRouteError {
     fn internal(message: impl Into<String>) -> Self {
         Self {
@@ -1935,6 +2126,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
     let base_path = service.base_path.clone();
     let issue_meta_service = service.clone();
     let org_project_service = service.clone();
+    let pull_request_service = service.clone();
 
     let router = Router::new()
         .route(
@@ -2462,7 +2654,8 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .merge(build_rest_issue_meta_router(issue_meta_service))
-        .merge(build_rest_org_project_router(org_project_service));
+        .merge(build_rest_org_project_router(org_project_service))
+        .merge(build_rest_pull_request_router(pull_request_service));
 
     #[cfg(debug_assertions)]
     {
@@ -2783,6 +2976,120 @@ fn build_rest_org_project_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
                     let service = service.clone();
                     async move { rest_toggle_project_watch(headers, owner_name, project_name, false, service).await }
+                }
+            }),
+        )
+}
+
+fn build_rest_pull_request_router(service: PilotServiceImpl) -> Router {
+    Router::new()
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestPullRequestListQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_list_project_pull_requests(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_read_pull_request_detail(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/changes",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_read_pull_request_changes(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/reviews",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestReviewThreadListQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_list_project_reviews(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/organizations/{organization_name}/pull-requests",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path(organization_name): Path<String>,
+                      Query(query): Query<RestOrganizationPullRequestListQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_list_organization_pull_requests(
+                            headers,
+                            organization_name,
+                            query,
+                            service,
+                        )
+                        .await
+                    }
                 }
             }),
         )
@@ -5182,6 +5489,251 @@ async fn rest_read_code_browser(
         &authorization.project.project_name,
         snapshot,
     )))
+}
+
+fn rest_repository(service: &PilotServiceImpl) -> Result<&PilotRepository, RestRouteError> {
+    match &service.backend {
+        PilotBackend::Repository(repository) => Ok(repository),
+        PilotBackend::Static => Err(RestRouteError::not_implemented(
+            "pull request reads require repository backend",
+        )),
+    }
+}
+
+fn rest_actor_id(service: &PilotServiceImpl, headers: &HeaderMap) -> Option<i64> {
+    service
+        .session_manager
+        .read_session_from_headers(headers)
+        .and_then(|session| session.user_id)
+}
+
+async fn rest_require_project_code_read(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    actor_id: Option<i64>,
+) -> Result<persistence::ProjectAuthorizationRecord, RestRouteError> {
+    let authorization = require_project_read(repository, owner_name, project_name, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !project_code_menu_visible(&authorization, true) {
+        let error = ConnectError::permission_denied("project code access is not allowed");
+        return Err(RestRouteError::from_connect_error(error));
+    }
+    Ok(authorization)
+}
+
+fn rest_pull_request_filter(
+    query: RestPullRequestListQuery,
+    _actor_id: Option<i64>,
+) -> persistence::PullRequestListFilter {
+    let category = normalize_identifier(&query.category);
+    persistence::PullRequestListFilter {
+        category: if category.is_empty() {
+            "open".to_string()
+        } else {
+            category.clone()
+        },
+        contributor_id: if query.contributor_id > 0 {
+            Some(query.contributor_id)
+        } else {
+            None
+        },
+        filter: (!query.filter.trim().is_empty()).then(|| query.filter.trim().to_string()),
+        page_num: query.page_num.max(1),
+    }
+}
+
+fn rest_organization_pull_request_filter(
+    query: RestOrganizationPullRequestListQuery,
+) -> persistence::PullRequestListFilter {
+    persistence::PullRequestListFilter {
+        category: if normalize_identifier(&query.category) == "closed" {
+            "closed".to_string()
+        } else {
+            "open".to_string()
+        },
+        contributor_id: None,
+        filter: (!query.filter.trim().is_empty()).then(|| query.filter.trim().to_string()),
+        page_num: query.page_num.max(1),
+    }
+}
+
+fn rest_review_thread_filter(
+    query: RestReviewThreadListQuery,
+) -> persistence::ReviewThreadListFilter {
+    persistence::ReviewThreadListFilter {
+        author_id: (query.author_id > 0).then_some(query.author_id),
+        filter: (!query.filter.trim().is_empty()).then(|| query.filter.trim().to_string()),
+        order_by: if query.order_by.trim().is_empty() {
+            "createdDate".to_string()
+        } else {
+            query.order_by.trim().to_string()
+        },
+        order_dir: if query.order_dir.trim().is_empty() {
+            "desc".to_string()
+        } else {
+            query.order_dir.trim().to_string()
+        },
+        page_num: query.page_num.max(1),
+        participant_id: (query.participant_id > 0).then_some(query.participant_id),
+        state: if normalize_identifier(&query.state) == "closed" {
+            "closed".to_string()
+        } else {
+            "open".to_string()
+        },
+    }
+}
+
+async fn rest_list_project_pull_requests(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: RestPullRequestListQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestListResponse>, RestRouteError> {
+    let repository = rest_repository(&service)?;
+    let actor_id = rest_actor_id(&service, &headers);
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, actor_id).await?;
+    let record = repository
+        .list_project_pull_requests(
+            &authorization.project,
+            rest_pull_request_filter(query, actor_id),
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(rest_pull_request_list_from_record(record)))
+}
+
+async fn rest_read_pull_request_detail(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestDetailResponse>, RestRouteError> {
+    let repository = rest_repository(&service)?;
+    let actor_id = rest_actor_id(&service, &headers);
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, actor_id).await?;
+    let record = repository
+        .read_pull_request_detail(&owner_name, &project_name, pull_request_number, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
+    Ok(Json(
+        rest_pull_request_detail_from_record(record, &authorization, actor_id)
+            .map_err(RestRouteError::from_connect_error)?,
+    ))
+}
+
+async fn rest_read_pull_request_changes(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestChangesResponse>, RestRouteError> {
+    let repository = rest_repository(&service)?;
+    let actor_id = rest_actor_id(&service, &headers);
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, actor_id).await?;
+    let record = repository
+        .read_pull_request_detail(&owner_name, &project_name, pull_request_number, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
+    let detail = rest_pull_request_detail_from_record(record, &authorization, actor_id)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let diff =
+        yona_rust_vcs::read_pull_request_diff(&repo_path, &detail.from_branch, &detail.to_branch)
+            .map_err(code_browser_error)
+            .map_err(RestRouteError::from_connect_error)?;
+    let (commits, files) = if diff.no_head {
+        (Vec::new(), Vec::new())
+    } else {
+        (
+            diff.commits
+                .into_iter()
+                .map(rest_pull_request_commit_from_vcs_record)
+                .collect(),
+            diff.files
+                .into_iter()
+                .map(rest_pull_request_changed_file_from_vcs_record)
+                .collect(),
+        )
+    };
+    Ok(Json(RestPullRequestChangesResponse {
+        commits,
+        files,
+        threads: detail.threads.clone(),
+        pull_request: detail,
+    }))
+}
+
+async fn rest_list_project_reviews(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: RestReviewThreadListQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestReviewThreadListResponse>, RestRouteError> {
+    let repository = rest_repository(&service)?;
+    let actor_id = rest_actor_id(&service, &headers);
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, actor_id).await?;
+    let record = repository
+        .list_project_review_threads(&authorization.project, rest_review_thread_filter(query))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(RestReviewThreadListResponse {
+        closed_count: record.closed_count,
+        items: record
+            .items
+            .into_iter()
+            .map(rest_review_thread_from_record)
+            .collect(),
+        open_count: record.open_count,
+        page_num: record.page_num,
+        page_size: record.page_size,
+        state: record.state,
+        total_count: record.total_count,
+    }))
+}
+
+async fn rest_list_organization_pull_requests(
+    headers: HeaderMap,
+    organization_name: String,
+    query: RestOrganizationPullRequestListQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestListResponse>, RestRouteError> {
+    let repository = rest_repository(&service)?;
+    let actor_id = rest_actor_id(&service, &headers);
+    let authorization = repository
+        .read_organization_authorization(&organization_name, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("organization not found"))?;
+    let visible_projects =
+        visible_code_projects_for_organization(repository, authorization.organization.id, actor_id)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+    let record = repository
+        .list_organization_pull_requests(
+            visible_projects,
+            rest_organization_pull_request_filter(query),
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(rest_pull_request_list_from_record(record)))
 }
 
 #[derive(Deserialize)]
@@ -8918,6 +9470,33 @@ async fn visible_projects_for_organization(
             continue;
         };
         if project_read_allowed(&project_authorization, actor_id.is_none())? {
+            visible_projects.push(project_authorization.project);
+        }
+    }
+    Ok(visible_projects)
+}
+
+async fn visible_code_projects_for_organization(
+    repository: &PilotRepository,
+    organization_id: i64,
+    actor_id: Option<i64>,
+) -> Result<Vec<persistence::ProjectRecord>, ConnectError> {
+    let projects = repository
+        .list_projects_for_organization(organization_id)
+        .await
+        .map_err(internal_error)?;
+    let mut visible_projects = Vec::new();
+    for project in projects {
+        let Some(project_authorization) = repository
+            .read_project_authorization(&project.owner_name, &project.project_name, actor_id)
+            .await
+            .map_err(internal_error)?
+        else {
+            continue;
+        };
+        if project_read_allowed(&project_authorization, actor_id.is_none())?
+            && project_code_menu_visible(&project_authorization, true)
+        {
             visible_projects.push(project_authorization.project);
         }
     }
@@ -13020,6 +13599,209 @@ fn project_issue_list_item_to_proto(
         watcher_count: item.watcher_count,
         ..Default::default()
     }
+}
+
+fn rest_pull_request_user_from_record(
+    record: persistence::PullRequestUserRecord,
+) -> RestPullRequestUser {
+    RestPullRequestUser {
+        login_id: record.login_id,
+        user_id: record.user_id,
+        user_label: record.user_label,
+    }
+}
+
+fn rest_pull_request_list_item_from_record(
+    record: persistence::PullRequestListItemRecord,
+) -> RestPullRequestListItem {
+    RestPullRequestListItem {
+        comment_thread_count: record.comment_thread_count,
+        conflict: record.conflict,
+        contributor_label: record.contributor_label,
+        contributor_login_id: record.contributor_login_id,
+        created_label: record.created_label,
+        from_branch: record.from_branch,
+        from_owner_name: record.from_owner_name,
+        from_project_name: record.from_project_name,
+        id: record.id,
+        owner_name: record.owner_name,
+        project_name: record.project_name,
+        pull_request_number: record.pull_request_number,
+        receiver_label: record.receiver_label,
+        receiver_login_id: record.receiver_login_id,
+        reviewer_count: record.reviewer_count,
+        state: record.state,
+        title: record.title,
+        to_branch: record.to_branch,
+        updated_label: record.updated_label,
+    }
+}
+
+fn rest_pull_request_list_from_record(
+    record: persistence::PullRequestListRecord,
+) -> RestPullRequestListResponse {
+    RestPullRequestListResponse {
+        category: record.category,
+        items: record
+            .items
+            .into_iter()
+            .map(rest_pull_request_list_item_from_record)
+            .collect(),
+        page_num: record.page_num,
+        page_size: record.page_size,
+        total_count: record.total_count,
+    }
+}
+
+fn rest_review_comment_from_record(record: persistence::ReviewCommentRecord) -> RestReviewComment {
+    RestReviewComment {
+        author_id: record.author_id.unwrap_or_default(),
+        author_label: record.author_label,
+        author_login_id: record.author_login_id,
+        contents_html: render_markdown_html(&record.contents_markdown),
+        contents_markdown: record.contents_markdown,
+        created_label: record.created_label,
+        id: record.id,
+        thread_id: record.thread_id,
+    }
+}
+
+fn rest_review_thread_from_record(record: persistence::ReviewThreadRecord) -> RestReviewThread {
+    RestReviewThread {
+        author_id: record.author_id.unwrap_or_default(),
+        author_label: record.author_label,
+        author_login_id: record.author_login_id,
+        comments: record
+            .comments
+            .into_iter()
+            .map(rest_review_comment_from_record)
+            .collect(),
+        commit_id: record.commit_id,
+        created_label: record.created_label,
+        end_line: record.end_line,
+        id: record.id,
+        path: record.path,
+        prev_commit_id: record.prev_commit_id,
+        start_line: record.start_line,
+        state: record.state,
+    }
+}
+
+fn rest_pull_request_commit_from_record(
+    record: persistence::PullRequestCommitRecord,
+) -> RestPullRequestCommit {
+    RestPullRequestCommit {
+        author_date_label: record.author_date_label,
+        author_email: record.author_email,
+        commit_id: record.commit_id,
+        commit_message: record.commit_message,
+        commit_short_id: record.commit_short_id,
+        state: record.state,
+    }
+}
+
+fn rest_pull_request_commit_from_vcs_record(
+    record: yona_rust_vcs::PullRequestDiffCommitRecord,
+) -> RestPullRequestCommit {
+    RestPullRequestCommit {
+        author_date_label: record.author_date_label,
+        author_email: record.author_email,
+        commit_id: record.commit_id,
+        commit_message: record.commit_message,
+        commit_short_id: record.commit_short_id,
+        state: String::new(),
+    }
+}
+
+fn rest_pull_request_changed_file_from_vcs_record(
+    record: yona_rust_vcs::PullRequestChangedFileRecord,
+) -> RestPullRequestChangedFile {
+    RestPullRequestChangedFile {
+        path: record.path,
+        patch: record.patch,
+    }
+}
+
+fn rest_pull_request_detail_from_record(
+    record: persistence::PullRequestDetailRecord,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor_id: Option<i64>,
+) -> Result<RestPullRequestDetailResponse, ConnectError> {
+    let viewer_can_project_update = actor_id.is_some() && project_update_allowed(authorization)?;
+    let viewer_is_contributor =
+        actor_id.is_some_and(|user_id| user_id == record.contributor.user_id);
+    let viewer_is_receiver = actor_id.is_some_and(|user_id| user_id == record.receiver.user_id);
+    let viewer_is_reviewer = actor_id.is_some_and(|user_id| {
+        record
+            .reviewers
+            .iter()
+            .any(|reviewer| reviewer.user_id == user_id)
+    });
+    let can_update = viewer_can_project_update || viewer_is_contributor || viewer_is_receiver;
+    let can_review = actor_id.is_some()
+        && (authorization.viewer.is_project_member
+            || authorization.viewer.is_project_manager
+            || authorization.viewer.is_organization_admin
+            || authorization.viewer.is_site_admin
+            || viewer_is_receiver
+            || viewer_is_reviewer);
+
+    Ok(RestPullRequestDetailResponse {
+        body_html: render_markdown_html(&record.body_markdown),
+        body_markdown: record.body_markdown,
+        commits: record
+            .commits
+            .into_iter()
+            .map(rest_pull_request_commit_from_record)
+            .collect(),
+        conflict: record.conflict,
+        contributor: rest_pull_request_user_from_record(record.contributor),
+        created_label: record.created_label,
+        events: record
+            .events
+            .into_iter()
+            .map(|event| RestPullRequestEvent {
+                created_label: event.created_label,
+                event_type: event.event_type,
+                id: event.id,
+                new_value: event.new_value,
+                old_value: event.old_value,
+                sender_login_id: event.sender_login_id,
+            })
+            .collect(),
+        from_branch: record.from_branch,
+        from_owner_name: record.from_owner_name,
+        from_project_name: record.from_project_name,
+        id: record.id,
+        is_watching: record.is_watching,
+        owner_name: record.owner_name,
+        permissions: RestPullRequestPermissions {
+            can_comment: actor_id.is_some(),
+            can_read: true,
+            can_read_changes: true,
+            can_review,
+            can_update,
+            can_update_state: can_update,
+        },
+        project_name: record.project_name,
+        pull_request_number: record.pull_request_number,
+        receiver: rest_pull_request_user_from_record(record.receiver),
+        reviewers: record
+            .reviewers
+            .into_iter()
+            .map(rest_pull_request_user_from_record)
+            .collect(),
+        state: record.state,
+        threads: record
+            .threads
+            .into_iter()
+            .map(rest_review_thread_from_record)
+            .collect(),
+        title: record.title,
+        to_branch: record.to_branch,
+        updated_label: record.updated_label,
+        watcher_count: record.watcher_count,
+    })
 }
 
 fn code_browser_error(error: VcsError) -> ConnectError {
