@@ -48,8 +48,10 @@ import {
   sendWorkspaceEmailValidation,
   setDefaultLandingPath,
   setMainWorkspaceEmail,
+  shareIssue,
   signInWithPassword,
   signOut,
+  listNotifications,
   searchIssueAssignableUsers,
   searchIssueMentionUsers,
   searchIssueSharableUsers,
@@ -66,6 +68,7 @@ import {
   updateIssue,
   updateIssueComment,
   updateIssueState,
+  unshareIssue,
   uploadProfileAvatar,
   verifyUser,
   voteIssueComment,
@@ -786,6 +789,11 @@ describe("issue assignable user REST client", () => {
           {
             loginId: "guest",
           },
+          {
+            displayName: "owner/publicProject",
+            loginId: "42",
+            type: "project",
+          },
         ],
       }),
     );
@@ -822,9 +830,116 @@ describe("issue assignable user REST client", () => {
           pureNameOnly: "",
           type: "user",
         },
+        {
+          avatarUrl: "",
+          displayName: "owner/publicProject",
+          loginId: "42",
+          pureNameOnly: "",
+          type: "project",
+        },
       ],
-      total: 1,
+      total: 2,
       truncated: false,
+    });
+  });
+
+  it("sends optional project target type for issue share mutations", async () => {
+    const fetchMock = vi.fn(async () => okJsonResponse({}));
+
+    await shareIssue(
+      runtimeConfig,
+      "csrf-share",
+      {
+        issueNumber: 7n,
+        loginId: "42",
+        ownerName: "owner",
+        projectName: "projectYobi",
+        targetType: "project",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+    await unshareIssue(
+      runtimeConfig,
+      "csrf-unshare",
+      {
+        issueNumber: 7n,
+        loginId: "42",
+        ownerName: "owner",
+        projectName: "projectYobi",
+        targetType: "project",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    const calls = fetchMock.mock.calls as unknown as Array<
+      [string, { body?: string; headers: Headers; method: string }]
+    >;
+    expect(calls[0]![0]).toBe("/yona/api/v1/owners/owner/projects/projectYobi/issues/7/sharers");
+    expect(calls[0]![1].method).toBe("POST");
+    expect(calls[0]![1].headers.get("x-csrf-token")).toBe("csrf-share");
+    expect(JSON.parse(calls[0]![1].body ?? "")).toEqual({
+      loginId: "42",
+      targetType: "project",
+    });
+    expect(calls[1]![0]).toBe(
+      "/yona/api/v1/owners/owner/projects/projectYobi/issues/7/sharers/42?targetType=project",
+    );
+    expect(calls[1]![1].method).toBe("DELETE");
+    expect(calls[1]![1].headers.get("x-csrf-token")).toBe("csrf-unshare");
+  });
+
+  it("lists notification inbox items with paging query params", async () => {
+    const fetchMock = vi.fn(async () =>
+      okJsonResponse({
+        hasMore: true,
+        items: [
+          {
+            actor: { displayName: "Owner", loginId: "owner" },
+            eventType: "ISSUE_SHARER_CHANGED",
+            id: "5",
+            message: "Issue is shared with guest",
+            targetHref: "/yona/owner/projectYobi/issue/1",
+            targetTitle: "Private issue",
+          },
+        ],
+        total: 12,
+      }),
+    );
+
+    const result = await listNotifications(
+      runtimeConfig,
+      { from: 20, size: 10 },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { credentials: string; headers: Headers; method: string },
+    ];
+    expect(requestUrl).toBe("/yona/api/v1/notifications?from=20&size=10");
+    expect(requestInit.credentials).toBe("same-origin");
+    expect(requestInit.method).toBe("GET");
+    expect(result).toEqual({
+      hasMore: true,
+      items: [
+        {
+          actor: {
+            avatarUrl: "",
+            displayName: "Owner",
+            loginId: "owner",
+          },
+          createdAt: "",
+          createdLabel: "",
+          eventType: "ISSUE_SHARER_CHANGED",
+          id: "5",
+          message: "Issue is shared with guest",
+          targetHref: "/yona/owner/projectYobi/issue/1",
+          targetTitle: "Private issue",
+          typeIcon: "megaphone",
+        },
+      ],
+      total: 12,
     });
   });
 

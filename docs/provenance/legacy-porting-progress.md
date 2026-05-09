@@ -3,20 +3,20 @@
 > Status dashboard. This document is a progress mirror for humans and agents.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, and the narrower provenance docs under `docs/provenance/**`.
 
-Last updated: 2026-05-06
+Last updated: 2026-05-09
 
 ## Progress Estimate
 
 | Scope                                   | Estimate | Basis                                                                                                                         |
 | --------------------------------------- | -------: | ----------------------------------------------------------------------------------------------------------------------------- |
-| Full legacy Yona parity                 |     ~39% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and legacy external REST API. |
-| Current first-priority conversion scope |     ~45% | Same as above, but excluding explicitly deferred second-priority items such as SVN, LDAP, and import/export tooling.          |
+| Full legacy Yona parity                 |     ~40% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and separate migrator/external API compatibility. |
+| Current first-priority conversion scope |     ~46% | Same as above, but excluding explicitly deferred second-priority items such as SVN, LDAP, import/export tooling, and legacy external API compatibility. |
 | Mechanical SPEC row count               |     ~31% | Phase -1 moved implemented application flows to `/api/v1` REST and removed runtime RPC, but many product rows remain gaps.    |
 
 Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace, organization/project ownership, and issue-tracker core behavior.
-- The largest remaining gaps are still code hosting/VCS, pull requests/reviews, board/posting, search, notification fan-out, webhooks, site admin, and legacy REST API compatibility.
+- The largest remaining gaps are still code hosting/VCS, pull requests/reviews, board/posting, search, notification fan-out/read state, webhooks, site admin, and separate migrator/external API compatibility.
 - Percentages are approximate. Update them only when a slice lands with tests and provenance updates.
 
 ## Update Protocol
@@ -37,12 +37,12 @@ Interpretation:
 | Foundation / DB / runtime               | [~] Mostly implemented    | Schema, migrations, `/api/v1` REST runtime, assets are strong; production migration/import/export is not.                |
 | Auth / Workspace                        | [~] Partially implemented | Core account and settings flows exist; remember-me/admin approval/guest/OAuth/LDAP remain.                               |
 | Organization / Project core             | [~] Partially implemented | CRUD, members, enrollment, watch/favorite basics exist; project admin surfaces remain.                                   |
-| Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists, favorite issue, direct sharer row effects, and issue/comment mention row effects exist over `/api/v1`; legacy external REST parity remains. |
+| Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists, favorite issue, direct/project sharer effects, and issue/comment mention row effects exist over `/api/v1`; legacy external REST parity is separate migrator scope. |
 | VCS / Code hosting                      | [~] Started               | Read-only Git code browser exists; smart HTTP, history, raw/image/download, branch admin, and provisioning remain.       |
 | Pull Request / Review                   | [ ] Mostly missing        | PR routes are placeholders.                                                                                              |
 | Board / Posting                         | [ ] Mostly missing        | Board/post routes are placeholders.                                                                                      |
 | Search                                  | [ ] Mostly missing        | Search route is placeholder.                                                                                             |
-| Notifications / Webhooks / Admin / External REST | [ ] Mostly missing | Some infrastructure exists, but parity surfaces and `/-_-api/v1` external compatibility are mostly gaps.                |
+| Notifications / Webhooks / Admin / External REST | [ ] Mostly missing | Notification inbox/list and mail queue staging exist; webhooks/admin remain missing, and `/-_-api/v1` compatibility is separate migrator scope. |
 
 ## Foundation / Deployment / DB
 
@@ -162,6 +162,7 @@ Interpretation:
 - [x] Issue label consumption in list/detail
 - [x] Issue milestone consumption in list/detail
 - [x] Issue sharer direct share/unshare
+- [x] Issue sharer public project target expansion
 - [x] Private issue read/comment ACL for directly shared users
 - [x] Parent-shared child issue read-only inheritance
 - [x] Organization issue aggregate list
@@ -176,7 +177,7 @@ Interpretation:
 - [x] Favorite issue
 - [x] User aggregate issue list
 - [ ] Issue Excel export
-- [ ] REST issue API parity
+- [ ] REST issue API parity (separate migrator/external compatibility scope)
 
 ## Labels
 
@@ -280,12 +281,12 @@ Interpretation:
 - [x] SMTP/integration infrastructure basics
 - [x] Project notification settings basics
 - [x] Project watch toggle basics
-- [ ] Notification event list
-- [ ] Issue event notifications
+- [x] Notification event list
+- [~] Issue event notifications
 - [ ] PR/review notifications
 - [ ] Email notification fan-out parity
 - [ ] BCC mode
-- [ ] Notification interval batching
+- [~] Notification interval batching queue/drain helper
 - [ ] Draft-time merge
 - [ ] Recipient limit
 - [ ] Mailbox/reply threading parity
@@ -342,7 +343,7 @@ Interpretation:
 
 - [ ] `GET /-_-api/v1/hello`
 - [ ] User REST APIs
-- [ ] Issue REST API
+- [ ] Issue REST API (separate migrator scope)
 - [ ] Project REST API
 - [ ] Board REST API
 - [ ] Milestone REST API

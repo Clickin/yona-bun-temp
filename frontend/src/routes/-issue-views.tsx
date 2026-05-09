@@ -133,7 +133,7 @@ export function ProjectIssueDetailPage(props: {
   onCommentVoteToggle?: (commentId: number, viewerHasVoted: boolean) => Promise<void>;
   onDeleteIssue?: () => Promise<void>;
   onFavoriteToggle?: () => Promise<void>;
-  onShareIssue?: (loginId: string) => Promise<void>;
+  onShareIssue?: (loginId: string, targetType?: IssueAssignableUserItem["type"]) => Promise<void>;
   onStateChange?: (state: string) => Promise<void>;
   onUnshareIssue?: (loginId: string) => Promise<void>;
   onVoteToggle?: () => Promise<void>;
@@ -476,7 +476,7 @@ export function UserIssueListPage(props: {
 function IssueSharerPanel(props: {
   issue: ProjectIssueDetailViewModel;
   onSearchSharableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
-  onShareIssue?: (loginId: string) => Promise<void>;
+  onShareIssue?: (loginId: string, targetType?: IssueAssignableUserItem["type"]) => Promise<void>;
   onUnshareIssue?: (loginId: string) => Promise<void>;
 }) {
   const [loginId, setLoginId] = React.useState("");
@@ -489,13 +489,16 @@ function IssueSharerPanel(props: {
     return null;
   }
 
-  const submitSharerLoginId = (nextLoginId: string) => {
+  const submitSharerLoginId = (
+    nextLoginId: string,
+    targetType: IssueAssignableUserItem["type"] = "user",
+  ) => {
     const trimmedLoginId = nextLoginId.trim();
     if (!trimmedLoginId || submitting || !onShareIssue) {
       return;
     }
     setSubmitting(true);
-    void onShareIssue(trimmedLoginId).finally(() => {
+    void onShareIssue(trimmedLoginId, targetType).finally(() => {
       setLoginId("");
       setSubmitting(false);
     });
@@ -503,7 +506,7 @@ function IssueSharerPanel(props: {
 
   const selectSharerSuggestion = (suggestion: IssueAssignableUserItem) => {
     setLoginId(suggestion.loginId);
-    submitSharerLoginId(suggestion.loginId);
+    submitSharerLoginId(suggestion.loginId, suggestion.type);
   };
 
   return (

@@ -49,7 +49,7 @@ export type IssueAssignableUserItem = {
   displayName: string;
   loginId: string;
   pureNameOnly: string;
-  type: "user";
+  type: "project" | "user";
 };
 
 export type IssueAssignableUsersResponse = {
@@ -93,6 +93,7 @@ export type ProjectIssueReferencesResponse = {
 
 type IssueShareInput = IssueScopeInput & {
   loginId: string;
+  targetType?: "project" | "user" | string;
 };
 
 function toInt64Number(value: bigint | number): number {
@@ -190,12 +191,12 @@ function normalizeIssueDetailResponse(response: ReadIssueDetailResponse): ReadIs
 function normalizeIssueAssignableUsersResponse(
   response: Partial<IssueAssignableUsersResponse>,
 ): IssueAssignableUsersResponse {
-  const items = (response.items ?? []).map((item) => ({
+  const items: IssueAssignableUserItem[] = (response.items ?? []).map((item) => ({
     avatarUrl: item.avatarUrl ?? "",
     displayName: item.displayName ?? "",
     loginId: item.loginId ?? "",
     pureNameOnly: item.pureNameOnly ?? "",
-    type: "user" as const,
+    type: item.type === "project" ? "project" : "user",
   }));
   return {
     items,
@@ -465,6 +466,7 @@ export function shareIssueRest(
   return restFetch<ReadIssueDetailResponse>(runtimeConfig, `${issuePath(input)}/sharers`, {
     body: {
       loginId: input.loginId,
+      ...(input.targetType ? { targetType: input.targetType } : {}),
     },
     csrfToken,
     fetchImpl,
@@ -478,9 +480,12 @@ export function unshareIssueRest(
   input: IssueShareInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
+  const targetTypeSuffix = input.targetType
+    ? `?${new URLSearchParams({ targetType: input.targetType }).toString()}`
+    : "";
   return restFetch<ReadIssueDetailResponse>(
     runtimeConfig,
-    `${issuePath(input)}/sharers/${encodeURIComponent(input.loginId)}`,
+    `${issuePath(input)}/sharers/${encodeURIComponent(input.loginId)}${targetTypeSuffix}`,
     {
       csrfToken,
       fetchImpl,

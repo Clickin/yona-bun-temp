@@ -205,12 +205,13 @@ function IssueDetailRouteComponent() {
         });
         setIssue(toProjectIssueDetailView(nextIssue));
       }}
-      onShareIssue={async (loginId) => {
+      onShareIssue={async (loginId, targetType) => {
         const nextIssue = await shareIssue(runtimeConfig, csrfToken, {
           issueNumber: BigInt(Number(issueNumber)),
           loginId,
           ownerName: owner,
           projectName,
+          targetType,
         });
         setIssue(toProjectIssueDetailView(nextIssue));
       }}

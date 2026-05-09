@@ -145,6 +145,11 @@ import {
   updateProjectLabelCategoryRest,
   updateProjectLabelRest,
 } from "./api/project-labels";
+import {
+  listNotificationsRest,
+  type NotificationsListInput,
+  type NotificationsListResponse,
+} from "./api/notifications";
 import { restFetch } from "./api/rest-client";
 import { readCurrentSessionRest } from "./api/session";
 import {
@@ -204,6 +209,10 @@ export interface OrganizationIssueListOptions {
   projectNames?: string[];
   state?: string;
 }
+
+type IssueShareClientInput = MessageInitShape<typeof IssueShareRequestSchema> & {
+  targetType?: "project" | "user" | string;
+};
 
 export interface UserIssueListOptions {
   filter?: string;
@@ -863,10 +872,18 @@ export async function searchProjectIssueReferences(
   return searchProjectIssueReferencesRest(runtimeConfig, input, fetchImpl);
 }
 
+export async function listNotifications(
+  runtimeConfig: RuntimeConfig,
+  input: NotificationsListInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<NotificationsListResponse> {
+  return listNotificationsRest(runtimeConfig, input, fetchImpl);
+}
+
 export async function shareIssue(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof IssueShareRequestSchema>,
+  input: IssueShareClientInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return shareIssueRest(
@@ -877,6 +894,7 @@ export async function shareIssue(
       loginId: input.loginId ?? "",
       ownerName: input.ownerName ?? "",
       projectName: input.projectName ?? "",
+      targetType: input.targetType,
     },
     fetchImpl,
   );
@@ -885,7 +903,7 @@ export async function shareIssue(
 export async function unshareIssue(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof IssueShareRequestSchema>,
+  input: IssueShareClientInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return unshareIssueRest(
@@ -896,6 +914,7 @@ export async function unshareIssue(
       loginId: input.loginId ?? "",
       ownerName: input.ownerName ?? "",
       projectName: input.projectName ?? "",
+      targetType: input.targetType,
     },
     fetchImpl,
   );

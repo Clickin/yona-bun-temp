@@ -9,6 +9,7 @@ use serde_json::json;
 use tower::ServiceExt;
 use yona_rust_persistence::{
     issue, issue_event, n4user, notification_event, notification_event_n4user, AppRepository,
+    CreateProjectInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -130,6 +131,30 @@ async fn rest(
         .unwrap()
 }
 
+async fn rest_json(
+    app: axum::Router,
+    method: Method,
+    uri: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    payload: serde_json::Value,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(method)
+        .uri(uri)
+        .header(http::header::CONTENT_TYPE, "application/json");
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+
+    app.oneshot(builder.body(Body::from(payload.to_string())).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i64) {
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let response = rpc(
@@ -231,6 +256,15 @@ fn login_ids(payload: &serde_json::Value) -> Vec<String> {
         .collect()
 }
 
+fn item_types(payload: &serde_json::Value) -> Vec<String> {
+    payload["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| item["type"].as_str().unwrap().to_string())
+        .collect()
+}
+
 #[tokio::test]
 async fn issue_sharer_contract_searches_sharable_active_users_with_issue_read_acl() {
     let (app, _repo, db) = build_app_with_repository().await;
@@ -305,6 +339,152 @@ async fn issue_sharer_contract_searches_sharable_active_users_with_issue_read_ac
     )
     .await;
     assert_eq!(denied.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn issue_sharer_contract_searches_public_project_targets() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    register_user(app.clone(), "member").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "private").await;
+    create_issue(app.clone(), &owner_cookie, &owner_csrf, "Private issue").await;
+    let public_project = repo
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "member".to_string(),
+            overview: Some("Target public project".to_string()),
+            project_name: "targetShare".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+    repo.create_project(CreateProjectInput {
+        organization_id: None,
+        owner_name: "member".to_string(),
+        overview: Some("Target private project".to_string()),
+        project_name: "targetSecret".to_string(),
+        project_scope: "private".to_string(),
+    })
+    .await
+    .unwrap();
+
+    let payload = response_json(
+        rest(
+            app,
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharable-users?query=target",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+
+    let project_id = public_project.id.to_string();
+    assert!(login_ids(&payload).contains(&project_id));
+    assert!(item_types(&payload).contains(&"project".to_string()));
+    assert!(payload["items"].as_array().unwrap().iter().any(|item| {
+        item["loginId"] == project_id
+            && item["displayName"] == "member/targetShare"
+            && item["type"] == "project"
+    }));
+    assert!(!payload["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|item| { item["displayName"] == "member/targetSecret" }));
+    drop(db);
+}
+
+#[tokio::test]
+async fn issue_sharer_contract_project_target_mutation_expands_project_members() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, _, guest_id) = register_user(app.clone(), "guest").await;
+    let (_, _, other_id) = register_user(app.clone(), "other").await;
+    register_user(app.clone(), "target-owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "private").await;
+    create_issue(app.clone(), &owner_cookie, &owner_csrf, "Private issue").await;
+
+    let target_project = repo
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "target-owner".to_string(),
+            overview: Some("Bulk target".to_string()),
+            project_name: "targetShare".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+    repo.add_project_membership(target_project.id, guest_id, "member")
+        .await
+        .unwrap();
+    repo.add_project_membership(target_project.id, other_id, "member")
+        .await
+        .unwrap();
+
+    let shared = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharers",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "loginId": target_project.id.to_string(),
+                "targetType": "project"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let mut sharers = shared["sharers"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| item["loginId"].as_str().unwrap().to_string())
+        .collect::<Vec<_>>();
+    sharers.sort();
+    assert_eq!(sharers, vec!["guest".to_string(), "other".to_string()]);
+
+    let noti_events = notification_event::Entity::find()
+        .filter(notification_event::Column::EventType.eq(Some("ISSUE_SHARER_CHANGED".to_string())))
+        .all(&db)
+        .await
+        .unwrap();
+    assert_eq!(noti_events.len(), 2);
+    assert!(noti_events
+        .iter()
+        .all(|event| event.sender_id == Some(owner_id)));
+    assert_eq!(
+        notification_event_n4user::Entity::find_by_id((noti_events[0].id, guest_id))
+            .one(&db)
+            .await
+            .unwrap()
+            .is_some()
+            || notification_event_n4user::Entity::find_by_id((noti_events[1].id, guest_id))
+                .one(&db)
+                .await
+                .unwrap()
+                .is_some(),
+        true
+    );
+
+    let unshared = response_json(
+        rest_json(
+            app,
+            Method::DELETE,
+            &format!(
+                "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharers/{}?targetType=project",
+                target_project.id
+            ),
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({}),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(json_array_len(&unshared, "sharers"), 0);
 }
 
 #[tokio::test]

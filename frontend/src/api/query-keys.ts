@@ -11,5 +11,9 @@ export const apiQueryKeys = {
         { query: input.query },
       ] as const,
   },
+  notifications: {
+    list: (input: { from: number; size: number }) =>
+      [...apiQueryKeys.v1(), "notifications", { from: input.from, size: input.size }] as const,
+  },
   session: () => [...apiQueryKeys.v1(), "session"] as const,
 };

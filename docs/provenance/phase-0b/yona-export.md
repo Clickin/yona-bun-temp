@@ -4,7 +4,7 @@
 
 - Long-term replacement target for `https://github.com/yona-projects/yona-export`.
 - This is not a general internal-view REST contract. It is a migration-facing project export/import tool contract.
-- Future `/-_-api/v1/**` issue, milestone, label, project, post, and file endpoints are allowed only when they are backed by this tool provenance or a narrower migration/export provenance document.
+- Future `/-_-api/v1/**` issue, milestone, label, project, post, and file compatibility belongs to a separate migrator/export/import deliverable. These endpoints must not be added to the frontend/server app unless that deliverable explicitly owns and tests the compatibility adapter.
 
 ## Upstream Tool Sources
 
@@ -54,10 +54,10 @@ The Node tool calls these external surfaces:
 
 - Build as a migration/export CLI or migration tool surface, not as SPA internals.
 - Keep schema validation explicit and versioned.
-- Separate external compatibility adapters from `/api/v1` app-facing REST APIs.
+- Separate external compatibility adapters from `/api/v1` app-facing REST APIs, and keep those adapters out of the app server until the migrator/export/import deliverable owns them.
 - Add dry-run, resumable import reports, duplicate policy, and attachment checksum validation before claiming production migration parity.
 
 ## Guardrail
 
 - Do not add `/-_-api/v1` issue/milestone/label/post/project REST endpoints just because a React view needs data.
-- Those endpoints require explicit migration/export provenance and tests tied to the external tool contract.
+- Those endpoints require explicit migration/export provenance, tests tied to the external tool contract, and a separate migrator/export/import plan.

@@ -111,6 +111,26 @@ test("passes partial legacy slices when tests and parity audit updates land toge
   assert.equal(shouldBlockForStrictGate(result), false);
 });
 
+test("maps notification inbox frontend files to the issue notification slice", () => {
+  const result = runGate([
+    "frontend/src/api/notifications.ts",
+    "frontend/src/routes/notification/route.tsx",
+    "crates/server/tests/notification_contract.rs",
+    "docs/provenance/phase-0b/issue.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.equal(
+    result.unmappedImplementationFiles.includes("frontend/src/api/notifications.ts"),
+    false,
+  );
+  assert.equal(
+    result.unmappedImplementationFiles.includes("frontend/src/routes/notification/route.tsx"),
+    false,
+  );
+});
+
 test("treats canonical migration crate as active canonical work, not deferred scope", () => {
   const result = runGate([
     "crates/migration/src/m20260407_000003_create_org_project_baseline_tables.rs",

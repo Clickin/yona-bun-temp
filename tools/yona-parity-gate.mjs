@@ -213,6 +213,22 @@ const DOMAIN_BUCKETS = [
     provenanceDocs: ["docs/provenance/phase-0b/project.md", "docs/provenance/core-parity-audit.md"],
   },
   {
+    id: "notification-inbox-and-mail-staging",
+    label: "Notification inbox and mail staging",
+    status: "partial",
+    implementationPatterns: [
+      /^frontend\/src\/api\/notifications\.ts$/i,
+      /^frontend\/src\/routes\/notifications?\/route\.tsx$/i,
+      /^crates\/(?:server|persistence|integrations)\/.*notification/i,
+    ],
+    testKeywords: ["notification", "mail", "watch"],
+    provenanceDocs: [
+      "docs/provenance/phase-0b/issue.md",
+      "docs/provenance/phase-0b/legacy-test-inventory.md",
+      "docs/provenance/core-parity-audit.md",
+    ],
+  },
+  {
     id: "issue-lifecycle",
     label: "Issue lifecycle",
     status: "gap",

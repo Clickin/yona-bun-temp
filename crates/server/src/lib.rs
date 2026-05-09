@@ -1691,6 +1691,43 @@ struct RestRecentProjectVisitBody {
     project_name: String,
 }
 
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestNotificationsQuery {
+    from: u32,
+    size: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestNotificationActor {
+    avatar_url: String,
+    display_name: String,
+    login_id: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestNotificationItem {
+    actor: RestNotificationActor,
+    created_at: String,
+    created_label: String,
+    event_type: String,
+    id: String,
+    message: String,
+    target_href: String,
+    target_title: String,
+    type_icon: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestNotificationsResponse {
+    has_more: bool,
+    items: Vec<RestNotificationItem>,
+    total: u32,
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RestIssueAssigneeBody {
@@ -1774,6 +1811,14 @@ struct RestProjectIssueReferencesResponse {
 #[serde(rename_all = "camelCase")]
 struct RestIssueSharerBody {
     login_id: String,
+    #[serde(default)]
+    target_type: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestIssueSharerDeleteQuery {
+    target_type: String,
 }
 
 #[derive(Deserialize)]
@@ -2069,6 +2114,23 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Json(body): Json<RestWorkspaceNotificationBody>| {
                     let service = service.clone();
                     async move { rest_toggle_workspace_notification(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/notifications",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                let base_path = base_path.clone();
+                move |headers: HeaderMap, Query(query): Query<RestNotificationsQuery>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    let base_path = base_path.clone();
+                    async move {
+                        rest_list_notifications(headers, query, session_manager, backend, base_path)
+                            .await
+                    }
                 }
             }),
         )
@@ -2998,7 +3060,8 @@ fn build_rest_issue_meta_router(service: PilotServiceImpl) -> Router {
                     String,
                     i64,
                     String,
-                )>| {
+                )>,
+                      Query(query): Query<RestIssueSharerDeleteQuery>| {
                     let service = service.clone();
                     async move {
                         rest_unshare_issue(
@@ -3007,6 +3070,7 @@ fn build_rest_issue_meta_router(service: PilotServiceImpl) -> Router {
                             project_name,
                             issue_number,
                             login_id,
+                            query,
                             service,
                         )
                         .await
@@ -3861,6 +3925,69 @@ async fn rest_toggle_workspace_notification(
     Ok(rest_json_response(payload, ctx))
 }
 
+fn rest_notifications_response(
+    record: persistence::NotificationListRecord,
+    base_path: &str,
+) -> RestNotificationsResponse {
+    RestNotificationsResponse {
+        has_more: record.has_more,
+        items: record
+            .items
+            .into_iter()
+            .map(|item| RestNotificationItem {
+                actor: RestNotificationActor {
+                    avatar_url: item.actor.avatar_url,
+                    display_name: item.actor.display_name,
+                    login_id: item.actor.login_id,
+                },
+                created_at: item
+                    .created
+                    .map(|created| created.format("%Y-%m-%dT%H:%M:%S").to_string())
+                    .unwrap_or_default(),
+                created_label: format_project_date_label(item.created),
+                event_type: item.event_type,
+                id: item.id.to_string(),
+                message: item.message,
+                target_href: if item.target_path.is_empty() {
+                    String::new()
+                } else {
+                    base_path_href(base_path, &item.target_path)
+                },
+                target_title: item.target_title,
+                type_icon: item.type_icon,
+            })
+            .collect(),
+        total: record.total,
+    }
+}
+
+async fn rest_list_notifications(
+    headers: HeaderMap,
+    query: RestNotificationsQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Result<Json<RestNotificationsResponse>, RestRouteError> {
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    let Some(user_id) = session.user_id else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unauthenticated("missing pilot user"),
+        ));
+    };
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "notifications require repository backend",
+        ));
+    };
+    let record = repository
+        .list_notifications_for_user(user_id, query.from, query.size)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(rest_notifications_response(record, &base_path)))
+}
+
 async fn rest_record_recent_project_visit(
     headers: HeaderMap,
     body: RestRecentProjectVisitBody,
@@ -4565,7 +4692,7 @@ async fn rest_share_issue(
     };
     let request = rest_owned_view::<IssueShareRequestView<'static>>(&request)?;
     let (payload, ctx) = service
-        .share_issue(Context::new(headers), request)
+        .issue_sharer_mutation(Context::new(headers), request, "share", &body.target_type)
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let payload = rest_refreshed_issue_detail(
@@ -4586,6 +4713,7 @@ async fn rest_unshare_issue(
     project_name: String,
     issue_number: i64,
     login_id: String,
+    query: RestIssueSharerDeleteQuery,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
     let refresh_headers = headers.clone();
@@ -4600,7 +4728,12 @@ async fn rest_unshare_issue(
     };
     let request = rest_owned_view::<IssueShareRequestView<'static>>(&request)?;
     let (payload, ctx) = service
-        .unshare_issue(Context::new(headers), request)
+        .issue_sharer_mutation(
+            Context::new(headers),
+            request,
+            "unshare",
+            &query.target_type,
+        )
         .await
         .map_err(RestRouteError::from_connect_error)?;
     let payload = rest_refreshed_issue_detail(
@@ -5590,7 +5723,7 @@ fn rest_issue_assignable_users_response(
                 display_name: item.display_name,
                 login_id: item.login_id,
                 pure_name_only: item.pure_name_only,
-                r#type: "user".to_string(),
+                r#type: item.item_type,
             })
             .collect(),
         total: record.total,
@@ -6910,6 +7043,7 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<IssueShareRequestView<'static>>,
         action: &str,
+        target_type: &str,
     ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
         let session = require_session(&self.session_manager, &ctx.headers)?;
         require_valid_csrf(&self.session_manager, &ctx.headers, &session)?;
@@ -6941,38 +7075,57 @@ impl PilotServiceImpl {
             ));
         }
         let actor = access.actor.as_ref().expect("authenticated issue actor");
-        let target = repository
-            .find_user_by_login_id(request.login_id)
-            .await
-            .map_err(internal_error)?
-            .ok_or_else(|| ConnectError::not_found("issue sharer user not found"))?;
-        let changed = match action {
-            "share" => repository
-                .add_issue_sharer(access.issue.id, target.id, &target.login_id)
-                .await
-                .map_err(internal_error)?,
-            "unshare" => repository
-                .remove_issue_sharer(access.issue.id, target.id)
-                .await
-                .map_err(internal_error)?,
-            _ => {
-                return Err(ConnectError::invalid_argument(
-                    "invalid issue sharer action",
-                ))
-            }
-        };
-        if changed {
+        let target_users = if target_type.trim().eq_ignore_ascii_case("project") {
+            let project_id = request
+                .login_id
+                .parse::<i64>()
+                .map_err(|_| ConnectError::not_found("issue sharer project not found"))?;
             repository
-                .record_issue_sharer_changed(
-                    access.issue.id,
-                    actor.id,
-                    &actor.login_id,
-                    target.id,
-                    &target.login_id,
-                    action,
-                )
+                .read_public_project_by_id(project_id)
                 .await
-                .map_err(internal_error)?;
+                .map_err(internal_error)?
+                .ok_or_else(|| ConnectError::not_found("issue sharer project not found"))?;
+            repository
+                .list_project_member_users(project_id)
+                .await
+                .map_err(internal_error)?
+        } else {
+            vec![repository
+                .find_user_by_login_id(request.login_id)
+                .await
+                .map_err(internal_error)?
+                .ok_or_else(|| ConnectError::not_found("issue sharer user not found"))?]
+        };
+
+        for target in target_users {
+            let changed = match action {
+                "share" => repository
+                    .add_issue_sharer(access.issue.id, target.id, &target.login_id)
+                    .await
+                    .map_err(internal_error)?,
+                "unshare" => repository
+                    .remove_issue_sharer(access.issue.id, target.id)
+                    .await
+                    .map_err(internal_error)?,
+                _ => {
+                    return Err(ConnectError::invalid_argument(
+                        "invalid issue sharer action",
+                    ))
+                }
+            };
+            if changed {
+                repository
+                    .record_issue_sharer_changed(
+                        access.issue.id,
+                        actor.id,
+                        &actor.login_id,
+                        target.id,
+                        &target.login_id,
+                        action,
+                    )
+                    .await
+                    .map_err(internal_error)?;
+            }
         }
         let updated = repository
             .read_issue_detail(
@@ -12104,7 +12257,8 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<IssueShareRequestView<'static>>,
     ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        self.issue_sharer_mutation(ctx, request, "share").await
+        self.issue_sharer_mutation(ctx, request, "share", "user")
+            .await
     }
 
     async fn unshare_issue(
@@ -12112,7 +12266,8 @@ impl PilotServiceImpl {
         ctx: Context,
         request: OwnedView<IssueShareRequestView<'static>>,
     ) -> Result<(ReadIssueDetailResponse, Context), ConnectError> {
-        self.issue_sharer_mutation(ctx, request, "unshare").await
+        self.issue_sharer_mutation(ctx, request, "unshare", "user")
+            .await
     }
 
     async fn mass_update_issues(

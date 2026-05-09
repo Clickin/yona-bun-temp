@@ -149,6 +149,66 @@ h1 {
   color: #333;
 }
 
+.unstyled {
+  padding-left: 0;
+  list-style: none;
+}
+
+.warning-none {
+  padding: 18px 20px;
+  color: #666;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+}
+
+.notification-page .activity-streams {
+  margin: 0;
+}
+
+.notification-stream {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.notification-stream .stream-type {
+  width: 32px;
+  height: 32px;
+  color: #666;
+  text-align: center;
+  line-height: 32px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+}
+
+.notification-stream .title {
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.notification-stream .message-wrap {
+  color: #555;
+}
+
+.notification-stream .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+  margin-top: 8px;
+  color: #777;
+  font-size: 12px;
+}
+
+.notification-stream .ago {
+  margin-left: auto;
+}
+
 .lede {
   margin: 0 0 18px;
   max-width: 52ch;

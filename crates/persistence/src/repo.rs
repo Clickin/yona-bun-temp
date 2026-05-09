@@ -6,30 +6,31 @@ use crate::repo_types::{
     IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter,
     IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueRecord,
     IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, MassUpdateIssuesInput,
-    MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
-    OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
-    OrganizationIssueListFilter, OrganizationIssueListRecord, OrganizationIssueProjectOptionRecord,
-    OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationRecord,
-    OrganizationViewerRecord, ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord,
-    ProjectIssueListItemRecord, ProjectIssueListRecord, ProjectIssueReferenceRecord,
-    ProjectIssueReferenceSearchRecord, ProjectListEntry, ProjectMemberDirectoryRecord,
-    ProjectMemberRecord, ProjectMenuSettingsRecord, ProjectMilestoneSummaryRecord, ProjectRecord,
-    ProjectViewerRecord, ToggleFavoriteIssueResult, ToggleFavoriteProjectResult,
-    UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput,
-    UpdateProjectInput, UpdateProjectLabelCategoryInput, UpdateProjectLabelInput,
-    UserIssueCandidateRecord, UserIssueListFilter, WatchedProjectNotificationsRecord,
-    WorkspaceEmailRecord, WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
-    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    MentionSyncResult, MilestoneListFilter, MilestoneMutationInput, NotificationActorRecord,
+    NotificationItemRecord, NotificationListRecord, OrganizationAuthorizationRecord,
+    OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
+    OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
+    OrganizationMemberRecord, OrganizationRecord, OrganizationViewerRecord,
+    ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord, ProjectIssueListItemRecord,
+    ProjectIssueListRecord, ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord,
+    ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
+    ProjectMilestoneSummaryRecord, ProjectRecord, ProjectViewerRecord, ToggleFavoriteIssueResult,
+    ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
+    UpdateOrganizationInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
+    UpdateProjectLabelInput, UserIssueCandidateRecord, UserIssueListFilter,
+    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
+    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
     assignee, attachment, comment_thread, email, favorite_issue, favorite_organization,
     favorite_project, issue, issue_comment, issue_comment_voter, issue_event, issue_issue_label,
     issue_label, issue_label_category, issue_sharer, issue_voter, linked_account, mention,
-    milestone, n4user, notification_event, notification_event_n4user, organization,
-    organization_user, posting, posting_issue_label, project, project_menu_setting, project_user,
-    pull_request, recent_project, role, site_admin, user_credential, user_enrolled_organization,
-    user_enrolled_project, user_project_notification, user_setting, user_verification, watch,
+    milestone, n4user, notification_event, notification_event_n4user, notification_mail,
+    organization, organization_user, posting, posting_issue_label, project, project_menu_setting,
+    project_user, pull_request, recent_project, role, site_admin, user_credential,
+    user_enrolled_organization, user_enrolled_project, user_project_notification, user_setting,
+    user_verification, watch,
 };
 use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
@@ -97,8 +98,20 @@ fn issue_assignable_user_record(user: n4user::Model) -> IssueAssignableUserRecor
     IssueAssignableUserRecord {
         avatar_url: String::new(),
         display_name,
+        item_type: "user".to_string(),
         login_id,
         pure_name_only,
+    }
+}
+
+fn issue_sharable_project_record(project: ProjectRecord) -> IssueAssignableUserRecord {
+    let display_name = format!("{}/{}", project.owner_name, project.project_name);
+    IssueAssignableUserRecord {
+        avatar_url: String::new(),
+        display_name: display_name.clone(),
+        item_type: "project".to_string(),
+        login_id: project.id.to_string(),
+        pure_name_only: display_name,
     }
 }
 
@@ -252,6 +265,40 @@ const USER_AVATAR_ATTACHMENT_CONTAINER: &str = "USER_AVATAR";
 
 fn workspace_notification_enabled_by_default(event_type: &str) -> bool {
     !matches!(event_type, "NEW_COMMENT")
+}
+
+fn notification_message(event_type: &str, old_value: &str, new_value: &str) -> String {
+    match event_type {
+        "ISSUE_SHARER_CHANGED" if !new_value.trim().is_empty() => {
+            format!("Issue is shared with {}", new_value.trim())
+        }
+        "ISSUE_SHARER_CHANGED" if !old_value.trim().is_empty() => {
+            "Issue sharing state is changed".to_string()
+        }
+        "NEW_ISSUE" => "New issue added".to_string(),
+        "NEW_COMMENT" => "New comment on post or issue added".to_string(),
+        "ISSUE_BODY_CHANGED" => "Issue body changed".to_string(),
+        "COMMENT_UPDATED" => "Comment updated".to_string(),
+        _ => event_type.to_string(),
+    }
+}
+
+fn notification_type_icon(event_type: &str, state: &str) -> &'static str {
+    match event_type {
+        "NEW_COMMENT" => "comment2",
+        "NEW_ISSUE" | "ISSUE_STATE_CHANGED" if state == "closed" => "list-alt closed",
+        "NEW_ISSUE" | "ISSUE_STATE_CHANGED" => "list-alt",
+        "ISSUE_ASSIGNEE_CHANGED" => "friends changed",
+        "ISSUE_BODY_CHANGED" | "COMMENT_UPDATED" => "ellipsis-horizontal",
+        _ => "megaphone",
+    }
+}
+
+fn notification_mail_is_due(created: Option<DateTime>, now: DateTime, delay_ms: i64) -> bool {
+    let Some(created) = created else {
+        return false;
+    };
+    now.signed_duration_since(created).num_milliseconds() >= delay_ms.max(0)
 }
 
 fn random_workspace_token() -> String {
@@ -748,6 +795,16 @@ impl AppRepository {
             .filter(|user| issue_assignable_user_matches(user, query, search_type))
             .map(issue_assignable_user_record)
             .collect::<Vec<_>>();
+        matches.extend(
+            self.list_projects()
+                .await?
+                .into_iter()
+                .filter(|project| normalize_identity(&project.project_scope) == "public")
+                .filter(|project| {
+                    normalize_identity(&project.project_name).contains(&normalize_identity(query))
+                })
+                .map(issue_sharable_project_record),
+        );
         let total = matches.len() as u32;
         let truncated = matches.len() > limit;
         matches.truncate(limit);
@@ -2801,6 +2858,41 @@ impl AppRepository {
         Ok(())
     }
 
+    pub async fn read_public_project_by_id(
+        &self,
+        project_id: i64,
+    ) -> Result<Option<ProjectRecord>, DbErr> {
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok(None);
+        };
+        if normalize_identity(&project.project_scope) != "public" {
+            return Ok(None);
+        }
+        Ok(Some(project))
+    }
+
+    pub async fn list_project_member_users(
+        &self,
+        project_id: i64,
+    ) -> Result<Vec<AppUserRecord>, DbErr> {
+        let memberships = project_user::Entity::find()
+            .filter(project_user::Column::ProjectId.eq(Some(project_id)))
+            .all(&self.db)
+            .await?;
+        let mut users = Vec::new();
+        for membership in memberships {
+            let Some(user_id) = membership.user_id else {
+                continue;
+            };
+            if let Some(user) = self.find_user_by_id(user_id).await? {
+                users.push(user);
+            }
+        }
+        users.sort_by(|left, right| left.login_id.cmp(&right.login_id));
+        users.dedup_by(|left, right| left.id == right.id);
+        Ok(users)
+    }
+
     async fn assignable_member_user_ids(
         &self,
         project_record: &ProjectRecord,
@@ -4436,6 +4528,93 @@ impl AppRepository {
         Ok(())
     }
 
+    pub async fn list_notifications_for_user(
+        &self,
+        user_id: i64,
+        from: u32,
+        size: u32,
+    ) -> Result<NotificationListRecord, DbErr> {
+        let receivers = notification_event_n4user::Entity::find()
+            .filter(notification_event_n4user::Column::N4userId.eq(user_id))
+            .all(&self.db)
+            .await?;
+        let mut events = Vec::new();
+        for receiver in receivers {
+            let event = notification_event::Entity::find_by_id(receiver.notification_event_id)
+                .one(&self.db)
+                .await?;
+            if let Some(event) = event {
+                events.push(event);
+            }
+        }
+        events.sort_by(|left, right| {
+            right
+                .created
+                .cmp(&left.created)
+                .then_with(|| right.id.cmp(&left.id))
+        });
+
+        let total = events.len() as u32;
+        let from = from as usize;
+        let size = size.clamp(1, 100) as usize;
+        let has_more = from.saturating_add(size) < events.len();
+        let page = events.into_iter().skip(from).take(size);
+        let mut items = Vec::new();
+        for event in page {
+            items.push(self.notification_item_record(event).await?);
+        }
+
+        Ok(NotificationListRecord {
+            has_more,
+            items,
+            total,
+        })
+    }
+
+    pub async fn drain_due_notification_mails(
+        &self,
+        now: DateTime,
+        delay_ms: i64,
+    ) -> Result<Vec<i64>, DbErr> {
+        let mails = notification_mail::Entity::find().all(&self.db).await?;
+        let mut due = Vec::new();
+        for mail in mails {
+            let Some(event_id) = mail.notification_event_id else {
+                continue;
+            };
+            let Some(event) = notification_event::Entity::find_by_id(event_id)
+                .one(&self.db)
+                .await?
+            else {
+                continue;
+            };
+            if notification_mail_is_due(event.created, now, delay_ms) {
+                due.push((event.created, event.id, mail.id));
+            }
+        }
+        due.sort_by(|left, right| {
+            left.0
+                .cmp(&right.0)
+                .then_with(|| left.1.cmp(&right.1))
+                .then_with(|| left.2.cmp(&right.2))
+        });
+        let event_ids = due
+            .iter()
+            .map(|(_, event_id, _)| *event_id)
+            .collect::<Vec<_>>();
+        let mail_ids = due
+            .iter()
+            .map(|(_, _, mail_id)| *mail_id)
+            .collect::<Vec<_>>();
+        if !mail_ids.is_empty() {
+            notification_mail::Entity::delete_many()
+                .filter(notification_mail::Column::Id.is_in(mail_ids))
+                .exec(&self.db)
+                .await?;
+        }
+        Ok(event_ids)
+    }
+
     pub async fn read_default_landing_path(&self, user_id: i64) -> Result<Option<String>, DbErr> {
         let row = user_setting::Entity::find()
             .filter(user_setting::Column::UserId.eq(Some(user_id)))
@@ -5575,6 +5754,12 @@ impl AppRepository {
             .await?;
         self.write_text_column("notification_event", "new_value", created.id, new_value)
             .await?;
+        notification_mail::ActiveModel {
+            id: NotSet,
+            notification_event_id: Set(Some(created.id)),
+        }
+        .insert(&self.db)
+        .await?;
 
         for receiver_id in unique_receiver_ids {
             notification_event_n4user::ActiveModel {
@@ -5727,6 +5912,94 @@ impl AppRepository {
         )
         .await?;
         Ok(sync_result)
+    }
+
+    async fn notification_item_record(
+        &self,
+        event: notification_event::Model,
+    ) -> Result<NotificationItemRecord, DbErr> {
+        let old_value = self
+            .read_text_column("notification_event", "old_value", event.id)
+            .await?;
+        let new_value = self
+            .read_text_column("notification_event", "new_value", event.id)
+            .await?;
+        let event_type = event.event_type.unwrap_or_default();
+        let actor = match event.sender_id {
+            Some(sender_id) => self.find_user_by_id(sender_id).await?,
+            None => None,
+        };
+        let actor = actor
+            .map(|user| NotificationActorRecord {
+                avatar_url: String::new(),
+                display_name: user.display_name,
+                login_id: user.login_id,
+            })
+            .unwrap_or_else(|| NotificationActorRecord {
+                avatar_url: String::new(),
+                display_name: String::new(),
+                login_id: String::new(),
+            });
+        let target = self
+            .notification_issue_target(
+                event.resource_type.as_deref().unwrap_or_default(),
+                event.resource_id.as_deref().unwrap_or_default(),
+            )
+            .await?;
+
+        Ok(NotificationItemRecord {
+            actor,
+            created: event.created,
+            event_type: event_type.clone(),
+            id: event.id,
+            message: notification_message(&event_type, &old_value, &new_value),
+            target_path: target.0,
+            target_title: target.1,
+            type_icon: notification_type_icon(&event_type, &new_value).to_string(),
+        })
+    }
+
+    async fn notification_issue_target(
+        &self,
+        resource_type: &str,
+        resource_id: &str,
+    ) -> Result<(String, String), DbErr> {
+        let Some(resource_id) = resource_id.parse::<i64>().ok() else {
+            return Ok((String::new(), String::new()));
+        };
+        let issue_model = match resource_type {
+            "issue" | "issue_post" => issue::Entity::find_by_id(resource_id).one(&self.db).await?,
+            "issue_comment" => {
+                let Some(comment) = issue_comment::Entity::find_by_id(resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok((String::new(), String::new()));
+                };
+                match comment.issue_id {
+                    Some(issue_id) => issue::Entity::find_by_id(issue_id).one(&self.db).await?,
+                    None => None,
+                }
+            }
+            _ => None,
+        };
+        let Some(issue_model) = issue_model else {
+            return Ok((String::new(), String::new()));
+        };
+        let Some(project_id) = issue_model.project_id else {
+            return Ok((String::new(), String::new()));
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok((String::new(), String::new()));
+        };
+        let issue_number = issue_model.number.unwrap_or_default();
+        Ok((
+            format!(
+                "/{}/{}/issue/{}",
+                project.owner_name, project.project_name, issue_number
+            ),
+            issue_model.title.unwrap_or_default(),
+        ))
     }
 
     async fn ensure_site_admin(&self, user_id: i64) -> Result<(), DbErr> {

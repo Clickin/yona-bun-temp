@@ -3,7 +3,7 @@
 ## Scope
 
 - Phase 2A issue core parity slice
-- Issue list/detail/create/edit/delete, comments, comment vote, state mutation, watch/vote/favorite/assignee, issue detail assignee autocomplete/search, mass update, Markdown rendering, issue/comment attachment binding, core Issue Sharer read/comment authorization, sharable-user search, direct sharer row-level timeline/notification side effects, issue/comment `@user`/`@org`/`@owner/project` mention indexing/search/notification semantics, issue reference `#issue` autocomplete, and `/user/issues` personal issue aggregation now have Rust canonical coverage.
+- Issue list/detail/create/edit/delete, comments, comment vote, state mutation, watch/vote/favorite/assignee, issue detail assignee autocomplete/search, mass update, Markdown rendering, issue/comment attachment binding, core Issue Sharer read/comment authorization, sharable-user search, project-target issue sharer mutation, direct sharer row-level timeline/notification/mail queue side effects, issue/comment `@user`/`@org`/`@owner/project` mention indexing/search/notification semantics, issue reference `#issue` autocomplete, and `/user/issues` personal issue aggregation now have Rust canonical coverage.
 - Label/category and milestone management screens are now covered by Phase 2B/2C provenance. Phase 2A issue core only owns issue CRUD and issue-linked label/milestone consumption.
 
 ## Legacy Sources
@@ -59,7 +59,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 
 - Legacy `IssueSharer.createSharer` stores `loginId`, `user`, `issue`, and `created`; Rust resolves `login_id` to `n4user.id` and writes direct `issue_sharer(issue_id, user_id, login_id, created)` rows.
 - Legacy `AccessControl.isAllowedIfSharer` grants direct issue read and parent-to-child issue/comment read. Rust mirrors this with separate direct and inherited share flags, and allows comments only on directly shared issues.
-- Legacy `IssueApi.updateSharer` is an internal screen mutation. Rust implements this through `/api/v1/owners/:owner/projects/:project/issues/:number/sharers`; no `/-_-api/v1` external compatibility endpoint is added in this phase.
+- Legacy `IssueApi.updateSharer` is an internal screen mutation. Rust implements this through `/api/v1/owners/:owner/projects/:project/issues/:number/sharers`; no `/-_-api/v1` external compatibility endpoint is added in this app phase.
 - Legacy `issue/view.scala.html` renders the `sharer-list` sidebar near issue metadata. Rust issue detail renders the direct sharer count/list and login ID add/remove controls when `viewerCanManageSharers` is true.
 
 ## Phase 2G Favorite/User Issue Translation Rule
@@ -92,8 +92,8 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 
 ## Phase 2L Issue Collaboration Translation Rule
 
-- Legacy `yonaIssueSharerModule` separates user lookup from direct share mutation. Rust implements the screen lookup through `GET /api/v1/owners/:owner/projects/:project/issues/:number/sharable-users?query=&type=` with issue read ACL, active user-only candidates, exact field matching for `type=loginId|name|englishName`, broad contains matching otherwise, no blank-query remote results, and 10 visible rows with `total`/`truncated`.
-- Direct share/unshare mutation remains manager-only and idempotent. Rust writes `ISSUE_SHARER_CHANGED` `issue_event` and one `notification_event` plus `notification_event_n4user` receiver row only when the direct `issue_sharer` row actually changes.
+- Legacy `yonaIssueSharerModule` separates user/project lookup from direct share mutation. Rust implements the screen lookup through `GET /api/v1/owners/:owner/projects/:project/issues/:number/sharable-users?query=&type=` with issue read ACL, active user candidates, public project candidates, exact user field matching for `type=loginId|name|englishName`, broad contains matching otherwise, no blank-query remote results, and 10 visible rows with `total`/`truncated`.
+- Direct share/unshare mutation remains manager-only and idempotent. Rust writes `ISSUE_SHARER_CHANGED` `issue_event`, one `notification_event`, one `notification_event_n4user` receiver row, and one `notification_mail` queue row only when the direct `issue_sharer` row actually changes. Project target mutation is limited to public project candidates and expands to that project's member users; org/group sharer mutation is not included without stronger legacy issue-sharer evidence.
 - Legacy `yobi.Mention` and `ProjectApp.mentionList` expose `@` candidates for users, the project token, and organization token. Rust implements issue-scoped mention suggestions through `GET /api/v1/owners/:owner/projects/:project/issues/:number/mention-users?query=&context=issue-body|issue-comment`; blank query returns contextual issue/project candidates, public nonblank search may include active global users, and private/protected nonblank search stays contextual.
 - Legacy mention persistence uses resource-specific rows and existing event types rather than a standalone mention event. Rust parses `@login`, `@org`, and `@owner/project` on issue create/update and comment create/update, expands org/project tokens to active user rows, stores `issue_post` and `issue_comment` mention rows, notifies newly mentioned active users with `NEW_ISSUE`, `ISSUE_BODY_CHANGED`, `NEW_COMMENT`, or `COMMENT_UPDATED`, and excludes the actor.
 
@@ -104,7 +104,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 - Rust implements the screen lookup through `GET /api/v1/owners/:owner/projects/:project/issue-references?query=` with project read ACL, anonymous public-project reads, private/protected 403s, 404 for missing projects, and readable fork-origin search with current-fork fallback when the origin is not readable.
 - The REST response stays frontend-local (`issueNumber`, `title`, `state`, `total`, `truncated`) rather than adding proto/ConnectRPC codegen. Nonblank results sort exact issue number first, then number-prefix matches, then title matches, with latest issue recency as the tie-breaker.
 - Create/edit/detail/comment textareas now support insertion-only `#${issueNumber}` autocomplete using the same 300ms debounce boundary as `@` mention suggestions. Markdown auto-link rendering beyond the inserted token remains a separate follow-up if the existing renderer does not already cover it.
-- Legacy external `/-_-api/v1` issue API compatibility, notification inbox/mail batching, and project/group sharer mutation remain follow-ups.
+- Phase 2N adds notification inbox/list, notification mail queue staging/drain, and public project-target sharer mutation. Legacy external `/-_-api/v1` issue API compatibility is not an app follow-up; it is deferred to a separate migrator/export/import deliverable.
 
 ## Phase 2A Evidence
 
@@ -193,11 +193,22 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | UI route surface               | `frontend/src/api/issue-meta.ts`, `frontend/src/api/query-keys.ts`, `frontend/src/auth-workspace-client.ts`, `frontend/src/routes/$owner/$projectName/issueform/route.tsx`, `frontend/src/routes/$owner/$projectName/issue/$issueNumber/route.tsx`, `frontend/src/routes/$owner/$projectName/issue/$issueNumber/editform/route.tsx`, `frontend/src/routes/-issue-views.tsx` |
 | Regression tests               | `cargo test -p yona-rust-pilot-server --test issue_reference_autocomplete_contract --test issue_mention_contract --test rest_contract`; `pnpm --dir frontend test -- auth-workspace-shell.spec.tsx api-query.spec.ts` |
 
+## Phase 2N Evidence
+
+| Evidence                    | Rust target                                                                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Legacy notification source  | `yona-original/app/controllers/NotificationApp.java`, `yona-original/app/views/index/notifications.scala.html`, `yona-original/app/views/index/partial_notifications.scala.html`, `yona-original/app/models/NotificationEvent.java`, `yona-original/app/models/NotificationMail.java` |
+| Legacy sharer source        | `yona-original/app/controllers/api/IssueApi.java#findSharableUsers`, `#updateSharer`, `yona-original/public/javascripts/service/yona.issue.Sharer.js` |
+| REST contract               | `/api/v1/notifications`, `/api/v1/owners/:owner/projects/:project/issues/:number/sharable-users`, `/api/v1/owners/:owner/projects/:project/issues/:number/sharers`, `crates/server/tests/notification_contract.rs`, `crates/server/tests/issue_sharer_contract.rs` |
+| Backend behavior            | `crates/persistence/src/repo.rs`, `crates/persistence/src/repo_types.rs`, `crates/server/src/lib.rs`                                        |
+| UI route surface            | `frontend/src/routes/notification/route.tsx`, `frontend/src/api/notifications.ts`, `frontend/src/api/issue-meta.ts`, `frontend/src/routes/-issue-views.tsx` |
+| Regression tests            | `cargo test -p yona-rust-pilot-server --test notification_contract --test issue_sharer_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts route-parity.spec.tsx` |
+
 ## Remaining Phase 2 Follow-ups
 
-- Legacy external `/-_-api/v1` issue API parity.
-- Notification inbox/read-state/mail batching parity.
-- Project/group sharer mutation.
+- Notification read-state and full SMTP batching parity.
+- Group sharer mutation only if legacy issue-sharer evidence requires it.
+- Legacy external `/-_-api/v1` issue API parity is deferred to a separate migrator/export/import deliverable, not the app server.
 
 ## Shared Surface Notes
 

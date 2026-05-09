@@ -52,6 +52,7 @@ pub struct IssueSharerRecord {
 pub struct IssueAssignableUserRecord {
     pub avatar_url: String,
     pub display_name: String,
+    pub item_type: String,
     pub login_id: String,
     pub pure_name_only: String,
 }
@@ -91,6 +92,32 @@ pub struct ProjectIssueReferenceSearchRecord {
     pub items: Vec<ProjectIssueReferenceRecord>,
     pub total: u32,
     pub truncated: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NotificationActorRecord {
+    pub avatar_url: String,
+    pub display_name: String,
+    pub login_id: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NotificationItemRecord {
+    pub actor: NotificationActorRecord,
+    pub created: Option<DateTime>,
+    pub event_type: String,
+    pub id: i64,
+    pub message: String,
+    pub target_path: String,
+    pub target_title: String,
+    pub type_icon: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NotificationListRecord {
+    pub has_more: bool,
+    pub items: Vec<NotificationItemRecord>,
+    pub total: u32,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

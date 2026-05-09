@@ -471,7 +471,7 @@ POST  /watch                                → 이슈 감시
 POST  /unwatch                              → 이슈 감시 해제
 POST  /:owner/:project/issue/:number/vote   → 이슈 투표
 POST  /:owner/:project/issue/:number/unvote → 이슈 투표 취소
-POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → 이슈 공유 변경(legacy external REST; Rust 화면 기능은 `/api/v1/.../sharers`)
+POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → legacy external REST; Rust app server scope에서는 미지원, 별도 migrator/export tool에서 판단
 ```
 
 #### 기능 목록과 상태
@@ -491,7 +491,7 @@ POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → �
 | 이슈 투표 (Vote)   | 이슈에 투표/취소                                    | ✅ Phase 2A 구현      | 2     |
 | 댓글 투표          | 댓글에 투표/취소                                    | ✅ Phase 2H 구현      | 2     |
 | @멘션              | `@username` 자동 완성 + 알림                        | ✅ Phase 2L 핵심 구현 | 2     |
-| 이슈 공유 (Sharer) | 비멤버에게 이슈 읽기 권한 부여                      | ✅ Phase 2E/2L 구현   | 2     |
+| 이슈 공유 (Sharer) | 비멤버 또는 공개 프로젝트 멤버에게 이슈 읽기 권한 부여 | ✅ Phase 2E/2L/2N 구현 | 2     |
 | Mass Update        | 이슈 일괄 상태/담당자/마일스톤/라벨 변경            | ✅ Phase 2A 구현      | 2     |
 | 이슈 엑셀 내보내기 | xlsx 다운로드                                       | deferred              | 2차   |
 | 즐겨찾기 이슈      | workspace에서 즐겨찾기 관리                         | ✅ Phase 2G 구현      | 2     |
@@ -508,7 +508,7 @@ POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → �
 - [ ] Mass Update: 체크박스로 다중 선택 → 상태/담당자/마일스톤 일괄 변경 (legacy `IssueMassUpdate` 동일)
 - [ ] 이슈 삭제: 작성자 또는 프로젝트 관리자만 가능
 - [ ] 이슈 공유: 직접 공유된 사용자는 비공개/제한 이슈와 댓글을 읽고 해당 이슈에 댓글 작성 가능, parent issue 공유는 child issue 읽기만 허용
-- [ ] 이슈 공유 검색은 읽기 ACL을 재사용하고, 실제 공유 추가/삭제시에만 `ISSUE_SHARER_CHANGED` 타임라인/notification row side effect를 남긴다
+- [ ] 이슈 공유 검색은 읽기 ACL을 재사용하고, active user와 public project 후보를 typed target으로 반환하며, 실제 공유 추가/삭제시에만 `ISSUE_SHARER_CHANGED` 타임라인/notification/mail queue row side effect를 남긴다
 - [ ] @멘션은 이슈 본문과 댓글에서 `@user`, `@org`, `@owner/project`를 해석하고 신규 활성 사용자 mention만 기존 이슈/댓글 이벤트 타입으로 알림 row를 만든다
 - [ ] `#issue` 자동완성은 프로젝트 읽기 ACL을 재사용하고, legacy `ProjectApp.mentionList(... mentionType=issue)`처럼 이슈 번호/제목 후보를 보여준 뒤 `#번호` 토큰만 삽입한다
 - [ ] 첨부파일: 이슈 본문/댓글에 파일 첨부 가능 (`/files` 엔드포인트)
@@ -811,20 +811,21 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 타입 토글
 
 | 기능                 | Legacy 동작                                       | 현재 상태                | Phase |
 | -------------------- | ------------------------------------------------- | ------------------------ | ----- |
-| 알림 목록            | 시간역순 알림 이벤트 목록                         | gap                      | 5     |
-| 이메일 알림          | 이벤트 발생 시 이메일 발송                        | gap (SMTP 인프라만 구현) | 5     |
+| 알림 목록            | 시간역순 알림 이벤트 목록                         | ✅ Phase 2N 기본 구현    | 5     |
+| 이메일 알림          | 이벤트 발생 시 이메일 발송                        | gap (mail queue staging만 구현) | 5     |
 | 프로젝트별 알림 설정 | NEW_ISSUE, NEW_POSTING, NEW_COMMENT 등 토글       | ✅ 기본 구현             | 1     |
 | Watch/Unwatch        | 리소스(이슈/프로젝트) 감시                        | ✅ 프로젝트 토글 구현    | 1     |
 | 알림 이벤트 타입     | 이슈 생성, 댓글, 상태변경, PR 생성/merge, 리뷰 등 | gap                      | 5     |
 | BCC 모드             | 수신자 간 이메일 주소 비공개                      | gap                      | 5     |
-| 알림 간격            | `notification.bymail.interval` 배치 발송          | gap                      | 5     |
+| 알림 간격            | `notification.bymail.interval` 배치 발송          | gap (due-row drain helper만 구현) | 5     |
 | Draft-time 머징      | 30초 내 연속 편집 알림 병합                       | gap                      | 5     |
 | 수신자 제한          | `recipientLimit` 설정                             | gap                      | 5     |
 
 #### 검수 기준
 
-- [ ] 알림 목록: legacy `/notification` 화면과 동일한 이벤트 목록 표시
+- [x] 알림 목록: legacy `/notification` 화면의 기본 이벤트 목록/empty/More 표시
 - [ ] 이메일 알림: 이슈/PR 댓글 작성 시 관련 감시자에게 이메일 발송
+- [x] 이메일 알림 준비: notification event 생성 시 `notification_mail` queue row를 만들고 due row drain helper가 created ASC로 event id를 반환한 뒤 queue row를 삭제한다
 - [ ] 알림 토글: 프로젝트별 이벤트 타입(NEW_ISSUE, NEW_POSTING, NEW_COMMENT 등) on/off
 - [ ] 알림 이메일: legacy 메일 포맷(제목, 본문, 링크)과 동일
 
@@ -973,32 +974,34 @@ POST  /markdown                → 마크다운 → HTML 변환
 
 ---
 
-### FG-18: REST API (Legacy API 호환)
+### FG-18: Legacy External API / Migrator Surface
 
 **Legacy 참조**: `yona-original/app/controllers/api/*`, routes 파일의 `/-_-api/v1/**` 경로
 
 **Legacy API 접두사**: `/-_-api/v1/`
 
+**현재 결정**: Rust frontend/server app은 `/-_-api/v1/**` endpoint support를 제공하지 않는다. 기존 외부 API 사용자 대상 migration/export/import compatibility는 별도 migrator 제품/도구에서 다루며, app-facing canonical REST surface는 `/api/v1/**`만 유지한다.
+
 #### 기능 목록과 상태
 
-| API                           | Legacy 동작        | 현재 상태 | Phase |
-| ----------------------------- | ------------------ | --------- | ----- |
-| `GET /-_-api/v1/hello`        | Health check       | gap       | 2     |
-| `GET /-_-api/v1/users`        | 사용자 목록        | gap       | 6     |
-| `POST /-_-api/v1/users`       | 사용자 생성        | gap       | 6     |
-| `POST /-_-api/v1/users/token` | API 토큰 발급      | gap       | 6     |
-| Issue API                     | 이슈 CRUD + 댓글   | gap       | 2     |
-| Project API                   | 프로젝트 CRUD      | gap       | 2     |
-| Board API                     | 게시글 CRUD + 댓글 | gap       | 5     |
-| Milestone API                 | 마일스톤 CRUD      | gap       | 2     |
-| Watcher API                   | 감시자 목록        | gap       | 5     |
-| Favorite API                  | 즐겨찾기 관리      | gap       | 2     |
+| API                           | Legacy 동작        | 현재 상태                         | Phase |
+| ----------------------------- | ------------------ | --------------------------------- | ----- |
+| `GET /-_-api/v1/hello`        | Health check       | unsupported in app                | migrator/deferred |
+| `GET /-_-api/v1/users`        | 사용자 목록        | unsupported in app                | migrator/deferred |
+| `POST /-_-api/v1/users`       | 사용자 생성        | unsupported in app                | migrator/deferred |
+| `POST /-_-api/v1/users/token` | API 토큰 발급      | unsupported in app                | migrator/deferred |
+| Issue API                     | 이슈 CRUD + 댓글   | unsupported in app                | migrator/deferred |
+| Project API                   | 프로젝트 CRUD      | unsupported in app                | migrator/deferred |
+| Board API                     | 게시글 CRUD + 댓글 | unsupported in app                | migrator/deferred |
+| Milestone API                 | 마일스톤 CRUD      | unsupported in app                | migrator/deferred |
+| Watcher API                   | 감시자 목록        | unsupported in app                | migrator/deferred |
+| Favorite API                  | 즐겨찾기 관리      | unsupported in app                | migrator/deferred |
 
-**주의**: REST에는 두 계층이 있다. 새 React application API는 `/api/v1/**`를 canonical surface로 사용한다. legacy 외부 호환 API는 `/-_-api/v1/**`를 보존하며, 기존 Yona API를 사용하는 외부 도구와의 호환성을 위한 것이다.
+**주의**: REST에는 두 계층이 있다. 새 React application API는 `/api/v1/**`를 canonical surface로 사용한다. legacy 외부 호환 API(`/-_-api/v1/**`)는 현재 app scope가 아니며, 기존 Yona API를 사용하는 외부 도구와의 호환은 별도 migrator/export/import deliverable에서 다룬다.
 
-`/-_-api/v1/**` legacy API는 외부 도구와의 호환이 확인된 경우에만 구현한다. 내부 React 화면이나 legacy view helper API를 `/-_-api/v1/**`로 확장하지 않는다. 내부 React 화면은 `/api/v1/**` application API와 TanStack Query를 사용한다.
+`/-_-api/v1/**` legacy API를 frontend/server app에 추가하지 않는다. 내부 React 화면이나 legacy view helper API를 `/-_-api/v1/**`로 확장하지 않는다. 내부 React 화면은 `/api/v1/**` application API와 TanStack Query를 사용한다.
 
-#### 검수 기준
+#### 별도 migrator 검수 기준
 
 - [ ] `/-_-api/v1/hello` 가 200 OK를 반환한다
 - [ ] API 인증: `Yona-Token` 헤더 또는 쿠키 기반 세션 — legacy 동일
@@ -1213,11 +1216,11 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | Git Smart HTTP    | ❌ 미구현         |                                                                  |
 | PR/리뷰           | ❌ 미구현         | placeholder route만                                              |
 | 검색              | ❌ 미구현         | `crates/search` placeholder                                      |
-| 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글                                  |
+| 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, mail queue staging |
 | 웹훅              | ❌ 미구현         | DB 엔티티만 존재                                                 |
 | 관리자            | ❌ 미구현         |                                                                  |
 | 마크다운          | 🔶 이슈 범위 구현 | Issue body/comment sanitized HTML projection                     |
-| REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1` legacy external API parity는 후속 |
+| REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1` legacy external API는 app scope에서 미지원이며 별도 migrator/export/import deliverable로 분리 |
 | Frontend 라우트   | ✅ 구현           | legacy issueform/editform 포함                                   |
 | Frontend 테스트   | 🔶 부분           | API client, route parity, E2E smoke                              |
 | i18n              | ❌ 미구현         | hardcoded English/Korean                                         |
@@ -1341,9 +1344,9 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/search`                          | GET      | —                                     | `search/`                                     | gap                |
 | `/files`                           | POST     | `POST /files` direct                  | —                                             | implemented        |
 | `/files/:id`                       | GET      | `GET /files/:id` direct               | —                                             | implemented        |
-| `/notification`                    | GET      | —                                     | —                                             | gap                |
+| `/notification`                    | GET      | `GET /api/v1/notifications`           | `notification/`                               | implemented (기본) |
 | `/sites/*`                         | GET      | —                                     | —                                             | gap                |
-| `/-_-api/v1/*`                     | Various  | —                                     | —                                             | gap                |
+| `/-_-api/v1/*`                     | Various  | —                                     | —                                             | unsupported in app; migrator/deferred |
 | `/svn/*`                           | Various  | —                                     | —                                             | deferred           |
 | `/authenticate/:provider`          | GET      | —                                     | —                                             | deferred           |
 
@@ -1368,14 +1371,15 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 
 **새 runtime API는 REST로 구현할 영역**:
 
-- Issue follow-up: legacy external `/-_-api/v1` issue API parity, notification inbox/read state/mail batching, project/group sharer mutation
+- Issue follow-up: notification read state/full mail batching, group sharer mutation, and remaining issue-adjacent parity gaps
 - Board: posting list/detail/create/update/delete/comment flows
 - Label follow-up: copyLabels Phase 6 and legacy external label/project API parity
 - Milestone follow-up: migration export and search milestone result type
 - Code follow-up: raw file/download/image routes, syntax highlighting, commit history/detail, branch admin, compare, Smart HTTP
 - PullRequest: create/detail/list/merge/close/reopen/review comment/reviewer lifecycle
 - Search: global/project/organization search
-- Notification: list/read state/mail notification surface
+- Notification: read state, SMTP scheduler/delivery, draft-time merge, recipient limit, and full mail notification parity
+- Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope
 - Webhook: project webhook CRUD
 - Admin: users/projects/site-admin/account-lock/test-mail surfaces
 - Markdown: app-level markdown preview API if legacy evidence requires it
