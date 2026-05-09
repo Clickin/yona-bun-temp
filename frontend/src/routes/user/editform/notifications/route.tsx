@@ -9,12 +9,23 @@ export const Route = createFileRoute("/user/editform/notifications")({
 });
 
 function EditNotificationsRouteComponent() {
-  const { bootstrapping, csrfToken, runtimeConfig, workspaceOverview, setErrorMessage, syncWorkspaceFromOverview } = useAppRuntime();
+  const {
+    bootstrapping,
+    csrfToken,
+    runtimeConfig,
+    workspaceOverview,
+    setErrorMessage,
+    syncWorkspaceFromOverview,
+  } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/user/editform/notifications");
   const currentHref = useCurrentHref();
 
   if (bootstrapping || !canRender) {
-    return <main className="app-shell"><h1>Loading...</h1></main>;
+    return (
+      <main className="app-shell">
+        <h1>Loading…</h1>
+      </main>
+    );
   }
 
   return (
@@ -26,7 +37,12 @@ function EditNotificationsRouteComponent() {
       workspaceOverview={workspaceOverview}
       onToggleWorkspaceNotification={async (projectId, eventType) => {
         try {
-          const overview = await toggleWorkspaceNotification(runtimeConfig, csrfToken, projectId, eventType);
+          const overview = await toggleWorkspaceNotification(
+            runtimeConfig,
+            csrfToken,
+            projectId,
+            eventType,
+          );
           await syncWorkspaceFromOverview(overview);
         } catch (error) {
           setErrorMessage(error instanceof Error ? error.message : "Toggle notification failed.");

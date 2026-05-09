@@ -36,7 +36,7 @@ function NotificationRouteComponent() {
   if (bootstrapping || !canRender) {
     return (
       <main className="app-shell">
-        <h1>Loading...</h1>
+        <h1>Loading…</h1>
       </main>
     );
   }
@@ -51,7 +51,7 @@ function NotificationRouteComponent() {
       <p className="eyebrow">Yona Rust Notifications</p>
       <h1>Notifications</h1>
       {notificationsQuery.isLoading ? (
-        <p>Loading...</p>
+        <p>Loading…</p>
       ) : items.length === 0 ? (
         <div className="warning-none">No notification has been received.</div>
       ) : (

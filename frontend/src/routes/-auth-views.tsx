@@ -44,11 +44,7 @@ export function LoginPage({
   runtimeConfig,
 }: {
   authUiCapabilities?: AuthUiCapabilitiesViewModel | null;
-  onSignIn?: (input: {
-    identifier: string;
-    password: string;
-    rememberMe: boolean;
-  }) => void;
+  onSignIn?: (input: { identifier: string; password: string; rememberMe: boolean }) => void;
   pending?: boolean;
   routeHref: string;
   runtimeConfig: RuntimeConfig;
@@ -60,8 +56,7 @@ export function LoginPage({
   });
   const searchParams = readSearchParams(routeHref);
   const redirectUrl = resolveAuthRedirectPath(searchParams);
-  const canRenderLocalForm =
-    authUiCapabilities !== null && !authUiCapabilities?.socialLoginOnly;
+  const canRenderLocalForm = authUiCapabilities !== null && !authUiCapabilities?.socialLoginOnly;
   const postSubmitMessage =
     searchParams.get("signup") === "requested"
       ? "Sign up requires confirmation."
@@ -80,9 +75,7 @@ export function LoginPage({
       {authUiCapabilities?.emailVerificationEnabled ? (
         <p className="lede">Email verification is required.</p>
       ) : null}
-      {authUiCapabilities?.socialLoginOnly ? (
-        <p className="lede">Social login only</p>
-      ) : null}
+      {authUiCapabilities?.socialLoginOnly ? <p className="lede">Social login only</p> : null}
       {canRenderLocalForm ? (
         <>
           <form
@@ -139,7 +132,7 @@ export function LoginPage({
               />
               <span>Remember me</span>
             </label>
-            <button type="submit">{pending ? "Logging in..." : "Login"}</button>
+            <button type="submit">{pending ? "Logging in…" : "Login"}</button>
           </form>
           <div className="runtime-grid">
             <div>
@@ -184,9 +177,7 @@ export function RegisterPage({
       {authUiCapabilities?.signupRequireConfirm ? (
         <p className="lede">Sign up requires confirmation.</p>
       ) : null}
-      {authUiCapabilities?.socialLoginOnly ? (
-        <p className="lede">Social login only</p>
-      ) : null}
+      {authUiCapabilities?.socialLoginOnly ? <p className="lede">Social login only</p> : null}
       {authUiCapabilities !== null && !authUiCapabilities?.socialLoginOnly ? (
         <>
           <form
@@ -265,7 +256,7 @@ export function RegisterPage({
                 }
               />
             </label>
-            <button type="submit">{pending ? "Signing up..." : "Sign up"}</button>
+            <button type="submit">{pending ? "Signing up…" : "Sign up"}</button>
           </form>
           <p className="lede">
             Already signed up?{" "}
@@ -299,11 +290,7 @@ export function LostPasswordPage({
       <p className="eyebrow">Yona Rust Auth</p>
       <h1>Reset Password for Yona</h1>
       {message ? <p className="lede">{message}</p> : null}
-      <form
-        action={appHref(runtimeConfig, "/lostPassword")}
-        className="runtime-grid"
-        method="post"
-      >
+      <form action={appHref(runtimeConfig, "/lostPassword")} className="runtime-grid" method="post">
         <label>
           <span>Login ID</span>
           <input name="loginId" type="text" />
@@ -327,8 +314,7 @@ export function ResetPasswordPage({
 }) {
   const searchParams = readSearchParams(routeHref);
   const hashString = searchParams.get("s") ?? searchParams.get("hashString") ?? "";
-  const message =
-    searchParams.get("error") === "invalid" ? "Invalid password reset link." : null;
+  const message = searchParams.get("error") === "invalid" ? "Invalid password reset link." : null;
 
   return (
     <main className="app-shell">

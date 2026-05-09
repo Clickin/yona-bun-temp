@@ -56,7 +56,7 @@ function NewMilestoneFormRouteComponent() {
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading...</h1>
+        <h1>Loading…</h1>
       </main>
     );
   }

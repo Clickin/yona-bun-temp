@@ -13,12 +13,23 @@ export const Route = createFileRoute("/user/editform/emails")({
 });
 
 function EditEmailsRouteComponent() {
-  const { bootstrapping, csrfToken, runtimeConfig, workspaceOverview, setErrorMessage, syncWorkspaceFromOverview } = useAppRuntime();
+  const {
+    bootstrapping,
+    csrfToken,
+    runtimeConfig,
+    workspaceOverview,
+    setErrorMessage,
+    syncWorkspaceFromOverview,
+  } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/user/editform/emails");
   const currentHref = useCurrentHref();
 
   if (bootstrapping || !canRender) {
-    return <main className="app-shell"><h1>Loading...</h1></main>;
+    return (
+      <main className="app-shell">
+        <h1>Loading…</h1>
+      </main>
+    );
   }
 
   return (

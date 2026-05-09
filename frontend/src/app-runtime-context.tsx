@@ -137,9 +137,13 @@ export function AppRuntimeProvider({
   children,
   runtimeConfig,
 }: React.PropsWithChildren<{ runtimeConfig: RuntimeConfig }>) {
-  const [workspaceOverview, setWorkspaceOverview] = React.useState<WorkspaceOverviewViewModel | null>(null);
-  const [authUiCapabilities, setAuthUiCapabilities] = React.useState<AuthUiCapabilitiesViewModel | null>(null);
-  const [currentSession, setCurrentSession] = React.useState<Awaited<ReturnType<typeof readCurrentSession>> | null>(null);
+  const [workspaceOverview, setWorkspaceOverview] =
+    React.useState<WorkspaceOverviewViewModel | null>(null);
+  const [authUiCapabilities, setAuthUiCapabilities] =
+    React.useState<AuthUiCapabilitiesViewModel | null>(null);
+  const [currentSession, setCurrentSession] = React.useState<Awaited<
+    ReturnType<typeof readCurrentSession>
+  > | null>(null);
   const [csrfToken, setCsrfToken] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
@@ -247,7 +251,7 @@ export function AppRuntimeProvider({
 }
 
 export function useAppRuntime() {
-  const value = React.useContext(AppRuntimeContext);
+  const value = React.use(AppRuntimeContext);
   if (value === null) {
     throw new Error("AppRuntimeContext is not available.");
   }

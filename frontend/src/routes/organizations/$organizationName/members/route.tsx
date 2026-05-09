@@ -10,7 +10,12 @@ import {
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toOrganizationAdminView } from "../../../../app-view-models";
 import { OrganizationMembersPage } from "../../../-organization-views";
-import { classifyConnectFailure, ForbiddenPage, NotFoundPage, useRequireAuthenticatedRoute } from "../../../-shared";
+import {
+  classifyConnectFailure,
+  ForbiddenPage,
+  NotFoundPage,
+  useRequireAuthenticatedRoute,
+} from "../../../-shared";
 
 export const Route = createFileRoute("/organizations/$organizationName/members")({
   component: OrganizationMembersRouteComponent,
@@ -21,7 +26,9 @@ function OrganizationMembersRouteComponent() {
   const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
   const routeHref = `/organizations/${organizationName}/members`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
-  const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationAdminView> | null>(null);
+  const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationAdminView> | null>(
+    null,
+  );
   const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
 
   React.useEffect(() => {
@@ -54,7 +61,11 @@ function OrganizationMembersRouteComponent() {
   }, [canRender, organizationName, runtimeConfig, setErrorMessage]);
 
   if (bootstrapping || !canRender) {
-    return <main className="app-shell"><h1>Loading...</h1></main>;
+    return (
+      <main className="app-shell">
+        <h1>Loading…</h1>
+      </main>
+    );
   }
   if (failureKind === "forbidden") {
     return <ForbiddenPage href={routeHref} />;

@@ -57,13 +57,15 @@ export function ProjectMenu(props: {
 
   return (
     <nav aria-label="Project menu">
-      {menuItems
-        .filter((item) => item.show)
-        .map((item) => (
-          <a href={item.href} key={item.label}>
-            {item.label}
-          </a>
-        ))}
+      {menuItems.flatMap((item) =>
+        item.show
+          ? [
+              <a href={item.href} key={item.label}>
+                {item.label}
+              </a>,
+            ]
+          : [],
+      )}
       {detail.showAdmin || detail.viewerCanUpdate ? (
         <a
           href={buildProjectHref(
@@ -165,7 +167,7 @@ export function ProjectNewPage(props: {
             <option value="private">private</option>
           </select>
         </label>
-        <button type="submit">{props.pending ? "Creating..." : "Create project"}</button>
+        <button type="submit">{props.pending ? "Creating…" : "Create project"}</button>
       </form>
     </main>
   );
@@ -447,7 +449,7 @@ export function ProjectSettingsPage(props: {
           </label>
         </section>
         <p>Code access is members only: {(detail.codeMemberOnly ?? false) ? "Yes" : "No"}</p>
-        <button type="submit">{props.pending ? "Saving..." : "Save project"}</button>
+        <button type="submit">{props.pending ? "Saving…" : "Save project"}</button>
       </form>
     </main>
   );

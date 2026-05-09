@@ -1,9 +1,6 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  deleteOrganization,
-  readOrganizationAdmin,
-} from "../../../../auth-workspace-client";
+import { deleteOrganization, readOrganizationAdmin } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toOrganizationAdminView } from "../../../../app-view-models";
 import { OrganizationDeletePage } from "../../../-organization-views";
@@ -24,7 +21,9 @@ function OrganizationDeleteRouteComponent() {
   const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
   const routeHref = `/organizations/${organizationName}/deleteForm`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
-  const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationAdminView> | null>(null);
+  const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationAdminView> | null>(
+    null,
+  );
   const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
 
   React.useEffect(() => {
@@ -57,7 +56,11 @@ function OrganizationDeleteRouteComponent() {
   }, [canRender, organizationName, runtimeConfig, setErrorMessage]);
 
   if (bootstrapping || !canRender) {
-    return <main className="app-shell"><h1>Loading...</h1></main>;
+    return (
+      <main className="app-shell">
+        <h1>Loading…</h1>
+      </main>
+    );
   }
   if (failureKind === "forbidden") {
     return <ForbiddenPage href={routeHref} />;

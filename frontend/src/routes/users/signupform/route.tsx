@@ -23,7 +23,11 @@ function RegisterRouteComponent() {
   useDocumentTitle("Sign Up");
 
   if (bootstrapping) {
-    return <main className="app-shell"><h1>Loading...</h1></main>;
+    return (
+      <main className="app-shell">
+        <h1>Loading…</h1>
+      </main>
+    );
   }
 
   return (

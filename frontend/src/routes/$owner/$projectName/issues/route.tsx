@@ -4,7 +4,12 @@ import { listProjectIssues, readProjectContainer } from "../../../../auth-worksp
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { toProjectContainerView, toProjectIssueListView } from "../../../../app-view-models";
 import { ProjectIssueListPage } from "../../../-issue-views";
-import { classifyConnectFailure, ForbiddenPage, NotFoundPage, useDocumentTitle } from "../../../-shared";
+import {
+  classifyConnectFailure,
+  ForbiddenPage,
+  NotFoundPage,
+  useDocumentTitle,
+} from "../../../-shared";
 
 export const Route = createFileRoute("/$owner/$projectName/issues")({
   component: ProjectIssuesRouteComponent,
@@ -14,8 +19,12 @@ function ProjectIssuesRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
   const routeHref = `/${owner}/${projectName}/issues`;
-  const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(null);
-  const [issueList, setIssueList] = React.useState<ReturnType<typeof toProjectIssueListView> | null>(null);
+  const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
+    null,
+  );
+  const [issueList, setIssueList] = React.useState<ReturnType<
+    typeof toProjectIssueListView
+  > | null>(null);
   const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
 
   useDocumentTitle("Issues");
@@ -57,7 +66,11 @@ function ProjectIssuesRouteComponent() {
   }, [owner, projectName, runtimeConfig, setErrorMessage]);
 
   if (bootstrapping) {
-    return <main className="app-shell"><h1>Loading...</h1></main>;
+    return (
+      <main className="app-shell">
+        <h1>Loading…</h1>
+      </main>
+    );
   }
   if (failureKind === "forbidden") {
     return <ForbiddenPage href={routeHref} />;
@@ -66,5 +79,7 @@ function ProjectIssuesRouteComponent() {
     return <NotFoundPage href={routeHref} />;
   }
 
-  return <ProjectIssueListPage detail={detail} issueList={issueList} runtimeConfig={runtimeConfig} />;
+  return (
+    <ProjectIssueListPage detail={detail} issueList={issueList} runtimeConfig={runtimeConfig} />
+  );
 }

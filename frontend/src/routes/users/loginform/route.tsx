@@ -2,11 +2,7 @@ import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { signInWithPassword } from "../../../auth-workspace-client";
 import { useAppRuntime } from "../../../app-runtime-context";
-import {
-  LoginPage,
-  resolveAuthRedirectPath,
-  resolvePostAuthHref,
-} from "../../-auth-views";
+import { LoginPage, resolveAuthRedirectPath, resolvePostAuthHref } from "../../-auth-views";
 import { navigateToAppHref, useCurrentHref, useDocumentTitle } from "../../-shared";
 
 export const Route = createFileRoute("/users/loginform")({
@@ -28,7 +24,11 @@ function LoginRouteComponent() {
   useDocumentTitle("Login");
 
   if (bootstrapping) {
-    return <main className="app-shell"><h1>Loading...</h1></main>;
+    return (
+      <main className="app-shell">
+        <h1>Loading…</h1>
+      </main>
+    );
   }
 
   return (

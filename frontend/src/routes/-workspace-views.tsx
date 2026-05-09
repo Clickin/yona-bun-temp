@@ -22,10 +22,7 @@ function pullRequestHref(
   return `/${ownerName}/${projectName}/pullRequest/${pullRequestNumber}`;
 }
 
-function Section({
-  title,
-  children,
-}: React.PropsWithChildren<{ title: string }>) {
+function Section({ title, children }: React.PropsWithChildren<{ title: string }>) {
   return (
     <section>
       <h2>{title}</h2>
@@ -35,14 +32,17 @@ function Section({
 }
 
 export function workspaceAvatarDataUrl(label: string): string {
-  const initials =
-    label
-      .split(/\s+/u)
-      .map((part) => part.trim()[0] ?? "")
-      .filter((value) => value !== "")
-      .slice(0, 2)
-      .join("")
-      .toUpperCase() || "Y";
+  const initialsParts: string[] = [];
+  for (const part of label.split(/\s+/u)) {
+    const initial = part.trim()[0];
+    if (initial) {
+      initialsParts.push(initial);
+    }
+    if (initialsParts.length === 2) {
+      break;
+    }
+  }
+  const initials = initialsParts.join("").toUpperCase() || "Y";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" rx="64" fill="#d9dde4"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="42" fill="#3b4552">${initials}</text></svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
@@ -58,7 +58,7 @@ export function resolveWorkspaceAvatarUrl(
   return workspaceAvatarDataUrl(fallbackLabel);
 }
 
-function renderWorkspaceProviderBadge(provider: string): React.ReactNode {
+function WorkspaceProviderBadge({ provider }: { provider: string }) {
   const normalized = provider.trim().toLowerCase();
   switch (normalized) {
     case "github":
@@ -126,10 +126,10 @@ export function WorkspacePage(props: {
     isBlocked: false,
     isSiteAdmin: session.isSiteAdmin,
     loginId: session.loginId,
-      primaryEmailAddress: session.emailAddress,
-      sinceLabel: "",
-      avatarUrl: "",
-    };
+    primaryEmailAddress: session.emailAddress,
+    sinceLabel: "",
+    avatarUrl: "",
+  };
   const pullRequestItems = props.workspaceOverview?.pullRequestItems ?? [];
   const recentProjects = props.workspaceOverview?.recentProjects ?? [];
   const watchedProjects = props.workspaceOverview?.watchedProjects ?? [];
@@ -139,14 +139,12 @@ export function WorkspacePage(props: {
   const profileEnglishName = profile.englishName.trim();
   const headlineName =
     profileEnglishName || profileDisplayName || session.userLabel || session.loginId;
-  const showDisplayName =
-    profileDisplayName !== "" && profileDisplayName !== headlineName;
+  const showDisplayName = profileDisplayName !== "" && profileDisplayName !== headlineName;
   const [activeIssueTab, setActiveIssueTab] = React.useState<"closed" | "open">("open");
-  const [activeTab, setActiveTab] = React.useState<
-    "issues" | "projects" | "pullRequests"
-  >("issues");
-  const [nextDefaultLandingPath, setNextDefaultLandingPath] =
-    React.useState(defaultLandingPath);
+  const [activeTab, setActiveTab] = React.useState<"issues" | "projects" | "pullRequests">(
+    "issues",
+  );
+  const [nextDefaultLandingPath, setNextDefaultLandingPath] = React.useState(defaultLandingPath);
   const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(profile.avatarUrl, headlineName);
 
   return (
@@ -165,9 +163,7 @@ export function WorkspacePage(props: {
                 <span className="name">{headlineName}</span>
                 {showDisplayName ? <span className="lede">{profile.displayName}</span> : null}
                 <span className="loginid">{`@${profile.loginId || session.loginId}`}</span>
-                <span className="email">
-                  {profile.primaryEmailAddress || session.emailAddress}
-                </span>
+                <span className="email">{profile.primaryEmailAddress || session.emailAddress}</span>
               </div>
               <div className="edit">
                 <a
@@ -181,9 +177,7 @@ export function WorkspacePage(props: {
                 {profile.isSiteAdmin ? (
                   <span className="badge label-success">SITE ADMIN</span>
                 ) : null}
-                {profile.isBlocked ? (
-                  <span className="badge label-important">BLOCKED</span>
-                ) : null}
+                {profile.isBlocked ? <span className="badge label-important">BLOCKED</span> : null}
               </div>
               {profile.sinceLabel ? (
                 <div className="user-since">
@@ -200,7 +194,9 @@ export function WorkspacePage(props: {
                 ) : (
                   <ul className="auth-provider-logo">
                     {profile.connectedSocialProviders.map((provider) => (
-                      <li key={provider}>{renderWorkspaceProviderBadge(provider)}</li>
+                      <li key={provider}>
+                        <WorkspaceProviderBadge provider={provider} />
+                      </li>
                     ))}
                   </ul>
                 )}
@@ -311,9 +307,7 @@ export function WorkspacePage(props: {
                                       {issue.projectName}
                                     </a>
                                   </span>
-                                  <span className="infos-item post-id">
-                                    #{issue.issueNumber}
-                                  </span>
+                                  <span className="infos-item post-id">#{issue.issueNumber}</span>
                                 </div>
                                 <div className="title-wrap span5">
                                   <span className="title-cell">
@@ -374,9 +368,7 @@ export function WorkspacePage(props: {
                                       {issue.projectName}
                                     </a>
                                   </span>
-                                  <span className="infos-item post-id">
-                                    #{issue.issueNumber}
-                                  </span>
+                                  <span className="infos-item post-id">#{issue.issueNumber}</span>
                                 </div>
                                 <div className="title-wrap span5">
                                   <span className="title-cell">
@@ -433,17 +425,12 @@ export function WorkspacePage(props: {
                                 className="title project"
                                 href={appHref(
                                   props.runtimeConfig,
-                                  projectHref(
-                                    pullRequest.ownerName,
-                                    pullRequest.projectName,
-                                  ),
+                                  projectHref(pullRequest.ownerName, pullRequest.projectName),
                                 )}
                               >
                                 {pullRequest.projectName}
                               </a>
-                              <span className="post-id">
-                                #{pullRequest.pullRequestNumber}
-                              </span>
+                              <span className="post-id">#{pullRequest.pullRequestNumber}</span>
                               <a
                                 className="title"
                                 href={appHref(
@@ -484,10 +471,7 @@ export function WorkspacePage(props: {
                   ) : (
                     <ul className="user-streams all-projects">
                       {memberProjects.map((project) => (
-                        <li
-                          className="project"
-                          key={`${project.ownerName}/${project.projectName}`}
-                        >
+                        <li className="project" key={`${project.ownerName}/${project.projectName}`}>
                           <div className="info-wrap">
                             <div className="header">
                               <a
@@ -558,9 +542,7 @@ export function WorkspacePage(props: {
               value={nextDefaultLandingPath}
             />
           </label>
-          <button type="submit">
-            {props.pending ? "Saving..." : "Save default landing"}
-          </button>
+          <button type="submit">{props.pending ? "Saving…" : "Save default landing"}</button>
         </form>
       </Section>
       <Section title="Favorite projects">

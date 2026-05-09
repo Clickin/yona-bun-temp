@@ -91,7 +91,7 @@ function IssueLabelsFormRouteComponent() {
   if (bootstrapping) {
     return (
       <main className="app-shell">
-        <h1>Loading...</h1>
+        <h1>Loading…</h1>
       </main>
     );
   }
@@ -431,7 +431,7 @@ function groupLabels(labels: LabelView[]): LabelGroup[] {
     existing.labels.push(label);
     groups.set(label.categoryId, existing);
   }
-  return [...groups.values()].sort((left, right) =>
+  return Array.from(groups.values()).sort((left, right) =>
     left.categoryName.localeCompare(right.categoryName),
   );
 }

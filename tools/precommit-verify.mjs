@@ -24,7 +24,17 @@ const IGNORED_PREFIXES = [
 ];
 const GENERATED_FILE_SUFFIXES = ["routeTree.gen.ts"];
 const OXLINT_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx"]);
+const OXLINT_PLUGIN_ARGS = ["--react-plugin", "--react-perf-plugin", "--jsx-a11y-plugin"];
 const OXFMT_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx"]);
+const REACT_DOCTOR_PROJECT = "@yona/rust-frontend";
+const REACT_DOCTOR_PRECOMMIT_ARGS = [
+  "--project",
+  REACT_DOCTOR_PROJECT,
+  "--offline",
+  "--full",
+  "--fail-on",
+  "warning",
+];
 
 const resolveExecutable = (name) => {
   if (process.platform === "win32") {
@@ -60,6 +70,10 @@ const OXFMT_LOCAL_BIN =
   process.platform === "win32" ? join(TOOL_BIN_DIR, "oxfmt.CMD") : join(TOOL_BIN_DIR, "oxfmt");
 const OXLINT_LOCAL_BIN =
   process.platform === "win32" ? join(TOOL_BIN_DIR, "oxlint.CMD") : join(TOOL_BIN_DIR, "oxlint");
+const REACT_DOCTOR_LOCAL_BIN =
+  process.platform === "win32"
+    ? join(TOOL_BIN_DIR, "react-doctor.CMD")
+    : join(TOOL_BIN_DIR, "react-doctor");
 
 const resolveToolInvocation = (localBin, globalName, packageName) => {
   if (existsSync(localBin) && canRun(localBin)) {
@@ -134,7 +148,20 @@ if (lintTargets.length > 0) {
     );
   } else {
     console.log(`precommit: running oxlint on ${lintTargets.length} staged file(s)`);
-    run(oxlint.command, lintTargets, oxlint.argsPrefix);
+    run(oxlint.command, [...OXLINT_PLUGIN_ARGS, ...lintTargets], oxlint.argsPrefix);
+  }
+}
+
+const reactDoctorTargets = lintTargets.filter((file) => file.startsWith("frontend/"));
+if (reactDoctorTargets.length > 0) {
+  const reactDoctor = resolveToolInvocation(REACT_DOCTOR_LOCAL_BIN, "react-doctor", "react-doctor");
+  if (!reactDoctor) {
+    console.log(
+      "precommit: skipping react-doctor because no local bin or package-managed invocation is available",
+    );
+  } else {
+    console.log(`precommit: running react-doctor for ${REACT_DOCTOR_PROJECT}`);
+    run(reactDoctor.command, REACT_DOCTOR_PRECOMMIT_ARGS, reactDoctor.argsPrefix);
   }
 }
 

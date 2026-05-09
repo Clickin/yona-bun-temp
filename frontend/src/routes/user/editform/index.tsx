@@ -1,10 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { updateProfile, uploadProfileAvatar } from "../../../auth-workspace-client";
 import { useAppRuntime } from "../../../app-runtime-context";
-import {
-  type ProfileUpdateInput,
-  WorkspaceSettingsPage,
-} from "../../-workspace-settings-view";
+import { type ProfileUpdateInput, WorkspaceSettingsPage } from "../../-workspace-settings-view";
 import { navigateToAppHref, useCurrentHref, useRequireAuthenticatedRoute } from "../../-shared";
 
 export const Route = createFileRoute("/user/editform/")({
@@ -12,12 +9,23 @@ export const Route = createFileRoute("/user/editform/")({
 });
 
 function EditProfileRouteComponent() {
-  const { bootstrapping, csrfToken, runtimeConfig, workspaceOverview, setErrorMessage, syncWorkspaceFromOverview } = useAppRuntime();
+  const {
+    bootstrapping,
+    csrfToken,
+    runtimeConfig,
+    workspaceOverview,
+    setErrorMessage,
+    syncWorkspaceFromOverview,
+  } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/user/editform");
   const currentHref = useCurrentHref();
 
   if (bootstrapping || !canRender) {
-    return <main className="app-shell"><h1>Loading...</h1></main>;
+    return (
+      <main className="app-shell">
+        <h1>Loading…</h1>
+      </main>
+    );
   }
 
   return (

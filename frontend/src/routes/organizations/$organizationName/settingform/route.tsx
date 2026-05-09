@@ -14,7 +14,9 @@ function OrganizationSettingsRouteComponent() {
   const { organizationName } = Route.useParams();
   const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute(`/organizations/${organizationName}/settingform`);
-  const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationContainerView> | null>(null);
+  const [detail, setDetail] = React.useState<ReturnType<typeof toOrganizationContainerView> | null>(
+    null,
+  );
 
   React.useEffect(() => {
     let cancelled = false;
@@ -33,7 +35,11 @@ function OrganizationSettingsRouteComponent() {
   }, [canRender, organizationName, runtimeConfig]);
 
   if (bootstrapping || !canRender) {
-    return <main className="app-shell"><h1>Loading...</h1></main>;
+    return (
+      <main className="app-shell">
+        <h1>Loading…</h1>
+      </main>
+    );
   }
 
   return (
@@ -43,7 +49,10 @@ function OrganizationSettingsRouteComponent() {
       onUpdateOrganization={async (input) => {
         try {
           const nextDetail = await updateOrganization(runtimeConfig, csrfToken, input);
-          navigateToAppHref(runtimeConfig.basePath, `/organizations/${nextDetail.organizationName}/settingform`);
+          navigateToAppHref(
+            runtimeConfig.basePath,
+            `/organizations/${nextDetail.organizationName}/settingform`,
+          );
         } catch (error) {
           setErrorMessage(error instanceof Error ? error.message : "Update organization failed.");
         }

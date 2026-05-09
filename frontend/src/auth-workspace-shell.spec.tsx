@@ -449,7 +449,7 @@ describe("auth and workspace views", () => {
     expect(html).toContain('placeholder="Issue sharer login ID"');
     expect(html).toContain(">Share<");
     expect(html).toContain(">Remove sharer<");
-    expect(html).not.toContain("Searching...");
+    expect(html).not.toContain("Searching…");
   });
 
   it("renders issue assignee autocomplete loading, empty, error, and suggestion states", () => {
@@ -461,7 +461,7 @@ describe("auth and workspace views", () => {
         state={{ items: [], status: "loading", truncated: false }}
       />,
     );
-    expect(loadingHtml).toContain("Searching...");
+    expect(loadingHtml).toContain("Searching…");
 
     const emptyHtml = renderToStaticMarkup(
       <IssueAssignableUserSuggestions
@@ -595,7 +595,7 @@ describe("auth and workspace views", () => {
     expect(createHtml).toContain('name="assigneeLoginId"');
     expect(createHtml).toContain('name="body"');
     expect(createHtml).toContain('placeholder="Assignee"');
-    expect(createHtml).not.toContain("Searching...");
+    expect(createHtml).not.toContain("Searching…");
 
     const editHtml = renderToStaticMarkup(
       <ProjectIssueFormPage

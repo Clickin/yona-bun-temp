@@ -13,7 +13,11 @@ function OrganizationNewRouteComponent() {
   const canRender = useRequireAuthenticatedRoute("/organizations/new");
 
   if (bootstrapping || !canRender) {
-    return <main className="app-shell"><h1>Loading...</h1></main>;
+    return (
+      <main className="app-shell">
+        <h1>Loading…</h1>
+      </main>
+    );
   }
 
   return (

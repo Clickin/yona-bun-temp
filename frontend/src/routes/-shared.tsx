@@ -79,15 +79,7 @@ export function classifyConnectFailure(error: unknown): null | RouteFailureKind 
   return null;
 }
 
-function RouteStatusPage({
-  href,
-  lede,
-  title,
-}: {
-  href: string;
-  lede: string;
-  title: string;
-}) {
+function RouteStatusPage({ href, lede, title }: { href: string; lede: string; title: string }) {
   useDocumentTitle(title);
 
   return (
@@ -100,13 +92,7 @@ function RouteStatusPage({
   );
 }
 
-export function PlaceholderPage({
-  href,
-  title,
-}: {
-  href: string;
-  title: string;
-}) {
+export function PlaceholderPage({ href, title }: { href: string; title: string }) {
   return (
     <RouteStatusPage
       href={href}
@@ -128,28 +114,18 @@ export function ForbiddenPage({ href }: { href: string }) {
 
 export function NotFoundPage({ href }: { href: string }) {
   return (
-    <RouteStatusPage
-      href={href}
-      lede="The requested page could not be found."
-      title="Not found"
-    />
+    <RouteStatusPage href={href} lede="The requested page could not be found." title="Not found" />
   );
 }
 
-export function RedirectPage({
-  basePath,
-  to,
-}: {
-  basePath: string;
-  to: string;
-}) {
+export function RedirectPage({ basePath, to }: { basePath: string; to: string }) {
   React.useEffect(() => {
     navigateToAppHref(basePath, to);
   }, [basePath, to]);
 
   return (
     <main className="app-shell">
-      <h1>Redirecting...</h1>
+      <h1>Redirecting…</h1>
     </main>
   );
 }

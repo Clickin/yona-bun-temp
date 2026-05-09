@@ -590,7 +590,7 @@ export function IssueAssignableUserSuggestions(props: {
     return null;
   }
   if (props.state.status === "loading") {
-    return <p className="assignee-autocomplete-status">Searching...</p>;
+    return <p className="assignee-autocomplete-status">Searching…</p>;
   }
   if (props.state.status === "error") {
     return (
@@ -637,6 +637,8 @@ function IssueAssigneeAutocompleteField(props: {
   placeholder: string;
   value: string;
 }) {
+  const onSearchAssignableUsers = props.onSearchAssignableUsers;
+  const value = props.value;
   const [searchState, setSearchState] = React.useState<IssueAssigneeSearchState>({
     items: [],
     status: "idle",
@@ -644,8 +646,8 @@ function IssueAssigneeAutocompleteField(props: {
   });
 
   React.useEffect(() => {
-    const query = props.value.trim();
-    if (!props.onSearchAssignableUsers || !shouldSearchIssueAssignee(query)) {
+    const query = value.trim();
+    if (!onSearchAssignableUsers || !shouldSearchIssueAssignee(query)) {
       setSearchState({ items: [], status: "idle", truncated: false });
       return undefined;
     }
@@ -653,8 +655,7 @@ function IssueAssigneeAutocompleteField(props: {
     let cancelled = false;
     setSearchState({ items: [], status: "loading", truncated: false });
     const timer = window.setTimeout(() => {
-      props
-        .onSearchAssignableUsers?.(query)
+      onSearchAssignableUsers(query)
         .then((response) => {
           if (!cancelled) {
             setSearchState({
@@ -675,7 +676,7 @@ function IssueAssigneeAutocompleteField(props: {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [props.value, props.onSearchAssignableUsers]);
+  }, [onSearchAssignableUsers, value]);
 
   return (
     <>
@@ -848,7 +849,7 @@ function IssueMentionUserSuggestions(props: {
     return null;
   }
   if (props.state.status === "loading") {
-    return <p className="mention-autocomplete-status">Searching...</p>;
+    return <p className="mention-autocomplete-status">Searching…</p>;
   }
   if (props.state.status === "error") {
     return <p className="mention-autocomplete-status">Mention user search failed.</p>;
@@ -887,7 +888,7 @@ function IssueReferenceSuggestions(props: {
     return null;
   }
   if (props.state.status === "loading") {
-    return <p className="mention-autocomplete-status">Searching...</p>;
+    return <p className="mention-autocomplete-status">Searching…</p>;
   }
   if (props.state.status === "error") {
     return <p className="mention-autocomplete-status">Issue reference search failed.</p>;
@@ -930,6 +931,9 @@ function IssueMentionTextarea(props: {
   value: string;
 }) {
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
+  const context = props.context;
+  const onSearchMentionUsers = props.onSearchMentionUsers;
+  const value = props.value;
   const [cursorIndex, setCursorIndex] = React.useState(props.value.length);
   const [mentionSearchState, setMentionSearchState] = React.useState<IssueMentionSearchState>({
     items: [],
@@ -944,9 +948,9 @@ function IssueMentionTextarea(props: {
     });
 
   React.useEffect(() => {
-    const referenceQuery = findIssueReferenceQuery(props.value, cursorIndex);
-    const query = referenceQuery === null ? findIssueMentionQuery(props.value, cursorIndex) : null;
-    if (query === null || !props.onSearchMentionUsers) {
+    const referenceQuery = findIssueReferenceQuery(value, cursorIndex);
+    const query = referenceQuery === null ? findIssueMentionQuery(value, cursorIndex) : null;
+    if (query === null || !onSearchMentionUsers) {
       setMentionSearchState({ items: [], status: "idle", truncated: false });
       return undefined;
     }
@@ -954,8 +958,7 @@ function IssueMentionTextarea(props: {
     let cancelled = false;
     setMentionSearchState({ items: [], status: "loading", truncated: false });
     const timer = window.setTimeout(() => {
-      props
-        .onSearchMentionUsers?.(query, props.context)
+      onSearchMentionUsers(query, context)
         .then((response) => {
           if (!cancelled) {
             setMentionSearchState({
@@ -976,7 +979,7 @@ function IssueMentionTextarea(props: {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [cursorIndex, props.context, props.onSearchMentionUsers, props.value]);
+  }, [context, cursorIndex, onSearchMentionUsers, value]);
 
   React.useEffect(() => {
     const query = findIssueReferenceQuery(props.value, cursorIndex);

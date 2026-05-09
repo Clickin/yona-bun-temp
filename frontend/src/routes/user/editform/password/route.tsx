@@ -2,20 +2,37 @@ import { createFileRoute } from "@tanstack/react-router";
 import { changePassword } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { WorkspaceSettingsPage } from "../../../-workspace-settings-view";
-import { navigateToAppHref, useCurrentHref, useDocumentTitle, useRequireAuthenticatedRoute } from "../../../-shared";
+import {
+  navigateToAppHref,
+  useCurrentHref,
+  useDocumentTitle,
+  useRequireAuthenticatedRoute,
+} from "../../../-shared";
 
 export const Route = createFileRoute("/user/editform/password")({
   component: EditPasswordRouteComponent,
 });
 
 function EditPasswordRouteComponent() {
-  const { bootstrapping, csrfToken, runtimeConfig, workspaceOverview, setCurrentSession, setErrorMessage, setWorkspaceOverview } = useAppRuntime();
+  const {
+    bootstrapping,
+    csrfToken,
+    runtimeConfig,
+    workspaceOverview,
+    setCurrentSession,
+    setErrorMessage,
+    setWorkspaceOverview,
+  } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/user/editform/password");
   const currentHref = useCurrentHref();
   useDocumentTitle("Account Settings");
 
   if (bootstrapping || !canRender) {
-    return <main className="app-shell"><h1>Loading...</h1></main>;
+    return (
+      <main className="app-shell">
+        <h1>Loading…</h1>
+      </main>
+    );
   }
 
   return (

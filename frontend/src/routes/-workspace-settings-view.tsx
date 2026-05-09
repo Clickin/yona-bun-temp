@@ -184,10 +184,12 @@ export function WorkspaceSettingsPage(props: {
   const [uploadingAvatar, setUploadingAvatar] = React.useState(false);
   const cropCanvasRef = React.useRef<HTMLCanvasElement | null>(null);
   const cropImageRef = React.useRef<HTMLImageElement | null>(null);
-  const currentAvatarUrl = avatarPreviewUrl || resolveWorkspaceAvatarUrl(
-    profile.avatarUrl,
-    profile.displayName || session.userLabel || session.loginId,
-  );
+  const currentAvatarUrl =
+    avatarPreviewUrl ||
+    resolveWorkspaceAvatarUrl(
+      profile.avatarUrl,
+      profile.displayName || session.userLabel || session.loginId,
+    );
   const isCropModalOpen = cropSourceUrl !== "";
   const cropPreviewStyle = getAvatarCropPreviewStyle(
     cropSelection,
@@ -199,35 +201,32 @@ export function WorkspaceSettingsPage(props: {
     setCropSourceUrl("");
   }, []);
 
-  const onAvatarFileChange = React.useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      event.target.value = "";
-      if (!file) {
-        return;
-      }
-      if (!file.type.startsWith("image/")) {
-        setAvatarErrorMessage("Only image files are allowed to be uploaded.");
-        return;
-      }
+  const onAvatarFileChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setAvatarErrorMessage("Only image files are allowed to be uploaded.");
+      return;
+    }
 
-      setAvatarErrorMessage(null);
-      const nextCropSourceUrl = URL.createObjectURL(file);
-      setCropFilename(file.name || "avatar.png");
-      setCropSourceUrl(nextCropSourceUrl);
+    setAvatarErrorMessage(null);
+    const nextCropSourceUrl = URL.createObjectURL(file);
+    setCropFilename(file.name || "avatar.png");
+    setCropSourceUrl(nextCropSourceUrl);
 
-      const image = new Image();
-      image.onload = () => {
-        setCropImageSize({
-          height: image.naturalHeight,
-          width: image.naturalWidth,
-        });
-        setCropSelection(createDefaultAvatarCrop(image.naturalWidth, image.naturalHeight));
-      };
-      image.src = nextCropSourceUrl;
-    },
-    [],
-  );
+    const image = new Image();
+    image.onload = () => {
+      setCropImageSize({
+        height: image.naturalHeight,
+        width: image.naturalWidth,
+      });
+      setCropSelection(createDefaultAvatarCrop(image.naturalWidth, image.naturalHeight));
+    };
+    image.src = nextCropSourceUrl;
+  }, []);
 
   const uploadCroppedAvatar = React.useCallback(async () => {
     const canvas = cropCanvasRef.current;
@@ -291,11 +290,7 @@ export function WorkspaceSettingsPage(props: {
               props.onUpdateProfile?.(buildProfileUpdateInput(formData, avatarAttachmentId));
             }}
           >
-            <input
-              name="avatarAttachmentId"
-              type="hidden"
-              value={avatarAttachmentId}
-            />
+            <input name="avatarAttachmentId" type="hidden" value={avatarAttachmentId} />
             <label>
               <span>Login ID</span>
               <input defaultValue={session.loginId} name="loginId" readOnly type="text" />
@@ -308,17 +303,13 @@ export function WorkspaceSettingsPage(props: {
               <span>Email</span>
               <input defaultValue={session.emailAddress} name="email" type="email" />
             </label>
-            <button type="submit">{props.pending ? "Saving..." : "Edit Profile"}</button>
+            <button type="submit">{props.pending ? "Saving…" : "Edit Profile"}</button>
           </form>
           <section className="modal" hidden={!isCropModalOpen}>
             <div className="modal-header center-txt">
               <h2>Crop Avatar</h2>
               <div className="avatar-wrap xlarge">
-                <img
-                  alt="Avatar crop preview"
-                  src={cropSourceUrl}
-                  style={cropPreviewStyle}
-                />
+                <img alt="Avatar crop preview" src={cropSourceUrl} style={cropPreviewStyle} />
               </div>
             </div>
             <div className="modal-body runtime-grid">
@@ -391,19 +382,18 @@ export function WorkspaceSettingsPage(props: {
                   value={cropSelection.size}
                 />
               </label>
-              <canvas
-                height={128}
-                hidden
-                ref={cropCanvasRef}
-                width={128}
-              />
+              <canvas height={128} hidden ref={cropCanvasRef} width={128} />
             </div>
             <div className="modal-footer">
               <button onClick={closeCropModal} type="button">
                 Cancel
               </button>
-              <button disabled={uploadingAvatar} onClick={() => void uploadCroppedAvatar()} type="button">
-                {uploadingAvatar ? "Saving..." : "Save"}
+              <button
+                disabled={uploadingAvatar}
+                onClick={() => void uploadCroppedAvatar()}
+                type="button"
+              >
+                {uploadingAvatar ? "Saving…" : "Save"}
               </button>
             </div>
           </section>
@@ -450,7 +440,7 @@ export function WorkspaceSettingsPage(props: {
             <span>Retype password</span>
             <input name="retypedPassword" type="password" />
           </label>
-          <button type="submit">{props.pending ? "Saving..." : "Change Password"}</button>
+          <button type="submit">{props.pending ? "Saving…" : "Change Password"}</button>
           <a href={appHref(props.runtimeConfig, "/lostPassword")}>Reset password by email</a>
         </form>
       );
@@ -564,10 +554,7 @@ export function WorkspaceSettingsPage(props: {
               <div>
                 <button
                   data-request-method="delete"
-                  data-request-uri={appHref(
-                    props.runtimeConfig,
-                    `/user/email/delete/${email.id}`,
-                  )}
+                  data-request-uri={appHref(props.runtimeConfig, `/user/email/delete/${email.id}`)}
                   onClick={() => props.onDeleteWorkspaceEmail?.(email.id)}
                   type="button"
                 >
@@ -632,14 +619,10 @@ export function WorkspaceSettingsPage(props: {
           <a href={appHref(props.runtimeConfig, "/user/editform")}>Edit Profile</a>
         </li>
         <li>
-          <a href={appHref(props.runtimeConfig, "/user/editform/password")}>
-            Change Password
-          </a>
+          <a href={appHref(props.runtimeConfig, "/user/editform/password")}>Change Password</a>
         </li>
         <li>
-          <a href={appHref(props.runtimeConfig, "/user/editform/notifications")}>
-            Notifications
-          </a>
+          <a href={appHref(props.runtimeConfig, "/user/editform/notifications")}>Notifications</a>
         </li>
         <li>
           <a href={appHref(props.runtimeConfig, "/user/editform/emails")}>Emails</a>

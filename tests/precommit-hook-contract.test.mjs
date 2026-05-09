@@ -24,6 +24,12 @@ function readExtensionSet(source, name) {
   return [...match[1].matchAll(/"([^"]+)"/gu)].map((entry) => entry[1]);
 }
 
+function readStringArray(source, name) {
+  const match = source.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\];`));
+  assert.ok(match, `${name} must be declared as an array literal`);
+  return [...match[1].matchAll(/"([^"]+)"/gu)].map((entry) => entry[1]);
+}
+
 test("pre-commit hook points at the canonical root verification tool", () => {
   assert.equal(existsSync(hookPath), true, ".husky/pre-commit must exist");
   assert.equal(existsSync(verifyToolPath), true, "tools/precommit-verify.mjs must exist");
@@ -48,6 +54,32 @@ test("pre-commit ox tools only target frontend JavaScript and TypeScript files",
 
   assert.deepEqual(readExtensionSet(verifySource, "OXLINT_EXTENSIONS"), frontendToolExtensions);
   assert.deepEqual(readExtensionSet(verifySource, "OXFMT_EXTENSIONS"), frontendToolExtensions);
+});
+
+test("pre-commit oxlint enables React component lint plugins", () => {
+  const verifySource = readFileSync(verifyToolPath, "utf8");
+
+  assert.deepEqual(readStringArray(verifySource, "OXLINT_PLUGIN_ARGS"), [
+    "--react-plugin",
+    "--react-perf-plugin",
+    "--jsx-a11y-plugin",
+  ]);
+  assert.match(verifySource, /\.\.\.OXLINT_PLUGIN_ARGS/u);
+});
+
+test("pre-commit runs React Doctor when frontend source files are staged", () => {
+  const verifySource = readFileSync(verifyToolPath, "utf8");
+
+  assert.match(verifySource, /REACT_DOCTOR_PROJECT = "@yona\/rust-frontend"/u);
+  assert.deepEqual(readStringArray(verifySource, "REACT_DOCTOR_PRECOMMIT_ARGS"), [
+    "--project",
+    "--offline",
+    "--full",
+    "--fail-on",
+    "warning",
+  ]);
+  assert.match(verifySource, /reactDoctorTargets/u);
+  assert.match(verifySource, /file\.startsWith\("frontend\/"\)/u);
 });
 
 test("external REST harness requires yona-export provenance for issue and milestone REST", () => {

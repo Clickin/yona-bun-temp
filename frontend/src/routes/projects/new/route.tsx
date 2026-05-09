@@ -11,7 +11,11 @@ function ProjectsNewRouteComponent() {
   const canRender = useRequireAuthenticatedRoute("/projects/new");
 
   if (bootstrapping || !canRender) {
-    return <main className="app-shell"><h1>Loading...</h1></main>;
+    return (
+      <main className="app-shell">
+        <h1>Loading…</h1>
+      </main>
+    );
   }
 
   return <RedirectPage basePath={runtimeConfig.basePath} to="/projectform" />;

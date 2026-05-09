@@ -14,7 +14,9 @@ function ProjectSettingsRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute(`/${owner}/${projectName}/settingform`);
-  const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(null);
+  const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(
+    null,
+  );
 
   React.useEffect(() => {
     let cancelled = false;
@@ -33,7 +35,11 @@ function ProjectSettingsRouteComponent() {
   }, [canRender, owner, projectName, runtimeConfig]);
 
   if (bootstrapping || !canRender) {
-    return <main className="app-shell"><h1>Loading...</h1></main>;
+    return (
+      <main className="app-shell">
+        <h1>Loading…</h1>
+      </main>
+    );
   }
 
   return (
@@ -44,7 +50,10 @@ function ProjectSettingsRouteComponent() {
         try {
           const nextDetail = await updateProjectOverview(runtimeConfig, csrfToken, input);
           setDetail(toProjectContainerView(nextDetail));
-          navigateToAppHref(runtimeConfig.basePath, `/${nextDetail.ownerName}/${nextDetail.projectName}/settingform`);
+          navigateToAppHref(
+            runtimeConfig.basePath,
+            `/${nextDetail.ownerName}/${nextDetail.projectName}/settingform`,
+          );
         } catch (error) {
           setErrorMessage(error instanceof Error ? error.message : "Update project failed.");
         }

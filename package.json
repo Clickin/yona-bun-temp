@@ -7,11 +7,14 @@
     "dev:backend": "node scripts/dev-backend.mjs",
     "dev:frontend": "pnpm --dir frontend dev",
     "dev:mounted": "node scripts/dev-mounted.mjs",
+    "doctor:react": "react-doctor --project @yona/rust-frontend --offline --full --fail-on warning",
+    "doctor:react:precommit": "react-doctor --project @yona/rust-frontend --offline --full --fail-on warning",
     "test:dev-scripts": "node --test scripts/dev-config.spec.mjs scripts/playwright-e2e-runtime.spec.mjs tests/precommit-hook-contract.test.mjs tests/design-harness-contract.test.mjs"
   },
-  "dependencies": {
-    "oxfmt": "^0.45.0",
-    "oxlint": "^1.60.0"
-  },
-  "packageManager": "pnpm@10.32.1"
+  "packageManager": "pnpm@10.32.1",
+  "devDependencies": {
+    "oxfmt": "0.45.0",
+    "oxlint": "1.63.0",
+    "react-doctor": "0.1.4"
+  }
 }

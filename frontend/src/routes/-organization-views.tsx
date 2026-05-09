@@ -239,7 +239,7 @@ export function OrganizationNewPage(props: {
             }
           />
         </label>
-        <button type="submit">{props.pending ? "Creating..." : "Create organization"}</button>
+        <button type="submit">{props.pending ? "Creating…" : "Create organization"}</button>
       </form>
     </main>
   );
@@ -577,7 +577,7 @@ export function OrganizationSettingsPage(props: {
             }
           />
         </label>
-        <button type="submit">{props.pending ? "Saving..." : "Save organization"}</button>
+        <button type="submit">{props.pending ? "Saving…" : "Save organization"}</button>
       </form>
     </main>
   );
@@ -627,7 +627,7 @@ export function OrganizationMembersPage(props: {
             onChange={(event) => setLoginId(event.target.value)}
           />
         </label>
-        <button type="submit">{props.pending ? "Adding..." : "Add"}</button>
+        <button type="submit">{props.pending ? "Adding…" : "Add"}</button>
       </form>
       <ul>
         {detail.members.map((member) => (
@@ -716,7 +716,7 @@ export function OrganizationDeletePage(props: {
           disabled={!detail.deleteAllowed || props.pending}
           onClick={() => props.onDeleteOrganization?.(detail.organizationName)}
         >
-          {props.pending ? "Deleting..." : "Delete This Group"}
+          {props.pending ? "Deleting…" : "Delete This Group"}
         </button>
         <p>Do you want to delete this group?</p>
         <p>Are you sure you want to delete this group?</p>
