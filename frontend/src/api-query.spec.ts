@@ -13,6 +13,11 @@ import {
   pullRequestDetailQueryOptions,
 } from "./api/pull-requests";
 import { apiQueryKeys } from "./api/query-keys";
+import {
+  globalSearchQueryOptions,
+  organizationSearchQueryOptions,
+  projectSearchQueryOptions,
+} from "./api/search";
 
 describe("api query keys", () => {
   it("includes owner, project, and query in project issue-reference keys", () => {
@@ -176,6 +181,52 @@ describe("api query keys", () => {
     expect(detailOptions.queryFn).toEqual(expect.any(Function));
     expect(formOptions.queryFn).toEqual(expect.any(Function));
     expect(orgOptions.queryFn).toEqual(expect.any(Function));
+  });
+
+  it("includes search scope, type, keyword, and page in query keys", () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+
+    expect(
+      globalSearchQueryOptions(runtimeConfig, {
+        keyword: "Needle",
+        pageNum: 2,
+        searchType: "issue",
+      }).queryKey,
+    ).toEqual(
+      apiQueryKeys.search.global({
+        keyword: "Needle",
+        pageNum: 2,
+        searchType: "issue",
+      }),
+    );
+    expect(
+      projectSearchQueryOptions(runtimeConfig, {
+        keyword: "Needle",
+        ownerName: "owner",
+        pageNum: 1,
+        projectName: "projectYobi",
+        searchType: "review",
+      }).queryKey,
+    ).toEqual(
+      apiQueryKeys.search.project("owner", "projectYobi", {
+        keyword: "Needle",
+        pageNum: 1,
+        searchType: "review",
+      }),
+    );
+    expect(
+      organizationSearchQueryOptions(runtimeConfig, {
+        keyword: "Needle",
+        organizationName: "weblabs",
+        searchType: "post",
+      }).queryKey,
+    ).toEqual(
+      apiQueryKeys.search.organization("weblabs", {
+        keyword: "Needle",
+        pageNum: 1,
+        searchType: "post",
+      }),
+    );
   });
 
   it("uses PATCH for board update REST mutations", async () => {

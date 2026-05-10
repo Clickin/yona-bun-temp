@@ -49,6 +49,9 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain(
       "fullPath: '/$owner/$projectName/milestone/$milestoneId/editform'",
     );
+    expect(routeTreeSource).toContain("fullPath: '/search'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/search'");
+    expect(routeTreeSource).toContain("fullPath: '/organizations/$organizationName/search'");
   });
 
   it("requires real project issue routes instead of placeholder pages", () => {
@@ -91,6 +94,54 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/code/$branch'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/code/$branch/'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/code/$branch/$'");
+  });
+
+  it("requires real search routes and legacy search class anchors", () => {
+    const globalSearchRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/search/route.tsx"),
+      "utf8",
+    );
+    const projectSearchRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/search/route.tsx"),
+      "utf8",
+    );
+    const organizationSearchRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/organizations/$organizationName/search/route.tsx"),
+      "utf8",
+    );
+    const searchViewsSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-search-views.tsx"),
+      "utf8",
+    );
+
+    expect(globalSearchRouteSource).not.toContain("PlaceholderPage");
+    expect(projectSearchRouteSource).not.toContain("PlaceholderPage");
+    expect(organizationSearchRouteSource).not.toContain("PlaceholderPage");
+    for (const anchor of [
+      "site-breadcrumb-outer",
+      "search-category-wrap",
+      "num-badge",
+      "search-box-wrap",
+      "searchInnerForm",
+      "searchKeyword",
+      "search-result-title",
+      "search-result-wrap",
+      "search-list-wrap",
+      "search-list-item",
+      "title-wrap",
+      "search-content-body",
+      "search-meta-info",
+      "pagination",
+      "empty-result",
+      "keyword",
+    ]) {
+      expect(searchViewsSource).toContain(anchor);
+    }
+    expect(searchViewsSource).toContain('props.scope.type === "project"');
+    expect(searchViewsSource).toContain('category.type === "project"');
+    expect(searchViewsSource).toContain("readProjectSearch");
+    expect(searchViewsSource).toContain("readOrganizationSearch");
+    expect(searchViewsSource).toContain("apiQueryKeys.search.project");
   });
 
   it("requires a real organization issue route instead of a placeholder page", () => {

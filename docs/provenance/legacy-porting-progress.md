@@ -9,14 +9,14 @@ Last updated: 2026-05-10
 
 | Scope                                   | Estimate | Basis                                                                                                                         |
 | --------------------------------------- | -------: | ----------------------------------------------------------------------------------------------------------------------------- |
-| Full legacy Yona parity                 |     ~42% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and separate migrator/external API compatibility. |
-| Current first-priority conversion scope |     ~49% | Same as above, but excluding explicitly deferred second-priority items such as SVN, LDAP, import/export tooling, and legacy external API compatibility. |
-| Mechanical SPEC row count               |     ~33% | Phase -1 moved implemented application flows to `/api/v1` REST and removed runtime RPC; Phase 5B closes board/posting core rows while many product rows remain gaps. |
+| Full legacy Yona parity                 |     ~44% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and separate migrator/external API compatibility. |
+| Current first-priority conversion scope |     ~51% | Same as above, but excluding explicitly deferred second-priority items such as SVN, LDAP, import/export tooling, and legacy external API compatibility. |
+| Mechanical SPEC row count               |     ~35% | Phase -1 moved implemented application flows to `/api/v1` REST and removed runtime RPC; Phase 5B closes board/posting core rows and Phase 5C closes app search rows while many product rows remain gaps. |
 
 Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace, organization/project ownership, issue-tracker core behavior, PR/review read surfaces, and board/posting core app behavior.
-- The largest remaining gaps are still code hosting/VCS write/serve flows, PR/review mutations and merge/fork lifecycle, board/posting follow-ups, search, notification fan-out/read state, webhooks, site admin, and separate migrator/external API compatibility.
+- The largest remaining gaps are still code hosting/VCS write/serve flows, PR/review mutations and merge/fork lifecycle, board/posting follow-ups, notification fan-out/read state, webhooks, site admin, full-text/indexed search hardening, and separate migrator/external API compatibility.
 - Percentages are approximate. Update them only when a slice lands with tests and provenance updates.
 
 ## Update Protocol
@@ -40,8 +40,8 @@ Interpretation:
 | Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists, favorite issue, direct/project sharer effects, and issue/comment mention row effects exist over `/api/v1`; legacy external REST parity is separate migrator scope. |
 | VCS / Code hosting                      | [~] Started               | Read-only Git code browser exists; smart HTTP, history, raw/image/download, branch admin, and provisioning remain.       |
 | Pull Request / Review                   | [~] Started               | Phase 4A restores read-only project/org PR lists, PR detail, changes, and review lists; PR/review mutations remain deferred. |
-| Board / Posting                         | [~] Strong partial        | Project board CRUD/comment/watch/notice/README/label flows and organization board list exist over `/api/v1`; Git README sync, issue template/file edit, search indexing, and legacy external API compatibility remain. |
-| Search                                  | [ ] Mostly missing        | Search route is placeholder.                                                                                             |
+| Board / Posting                         | [~] Strong partial        | Project board CRUD/comment/watch/notice/README/label flows and organization board list exist over `/api/v1`; Git README sync, issue template/file edit, and legacy external API compatibility remain. |
+| Search                                  | [~] Strong partial        | Global/project/organization app search exists over `/api/v1` with all legacy result tabs, counts, snippets, pagination, and ACL filtering; full-text/indexed search and external API compatibility remain deferred. |
 | Notifications / Webhooks / Admin / External REST | [ ] Mostly missing | Notification inbox/list and mail queue staging exist; webhooks/admin remain missing, and `/-_-api/v1` compatibility is separate migrator scope. |
 
 ## Foundation / Deployment / DB
@@ -114,7 +114,7 @@ Interpretation:
 - [x] Organization issue list body parity
 - [x] Organization pull request list body
 - [x] Organization board list body
-- [ ] Organization scoped search
+- [x] Organization scoped search
 
 ## Project
 
@@ -207,7 +207,7 @@ Interpretation:
 - [x] Milestone attachment binding
 - [ ] REST milestone API parity
 - [ ] Milestone migration/export parity
-- [ ] Milestone search result type
+- [x] Milestone search result type
 
 ## Board / Posting
 
@@ -226,7 +226,7 @@ Interpretation:
 - [ ] Git-backed README commit/sync
 - [ ] Issue template edit / online code file edit through posting forms
 - [ ] Legacy external `/-_-api/v1/**` board compatibility (migrator/deferred)
-- [ ] Posting/comment search indexing
+- [x] Posting/comment app search
 
 ## Repository / VCS / Code
 
@@ -271,17 +271,20 @@ Interpretation:
 
 ## Search
 
-- [ ] Global search
-- [ ] Project scoped search
-- [ ] Organization scoped search
-- [ ] Issue result type full parity
-- [ ] Posting result type
-- [ ] Issue comment result type
-- [ ] Posting comment result type
-- [ ] Milestone result type
-- [ ] Review comment result type
-- [ ] Result grouping/counts
-- [ ] Pagination/snippets/access filtering
+- [x] Global search
+- [x] Project scoped search
+- [x] Organization scoped search
+- [x] Issue result type full parity
+- [x] Project result type
+- [x] Posting result type
+- [x] Issue comment result type
+- [x] Posting comment result type
+- [x] Milestone result type
+- [x] Review comment result type
+- [x] Result grouping/counts
+- [x] Pagination/snippets/access filtering
+- [ ] Full-text/index-backed search and ranking beyond legacy sort
+- [ ] Legacy external search API compatibility (separate migrator/deferred scope)
 
 ## Notifications / Mail
 
