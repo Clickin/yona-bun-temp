@@ -81,6 +81,19 @@
 - `DESIGN.md` records the legacy Yona view/LESS source order for future frontend
   styling work and is a guardrail, not a new product surface.
 
+## Phase 4A PR Read-Semantics Correction
+
+- The PR/review read surface keeps legacy persisted values as the compatibility
+  boundary: pull-request state rows use `OPEN = 1`, `CLOSED = 2`, and
+  `MERGED = 6`; review-thread state reads accept both `OPEN`/`CLOSED` and
+  lowercase migrated strings.
+- Pull-request changes use the stored merged commit id pair captured on the PR
+  row. Current branch heads are not a parity source for the Phase 4A read view,
+  and missing Git revisions still return the documented empty diff fallback.
+- Organization PR list tabs and search keep `filter` and `pageNum` visible in
+  route query state so the read-only list surface does not silently reset the
+  user's narrowed view.
+
 ## Wave 0 Exit Snapshot
 
 - `frontend` route foundation now resolves legacy home, canonical auth GET surfaces, public directories, search, site admin, and anchored org/project deep links through the file-route tree under `src/routes/**`.

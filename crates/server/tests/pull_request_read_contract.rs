@@ -464,7 +464,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         reviewer_id,
         1,
         "Open read surface",
-        0,
+        1,
         false,
     )
     .await;
@@ -478,7 +478,22 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         reviewer_id,
         2,
         "Closed read surface",
-        1,
+        2,
+        false,
+    )
+    .await;
+    seed_pull_request_between(
+        &db,
+        &repo,
+        "owner",
+        "forkRepo",
+        "owner",
+        "projectYobi",
+        owner_id,
+        reviewer_id,
+        6,
+        "Merged read surface",
+        6,
         false,
     )
     .await;
@@ -491,7 +506,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         reviewer_id,
         3,
         "Conflict read surface",
-        0,
+        1,
         true,
     )
     .await;
@@ -506,7 +521,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         reviewer_id,
         4,
         "Outbound sent surface",
-        0,
+        1,
         false,
     )
     .await;
@@ -521,7 +536,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         reviewer_id,
         5,
         "Inbound fork surface",
-        0,
+        1,
         false,
     )
     .await;
@@ -534,7 +549,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         reviewer_id,
         1,
         "Organization read surface",
-        0,
+        1,
         false,
     )
     .await;
@@ -568,12 +583,17 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         .await,
     )
     .await;
-    assert_eq!(closed_list["totalCount"], 1);
+    assert_eq!(closed_list["totalCount"], 2);
     assert!(!closed_list["items"]
         .as_array()
         .unwrap()
         .iter()
         .any(|item| item["state"] == "conflict"));
+    assert!(closed_list["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|item| item["state"] == "merged"));
 
     let sent_list = response_json(
         rest_get(
@@ -704,6 +724,44 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         "reviewer"
     );
 
+    comment_thread::ActiveModel {
+        dtype: Set("ReviewThread".to_string()),
+        id: NotSet,
+        author_id: Set(Some(owner_id)),
+        author_login_id: Set(Some("owner".to_string())),
+        author_name: Set(Some("owner".to_string())),
+        state: Set(Some("CLOSED".to_string())),
+        created_date: Set(Some(days_ago_datetime(2))),
+        pull_request_id: Set(Some(open.id)),
+        project_id: Set(open.to_project_id),
+        prev_commit_id: Set(Some("base".to_string())),
+        commit_id: Set(Some("abcdef123456".to_string())),
+        path: Set(Some("src/closed-thread.rs".to_string())),
+        start_side: Set(None),
+        start_line: Set(Some(5)),
+        start_column: Set(None),
+        end_side: Set(None),
+        end_line: Set(Some(6)),
+        end_column: Set(None),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let closed_reviews = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/owner/projects/projectYobi/reviews?state=closed",
+            Some(&reviewer_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(closed_reviews["state"], "closed");
+    assert_eq!(closed_reviews["openCount"], 2);
+    assert_eq!(closed_reviews["closedCount"], 1);
+    assert_eq!(closed_reviews["totalCount"], 1);
+    assert_eq!(closed_reviews["items"][0]["path"], "src/closed-thread.rs");
+
     let org_list = response_json(
         rest_get(
             app,
@@ -746,7 +804,7 @@ async fn pull_request_read_surface_maps_forbidden_and_not_found() {
         owner_id,
         1,
         "Member-only code PR",
-        0,
+        1,
         false,
     )
     .await;
@@ -784,7 +842,7 @@ async fn pull_request_read_surface_maps_forbidden_and_not_found() {
         owner_id,
         1,
         "Organization member-only code PR",
-        0,
+        1,
         false,
     )
     .await;
@@ -826,7 +884,7 @@ async fn pull_request_read_surface_maps_forbidden_and_not_found() {
         owner_id,
         1,
         "Private PR",
-        0,
+        1,
         false,
     )
     .await;

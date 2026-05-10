@@ -65,6 +65,7 @@ function OrganizationClosedPullRequestsRouteComponent() {
       detail={containerQuery.data ? toOrganizationContainerView(containerQuery.data) : null}
       list={listQuery.data}
       organizationName={organizationName}
+      query={{ category: "closed", filter, pageNum }}
       runtimeConfig={runtimeConfig}
     />
   );

@@ -156,7 +156,39 @@ pub fn read_pull_request_diff(
         return Ok(no_head_pull_request_diff());
     }
 
-    let commits = list_pull_request_commits(repo_path, from_branch, to_branch)?;
+    read_pull_request_diff_range(repo_path, to_branch, from_branch)
+}
+
+pub fn read_pull_request_diff_between_revisions(
+    repo_path: &Path,
+    base_revision: &str,
+    head_revision: &str,
+) -> Result<PullRequestDiffSnapshot, VcsError> {
+    if !repo_path.exists() {
+        return Ok(no_head_pull_request_diff());
+    }
+    if !has_head(repo_path) {
+        return Ok(no_head_pull_request_diff());
+    }
+    let base_revision = base_revision.trim();
+    let head_revision = head_revision.trim();
+    if base_revision.is_empty()
+        || head_revision.is_empty()
+        || !revision_exists(repo_path, base_revision)
+        || !revision_exists(repo_path, head_revision)
+    {
+        return Ok(no_head_pull_request_diff());
+    }
+
+    read_pull_request_diff_range(repo_path, base_revision, head_revision)
+}
+
+fn read_pull_request_diff_range(
+    repo_path: &Path,
+    base_revision: &str,
+    head_revision: &str,
+) -> Result<PullRequestDiffSnapshot, VcsError> {
+    let commits = list_pull_request_commits(repo_path, base_revision, head_revision)?;
     let diff = git_output(
         repo_path,
         &[
@@ -164,8 +196,8 @@ pub fn read_pull_request_diff(
             "--find-renames",
             "--patch",
             "--unified=3",
-            to_branch,
-            from_branch,
+            base_revision,
+            head_revision,
         ],
     )?;
     Ok(PullRequestDiffSnapshot {
@@ -213,6 +245,11 @@ fn list_branches(repo_path: &Path) -> Result<Vec<CodeBranchRecord>, VcsError> {
 fn branch_exists(branches: &[CodeBranchRecord], name: &str) -> bool {
     let normalized = name.trim();
     !normalized.is_empty() && branches.iter().any(|branch| branch.name == normalized)
+}
+
+fn revision_exists(repo_path: &Path, revision: &str) -> bool {
+    let spec = format!("{revision}^{{commit}}");
+    git_output(repo_path, &["rev-parse", "--verify", &spec]).is_ok()
 }
 
 fn has_head(repo_path: &Path) -> bool {
@@ -286,10 +323,10 @@ fn latest_commit_for_path(repo_path: &Path, branch: &str, path: &str) -> (String
 
 fn list_pull_request_commits(
     repo_path: &Path,
-    from_branch: &str,
-    to_branch: &str,
+    base_revision: &str,
+    head_revision: &str,
 ) -> Result<Vec<PullRequestDiffCommitRecord>, VcsError> {
-    let range = format!("{to_branch}..{from_branch}");
+    let range = format!("{base_revision}..{head_revision}");
     let output = git_output(
         repo_path,
         &[

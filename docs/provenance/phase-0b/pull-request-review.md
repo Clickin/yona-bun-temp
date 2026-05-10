@@ -22,6 +22,20 @@
 - canonical implementation path: `repo root`
 - canonical owner path: `frontend`, `crates/server`, `crates/domain`
 
+## Phase 4A Read Surface Rules
+
+- Pull-request read queries preserve legacy persisted state values: `OPEN = 1`,
+  `CLOSED = 2`, and `MERGED = 6`. `ALL = 0` is a search bucket in legacy code,
+  not an open pull-request row state.
+- Review-thread read queries accept both legacy enum-string values
+  `OPEN`/`CLOSED` and already-lowercase migrated data. Missing thread state is
+  treated as open for read compatibility.
+- Pull-request changes read from the stored merged commit id pair, not from
+  current branch heads. Missing Git repositories or missing stored revisions
+  keep the Phase 4A empty-diff fallback instead of inventing a synthetic diff.
+- Organization pull-request lists preserve `filter` and `pageNum` through
+  category tab navigation and search forms.
+
 ## Extracted Intent
 
 | Legacy source | Intent | Rust translation target |

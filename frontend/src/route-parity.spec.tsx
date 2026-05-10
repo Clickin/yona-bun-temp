@@ -170,6 +170,8 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain("props.detail.isForked");
     expect(pullRequestViewsSource).toContain("pullRequestQueryString");
     expect(pullRequestViewsSource).toContain('category !== "sent"');
+    expect(pullRequestViewsSource).toContain("organizationPullRequestQueryString");
+    expect(pullRequestViewsSource).toContain("props.query.filter");
     expect(pullRequestViewsSource).toContain('name="contributorId"');
     expect(pullRequestViewsSource).toContain('name="state"');
     expect(pullRequestViewsSource).toContain('name="participantId"');

@@ -1,4 +1,5 @@
 import type {
+  OrganizationPullRequestListQuery,
   PullRequestChangesResponse,
   PullRequestDetailResponse,
   PullRequestListCategory,
@@ -86,6 +87,17 @@ function organizationCategoryHref(
     organizationName,
     category === "closed" ? "closedPullrequests" : "pullrequests",
   );
+}
+
+function organizationPullRequestQueryString(query: OrganizationPullRequestListQuery) {
+  const search = new URLSearchParams();
+  if (query.filter) {
+    search.set("filter", query.filter);
+  }
+  if (query.pageNum && query.pageNum > 1) {
+    search.set("pageNum", String(query.pageNum));
+  }
+  return search.toString();
 }
 
 function PullRequestTabs(props: {
@@ -244,6 +256,7 @@ export function OrganizationPullRequestListPage(props: {
   detail: OrganizationDetailViewModel | null;
   list: PullRequestListResponse | undefined;
   organizationName: string;
+  query: OrganizationPullRequestListQuery;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackOrganizationDetail(props.organizationName);
@@ -262,11 +275,16 @@ export function OrganizationPullRequestListPage(props: {
         {tabs.map((tab) => (
           <li className={props.category === tab.category ? "active" : undefined} key={tab.category}>
             <a
-              href={organizationCategoryHref(
-                props.runtimeConfig,
-                detail.organizationName,
-                tab.category,
-              )}
+              href={[
+                organizationCategoryHref(
+                  props.runtimeConfig,
+                  detail.organizationName,
+                  tab.category,
+                ),
+                organizationPullRequestQueryString(props.query),
+              ]
+                .filter(Boolean)
+                .join("?")}
             >
               {tab.label}
             </a>
@@ -281,7 +299,7 @@ export function OrganizationPullRequestListPage(props: {
             props.category,
           )}
         >
-          <input name="filter" placeholder="Search" />
+          <input defaultValue={props.query.filter ?? ""} name="filter" placeholder="Search" />
           <button className="ybtn" type="submit">
             Search
           </button>

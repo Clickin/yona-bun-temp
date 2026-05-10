@@ -65,6 +65,7 @@ function OrganizationPullRequestsRouteComponent() {
       detail={containerQuery.data ? toOrganizationContainerView(containerQuery.data) : null}
       list={listQuery.data}
       organizationName={organizationName}
+      query={{ category: "open", filter, pageNum }}
       runtimeConfig={runtimeConfig}
     />
   );

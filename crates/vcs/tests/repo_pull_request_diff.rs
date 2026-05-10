@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use yona_rust_vcs::read_pull_request_diff;
+use yona_rust_vcs::{read_pull_request_diff, read_pull_request_diff_between_revisions};
 
 fn temp_repo_path(label: &str) -> PathBuf {
     let nanos = SystemTime::now()
@@ -42,6 +42,17 @@ fn clone_bare(work_path: &PathBuf, repo_path: &PathBuf) {
         .status()
         .expect("clone bare repository");
     assert!(status.success(), "git clone --bare failed");
+}
+
+fn git_output(repo_path: &PathBuf, args: &[&str]) -> String {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .args(args)
+        .output()
+        .expect("run git output");
+    assert!(output.status.success(), "git {:?} failed", args);
+    String::from_utf8(output.stdout).unwrap().trim().to_string()
 }
 
 #[test]
@@ -122,6 +133,41 @@ fn repo_pull_request_diff_keeps_deleted_file_path() {
     assert_eq!(snapshot.files.len(), 1);
     assert_eq!(snapshot.files[0].path, "src/remove_me.rs");
     assert!(snapshot.files[0].patch.contains("+++ /dev/null"));
+
+    fs::remove_dir_all(&work_path).unwrap();
+    fs::remove_dir_all(&repo_path).unwrap();
+}
+
+#[test]
+fn repo_pull_request_diff_reads_stored_revision_pair() {
+    let repo_path = temp_repo_path("revision-pair");
+    let work_path = temp_repo_path("revision-pair-work");
+    fs::create_dir_all(&work_path).unwrap();
+    run_git(&work_path, &["init", "-b", "main"]);
+    run_git(&work_path, &["config", "user.email", "test@example.com"]);
+    run_git(&work_path, &["config", "user.name", "Test User"]);
+    write_repo_file(&work_path, "src/lib.rs", "pub fn value() -> i32 { 1 }\n");
+    run_git(&work_path, &["add", "src/lib.rs"]);
+    run_git(&work_path, &["commit", "-m", "initial"]);
+    let base_revision = git_output(&work_path, &["rev-parse", "HEAD"]);
+    write_repo_file(&work_path, "src/lib.rs", "pub fn value() -> i32 { 2 }\n");
+    run_git(&work_path, &["add", "src/lib.rs"]);
+    run_git(&work_path, &["commit", "-m", "update value"]);
+    let head_revision = git_output(&work_path, &["rev-parse", "HEAD"]);
+    clone_bare(&work_path, &repo_path);
+
+    let snapshot =
+        read_pull_request_diff_between_revisions(&repo_path, &base_revision, &head_revision)
+            .unwrap();
+
+    assert!(!snapshot.no_head);
+    assert_eq!(snapshot.commits.len(), 1);
+    assert_eq!(snapshot.commits[0].commit_message, "update value");
+    assert_eq!(snapshot.files.len(), 1);
+    assert_eq!(snapshot.files[0].path, "src/lib.rs");
+    assert!(snapshot.files[0]
+        .patch
+        .contains("pub fn value() -> i32 { 2 }"));
 
     fs::remove_dir_all(&work_path).unwrap();
     fs::remove_dir_all(&repo_path).unwrap();

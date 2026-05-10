@@ -5647,13 +5647,26 @@ async fn rest_read_pull_request_changes(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
+    let merged_commit_id_from = record.merged_commit_id_from.clone();
+    let merged_commit_id_to = record.merged_commit_id_to.clone();
     let detail = rest_pull_request_detail_from_record(record, &authorization, actor_id)
         .map_err(RestRouteError::from_connect_error)?;
     let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
-    let diff =
-        yona_rust_vcs::read_pull_request_diff(&repo_path, &detail.from_branch, &detail.to_branch)
-            .map_err(code_browser_error)
-            .map_err(RestRouteError::from_connect_error)?;
+    let diff = if merged_commit_id_from.trim().is_empty() || merged_commit_id_to.trim().is_empty() {
+        yona_rust_vcs::PullRequestDiffSnapshot {
+            commits: Vec::new(),
+            files: Vec::new(),
+            no_head: true,
+        }
+    } else {
+        yona_rust_vcs::read_pull_request_diff_between_revisions(
+            &repo_path,
+            &merged_commit_id_from,
+            &merged_commit_id_to,
+        )
+        .map_err(code_browser_error)
+        .map_err(RestRouteError::from_connect_error)?
+    };
     let (commits, files) = if diff.no_head {
         (Vec::new(), Vec::new())
     } else {

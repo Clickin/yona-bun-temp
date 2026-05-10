@@ -772,6 +772,8 @@ pub struct PullRequestDetailRecord {
     pub from_project_name: String,
     pub id: i64,
     pub is_watching: bool,
+    pub merged_commit_id_from: String,
+    pub merged_commit_id_to: String,
     pub owner_name: String,
     pub project_name: String,
     pub pull_request_number: i64,

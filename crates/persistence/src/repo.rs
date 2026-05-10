@@ -420,23 +420,23 @@ fn pull_request_state_from_raw(value: Option<i32>, is_conflict: Option<i16>) -> 
 }
 
 fn pull_request_lifecycle_state(value: Option<i32>) -> String {
-    match value.unwrap_or(0) {
-        2 => "merged".to_string(),
-        1 => "closed".to_string(),
+    match value.unwrap_or(1) {
+        6 => "merged".to_string(),
+        2 => "closed".to_string(),
         _ => "open".to_string(),
     }
 }
 
 fn pull_request_open_condition() -> Condition {
     Condition::any()
-        .add(pull_request::Column::State.eq(Some(0)))
+        .add(pull_request::Column::State.eq(Some(1)))
         .add(pull_request::Column::State.is_null())
 }
 
 fn pull_request_closed_condition() -> Condition {
     Condition::any()
-        .add(pull_request::Column::State.eq(Some(1)))
         .add(pull_request::Column::State.eq(Some(2)))
+        .add(pull_request::Column::State.eq(Some(6)))
 }
 
 fn review_thread_state(value: Option<&str>) -> String {
@@ -449,11 +449,17 @@ fn review_thread_state(value: Option<&str>) -> String {
 fn review_thread_open_condition() -> Condition {
     Condition::any()
         .add(comment_thread::Column::State.is_null())
-        .add(comment_thread::Column::State.ne(Some("closed".to_string())))
+        .add(
+            Condition::all()
+                .add(comment_thread::Column::State.ne(Some("closed".to_string())))
+                .add(comment_thread::Column::State.ne(Some("CLOSED".to_string()))),
+        )
 }
 
 fn review_thread_closed_condition() -> Condition {
-    Condition::all().add(comment_thread::Column::State.eq(Some("closed".to_string())))
+    Condition::any()
+        .add(comment_thread::Column::State.eq(Some("closed".to_string())))
+        .add(comment_thread::Column::State.eq(Some("CLOSED".to_string())))
 }
 
 #[derive(Debug, FromQueryResult)]
@@ -5402,6 +5408,8 @@ impl AppRepository {
             from_project_name: list_item.from_project_name,
             id: row.id,
             is_watching,
+            merged_commit_id_from: row.merged_commit_id_from.unwrap_or_default(),
+            merged_commit_id_to: row.merged_commit_id_to.unwrap_or_default(),
             owner_name: project.owner_name.clone(),
             project_name: project.project_name.clone(),
             pull_request_number: list_item.pull_request_number,
