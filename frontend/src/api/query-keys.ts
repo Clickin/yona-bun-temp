@@ -4,6 +4,8 @@ export const apiQueryKeys = {
   project: {
     base: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.v1(), "owners", ownerName, "projects", projectName] as const,
+    container: (ownerName: string, projectName: string) =>
+      [...apiQueryKeys.project.base(ownerName, projectName), "container"] as const,
     issueReferences: (ownerName: string, projectName: string, input: { query: string }) =>
       [
         ...apiQueryKeys.project.base(ownerName, projectName),
@@ -39,6 +41,34 @@ export const apiQueryKeys = {
         state: string;
       },
     ) => [...apiQueryKeys.project.base(ownerName, projectName), "reviews", input] as const,
+    labels: (ownerName: string, projectName: string) =>
+      [...apiQueryKeys.project.base(ownerName, projectName), "labels"] as const,
+    postFormOptions: (ownerName: string, projectName: string) =>
+      [...apiQueryKeys.project.base(ownerName, projectName), "posts", "form-options"] as const,
+    post: (ownerName: string, projectName: string, postNumber: number | string) =>
+      [...apiQueryKeys.project.base(ownerName, projectName), "posts", String(postNumber)] as const,
+    posts: (
+      ownerName: string,
+      projectName: string,
+      input: {
+        filter: string;
+        labelIds: number[];
+        orderBy: string;
+        orderDir: string;
+        pageNum: number;
+      },
+    ) =>
+      [
+        ...apiQueryKeys.project.base(ownerName, projectName),
+        "posts",
+        {
+          filter: input.filter,
+          labelIds: input.labelIds,
+          orderBy: input.orderBy,
+          orderDir: input.orderDir,
+          pageNum: input.pageNum,
+        },
+      ] as const,
   },
   organization: {
     base: (organizationName: string) =>
@@ -47,6 +77,27 @@ export const apiQueryKeys = {
       organizationName: string,
       input: { category: string; filter: string; pageNum: number },
     ) => [...apiQueryKeys.organization.base(organizationName), "pull-requests", input] as const,
+    boards: (
+      organizationName: string,
+      input: {
+        filter: string;
+        orderBy: string;
+        orderDir: string;
+        pageNum: number;
+        projectNames: string[];
+      },
+    ) =>
+      [
+        ...apiQueryKeys.organization.base(organizationName),
+        "boards",
+        {
+          filter: input.filter,
+          orderBy: input.orderBy,
+          orderDir: input.orderDir,
+          pageNum: input.pageNum,
+          projectNames: input.projectNames,
+        },
+      ] as const,
   },
   notifications: {
     list: (input: { from: number; size: number }) =>

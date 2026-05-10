@@ -42,6 +42,41 @@ pub struct IssueRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PostingRecord {
+    pub attachments: Vec<IssueAttachmentRecord>,
+    pub author_id: Option<i64>,
+    pub author_label: String,
+    pub author_login_id: String,
+    pub body_markdown: String,
+    pub comment_count: u32,
+    pub comments: Vec<PostingCommentRecord>,
+    pub created_label: String,
+    pub id: i64,
+    pub is_watching: bool,
+    pub labels: Vec<IssueLabelRecord>,
+    pub notice: bool,
+    pub owner_name: String,
+    pub post_number: i64,
+    pub project_name: String,
+    pub readme: bool,
+    pub title: String,
+    pub updated_label: String,
+    pub watcher_count: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PostingCommentRecord {
+    pub attachments: Vec<IssueAttachmentRecord>,
+    pub author_id: Option<i64>,
+    pub author_label: String,
+    pub author_login_id: String,
+    pub contents_markdown: String,
+    pub created_label: String,
+    pub id: i64,
+    pub parent_comment_id: Option<i64>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IssueSharerRecord {
     pub user_id: i64,
     pub login_id: String,
@@ -159,9 +194,52 @@ pub struct ProjectIssueListRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectPostingListItemRecord {
+    pub author_label: String,
+    pub author_login_id: String,
+    pub comment_count: u32,
+    pub created_label: String,
+    pub labels: Vec<IssueLabelRecord>,
+    pub notice: bool,
+    pub owner_name: String,
+    pub post_number: i64,
+    pub project_name: String,
+    pub readme: bool,
+    pub title: String,
+    pub updated_label: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectPostingListRecord {
+    pub items: Vec<ProjectPostingListItemRecord>,
+    pub notices: Vec<ProjectPostingListItemRecord>,
+    pub page_num: u32,
+    pub page_size: u32,
+    pub readme: Option<PostingRecord>,
+    pub total_count: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OrganizationIssueProjectOptionRecord {
     pub owner_name: String,
     pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OrganizationPostingProjectOptionRecord {
+    pub owner_name: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OrganizationPostingListRecord {
+    pub items: Vec<ProjectPostingListItemRecord>,
+    pub notices: Vec<ProjectPostingListItemRecord>,
+    pub organization_name: String,
+    pub page_num: u32,
+    pub page_size: u32,
+    pub total_count: u32,
+    pub visible_projects: Vec<OrganizationPostingProjectOptionRecord>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -197,6 +275,24 @@ pub struct OrganizationIssueListFilter {
     pub page_num: u32,
     pub project_names: Vec<String>,
     pub state: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PostingListFilter {
+    pub filter: Option<String>,
+    pub label_ids: Vec<i64>,
+    pub order_by: String,
+    pub order_dir: String,
+    pub page_num: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OrganizationPostingListFilter {
+    pub filter: Option<String>,
+    pub order_by: String,
+    pub order_dir: String,
+    pub page_num: u32,
+    pub project_names: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -413,6 +509,59 @@ pub struct UpdateIssueCommentInput {
     pub contents_markdown: String,
     pub issue_number: i64,
     pub owner_name: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PostingMutationInput {
+    pub attachment_ids: Vec<i64>,
+    pub body_markdown: String,
+    pub label_ids: Vec<i64>,
+    pub notice: bool,
+    pub readme: bool,
+    pub title: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreatePostingInput {
+    pub actor_display_name: String,
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub values: PostingMutationInput,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UpdatePostingInput {
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub owner_name: String,
+    pub post_number: i64,
+    pub project_name: String,
+    pub values: PostingMutationInput,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreatePostingCommentInput {
+    pub actor_display_name: String,
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub attachment_ids: Vec<i64>,
+    pub contents_markdown: String,
+    pub owner_name: String,
+    pub post_number: i64,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UpdatePostingCommentInput {
+    pub actor_id: i64,
+    pub attachment_ids: Vec<i64>,
+    pub comment_id: i64,
+    pub contents_markdown: String,
+    pub owner_name: String,
+    pub post_number: i64,
     pub project_name: String,
 }
 

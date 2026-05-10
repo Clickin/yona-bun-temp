@@ -146,6 +146,24 @@ test("maps shared frontend query keys to the API query boundary", () => {
   );
 });
 
+test("maps board posting frontend files before generic project routes", () => {
+  const result = runGate([
+    "frontend/src/api/boards.ts",
+    "frontend/src/routes/-board-views.tsx",
+    "frontend/src/routes/$owner/$projectName/posts/route.tsx",
+    "frontend/src/routes/organizations/$organizationName/boards/route.tsx",
+    "frontend/tests/board-posting-parity.e2e.ts",
+    "docs/provenance/core-parity-audit.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["board-posting-core"],
+  );
+});
+
 test("maps project scoped pull request routes before generic project routes", () => {
   const result = runGate([
     "frontend/src/routes/$owner/$projectName/pullRequests/route.tsx",
@@ -245,32 +263,17 @@ test("treats wave-0 route-foundation files as mapped canonical work", () => {
   assert.equal(result.implementationFiles.includes("frontend/index.html"), false);
   assert.equal(result.implementationFiles.includes("frontend/vite.config.ts"), false);
   assert.equal(result.implementationFiles.includes("frontend/tsconfig.json"), false);
-  assert.equal(
-    result.unmappedImplementationFiles.includes("frontend/package.json"),
-    false,
-  );
+  assert.equal(result.unmappedImplementationFiles.includes("frontend/package.json"), false);
   assert.equal(
     result.unmappedImplementationFiles.includes("frontend/src/runtime-config.ts"),
     false,
   );
-  assert.equal(
-    result.unmappedImplementationFiles.includes("frontend/src/router.tsx"),
-    false,
-  );
-  assert.equal(
-    result.unmappedImplementationFiles.includes("frontend/src/main.tsx"),
-    false,
-  );
+  assert.equal(result.unmappedImplementationFiles.includes("frontend/src/router.tsx"), false);
+  assert.equal(result.unmappedImplementationFiles.includes("frontend/src/main.tsx"), false);
   assert.equal(
     result.unmappedImplementationFiles.includes("frontend/src/routes/__root.tsx"),
     false,
   );
-  assert.equal(
-    result.unmappedImplementationFiles.includes("frontend/src/api/workspace.ts"),
-    false,
-  );
-  assert.equal(
-    result.unmappedImplementationFiles.includes("frontend/playwright.config.ts"),
-    false,
-  );
+  assert.equal(result.unmappedImplementationFiles.includes("frontend/src/api/workspace.ts"), false);
+  assert.equal(result.unmappedImplementationFiles.includes("frontend/playwright.config.ts"), false);
 });

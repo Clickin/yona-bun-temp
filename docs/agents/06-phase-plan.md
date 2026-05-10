@@ -60,8 +60,9 @@
 
 ## Phase 5: 검색, 보드, 알림, 연동
 
+- Phase 5B complete: Board/Posting core parity over `/api/v1/**`, including project post list/detail/create/edit/delete, comments, labels, notice pinning, DB-backed README rendering, watch toggle, notification target resolution for posting resources, organization board aggregation, and dedicated `board-posting-parity.e2e.ts`.
+- Remaining board follow-ups: Git-backed README commit/sync, issue template edit, online code file edit, legacy external `/-_-api/v1/**` compatibility for migrator scope, and posting/comment search indexing.
 - search
-- Phase 5A complete: board/posting posting surface baseline was promoted before Phase 4A planning; future board packets should start from that committed baseline.
 - notifications
 - integrations
 

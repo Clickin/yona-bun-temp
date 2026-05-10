@@ -4,7 +4,9 @@ import type {
   ProjectLabelCategoryMutationResponse,
   ProjectLabelMutationResponse,
 } from "../gen/yona/pilot/v1/pilot_pb";
+import { queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
+import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
 
 type ProjectScope = {
@@ -74,6 +76,13 @@ export function listProjectLabelsRest(
   ).then(normalizeLabelListResponse);
 }
 
+export function listProjectLabelsQueryOptions(runtimeConfig: RuntimeConfig, input: ProjectScope) {
+  return queryOptions({
+    queryFn: () => listProjectLabelsRest(runtimeConfig, input.ownerName, input.projectName),
+    queryKey: apiQueryKeys.project.labels(input.ownerName, input.projectName),
+  });
+}
+
 export function listProjectLabelCategoriesRest(
   runtimeConfig: RuntimeConfig,
   ownerName: string,
@@ -141,11 +150,15 @@ export async function deleteProjectLabelRest(
   input: ProjectScope & { labelId: bigint | number },
   fetchImpl: typeof fetch = fetch,
 ): Promise<void> {
-  await restFetch(runtimeConfig, `${projectPath(input.ownerName, input.projectName)}/labels/${toInt64Number(input.labelId)}`, {
-    csrfToken,
-    fetchImpl,
-    method: "DELETE",
-  });
+  await restFetch(
+    runtimeConfig,
+    `${projectPath(input.ownerName, input.projectName)}/labels/${toInt64Number(input.labelId)}`,
+    {
+      csrfToken,
+      fetchImpl,
+      method: "DELETE",
+    },
+  );
 }
 
 export function createProjectLabelCategoryRest(

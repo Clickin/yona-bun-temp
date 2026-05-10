@@ -1,13 +1,15 @@
 import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Outlet, createFileRoute } from "@tanstack/react-router";
 import {
   cancelEnrollProject,
   enrollProject,
-  readProjectContainer,
   toggleFavoriteProject,
   toggleProjectWatch,
   updateProjectOverview,
 } from "../../../auth-workspace-client";
+import { listProjectPostsQueryOptions } from "../../../api/boards";
+import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { useAppRuntime } from "../../../app-runtime-context";
 import { toProjectContainerView } from "../../../app-view-models";
 import { ProjectDetailPage } from "../../-project-views";
@@ -22,35 +24,46 @@ function ProjectLayoutRouteComponent() {
 
 export function ProjectDetailRouteComponent() {
   const { owner, projectName } = Route.useParams();
-  const { csrfToken, currentSession, refreshWorkspace, runtimeConfig, setErrorMessage } = useAppRuntime();
-  const [detail, setDetail] = React.useState<ReturnType<typeof toProjectContainerView> | null>(null);
-
-  const refreshContainer = React.useCallback(async (nextOwnerName: string, nextProjectName: string) => {
-    const nextDetail = await readProjectContainer(runtimeConfig, nextOwnerName, nextProjectName);
-    setDetail(toProjectContainerView(nextDetail));
-  }, [runtimeConfig]);
+  const {
+    bootstrapping,
+    csrfToken,
+    currentSession,
+    refreshWorkspace,
+    runtimeConfig,
+    setErrorMessage,
+  } = useAppRuntime();
+  const detailQuery = useQuery({
+    ...readProjectContainerQueryOptions(runtimeConfig, {
+      ownerName: owner,
+      projectName,
+    }),
+    enabled: !bootstrapping,
+  });
+  const postsQuery = useQuery({
+    ...listProjectPostsQueryOptions(runtimeConfig, {
+      ownerName: owner,
+      pageNum: 1,
+      projectName,
+    }),
+    enabled: !bootstrapping,
+  });
 
   React.useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const nextDetail = await readProjectContainer(runtimeConfig, owner, projectName);
-      if (!cancelled) {
-        setDetail(toProjectContainerView(nextDetail));
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [owner, projectName, runtimeConfig]);
+    const error = detailQuery.error ?? postsQuery.error;
+    if (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Read project failed.");
+    }
+  }, [detailQuery.error, postsQuery.error, setErrorMessage]);
 
   return (
     <ProjectDetailPage
-      detail={detail}
+      detail={detailQuery.data ? toProjectContainerView(detailQuery.data) : null}
+      readmePost={postsQuery.data?.readme ?? null}
       runtimeConfig={runtimeConfig}
       onCancelEnrollProject={async (nextOwnerName, nextProjectName) => {
         try {
           await cancelEnrollProject(runtimeConfig, csrfToken, nextOwnerName, nextProjectName);
-          await refreshContainer(nextOwnerName, nextProjectName);
+          await detailQuery.refetch();
           if (currentSession && !currentSession.isAnonymous) {
             await refreshWorkspace(currentSession);
           }
@@ -61,7 +74,7 @@ export function ProjectDetailRouteComponent() {
       onEnrollProject={async (nextOwnerName, nextProjectName) => {
         try {
           await enrollProject(runtimeConfig, csrfToken, nextOwnerName, nextProjectName);
-          await refreshContainer(nextOwnerName, nextProjectName);
+          await detailQuery.refetch();
           if (currentSession && !currentSession.isAnonymous) {
             await refreshWorkspace(currentSession);
           }
@@ -72,7 +85,7 @@ export function ProjectDetailRouteComponent() {
       onToggleFavoriteProject={async (nextOwnerName, nextProjectName) => {
         try {
           await toggleFavoriteProject(runtimeConfig, csrfToken, nextOwnerName, nextProjectName);
-          await refreshContainer(nextOwnerName, nextProjectName);
+          await detailQuery.refetch();
           if (currentSession && !currentSession.isAnonymous) {
             await refreshWorkspace(currentSession);
           }
@@ -82,26 +95,26 @@ export function ProjectDetailRouteComponent() {
       }}
       onToggleProjectWatch={async (nextOwnerName, nextProjectName, watching) => {
         try {
-          const nextDetail = await toggleProjectWatch(
+          await toggleProjectWatch(
             runtimeConfig,
             csrfToken,
             nextOwnerName,
             nextProjectName,
             watching,
           );
-          setDetail(toProjectContainerView(nextDetail));
+          await detailQuery.refetch();
         } catch (error) {
           setErrorMessage(error instanceof Error ? error.message : "Toggle watch failed.");
         }
       }}
       onUpdateProjectOverview={async (nextOwnerName, nextProjectName, overview) => {
         try {
-          const nextDetail = await updateProjectOverview(runtimeConfig, csrfToken, {
+          await updateProjectOverview(runtimeConfig, csrfToken, {
             overview,
             ownerName: nextOwnerName,
             projectName: nextProjectName,
           });
-          setDetail(toProjectContainerView(nextDetail));
+          await detailQuery.refetch();
         } catch (error) {
           setErrorMessage(error instanceof Error ? error.message : "Update overview failed.");
         }

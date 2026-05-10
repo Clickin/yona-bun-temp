@@ -135,6 +135,21 @@ const DOMAIN_BUCKETS = [
     ],
   },
   {
+    id: "board-posting-core",
+    label: "Board posting core",
+    status: "partial",
+    implementationPatterns: [
+      /^frontend\/src\/api\/boards\.ts$/i,
+      /^frontend\/src\/routes\/-board-views\.tsx$/i,
+      /^frontend\/src\/routes\/\$owner\/\$projectName\/posts\/route\.tsx$/i,
+      /^frontend\/src\/routes\/\$owner\/\$projectName\/post(?:form|\/)/i,
+      /^frontend\/src\/routes\/organizations\/\$organizationName\/boards\/route\.tsx$/i,
+      /^crates\/(?:persistence|server)\/.*(?:posting|board)/i,
+    ],
+    testKeywords: ["board", "posting", "post"],
+    provenanceDocs: ["docs/provenance/core-parity-audit.md"],
+  },
+  {
     id: "canonical-schema-and-persistence-foundation",
     label: "Canonical schema and persistence foundation",
     status: "partial",

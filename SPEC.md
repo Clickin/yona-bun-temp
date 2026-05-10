@@ -537,23 +537,25 @@ DELETE /:owner/:project/post/comment/:id/delete → 댓글 삭제
 
 | 기능             | Legacy 동작                             | 현재 상태 | Phase |
 | ---------------- | --------------------------------------- | --------- | ----- |
-| 게시글 목록      | 검색, 페이지네이션, 공지 상단 고정      | gap       | 5     |
-| 게시글 작성      | 제목, 본문(마크다운), 라벨              | gap       | 5     |
-| 게시글 상세      | 제목/본문/댓글, 공지 표시               | gap       | 5     |
-| 게시글 수정/삭제 | 작성자 또는 관리자                      | gap       | 5     |
-| 댓글 CRUD        | 마크다운, 작성/삭제                     | gap       | 5     |
-| 공지 (notice)    | `posting.notice=true` 시 목록 상단 고정 | gap       | 5     |
-| README 게시글    | `posting.readme=true` 시 특별 표시      | gap       | 5     |
-| 게시글 라벨      | 이슈 라벨과 공유                        | gap       | 5     |
-| 게시글 번호      | 프로젝트 내 자동 증가                   | gap       | 5     |
-| 조직 게시판 목록 | `/organizations/:name/boards`           | gap       | 5     |
+| 게시글 목록      | 검색, 페이지네이션, 공지 상단 고정      | implemented (core) | 5B    |
+| 게시글 작성      | 제목, 본문(마크다운), 라벨              | implemented (core) | 5B    |
+| 게시글 상세      | 제목/본문/댓글, 공지 표시               | implemented (core) | 5B    |
+| 게시글 수정/삭제 | 작성자 또는 관리자                      | implemented (core) | 5B    |
+| 댓글 CRUD        | 마크다운, 작성/수정/삭제                | implemented (core) | 5B    |
+| 공지 (notice)    | `posting.notice=true` 시 목록 상단 고정 | implemented (core) | 5B    |
+| README 게시글    | `posting.readme=true` 시 특별 표시      | implemented (DB-only) | 5B    |
+| 게시글 라벨      | 이슈 라벨과 공유                        | implemented (core) | 5B    |
+| 게시글 번호      | 프로젝트 내 자동 증가                   | implemented (core) | 5B    |
+| 조직 게시판 목록 | `/organizations/:name/boards`           | implemented (core) | 5B    |
 
 #### 검수 기준
 
-- [ ] 게시글 목록: 공지(notice) 게시글이 항상 상단에 표시 (legacy `Posting.finder.where().orderBy("notice desc, ...")` 동일)
-- [ ] 게시글 번호: `Posting.nextNumber()` 로직과 동일하게 프로젝트 내 자동 증가
-- [ ] 게시글 레이아웃: legacy `board/post.scala.html`의 제목/본문/댓글 구조 동일
-- [ ] 댓글: 시간순, 작성자 아바타, 마크다운 렌더링
+- [x] 게시글 목록: 프로젝트 게시판은 일반 목록과 공지(`notice=true`) 목록을 분리해 공지 상단 고정을 유지한다.
+- [x] 게시글 번호: `project.last_posting_number`와 기존 max number를 함께 보며 프로젝트 내 자동 증가를 복구한다.
+- [x] 게시글 레이아웃: React route가 legacy class anchor(`post-list-wrap`, `notice-wrap`, `board-view`, `board-comment-wrap`, `board-labels`, `ybtn`)를 사용한다.
+- [x] 댓글: 시간순 정렬과 마크다운 렌더링을 제공한다.
+- [x] 검증: `frontend/tests/board-posting-parity.e2e.ts`가 프로젝트/조직 board list, detail, comment CRUD, watch, create/edit/delete CSRF, filter/sort/label/project selector, placeholder 제거를 전용 Playwright surface로 검증한다.
+- [ ] Deferred: Git-backed README commit/sync, issue template edit, online code file edit, `/-_-api/v1/**` board compatibility, board search indexing.
 
 ---
 
@@ -1333,7 +1335,10 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/:owner/:project/settingform`     | GET      | `GET /api/v1/owners/:owner/projects/:project/settings` | `$owner/$projectName/settingform`             | implemented        |
 | `/:owner/:project/issues`          | GET      | `GET /api/v1/projects/:owner/:project/issues` | `$owner/$projectName/issues`                  | implemented        |
 | `/:owner/:project/issue/:number`   | GET      | `GET /api/v1/projects/:owner/:project/issues/:number` | `$owner/$projectName/issue/$issueNumber`      | implemented        |
-| `/:owner/:project/posts`           | GET      | —                                     | `$owner/$projectName/posts`                   | gap                |
+| `/:owner/:project/posts`           | GET      | `GET /api/v1/projects/:owner/:project/posts` | `$owner/$projectName/posts`                   | implemented (core) |
+| `/:owner/:project/postform`        | GET      | SPA                                   | `$owner/$projectName/postform`                | implemented (core) |
+| `/:owner/:project/post/:number`    | GET      | `GET /api/v1/projects/:owner/:project/posts/:number` | `$owner/$projectName/post/$postNumber`        | implemented (core) |
+| `/:owner/:project/post/:number/editform` | GET | SPA                                   | `$owner/$projectName/post/$postNumber/editform` | implemented (core) |
 | `/:owner/:project/pullRequests`    | GET      | —                                     | `$owner/$projectName/pullRequests`            | gap                |
 | `/:owner/:project/code`            | GET      | `GET /api/v1/projects/:owner/:project/code` | `$owner/$projectName/code`                    | implemented (기본) |
 | `/:owner/:project/code/:branch/*`  | GET      | `GET /api/v1/projects/:owner/:project/code?branch=&path=` | `$owner/$projectName/code/$branch/$`          | implemented (기본) |
@@ -1345,7 +1350,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/organizations/:name/members`     | GET      | `GET /api/v1/organizations/:name/members` | `organizations/$organizationName/members`     | implemented        |
 | `/organizations/:name/settingform` | GET      | `GET /api/v1/organizations/:name/settings` | `organizations/$organizationName/settingform` | implemented        |
 | `/organizations/:name/issues`      | GET      | `GET /api/v1/organizations/:name/issues` | `organizations/$organizationName/issues`      | implemented        |
-| `/organizations/:name/boards`      | GET      | —                                     | `organizations/$organizationName/boards`      | gap                |
+| `/organizations/:name/boards`      | GET      | `GET /api/v1/organizations/:name/boards` | `organizations/$organizationName/boards`      | implemented (core) |
 | `/search`                          | GET      | —                                     | `search/`                                     | gap                |
 | `/files`                           | POST     | `POST /files` direct                  | —                                             | implemented        |
 | `/files/:id`                       | GET      | `GET /files/:id` direct               | —                                             | implemented        |

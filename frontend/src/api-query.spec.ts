@@ -1,4 +1,12 @@
 import { describe, expect, it } from "vitest";
+import {
+  updatePostCommentRest,
+  updateProjectPostRest,
+  listOrganizationBoardsQueryOptions,
+  listProjectPostsQueryOptions,
+  readProjectPostFormOptionsQueryOptions,
+  readProjectPostQueryOptions,
+} from "./api/boards";
 import { projectIssueReferencesQueryOptions } from "./api/issue-meta";
 import {
   projectPullRequestListQueryOptions,
@@ -88,5 +96,157 @@ describe("api query keys", () => {
         pullRequestNumber: 9,
       }).queryKey,
     ).toEqual(apiQueryKeys.project.pullRequestDetail("owner", "projectYobi", 9));
+  });
+
+  it("includes project board list filters in query keys", () => {
+    const key = apiQueryKeys.project.posts("owner", "projectYobi", {
+      filter: "readme",
+      labelIds: [3, 4],
+      orderBy: "createdDate",
+      orderDir: "desc",
+      pageNum: 2,
+    });
+
+    expect(key).toEqual([
+      "api",
+      "v1",
+      "owners",
+      "owner",
+      "projects",
+      "projectYobi",
+      "posts",
+      {
+        filter: "readme",
+        labelIds: [3, 4],
+        orderBy: "createdDate",
+        orderDir: "desc",
+        pageNum: 2,
+      },
+    ]);
+  });
+
+  it("builds board query options from canonical query keys", () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const listOptions = listProjectPostsQueryOptions(runtimeConfig, {
+      filter: "needle",
+      labelIds: [1],
+      ownerName: "owner",
+      pageNum: 1,
+      projectName: "projectYobi",
+    });
+    const detailOptions = readProjectPostQueryOptions(runtimeConfig, {
+      ownerName: "owner",
+      postNumber: 12,
+      projectName: "projectYobi",
+    });
+    const formOptions = readProjectPostFormOptionsQueryOptions(runtimeConfig, {
+      ownerName: "owner",
+      projectName: "projectYobi",
+    });
+    const orgOptions = listOrganizationBoardsQueryOptions(runtimeConfig, {
+      filter: "cross",
+      organizationName: "weblabs",
+      pageNum: 1,
+      projectNames: ["alpha"],
+    });
+
+    expect(listOptions.queryKey).toEqual(
+      apiQueryKeys.project.posts("owner", "projectYobi", {
+        filter: "needle",
+        labelIds: [1],
+        orderBy: "",
+        orderDir: "",
+        pageNum: 1,
+      }),
+    );
+    expect(detailOptions.queryKey).toEqual(apiQueryKeys.project.post("owner", "projectYobi", 12));
+    expect(formOptions.queryKey).toEqual(
+      apiQueryKeys.project.postFormOptions("owner", "projectYobi"),
+    );
+    expect(orgOptions.queryKey).toEqual(
+      apiQueryKeys.organization.boards("weblabs", {
+        filter: "cross",
+        orderBy: "",
+        orderDir: "",
+        pageNum: 1,
+        projectNames: ["alpha"],
+      }),
+    );
+    expect(listOptions.queryFn).toEqual(expect.any(Function));
+    expect(detailOptions.queryFn).toEqual(expect.any(Function));
+    expect(formOptions.queryFn).toEqual(expect.any(Function));
+    expect(orgOptions.queryFn).toEqual(expect.any(Function));
+  });
+
+  it("uses PATCH for board update REST mutations", async () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const methods: string[] = [];
+    const fetchImpl: typeof fetch = async (_input, init) => {
+      methods.push(init?.method ?? "");
+      return new Response(
+        JSON.stringify({
+          attachments: [],
+          authorId: "1",
+          authorLabel: "Owner",
+          authorLoginId: "owner",
+          bodyHtml: "<p>body</p>",
+          bodyMarkdown: "body",
+          commentCount: 0,
+          comments: [],
+          createdLabel: "now",
+          id: "10",
+          isWatching: false,
+          labels: [],
+          notice: false,
+          ownerName: "owner",
+          permissions: {
+            canComment: true,
+            canCreate: true,
+            canDelete: true,
+            canRead: true,
+            canSetNotice: false,
+            canUpdate: true,
+            canWatch: true,
+          },
+          postNumber: "1",
+          projectName: "projectYobi",
+          readme: false,
+          title: "Updated",
+          updatedLabel: "now",
+          watcherCount: 0,
+        }),
+        { headers: { "content-type": "application/json" }, status: 200 },
+      );
+    };
+
+    await updateProjectPostRest(
+      runtimeConfig,
+      "csrf",
+      {
+        bodyMarkdown: "body",
+        labelIds: [],
+        notice: false,
+        ownerName: "owner",
+        postNumber: 1,
+        projectName: "projectYobi",
+        readme: false,
+        title: "Updated",
+      },
+      fetchImpl,
+    );
+    await updatePostCommentRest(
+      runtimeConfig,
+      "csrf",
+      {
+        commentId: 7,
+        contentsMarkdown: "comment",
+        ownerName: "owner",
+        postNumber: 1,
+        projectName: "projectYobi",
+      },
+      fetchImpl,
+    );
+
+    expect(methods).toEqual(["PATCH", "PATCH"]);
   });
 });

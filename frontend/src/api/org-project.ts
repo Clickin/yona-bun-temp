@@ -12,7 +12,9 @@ import type {
   ReadProjectMembersResponse,
   ToggleFavoriteProjectResponse,
 } from "../gen/yona/pilot/v1/pilot_pb";
+import { queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
+import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
 
 type OrganizationNameInput = {
@@ -112,10 +114,14 @@ export function readOrganizationAdminRest(
   organizationName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<OrganizationAdminView> {
-  return restFetch<OrganizationAdminView>(runtimeConfig, organizationPath(organizationName, "/admin"), {
-    fetchImpl,
-    method: "GET",
-  });
+  return restFetch<OrganizationAdminView>(
+    runtimeConfig,
+    organizationPath(organizationName, "/admin"),
+    {
+      fetchImpl,
+      method: "GET",
+    },
+  );
 }
 
 export function readOrganizationContainerRest(
@@ -246,10 +252,7 @@ export function acceptOrganizationEnrollmentRest(
 ): Promise<OrganizationAdminView> {
   return restFetch<OrganizationAdminView>(
     runtimeConfig,
-    organizationPath(
-      input.organizationName,
-      `/enrollments/${toInt64Number(input.userId)}/accept`,
-    ),
+    organizationPath(input.organizationName, `/enrollments/${toInt64Number(input.userId)}/accept`),
     {
       csrfToken,
       fetchImpl,
@@ -369,20 +372,26 @@ export function readProjectContainerRest(
   );
 }
 
+export function readProjectContainerQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectPathInput,
+) {
+  return queryOptions({
+    queryFn: () => readProjectContainerRest(runtimeConfig, input.ownerName, input.projectName),
+    queryKey: apiQueryKeys.project.container(input.ownerName, input.projectName),
+  });
+}
+
 export function readProjectSettingsRest(
   runtimeConfig: RuntimeConfig,
   ownerName: string,
   projectName: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectDetail> {
-  return restFetch<ProjectDetail>(
-    runtimeConfig,
-    projectPath(ownerName, projectName, "/settings"),
-    {
-      fetchImpl,
-      method: "GET",
-    },
-  );
+  return restFetch<ProjectDetail>(runtimeConfig, projectPath(ownerName, projectName, "/settings"), {
+    fetchImpl,
+    method: "GET",
+  });
 }
 
 export function readProjectMembersRest(

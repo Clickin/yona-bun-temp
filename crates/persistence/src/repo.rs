@@ -1,28 +1,32 @@
 use crate::repo_types::{
     AppUserInput, AppUserRecord, AttachmentRecord, CreateIssueCommentInput, CreateIssueInput,
-    CreateOrganizationInput, CreateProjectInput, CreateProjectLabelCategoryInput,
-    CreateProjectLabelInput, CreateUserInput, IssueAssignableUserRecord,
-    IssueAssignableUserSearchRecord, IssueAttachmentRecord, IssueCommentRecord,
-    IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter,
-    IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueRecord,
-    IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, MassUpdateIssuesInput,
-    MentionSyncResult, MilestoneListFilter, MilestoneMutationInput, NotificationActorRecord,
-    NotificationItemRecord, NotificationListRecord, OrganizationAuthorizationRecord,
-    OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
-    OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
-    OrganizationMemberRecord, OrganizationRecord, OrganizationViewerRecord,
+    CreateOrganizationInput, CreatePostingCommentInput, CreatePostingInput, CreateProjectInput,
+    CreateProjectLabelCategoryInput, CreateProjectLabelInput, CreateUserInput,
+    IssueAssignableUserRecord, IssueAssignableUserSearchRecord, IssueAttachmentRecord,
+    IssueCommentRecord, IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord,
+    IssueListFilter, IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord,
+    IssueRecord, IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord,
+    MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
+    NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
+    OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
+    OrganizationIssueListFilter, OrganizationIssueListRecord, OrganizationIssueProjectOptionRecord,
+    OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationPostingListFilter,
+    OrganizationPostingListRecord, OrganizationPostingProjectOptionRecord, OrganizationRecord,
+    OrganizationViewerRecord, PostingCommentRecord, PostingListFilter, PostingRecord,
     ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord, ProjectIssueListItemRecord,
     ProjectIssueListRecord, ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord,
     ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
-    ProjectMilestoneSummaryRecord, ProjectRecord, ProjectViewerRecord, PullRequestCommitRecord,
-    PullRequestDetailRecord, PullRequestEventRecord, PullRequestListFilter,
-    PullRequestListItemRecord, PullRequestListRecord, PullRequestUserRecord, ReviewCommentRecord,
-    ReviewThreadListFilter, ReviewThreadListRecord, ReviewThreadRecord, ToggleFavoriteIssueResult,
+    ProjectMilestoneSummaryRecord, ProjectPostingListItemRecord, ProjectPostingListRecord,
+    ProjectRecord, ProjectViewerRecord, PullRequestCommitRecord, PullRequestDetailRecord,
+    PullRequestEventRecord, PullRequestListFilter, PullRequestListItemRecord,
+    PullRequestListRecord, PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter,
+    ReviewThreadListRecord, ReviewThreadRecord, ToggleFavoriteIssueResult,
     ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
-    UpdateOrganizationInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
-    UpdateProjectLabelInput, UserIssueCandidateRecord, UserIssueListFilter,
-    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
-    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    UpdateOrganizationInput, UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
+    UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UserIssueCandidateRecord,
+    UserIssueListFilter, WatchedProjectNotificationsRecord, WorkspaceEmailRecord,
+    WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
+    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
@@ -30,10 +34,11 @@ use crate::{
     favorite_project, issue, issue_comment, issue_comment_voter, issue_event, issue_issue_label,
     issue_label, issue_label_category, issue_sharer, issue_voter, linked_account, mention,
     milestone, n4user, notification_event, notification_event_n4user, notification_mail,
-    organization, organization_user, posting, posting_issue_label, project, project_menu_setting,
-    project_user, pull_request, pull_request_commit, pull_request_event, pull_request_reviewers,
-    recent_project, review_comment, role, site_admin, user_credential, user_enrolled_organization,
-    user_enrolled_project, user_project_notification, user_setting, user_verification, watch,
+    organization, organization_user, posting, posting_comment, posting_issue_label, project,
+    project_menu_setting, project_user, pull_request, pull_request_commit, pull_request_event,
+    pull_request_reviewers, recent_project, review_comment, role, site_admin, unwatch,
+    user_credential, user_enrolled_organization, user_enrolled_project, user_project_notification,
+    user_setting, user_verification, watch,
 };
 use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
@@ -266,6 +271,11 @@ const SIGNUP_VERIFICATION_PREFIX: &str = "signup:";
 const USER_ATTACHMENT_CONTAINER: &str = "USER";
 const USER_AVATAR_ATTACHMENT_CONTAINER: &str = "USER_AVATAR";
 
+enum PostingMentionNotificationMode {
+    All,
+    NewOnly,
+}
+
 fn workspace_notification_enabled_by_default(event_type: &str) -> bool {
     !matches!(event_type, "NEW_COMMENT")
 }
@@ -388,12 +398,46 @@ fn sort_issue_models_for_organization(
     });
 }
 
+fn sort_posting_models(
+    items: &mut [(posting::Model, ProjectRecord)],
+    order_by: &str,
+    order_dir: &str,
+) {
+    let descending = normalize_identity(order_dir) != "asc";
+    let normalized_order = normalize_identity(order_by);
+    items.sort_by(|(left, _), (right, _)| {
+        let ordering = match normalized_order.as_str() {
+            "updateddate" => left.updated_date.cmp(&right.updated_date),
+            "numofcomments" => left
+                .num_of_comments
+                .unwrap_or_default()
+                .cmp(&right.num_of_comments.unwrap_or_default()),
+            _ => left.created_date.cmp(&right.created_date),
+        }
+        .then_with(|| left.number.cmp(&right.number))
+        .then_with(|| left.id.cmp(&right.id));
+
+        if descending {
+            ordering.reverse()
+        } else {
+            ordering
+        }
+    });
+}
+
 fn bool_to_i16(value: bool) -> i16 {
     if value {
         1
     } else {
         0
     }
+}
+
+fn is_unique_posting_number_conflict(error: &DbErr) -> bool {
+    let message = error.to_string().to_ascii_lowercase();
+    (message.contains("unique") || message.contains("duplicate"))
+        && message.contains("posting")
+        && (message.contains("number") || message.contains("uq_posting_1"))
 }
 
 fn issue_label_category_record(row: issue_label_category::Model) -> IssueLabelCategoryRecord {
@@ -1886,6 +1930,621 @@ impl AppRepository {
             .filter(watch::Column::UserId.eq(Some(user_id)))
             .filter(watch::Column::ResourceType.eq(Some("ISSUE".to_string())))
             .filter(watch::Column::ResourceId.eq(Some(issue_id.to_string())))
+            .exec(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn list_project_postings_filtered(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        filter: PostingListFilter,
+        viewer_id: Option<i64>,
+    ) -> Result<ProjectPostingListRecord, DbErr> {
+        const PAGE_SIZE: u32 = 15;
+        let page_num = filter.page_num.max(1);
+        let Some(project) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(ProjectPostingListRecord {
+                items: Vec::new(),
+                notices: Vec::new(),
+                page_num,
+                page_size: PAGE_SIZE,
+                readme: None,
+                total_count: 0,
+            });
+        };
+
+        let rows = posting::Entity::find()
+            .filter(posting::Column::ProjectId.eq(Some(project.id)))
+            .all(&self.db)
+            .await?;
+        let mut normal_matches = Vec::new();
+        let mut notice_matches = Vec::new();
+        let mut readme_row = None;
+        for row in rows {
+            if row.readme.unwrap_or_default() != 0
+                && readme_row
+                    .as_ref()
+                    .is_none_or(|existing: &posting::Model| row.id > existing.id)
+            {
+                readme_row = Some(row.clone());
+            }
+            if row.notice.unwrap_or_default() != 0 {
+                notice_matches.push((row, project.clone()));
+                continue;
+            }
+            if let Some(text_filter) = filter.filter.as_deref() {
+                if !self
+                    .posting_model_matches_text_filter(&row, text_filter)
+                    .await?
+                {
+                    continue;
+                }
+            }
+            let labels = self.list_posting_labels(row.id).await?;
+            if !filter.label_ids.is_empty()
+                && !filter
+                    .label_ids
+                    .iter()
+                    .all(|id| labels.iter().any(|label| label.id == *id))
+            {
+                continue;
+            }
+            normal_matches.push((row, project.clone()));
+        }
+
+        sort_posting_models(&mut normal_matches, &filter.order_by, &filter.order_dir);
+        sort_posting_models(&mut notice_matches, "updatedDate", "desc");
+
+        let total_count = normal_matches.len() as u32;
+        let offset = ((page_num - 1) * PAGE_SIZE) as usize;
+        let page_models = normal_matches
+            .into_iter()
+            .skip(offset)
+            .take(PAGE_SIZE as usize)
+            .collect::<Vec<_>>();
+        let mut items = Vec::new();
+        for (row, project) in page_models {
+            items.push(
+                self.project_posting_list_item_from_model(row, &project)
+                    .await?,
+            );
+        }
+        let mut notices = Vec::new();
+        for (row, project) in notice_matches {
+            notices.push(
+                self.project_posting_list_item_from_model(row, &project)
+                    .await?,
+            );
+        }
+        let readme = match readme_row {
+            Some(row) => Some(
+                self.posting_record_from_model(row, &project, viewer_id)
+                    .await?,
+            ),
+            None => None,
+        };
+
+        Ok(ProjectPostingListRecord {
+            items,
+            notices,
+            page_num,
+            page_size: PAGE_SIZE,
+            readme,
+            total_count,
+        })
+    }
+
+    pub async fn list_organization_postings_filtered(
+        &self,
+        organization_name: &str,
+        visible_projects: Vec<ProjectRecord>,
+        filter: OrganizationPostingListFilter,
+    ) -> Result<OrganizationPostingListRecord, DbErr> {
+        const PAGE_SIZE: u32 = 15;
+        let page_num = filter.page_num.max(1);
+        let visible_projects = {
+            let mut projects = visible_projects;
+            projects.sort_by(|left, right| left.project_name.cmp(&right.project_name));
+            projects
+        };
+        let visible_project_options = visible_projects
+            .iter()
+            .map(|project| OrganizationPostingProjectOptionRecord {
+                owner_name: project.owner_name.clone(),
+                project_name: project.project_name.clone(),
+            })
+            .collect::<Vec<_>>();
+        let project_by_id = visible_projects
+            .iter()
+            .cloned()
+            .map(|project| (project.id, project))
+            .collect::<HashMap<_, _>>();
+        if project_by_id.is_empty() {
+            return Ok(OrganizationPostingListRecord {
+                items: Vec::new(),
+                notices: Vec::new(),
+                organization_name: organization_name.to_string(),
+                page_num,
+                page_size: PAGE_SIZE,
+                total_count: 0,
+                visible_projects: visible_project_options,
+            });
+        }
+
+        let project_name_filter = filter
+            .project_names
+            .iter()
+            .map(|name| normalize_identity(name))
+            .filter(|name| !name.is_empty())
+            .collect::<HashSet<_>>();
+        let rows = posting::Entity::find()
+            .filter(posting::Column::ProjectId.is_in(project_by_id.keys().copied().map(Some)))
+            .all(&self.db)
+            .await?;
+        let mut matches = Vec::new();
+        for row in rows {
+            let Some(project_id) = row.project_id else {
+                continue;
+            };
+            let Some(project) = project_by_id.get(&project_id) else {
+                continue;
+            };
+            if !project_name_filter.is_empty()
+                && !project_name_filter.contains(&normalize_identity(&project.project_name))
+            {
+                continue;
+            }
+            if let Some(text_filter) = filter.filter.as_deref() {
+                if !self
+                    .posting_model_matches_text_filter(&row, text_filter)
+                    .await?
+                {
+                    continue;
+                }
+            }
+            matches.push((row, project.clone()));
+        }
+
+        sort_posting_models(&mut matches, &filter.order_by, &filter.order_dir);
+        let total_count = matches.len() as u32;
+        let offset = ((page_num - 1) * PAGE_SIZE) as usize;
+        let page_models = matches
+            .into_iter()
+            .skip(offset)
+            .take(PAGE_SIZE as usize)
+            .collect::<Vec<_>>();
+        let mut items = Vec::new();
+        for (row, project) in page_models {
+            items.push(
+                self.project_posting_list_item_from_model(row, &project)
+                    .await?,
+            );
+        }
+
+        Ok(OrganizationPostingListRecord {
+            items,
+            notices: Vec::new(),
+            organization_name: organization_name.to_string(),
+            page_num,
+            page_size: PAGE_SIZE,
+            total_count,
+            visible_projects: visible_project_options,
+        })
+    }
+
+    pub async fn read_posting_detail_for_viewer(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        post_number: i64,
+        viewer_id: Option<i64>,
+    ) -> Result<Option<PostingRecord>, DbErr> {
+        let Some((project, model)) = self
+            .read_project_posting_model(owner_name, project_name, post_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        self.posting_record_from_model(model, &project, viewer_id)
+            .await
+            .map(Some)
+    }
+
+    pub async fn create_posting(
+        &self,
+        input: CreatePostingInput,
+    ) -> Result<Option<PostingRecord>, DbErr> {
+        let Some(project_record) = self
+            .read_project_by_owner_and_name(&input.owner_name, &input.project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+        for _attempt in 0..32 {
+            let post_number = self.next_posting_number(project_record.id).await?;
+            let now = current_datetime();
+            let insert_result = posting::ActiveModel {
+                id: NotSet,
+                title: Set(Some(input.values.title.trim().to_string())),
+                created_date: Set(Some(now)),
+                updated_date: Set(Some(now)),
+                author_id: Set(Some(input.actor_id)),
+                author_login_id: Set(Some(normalize_identity(&input.actor_login_id))),
+                author_name: Set(Some(input.actor_display_name.clone())),
+                project_id: Set(Some(project_record.id)),
+                number: Set(Some(post_number)),
+                num_of_comments: Set(Some(0)),
+                notice: Set(Some(bool_to_i16(input.values.notice))),
+                readme: Set(Some(bool_to_i16(input.values.readme))),
+                parent_id: Set(None),
+                updated_by_author_id: Set(Some(input.actor_id)),
+                ..Default::default()
+            }
+            .insert(&self.db)
+            .await;
+
+            let created = match insert_result {
+                Ok(created) => created,
+                Err(error) if is_unique_posting_number_conflict(&error) => continue,
+                Err(error) => return Err(error),
+            };
+
+            let mut project_active = project::ActiveModel {
+                id: Set(project_record.id),
+                ..Default::default()
+            };
+            project_active.last_posting_number = Set(Some(post_number));
+            project_active.update(&self.db).await?;
+
+            self.write_text_column("posting", "body", created.id, &input.values.body_markdown)
+                .await?;
+            if input.values.readme {
+                self.clear_other_readme_postings(project_record.id, created.id)
+                    .await?;
+            }
+            self.sync_posting_mentions_and_notify(
+                input.actor_id,
+                project_record.id,
+                created.id,
+                created.author_id,
+                "posting",
+                created.id,
+                &input.values.body_markdown,
+                "NEW_POSTING",
+                "",
+                &input.values.body_markdown,
+                PostingMentionNotificationMode::All,
+            )
+            .await?;
+
+            self.replace_posting_labels(created.id, project_record.id, &input.values.label_ids)
+                .await?;
+            self.bind_attachments("BOARD_POST", created.id, &input.values.attachment_ids)
+                .await?;
+            self.watch_posting(created.id, input.actor_id).await?;
+            return self
+                .posting_record_from_model(created, &project_record, Some(input.actor_id))
+                .await
+                .map(Some);
+        }
+
+        Err(DbErr::Custom(
+            "posting number allocation conflicted after retries".to_string(),
+        ))
+    }
+
+    pub async fn update_posting(
+        &self,
+        input: UpdatePostingInput,
+    ) -> Result<Option<PostingRecord>, DbErr> {
+        let Some((project_record, model)) = self
+            .read_project_posting_model(&input.owner_name, &input.project_name, input.post_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let old_body = self.read_text_column("posting", "body", model.id).await?;
+        let mut active = posting::ActiveModel::from(model);
+        active.title = Set(Some(input.values.title.trim().to_string()));
+        active.updated_date = Set(Some(current_datetime()));
+        active.updated_by_author_id = Set(Some(input.actor_id));
+        active.notice = Set(Some(bool_to_i16(input.values.notice)));
+        active.readme = Set(Some(bool_to_i16(input.values.readme)));
+        let updated = active.update(&self.db).await?;
+        self.write_text_column("posting", "body", updated.id, &input.values.body_markdown)
+            .await?;
+        if input.values.readme {
+            self.clear_other_readme_postings(project_record.id, updated.id)
+                .await?;
+        }
+        self.sync_posting_mentions_and_notify(
+            input.actor_id,
+            project_record.id,
+            updated.id,
+            updated.author_id,
+            "posting",
+            updated.id,
+            &input.values.body_markdown,
+            "POSTING_BODY_CHANGED",
+            &old_body,
+            &input.values.body_markdown,
+            PostingMentionNotificationMode::NewOnly,
+        )
+        .await?;
+        self.replace_posting_labels(updated.id, project_record.id, &input.values.label_ids)
+            .await?;
+        self.bind_attachments("BOARD_POST", updated.id, &input.values.attachment_ids)
+            .await?;
+        self.posting_record_from_model(updated, &project_record, Some(input.actor_id))
+            .await
+            .map(Some)
+    }
+
+    pub async fn delete_posting(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        post_number: i64,
+        actor_id: i64,
+        actor_login_id: &str,
+    ) -> Result<bool, DbErr> {
+        let Some((project_record, model)) = self
+            .read_project_posting_model(owner_name, project_name, post_number)
+            .await?
+        else {
+            return Ok(false);
+        };
+        let old_body = self.read_text_column("posting", "body", model.id).await?;
+        let mut receiver_ids = self
+            .posting_notification_receiver_ids(
+                project_record.id,
+                model.id,
+                model.author_id,
+                "RESOURCE_DELETED",
+            )
+            .await?;
+        receiver_ids.extend(self.mentioned_active_user_ids(&old_body).await?);
+        self.create_notification_event_for_receivers(
+            actor_id,
+            "project",
+            &project_record.id.to_string(),
+            "RESOURCE_DELETED",
+            &old_body,
+            actor_login_id,
+            &receiver_ids,
+        )
+        .await?;
+        posting_issue_label::Entity::delete_many()
+            .filter(posting_issue_label::Column::PostingId.eq(model.id))
+            .exec(&self.db)
+            .await?;
+        for comment in posting_comment::Entity::find()
+            .filter(posting_comment::Column::PostingId.eq(Some(model.id)))
+            .all(&self.db)
+            .await?
+        {
+            attachment::Entity::delete_many()
+                .filter(
+                    attachment::Column::ContainerType.eq(Some("BOARD_POST_COMMENT".to_string())),
+                )
+                .filter(attachment::Column::ContainerId.eq(comment.id))
+                .exec(&self.db)
+                .await?;
+            mention::Entity::delete_many()
+                .filter(mention::Column::ResourceType.eq(Some("posting_comment".to_string())))
+                .filter(mention::Column::ResourceId.eq(Some(comment.id.to_string())))
+                .exec(&self.db)
+                .await?;
+        }
+        posting_comment::Entity::delete_many()
+            .filter(posting_comment::Column::PostingId.eq(Some(model.id)))
+            .exec(&self.db)
+            .await?;
+        watch::Entity::delete_many()
+            .filter(watch::Column::ResourceType.eq(Some("POSTING".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(model.id.to_string())))
+            .exec(&self.db)
+            .await?;
+        attachment::Entity::delete_many()
+            .filter(attachment::Column::ContainerType.eq(Some("BOARD_POST".to_string())))
+            .filter(attachment::Column::ContainerId.eq(model.id))
+            .exec(&self.db)
+            .await?;
+        mention::Entity::delete_many()
+            .filter(mention::Column::ResourceType.eq(Some("posting".to_string())))
+            .filter(mention::Column::ResourceId.eq(Some(model.id.to_string())))
+            .exec(&self.db)
+            .await?;
+        posting::Entity::delete_by_id(model.id)
+            .exec(&self.db)
+            .await?;
+        Ok(true)
+    }
+
+    pub async fn create_posting_comment(
+        &self,
+        input: CreatePostingCommentInput,
+    ) -> Result<Option<PostingRecord>, DbErr> {
+        let Some((project_record, posting_model)) = self
+            .read_project_posting_model(&input.owner_name, &input.project_name, input.post_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let created = posting_comment::ActiveModel {
+            id: NotSet,
+            created_date: Set(Some(current_datetime())),
+            author_id: Set(Some(input.actor_id)),
+            author_login_id: Set(Some(normalize_identity(&input.actor_login_id))),
+            author_name: Set(Some(input.actor_display_name)),
+            posting_id: Set(Some(posting_model.id)),
+            project_id: Set(project_record.id),
+            parent_comment_id: Set(None),
+            ..Default::default()
+        }
+        .insert(&self.db)
+        .await?;
+        self.write_text_column(
+            "posting_comment",
+            "contents",
+            created.id,
+            &input.contents_markdown,
+        )
+        .await?;
+        self.sync_posting_mentions_and_notify(
+            input.actor_id,
+            project_record.id,
+            posting_model.id,
+            posting_model.author_id,
+            "posting_comment",
+            created.id,
+            &input.contents_markdown,
+            "NEW_COMMENT",
+            "",
+            &input.contents_markdown,
+            PostingMentionNotificationMode::All,
+        )
+        .await?;
+        self.bind_attachments("BOARD_POST_COMMENT", created.id, &input.attachment_ids)
+            .await?;
+        self.recount_posting_comments(posting_model.id).await?;
+        self.read_posting_detail_for_viewer(
+            &input.owner_name,
+            &input.project_name,
+            input.post_number,
+            Some(input.actor_id),
+        )
+        .await
+    }
+
+    pub async fn update_posting_comment(
+        &self,
+        input: UpdatePostingCommentInput,
+    ) -> Result<Option<PostingRecord>, DbErr> {
+        let Some((project_record, posting_model)) = self
+            .read_project_posting_model(&input.owner_name, &input.project_name, input.post_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(comment) = posting_comment::Entity::find_by_id(input.comment_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        if comment.posting_id != Some(posting_model.id) {
+            return Ok(None);
+        }
+        let old_contents = self
+            .read_text_column("posting_comment", "contents", comment.id)
+            .await?;
+        let active = posting_comment::ActiveModel::from(comment);
+        let updated = active.update(&self.db).await?;
+        self.write_text_column(
+            "posting_comment",
+            "contents",
+            updated.id,
+            &input.contents_markdown,
+        )
+        .await?;
+        self.sync_posting_mentions_and_notify(
+            input.actor_id,
+            project_record.id,
+            posting_model.id,
+            posting_model.author_id,
+            "posting_comment",
+            updated.id,
+            &input.contents_markdown,
+            "COMMENT_UPDATED",
+            &old_contents,
+            &input.contents_markdown,
+            PostingMentionNotificationMode::All,
+        )
+        .await?;
+        self.bind_attachments("BOARD_POST_COMMENT", updated.id, &input.attachment_ids)
+            .await?;
+        self.read_posting_detail_for_viewer(
+            &input.owner_name,
+            &input.project_name,
+            input.post_number,
+            Some(input.actor_id),
+        )
+        .await
+    }
+
+    pub async fn delete_posting_comment(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        post_number: i64,
+        comment_id: i64,
+        viewer_id: Option<i64>,
+    ) -> Result<Option<PostingRecord>, DbErr> {
+        let Some((_project_record, posting_model)) = self
+            .read_project_posting_model(owner_name, project_name, post_number)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(comment) = posting_comment::Entity::find_by_id(comment_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        if comment.posting_id != Some(posting_model.id) {
+            return Ok(None);
+        }
+        attachment::Entity::delete_many()
+            .filter(attachment::Column::ContainerType.eq(Some("BOARD_POST_COMMENT".to_string())))
+            .filter(attachment::Column::ContainerId.eq(comment_id))
+            .exec(&self.db)
+            .await?;
+        mention::Entity::delete_many()
+            .filter(mention::Column::ResourceType.eq(Some("posting_comment".to_string())))
+            .filter(mention::Column::ResourceId.eq(Some(comment_id.to_string())))
+            .exec(&self.db)
+            .await?;
+        posting_comment::Entity::delete_by_id(comment_id)
+            .exec(&self.db)
+            .await?;
+        self.recount_posting_comments(posting_model.id).await?;
+        self.read_posting_detail_for_viewer(owner_name, project_name, post_number, viewer_id)
+            .await
+    }
+
+    pub async fn watch_posting(&self, posting_id: i64, user_id: i64) -> Result<(), DbErr> {
+        if watch::Entity::find()
+            .filter(watch::Column::UserId.eq(Some(user_id)))
+            .filter(watch::Column::ResourceType.eq(Some("POSTING".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(posting_id.to_string())))
+            .one(&self.db)
+            .await?
+            .is_none()
+        {
+            watch::ActiveModel {
+                id: NotSet,
+                user_id: Set(Some(user_id)),
+                resource_type: Set(Some("POSTING".to_string())),
+                resource_id: Set(Some(posting_id.to_string())),
+            }
+            .insert(&self.db)
+            .await?;
+        }
+        Ok(())
+    }
+
+    pub async fn unwatch_posting(&self, posting_id: i64, user_id: i64) -> Result<(), DbErr> {
+        watch::Entity::delete_many()
+            .filter(watch::Column::UserId.eq(Some(user_id)))
+            .filter(watch::Column::ResourceType.eq(Some("POSTING".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(posting_id.to_string())))
             .exec(&self.db)
             .await?;
         Ok(())
@@ -5638,6 +6297,44 @@ impl AppRepository {
         Ok(false)
     }
 
+    async fn posting_model_matches_text_filter(
+        &self,
+        model: &posting::Model,
+        text_filter: &str,
+    ) -> Result<bool, DbErr> {
+        let needle = normalize_identity(text_filter);
+        if needle.is_empty() {
+            return Ok(true);
+        }
+        if model
+            .title
+            .as_deref()
+            .is_some_and(|title| normalize_identity(title).contains(&needle))
+        {
+            return Ok(true);
+        }
+        if normalize_identity(&self.read_text_column("posting", "body", model.id).await?)
+            .contains(&needle)
+        {
+            return Ok(true);
+        }
+
+        let comments = posting_comment::Entity::find()
+            .filter(posting_comment::Column::PostingId.eq(Some(model.id)))
+            .all(&self.db)
+            .await?;
+        for comment in comments {
+            let contents = self
+                .read_text_column("posting_comment", "contents", comment.id)
+                .await?;
+            if normalize_identity(&contents).contains(&needle) {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
+    }
+
     async fn has_direct_issue_share(&self, issue_id: i64, user_id: i64) -> Result<bool, DbErr> {
         Ok(issue_sharer::Entity::find()
             .filter(issue_sharer::Column::IssueId.eq(Some(issue_id)))
@@ -5890,6 +6587,24 @@ impl AppRepository {
         Ok(project_last.max(max_existing) + 1)
     }
 
+    async fn next_posting_number(&self, project_id: i64) -> Result<i64, DbErr> {
+        let project_row = project::Entity::find_by_id(project_id)
+            .one(&self.db)
+            .await?;
+        let project_last = project_row
+            .and_then(|row| row.last_posting_number)
+            .unwrap_or_default();
+        let max_existing = posting::Entity::find()
+            .filter(posting::Column::ProjectId.eq(Some(project_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| row.number)
+            .max()
+            .unwrap_or_default();
+        Ok(project_last.max(max_existing) + 1)
+    }
+
     async fn resolve_assignee_id(
         &self,
         project_id: i64,
@@ -6015,6 +6730,98 @@ impl AppRepository {
             id: label.id,
             name: label.name.unwrap_or_default(),
         })
+    }
+
+    async fn read_project_posting_model(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        post_number: i64,
+    ) -> Result<Option<(ProjectRecord, posting::Model)>, DbErr> {
+        let Some(project_record) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let model = posting::Entity::find()
+            .filter(posting::Column::ProjectId.eq(Some(project_record.id)))
+            .filter(posting::Column::Number.eq(Some(post_number)))
+            .one(&self.db)
+            .await?;
+        Ok(model.map(|model| (project_record, model)))
+    }
+
+    async fn project_posting_list_item_from_model(
+        &self,
+        model: posting::Model,
+        project: &ProjectRecord,
+    ) -> Result<ProjectPostingListItemRecord, DbErr> {
+        Ok(ProjectPostingListItemRecord {
+            author_label: model.author_name.unwrap_or_default(),
+            author_login_id: model.author_login_id.unwrap_or_default(),
+            comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
+            created_label: format_workspace_date_label(model.created_date),
+            labels: self.list_posting_labels(model.id).await?,
+            notice: model.notice.unwrap_or_default() != 0,
+            owner_name: project.owner_name.clone(),
+            post_number: model.number.unwrap_or_default(),
+            project_name: project.project_name.clone(),
+            readme: model.readme.unwrap_or_default() != 0,
+            title: model.title.unwrap_or_default(),
+            updated_label: format_workspace_date_label(model.updated_date.or(model.created_date)),
+        })
+    }
+
+    async fn posting_record_from_model(
+        &self,
+        model: posting::Model,
+        project: &ProjectRecord,
+        viewer_id: Option<i64>,
+    ) -> Result<PostingRecord, DbErr> {
+        let watcher_count = self.count_posting_watchers(model.id).await?;
+        let is_watching = match viewer_id {
+            Some(viewer_id) => self.is_posting_watched_by(model.id, viewer_id).await?,
+            None => false,
+        };
+        Ok(PostingRecord {
+            attachments: self.list_issue_attachments("BOARD_POST", model.id).await?,
+            author_id: model.author_id,
+            author_label: model.author_name.unwrap_or_default(),
+            author_login_id: model.author_login_id.unwrap_or_default(),
+            body_markdown: self.read_text_column("posting", "body", model.id).await?,
+            comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
+            comments: self.list_posting_comments(model.id).await?,
+            created_label: format_workspace_date_label(model.created_date),
+            id: model.id,
+            is_watching,
+            labels: self.list_posting_labels(model.id).await?,
+            notice: model.notice.unwrap_or_default() != 0,
+            owner_name: project.owner_name.clone(),
+            post_number: model.number.unwrap_or_default(),
+            project_name: project.project_name.clone(),
+            readme: model.readme.unwrap_or_default() != 0,
+            title: model.title.unwrap_or_default(),
+            updated_label: format_workspace_date_label(model.updated_date.or(model.created_date)),
+            watcher_count,
+        })
+    }
+
+    async fn list_posting_labels(&self, posting_id: i64) -> Result<Vec<IssueLabelRecord>, DbErr> {
+        let links = posting_issue_label::Entity::find()
+            .filter(posting_issue_label::Column::PostingId.eq(posting_id))
+            .all(&self.db)
+            .await?;
+        let mut labels = Vec::new();
+        for link in links {
+            if let Some(label) = issue_label::Entity::find_by_id(link.issue_label_id)
+                .one(&self.db)
+                .await?
+            {
+                labels.push(self.issue_label_record(label).await?);
+            }
+        }
+        Ok(labels)
     }
 
     async fn find_or_create_issue_label_category(
@@ -6182,6 +6989,32 @@ impl AppRepository {
         Ok(())
     }
 
+    async fn replace_posting_labels(
+        &self,
+        posting_id: i64,
+        project_id: i64,
+        label_ids: &[i64],
+    ) -> Result<(), DbErr> {
+        posting_issue_label::Entity::delete_many()
+            .filter(posting_issue_label::Column::PostingId.eq(posting_id))
+            .exec(&self.db)
+            .await?;
+        let mut seen = HashSet::new();
+        for label_id in label_ids {
+            if seen.insert(*label_id)
+                && self.label_belongs_to_project(project_id, *label_id).await?
+            {
+                posting_issue_label::ActiveModel {
+                    posting_id: Set(posting_id),
+                    issue_label_id: Set(*label_id),
+                }
+                .insert(&self.db)
+                .await?;
+            }
+        }
+        Ok(())
+    }
+
     async fn label_belongs_to_project(
         &self,
         project_id: i64,
@@ -6209,6 +7042,43 @@ impl AppRepository {
             comments.push(self.issue_comment_record(row, viewer_id).await?);
         }
         Ok(comments)
+    }
+
+    async fn list_posting_comments(
+        &self,
+        posting_id: i64,
+    ) -> Result<Vec<PostingCommentRecord>, DbErr> {
+        let rows = posting_comment::Entity::find()
+            .filter(posting_comment::Column::PostingId.eq(Some(posting_id)))
+            .order_by_asc(posting_comment::Column::CreatedDate)
+            .order_by_asc(posting_comment::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut comments = Vec::new();
+        for row in rows {
+            comments.push(self.posting_comment_record(row).await?);
+        }
+        Ok(comments)
+    }
+
+    async fn posting_comment_record(
+        &self,
+        row: posting_comment::Model,
+    ) -> Result<PostingCommentRecord, DbErr> {
+        Ok(PostingCommentRecord {
+            attachments: self
+                .list_issue_attachments("BOARD_POST_COMMENT", row.id)
+                .await?,
+            author_id: row.author_id,
+            author_label: row.author_name.unwrap_or_default(),
+            author_login_id: row.author_login_id.unwrap_or_default(),
+            contents_markdown: self
+                .read_text_column("posting_comment", "contents", row.id)
+                .await?,
+            created_label: format_workspace_date_label(row.created_date),
+            id: row.id,
+            parent_comment_id: row.parent_comment_id,
+        })
     }
 
     async fn issue_comment_record(
@@ -6398,6 +7268,14 @@ impl AppRepository {
             .await? as u32)
     }
 
+    async fn count_posting_watchers(&self, posting_id: i64) -> Result<u32, DbErr> {
+        Ok(watch::Entity::find()
+            .filter(watch::Column::ResourceType.eq(Some("POSTING".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(posting_id.to_string())))
+            .count(&self.db)
+            .await? as u32)
+    }
+
     async fn is_issue_watched_by(&self, issue_id: i64, user_id: i64) -> Result<bool, DbErr> {
         Ok(watch::Entity::find()
             .filter(watch::Column::UserId.eq(Some(user_id)))
@@ -6422,6 +7300,16 @@ impl AppRepository {
             .is_some())
     }
 
+    async fn is_posting_watched_by(&self, posting_id: i64, user_id: i64) -> Result<bool, DbErr> {
+        Ok(watch::Entity::find()
+            .filter(watch::Column::UserId.eq(Some(user_id)))
+            .filter(watch::Column::ResourceType.eq(Some("POSTING".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(posting_id.to_string())))
+            .one(&self.db)
+            .await?
+            .is_some())
+    }
+
     async fn recount_issue_comments(&self, issue_id: i64) -> Result<(), DbErr> {
         let count = issue_comment::Entity::find()
             .filter(issue_comment::Column::IssueId.eq(Some(issue_id)))
@@ -6434,6 +7322,42 @@ impl AppRepository {
         active.num_of_comments = Set(Some(count));
         active.updated_date = Set(Some(current_datetime()));
         active.update(&self.db).await?;
+        Ok(())
+    }
+
+    async fn recount_posting_comments(&self, posting_id: i64) -> Result<(), DbErr> {
+        let count = posting_comment::Entity::find()
+            .filter(posting_comment::Column::PostingId.eq(Some(posting_id)))
+            .count(&self.db)
+            .await? as i32;
+        let mut active = posting::ActiveModel {
+            id: Set(posting_id),
+            ..Default::default()
+        };
+        active.num_of_comments = Set(Some(count));
+        active.updated_date = Set(Some(current_datetime()));
+        active.update(&self.db).await?;
+        Ok(())
+    }
+
+    async fn clear_other_readme_postings(
+        &self,
+        project_id: i64,
+        keep_posting_id: i64,
+    ) -> Result<(), DbErr> {
+        for row in posting::Entity::find()
+            .filter(posting::Column::ProjectId.eq(Some(project_id)))
+            .filter(posting::Column::Readme.eq(Some(1)))
+            .all(&self.db)
+            .await?
+        {
+            if row.id == keep_posting_id {
+                continue;
+            }
+            let mut active = posting::ActiveModel::from(row);
+            active.readme = Set(Some(0));
+            active.update(&self.db).await?;
+        }
         Ok(())
     }
 
@@ -6512,6 +7436,207 @@ impl AppRepository {
         }
 
         Ok(())
+    }
+
+    async fn active_watch_user_ids(
+        &self,
+        resource_type: &str,
+        resource_id: &str,
+    ) -> Result<Vec<i64>, DbErr> {
+        let rows = watch::Entity::find()
+            .filter(watch::Column::ResourceType.eq(Some(resource_type.to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(resource_id.to_string())))
+            .all(&self.db)
+            .await?;
+        let mut user_ids = Vec::new();
+        for row in rows {
+            if let Some(user_id) = row.user_id {
+                if self
+                    .find_user_model_by_id(user_id)
+                    .await?
+                    .is_some_and(|user| n4user_is_active(&user))
+                {
+                    user_ids.push(user_id);
+                }
+            }
+        }
+        Ok(user_ids)
+    }
+
+    async fn active_unwatch_user_ids(
+        &self,
+        resource_type: &str,
+        resource_id: &str,
+    ) -> Result<Vec<i64>, DbErr> {
+        let rows = unwatch::Entity::find()
+            .filter(unwatch::Column::ResourceType.eq(Some(resource_type.to_string())))
+            .filter(unwatch::Column::ResourceId.eq(Some(resource_id.to_string())))
+            .all(&self.db)
+            .await?;
+        let mut user_ids = Vec::new();
+        for row in rows {
+            if let Some(user_id) = row.user_id {
+                if self
+                    .find_user_model_by_id(user_id)
+                    .await?
+                    .is_some_and(|user| n4user_is_active(&user))
+                {
+                    user_ids.push(user_id);
+                }
+            }
+        }
+        Ok(user_ids)
+    }
+
+    async fn explicit_project_notification_user_ids(
+        &self,
+        project_id: i64,
+        event_type: &str,
+        allowed: bool,
+    ) -> Result<Vec<i64>, DbErr> {
+        let rows = user_project_notification::Entity::find()
+            .filter(user_project_notification::Column::ProjectId.eq(Some(project_id)))
+            .filter(
+                user_project_notification::Column::NotificationType
+                    .eq(Some(event_type.to_string())),
+            )
+            .filter(
+                user_project_notification::Column::Allowed.eq(Some(if allowed { 1 } else { 0 })),
+            )
+            .all(&self.db)
+            .await?;
+        let mut user_ids = Vec::new();
+        for row in rows {
+            if let Some(user_id) = row.user_id {
+                if self
+                    .find_user_model_by_id(user_id)
+                    .await?
+                    .is_some_and(|user| n4user_is_active(&user))
+                {
+                    user_ids.push(user_id);
+                }
+            }
+        }
+        Ok(user_ids)
+    }
+
+    async fn project_notification_enabled_for_user(
+        &self,
+        user_id: i64,
+        project_id: i64,
+        event_type: &str,
+    ) -> Result<bool, DbErr> {
+        let override_row = user_project_notification::Entity::find()
+            .filter(user_project_notification::Column::UserId.eq(Some(user_id)))
+            .filter(user_project_notification::Column::ProjectId.eq(Some(project_id)))
+            .filter(
+                user_project_notification::Column::NotificationType
+                    .eq(Some(event_type.to_string())),
+            )
+            .one(&self.db)
+            .await?;
+        Ok(override_row
+            .map(|row| row.allowed.unwrap_or(1) != 0)
+            .unwrap_or_else(|| workspace_notification_enabled_by_default(event_type)))
+    }
+
+    async fn posting_notification_receiver_ids(
+        &self,
+        project_id: i64,
+        posting_id: i64,
+        posting_author_id: Option<i64>,
+        event_type: &str,
+    ) -> Result<Vec<i64>, DbErr> {
+        let mut receivers = Vec::new();
+        let mut seen = HashSet::new();
+        push_unique_user_id(&mut receivers, &mut seen, posting_author_id);
+
+        for user_id in self
+            .active_watch_user_ids("POSTING", &posting_id.to_string())
+            .await?
+        {
+            push_unique_user_id(&mut receivers, &mut seen, Some(user_id));
+        }
+
+        for user_id in self
+            .active_watch_user_ids("PROJECT", &project_id.to_string())
+            .await?
+        {
+            if self
+                .project_notification_enabled_for_user(user_id, project_id, event_type)
+                .await?
+            {
+                push_unique_user_id(&mut receivers, &mut seen, Some(user_id));
+            }
+        }
+
+        for user_id in self
+            .explicit_project_notification_user_ids(project_id, event_type, true)
+            .await?
+        {
+            push_unique_user_id(&mut receivers, &mut seen, Some(user_id));
+        }
+
+        let posting_unwatchers = self
+            .active_unwatch_user_ids("POSTING", &posting_id.to_string())
+            .await?
+            .into_iter()
+            .collect::<HashSet<_>>();
+        let event_unwatchers = self
+            .explicit_project_notification_user_ids(project_id, event_type, false)
+            .await?
+            .into_iter()
+            .collect::<HashSet<_>>();
+        receivers.retain(|user_id| !posting_unwatchers.contains(user_id));
+        receivers.retain(|user_id| !event_unwatchers.contains(user_id));
+        Ok(receivers)
+    }
+
+    async fn sync_posting_mentions_and_notify(
+        &self,
+        sender_id: i64,
+        project_id: i64,
+        posting_id: i64,
+        posting_author_id: Option<i64>,
+        resource_type: &str,
+        resource_id: i64,
+        text: &str,
+        event_type: &str,
+        old_value: &str,
+        new_value: &str,
+        mention_mode: PostingMentionNotificationMode,
+    ) -> Result<MentionSyncResult, DbErr> {
+        let mentioned_user_ids = self.mentioned_active_user_ids(text).await?;
+        let sync_result = self
+            .sync_mentions_for_resource(resource_type, resource_id, mentioned_user_ids)
+            .await?;
+        let mut receiver_ids = self
+            .posting_notification_receiver_ids(
+                project_id,
+                posting_id,
+                posting_author_id,
+                event_type,
+            )
+            .await?;
+        match mention_mode {
+            PostingMentionNotificationMode::All => {
+                receiver_ids.extend(sync_result.mentioned_user_ids.iter().copied());
+            }
+            PostingMentionNotificationMode::NewOnly => {
+                receiver_ids.extend(sync_result.newly_mentioned_user_ids.iter().copied());
+            }
+        }
+        self.create_notification_event_for_receivers(
+            sender_id,
+            resource_type,
+            &resource_id.to_string(),
+            event_type,
+            old_value,
+            new_value,
+            &receiver_ids,
+        )
+        .await?;
+        Ok(sync_result)
     }
 
     async fn sync_mentions_for_resource(
@@ -6682,7 +7807,7 @@ impl AppRepository {
                 login_id: String::new(),
             });
         let target = self
-            .notification_issue_target(
+            .notification_target(
                 event.resource_type.as_deref().unwrap_or_default(),
                 event.resource_id.as_deref().unwrap_or_default(),
             )
@@ -6700,7 +7825,7 @@ impl AppRepository {
         })
     }
 
-    async fn notification_issue_target(
+    async fn notification_target(
         &self,
         resource_type: &str,
         resource_id: &str,
@@ -6708,6 +7833,37 @@ impl AppRepository {
         let Some(resource_id) = resource_id.parse::<i64>().ok() else {
             return Ok((String::new(), String::new()));
         };
+        let normalized_type = normalize_identity(resource_type);
+        if matches!(normalized_type.as_str(), "posting" | "posting_comment") {
+            return self
+                .notification_posting_target(&normalized_type, resource_id)
+                .await;
+        }
+        if normalized_type == "project" {
+            return self.notification_project_target(resource_id).await;
+        }
+        self.notification_issue_target(&normalized_type, resource_id)
+            .await
+    }
+
+    async fn notification_project_target(
+        &self,
+        project_id: i64,
+    ) -> Result<(String, String), DbErr> {
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok((String::new(), String::new()));
+        };
+        Ok((
+            format!("/{}/{}", project.owner_name, project.project_name),
+            project.project_name,
+        ))
+    }
+
+    async fn notification_issue_target(
+        &self,
+        resource_type: &str,
+        resource_id: i64,
+    ) -> Result<(String, String), DbErr> {
         let issue_model = match resource_type {
             "issue" | "issue_post" => issue::Entity::find_by_id(resource_id).one(&self.db).await?,
             "issue_comment" => {
@@ -6740,6 +7896,56 @@ impl AppRepository {
                 project.owner_name, project.project_name, issue_number
             ),
             issue_model.title.unwrap_or_default(),
+        ))
+    }
+
+    async fn notification_posting_target(
+        &self,
+        resource_type: &str,
+        resource_id: i64,
+    ) -> Result<(String, String), DbErr> {
+        let mut comment_anchor = String::new();
+        let posting_model = match resource_type {
+            "posting" => {
+                posting::Entity::find_by_id(resource_id)
+                    .one(&self.db)
+                    .await?
+            }
+            "posting_comment" => {
+                let Some(comment) = posting_comment::Entity::find_by_id(resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok((String::new(), String::new()));
+                };
+                comment_anchor = format!("#comment-{}", comment.id);
+                match comment.posting_id {
+                    Some(posting_id) => {
+                        posting::Entity::find_by_id(posting_id)
+                            .one(&self.db)
+                            .await?
+                    }
+                    None => None,
+                }
+            }
+            _ => None,
+        };
+        let Some(posting_model) = posting_model else {
+            return Ok((String::new(), String::new()));
+        };
+        let Some(project_id) = posting_model.project_id else {
+            return Ok((String::new(), String::new()));
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok((String::new(), String::new()));
+        };
+        let post_number = posting_model.number.unwrap_or_default();
+        Ok((
+            format!(
+                "/{}/{}/post/{}{}",
+                project.owner_name, project.project_name, post_number, comment_anchor
+            ),
+            posting_model.title.unwrap_or_default(),
         ))
     }
 

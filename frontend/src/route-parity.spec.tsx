@@ -1,5 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
+import * as React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
   renderHome,
@@ -7,6 +9,11 @@ import {
   renderProjectDirectory,
   renderWorkspaceSettings,
 } from "./auth-workspace-shell.test-helpers";
+import {
+  OrganizationBoardListPage,
+  ProjectBoardDetailPage,
+  ProjectBoardListPage,
+} from "./routes/-board-views";
 
 function expectOrderedText(html: string, orderedSnippets: string[]) {
   let previousIndex = -1;
@@ -113,6 +120,152 @@ describe("file-route parity harness", () => {
     expect(notificationRouteSource).not.toContain("PlaceholderPage");
     expect(notificationRouteSource).toContain("useQuery");
     expect(notificationRouteSource).toContain("listNotificationsQueryOptions");
+  });
+
+  it("requires real board routes and board API wiring instead of placeholders", () => {
+    const boardListRoutePath = path.resolve(
+      __dirname,
+      "routes/$owner/$projectName/posts/route.tsx",
+    );
+    const boardDetailRoutePath = path.resolve(
+      __dirname,
+      "routes/$owner/$projectName/post/$postNumber/route.tsx",
+    );
+    const boardCreateRoutePath = path.resolve(
+      __dirname,
+      "routes/$owner/$projectName/postform/route.tsx",
+    );
+    const boardEditRoutePath = path.resolve(
+      __dirname,
+      "routes/$owner/$projectName/post/$postNumber/editform/route.tsx",
+    );
+    const organizationBoardRoutePath = path.resolve(
+      __dirname,
+      "routes/organizations/$organizationName/boards/route.tsx",
+    );
+    const boardApiPath = path.resolve(__dirname, "api/boards.ts");
+
+    for (const routePath of [
+      boardListRoutePath,
+      boardDetailRoutePath,
+      boardCreateRoutePath,
+      boardEditRoutePath,
+      organizationBoardRoutePath,
+    ]) {
+      expect(fs.existsSync(routePath)).toBe(true);
+      expect(fs.readFileSync(routePath, "utf8")).not.toContain("PlaceholderPage");
+    }
+
+    expect(fs.readFileSync(boardListRoutePath, "utf8")).toContain("listProjectPostsQueryOptions");
+    expect(fs.readFileSync(boardDetailRoutePath, "utf8")).toContain("readProjectPostQueryOptions");
+    expect(fs.readFileSync(boardCreateRoutePath, "utf8")).toContain("createProjectPostRest");
+    expect(fs.readFileSync(boardEditRoutePath, "utf8")).toContain("updateProjectPostRest");
+    expect(fs.readFileSync(organizationBoardRoutePath, "utf8")).toContain(
+      "listOrganizationBoardsQueryOptions",
+    );
+    expect(fs.readFileSync(boardApiPath, "utf8")).toContain("/posts");
+
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/posts'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/postform'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/post/$postNumber'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/post/$postNumber/editform'");
+    expect(routeTreeSource).toContain("fullPath: '/organizations/$organizationName/boards'");
+  });
+
+  it("preserves board permission gates and pagination controls in static markup", () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const boardItem = {
+      authorLabel: "Owner",
+      authorLoginId: "owner",
+      commentCount: 0,
+      createdLabel: "now",
+      labels: [],
+      notice: false,
+      ownerName: "owner",
+      postNumber: "16",
+      projectName: "projectYobi",
+      readme: false,
+      title: "Second page post",
+      updatedLabel: "now",
+    };
+    const listHtml = renderToStaticMarkup(
+      <ProjectBoardListPage
+        canCreate={false}
+        detail={null}
+        filter="needle"
+        labelIds={["7"]}
+        labels={[]}
+        orderBy="updatedDate"
+        orderDir="desc"
+        posts={{
+          items: [boardItem],
+          notices: [],
+          ownerName: "owner",
+          pageNum: 2,
+          pageSize: 15,
+          projectName: "projectYobi",
+          readme: null,
+          totalCount: 31,
+        }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(listHtml).not.toContain("postform");
+    expect(listHtml).toContain("Page 2 of 3");
+    expect(listHtml).toContain("pageNum=1");
+    expect(listHtml).toContain("pageNum=3");
+
+    const detailHtml = renderToStaticMarkup(
+      <ProjectBoardDetailPage
+        post={{
+          ...boardItem,
+          attachments: [],
+          authorId: "1",
+          bodyHtml: "<p>body</p>",
+          bodyMarkdown: "body",
+          comments: [],
+          id: "16",
+          isWatching: false,
+          permissions: {
+            canComment: false,
+            canCreate: false,
+            canDelete: false,
+            canRead: true,
+            canSetNotice: false,
+            canUpdate: false,
+            canWatch: false,
+          },
+          watcherCount: 0,
+        }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    expect(detailHtml).not.toContain(">Watch<");
+    expect(detailHtml).not.toContain("Leave a comment");
+
+    const orgHtml = renderToStaticMarkup(
+      <OrganizationBoardListPage
+        boards={{
+          items: [{ ...boardItem, ownerName: "weblabs", projectName: "alpha" }],
+          organizationName: "weblabs",
+          pageNum: 1,
+          pageSize: 15,
+          totalCount: 16,
+          visibleProjects: [{ ownerName: "weblabs", projectName: "alpha" }],
+        }}
+        filter="board"
+        orderBy="createdDate"
+        orderDir="asc"
+        organizationName="weblabs"
+        projectNames={["alpha"]}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+    expect(orgHtml).toContain("Page 1 of 2");
+    expect(orgHtml).toContain("projectNames%5B%5D=alpha");
+    expect(orgHtml).toContain("pageNum=2");
   });
 
   it("requires real PR/review read routes while leaving create/edit placeholders deferred", () => {

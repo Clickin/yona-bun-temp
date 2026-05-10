@@ -1,5 +1,6 @@
 import * as React from "react";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import type { BoardPostDetail } from "../api/boards";
 import type { ProjectDetailViewModel } from "./-view-models";
 
 export function buildProjectHref(
@@ -175,6 +176,7 @@ export function ProjectNewPage(props: {
 
 export function ProjectDetailPage(props: {
   detail: ProjectDetailViewModel | null | undefined;
+  readmePost?: BoardPostDetail | null;
   runtimeConfig: RuntimeConfig;
   onEnrollProject?: (ownerName: string, projectName: string) => void;
   onCancelEnrollProject?: (ownerName: string, projectName: string) => void;
@@ -314,10 +316,31 @@ export function ProjectDetailPage(props: {
           </a>
         </nav>
         <div>
-          {activeTab === "readme" ? <h3>README</h3> : null}
-          {activeTab === "history" ? <h3>Recent history</h3> : null}
-          {activeTab === "dashboard" ? <h3>Dashboard</h3> : null}
-          <p>Legacy placeholder panel while real {activeTab} content stays outside Wave 2A.</p>
+          {activeTab === "readme" ? (
+            props.readmePost ? (
+              <article className="board-view project-readme-post">
+                <h3>{props.readmePost.title || "README"}</h3>
+                <div dangerouslySetInnerHTML={{ __html: props.readmePost.bodyHtml }} />
+              </article>
+            ) : (
+              <>
+                <h3>README</h3>
+                <p>No README post yet.</p>
+              </>
+            )
+          ) : null}
+          {activeTab === "history" ? (
+            <>
+              <h3>Recent history</h3>
+              <p>Legacy placeholder panel while real history content stays outside Wave 2A.</p>
+            </>
+          ) : null}
+          {activeTab === "dashboard" ? (
+            <>
+              <h3>Dashboard</h3>
+              <p>Legacy placeholder panel while real dashboard content stays outside Wave 2A.</p>
+            </>
+          ) : null}
         </div>
       </section>
       <section>

@@ -53,8 +53,15 @@ pub fn deliver(mail: OutboundMail) -> Result<(), String> {
     }
 
     let email = Message::builder()
-        .from(mail.from.parse().map_err(|error| format!("invalid from address: {error}"))?)
-        .to(mail.to.parse().map_err(|error| format!("invalid to address: {error}"))?)
+        .from(
+            mail.from
+                .parse()
+                .map_err(|error| format!("invalid from address: {error}"))?,
+        )
+        .to(mail
+            .to
+            .parse()
+            .map_err(|error| format!("invalid to address: {error}"))?)
         .subject(mail.subject)
         .body(mail.body)
         .map_err(|error| format!("invalid mail message: {error}"))?;
@@ -67,8 +74,12 @@ pub fn deliver(mail: OutboundMail) -> Result<(), String> {
     let mut builder = SmtpTransport::relay(&host)
         .map_err(|error| format!("smtp relay configuration failed: {error}"))?
         .port(port);
-    let user = std::env::var("SMTP_USER").ok().filter(|value| !value.trim().is_empty());
-    let pass = std::env::var("SMTP_PASS").ok().filter(|value| !value.trim().is_empty());
+    let user = std::env::var("SMTP_USER")
+        .ok()
+        .filter(|value| !value.trim().is_empty());
+    let pass = std::env::var("SMTP_PASS")
+        .ok()
+        .filter(|value| !value.trim().is_empty());
     if let (Some(user), Some(pass)) = (user, pass) {
         builder = builder.credentials(Credentials::new(user, pass));
     }
@@ -81,6 +92,11 @@ pub fn deliver(mail: OutboundMail) -> Result<(), String> {
 
 fn read_bool_env(name: &str) -> bool {
     std::env::var(name)
-        .map(|value| matches!(value.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+        .map(|value| {
+            matches!(
+                value.trim().to_ascii_lowercase().as_str(),
+                "1" | "true" | "yes" | "on"
+            )
+        })
         .unwrap_or(false)
 }
