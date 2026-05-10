@@ -555,7 +555,7 @@ DELETE /:owner/:project/post/comment/:id/delete → 댓글 삭제
 - [x] 게시글 레이아웃: React route가 legacy class anchor(`post-list-wrap`, `notice-wrap`, `board-view`, `board-comment-wrap`, `board-labels`, `ybtn`)를 사용한다.
 - [x] 댓글: 시간순 정렬과 마크다운 렌더링을 제공한다.
 - [x] 검증: `frontend/tests/board-posting-parity.e2e.ts`가 프로젝트/조직 board list, detail, comment CRUD, watch, create/edit/delete CSRF, filter/sort/label/project selector, placeholder 제거를 전용 Playwright surface로 검증한다.
-- [ ] Deferred: Git-backed README commit/sync, issue template edit, online code file edit, `/-_-api/v1/**` board compatibility, board search indexing.
+- [ ] Deferred: Git-backed README commit/sync, issue template edit, online code file edit, `/-_-api/v1/**` board compatibility.
 
 ---
 
@@ -786,19 +786,21 @@ GET   /organizations/:name/search            → 조직 내 검색
 
 | 기능              | Legacy 동작                                                                     | 현재 상태 | Phase |
 | ----------------- | ------------------------------------------------------------------------------- | --------- | ----- |
-| 전체 검색         | 모든 프로젝트의 이슈/게시판/댓글/마일스톤 검색                                  | gap       | 5     |
-| 프로젝트 내 검색  | 특정 프로젝트 범위 검색                                                         | gap       | 5     |
-| 조직 내 검색      | 조직 소속 프로젝트 범위 검색                                                    | gap       | 5     |
-| 검색 타입 필터    | issue, posting, issue_comment, posting_comment, milestone, review_comment, user | gap       | 5     |
-| 검색 결과 그룹핑  | 타입별 결과 수 + 결과 목록                                                      | gap       | 5     |
-| 검색 페이지네이션 | 결과 페이지네이션                                                               | gap       | 5     |
+| 전체 검색         | 모든 프로젝트의 이슈/게시판/댓글/마일스톤 검색                                  | implemented (Phase 5C app runtime) | 5     |
+| 프로젝트 내 검색  | 특정 프로젝트 범위 검색                                                         | implemented (Phase 5C app runtime) | 5     |
+| 조직 내 검색      | 조직 소속 프로젝트 범위 검색                                                    | implemented (Phase 5C app runtime) | 5     |
+| 검색 타입 필터    | issue, project, posting, issue_comment, posting_comment, milestone, review_comment, user | implemented (Phase 5C app runtime) | 5     |
+| 검색 결과 그룹핑  | 타입별 결과 수 + 결과 목록                                                      | implemented (Phase 5C app runtime) | 5     |
+| 검색 페이지네이션 | 결과 페이지네이션                                                               | implemented (Phase 5C app runtime) | 5     |
 
 #### 검수 기준
 
-- [ ] 검색 결과: legacy `search/result.scala.html`과 동일한 타입별 탭 + 결과 목록 구조
-- [ ] 검색 범위: 전체/프로젝트/조직 3가지 모드 지원
-- [ ] 검색 대상: Issue, Posting, IssueComment, PostingComment, Milestone, ReviewComment, User
-- [ ] 각 결과 항목: 프로젝트명, 제목/내용 스니펫, 작성자, 날짜 표시
+- [x] 검색 결과: legacy `search/result.scala.html`과 동일한 타입별 탭 + 결과 목록 구조
+- [x] 검색 범위: 전체/프로젝트/조직 3가지 모드 지원
+- [x] 검색 대상: Issue, Project, Posting, IssueComment, PostingComment, Milestone, ReviewComment, User
+- [x] 각 결과 항목: 프로젝트명, 제목/내용 스니펫, 작성자, 날짜 표시
+
+**Phase 5C 구현 메모**: app runtime REST는 `/api/v1/search`, `/api/v1/projects/:owner/:project/search`, `/api/v1/organizations/:organization/search`만 제공한다. `keyword`와 `searchType`는 required이고 invalid/missing query는 400이다. `searchType=auto`는 legacy order대로 result type을 선택하며, project scope에서는 `project` type을 제외한다. `/-_-api/v1/**` legacy external search compatibility, full-text index, async indexing, ranking 개선은 별도 migrator/deferred scope다.
 
 ---
 
@@ -1217,12 +1219,12 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 조직 CRUD         | ✅ 구현           | 생성/수정/삭제/멤버/가입                                         |
 | 프로젝트 CRUD     | ✅ 구현           | 생성/수정/설정/감시/즐겨찾기                                     |
 | 이슈              | ✅ Phase 2A 구현  | CRUD, 댓글, 타임라인, watch/vote/assignee, mass update, Markdown |
-| 게시판            | ❌ 미구현         | placeholder route만                                              |
+| 게시판            | 🔶 Phase 5B 구현  | project/organization board app surface                           |
 | 라벨/마일스톤     | ✅ 구현           | 라벨/카테고리 관리, 마일스톤 CRUD/state 구현                     |
 | 코드 브라우저     | 🔶 Phase 3A 구현  | read-only Git 폴더/파일 보기, 브랜치 선택기                      |
 | Git Smart HTTP    | ❌ 미구현         |                                                                  |
 | PR/리뷰           | 🔶 Phase 4A 구현  | read-only PR 목록/상세/changes/reviews 및 조직 PR 목록. PR mutation/merge/fork/review-comment mutation은 gap |
-| 검색              | ❌ 미구현         | `crates/search` placeholder                                      |
+| 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, mail queue staging |
 | 웹훅              | ❌ 미구현         | DB 엔티티만 존재                                                 |
 | 관리자            | ❌ 미구현         |                                                                  |
@@ -1351,7 +1353,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/organizations/:name/settingform` | GET      | `GET /api/v1/organizations/:name/settings` | `organizations/$organizationName/settingform` | implemented        |
 | `/organizations/:name/issues`      | GET      | `GET /api/v1/organizations/:name/issues` | `organizations/$organizationName/issues`      | implemented        |
 | `/organizations/:name/boards`      | GET      | `GET /api/v1/organizations/:name/boards` | `organizations/$organizationName/boards`      | implemented (core) |
-| `/search`                          | GET      | —                                     | `search/`                                     | gap                |
+| `/search`                          | GET      | `GET /api/v1/search`                 | `search/`                                     | implemented        |
 | `/files`                           | POST     | `POST /files` direct                  | —                                             | implemented        |
 | `/files/:id`                       | GET      | `GET /files/:id` direct               | —                                             | implemented        |
 | `/notification`                    | GET      | `GET /api/v1/notifications`           | `notification/`                               | implemented (기본) |
@@ -1387,7 +1389,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Milestone follow-up: migration export and search milestone result type
 - Code follow-up: raw file/download/image routes, syntax highlighting, commit history/detail, branch admin, compare, Smart HTTP
 - PullRequest: create/detail/list/merge/close/reopen/review comment/reviewer lifecycle
-- Search: global/project/organization search
+- Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: read state, SMTP scheduler/delivery, draft-time merge, recipient limit, and full mail notification parity
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope
 - Webhook: project webhook CRUD

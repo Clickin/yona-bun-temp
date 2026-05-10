@@ -4929,6 +4929,7 @@ dependencies = [
  "serde",
  "tokio",
  "yona-rust-pilot-migration",
+ "yona-rust-search",
 ]
 
 [[package]]
@@ -4982,12 +4983,16 @@ dependencies = [
  "yona-rust-integrations",
  "yona-rust-persistence",
  "yona-rust-pilot-migration",
+ "yona-rust-search",
  "yona-rust-vcs",
 ]
 
 [[package]]
 name = "yona-rust-search"
 version = "0.1.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "yona-rust-vcs"

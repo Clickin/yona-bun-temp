@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PlaceholderPage } from "../-shared";
+import { SearchRoutePage } from "../-search-views";
 
 export const Route = createFileRoute("/search")({
   component: SearchRouteComponent,
 });
 
 function SearchRouteComponent() {
-  return <PlaceholderPage href="/search" title="Search" />;
+  return <SearchRoutePage scope={{ type: "global" }} />;
 }

@@ -1,4 +1,6 @@
 use sea_orm::entity::prelude::DateTime;
+use serde::Serialize;
+use yona_rust_search::SearchSnippet;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AppUserRecord {
@@ -740,6 +742,90 @@ pub struct ProjectMilestoneSummaryRecord {
 pub struct ProjectListEntry {
     pub owner_name: String,
     pub project_name: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SearchScope {
+    Global,
+    Organization,
+    Project,
+}
+
+impl SearchScope {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Global => "global",
+            Self::Organization => "organization",
+            Self::Project => "project",
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SearchRepositoryInput {
+    pub actor_id: Option<i64>,
+    pub keyword: String,
+    pub organization_name: Option<String>,
+    pub owner_name: Option<String>,
+    pub page_num: u32,
+    pub project_name: Option<String>,
+    pub requested_search_type: String,
+    pub search_type: String,
+    pub scope: SearchScope,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchCountsRecord {
+    pub issues: u32,
+    pub users: u32,
+    pub projects: u32,
+    pub posts: u32,
+    pub milestones: u32,
+    pub issue_comments: u32,
+    pub post_comments: u32,
+    pub reviews: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchContextRecord {
+    pub organization_name: String,
+    pub owner_name: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchItemRecord {
+    pub author_label: String,
+    pub author_login_id: String,
+    pub created_label: String,
+    pub href: String,
+    pub id: String,
+    pub number: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub snippets: Vec<SearchSnippet>,
+    pub state: String,
+    pub title: String,
+    pub r#type: String,
+    pub updated_label: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchResultRecord {
+    pub context: SearchContextRecord,
+    pub counts: SearchCountsRecord,
+    pub items: Vec<SearchItemRecord>,
+    pub keyword: String,
+    pub page_num: u32,
+    pub page_size: u32,
+    pub requested_search_type: String,
+    pub scope: String,
+    pub search_type: String,
+    pub total_count: u32,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

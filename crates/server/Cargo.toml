@@ -37,6 +37,7 @@ yona-rust-domain = { path = "../domain" }
 yona-rust-integrations = { path = "../integrations" }
 yona-rust-persistence = { path = "../persistence" }
 yona-rust-pilot-migration = { path = "../migration" }
+yona-rust-search = { path = "../search" }
 yona-rust-vcs = { path = "../vcs" }
 
 [build-dependencies]

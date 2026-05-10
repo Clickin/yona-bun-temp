@@ -103,5 +103,18 @@ export const apiQueryKeys = {
     list: (input: { from: number; size: number }) =>
       [...apiQueryKeys.v1(), "notifications", { from: input.from, size: input.size }] as const,
   },
+  search: {
+    global: (input: { keyword: string; pageNum: number; searchType: string }) =>
+      [...apiQueryKeys.v1(), "search", "global", input] as const,
+    organization: (
+      organizationName: string,
+      input: { keyword: string; pageNum: number; searchType: string },
+    ) => [...apiQueryKeys.organization.base(organizationName), "search", input] as const,
+    project: (
+      ownerName: string,
+      projectName: string,
+      input: { keyword: string; pageNum: number; searchType: string },
+    ) => [...apiQueryKeys.project.base(ownerName, projectName), "search", input] as const,
+  },
   session: () => [...apiQueryKeys.v1(), "session"] as const,
 };
