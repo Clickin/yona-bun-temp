@@ -30,7 +30,9 @@ use yona_rust_domain::{
 };
 use yona_rust_integrations::{deliver, OutboundMail};
 use yona_rust_search::SearchType;
-use yona_rust_vcs::{CodeBrowserSnapshot, CodeEntryRecord, CodeFileRecord, VcsError};
+use yona_rust_vcs::{
+    CodeBrowserSnapshot, CodeEntryRecord, CodeFileBytesRecord, CodeFileRecord, VcsError,
+};
 
 #[allow(clippy::missing_panics_doc)]
 pub mod generated {
@@ -263,6 +265,15 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let comment_unvote_backend = route_backend.clone();
     let comment_unvote_session_manager = session_manager.clone();
     let comment_unvote_base_path = base_path.clone();
+    let raw_code_backend = route_backend.clone();
+    let raw_code_session_manager = session_manager.clone();
+    let raw_code_base_path = base_path.clone();
+    let open_code_backend = route_backend.clone();
+    let open_code_session_manager = session_manager.clone();
+    let open_code_base_path = base_path.clone();
+    let image_code_backend = route_backend.clone();
+    let image_code_session_manager = session_manager.clone();
+    let image_code_base_path = base_path.clone();
     let rest_router = build_rest_router(pilot_service.clone());
 
     let mut base_router = Router::new()
@@ -369,6 +380,87 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     .await
                 }
             }),
+        )
+        .route(
+            "/{owner}/{project}/rawcode/{revision}/{*path}",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project, revision, path)): Path<(
+                    String,
+                    String,
+                    String,
+                    String,
+                )>| {
+                    async move {
+                        direct_code_file(
+                            headers,
+                            owner,
+                            project,
+                            revision,
+                            path,
+                            DirectCodeFileMode::Raw,
+                            raw_code_session_manager.clone(),
+                            raw_code_backend.clone(),
+                            raw_code_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/files/{revision}/{*path}",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project, revision, path)): Path<(
+                    String,
+                    String,
+                    String,
+                    String,
+                )>| {
+                    async move {
+                        direct_code_file(
+                            headers,
+                            owner,
+                            project,
+                            revision,
+                            path,
+                            DirectCodeFileMode::Open,
+                            open_code_session_manager.clone(),
+                            open_code_backend.clone(),
+                            open_code_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/image/{revision}/{*path}",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project, revision, path)): Path<(
+                    String,
+                    String,
+                    String,
+                    String,
+                )>| {
+                    async move {
+                        direct_code_file(
+                            headers,
+                            owner,
+                            project,
+                            revision,
+                            path,
+                            DirectCodeFileMode::Image,
+                            image_code_session_manager.clone(),
+                            image_code_backend.clone(),
+                            image_code_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
         )
         .route(
             "/{owner}/{project}/issue/labels",
@@ -1543,6 +1635,110 @@ fn direct_status_from_connect_error(error: ConnectError) -> StatusCode {
     } else {
         StatusCode::INTERNAL_SERVER_ERROR
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum DirectCodeFileMode {
+    Image,
+    Open,
+    Raw,
+}
+
+async fn direct_code_file(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    revision: String,
+    path: String,
+    mode: DirectCodeFileMode,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &backend else {
+        return StatusCode::NOT_IMPLEMENTED.into_response();
+    };
+    let authorization = match repository
+        .read_project_authorization(&owner_name, &project_name, actor_id)
+        .await
+    {
+        Ok(Some(authorization)) => authorization,
+        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+    let read_allowed = match project_read_allowed(&authorization, actor_id.is_none()) {
+        Ok(allowed) => allowed,
+        Err(_) => return StatusCode::BAD_REQUEST.into_response(),
+    };
+    if !read_allowed || !project_code_menu_visible(&authorization, true) {
+        return if actor_id.is_none() {
+            StatusCode::UNAUTHORIZED.into_response()
+        } else {
+            StatusCode::FORBIDDEN.into_response()
+        };
+    }
+
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    match yona_rust_vcs::read_file_bytes(&repo_path, &revision, &path) {
+        Ok(file) => direct_code_file_response(file, mode),
+        Err(VcsError::NotFound) if mode == DirectCodeFileMode::Raw => {
+            direct_code_raw_missing_redirect(
+                &base_path,
+                &owner_name,
+                &project_name,
+                &revision,
+                &path,
+            )
+        }
+        Err(error) => direct_code_file_error(error),
+    }
+}
+
+fn direct_code_file_response(file: CodeFileBytesRecord, mode: DirectCodeFileMode) -> Response {
+    let content_type = match mode {
+        DirectCodeFileMode::Raw => "text/plain; charset=utf-8".to_string(),
+        DirectCodeFileMode::Image | DirectCodeFileMode::Open => file.mime_type,
+    };
+    let disposition = match mode {
+        DirectCodeFileMode::Open => format!("inline; filename=\"{}\"", file.name.replace('"', "")),
+        DirectCodeFileMode::Image | DirectCodeFileMode::Raw => String::new(),
+    };
+    let mut response = file.bytes.into_response();
+    if let Ok(header_value) = HeaderValue::from_str(&content_type) {
+        response
+            .headers_mut()
+            .insert(http::header::CONTENT_TYPE, header_value);
+    }
+    if !disposition.is_empty() {
+        if let Ok(header_value) = HeaderValue::from_str(&disposition) {
+            response
+                .headers_mut()
+                .insert(http::header::CONTENT_DISPOSITION, header_value);
+        }
+    }
+    response
+}
+
+fn direct_code_file_error(error: VcsError) -> Response {
+    let error = code_browser_error(error);
+    error.code.http_status().into_response()
+}
+
+fn direct_code_raw_missing_redirect(
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    revision: &str,
+    path: &str,
+) -> Response {
+    let redirect_path = format!(
+        "/{owner_name}/{project_name}/code/{revision}/{}",
+        path.trim_start_matches('/')
+    );
+    Redirect::to(&base_path_href(base_path, &redirect_path)).into_response()
 }
 
 #[derive(Serialize)]

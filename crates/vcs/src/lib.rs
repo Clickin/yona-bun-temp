@@ -51,6 +51,14 @@ pub struct CodeFileRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeFileBytesRecord {
+    pub bytes: Vec<u8>,
+    pub mime_type: String,
+    pub name: String,
+    pub path: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestDiffSnapshot {
     pub commits: Vec<PullRequestDiffCommitRecord>,
     pub files: Vec<PullRequestChangedFileRecord>,
@@ -138,6 +146,42 @@ pub fn read_code_browser(
         }),
         _ => Err(VcsError::NotFound),
     }
+}
+
+pub fn read_file_bytes(
+    repo_path: &Path,
+    revision: &str,
+    path: &str,
+) -> Result<CodeFileBytesRecord, VcsError> {
+    if !repo_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Err(VcsError::NotFound);
+    }
+    let revision = revision.trim();
+    if revision.is_empty() {
+        return Err(VcsError::NotFound);
+    }
+    let spec = object_spec(revision, &clean_path);
+    let object_type = git_output(repo_path, &["cat-file", "-t", &spec])?;
+    if object_type.trim() != "blob" {
+        return Err(VcsError::NotFound);
+    }
+    let bytes = git_bytes(repo_path, &["show", &spec])?;
+    Ok(CodeFileBytesRecord {
+        bytes,
+        mime_type: mime_guess::from_path(&clean_path)
+            .first_or_octet_stream()
+            .to_string(),
+        name: Path::new(&clean_path)
+            .file_name()
+            .and_then(|value| value.to_str())
+            .unwrap_or_default()
+            .to_string(),
+        path: clean_path,
+    })
 }
 
 pub fn read_pull_request_diff(
@@ -544,6 +588,7 @@ fn git_bytes(repo_path: &Path, args: &[&str]) -> Result<Vec<u8>, VcsError> {
     if stderr.contains("Not a valid object name")
         || stderr.contains("ambiguous argument")
         || stderr.contains("pathspec")
+        || stderr.contains("does not exist in")
         || stderr.contains("exists on disk, but not in")
     {
         Err(VcsError::NotFound)

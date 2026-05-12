@@ -48,6 +48,7 @@
 ## Phase 3: 저장소와 VCS
 
 - Phase 3A complete: read-only Git code browser with existing repo detection, no-head state, branch selector, breadcrumbs, folder entries, and text file view.
+- Phase 3B complete: legacy direct Git blob file surfaces for `rawcode`, `files`, and `image`, reusing code read ACL/menu visibility, safe repo path validation, MIME response shaping, and code view Raw/Open/image/download anchors.
 - smart HTTP
 - commit discussion
 - VCS flows

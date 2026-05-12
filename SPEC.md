@@ -187,7 +187,7 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 | Phase 0  | Rust workspace promotion, 문서 정리, provenance 갱신                         | ✅ **완료**                                   |
 | Phase 1  | 인증, Workspace, 조직, 프로젝트                                                | ✅ **완료**                                   |
 | Phase 2  | 이슈, 댓글, 첨부, 라벨, 마일스톤                                               | 🔶 부분 구현                                  |
-| Phase 3  | 저장소 브라우저, Smart HTTP, 커밋 토론, VCS                                    | 🔶 Phase 3A 구현                              |
+| Phase 3  | 저장소 브라우저, Smart HTTP, 커밋 토론, VCS                                    | 🔶 Phase 3B 구현                              |
 | Phase 4 | Pull Request, 코드 리뷰                              | 후속                                          |
 | Phase 5 | 검색, 게시판, 알림, 연동(Webhook)                    | 후속                                          |
 | Phase 6 | 관리자, 마이그레이션 도구, 배포 하드닝               | 후속                                          |
@@ -660,8 +660,8 @@ GET   /:owner/:project/compare/:rev        → 커밋 비교
 | 파일/폴더 트리 브라우저      | 디렉토리 탐색, 파일 내용 표시       | ✅ Phase 3A 구현      | 3     |
 | 브랜치 선택기                | 드롭다운으로 브랜치/태그 전환       | ✅ Phase 3A 기본 구현 | 3     |
 | 파일 보기 (syntax highlight) | 코드 하이라이트, 라인 번호          | 🔶 텍스트 보기 구현   | 3     |
-| Raw 파일 다운로드            | 바이너리/텍스트 직접 다운로드       | gap                   | 3     |
-| 이미지 미리보기              | 이미지 파일 인라인 표시             | gap                   | 3     |
+| Raw 파일 다운로드            | 바이너리/텍스트 직접 다운로드       | ✅ Phase 3B 구현      | 3     |
+| 이미지 미리보기              | 이미지 파일 인라인 표시             | ✅ Phase 3B 구현      | 3     |
 | 커밋 이력                    | 커밋 목록, 페이지네이션             | gap                   | 3     |
 | 커밋 상세 (diff)             | 변경 파일 목록, unified diff        | gap                   | 3     |
 | 커밋 댓글                    | 커밋에 댓글 작성/삭제               | gap                   | 3     |
@@ -670,9 +670,10 @@ GET   /:owner/:project/compare/:rev        → 커밋 비교
 
 #### 검수 기준
 
-- [ ] 코드 브라우저: `/:owner/:project/code` 접근 시 기본 브랜치의 루트 디렉토리가 legacy `code/view.scala.html` 레이아웃으로 표시
-- [ ] 파일 보기: syntax highlighting, 라인 번호, raw 다운로드 링크
-- [ ] 브랜치 선택기: 드롭다운에 브랜치/태그 목록, 현재 브랜치 표시
+- [x] 코드 브라우저: `/:owner/:project/code` 접근 시 기본 브랜치의 루트 디렉토리가 legacy `code/view.scala.html` 레이아웃으로 표시
+- [x] Raw/Open/Image 직접 파일 라우트: `rawcode`, `files`, `image`가 동일한 code read ACL과 Git blob path validation을 사용한다
+- [ ] 파일 보기: syntax highlighting, 라인 번호
+- [x] 브랜치 선택기: 드롭다운에 브랜치/태그 목록, 현재 브랜치 표시
 - [ ] 커밋 이력: 시간역순, 작성자/메시지/해시, 페이지네이션
 - [ ] 커밋 diff: unified diff 형식, 파일별 변경 라인 수, 인라인 코멘트 가능 위치 표시
 
@@ -1221,7 +1222,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 이슈              | ✅ Phase 2A 구현  | CRUD, 댓글, 타임라인, watch/vote/assignee, mass update, Markdown |
 | 게시판            | 🔶 Phase 5B 구현  | project/organization board app surface                           |
 | 라벨/마일스톤     | ✅ 구현           | 라벨/카테고리 관리, 마일스톤 CRUD/state 구현                     |
-| 코드 브라우저     | 🔶 Phase 3A 구현  | read-only Git 폴더/파일 보기, 브랜치 선택기                      |
+| 코드 브라우저     | 🔶 Phase 3B 구현  | read-only Git 폴더/파일 보기, 브랜치 선택기, raw/open/image 파일 표면 |
 | Git Smart HTTP    | ❌ 미구현         |                                                                  |
 | PR/리뷰           | 🔶 Phase 4A 구현  | read-only PR 목록/상세/changes/reviews 및 조직 PR 목록. PR mutation/merge/fork/review-comment mutation은 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
@@ -1344,6 +1345,9 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/:owner/:project/pullRequests`    | GET      | —                                     | `$owner/$projectName/pullRequests`            | gap                |
 | `/:owner/:project/code`            | GET      | `GET /api/v1/projects/:owner/:project/code` | `$owner/$projectName/code`                    | implemented (기본) |
 | `/:owner/:project/code/:branch/*`  | GET      | `GET /api/v1/projects/:owner/:project/code?branch=&path=` | `$owner/$projectName/code/$branch/$`          | implemented (기본) |
+| `/:owner/:project/rawcode/:rev/*`  | GET      | direct Git blob stream                 | —                                             | implemented        |
+| `/:owner/:project/files/:rev/*`    | GET      | direct Git blob stream                 | —                                             | implemented        |
+| `/:owner/:project/image/:rev/*`    | GET      | direct Git blob stream                 | —                                             | implemented        |
 | `/:owner/:project/commits`         | GET      | —                                     | —                                             | gap                |
 | `/:owner/:project/milestones`      | GET      | `GET /api/v1/owners/:owner/projects/:project/milestones` | `$owner/$projectName/milestones`              | implemented        |
 | `/:owner/:project/branches`        | GET      | —                                     | —                                             | gap                |
@@ -1387,7 +1391,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Board: posting list/detail/create/update/delete/comment flows
 - Label follow-up: copyLabels Phase 6 and legacy external label/project API parity
 - Milestone follow-up: migration export and search milestone result type
-- Code follow-up: raw file/download/image routes, syntax highlighting, commit history/detail, branch admin, compare, Smart HTTP
+- Code follow-up: syntax highlighting, archive download, commit history/detail, branch admin, compare, Smart HTTP
 - PullRequest: create/detail/list/merge/close/reopen/review comment/reviewer lifecycle
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: read state, SMTP scheduler/delivery, draft-time merge, recipient limit, and full mail notification parity
