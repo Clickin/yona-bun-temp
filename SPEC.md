@@ -660,8 +660,8 @@ GET   /:owner/:project/compare/:rev        → 커밋 비교
 | 파일/폴더 트리 브라우저      | 디렉토리 탐색, 파일 내용 표시       | ✅ Phase 3A 구현      | 3     |
 | 브랜치 선택기                | 드롭다운으로 브랜치/태그 전환       | ✅ Phase 3A 기본 구현 | 3     |
 | 파일 보기 (syntax highlight) | 코드 하이라이트, 라인 번호          | 🔶 텍스트 보기 구현   | 3     |
-| Raw 파일 다운로드            | 바이너리/텍스트 직접 다운로드       | gap                   | 3     |
-| 이미지 미리보기              | 이미지 파일 인라인 표시             | gap                   | 3     |
+| Raw 파일 다운로드            | 바이너리/텍스트 직접 다운로드       | ✅ Phase 3B 구현      | 3     |
+| 이미지 미리보기              | 이미지 파일 인라인 표시             | ✅ Phase 3B 구현      | 3     |
 | 커밋 이력                    | 커밋 목록, 페이지네이션             | gap                   | 3     |
 | 커밋 상세 (diff)             | 변경 파일 목록, unified diff        | gap                   | 3     |
 | 커밋 댓글                    | 커밋에 댓글 작성/삭제               | gap                   | 3     |
@@ -671,7 +671,8 @@ GET   /:owner/:project/compare/:rev        → 커밋 비교
 #### 검수 기준
 
 - [ ] 코드 브라우저: `/:owner/:project/code` 접근 시 기본 브랜치의 루트 디렉토리가 legacy `code/view.scala.html` 레이아웃으로 표시
-- [ ] 파일 보기: syntax highlighting, 라인 번호, raw 다운로드 링크
+- [x] Raw/Open/Image 직접 파일 라우트: `rawcode`, `files`, `image`가 동일한 code read ACL과 Git blob path validation을 사용한다
+- [ ] 파일 보기: syntax highlighting, 라인 번호
 - [ ] 브랜치 선택기: 드롭다운에 브랜치/태그 목록, 현재 브랜치 표시
 - [ ] 커밋 이력: 시간역순, 작성자/메시지/해시, 페이지네이션
 - [ ] 커밋 diff: unified diff 형식, 파일별 변경 라인 수, 인라인 코멘트 가능 위치 표시
@@ -1344,6 +1345,9 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/:owner/:project/pullRequests`    | GET      | —                                     | `$owner/$projectName/pullRequests`            | gap                |
 | `/:owner/:project/code`            | GET      | `GET /api/v1/projects/:owner/:project/code` | `$owner/$projectName/code`                    | implemented (기본) |
 | `/:owner/:project/code/:branch/*`  | GET      | `GET /api/v1/projects/:owner/:project/code?branch=&path=` | `$owner/$projectName/code/$branch/$`          | implemented (기본) |
+| `/:owner/:project/rawcode/:rev/*`  | GET      | direct Git blob stream                 | —                                             | implemented        |
+| `/:owner/:project/files/:rev/*`    | GET      | direct Git blob stream                 | —                                             | implemented        |
+| `/:owner/:project/image/:rev/*`    | GET      | direct Git blob stream                 | —                                             | implemented        |
 | `/:owner/:project/commits`         | GET      | —                                     | —                                             | gap                |
 | `/:owner/:project/milestones`      | GET      | `GET /api/v1/owners/:owner/projects/:project/milestones` | `$owner/$projectName/milestones`              | implemented        |
 | `/:owner/:project/branches`        | GET      | —                                     | —                                             | gap                |

@@ -1,5 +1,5 @@
 use axum::body::Body;
-use http::{Method, Request, Response, StatusCode};
+use http::{HeaderMap, Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::Database;
 use serde_json::json;
@@ -95,6 +95,26 @@ async fn rest_get(app: axum::Router, path: &str, cookie_header: Option<&str>) ->
         .unwrap()
 }
 
+async fn direct_get(app: axum::Router, path: &str, cookie_header: Option<&str>) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(Method::GET)
+        .uri(format!("/yona{path}"));
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+
+    app.oneshot(builder.body(Body::empty()).unwrap())
+        .await
+        .unwrap()
+}
+
+async fn response_bytes(response: Response<Body>) -> (StatusCode, HeaderMap, Vec<u8>) {
+    let status = response.status();
+    let headers = response.headers().clone();
+    let bytes = response.into_body().collect().await.unwrap().to_bytes();
+    (status, headers, bytes.to_vec())
+}
+
 fn json_bool(value: &serde_json::Value, key: &str) -> bool {
     value
         .get(key)
@@ -180,6 +200,14 @@ fn seed_bare_repository(yona_data: &Path, project_id: i64) {
     fs::write(work.path().join("README.md"), "# Hello Yona\n").expect("readme");
     fs::create_dir_all(work.path().join("src")).expect("src dir");
     fs::write(work.path().join("src").join("main.rs"), "fn main() {}\n").expect("main");
+    fs::create_dir_all(work.path().join("assets")).expect("assets dir");
+    fs::write(
+        work.path().join("assets").join("logo.png"),
+        b"\x89PNG\r\n\x1a\n\0\0\0\rIHDR",
+    )
+    .expect("png");
+    fs::create_dir_all(work.path().join("bin")).expect("bin dir");
+    fs::write(work.path().join("bin").join("archive.bin"), b"\0binary").expect("binary");
     run_git(
         &[
             "--git-dir",
@@ -348,6 +376,125 @@ async fn rest_code_browser_reads_root_folder_and_text_file_from_git_repo() {
     assert_eq!(file["file"]["path"], "src/main.rs");
     assert_eq!(file["file"]["text"], "fn main() {}\n");
     assert!(!json_bool(&file["file"], "isBinary"));
+}
+
+#[tokio::test]
+async fn direct_code_file_routes_stream_raw_open_and_image_bytes() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+
+    let (raw_status, raw_headers, raw_body) = response_bytes(
+        direct_get(
+            app.clone(),
+            "/owner/projectYobi/rawcode/main/src/main.rs",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(raw_status, StatusCode::OK);
+    assert_eq!(raw_body, b"fn main() {}\n");
+    assert!(raw_headers[http::header::CONTENT_TYPE]
+        .to_str()
+        .unwrap()
+        .starts_with("text/plain"));
+
+    let (open_status, open_headers, open_body) = response_bytes(
+        direct_get(
+            app.clone(),
+            "/owner/projectYobi/files/main/assets/logo.png",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(open_status, StatusCode::OK);
+    assert_eq!(&open_body[..8], b"\x89PNG\r\n\x1a\n");
+    assert_eq!(
+        open_headers[http::header::CONTENT_TYPE].to_str().unwrap(),
+        "image/png"
+    );
+    assert!(open_headers[http::header::CONTENT_DISPOSITION]
+        .to_str()
+        .unwrap()
+        .contains("inline"));
+
+    let (image_status, image_headers, image_body) = response_bytes(
+        direct_get(
+            app.clone(),
+            "/owner/projectYobi/image/main/assets/logo.png",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(image_status, StatusCode::OK);
+    assert_eq!(image_body, open_body);
+    assert_eq!(
+        image_headers[http::header::CONTENT_TYPE].to_str().unwrap(),
+        "image/png"
+    );
+
+    let (binary_status, binary_headers, binary_body) = response_bytes(
+        direct_get(app, "/owner/projectYobi/files/main/bin/archive.bin", None).await,
+    )
+    .await;
+    assert_eq!(binary_status, StatusCode::OK);
+    assert_eq!(binary_body, b"\0binary");
+    assert_eq!(
+        binary_headers[http::header::CONTENT_TYPE].to_str().unwrap(),
+        "application/octet-stream"
+    );
+}
+
+#[tokio::test]
+async fn direct_raw_code_redirects_missing_file_and_rejects_path_traversal() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+
+    let missing = direct_get(
+        app.clone(),
+        "/owner/projectYobi/rawcode/main/missing.rs",
+        None,
+    )
+    .await;
+    assert_eq!(missing.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        missing
+            .headers()
+            .get(http::header::LOCATION)
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        "/yona/owner/projectYobi/code/main/missing.rs"
+    );
+
+    let traversal = direct_get(app, "/owner/projectYobi/rawcode/main/..%2Fsecret.txt", None).await;
+    assert_eq!(traversal.status(), StatusCode::BAD_REQUEST);
 }
 
 #[tokio::test]

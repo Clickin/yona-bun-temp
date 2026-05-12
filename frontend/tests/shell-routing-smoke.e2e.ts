@@ -648,6 +648,14 @@ test("project code routes render branch folder and text file views", async ({ pa
 
   await page.goto("/yona/admin/projectYobi/code/main/src/main.rs");
   await expect(page.locator(".file-header strong", { hasText: "main.rs" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Raw" })).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/rawcode/main/src/main.rs",
+  );
+  await expect(page.locator("#open-in-browser")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/files/main/src/main.rs",
+  );
   await expect(page.getByText("fn main() {}")).toBeVisible();
 });
 

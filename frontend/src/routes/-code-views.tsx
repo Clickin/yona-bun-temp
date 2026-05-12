@@ -30,6 +30,32 @@ function codeHref(
   return buildProjectHref(runtimeConfig, ownerName, projectName, suffix);
 }
 
+function encodePathSegments(path: string) {
+  const encodedSegments: string[] = [];
+  for (const segment of path.split("/")) {
+    if (segment.length > 0) {
+      encodedSegments.push(encodeURIComponent(segment));
+    }
+  }
+  return encodedSegments.join("/");
+}
+
+function codeFileAssetHref(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  routeName: "files" | "image" | "rawcode",
+  branch: string,
+  path: string,
+) {
+  return buildProjectHref(
+    runtimeConfig,
+    ownerName,
+    projectName,
+    `${routeName}/${encodeURIComponent(branch)}/${encodePathSegments(path)}`,
+  );
+}
+
 export function CodeBrowserPage(props: {
   code: CodeBrowserViewModel | null;
   detail: ProjectDetailViewModel | null;
@@ -144,7 +170,13 @@ export function CodeBrowserPage(props: {
               </nav>
             </div>
             {code?.file ? (
-              <CodeFileView file={code.file} />
+              <CodeFileView
+                file={code.file}
+                ownerName={detail.ownerName}
+                projectName={detail.projectName}
+                runtimeConfig={props.runtimeConfig}
+                selectedBranch={selectedBranch}
+              />
             ) : (
               <CodeFolderView
                 entries={code?.entries ?? []}
@@ -200,23 +232,114 @@ function CodeFolderView(props: {
   );
 }
 
-function CodeFileView(props: { file: NonNullable<CodeBrowserViewModel["file"]> }) {
+function CodeFileView(props: {
+  file: NonNullable<CodeBrowserViewModel["file"]>;
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+  selectedBranch: string;
+}) {
+  const rawHref = codeFileAssetHref(
+    props.runtimeConfig,
+    props.ownerName,
+    props.projectName,
+    "rawcode",
+    props.selectedBranch,
+    props.file.path,
+  );
+  const openHref = codeFileAssetHref(
+    props.runtimeConfig,
+    props.ownerName,
+    props.projectName,
+    "files",
+    props.selectedBranch,
+    props.file.path,
+  );
+  const imageHref = codeFileAssetHref(
+    props.runtimeConfig,
+    props.ownerName,
+    props.projectName,
+    "image",
+    props.selectedBranch,
+    props.file.path,
+  );
   if (props.file.isBinary) {
-    return <p>Binary file is not shown</p>;
+    return (
+      <div className="file-wrap" data-type="file">
+        <CodeFileHeader file={props.file} openHref={openHref} rawHref={rawHref} showRaw={false} />
+        {props.file.mimeType.startsWith("image/") ? (
+          <div className="image-wrap" id="showImage">
+            <img alt={props.file.name} src={imageHref} />
+          </div>
+        ) : (
+          <div className="file-wrap" id="showFile">
+            <p>
+              <strong className="filename">{props.file.name}</strong>
+              <br />
+              <span>{`${props.file.size} bytes`}</span>
+              <br />
+              <a className="filehref ybtn" href={openHref} target="_blank">
+                Download
+              </a>
+            </p>
+          </div>
+        )}
+      </div>
+    );
   }
   if (props.file.isTooLarge) {
-    return <p>{`Sorry, we cannot show a file larger than ${props.file.size} bytes here.`}</p>;
+    return (
+      <div className="file-wrap" data-type="file">
+        <CodeFileHeader file={props.file} openHref={openHref} rawHref={rawHref} showRaw={false} />
+        <p>
+          {`Sorry, we cannot show a file larger than ${props.file.size} bytes here.`}
+          <br />
+          <a className="filehref ybtn" href={rawHref} target="_blank">
+            View Raw
+          </a>
+        </p>
+      </div>
+    );
   }
   return (
     <div className="file-wrap" data-type="file">
-      <div className="file-header">
+      <CodeFileHeader file={props.file} openHref={openHref} rawHref={rawHref} showRaw={true} />
+      <pre id="showCode" className="code-wrap">
+        {props.file.text}
+      </pre>
+    </div>
+  );
+}
+
+function CodeFileHeader(props: {
+  file: NonNullable<CodeBrowserViewModel["file"]>;
+  openHref: string;
+  rawHref: string;
+  showRaw: boolean;
+}) {
+  return (
+    <div className="file-header">
+      <div id="fileInfo" className="file-info">
         <strong>{props.file.name}</strong>
         <span>{props.file.mimeType}</span>
         <span>{`${props.file.size} bytes`}</span>
       </div>
-      <pre id="showCode" className="code-wrap">
-        {props.file.text}
-      </pre>
+      <div className="pull-right">
+        {props.showRaw ? (
+          <a className="ybtn" href={props.rawHref} target="_blank">
+            Raw
+          </a>
+        ) : null}
+        <a
+          className="ybtn"
+          data-content="Open file in browser"
+          href={props.openHref}
+          id="open-in-browser"
+          target="_blank"
+        >
+          Open
+        </a>
+      </div>
     </div>
   );
 }
