@@ -38,7 +38,7 @@ Interpretation:
 | Auth / Workspace                        | [~] Partially implemented | Core account and settings flows exist; remember-me/admin approval/guest/OAuth/LDAP remain.                               |
 | Organization / Project core             | [~] Partially implemented | CRUD, members, enrollment, watch/favorite basics exist; project admin surfaces remain.                                   |
 | Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists, favorite issue, direct/project sharer effects, and issue/comment mention row effects exist over `/api/v1`; legacy external REST parity is separate migrator scope. |
-| VCS / Code hosting                      | [~] Started               | Read-only Git code browser plus raw/open/image file streaming and branch archive download exists; smart HTTP, history, branch admin, and provisioning remain. |
+| VCS / Code hosting                      | [~] Started               | Read-only Git code browser plus raw/open/image file streaming, branch archive download, and numbered syntax-highlighted text rendering exists; smart HTTP, history, branch admin, and provisioning remain. |
 | Pull Request / Review                   | [~] Started               | Phase 4A restores read-only project/org PR lists, PR detail, changes, and review lists; PR/review mutations remain deferred. |
 | Board / Posting                         | [~] Strong partial        | Project board CRUD/comment/watch/notice/README/label flows and organization board list exist over `/api/v1`; Git README sync, issue template/file edit, and legacy external API compatibility remain. |
 | Search                                  | [~] Strong partial        | Global/project/organization app search exists over `/api/v1` with all legacy result tabs, counts, snippets, pagination, and ACL filtering; full-text/indexed search and external API compatibility remain deferred. |
@@ -233,7 +233,8 @@ Interpretation:
 - [~] Repository browser
 - [x] Folder tree
 - [x] File content view
-- [ ] Syntax highlight
+- [x] Syntax highlight
+- [x] Line numbers
 - [x] Raw download
 - [x] Image preview
 - [x] Archive download

@@ -331,10 +331,180 @@ function CodeFileView(props: {
   return (
     <div className="file-wrap" data-type="file">
       <CodeFileHeader file={props.file} openHref={openHref} rawHref={rawHref} showRaw={true} />
-      <pre id="showCode" className="code-wrap">
-        {props.file.text}
-      </pre>
+      <CodeTextView file={props.file} />
     </div>
+  );
+}
+
+function CodeTextView(props: { file: NonNullable<CodeBrowserViewModel["file"]> }) {
+  const language = codeLanguageFromFile(props.file.path, props.file.mimeType);
+  const lines = codeLines(props.file.text);
+  return (
+    <pre
+      className="code-wrap code-syntax-wrap"
+      data-language={language}
+      data-mime-type={props.file.mimeType}
+      id="showCode"
+    >
+      {lines.map((line) => (
+        <span className="code-line-wrap" data-line-number={line.number} key={line.key}>
+          <span aria-hidden="true" className="line-number">
+            {line.number}
+          </span>
+          <code className="line-code">{highlightCodeLine(line.text, language)}</code>
+        </span>
+      ))}
+    </pre>
+  );
+}
+
+function codeLines(text: string) {
+  const normalized = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const trimmedTrailingNewline = normalized.endsWith("\n") ? normalized.slice(0, -1) : normalized;
+  const lines = trimmedTrailingNewline.split("\n");
+  const displayLines = lines.length > 0 ? lines : [""];
+  return displayLines.map((line, index) => ({
+    key: `${index + 1}:${line}`,
+    number: index + 1,
+    text: line,
+  }));
+}
+
+function codeLanguageFromFile(path: string, mimeType: string) {
+  const extension = path.split(".").pop()?.toLowerCase() ?? "";
+  if (extension === "rs") {
+    return "rust";
+  }
+  if (extension === "java") {
+    return "java";
+  }
+  if (extension === "js" || extension === "jsx" || extension === "ts" || extension === "tsx") {
+    return "javascript";
+  }
+  if (extension === "scala") {
+    return "scala";
+  }
+  if (extension === "html" || extension === "xml") {
+    return "markup";
+  }
+  if (extension === "css" || extension === "less" || extension === "scss") {
+    return "css";
+  }
+  if (extension === "md" || extension === "markdown") {
+    return "markdown";
+  }
+  if (mimeType.includes("json")) {
+    return "json";
+  }
+  if (mimeType.startsWith("text/")) {
+    return "text";
+  }
+  return "plain";
+}
+
+function highlightCodeLine(line: string, language: string) {
+  const tokenPattern =
+    /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  let tokenIndex = 0;
+  for (const match of line.matchAll(tokenPattern)) {
+    const token = match[0];
+    const index = match.index ?? 0;
+    if (index > cursor) {
+      parts.push(line.slice(cursor, index));
+    }
+    parts.push(
+      <span className={`syntax-token ${syntaxTokenClass(token, language)}`} key={tokenIndex}>
+        {token}
+      </span>,
+    );
+    tokenIndex += 1;
+    cursor = index + token.length;
+  }
+  if (cursor < line.length) {
+    parts.push(line.slice(cursor));
+  }
+  return parts.length > 0 ? parts : "\u00a0";
+}
+
+function syntaxTokenClass(token: string, language: string) {
+  if (token.startsWith("//") || token.startsWith("/*")) {
+    return "syntax-comment";
+  }
+  if (token.startsWith('"') || token.startsWith("'")) {
+    return "syntax-string";
+  }
+  if (/^\d/.test(token)) {
+    return "syntax-number";
+  }
+  if (isCodeKeyword(token, language)) {
+    return "syntax-keyword";
+  }
+  if (/^[{}()[\].,;:+\-*/%=<>!&|?]+$/.test(token)) {
+    return "syntax-punctuation";
+  }
+  return "syntax-identifier";
+}
+
+function isCodeKeyword(token: string, language: string) {
+  const commonKeywords = new Set([
+    "break",
+    "case",
+    "catch",
+    "class",
+    "const",
+    "continue",
+    "default",
+    "do",
+    "else",
+    "enum",
+    "false",
+    "for",
+    "if",
+    "import",
+    "interface",
+    "let",
+    "new",
+    "null",
+    "private",
+    "protected",
+    "public",
+    "return",
+    "static",
+    "switch",
+    "this",
+    "throw",
+    "true",
+    "try",
+    "void",
+    "while",
+  ]);
+  const rustKeywords = new Set([
+    "as",
+    "async",
+    "await",
+    "crate",
+    "dyn",
+    "fn",
+    "impl",
+    "let",
+    "match",
+    "mod",
+    "mut",
+    "pub",
+    "self",
+    "struct",
+    "trait",
+    "type",
+    "use",
+    "where",
+  ]);
+  const cssKeywords = new Set(["important", "media", "supports"]);
+  return (
+    commonKeywords.has(token) ||
+    (language === "rust" && rustKeywords.has(token)) ||
+    (language === "css" && cssKeywords.has(token))
   );
 }
 

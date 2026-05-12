@@ -76,6 +76,10 @@ describe("project code browser routing", () => {
     expect(textHtml).toContain('href="/yona/owner/projectYobi/files/main/src/main.rs"');
     expect(textHtml).toContain(">Raw</a>");
     expect(textHtml).toContain(">Open</a>");
+    expect(textHtml).toContain('data-language="rust"');
+    expect(textHtml).toContain('data-line-number="1"');
+    expect(textHtml).toContain('class="syntax-token syntax-keyword">fn</span>');
+    expect(textHtml).toContain('class="line-number">1</span>');
 
     const imageHtml = renderCodeFile({
       isBinary: true,

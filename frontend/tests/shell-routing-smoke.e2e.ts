@@ -660,6 +660,10 @@ test("project code routes render branch folder and text file views", async ({ pa
     "href",
     "/yona/admin/projectYobi/files/main/src/main.rs",
   );
+  await expect(page.locator("#showCode")).toHaveAttribute("data-language", "rust");
+  await expect(page.locator(".code-line-wrap").first()).toHaveAttribute("data-line-number", "1");
+  await expect(page.locator(".line-number").first()).toHaveText("1");
+  await expect(page.locator(".syntax-keyword").first()).toHaveText("fn");
   await expect(page.getByText("fn main() {}")).toBeVisible();
 });
 

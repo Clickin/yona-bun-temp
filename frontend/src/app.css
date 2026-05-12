@@ -617,6 +617,101 @@ h1 {
   color: #777;
 }
 
+.code-browse-wrap {
+  margin-top: 18px;
+}
+
+.code-browse-header,
+.file-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.code-breadcrumb-wrap {
+  display: inline-flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 180px;
+}
+
+.file-info,
+.pull-right {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.code-wrap {
+  margin: 0;
+  overflow: auto;
+  background: #fff;
+}
+
+.code-syntax-wrap {
+  display: grid;
+  padding: 0;
+  color: #333;
+  border: 1px solid #ddd;
+  border-top: 0;
+  font-family: Consolas, Menlo, Monaco, "Ubuntu Mono", "source-code-pro", monospace;
+  font-size: 12px;
+  line-height: 18px;
+  tab-size: 4;
+}
+
+.code-line-wrap {
+  display: grid;
+  grid-template-columns: minmax(44px, auto) minmax(0, 1fr);
+  min-width: max-content;
+}
+
+.line-number {
+  padding: 0 10px;
+  color: #999;
+  text-align: right;
+  user-select: none;
+  background: #f7f7f7;
+  border-right: 1px solid #e5e5e5;
+}
+
+.line-code {
+  display: block;
+  padding: 0 12px;
+  white-space: pre;
+}
+
+.syntax-comment {
+  color: #7a7a7a;
+}
+
+.syntax-keyword {
+  color: #005cc5;
+  font-weight: 600;
+}
+
+.syntax-string {
+  color: #9a4a00;
+}
+
+.syntax-number {
+  color: #6f42c1;
+}
+
+.syntax-punctuation {
+  color: #555;
+}
+
+.syntax-identifier {
+  color: inherit;
+}
+
 #pagination {
   display: flex;
   gap: 10px;

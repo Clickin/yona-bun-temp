@@ -2,9 +2,9 @@
 
 ## Scope
 
-- Phase 3A/3B/3C read-only Git code browser parity slice.
-- Covers existing Git repository read paths only: no-head state, branch selector, breadcrumbs, folder listing, text file view, raw file streaming, browser-open file streaming, image preview streaming, and branch archive download.
-- Does not cover repository provisioning, Smart HTTP, syntax highlighting, commit history/detail, branch administration, compare, inline edit, or SVN.
+- Phase 3A/3B/3C/3D read-only Git code browser parity slice.
+- Covers existing Git repository read paths only: no-head state, branch selector, breadcrumbs, folder listing, text file view, raw file streaming, browser-open file streaming, image preview streaming, branch archive download, and numbered syntax-highlighted text rendering.
+- Does not cover repository provisioning, Smart HTTP, commit history/detail, branch administration, compare, inline edit, or SVN.
 
 ## Legacy Sources
 
@@ -24,8 +24,9 @@
 - File path traversal is rejected before invoking Git.
 - Legacy `rawcode`, `files`, and `image` direct routes stream Git blobs through the same project read/code-menu authorization used by the REST code browser endpoint.
 - Legacy `code/:branch/download` streams a Git archive zip through the same project read/code-menu authorization and rejects missing Git revisions.
+- Legacy text file rendering used `#showCode` plus Ace; Rust keeps the same `#showCode`/`.code-wrap` anchors and renders line-numbered syntax token spans without adding a frontend dependency.
 
-## Phase 3A/3B/3C Evidence
+## Phase 3A/3B/3C/3D Evidence
 
 | Evidence | Rust target |
 | --- | --- |
@@ -38,7 +39,6 @@
 ## Remaining Phase 3 Follow-ups
 
 - Repository provisioning on project creation.
-- Syntax highlighting and line-number parity.
 - Commit history, commit detail/diff, commit comments, compare, and branch management.
 - Smart HTTP clone/pull/push and post-receive hooks.
 - SVN remains deferred.

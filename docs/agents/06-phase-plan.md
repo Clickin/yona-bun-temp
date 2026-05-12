@@ -50,6 +50,7 @@
 - Phase 3A complete: read-only Git code browser with existing repo detection, no-head state, branch selector, breadcrumbs, folder entries, and text file view.
 - Phase 3B complete: legacy direct Git blob file surfaces for `rawcode`, `files`, and `image`, reusing code read ACL/menu visibility, safe repo path validation, MIME response shaping, and code view Raw/Open/image/download anchors.
 - Phase 3C complete: legacy branch archive download at `/:owner/:project/code/:branch/download`, reusing code read ACL/menu visibility, Git revision validation, zip response shaping, and the code view Download anchor.
+- Phase 3D complete: text file view renders legacy-style numbered code lines with dependency-free syntax token spans while preserving the `#showCode`/`.code-wrap` anchors.
 - smart HTTP
 - commit discussion
 - VCS flows
