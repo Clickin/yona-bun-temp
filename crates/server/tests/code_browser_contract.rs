@@ -460,6 +460,48 @@ async fn direct_code_file_routes_stream_raw_open_and_image_bytes() {
 }
 
 #[tokio::test]
+async fn direct_code_archive_download_streams_branch_zip() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+
+    let (status, headers, body) = response_bytes(
+        direct_get(app.clone(), "/owner/projectYobi/code/main/download", None).await,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        headers[http::header::CONTENT_TYPE].to_str().unwrap(),
+        "application/zip"
+    );
+    assert!(headers[http::header::CONTENT_DISPOSITION]
+        .to_str()
+        .unwrap()
+        .contains("attachment; filename=\"projectYobi-main.zip\""));
+    assert!(body.starts_with(b"PK"));
+    assert!(body
+        .windows(b"README.md".len())
+        .any(|window| window == b"README.md"));
+    assert!(body
+        .windows(b"src/main.rs".len())
+        .any(|window| window == b"src/main.rs"));
+
+    let missing = direct_get(app, "/owner/projectYobi/code/missing/download", None).await;
+    assert_eq!(missing.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
 async fn direct_raw_code_redirects_missing_file_and_rejects_path_traversal() {
     let _guard = yona_data_env_lock()
         .lock()

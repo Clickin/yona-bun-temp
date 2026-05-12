@@ -274,6 +274,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let image_code_backend = route_backend.clone();
     let image_code_session_manager = session_manager.clone();
     let image_code_base_path = base_path.clone();
+    let archive_code_backend = route_backend.clone();
+    let archive_code_session_manager = session_manager.clone();
     let rest_router = build_rest_router(pilot_service.clone());
 
     let mut base_router = Router::new()
@@ -456,6 +458,25 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             image_code_session_manager.clone(),
                             image_code_backend.clone(),
                             image_code_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/code/{revision}/download",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project, revision)): Path<(String, String, String)>| {
+                    async move {
+                        direct_code_archive(
+                            headers,
+                            owner,
+                            project,
+                            revision,
+                            archive_code_session_manager.clone(),
+                            archive_code_backend.clone(),
                         )
                         .await
                     }
@@ -1695,6 +1716,78 @@ async fn direct_code_file(
         }
         Err(error) => direct_code_file_error(error),
     }
+}
+
+async fn direct_code_archive(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    revision: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &backend else {
+        return StatusCode::NOT_IMPLEMENTED.into_response();
+    };
+    let authorization = match repository
+        .read_project_authorization(&owner_name, &project_name, actor_id)
+        .await
+    {
+        Ok(Some(authorization)) => authorization,
+        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    };
+    let read_allowed = match project_read_allowed(&authorization, actor_id.is_none()) {
+        Ok(allowed) => allowed,
+        Err(_) => return StatusCode::BAD_REQUEST.into_response(),
+    };
+    if !read_allowed || !project_code_menu_visible(&authorization, true) {
+        return if actor_id.is_none() {
+            StatusCode::UNAUTHORIZED.into_response()
+        } else {
+            StatusCode::FORBIDDEN.into_response()
+        };
+    }
+
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    match yona_rust_vcs::read_archive_zip(&repo_path, &revision) {
+        Ok(bytes) => direct_code_archive_response(bytes, &project_name, &revision),
+        Err(error) => direct_code_file_error(error),
+    }
+}
+
+fn direct_code_archive_response(bytes: Vec<u8>, project_name: &str, revision: &str) -> Response {
+    let filename = format!(
+        "{}-{}.zip",
+        sanitize_download_filename(project_name),
+        sanitize_download_filename(revision)
+    );
+    let disposition = format!("attachment; filename=\"{filename}\"");
+    let mut response = bytes.into_response();
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/zip"),
+    );
+    if let Ok(header_value) = HeaderValue::from_str(&disposition) {
+        response
+            .headers_mut()
+            .insert(http::header::CONTENT_DISPOSITION, header_value);
+    }
+    response
+}
+
+fn sanitize_download_filename(value: &str) -> String {
+    value
+        .chars()
+        .filter(|character| {
+            character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.')
+        })
+        .collect::<String>()
+        .trim_matches('.')
+        .to_string()
 }
 
 fn direct_code_file_response(file: CodeFileBytesRecord, mode: DirectCodeFileMode) -> Response {

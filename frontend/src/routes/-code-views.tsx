@@ -56,6 +56,20 @@ function codeFileAssetHref(
   );
 }
 
+function codeArchiveHref(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  branch: string,
+) {
+  return buildProjectHref(
+    runtimeConfig,
+    ownerName,
+    projectName,
+    `code/${encodeURIComponent(branch)}/download`,
+  );
+}
+
 export function CodeBrowserPage(props: {
   code: CodeBrowserViewModel | null;
   detail: ProjectDetailViewModel | null;
@@ -168,6 +182,19 @@ export function CodeBrowserPage(props: {
                   </React.Fragment>
                 ))}
               </nav>
+              {selectedBranch ? (
+                <a
+                  className="ybtn"
+                  href={codeArchiveHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    selectedBranch,
+                  )}
+                >
+                  Download
+                </a>
+              ) : null}
             </div>
             {code?.file ? (
               <CodeFileView

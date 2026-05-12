@@ -71,6 +71,7 @@ describe("project code browser routing", () => {
     });
 
     expect(textHtml).toContain('href="/yona/owner/projectYobi/rawcode/main/src/main.rs"');
+    expect(textHtml).toContain('href="/yona/owner/projectYobi/code/main/download"');
     expect(textHtml).toContain('id="open-in-browser"');
     expect(textHtml).toContain('href="/yona/owner/projectYobi/files/main/src/main.rs"');
     expect(textHtml).toContain(">Raw</a>");

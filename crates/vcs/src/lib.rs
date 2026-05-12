@@ -184,6 +184,18 @@ pub fn read_file_bytes(
     })
 }
 
+pub fn read_archive_zip(repo_path: &Path, revision: &str) -> Result<Vec<u8>, VcsError> {
+    if !repo_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    let revision = revision.trim();
+    if revision.is_empty() || revision.starts_with('-') || !revision_exists(repo_path, revision) {
+        return Err(VcsError::NotFound);
+    }
+
+    git_bytes(repo_path, &["archive", "--format=zip", revision])
+}
+
 pub fn read_pull_request_diff(
     repo_path: &Path,
     from_branch: &str,

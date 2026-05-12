@@ -642,6 +642,10 @@ test("project code routes render branch folder and text file views", async ({ pa
   await page.goto("/yona/admin/projectYobi/code");
   await expect(page.getByRole("heading", { name: "Code" })).toBeVisible();
   await expect(page.getByLabel("Branch")).toHaveValue("main");
+  await expect(page.getByRole("link", { name: "Download" })).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/code/main/download",
+  );
   await expect(page.getByRole("link", { name: "Folder: src" })).toBeVisible();
   await expect(page.getByRole("link", { name: "File: README.md" })).toBeVisible();
   await expect(page.getByText("Initial commit").first()).toBeVisible();
