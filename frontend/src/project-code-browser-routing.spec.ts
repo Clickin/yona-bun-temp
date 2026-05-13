@@ -3,7 +3,13 @@ import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { CodeBrowserPage, CodeHistoryPage, type CodeHistoryViewModel } from "./routes/-code-views";
+import {
+  CodeBrowserPage,
+  CodeCommitDetailPage,
+  CodeHistoryPage,
+  type CodeCommitDetailViewModel,
+  type CodeHistoryViewModel,
+} from "./routes/-code-views";
 import type { CodeBrowserViewModel, ProjectDetailViewModel } from "./routes/-view-models";
 
 const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
@@ -50,6 +56,16 @@ function renderCodeHistory(history: CodeHistoryViewModel) {
   );
 }
 
+function renderCommitDetail(commitDetail: CodeCommitDetailViewModel) {
+  return renderToStaticMarkup(
+    React.createElement(CodeCommitDetailPage, {
+      commitDetail,
+      detail: projectDetail,
+      runtimeConfig,
+    }),
+  );
+}
+
 describe("project code browser routing", () => {
   it("keeps the project code route inside the project route tree", () => {
     const codeRouteSource = fs.readFileSync(
@@ -67,6 +83,19 @@ describe("project code browser routing", () => {
     expect(codeIndexRouteSource).toContain("CodeBrowserRouteView");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/code'");
     expect(routeTreeSource).toContain("OwnerProjectNameCodeRouteRoute");
+  });
+
+  it("keeps the commit detail route inside the project route tree", () => {
+    const commitRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/commit/$commitId/route.tsx"),
+      "utf8",
+    );
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+
+    expect(commitRouteSource).toContain("createFileRoute");
+    expect(commitRouteSource).toContain("/$owner/$projectName/commit/$commitId");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/commit/$commitId'");
+    expect(routeTreeSource).toContain("OwnerProjectNameCommitCommitIdRoute");
   });
 
   it("renders legacy raw/open/image file action anchors", () => {
@@ -178,5 +207,61 @@ describe("project code browser routing", () => {
     expect(pathHtml).toContain(">Older</a>");
     expect(pathHtml).toContain("Second Author");
     expect(pathHtml).toContain("Update main function");
+  });
+
+  it("renders legacy commit detail diff anchors and review placeholders", () => {
+    const detailHtml = renderCommitDetail({
+      branches: [{ name: "main" }],
+      breadcrumbs: [
+        { name: "src", path: "src" },
+        { name: "main.rs", path: "src/main.rs" },
+      ],
+      commit: {
+        authorDate: "2026-04-21",
+        authorEmail: "second@example.com",
+        authorName: "Second Author",
+        commentCount: 0,
+        commitId: "abcdef1234567890abcdef1234567890abcdef12",
+        commitShortId: "abcdef1",
+        message: "Update main function\n\nMore body",
+        shortMessage: "Update main function",
+      },
+      files: [
+        {
+          patch:
+            'diff --git a/src/main.rs b/src/main.rs\n--- a/src/main.rs\n+++ b/src/main.rs\n@@ -1 +1,3 @@\n fn main() {\n+    println!("detail");\n }\n',
+          path: "src/main.rs",
+        },
+      ],
+      noHead: false,
+      ownerName: "owner",
+      parentCommit: {
+        commitId: "1234567890abcdef1234567890abcdef12345678",
+        commitShortId: "1234567",
+      },
+      path: "src/main.rs",
+      projectName: "projectYobi",
+      selectedBranch: "main",
+    });
+
+    expect(detailHtml).toContain('id="code-browse-wrap"');
+    expect(detailHtml).toContain('class="codediff-wrap"');
+    expect(detailHtml).toContain('class="diffs-wrap"');
+    expect(detailHtml).toContain('class="commitInfo"');
+    expect(detailHtml).toContain('class="commitAuthor"');
+    expect(detailHtml).toContain('class="commitMsg-wrap"');
+    expect(detailHtml).toContain('class="commitId-wrap"');
+    expect(detailHtml).toContain('class="diff-body"');
+    expect(detailHtml).toContain('class="board-comment-wrap"');
+    expect(detailHtml).toContain('class="non-ranged-threads-wrap"');
+    expect(detailHtml).toContain('class="review-form board-comment-form"');
+    expect(detailHtml).toContain('class="review-wrap span-hard-wrap"');
+    expect(detailHtml).toContain('id="reviewcards-open"');
+    expect(detailHtml).toContain('id="reviewcards-closed"');
+    expect(detailHtml).toContain('id="watch-button"');
+    expect(detailHtml).toContain('href="/yona/owner/projectYobi/commits/main/src/main.rs"');
+    expect(detailHtml).toContain("@abcdef1234567890abcdef1234567890abcdef12");
+    expect(detailHtml).toContain("Second Author");
+    expect(detailHtml).toContain("+    println!(&quot;detail&quot;);");
   });
 });

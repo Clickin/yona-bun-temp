@@ -285,6 +285,29 @@ fn append_bare_repository_commit(
     run_git(&["push", "origin", "main"], Some(work.path()));
 }
 
+fn bare_repository_head_commit_id(yona_data: &Path, project_id: i64) -> String {
+    let bare_repo = yona_data.join("repo").join(format!("{project_id}.git"));
+    let output = Command::new("git")
+        .args([
+            "--git-dir",
+            bare_repo.to_str().unwrap(),
+            "rev-parse",
+            "main",
+        ])
+        .output()
+        .expect("rev-parse main");
+    assert!(
+        output.status.success(),
+        "rev-parse main failed\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8(output.stdout)
+        .expect("utf8 commit id")
+        .trim()
+        .to_string()
+}
+
 #[tokio::test]
 async fn code_browser_reads_root_folder_and_text_file_from_git_repo() {
     let _guard = yona_data_env_lock()
@@ -474,6 +497,105 @@ async fn rest_commit_history_lists_branch_and_path_commits_from_git_repo() {
     assert_eq!(commits[1]["shortMessage"], "Initial commit");
     assert!(commits[0]["commitId"].as_str().unwrap().len() >= 40);
     assert!(commits[0]["commitShortId"].as_str().unwrap().len() >= 7);
+}
+
+#[tokio::test]
+async fn rest_commit_detail_reads_commit_metadata_and_diff_from_git_repo() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+    let parent_commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+    append_bare_repository_commit(
+        data_dir.path(),
+        project.id,
+        "src/main.rs",
+        "fn main() {\n    println!(\"detail\");\n}\n",
+        "Update main function",
+    );
+    let commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+
+    let response = response_json(
+        rest_get(
+            app,
+            &format!(
+                "/projects/owner/projectYobi/commit/{commit_id}?branch=main&path=src%2Fmain.rs"
+            ),
+            None,
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(response["ownerName"], "owner");
+    assert_eq!(response["projectName"], "projectYobi");
+    assert_eq!(response["selectedBranch"], "main");
+    assert_eq!(response["path"], "src/main.rs");
+    assert!(!json_bool(&response, "noHead"));
+    assert!(response["branches"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|branch| branch["name"] == "main"));
+    assert_eq!(response["breadcrumbs"][0]["name"], "src");
+    assert_eq!(response["breadcrumbs"][1]["path"], "src/main.rs");
+    assert_eq!(response["commit"]["commitId"], commit_id);
+    assert_eq!(response["commit"]["shortMessage"], "Update main function");
+    assert_eq!(response["commit"]["authorName"], "Second Author");
+    assert_eq!(response["commit"]["authorEmail"], "second@example.com");
+    assert_eq!(response["commit"]["commentCount"], 0);
+    assert_eq!(response["parentCommit"]["commitId"], parent_commit_id);
+    assert_eq!(
+        response["parentCommit"]["commitShortId"]
+            .as_str()
+            .unwrap()
+            .len(),
+        7
+    );
+
+    let files = response["files"].as_array().unwrap();
+    assert_eq!(files.len(), 1);
+    assert_eq!(files[0]["path"], "src/main.rs");
+    let patch = files[0]["patch"].as_str().unwrap();
+    assert!(patch.contains("diff --git a/src/main.rs b/src/main.rs"));
+    assert!(patch.contains("+    println!(\"detail\");"));
+}
+
+#[tokio::test]
+async fn rest_commit_detail_reports_missing_commit_as_not_found() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+
+    let missing = rest_get(
+        app,
+        "/projects/owner/projectYobi/commit/doesnotexist?branch=main",
+        None,
+    )
+    .await;
+
+    assert_eq!(missing.status(), StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]

@@ -424,6 +424,50 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
+  await page.route(
+    /\/api\/v1\/projects\/admin\/projectYobi\/commit\/[^/?]+(?:\?.*)?$/,
+    async (route) => {
+      const requestUrl = new URL(route.request().url());
+      await route.fulfill({
+        body: JSON.stringify({
+          branches: [{ name: "main" }],
+          breadcrumbs: [
+            { name: "src", path: "src" },
+            { name: "main.rs", path: "src/main.rs" },
+          ],
+          commit: {
+            authorDate: "2026-04-21",
+            authorEmail: "author@example.com",
+            authorName: "Author",
+            commentCount: 0,
+            commitId: "abcdef1234567890abcdef1234567890abcdef12",
+            commitShortId: "abcdef1",
+            message: "Update main function",
+            shortMessage: "Update main function",
+          },
+          files: [
+            {
+              patch:
+                'diff --git a/src/main.rs b/src/main.rs\n--- a/src/main.rs\n+++ b/src/main.rs\n@@ -1 +1,3 @@\n fn main() {\n+    println!("detail");\n }\n',
+              path: "src/main.rs",
+            },
+          ],
+          noHead: false,
+          ownerName: "admin",
+          parentCommit: {
+            commitId: "1234567890abcdef1234567890abcdef12345678",
+            commitShortId: "1234567",
+          },
+          path: requestUrl.searchParams.get("path") ?? "",
+          projectName: "projectYobi",
+          selectedBranch: requestUrl.searchParams.get("branch") ?? "main",
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+
   await page.route(apiV1Route("/auth/sign-out"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
@@ -751,6 +795,25 @@ test("project commit history routes render branch and path-scoped lists", async 
   await expect(page.getByRole("link", { name: "Older" })).toHaveAttribute(
     "href",
     "/yona/admin/projectYobi/commits/main/src/main.rs?page=1",
+  );
+
+  await page.goto(
+    "/yona/admin/projectYobi/commit/abcdef1234567890abcdef1234567890abcdef12?branch=main&path=src%2Fmain.rs",
+  );
+  await expect(page.getByRole("heading", { name: "Update main function" })).toBeVisible();
+  await expect(page.locator("#code-browse-wrap")).toBeVisible();
+  await expect(page.locator(".codediff-wrap")).toBeVisible();
+  await expect(page.locator(".commitAuthor")).toContainText("Author");
+  await expect(page.locator(".commitId-wrap")).toContainText(
+    "@abcdef1234567890abcdef1234567890abcdef12",
+  );
+  await expect(page.locator(".diff-body")).toContainText('println!("detail")');
+  await expect(page.locator(".board-comment-wrap")).toBeVisible();
+  await expect(page.locator("#reviewcards-open")).toBeVisible();
+  await expect(page.locator("#watch-button")).toBeVisible();
+  await expect(page.getByRole("link", { name: "List" })).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/commits/main/src/main.rs",
   );
 });
 

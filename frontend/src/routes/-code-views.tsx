@@ -26,6 +26,19 @@ export interface CodeHistoryViewModel {
   selectedBranch: string;
 }
 
+export interface CodeCommitDetailViewModel {
+  branches: Array<{ name: string }>;
+  breadcrumbs: Array<{ name: string; path: string }>;
+  commit: CodeHistoryViewModel["commits"][number] | null;
+  files: Array<{ path: string; patch: string }>;
+  noHead: boolean;
+  ownerName: string;
+  parentCommit: { commitId: string; commitShortId: string } | null;
+  path: string;
+  projectName: string;
+  selectedBranch: string;
+}
+
 function fallbackProjectDetail(): ProjectDetailViewModel {
   return {
     enrollmentRequested: false,
@@ -139,6 +152,10 @@ function commitDetailHref(
   }
   const anchor = path ? `#${path.replace(/[/.]/g, "-")}` : "";
   return `${href}?${searchParams.toString()}${anchor}`;
+}
+
+function diffAnchorId(path: string) {
+  return path.replace(/[/.]/g, "-");
 }
 
 export function CodeBrowserPage(props: {
@@ -288,6 +305,173 @@ export function CodeBrowserPage(props: {
         )}
       </section>
     </main>
+  );
+}
+
+export function CodeCommitDetailPage(props: {
+  commitDetail: CodeCommitDetailViewModel | null;
+  detail: ProjectDetailViewModel | null;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const detail = props.detail ?? fallbackProjectDetail();
+  const commitDetail = props.commitDetail;
+  const commit = commitDetail?.commit ?? null;
+  const selectedBranch = commitDetail?.selectedBranch ?? "";
+  const selectedPath = commitDetail?.path ?? "";
+  const listHref = codeHistoryHref(
+    props.runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    selectedBranch,
+    selectedPath,
+  );
+
+  return (
+    <main className="app-shell">
+      <p className="eyebrow">Yona Rust Project</p>
+      <h1>{commit?.shortMessage ?? "Commit"}</h1>
+      <p>{`${detail.ownerName}/${detail.projectName}`}</p>
+      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="code-browse-wrap" id="code-browse-wrap">
+            <nav aria-label="Code tabs" className="nav nav-tabs">
+              <a
+                href={codeHref(
+                  props.runtimeConfig,
+                  detail.ownerName,
+                  detail.projectName,
+                  selectedBranch,
+                )}
+              >
+                Files
+              </a>
+              <a
+                aria-current="page"
+                href={codeHistoryHref(
+                  props.runtimeConfig,
+                  detail.ownerName,
+                  detail.projectName,
+                  selectedBranch,
+                )}
+              >
+                Commits
+              </a>
+              <a
+                href={buildProjectHref(
+                  props.runtimeConfig,
+                  detail.ownerName,
+                  detail.projectName,
+                  "branches",
+                )}
+              >
+                Branches
+              </a>
+            </nav>
+            {commitDetail?.noHead ? (
+              <div className="alert alert-block">
+                <h2>The repository is empty!</h2>
+                <p>{`Clone URL: ${detail.cloneUrl ?? ""}`}</p>
+              </div>
+            ) : (
+              <CodeCommitDiffView commitDetail={commitDetail} />
+            )}
+          </div>
+          <button className="pull-left ybtn" id="watch-button" type="button">
+            Watch
+          </button>
+          <a className="ybtn pull-right" href={listHref}>
+            List
+          </a>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function CodeCommitDiffView(props: { commitDetail: CodeCommitDetailViewModel | null }) {
+  const commitDetail = props.commitDetail;
+  const commit = commitDetail?.commit;
+  const files = commitDetail?.files ?? [];
+  return (
+    <div className="codediff-wrap">
+      <button className="ybtn ybtn-default btn-show-reviewcards" type="button">
+        Review cards
+      </button>
+      <div className="diffs-wrap">
+        <div className="commitInfo">
+          <div className="commitAuthor">
+            <strong>{commit?.authorName || "Anonymous"}</strong>
+            {commit?.authorEmail ? <span>{` <${commit.authorEmail}>`}</span> : null}
+            {commit?.authorDate ? (
+              <span className="ago" title={commit.authorDate}>
+                {commit.authorDate}
+              </span>
+            ) : null}
+          </div>
+          <div className="commitMsg-wrap">
+            <strong>{commit?.shortMessage ?? ""}</strong>
+            {commit && commit.message !== commit.shortMessage ? (
+              <pre className="commitMsg desc">{commit.message}</pre>
+            ) : null}
+          </div>
+          <div className="commitId-wrap">
+            <strong className="commitId">{commit ? `@${commit.commitId}` : ""}</strong>
+            {commitDetail?.parentCommit ? (
+              <span className="parentCommit">
+                {` parent @${commitDetail.parentCommit.commitShortId}`}
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="diff-body">
+          {files.length === 0 ? (
+            <div className="warning-none">No changed file diff is available.</div>
+          ) : (
+            files.map((file) => (
+              <article className="diff-file" id={diffAnchorId(file.path)} key={file.path}>
+                <h2>{file.path}</h2>
+                <pre className="diff-code">
+                  <code>{file.patch}</code>
+                </pre>
+              </article>
+            ))
+          )}
+          <div className="btnPop">
+            <button className="ybtn ybtn-info ybtn-small" type="button">
+              Comment
+            </button>
+          </div>
+        </div>
+
+        <div className="board-comment-wrap">
+          <div className="non-ranged-threads-wrap"></div>
+          <form className="review-form board-comment-form">
+            <textarea aria-label="Commit comment" disabled></textarea>
+            <button className="ybtn" disabled type="button">
+              Comment
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div className="review-wrap span-hard-wrap">
+        <div className="review-container">
+          <button className="ybtn ybtn-default btn-hide-reviewcards" type="button">
+            Hide review cards
+          </button>
+          <div className="tab-content review-list">
+            <div className="tab-pane active" id="reviewcards-open">
+              <span>Open 0</span>
+            </div>
+            <div className="tab-pane" id="reviewcards-closed">
+              <span>Closed 0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

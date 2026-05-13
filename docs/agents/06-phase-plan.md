@@ -52,7 +52,8 @@
 - Phase 3C complete: legacy branch archive download at `/:owner/:project/code/:branch/download`, reusing code read ACL/menu visibility, Git revision validation, zip response shaping, and the code view Download anchor.
 - Phase 3D complete: text file view renders legacy-style numbered code lines with dependency-free syntax token spans while preserving the `#showCode`/`.code-wrap` anchors.
 - Phase 3E complete: commit history parity over `GET /api/v1/projects/:owner/:project/commits` and legacy file routes `/:owner/:project/commits`, `/:owner/:project/commits/:branch/`, and `/:owner/:project/commits/:branch/*path`, including branch selector, path breadcrumbs, 25-item pagination, commit links, and path-scoped "show code" links.
-- Remaining Phase 3 follow-ups: commit detail/diff, commit comments, branch admin/default-branch mutation, compare, Smart HTTP, repository provisioning, and SVN wrapper integration.
+- Phase 3F complete: read-only commit detail/diff parity over `GET /api/v1/projects/:owner/:project/commit/:id` and legacy route `/:owner/:project/commit/:id`, including commit metadata, first-parent link metadata, branch/path list-back state, unified diff patches, missing-commit 404, and legacy `code/diff.scala.html` class/id anchors.
+- Remaining Phase 3 follow-ups: commit comments/thread lifecycle, branch admin/default-branch mutation, compare, Smart HTTP, repository provisioning, and SVN wrapper integration.
 
 ## Phase 4: 풀 리퀘스트와 리뷰
 
