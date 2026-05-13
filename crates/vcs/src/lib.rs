@@ -85,6 +85,30 @@ pub struct CodeCommitRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeCommitDetailSnapshot {
+    pub branches: Vec<CodeBranchRecord>,
+    pub breadcrumbs: Vec<CodeBreadcrumbRecord>,
+    pub commit: Option<CodeCommitRecord>,
+    pub files: Vec<CodeCommitFileDiffRecord>,
+    pub no_head: bool,
+    pub parent_commit: Option<CodeCommitParentRecord>,
+    pub path: String,
+    pub selected_branch: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeCommitParentRecord {
+    pub commit_id: String,
+    pub commit_short_id: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeCommitFileDiffRecord {
+    pub path: String,
+    pub patch: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestDiffSnapshot {
     pub commits: Vec<PullRequestDiffCommitRecord>,
     pub files: Vec<PullRequestChangedFileRecord>,
@@ -261,6 +285,61 @@ pub fn read_code_history(
     })
 }
 
+pub fn read_commit_detail(
+    repo_path: &Path,
+    commit_id: &str,
+    branch: Option<&str>,
+    path: &str,
+) -> Result<CodeCommitDetailSnapshot, VcsError> {
+    if !repo_path.exists() {
+        return Ok(no_head_commit_detail_snapshot());
+    }
+    let repo_path = repo_path.to_path_buf();
+    let clean_path = normalize_repo_path(path)?;
+    let branches = list_branches(&repo_path)?;
+    if branches.is_empty() || !has_head(&repo_path) {
+        return Ok(no_head_commit_detail_snapshot());
+    }
+    let selected_branch = match branch.map(str::trim).filter(|value| !value.is_empty()) {
+        Some(branch) => branch.to_string(),
+        None => default_branch(&repo_path).unwrap_or_else(|| branches[0].name.clone()),
+    };
+    if !branches.iter().any(|branch| branch.name == selected_branch) {
+        return Err(VcsError::NotFound);
+    }
+
+    let commit_id = commit_id.trim();
+    if commit_id.is_empty() {
+        return Err(VcsError::NotFound);
+    }
+    ensure_commit_exists(&repo_path, commit_id)?;
+
+    let commit = read_commit_record(&repo_path, commit_id)?;
+    let parent_commit = read_parent_commit(&repo_path, commit_id)?;
+    let diff = git_output(
+        &repo_path,
+        &[
+            "show",
+            "--format=",
+            "--find-renames",
+            "--patch",
+            "--unified=3",
+            commit_id,
+        ],
+    )?;
+
+    Ok(CodeCommitDetailSnapshot {
+        branches,
+        breadcrumbs: breadcrumbs_for_path(&clean_path),
+        commit: Some(commit),
+        files: parse_commit_diff_files(&diff),
+        no_head: false,
+        parent_commit,
+        path: clean_path,
+        selected_branch,
+    })
+}
+
 pub fn read_pull_request_diff(
     repo_path: &Path,
     from_branch: &str,
@@ -367,6 +446,19 @@ fn no_head_history_snapshot(page: u32) -> CodeHistorySnapshot {
         has_older: false,
         no_head: true,
         page,
+        path: String::new(),
+        selected_branch: String::new(),
+    }
+}
+
+fn no_head_commit_detail_snapshot() -> CodeCommitDetailSnapshot {
+    CodeCommitDetailSnapshot {
+        branches: Vec::new(),
+        breadcrumbs: Vec::new(),
+        commit: None,
+        files: Vec::new(),
+        no_head: true,
+        parent_commit: None,
         path: String::new(),
         selected_branch: String::new(),
     }
@@ -553,6 +645,78 @@ fn list_history_commits(
             })
         })
         .collect())
+}
+
+fn ensure_commit_exists(repo_path: &Path, commit_id: &str) -> Result<(), VcsError> {
+    let spec = format!("{commit_id}^{{commit}}");
+    let object_type = git_output(repo_path, &["cat-file", "-t", &spec])?;
+    if object_type.trim() == "commit" {
+        Ok(())
+    } else {
+        Err(VcsError::NotFound)
+    }
+}
+
+fn read_commit_record(repo_path: &Path, commit_id: &str) -> Result<CodeCommitRecord, VcsError> {
+    let output = git_output(
+        repo_path,
+        &[
+            "show",
+            "-s",
+            "--date=short",
+            "--format=%H%x1f%h%x1f%s%x1f%an%x1f%ae%x1f%ad%x1f%B",
+            commit_id,
+        ],
+    )?;
+    let mut parts = output.trim_end().splitn(7, '\x1f');
+    let commit_id = parts.next().unwrap_or_default().to_string();
+    let commit_short_id = parts.next().unwrap_or_default().to_string();
+    let short_message = parts.next().unwrap_or_default().to_string();
+    let author_name = parts.next().unwrap_or_default().to_string();
+    let author_email = parts.next().unwrap_or_default().to_string();
+    let author_date = parts.next().unwrap_or_default().to_string();
+    let message = parts
+        .next()
+        .unwrap_or(&short_message)
+        .trim_end()
+        .to_string();
+    Ok(CodeCommitRecord {
+        author_date,
+        author_email,
+        author_name,
+        comment_count: 0,
+        commit_id,
+        commit_short_id,
+        message,
+        short_message,
+    })
+}
+
+fn read_parent_commit(
+    repo_path: &Path,
+    commit_id: &str,
+) -> Result<Option<CodeCommitParentRecord>, VcsError> {
+    let output = git_output(repo_path, &["show", "-s", "--format=%P", commit_id])?;
+    let Some(parent_commit_id) = output.split_whitespace().next() else {
+        return Ok(None);
+    };
+    let commit_short_id = git_output(repo_path, &["rev-parse", "--short=7", parent_commit_id])?
+        .trim()
+        .to_string();
+    Ok(Some(CodeCommitParentRecord {
+        commit_id: parent_commit_id.to_string(),
+        commit_short_id,
+    }))
+}
+
+fn parse_commit_diff_files(diff: &str) -> Vec<CodeCommitFileDiffRecord> {
+    parse_diff_files(diff)
+        .into_iter()
+        .map(|file| CodeCommitFileDiffRecord {
+            path: file.path,
+            patch: file.patch,
+        })
+        .collect()
 }
 
 fn parse_diff_files(diff: &str) -> Vec<PullRequestChangedFileRecord> {
