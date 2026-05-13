@@ -941,6 +941,86 @@ pub struct PullRequestListRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestMutationInput {
+    pub attachment_ids: Vec<i64>,
+    pub body_markdown: String,
+    pub title: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreatePullRequestInput {
+    pub actor_display_name: String,
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub from_branch: String,
+    pub from_project_id: i64,
+    pub to_branch: String,
+    pub to_project_id: i64,
+    pub values: PullRequestMutationInput,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UpdatePullRequestInput {
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub pull_request_number: i64,
+    pub values: PullRequestMutationInput,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum CreatePullRequestResult {
+    Created(PullRequestDetailRecord),
+    Duplicate(PullRequestDetailRecord),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestStateInput {
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub pull_request_number: i64,
+    pub state: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestReviewInput {
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub pull_request_number: i64,
+    pub reviewed: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreatePullRequestCommentInput {
+    pub actor_display_name: String,
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub attachment_ids: Vec<i64>,
+    pub commit_id: Option<String>,
+    pub contents_markdown: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub pull_request_number: i64,
+    pub thread_id: Option<i64>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestThreadStateInput {
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub pull_request_number: i64,
+    pub state: String,
+    pub thread_id: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestUserRecord {
     pub login_id: String,
     pub user_id: i64,

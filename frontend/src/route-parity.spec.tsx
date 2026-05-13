@@ -319,7 +319,7 @@ describe("file-route parity harness", () => {
     expect(orgHtml).toContain("pageNum=2");
   });
 
-  it("requires real PR/review read routes while leaving create/edit placeholders deferred", () => {
+  it("requires real PR/review interaction routes without create/edit placeholders", () => {
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/pullRequests'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/closedPullRequests'");
@@ -329,6 +329,10 @@ describe("file-route parity harness", () => {
     );
     expect(routeTreeSource).toContain(
       "fullPath: '/$owner/$projectName/pullRequest/$pullRequestNumber/changes'",
+    );
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/newPullRequestForm'");
+    expect(routeTreeSource).toContain(
+      "fullPath: '/$owner/$projectName/pullRequest/$pullRequestNumber/editform'",
     );
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/reviews'");
     expect(routeTreeSource).toContain("fullPath: '/organizations/$organizationName/pullrequests'");
@@ -340,8 +344,10 @@ describe("file-route parity harness", () => {
       "routes/$owner/$projectName/pullRequests/route.tsx",
       "routes/$owner/$projectName/closedPullRequests/route.tsx",
       "routes/$owner/$projectName/sentPullRequests/route.tsx",
+      "routes/$owner/$projectName/newPullRequestForm/route.tsx",
       "routes/$owner/$projectName/pullRequest/$pullRequestNumber/route.tsx",
       "routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/route.tsx",
+      "routes/$owner/$projectName/pullRequest/$pullRequestNumber/editform/route.tsx",
       "routes/$owner/$projectName/reviews/route.tsx",
       "routes/organizations/$organizationName/pullrequests/route.tsx",
       "routes/organizations/$organizationName/closedPullrequests/route.tsx",
@@ -380,6 +386,16 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain('name="state"');
     expect(pullRequestViewsSource).toContain('name="participantId"');
     expect(pullRequestViewsSource).toContain('name="orderBy"');
+    expect(pullRequestViewsSource).toContain('id="fromProjectId"');
+    expect(pullRequestViewsSource).toContain('id="fromBranch"');
+    expect(pullRequestViewsSource).toContain('id="toProjectId"');
+    expect(pullRequestViewsSource).toContain('id="toBranch"');
+    expect(pullRequestViewsSource).toContain('id="pullRequestState"');
+    expect(pullRequestViewsSource).toContain('id="status"');
+    expect(pullRequestViewsSource).toContain('id="__commits"');
+    expect(pullRequestViewsSource).toContain("comment-thread-wrap");
+    expect(pullRequestViewsSource).toContain("thread-actrow");
+    expect(pullRequestViewsSource).toContain("review-form");
 
     const detailRouteSource = fs.readFileSync(
       path.resolve(
@@ -389,20 +405,7 @@ describe("file-route parity harness", () => {
       "utf8",
     );
     expect(detailRouteSource).toContain("pullRequestDetailQueryOptions");
-
-    const deferredCreateRoute = fs.readFileSync(
-      path.resolve(__dirname, "routes/$owner/$projectName/newPullRequestForm/route.tsx"),
-      "utf8",
-    );
-    const deferredEditRoute = fs.readFileSync(
-      path.resolve(
-        __dirname,
-        "routes/$owner/$projectName/pullRequest/$pullRequestNumber/editform/route.tsx",
-      ),
-      "utf8",
-    );
-    expect(deferredCreateRoute).toContain("PlaceholderPage");
-    expect(deferredEditRoute).toContain("PlaceholderPage");
+    expect(detailRouteSource).toContain("useMutation");
   });
 
   it("keeps the public home title and entry CTA/navigation order stable", () => {

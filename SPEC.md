@@ -738,33 +738,39 @@ DELETE /:owner/:project/pullRequest/:id/deletefrombranch → from 브랜치 삭�
 
 #### 기능 목록과 상태
 
-Phase 4A는 read-only app surface만 구현했다. `/api/v1/owners/:owner/projects/:project/pull-requests`,
+Phase 4A는 read-only app surface를 구현했다. Phase 4B는 app runtime `/api/v1` 범위에서
+PR 생성/수정 form, 생성/수정 mutation, close/reopen, review/unreview, 일반 PR review comment,
+review thread open/close mutation을 추가했다. `/api/v1/owners/:owner/projects/:project/pull-requests`,
 `/:number`, `/:number/changes`, `/reviews`, `/api/v1/organizations/:organization/pull-requests`
-가 project READ + code-accessible-member-only 정책을 통과한 viewer에게만 열리며, PR 생성/수정,
-상태 변경, 리뷰 승인/철회, 리뷰 댓글 mutation, merge, fork, from 브랜치 정리는 Phase 4B+로 남긴다.
+가 project READ + code-accessible-member-only 정책을 통과한 viewer에게만 열리며, mutation은
+CSRF + authenticated session + detail permission projection을 요구한다. Merge accept/conflict 처리,
+fork/clone, from branch delete/restore, Smart HTTP, webhook delivery, legacy external `/-_-api/v1/**`
+compatibility는 이번 app runtime batch에서 제외한다.
 
 | 기능                       | Legacy 동작                          | 현재 상태 | Phase |
 | -------------------------- | ------------------------------------ | --------- | ----- |
 | PR 목록 (open/closed/sent) | 탭으로 분류, 필터, 페이지네이션      | Phase 4A read-only 구현 | 4     |
-| PR 생성                    | from/to 브랜치 선택, 제목/본문       | gap       | 4     |
-| PR 상세                    | 커밋 목록, 변경 파일, 댓글/타임라인  | Phase 4A read-only 구현 | 4     |
+| PR 생성                    | from/to 브랜치 선택, 제목/본문       | Phase 4B 구현 | 4     |
+| PR 상세                    | 커밋 목록, 변경 파일, 댓글/타임라인  | Phase 4A read + Phase 4B interaction 구현 | 4     |
 | PR diff 보기               | 파일별 unified diff, 인라인 코멘트   | Phase 4A read-only diff 보기 구현; inline comment mutation은 gap | 4     |
-| PR 상태 관리               | open → merged / closed, 재열기       | gap       | 4     |
+| PR 상태 관리               | open → merged / closed, 재열기       | close/reopen Phase 4B 구현; merge는 gap | 4     |
 | Merge 실행                 | fast-forward / merge commit / squash | gap       | 4     |
 | Merge 충돌 처리            | 충돌 시 알림, 수동 해결 안내         | gap       | 4     |
-| 리뷰 승인/철회             | 리뷰어가 승인/철회                   | gap       | 4     |
-| 코드 리뷰 댓글             | 특정 라인에 인라인 댓글              | gap       | 4     |
-| 리뷰 스레드                | 인라인 댓글 스레드 open/close        | Phase 4A read-only 목록/표시 구현; open/close mutation은 gap | 4     |
+| 리뷰 승인/철회             | 리뷰어가 승인/철회                   | Phase 4B 구현 | 4     |
+| 코드 리뷰 댓글             | 특정 라인에 인라인 댓글              | 일반 PR review comment Phase 4B 구현; ranged inline create/edit/delete는 gap | 4     |
+| 리뷰 스레드                | 인라인 댓글 스레드 open/close        | Phase 4B open/close mutation 구현 | 4     |
 | Fork & PR                  | 프로젝트 fork → PR 워크플로우        | gap       | 4     |
 | from 브랜치 삭제           | merge 후 소스 브랜치 삭제            | gap       | 4     |
 | 리뷰어 지정                | PR에 리뷰어 배정                     | gap       | 4     |
 
 #### 검수 기준
 
-- [~] PR 목록: open/closed/sent 탭, 각 PR에 제목/작성자/날짜/리뷰 상태 표시
+- [x] PR 목록: open/closed/sent 탭, 각 PR에 제목/작성자/날짜/리뷰 상태 표시
 - [~] PR 상세: Conversation (댓글+이벤트 타임라인) / Changes (diff) 탭 구조 — legacy 동일
+- [x] PR 생성/수정 form: legacy class/id anchor와 from/to project/branch 표시, edit form branch/project disabled
+- [x] PR interaction: close/reopen, review/unreview, 일반 PR comment, review thread open/close
 - [ ] 인라인 코드 리뷰: diff 뷰에서 특정 라인 클릭 → 댓글 입력 → 스레드 생성
-- [ ] 리뷰 스레드: open/close/resolve 상태 전환, outdated 표시
+- [~] 리뷰 스레드: open/close 상태 전환 구현; resolve/outdated 표시는 gap
 - [ ] Merge: 충돌 없으면 merge 버튼 활성화, 충돌 시 비활성화 + 안내
 - [ ] Fork: 프로젝트 fork 시 동일 이름의 개인 프로젝트 생성, bare repo 복제
 
@@ -1201,7 +1207,7 @@ legacy Yona는 `pageNum` 기반 offset 페이지네이션을 사용한다.
 
 ---
 
-## 9. 현재 구현 상태 요약 (2026-05-06 기준)
+## 9. 현재 구현 상태 요약 (2026-05-10 기준)
 
 Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 입력 기준이다.
 기존 runtime ConnectRPC surface와 frontend ConnectRPC client/dependency는 제거되었고,
@@ -1223,7 +1229,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 라벨/마일스톤     | ✅ 구현           | 라벨/카테고리 관리, 마일스톤 CRUD/state 구현                     |
 | 코드 브라우저     | 🔶 Phase 3A 구현  | read-only Git 폴더/파일 보기, 브랜치 선택기                      |
 | Git Smart HTTP    | ❌ 미구현         |                                                                  |
-| PR/리뷰           | 🔶 Phase 4A 구현  | read-only PR 목록/상세/changes/reviews 및 조직 PR 목록. PR mutation/merge/fork/review-comment mutation은 gap |
+| PR/리뷰           | 🔶 Phase 4B 구현  | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, 일반 PR comment, thread open/close. merge/fork/ranged inline review CRUD/branch cleanup은 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, mail queue staging |
 | 웹훅              | ❌ 미구현         | DB 엔티티만 존재                                                 |
@@ -1388,7 +1394,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Label follow-up: copyLabels Phase 6 and legacy external label/project API parity
 - Milestone follow-up: migration export and search milestone result type
 - Code follow-up: raw file/download/image routes, syntax highlighting, commit history/detail, branch admin, compare, Smart HTTP
-- PullRequest: create/detail/list/merge/close/reopen/review comment/reviewer lifecycle
+- PullRequest: merge/conflict acceptance, ranged inline review comment edit/delete, reviewer assignment/threshold lifecycle, fork/clone, branch cleanup/restore
 - Search: global/project/organization search
 - Notification: read state, SMTP scheduler/delivery, draft-time merge, recipient limit, and full mail notification parity
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope

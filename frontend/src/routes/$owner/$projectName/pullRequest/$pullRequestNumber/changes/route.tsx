@@ -1,7 +1,12 @@
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { pullRequestChangesQueryOptions } from "../../../../../../api/pull-requests";
+import {
+  closePullRequestThreadRest,
+  openPullRequestThreadRest,
+  pullRequestChangesQueryOptions,
+} from "../../../../../../api/pull-requests";
+import { apiQueryKeys } from "../../../../../../api/query-keys";
 import { readProjectContainer } from "../../../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../../../app-view-models";
@@ -21,11 +26,13 @@ export const Route = createFileRoute("/$owner/$projectName/pullRequest/$pullRequ
 
 function PullRequestChangesRouteComponent() {
   const { owner, projectName, pullRequestNumber } = Route.useParams();
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const queryClient = useQueryClient();
   const parsedNumber = Number(pullRequestNumber);
+  const scope = { ownerName: owner, projectName, pullRequestNumber: parsedNumber };
   const containerQuery = useQuery({
     queryFn: () => readProjectContainer(runtimeConfig, owner, projectName),
-    queryKey: ["api", "v1", "owners", owner, "projects", projectName, "container"],
+    queryKey: apiQueryKeys.project.container(owner, projectName),
   });
   const changesQuery = useQuery(
     pullRequestChangesQueryOptions(runtimeConfig, {
@@ -36,6 +43,48 @@ function PullRequestChangesRouteComponent() {
   );
   const error = containerQuery.error ?? changesQuery.error;
   const failureKind = classifyConnectFailure(error);
+  const closeThreadMutation = useMutation({
+    mutationFn: (threadId: number) =>
+      closePullRequestThreadRest(runtimeConfig, csrfToken, {
+        ...scope,
+        threadId,
+      }),
+    onError: (error) => {
+      setErrorMessage(error instanceof Error ? error.message : "Close review thread failed.");
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
+  const openThreadMutation = useMutation({
+    mutationFn: (threadId: number) =>
+      openPullRequestThreadRest(runtimeConfig, csrfToken, {
+        ...scope,
+        threadId,
+      }),
+    onError: (error) => {
+      setErrorMessage(error instanceof Error ? error.message : "Open review thread failed.");
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
 
   useDocumentTitle("Pull Request Changes");
   React.useEffect(() => {
@@ -67,6 +116,12 @@ function PullRequestChangesRouteComponent() {
       changes={changesQuery.data}
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       runtimeConfig={runtimeConfig}
+      onThreadClose={async (threadId) => {
+        await closeThreadMutation.mutateAsync(threadId);
+      }}
+      onThreadOpen={async (threadId) => {
+        await openThreadMutation.mutateAsync(threadId);
+      }}
     />
   );
 }

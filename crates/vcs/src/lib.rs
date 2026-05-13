@@ -183,6 +183,16 @@ pub fn read_pull_request_diff_between_revisions(
     read_pull_request_diff_range(repo_path, base_revision, head_revision)
 }
 
+pub fn list_repository_branches(repo_path: &Path) -> Result<Vec<CodeBranchRecord>, VcsError> {
+    if !repo_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    if !has_head(repo_path) {
+        return Ok(Vec::new());
+    }
+    list_branches(repo_path)
+}
+
 fn read_pull_request_diff_range(
     repo_path: &Path,
     base_revision: &str,

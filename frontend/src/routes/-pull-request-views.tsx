@@ -1,7 +1,9 @@
+import * as React from "react";
 import type {
   OrganizationPullRequestListQuery,
   PullRequestChangesResponse,
   PullRequestDetailResponse,
+  PullRequestFormOptionsResponse,
   PullRequestListCategory,
   PullRequestListQuery,
   PullRequestListResponse,
@@ -65,6 +67,15 @@ function projectCategoryHref(
         : "pullRequests";
   return buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, suffix);
 }
+
+type PullRequestFormSubmitInput = {
+  bodyMarkdown: string;
+  fromBranch: string;
+  fromProjectId: number;
+  title: string;
+  toBranch: string;
+  toProjectId: number;
+};
 
 function pullRequestQueryString(query: PullRequestListQuery, category: PullRequestListCategory) {
   const search = new URLSearchParams();
@@ -311,11 +322,204 @@ export function OrganizationPullRequestListPage(props: {
   );
 }
 
+export function ProjectPullRequestFormPage(props: {
+  detail: ProjectDetailViewModel | null;
+  formOptions: PullRequestFormOptionsResponse | undefined;
+  mode: "create" | "edit";
+  runtimeConfig: RuntimeConfig;
+  onSubmit: (input: PullRequestFormSubmitInput) => Promise<void>;
+}) {
+  const detail = props.detail ?? fallbackProjectDetail();
+  const options = props.formOptions;
+  const initialPullRequest = options?.pullRequest;
+  const [fromProjectId, setFromProjectId] = React.useState(options?.selected.fromProjectId ?? 0);
+  const [toProjectId, setToProjectId] = React.useState(options?.selected.toProjectId ?? 0);
+  const [fromBranch, setFromBranch] = React.useState(options?.selected.fromBranch ?? "");
+  const [toBranch, setToBranch] = React.useState(options?.selected.toBranch ?? "");
+  const [title, setTitle] = React.useState(initialPullRequest?.title ?? "");
+  const [bodyMarkdown, setBodyMarkdown] = React.useState(initialPullRequest?.bodyMarkdown ?? "");
+  const [submitting, setSubmitting] = React.useState(false);
+  const editMode = props.mode === "edit";
+
+  React.useEffect(() => {
+    if (!options) {
+      return;
+    }
+    setFromProjectId(options.selected.fromProjectId);
+    setToProjectId(options.selected.toProjectId);
+    setFromBranch(options.selected.fromBranch);
+    setToBranch(options.selected.toBranch);
+    setTitle(options.pullRequest?.title ?? "");
+    setBodyMarkdown(options.pullRequest?.bodyMarkdown ?? "");
+  }, [options]);
+
+  const formTitle = editMode ? "Edit Pull Request" : "New Pull Request";
+  const backHref = buildProjectHref(
+    props.runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    editMode && initialPullRequest
+      ? `pullRequest/${initialPullRequest.pullRequestNumber}`
+      : "pullRequests",
+  );
+
+  return (
+    <main className="app-shell pull-request-page page-wrap-outer">
+      <div className="project-page-wrap">
+        <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+        <div className="content-wrap frm-wrap">
+          <section className="pull-request-wrap">
+            <header className="board-header issue">
+              <h1>{formTitle}</h1>
+              <div className="pullRequest-branchInfo">
+                <span>{`${detail.ownerName}/${detail.projectName}`}</span>
+                {initialPullRequest ? (
+                  <span className={`pullRequest-stateInfo state ${initialPullRequest.state}`}>
+                    {initialPullRequest.state}
+                  </span>
+                ) : null}
+              </div>
+            </header>
+            <form
+              className="board-form pull-request-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (submitting) {
+                  return;
+                }
+                setSubmitting(true);
+                void props
+                  .onSubmit({
+                    bodyMarkdown,
+                    fromBranch,
+                    fromProjectId,
+                    title,
+                    toBranch,
+                    toProjectId,
+                  })
+                  .finally(() => setSubmitting(false));
+              }}
+            >
+              <div className="pull-request-branches">
+                <label htmlFor="fromProjectId">
+                  From project
+                  <select
+                    disabled={editMode}
+                    id="fromProjectId"
+                    name="fromProjectId"
+                    onChange={(event) => setFromProjectId(Number(event.currentTarget.value))}
+                    value={fromProjectId}
+                  >
+                    {(options?.fromProjects ?? []).map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {`${project.ownerName}/${project.projectName}`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label htmlFor="fromBranch">
+                  From branch
+                  <select
+                    disabled={editMode}
+                    id="fromBranch"
+                    name="fromBranch"
+                    onChange={(event) => setFromBranch(event.currentTarget.value)}
+                    value={fromBranch}
+                  >
+                    {(options?.fromBranches ?? []).map((branch) => (
+                      <option key={branch.name} value={branch.name}>
+                        {branch.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label htmlFor="toProjectId">
+                  To project
+                  <select
+                    disabled={editMode}
+                    id="toProjectId"
+                    name="toProjectId"
+                    onChange={(event) => setToProjectId(Number(event.currentTarget.value))}
+                    value={toProjectId}
+                  >
+                    {(options?.toProjects ?? []).map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {`${project.ownerName}/${project.projectName}`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label htmlFor="toBranch">
+                  To branch
+                  <select
+                    disabled={editMode}
+                    id="toBranch"
+                    name="toBranch"
+                    onChange={(event) => setToBranch(event.currentTarget.value)}
+                    value={toBranch}
+                  >
+                    {(options?.toBranches ?? []).map((branch) => (
+                      <option key={branch.name} value={branch.name}>
+                        {branch.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <label htmlFor="pullRequestState">
+                Title
+                <input
+                  id="pullRequestState"
+                  name="title"
+                  onChange={(event) => setTitle(event.currentTarget.value)}
+                  required
+                  value={title}
+                />
+              </label>
+              <label htmlFor="status">
+                Description
+                <textarea
+                  className="content-body"
+                  id="status"
+                  name="bodyMarkdown"
+                  onChange={(event) => setBodyMarkdown(event.currentTarget.value)}
+                  required
+                  value={bodyMarkdown}
+                />
+              </label>
+              <div id="__commits">
+                <span className="num-badge">{initialPullRequest?.commits.length ?? 0}</span>
+                <span> commits</span>
+              </div>
+              <div className="actions">
+                <button className="ybtn ybtn-success" disabled={submitting} type="submit">
+                  {editMode ? "Save" : "Create"}
+                </button>
+                <a className="ybtn" href={backHref}>
+                  Cancel
+                </a>
+              </div>
+            </form>
+          </section>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 function PullRequestActionBar(props: {
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
+  viewerId?: number;
+  onClose?: () => Promise<void>;
+  onOpen?: () => Promise<void>;
+  onReview?: () => Promise<void>;
+  onUnreview?: () => Promise<void>;
 }) {
   const pr = props.pullRequest;
+  const viewerReviewed = props.viewerId
+    ? pr.reviewers.some((reviewer) => reviewer.userId === props.viewerId)
+    : false;
   return (
     <div className="pull-request-actions">
       {pr.permissions.canUpdate ? (
@@ -346,6 +550,30 @@ function PullRequestActionBar(props: {
           Changes
         </a>
       ) : null}
+      {pr.permissions.canUpdateState && pr.state === "open" ? (
+        <button className="ybtn" onClick={() => void props.onClose?.()} type="button">
+          Close
+        </button>
+      ) : null}
+      {pr.permissions.canUpdateState && pr.state === "closed" ? (
+        <button className="ybtn" onClick={() => void props.onOpen?.()} type="button">
+          Reopen
+        </button>
+      ) : null}
+      {pr.permissions.canReview ? (
+        viewerReviewed ? (
+          <button className="ybtn" onClick={() => void props.onUnreview?.()} type="button">
+            Unreview
+          </button>
+        ) : (
+          <button className="ybtn" onClick={() => void props.onReview?.()} type="button">
+            Review
+          </button>
+        )
+      ) : null}
+      <button className="ybtn" disabled type="button">
+        Merge deferred
+      </button>
     </div>
   );
 }
@@ -354,9 +582,18 @@ export function ProjectPullRequestDetailPage(props: {
   detail: ProjectDetailViewModel | null;
   pullRequest: PullRequestDetailResponse | undefined;
   runtimeConfig: RuntimeConfig;
+  viewerId?: number;
+  onClose?: () => Promise<void>;
+  onCommentSubmit?: (contentsMarkdown: string) => Promise<void>;
+  onOpen?: () => Promise<void>;
+  onReview?: () => Promise<void>;
+  onThreadClose?: (threadId: number) => Promise<void>;
+  onThreadOpen?: (threadId: number) => Promise<void>;
+  onUnreview?: () => Promise<void>;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
   const pr = props.pullRequest;
+  const [commentDraft, setCommentDraft] = React.useState("");
 
   return (
     <main className="app-shell pull-request-page">
@@ -381,12 +618,64 @@ export function ProjectPullRequestDetailPage(props: {
               <span>{`Watchers: ${pr.watcherCount}`}</span>
               <span>{pr.updatedLabel || pr.createdLabel}</span>
             </div>
-            <PullRequestActionBar pullRequest={pr} runtimeConfig={props.runtimeConfig} />
+            <PullRequestActionBar
+              pullRequest={pr}
+              runtimeConfig={props.runtimeConfig}
+              viewerId={props.viewerId}
+              onClose={props.onClose}
+              onOpen={props.onOpen}
+              onReview={props.onReview}
+              onUnreview={props.onUnreview}
+            />
+          </section>
+          <section id="reviewers" className="review-list-wrap">
+            <h2>Reviewers</h2>
+            {pr.reviewers.length === 0 ? (
+              <div className="warning-none">pullRequest.reviewers.empty</div>
+            ) : (
+              <ul className="unstyled">
+                {pr.reviewers.map((reviewer) => (
+                  <li key={reviewer.userId}>{reviewer.userLabel || reviewer.loginId}</li>
+                ))}
+              </ul>
+            )}
           </section>
           <section className="board-body">
             <div className="markdown-wrap" dangerouslySetInnerHTML={{ __html: pr.bodyHtml }} />
           </section>
-          <ReviewThreadSection threads={pr.threads} />
+          <ReviewThreadSection
+            threads={pr.threads}
+            onThreadClose={props.onThreadClose}
+            onThreadOpen={props.onThreadOpen}
+          />
+          <section className="board-comment-wrap">
+            <h2 id="comments">{`Comments ${pr.threads.reduce(
+              (count, thread) => count + thread.comments.length,
+              0,
+            )}`}</h2>
+            {pr.permissions.canComment ? (
+              <form
+                className="review-form board-comment-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const contents = commentDraft.trim();
+                  if (!contents) {
+                    return;
+                  }
+                  void props.onCommentSubmit?.(contents).then(() => setCommentDraft(""));
+                }}
+              >
+                <textarea
+                  name="contentsMarkdown"
+                  onChange={(event) => setCommentDraft(event.currentTarget.value)}
+                  value={commentDraft}
+                />
+                <button className="ybtn ybtn-success" type="submit">
+                  Comment
+                </button>
+              </form>
+            ) : null}
+          </section>
           <section className="review-list-wrap">
             <h2>Events</h2>
             {pr.events.length === 0 ? (
@@ -411,22 +700,37 @@ export function ProjectPullRequestDetailPage(props: {
   );
 }
 
-function ReviewThreadSection(props: { threads: ReviewThread[] }) {
+function ReviewThreadSection(props: {
+  threads: ReviewThread[];
+  onThreadClose?: (threadId: number) => Promise<void>;
+  onThreadOpen?: (threadId: number) => Promise<void>;
+}) {
   return (
     <section className="review-list-wrap">
       <h2>Reviews</h2>
       {props.threads.length === 0 ? (
         <div className="warning-none">review.is.empty</div>
       ) : (
-        props.threads.map((thread) => <ReviewThreadItem key={thread.id} thread={thread} />)
+        props.threads.map((thread) => (
+          <ReviewThreadItem
+            key={thread.id}
+            thread={thread}
+            onThreadClose={props.onThreadClose}
+            onThreadOpen={props.onThreadOpen}
+          />
+        ))
       )}
     </section>
   );
 }
 
-function ReviewThreadItem(props: { thread: ReviewThread }) {
+function ReviewThreadItem(props: {
+  thread: ReviewThread;
+  onThreadClose?: (threadId: number) => Promise<void>;
+  onThreadOpen?: (threadId: number) => Promise<void>;
+}) {
   return (
-    <article className="review-card" id={`thread-${props.thread.id}`}>
+    <article className="review-card comment-thread-wrap" id={`thread-${props.thread.id}`}>
       <header>
         <strong>{props.thread.path || props.thread.commitId || "General review"}</strong>
         <span>{props.thread.startLine ? `:${props.thread.startLine}` : ""}</span>
@@ -434,8 +738,27 @@ function ReviewThreadItem(props: { thread: ReviewThread }) {
           {props.thread.state}
         </span>
       </header>
+      <div className="thread-actrow">
+        {props.thread.state === "closed" ? (
+          <button
+            className="ybtn"
+            onClick={() => void props.onThreadOpen?.(props.thread.id)}
+            type="button"
+          >
+            Open thread
+          </button>
+        ) : (
+          <button
+            className="ybtn"
+            onClick={() => void props.onThreadClose?.(props.thread.id)}
+            type="button"
+          >
+            Close thread
+          </button>
+        )}
+      </div>
       {props.thread.comments.map((comment) => (
-        <div className="review-comment" key={comment.id}>
+        <div className="review-comment board-comment" id={`comment-${comment.id}`} key={comment.id}>
           <p>{`${comment.authorLabel || comment.authorLoginId || "Unknown"} ${comment.createdLabel}`}</p>
           <div dangerouslySetInnerHTML={{ __html: comment.contentsHtml }} />
         </div>
@@ -448,6 +771,8 @@ export function PullRequestChangesPage(props: {
   changes: PullRequestChangesResponse | undefined;
   detail: ProjectDetailViewModel | null;
   runtimeConfig: RuntimeConfig;
+  onThreadClose?: (threadId: number) => Promise<void>;
+  onThreadOpen?: (threadId: number) => Promise<void>;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
   const pr = props.changes?.pullRequest;
@@ -486,7 +811,12 @@ export function PullRequestChangesPage(props: {
           <div className="warning-none">No changed file diff is available.</div>
         )}
         {(props.changes?.threads ?? []).map((thread) => (
-          <ReviewThreadItem key={thread.id} thread={thread} />
+          <ReviewThreadItem
+            key={thread.id}
+            thread={thread}
+            onThreadClose={props.onThreadClose}
+            onThreadOpen={props.onThreadOpen}
+          />
         ))}
       </section>
     </main>

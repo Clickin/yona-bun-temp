@@ -23,6 +23,31 @@ export const apiQueryKeys = {
         "pull-requests",
         pullRequestNumber,
       ] as const,
+    pullRequestCreateFormOptions: (
+      ownerName: string,
+      projectName: string,
+      input: {
+        fromBranch: string;
+        fromProjectId: number;
+        toBranch: string;
+        toProjectId: number;
+      },
+    ) =>
+      [
+        ...apiQueryKeys.project.base(ownerName, projectName),
+        "pull-requests",
+        "form-options",
+        input,
+      ] as const,
+    pullRequestEditFormOptions: (
+      ownerName: string,
+      projectName: string,
+      pullRequestNumber: number,
+    ) =>
+      [
+        ...apiQueryKeys.project.pullRequestDetail(ownerName, projectName, pullRequestNumber),
+        "form-options",
+      ] as const,
     pullRequestList: (
       ownerName: string,
       projectName: string,
@@ -104,8 +129,9 @@ export const apiQueryKeys = {
       [...apiQueryKeys.v1(), "notifications", { from: input.from, size: input.size }] as const,
   },
   search: {
+    all: () => [...apiQueryKeys.v1(), "search"] as const,
     global: (input: { keyword: string; pageNum: number; searchType: string }) =>
-      [...apiQueryKeys.v1(), "search", "global", input] as const,
+      [...apiQueryKeys.search.all(), "global", input] as const,
     organization: (
       organizationName: string,
       input: { keyword: string; pageNum: number; searchType: string },
