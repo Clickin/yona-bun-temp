@@ -172,12 +172,40 @@ pub enum VcsError {
     InvalidBranch,
     #[error("repository object not found")]
     NotFound,
+    #[error("repository filesystem operation failed: {0}")]
+    FilesystemFailed(String),
     #[error("git command failed: {0}")]
     GitFailed(String),
 }
 
 pub fn repository_path(data_root: &Path, project_id: i64) -> PathBuf {
     data_root.join("repo").join(format!("{project_id}.git"))
+}
+
+pub fn create_bare_repository(repo_path: &Path) -> Result<(), VcsError> {
+    if let Some(parent) = repo_path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|error| VcsError::FilesystemFailed(error.to_string()))?;
+    }
+    if repo_path.exists() && !repo_path.is_dir() {
+        return Err(VcsError::FilesystemFailed(format!(
+            "{} exists and is not a directory",
+            repo_path.display()
+        )));
+    }
+
+    let output = Command::new("git")
+        .args(["init", "--bare"])
+        .arg(repo_path)
+        .output()
+        .map_err(|_| VcsError::GitUnavailable)?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(VcsError::GitFailed(
+            String::from_utf8_lossy(&output.stderr).trim().to_string(),
+        ))
+    }
 }
 
 pub fn read_code_browser(

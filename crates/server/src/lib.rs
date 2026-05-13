@@ -18,7 +18,12 @@ use runtime_config::normalize_base_path;
 use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Deserializer, Serialize};
 use session::{SessionConfig, SessionManager};
-use std::{collections::HashMap, path::PathBuf, vec};
+use std::{
+    collections::HashMap,
+    path::PathBuf,
+    sync::{Mutex, OnceLock},
+    vec,
+};
 
 use generated::yona::pilot::v1::*;
 use persistence::PilotRepository;
@@ -919,6 +924,11 @@ fn yona_data_root() -> PathBuf {
         .filter(|value| !value.trim().is_empty())
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from(".yona-data"))
+}
+
+fn repository_provisioning_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
 }
 
 fn uploaded_files_root() -> PathBuf {
@@ -15157,6 +15167,13 @@ impl PilotServiceImpl {
                 .await
                 .map_err(internal_error)?
         };
+        let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), created.id);
+        {
+            let _guard = repository_provisioning_lock()
+                .lock()
+                .map_err(|_| internal_error("repository provisioning lock poisoned"))?;
+            yona_rust_vcs::create_bare_repository(&repo_path).map_err(code_browser_error)?;
+        }
         repository
             .add_project_membership(created.id, user_id, "manager")
             .await
@@ -17815,7 +17832,9 @@ fn code_browser_error(error: VcsError) -> ConnectError {
             ConnectError::invalid_argument(error.to_string())
         }
         VcsError::NotFound => ConnectError::not_found("repository path not found"),
-        VcsError::GitTimedOut | VcsError::GitFailed(_) => internal_error(error),
+        VcsError::GitTimedOut | VcsError::GitFailed(_) | VcsError::FilesystemFailed(_) => {
+            internal_error(error)
+        }
     }
 }
 
@@ -17826,7 +17845,9 @@ fn code_branch_error(error: VcsError) -> ConnectError {
             ConnectError::invalid_argument(error.to_string())
         }
         VcsError::NotFound => ConnectError::not_found("branch not found"),
-        VcsError::GitTimedOut | VcsError::GitFailed(_) => internal_error(error),
+        VcsError::GitTimedOut | VcsError::GitFailed(_) | VcsError::FilesystemFailed(_) => {
+            internal_error(error)
+        }
     }
 }
 

@@ -229,6 +229,9 @@ fn write_repo_file(repo_path: &Path, relative_path: &str, contents: &str) {
 }
 
 fn clone_bare(work_path: &Path, repo_path: &Path) {
+    if repo_path.exists() {
+        fs::remove_dir_all(repo_path).expect("replace provisioned bare repository");
+    }
     let status = Command::new("git")
         .args(["clone", "--bare"])
         .arg(work_path)

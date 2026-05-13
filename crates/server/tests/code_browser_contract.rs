@@ -250,6 +250,87 @@ async fn create_project(app: axum::Router, cookie: &str, csrf: &str, scope: &str
     .await;
 }
 
+#[tokio::test]
+async fn rest_project_create_provisions_empty_bare_git_repository() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, db) = build_app_with_repository_and_db().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+
+    let response = response_json(
+        rest_post_json(
+            app.clone(),
+            "/owners/owner/projects",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "projectName": "projectYobi",
+                "overview": "Repository provisioning parity",
+                "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(response["ownerName"], "owner");
+    assert_eq!(response["projectName"], "projectYobi");
+
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("created project");
+    let backend = db.get_database_backend();
+    let rows = db
+        .query_all(Statement::from_sql_and_values(
+            backend,
+            "SELECT vcs FROM project WHERE id = ?",
+            vec![project.id.into()],
+        ))
+        .await
+        .expect("read project vcs");
+    assert_eq!(
+        rows[0].try_get::<String>("", "vcs").unwrap(),
+        "GIT",
+        "legacy project create defaults to Git"
+    );
+    let bare_repo = data_dir
+        .path()
+        .join("repo")
+        .join(format!("{}.git", project.id));
+    assert!(bare_repo.is_dir(), "bare repo path should be created");
+
+    let output = Command::new("git")
+        .args([
+            "--git-dir",
+            bare_repo.to_str().unwrap(),
+            "rev-parse",
+            "--is-bare-repository",
+        ])
+        .output()
+        .expect("inspect bare repository");
+    assert!(
+        output.status.success(),
+        "git rev-parse failed\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&output.stdout).trim(), "true");
+
+    let code =
+        response_json(rest_get(app, "/projects/owner/projectYobi/code", Some(&cookie)).await).await;
+    assert!(json_bool(&code, "noHead"));
+    assert_eq!(
+        code.get("branches")
+            .and_then(|value| value.as_array())
+            .map_or(0, Vec::len),
+        0
+    );
+}
+
 fn run_git(args: &[&str], cwd: Option<&Path>) {
     let mut command = Command::new("git");
     command.args(args);
@@ -1305,9 +1386,21 @@ async fn code_browser_reports_no_head_for_missing_repository() {
         .unwrap_or_else(|error| error.into_inner());
     let data_dir = tempdir().expect("yona data");
     std::env::set_var("YONA_DATA", data_dir.path());
-    let (app, _) = build_app_with_repository().await;
+    let (app, repo) = build_app_with_repository().await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("created project");
+    fs::remove_dir_all(
+        data_dir
+            .path()
+            .join("repo")
+            .join(format!("{}.git", project.id)),
+    )
+    .expect("remove provisioned repository to cover missing repo no-head state");
 
     let response = response_json(
         rpc(
