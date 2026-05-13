@@ -31,9 +31,9 @@ use yona_rust_domain::{
 use yona_rust_integrations::{deliver, OutboundMail};
 use yona_rust_search::SearchType;
 use yona_rust_vcs::{
-    CodeBrowserSnapshot, CodeCommitDetailSnapshot, CodeCommitFileDiffRecord,
-    CodeCommitParentRecord, CodeCommitRecord, CodeCompareSnapshot, CodeEntryRecord,
-    CodeFileBytesRecord, CodeFileRecord, CodeHistorySnapshot, VcsError,
+    CodeBranchListSnapshot, CodeBrowserSnapshot, CodeCommitDetailSnapshot,
+    CodeCommitFileDiffRecord, CodeCommitParentRecord, CodeCommitRecord, CodeCompareSnapshot,
+    CodeEntryRecord, CodeFileBytesRecord, CodeFileRecord, CodeHistorySnapshot, VcsError,
 };
 
 #[allow(clippy::missing_panics_doc)]
@@ -2529,6 +2529,52 @@ struct RestCodeCompareResponse {
     rev_b: String,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestCodeBranchMutationBody {
+    branch_name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestCodeBranchListResponse {
+    branches: Vec<RestCodeBranchListItem>,
+    default_branch: String,
+    no_head: bool,
+    owner_name: String,
+    permissions: RestCodeBranchPermissions,
+    project_name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestCodeBranchListItem {
+    commit_date: String,
+    commit_id: String,
+    commit_message: String,
+    commit_short_id: String,
+    is_default: bool,
+    name: String,
+    pull_request: Option<RestCodeBranchPullRequest>,
+    short_name: String,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestCodeBranchPullRequest {
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    state: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestCodeBranchPermissions {
+    can_delete: bool,
+    can_update: bool,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestCodeCommitParent {
@@ -3804,6 +3850,73 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             owner_name,
                             project_name,
                             revision_range,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/branches",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_read_code_branches(
+                            headers,
+                            owner_name,
+                            project_name,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestCodeBranchMutationBody>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_delete_code_branch(
+                            headers,
+                            owner_name,
+                            project_name,
+                            body,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/branches/default",
+            post({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestCodeBranchMutationBody>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_set_default_code_branch(
+                            headers,
+                            owner_name,
+                            project_name,
+                            body,
                             session_manager,
                             backend,
                         )
@@ -7076,6 +7189,121 @@ async fn rest_read_code_compare(
         &authorization.project.owner_name,
         &authorization.project.project_name,
         snapshot,
+    )))
+}
+
+async fn rest_read_code_branches(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestCodeBranchListResponse>, RestRouteError> {
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "code branches require repository backend",
+        ));
+    };
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, actor_id).await?;
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let snapshot = yona_rust_vcs::read_branch_list(&repo_path)
+        .map_err(code_branch_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let pull_requests =
+        code_branch_pull_requests(repository, &authorization.project, &snapshot).await?;
+    Ok(Json(code_branch_list_response_from_snapshot(
+        &authorization,
+        actor_id,
+        snapshot,
+        pull_requests,
+    )))
+}
+
+async fn rest_set_default_code_branch(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestCodeBranchMutationBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestCodeBranchListResponse>, RestRouteError> {
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "code branches require repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("branch default update is not allowed"),
+        ));
+    }
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let snapshot = yona_rust_vcs::set_default_branch(&repo_path, &body.branch_name)
+        .map_err(code_branch_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let pull_requests =
+        code_branch_pull_requests(repository, &authorization.project, &snapshot).await?;
+    Ok(Json(code_branch_list_response_from_snapshot(
+        &authorization,
+        Some(actor.id),
+        snapshot,
+        pull_requests,
+    )))
+}
+
+async fn rest_delete_code_branch(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestCodeBranchMutationBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestCodeBranchListResponse>, RestRouteError> {
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "code branches require repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("branch delete is not allowed"),
+        ));
+    }
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let snapshot = yona_rust_vcs::delete_branch(&repo_path, &body.branch_name)
+        .map_err(code_branch_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let pull_requests =
+        code_branch_pull_requests(repository, &authorization.project, &snapshot).await?;
+    Ok(Json(code_branch_list_response_from_snapshot(
+        &authorization,
+        Some(actor.id),
+        snapshot,
+        pull_requests,
     )))
 }
 
@@ -17182,10 +17410,21 @@ fn rest_pull_request_detail_from_record(
 fn code_browser_error(error: VcsError) -> ConnectError {
     match error {
         VcsError::GitUnavailable => ConnectError::unimplemented("git executable is unavailable"),
-        VcsError::InvalidPath | VcsError::InvalidRepositoryPath => {
+        VcsError::InvalidBranch | VcsError::InvalidPath | VcsError::InvalidRepositoryPath => {
             ConnectError::invalid_argument(error.to_string())
         }
         VcsError::NotFound => ConnectError::not_found("repository path not found"),
+        VcsError::GitTimedOut | VcsError::GitFailed(_) => internal_error(error),
+    }
+}
+
+fn code_branch_error(error: VcsError) -> ConnectError {
+    match error {
+        VcsError::GitUnavailable => ConnectError::unimplemented("git executable is unavailable"),
+        VcsError::InvalidBranch | VcsError::InvalidPath | VcsError::InvalidRepositoryPath => {
+            ConnectError::invalid_argument(error.to_string())
+        }
+        VcsError::NotFound => ConnectError::not_found("branch not found"),
         VcsError::GitTimedOut | VcsError::GitFailed(_) => internal_error(error),
     }
 }
@@ -17342,6 +17581,70 @@ fn code_compare_response_from_snapshot(
         rev_a: snapshot.rev_a,
         rev_b: snapshot.rev_b,
     }
+}
+
+fn code_branch_list_response_from_snapshot(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor_id: Option<i64>,
+    snapshot: CodeBranchListSnapshot,
+    pull_requests: HashMap<String, RestCodeBranchPullRequest>,
+) -> RestCodeBranchListResponse {
+    let can_update = actor_id.is_some() && project_update_allowed(authorization).unwrap_or(false);
+    RestCodeBranchListResponse {
+        branches: snapshot
+            .branches
+            .into_iter()
+            .map(|branch| RestCodeBranchListItem {
+                commit_date: branch.commit_date,
+                commit_id: branch.commit_id,
+                commit_message: branch.commit_message,
+                commit_short_id: branch.commit_short_id,
+                is_default: branch.is_default,
+                pull_request: pull_requests.get(&branch.name).cloned(),
+                name: branch.name,
+                short_name: branch.short_name,
+            })
+            .collect(),
+        default_branch: snapshot.default_branch,
+        no_head: snapshot.no_head,
+        owner_name: authorization.project.owner_name.clone(),
+        permissions: RestCodeBranchPermissions {
+            can_delete: can_update,
+            can_update,
+        },
+        project_name: authorization.project.project_name.clone(),
+    }
+}
+
+async fn code_branch_pull_requests(
+    repository: &PilotRepository,
+    project: &persistence::ProjectRecord,
+    snapshot: &CodeBranchListSnapshot,
+) -> Result<HashMap<String, RestCodeBranchPullRequest>, RestRouteError> {
+    let branch_names = snapshot
+        .branches
+        .iter()
+        .map(|branch| branch.name.clone())
+        .collect::<Vec<_>>();
+    let records = repository
+        .latest_pull_requests_from_branches(project, &branch_names)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(records
+        .into_iter()
+        .map(|(branch_name, record)| {
+            (
+                branch_name,
+                RestCodeBranchPullRequest {
+                    owner_name: record.owner_name,
+                    project_name: record.project_name,
+                    pull_request_number: record.pull_request_number,
+                    state: record.state,
+                },
+            )
+        })
+        .collect())
 }
 
 fn code_commit_to_rest(commit: CodeCommitRecord) -> RestCodeCommit {

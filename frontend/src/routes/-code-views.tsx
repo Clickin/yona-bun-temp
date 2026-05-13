@@ -50,6 +50,32 @@ export interface CodeCompareViewModel {
   revB: string;
 }
 
+export interface CodeBranchListViewModel {
+  branches: Array<{
+    commitDate: string;
+    commitId: string;
+    commitMessage: string;
+    commitShortId: string;
+    isDefault: boolean;
+    name: string;
+    pullRequest: {
+      ownerName: string;
+      projectName: string;
+      pullRequestNumber: number;
+      state: string;
+    } | null;
+    shortName: string;
+  }>;
+  defaultBranch: string;
+  noHead: boolean;
+  ownerName: string;
+  permissions: {
+    canDelete: boolean;
+    canUpdate: boolean;
+  };
+  projectName: string;
+}
+
 function fallbackProjectDetail(): ProjectDetailViewModel {
   return {
     enrollmentRequested: false,
@@ -117,6 +143,34 @@ function codeArchiveHref(
   );
 }
 
+function branchSetDefaultHref(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  branch: string,
+) {
+  return buildProjectHref(
+    runtimeConfig,
+    ownerName,
+    projectName,
+    `code/${encodeURIComponent(branch)}/setAsDefault`,
+  );
+}
+
+function branchDeleteHref(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  branch: string,
+) {
+  return buildProjectHref(
+    runtimeConfig,
+    ownerName,
+    projectName,
+    `code/${encodeURIComponent(branch)}/`,
+  );
+}
+
 function codeHistoryHref(
   runtimeConfig: RuntimeConfig,
   ownerName: string,
@@ -135,6 +189,20 @@ function codeHistoryHref(
     return href;
   }
   return `${href}?page=${page}`;
+}
+
+function pullRequestHref(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  pullRequestNumber: number,
+) {
+  return buildProjectHref(
+    runtimeConfig,
+    ownerName,
+    projectName,
+    `pullRequest/${pullRequestNumber}`,
+  );
 }
 
 function commitDetailHref(
@@ -448,6 +516,250 @@ export function CodeComparePage(props: {
         </div>
       </div>
     </main>
+  );
+}
+
+export function CodeBranchListPage(props: {
+  branchList: CodeBranchListViewModel | null;
+  detail: ProjectDetailViewModel | null;
+  onDeleteBranch: (branchName: string) => Promise<void>;
+  onSetDefaultBranch: (branchName: string) => Promise<void>;
+  pendingBranchName?: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const detail = props.detail ?? fallbackProjectDetail();
+  const branchList = props.branchList;
+  const defaultBranch = branchList?.defaultBranch || "HEAD";
+
+  return (
+    <main className="app-shell">
+      <p className="eyebrow">Yona Rust Project</p>
+      <h1>Branches</h1>
+      <p>{`${detail.ownerName}/${detail.projectName}`}</p>
+      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="bubble-wrap dark-gray repo-wrap">
+            <div className="code-browse-wrap">
+              <ul className="nav nav-tabs">
+                <li>
+                  <a
+                    href={codeHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      defaultBranch,
+                    )}
+                  >
+                    Files
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={codeHistoryHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      defaultBranch,
+                    )}
+                  >
+                    Commits
+                  </a>
+                </li>
+                <li className="active">
+                  <a
+                    aria-current="page"
+                    href={buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      "branches",
+                    )}
+                  >
+                    Branches
+                  </a>
+                </li>
+              </ul>
+              {branchList?.noHead ? (
+                <div className="alert alert-block">
+                  <h2>The repository is empty!</h2>
+                  <p>{`Clone URL: ${detail.cloneUrl ?? ""}`}</p>
+                </div>
+              ) : (
+                <CodeBranchTable
+                  branchList={branchList}
+                  detail={detail}
+                  onDeleteBranch={props.onDeleteBranch}
+                  onSetDefaultBranch={props.onSetDefaultBranch}
+                  pendingBranchName={props.pendingBranchName}
+                  runtimeConfig={props.runtimeConfig}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function CodeBranchTable(props: {
+  branchList: CodeBranchListViewModel | null;
+  detail: ProjectDetailViewModel;
+  onDeleteBranch: (branchName: string) => Promise<void>;
+  onSetDefaultBranch: (branchName: string) => Promise<void>;
+  pendingBranchName?: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const branchList = props.branchList;
+  const branches = branchList?.branches ?? [];
+  const showActions =
+    branchList?.permissions.canDelete === true || branchList?.permissions.canUpdate === true;
+  return (
+    <table className="table branch-list-wrap">
+      <thead className="thead">
+        <tr>
+          <th>Branches</th>
+          <th>Commit</th>
+          <th>Pull Request</th>
+          {showActions ? <th></th> : null}
+        </tr>
+      </thead>
+      <tbody>
+        {branches.length === 0 ? (
+          <tr>
+            <td className="warning-none" colSpan={showActions ? 4 : 3}>
+              No branches
+            </td>
+          </tr>
+        ) : (
+          branches.map((branch) => (
+            <CodeBranchRow
+              branch={branch}
+              canDelete={branchList?.permissions.canDelete === true}
+              canUpdate={branchList?.permissions.canUpdate === true}
+              detail={props.detail}
+              key={branch.name}
+              onDeleteBranch={props.onDeleteBranch}
+              onSetDefaultBranch={props.onSetDefaultBranch}
+              pending={props.pendingBranchName === branch.name}
+              runtimeConfig={props.runtimeConfig}
+              showActions={showActions}
+            />
+          ))
+        )}
+      </tbody>
+    </table>
+  );
+}
+
+function CodeBranchRow(props: {
+  branch: CodeBranchListViewModel["branches"][number];
+  canDelete: boolean;
+  canUpdate: boolean;
+  detail: ProjectDetailViewModel;
+  onDeleteBranch: (branchName: string) => Promise<void>;
+  onSetDefaultBranch: (branchName: string) => Promise<void>;
+  pending: boolean;
+  runtimeConfig: RuntimeConfig;
+  showActions: boolean;
+}) {
+  const branch = props.branch;
+  return (
+    <tr className={branch.isDefault ? "head" : undefined}>
+      <td className="branchName">
+        <a
+          href={codeHref(
+            props.runtimeConfig,
+            props.detail.ownerName,
+            props.detail.projectName,
+            branch.name,
+          )}
+        >
+          {branch.shortName || branch.name}
+        </a>
+        {branch.isDefault ? <span className="headBranch ml10">Default branch</span> : null}
+      </td>
+      <td className="commit">
+        <a
+          className="commitId"
+          href={codeHistoryHref(
+            props.runtimeConfig,
+            props.detail.ownerName,
+            props.detail.projectName,
+            branch.name,
+          )}
+          title={branch.commitId}
+        >
+          {branch.commitShortId}
+        </a>
+        <span className="date" title={branch.commitDate}>
+          {branch.commitDate}
+        </span>
+        {branch.commitMessage ? (
+          <pre className="commitMsg desc hidden">{branch.commitMessage}</pre>
+        ) : null}
+      </td>
+      <td className="pullRequest">
+        {branch.pullRequest ? (
+          <a
+            className={`blue-txt pullrequest-state ${branch.pullRequest.state.toLowerCase()}`}
+            href={pullRequestHref(
+              props.runtimeConfig,
+              branch.pullRequest.ownerName,
+              branch.pullRequest.projectName,
+              branch.pullRequest.pullRequestNumber,
+            )}
+            title={`pullRequest.state.${branch.pullRequest.state.toLowerCase()}`}
+          >
+            {`pullRequest-${branch.pullRequest.pullRequestNumber}`}
+          </a>
+        ) : (
+          <span className="disabled">No pull request</span>
+        )}
+      </td>
+      {props.showActions ? (
+        <td className="actions">
+          {props.canUpdate && !branch.isDefault ? (
+            <button
+              className="ybtn ybtn-default ybtn-small"
+              data-request-method="post"
+              data-request-uri={branchSetDefaultHref(
+                props.runtimeConfig,
+                props.detail.ownerName,
+                props.detail.projectName,
+                branch.name,
+              )}
+              disabled={props.pending}
+              onClick={() => {
+                void props.onSetDefaultBranch(branch.name);
+              }}
+              type="button"
+            >
+              Set as default
+            </button>
+          ) : null}
+          {props.canDelete && !branch.isDefault ? (
+            <a
+              className="ybtn ybtn-danger ybtn-small"
+              data-request-method="delete"
+              href={branchDeleteHref(
+                props.runtimeConfig,
+                props.detail.ownerName,
+                props.detail.projectName,
+                branch.name,
+              )}
+              onClick={(event) => {
+                event.preventDefault();
+                void props.onDeleteBranch(branch.name);
+              }}
+            >
+              Delete
+            </a>
+          ) : null}
+        </td>
+      ) : null}
+    </tr>
   );
 }
 

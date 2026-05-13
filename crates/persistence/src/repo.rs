@@ -1,8 +1,9 @@
 use crate::repo_types::{
-    AppUserInput, AppUserRecord, AttachmentRecord, CreateIssueCommentInput, CreateIssueInput,
-    CreateOrganizationInput, CreatePostingCommentInput, CreatePostingInput, CreateProjectInput,
-    CreateProjectLabelCategoryInput, CreateProjectLabelInput, CreatePullRequestCommentInput,
-    CreatePullRequestInput, CreatePullRequestResult, CreateUserInput, IssueAssignableUserRecord,
+    AppUserInput, AppUserRecord, AttachmentRecord, BranchPullRequestRecord,
+    CreateIssueCommentInput, CreateIssueInput, CreateOrganizationInput, CreatePostingCommentInput,
+    CreatePostingInput, CreateProjectInput, CreateProjectLabelCategoryInput,
+    CreateProjectLabelInput, CreatePullRequestCommentInput, CreatePullRequestInput,
+    CreatePullRequestResult, CreateUserInput, IssueAssignableUserRecord,
     IssueAssignableUserSearchRecord, IssueAttachmentRecord, IssueCommentRecord,
     IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter,
     IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueRecord,
@@ -5309,6 +5310,58 @@ impl AppRepository {
             page_size: PAGE_SIZE,
             total_count,
         })
+    }
+
+    pub async fn latest_pull_requests_from_branches(
+        &self,
+        project: &ProjectRecord,
+        branch_names: &[String],
+    ) -> Result<HashMap<String, BranchPullRequestRecord>, DbErr> {
+        let branch_names = branch_names
+            .iter()
+            .map(|branch| branch.trim().to_string())
+            .filter(|branch| !branch.is_empty())
+            .collect::<Vec<_>>();
+        if branch_names.is_empty() {
+            return Ok(HashMap::new());
+        }
+        let target_project_ids = match project.original_project_id {
+            Some(original_project_id) => vec![Some(project.id), Some(original_project_id)],
+            None => vec![Some(project.id)],
+        };
+        let rows = pull_request::Entity::find()
+            .filter(pull_request::Column::FromProjectId.eq(Some(project.id)))
+            .filter(pull_request::Column::FromBranch.is_in(branch_names))
+            .filter(pull_request::Column::ToProjectId.is_in(target_project_ids))
+            .order_by_desc(pull_request::Column::Number)
+            .order_by_desc(pull_request::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut latest_by_branch = HashMap::new();
+        for row in rows {
+            let Some(from_branch) = row.from_branch.clone().filter(|branch| !branch.is_empty())
+            else {
+                continue;
+            };
+            if latest_by_branch.contains_key(&from_branch) {
+                continue;
+            }
+            let to_project = match row.to_project_id {
+                Some(project_id) => self.read_project_by_id(project_id).await?,
+                None => None,
+            }
+            .unwrap_or_else(|| project.clone());
+            latest_by_branch.insert(
+                from_branch,
+                BranchPullRequestRecord {
+                    owner_name: to_project.owner_name,
+                    project_name: to_project.project_name,
+                    pull_request_number: row.number.unwrap_or_default(),
+                    state: pull_request_state_from_raw(row.state, row.is_conflict),
+                },
+            );
+        }
+        Ok(latest_by_branch)
     }
 
     pub async fn list_organization_pull_requests(

@@ -18,6 +18,71 @@ function restErrorEnvelope(code: string, message: string, status: number) {
 }
 
 test.beforeEach(async ({ page }) => {
+  let branchDefault = "main";
+  let deleteMeVisible = true;
+  const branchListPayload = () => {
+    const branches = [
+      {
+        commitDate: "2026-04-21",
+        commitId: "abcdef1234567890abcdef1234567890abcdef12",
+        commitMessage: "Initial commit",
+        commitShortId: "abcdef1",
+        isDefault: branchDefault === "main",
+        name: "main",
+        pullRequest: null,
+        shortName: "main",
+      },
+      {
+        commitDate: "2026-04-22",
+        commitId: "1234567890abcdef1234567890abcdef12345678",
+        commitMessage: "Prepare branch admin",
+        commitShortId: "1234567",
+        isDefault: branchDefault === "topic/default",
+        name: "topic/default",
+        pullRequest: {
+          ownerName: "admin",
+          projectName: "projectYobi",
+          pullRequestNumber: 7,
+          state: "open",
+        },
+        shortName: "topic/default",
+      },
+      ...(deleteMeVisible
+        ? [
+            {
+              commitDate: "2026-04-23",
+              commitId: "fedcba1234567890abcdef1234567890abcdef12",
+              commitMessage: "Delete candidate",
+              commitShortId: "fedcba1",
+              isDefault: false,
+              name: "topic/delete-me",
+              pullRequest: null,
+              shortName: "topic/delete-me",
+            },
+          ]
+        : []),
+    ].sort((left, right) => {
+      if (left.isDefault) {
+        return -1;
+      }
+      if (right.isDefault) {
+        return 1;
+      }
+      return left.name.localeCompare(right.name);
+    });
+    return {
+      branches,
+      defaultBranch: branchDefault,
+      noHead: false,
+      ownerName: "admin",
+      permissions: {
+        canDelete: true,
+        canUpdate: true,
+      },
+      projectName: "projectYobi",
+    };
+  };
+
   await page.addInitScript(() => {
     window.__YONA_RUNTIME_CONFIG__ = {
       apiBaseUrl: "/yona/api",
@@ -423,6 +488,24 @@ test.beforeEach(async ({ page }) => {
       status: 200,
     });
   });
+
+  await page.route(
+    /\/api\/v1\/projects\/admin\/projectYobi\/branches(?:\/default)?$/,
+    async (route) => {
+      const method = route.request().method();
+      if (method === "POST") {
+        branchDefault = "topic/default";
+      }
+      if (method === "DELETE") {
+        deleteMeVisible = false;
+      }
+      await route.fulfill({
+        body: JSON.stringify(branchListPayload()),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
 
   await page.route(
     /\/api\/v1\/projects\/admin\/projectYobi\/commit\/[^/?]+(?:\?.*)?$/,
@@ -867,6 +950,42 @@ test("project commit history routes render branch and path-scoped lists", async 
   );
   await expect(page.locator(".diff-body.discommentable")).toContainText('println!("compare")');
   await expect(page.locator("#src-main-rs")).toBeVisible();
+});
+
+test("project branch routes render and mutate the legacy branch table", async ({ page }) => {
+  await page.goto("/yona/admin/projectYobi/branches");
+  await expect(page.getByRole("heading", { name: "Branches" })).toBeVisible();
+  await expect(page.locator(".branch-list-wrap")).toBeVisible();
+  await expect(page.locator("tr.head .branchName")).toContainText("main");
+  await expect(page.locator(".headBranch")).toContainText("Default branch");
+  await expect(page.locator(".commitId").first()).toHaveAttribute(
+    "title",
+    "abcdef1234567890abcdef1234567890abcdef12",
+  );
+  await expect(page.locator(".pullrequest-state.open")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/pullRequest/7",
+  );
+  await expect(
+    page.locator('[data-request-uri="/yona/admin/projectYobi/code/topic%2Fdefault/setAsDefault"]'),
+  ).toBeVisible();
+  await expect(
+    page.locator(
+      'a[data-request-method="delete"][href="/yona/admin/projectYobi/code/topic%2Fdelete-me/"]',
+    ),
+  ).toBeVisible();
+
+  await page
+    .locator('[data-request-uri="/yona/admin/projectYobi/code/topic%2Fdefault/setAsDefault"]')
+    .click();
+  await expect(page.locator("tr.head .branchName")).toContainText("topic/default");
+
+  await page
+    .locator(
+      'a[data-request-method="delete"][href="/yona/admin/projectYobi/code/topic%2Fdelete-me/"]',
+    )
+    .click();
+  await expect(page.locator(".branchName", { hasText: "topic/delete-me" })).toHaveCount(0);
 });
 
 test("organization issue route renders cross-project issue inbox", async ({ page }) => {

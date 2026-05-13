@@ -932,6 +932,14 @@ pub struct PullRequestListItemRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BranchPullRequestRecord {
+    pub owner_name: String,
+    pub project_name: String,
+    pub pull_request_number: i64,
+    pub state: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestListRecord {
     pub category: String,
     pub items: Vec<PullRequestListItemRecord>,
