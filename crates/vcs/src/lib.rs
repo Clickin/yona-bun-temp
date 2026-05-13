@@ -4,6 +4,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 pub const CRATE_OWNER: &str = "vcs";
+pub const HISTORY_ITEM_LIMIT: usize = 25;
 pub const MAX_TEXT_FILE_BYTES: i64 = 1024 * 1024;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -56,6 +57,31 @@ pub struct CodeFileBytesRecord {
     pub mime_type: String,
     pub name: String,
     pub path: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeHistorySnapshot {
+    pub branches: Vec<CodeBranchRecord>,
+    pub breadcrumbs: Vec<CodeBreadcrumbRecord>,
+    pub commits: Vec<CodeCommitRecord>,
+    pub has_newer: bool,
+    pub has_older: bool,
+    pub no_head: bool,
+    pub page: u32,
+    pub path: String,
+    pub selected_branch: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeCommitRecord {
+    pub author_date: String,
+    pub author_email: String,
+    pub author_name: String,
+    pub comment_count: u32,
+    pub commit_id: String,
+    pub commit_short_id: String,
+    pub message: String,
+    pub short_message: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -196,6 +222,45 @@ pub fn read_archive_zip(repo_path: &Path, revision: &str) -> Result<Vec<u8>, Vcs
     git_bytes(repo_path, &["archive", "--format=zip", revision])
 }
 
+pub fn read_code_history(
+    repo_path: &Path,
+    branch: Option<&str>,
+    path: &str,
+    page: u32,
+) -> Result<CodeHistorySnapshot, VcsError> {
+    if !repo_path.exists() {
+        return Ok(no_head_history_snapshot(page));
+    }
+    let repo_path = repo_path.to_path_buf();
+    let clean_path = normalize_repo_path(path)?;
+    let branches = list_branches(&repo_path)?;
+    if branches.is_empty() || !has_head(&repo_path) {
+        return Ok(no_head_history_snapshot(page));
+    }
+    let selected_branch = match branch.map(str::trim).filter(|value| !value.is_empty()) {
+        Some(branch) => branch.to_string(),
+        None => default_branch(&repo_path).unwrap_or_else(|| branches[0].name.clone()),
+    };
+    if !branches.iter().any(|branch| branch.name == selected_branch) {
+        return Err(VcsError::NotFound);
+    }
+
+    let breadcrumbs = breadcrumbs_for_path(&clean_path);
+    let commits = list_history_commits(&repo_path, &selected_branch, &clean_path, page)?;
+    let has_older = commits.len() > HISTORY_ITEM_LIMIT;
+    Ok(CodeHistorySnapshot {
+        branches,
+        breadcrumbs,
+        commits: commits.into_iter().take(HISTORY_ITEM_LIMIT).collect(),
+        has_newer: page > 0,
+        has_older,
+        no_head: false,
+        page,
+        path: clean_path,
+        selected_branch,
+    })
+}
+
 pub fn read_pull_request_diff(
     repo_path: &Path,
     from_branch: &str,
@@ -280,6 +345,20 @@ fn no_head_pull_request_diff() -> PullRequestDiffSnapshot {
         commits: Vec::new(),
         files: Vec::new(),
         no_head: true,
+    }
+}
+
+fn no_head_history_snapshot(page: u32) -> CodeHistorySnapshot {
+    CodeHistorySnapshot {
+        branches: Vec::new(),
+        breadcrumbs: Vec::new(),
+        commits: Vec::new(),
+        has_newer: page > 0,
+        has_older: false,
+        no_head: true,
+        page,
+        path: String::new(),
+        selected_branch: String::new(),
     }
 }
 
@@ -407,6 +486,60 @@ fn list_pull_request_commits(
                 commit_id,
                 commit_message,
                 commit_short_id,
+            })
+        })
+        .collect())
+}
+
+fn list_history_commits(
+    repo_path: &Path,
+    branch: &str,
+    path: &str,
+    page: u32,
+) -> Result<Vec<CodeCommitRecord>, VcsError> {
+    let max_count = format!("--max-count={}", HISTORY_ITEM_LIMIT + 1);
+    let skip = format!(
+        "--skip={}",
+        usize::try_from(page).unwrap_or_default() * HISTORY_ITEM_LIMIT
+    );
+    let format = "--format=%x1e%H%x1f%h%x1f%s%x1f%an%x1f%ae%x1f%ad";
+    let mut args = vec![
+        "log",
+        "--date=short",
+        format,
+        max_count.as_str(),
+        skip.as_str(),
+        branch,
+    ];
+    if !path.is_empty() {
+        args.push("--");
+        args.push(path);
+    }
+
+    let output = git_output(repo_path, &args)?;
+    Ok(output
+        .split('\x1e')
+        .filter_map(|record| {
+            let record = record.trim_matches(|character| character == '\r' || character == '\n');
+            if record.is_empty() {
+                return None;
+            }
+            let mut parts = record.split('\x1f');
+            let commit_id = parts.next()?.to_string();
+            let commit_short_id = parts.next().unwrap_or_default().to_string();
+            let short_message = parts.next().unwrap_or_default().to_string();
+            let author_name = parts.next().unwrap_or_default().to_string();
+            let author_email = parts.next().unwrap_or_default().to_string();
+            let author_date = parts.next().unwrap_or_default().to_string();
+            Some(CodeCommitRecord {
+                author_date,
+                author_email,
+                author_name,
+                comment_count: 0,
+                commit_id,
+                commit_short_id,
+                message: short_message.clone(),
+                short_message,
             })
         })
         .collect())

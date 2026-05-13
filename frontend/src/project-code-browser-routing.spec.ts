@@ -3,7 +3,7 @@ import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { CodeBrowserPage } from "./routes/-code-views";
+import { CodeBrowserPage, CodeHistoryPage, type CodeHistoryViewModel } from "./routes/-code-views";
 import type { CodeBrowserViewModel, ProjectDetailViewModel } from "./routes/-view-models";
 
 const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
@@ -35,6 +35,16 @@ function renderCodeFile(file: NonNullable<CodeBrowserViewModel["file"]>) {
         selectedBranch: "main",
       },
       detail: projectDetail,
+      runtimeConfig,
+    }),
+  );
+}
+
+function renderCodeHistory(history: CodeHistoryViewModel) {
+  return renderToStaticMarkup(
+    React.createElement(CodeHistoryPage, {
+      detail: projectDetail,
+      history,
       runtimeConfig,
     }),
   );
@@ -108,5 +118,65 @@ describe("project code browser routing", () => {
     expect(binaryHtml).toContain('id="showFile"');
     expect(binaryHtml).toContain('href="/yona/owner/projectYobi/files/main/bin/archive.bin"');
     expect(binaryHtml).toContain(">Download</a>");
+  });
+
+  it("renders legacy commit history table, branch tabs, and path-scoped actions", () => {
+    const rootHtml = renderCodeHistory({
+      branches: [{ name: "main" }, { name: "topic" }],
+      breadcrumbs: [],
+      commits: [],
+      hasNewer: false,
+      hasOlder: false,
+      noHead: false,
+      ownerName: "owner",
+      page: 0,
+      path: "",
+      projectName: "projectYobi",
+      selectedBranch: "main",
+    });
+
+    expect(rootHtml).toContain('href="/yona/owner/projectYobi/code/main"');
+    expect(rootHtml).toContain('href="/yona/owner/projectYobi/commits/main"');
+    expect(rootHtml).toContain('href="/yona/owner/projectYobi/branches"');
+
+    const pathHtml = renderCodeHistory({
+      branches: [{ name: "main" }, { name: "topic" }],
+      breadcrumbs: [
+        { name: "src", path: "src" },
+        { name: "main.rs", path: "src/main.rs" },
+      ],
+      commits: [
+        {
+          authorEmail: "second@example.com",
+          authorName: "Second Author",
+          authorDate: "2026-04-21",
+          commentCount: 0,
+          commitId: "abcdef1234567890abcdef1234567890abcdef12",
+          commitShortId: "abcdef1",
+          message: "Update main function",
+          shortMessage: "Update main function",
+        },
+      ],
+      hasNewer: false,
+      hasOlder: true,
+      noHead: false,
+      ownerName: "owner",
+      page: 0,
+      path: "src/main.rs",
+      projectName: "projectYobi",
+      selectedBranch: "main",
+    });
+
+    expect(pathHtml).toContain('id="history"');
+    expect(pathHtml).toContain('class="code-table commits mt10"');
+    expect(pathHtml).toContain('data-commit-id="abcdef1234567890abcdef1234567890abcdef12"');
+    expect(pathHtml).toContain(
+      'href="/yona/owner/projectYobi/commit/abcdef1234567890abcdef1234567890abcdef12?branch=main&amp;path=src%2Fmain.rs#src-main-rs"',
+    );
+    expect(pathHtml).toContain('href="/yona/owner/projectYobi/code/abcdef1/src/main.rs"');
+    expect(pathHtml).toContain(">Show code</a>");
+    expect(pathHtml).toContain(">Older</a>");
+    expect(pathHtml).toContain("Second Author");
+    expect(pathHtml).toContain("Update main function");
   });
 });

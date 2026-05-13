@@ -3,6 +3,29 @@ import type { RuntimeConfig } from "../runtime-config";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
 import type { CodeBrowserViewModel, ProjectDetailViewModel } from "./-view-models";
 
+export interface CodeHistoryViewModel {
+  branches: Array<{ name: string }>;
+  breadcrumbs: Array<{ name: string; path: string }>;
+  commits: Array<{
+    authorDate: string;
+    authorEmail: string;
+    authorName: string;
+    commentCount: number;
+    commitId: string;
+    commitShortId: string;
+    message: string;
+    shortMessage: string;
+  }>;
+  hasNewer: boolean;
+  hasOlder: boolean;
+  noHead: boolean;
+  ownerName: string;
+  page: number;
+  path: string;
+  projectName: string;
+  selectedBranch: string;
+}
+
 function fallbackProjectDetail(): ProjectDetailViewModel {
   return {
     enrollmentRequested: false,
@@ -68,6 +91,54 @@ function codeArchiveHref(
     projectName,
     `code/${encodeURIComponent(branch)}/download`,
   );
+}
+
+function codeHistoryHref(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  branch: string,
+  path = "",
+  page?: number,
+) {
+  const suffix = path
+    ? `commits/${encodeURIComponent(branch)}/${encodePathSegments(path)}`
+    : branch
+      ? `commits/${encodeURIComponent(branch)}`
+      : "commits";
+  const href = buildProjectHref(runtimeConfig, ownerName, projectName, suffix);
+  if (page === undefined || page <= 0) {
+    return href;
+  }
+  return `${href}?page=${page}`;
+}
+
+function commitDetailHref(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  commitId: string,
+  branch: string,
+  path = "",
+) {
+  const href = buildProjectHref(
+    runtimeConfig,
+    ownerName,
+    projectName,
+    `commit/${encodeURIComponent(commitId)}`,
+  );
+  if (!branch && !path) {
+    return href;
+  }
+  const searchParams = new URLSearchParams();
+  if (branch) {
+    searchParams.set("branch", branch);
+  }
+  if (path) {
+    searchParams.set("path", path);
+  }
+  const anchor = path ? `#${path.replace(/[/.]/g, "-")}` : "";
+  return `${href}?${searchParams.toString()}${anchor}`;
 }
 
 export function CodeBrowserPage(props: {
@@ -217,6 +288,269 @@ export function CodeBrowserPage(props: {
         )}
       </section>
     </main>
+  );
+}
+
+export function CodeHistoryPage(props: {
+  detail: ProjectDetailViewModel | null;
+  history: CodeHistoryViewModel | null;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const detail = props.detail ?? fallbackProjectDetail();
+  const history = props.history;
+  const selectedBranch = history?.selectedBranch ?? "";
+  const selectedPath = history?.path ?? "";
+
+  return (
+    <main className="app-shell">
+      <p className="eyebrow">Yona Rust Project</p>
+      <h1>Commit History</h1>
+      <p>{`${detail.ownerName}/${detail.projectName}`}</p>
+      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <section className="code-browse-wrap">
+        {history?.noHead ? (
+          <div className="alert alert-block">
+            <h2>The repository is empty!</h2>
+            <p>{`Clone URL: ${detail.cloneUrl ?? ""}`}</p>
+          </div>
+        ) : (
+          <>
+            {selectedPath ? (
+              <nav aria-label="Breadcrumbs" className="code-breadcrumb-wrap">
+                <a
+                  href={codeHistoryHref(
+                    props.runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    selectedBranch,
+                  )}
+                >
+                  {detail.projectName}
+                </a>
+                {(history?.breadcrumbs ?? []).map((breadcrumb) => (
+                  <React.Fragment key={breadcrumb.path}>
+                    <span>/</span>
+                    <a
+                      href={codeHistoryHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        selectedBranch,
+                        breadcrumb.path,
+                      )}
+                    >
+                      {breadcrumb.name}
+                    </a>
+                  </React.Fragment>
+                ))}
+              </nav>
+            ) : (
+              <div className="code-browse-header">
+                <label htmlFor="branches">Branch</label>
+                <select
+                  id="branches"
+                  onChange={(event) => {
+                    window.location.assign(
+                      codeHistoryHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        event.currentTarget.value,
+                      ),
+                    );
+                  }}
+                  value={selectedBranch}
+                >
+                  {(history?.branches ?? []).map((branch) => (
+                    <option key={branch.name} value={branch.name}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+                <nav aria-label="Code tabs">
+                  <a
+                    href={codeHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      selectedBranch,
+                    )}
+                  >
+                    Files
+                  </a>
+                  <a
+                    aria-current="page"
+                    href={codeHistoryHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      selectedBranch,
+                    )}
+                  >
+                    Commits
+                  </a>
+                  <a
+                    href={buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      "branches",
+                    )}
+                  >
+                    Branches
+                  </a>
+                </nav>
+              </div>
+            )}
+            <CodeHistoryTable
+              history={history}
+              ownerName={detail.ownerName}
+              projectName={detail.projectName}
+              runtimeConfig={props.runtimeConfig}
+              selectedBranch={selectedBranch}
+            />
+          </>
+        )}
+      </section>
+    </main>
+  );
+}
+
+function CodeHistoryTable(props: {
+  history: CodeHistoryViewModel | null;
+  ownerName: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+  selectedBranch: string;
+}) {
+  const history = props.history;
+  const commits = history?.commits ?? [];
+  const path = history?.path ?? "";
+  return (
+    <>
+      <div id="history" className="commit-wrap">
+        <table className={`code-table commits${path ? " mt10" : ""}`}>
+          <thead className="thead">
+            <tr>
+              <td className="commit-id">
+                <strong>@</strong>
+              </td>
+              <td className="messages">
+                <strong>Commit message</strong>
+              </td>
+              {path ? <td className="browse"></td> : null}
+              <td className="date">
+                <strong>Author date</strong>
+              </td>
+              <td className="author">
+                <strong>Author</strong>
+              </td>
+            </tr>
+          </thead>
+          <tbody className="tbody">
+            {commits.length === 0 ? (
+              <tr>
+                <td className="warning-none" colSpan={path ? 5 : 4}>
+                  No commits
+                </td>
+              </tr>
+            ) : (
+              commits.map((commit) => {
+                const showCommitHref = commitDetailHref(
+                  props.runtimeConfig,
+                  props.ownerName,
+                  props.projectName,
+                  commit.commitId,
+                  props.selectedBranch,
+                  path,
+                );
+                return (
+                  <tr key={commit.commitId}>
+                    <td className="commit-id">
+                      <button
+                        className="ybtn ybtn-mini btn-copy-commitId"
+                        data-commit-id={commit.commitId}
+                        title="Copy commit id"
+                        type="button"
+                      >
+                        Copy
+                      </button>
+                      <a href={showCommitHref} title="Show commit">
+                        {commit.commitShortId}
+                      </a>
+                    </td>
+                    <td className="messages">
+                      {commit.commentCount > 0 ? (
+                        <span className="number-of-comments">
+                          {`Comments ${commit.commentCount}`}
+                        </span>
+                      ) : null}
+                      <a href={showCommitHref}>{commit.shortMessage}</a>
+                      {commit.message !== commit.shortMessage ? (
+                        <pre className="commitMsg desc hidden">{commit.message}</pre>
+                      ) : null}
+                    </td>
+                    {path ? (
+                      <td className="browse">
+                        <a
+                          className="ybtn"
+                          href={codeHref(
+                            props.runtimeConfig,
+                            props.ownerName,
+                            props.projectName,
+                            commit.commitShortId,
+                            path,
+                          )}
+                          title="Show code at this commit"
+                        >
+                          Show code
+                        </a>
+                      </td>
+                    ) : null}
+                    <td className="date">{commit.authorDate}</td>
+                    <td className="author">
+                      <span title={commit.authorEmail}>{commit.authorName || "Anonymous"}</span>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="actrow margin-top-20">
+        {history && history.hasNewer ? (
+          <a
+            className="ybtn pull-left"
+            href={codeHistoryHref(
+              props.runtimeConfig,
+              props.ownerName,
+              props.projectName,
+              props.selectedBranch,
+              path,
+              history.page - 1,
+            )}
+          >
+            Newer
+          </a>
+        ) : null}
+        {history && history.hasOlder ? (
+          <a
+            className="ybtn pull-left"
+            href={codeHistoryHref(
+              props.runtimeConfig,
+              props.ownerName,
+              props.projectName,
+              props.selectedBranch,
+              path,
+              history.page + 1,
+            )}
+          >
+            Older
+          </a>
+        ) : null}
+      </div>
+    </>
   );
 }
 

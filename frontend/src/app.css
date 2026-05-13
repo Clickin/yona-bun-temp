@@ -654,6 +654,82 @@ h1 {
   background: #fff;
 }
 
+.commit-wrap {
+  overflow-x: auto;
+}
+
+.code-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid #ddd;
+}
+
+.code-table .thead td {
+  padding: 8px 10px;
+  color: #555;
+  background: #f7f7f7;
+  border-bottom: 1px solid #ddd;
+}
+
+.code-table .tbody td {
+  padding: 9px 10px;
+  vertical-align: middle;
+  border-bottom: 1px solid #eee;
+}
+
+.code-table .commit-id {
+  width: 130px;
+  white-space: nowrap;
+}
+
+.code-table .messages {
+  min-width: 260px;
+}
+
+.code-table .browse {
+  width: 100px;
+}
+
+.code-table .date {
+  width: 120px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.code-table .author {
+  width: 170px;
+  color: #555;
+}
+
+.btn-copy-commitId {
+  margin-right: 6px;
+}
+
+.number-of-comments {
+  margin-right: 8px;
+  color: #666;
+}
+
+.commitMsg.desc {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+}
+
+.hidden {
+  display: none;
+}
+
+.actrow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.margin-top-20 {
+  margin-top: 20px;
+}
+
 .code-syntax-wrap {
   display: grid;
   padding: 0;

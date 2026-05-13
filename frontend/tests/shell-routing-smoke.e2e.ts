@@ -376,6 +376,54 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
+  await page.route(/\/api\/v1\/projects\/admin\/projectYobi\/commits(?:\?.*)?$/, async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const path = requestUrl.searchParams.get("path") ?? "";
+    await route.fulfill({
+      body: JSON.stringify({
+        branches: [{ name: "main" }],
+        breadcrumbs: path
+          ? [
+              { name: "src", path: "src" },
+              { name: "main.rs", path: "src/main.rs" },
+            ]
+          : [],
+        commits: [
+          {
+            authorDate: "2026-04-21",
+            authorEmail: "author@example.com",
+            authorName: "Author",
+            commentCount: 0,
+            commitId: "abcdef1234567890abcdef1234567890abcdef12",
+            commitShortId: "abcdef1",
+            message: "Update main function",
+            shortMessage: "Update main function",
+          },
+          {
+            authorDate: "2026-04-20",
+            authorEmail: "seed@example.com",
+            authorName: "Seed",
+            commentCount: 0,
+            commitId: "1234567890abcdef1234567890abcdef12345678",
+            commitShortId: "1234567",
+            message: "Initial commit",
+            shortMessage: "Initial commit",
+          },
+        ],
+        hasNewer: false,
+        hasOlder: path !== "",
+        noHead: false,
+        ownerName: "admin",
+        page: 0,
+        path,
+        projectName: "projectYobi",
+        selectedBranch: requestUrl.searchParams.get("branch") ?? "main",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
   await page.route(apiV1Route("/auth/sign-out"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
@@ -665,6 +713,45 @@ test("project code routes render branch folder and text file views", async ({ pa
   await expect(page.locator(".line-number").first()).toHaveText("1");
   await expect(page.locator(".syntax-keyword").first()).toHaveText("fn");
   await expect(page.getByText("fn main() {}")).toBeVisible();
+});
+
+test("project commit history routes render branch and path-scoped lists", async ({ page }) => {
+  await page.goto("/yona/admin/projectYobi/commits");
+  await expect(page.getByRole("heading", { name: "Commit History" })).toBeVisible();
+  await expect(page.getByLabel("Branch")).toHaveValue("main");
+  await expect(page.getByRole("link", { name: "Files" })).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/code/main",
+  );
+  await expect(page.getByRole("link", { name: "Commits" })).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/commits/main",
+  );
+  await expect(page.getByRole("link", { name: "Branches" })).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/branches",
+  );
+  await expect(page.getByText("Initial commit").first()).toBeVisible();
+
+  await page.goto("/yona/admin/projectYobi/commits/main/src/main.rs");
+  await expect(page.locator("#history")).toBeVisible();
+  await expect(page.locator(".code-table.commits.mt10")).toBeVisible();
+  await expect(page.locator(".btn-copy-commitId").first()).toHaveAttribute(
+    "data-commit-id",
+    "abcdef1234567890abcdef1234567890abcdef12",
+  );
+  await expect(page.getByRole("link", { name: "abcdef1" })).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/commit/abcdef1234567890abcdef1234567890abcdef12?branch=main&path=src%2Fmain.rs#src-main-rs",
+  );
+  await expect(page.getByRole("link", { name: "Show code" }).first()).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/code/abcdef1/src/main.rs",
+  );
+  await expect(page.getByRole("link", { name: "Older" })).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/commits/main/src/main.rs?page=1",
+  );
 });
 
 test("organization issue route renders cross-project issue inbox", async ({ page }) => {

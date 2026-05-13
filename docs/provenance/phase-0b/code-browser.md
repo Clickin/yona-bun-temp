@@ -2,14 +2,16 @@
 
 ## Scope
 
-- Phase 3A/3B/3C/3D read-only Git code browser parity slice.
-- Covers existing Git repository read paths only: no-head state, branch selector, breadcrumbs, folder listing, text file view, raw file streaming, browser-open file streaming, image preview streaming, branch archive download, and numbered syntax-highlighted text rendering.
-- Does not cover repository provisioning, Smart HTTP, commit history/detail, branch administration, compare, inline edit, or SVN.
+- Phase 3A/3B/3C/3D/3E read-only Git code browser parity slice.
+- Covers existing Git repository read paths only: no-head state, branch selector, breadcrumbs, folder listing, text file view, raw file streaming, browser-open file streaming, image preview streaming, branch archive download, numbered syntax-highlighted text rendering, and commit history listing.
+- Does not cover repository provisioning, Smart HTTP, commit detail/diff, commit comments, branch administration, compare, inline edit, or SVN.
 
 ## Legacy Sources
 
 - `yona-original/app/controllers/CodeApp.java`
+- `yona-original/app/controllers/CodeHistoryApp.java`
 - `yona-original/app/views/code/view.scala.html`
+- `yona-original/app/views/code/history.scala.html`
 - `yona-original/app/views/code/partial_view_folder.scala.html`
 - `yona-original/app/views/code/partial_view_file.scala.html`
 - `yona-original/app/playRepository/GitRepository.java`
@@ -25,21 +27,23 @@
 - Legacy `rawcode`, `files`, and `image` direct routes stream Git blobs through the same project read/code-menu authorization used by the REST code browser endpoint.
 - Legacy `code/:branch/download` streams a Git archive zip through the same project read/code-menu authorization and rejects missing Git revisions.
 - Legacy text file rendering used `#showCode` plus Ace; Rust keeps the same `#showCode`/`.code-wrap` anchors and renders line-numbered syntax token spans without adding a frontend dependency.
+- Legacy `CodeHistoryApp.historyUntilHead` and `CodeHistoryApp.history` map to `GET /api/v1/projects/:owner/:project/commits` plus SPA file routes. Rust uses the system `git log` wrapper with explicit argv, keeps the legacy 25-item page size, supports branch and path-scoped history, and exposes `hasOlder`/`hasNewer` instead of fabricating commits.
 
-## Phase 3A/3B/3C/3D Evidence
+## Phase 3A/3B/3C/3D/3E Evidence
 
 | Evidence | Rust target |
 | --- | --- |
-| REST contract | `GET /api/v1/projects/:owner/:project/code` guarded by `crates/server/tests/code_browser_contract.rs` |
+| REST contract | `GET /api/v1/projects/:owner/:project/code` and `GET /api/v1/projects/:owner/:project/commits` guarded by `crates/server/tests/code_browser_contract.rs` |
 | Git read adapter | `crates/vcs/src/lib.rs` |
 | Server behavior | `crates/server/src/lib.rs` |
 | UI route surface | `frontend/src/routes/$owner/$projectName/code/**`, `frontend/src/routes/-code-views.tsx` |
-| Regression tests | `cargo test -p yona-rust-pilot-server --test code_browser_contract`; `pnpm --dir frontend test:e2e` |
+| Commit history route surface | `frontend/src/routes/$owner/$projectName/commits/**`, `frontend/src/routes/-code-views.tsx` |
+| Regression tests | `cargo test -p yona-rust-pilot-server --test code_browser_contract`; `pnpm --dir frontend test`; `pnpm --dir frontend test:e2e` |
 
 ## Remaining Phase 3 Follow-ups
 
 - Repository provisioning on project creation.
-- Commit history, commit detail/diff, commit comments, compare, and branch management.
+- Commit detail/diff, commit comments, compare, and branch management.
 - Smart HTTP clone/pull/push and post-receive hooks.
 - SVN remains deferred.
 
