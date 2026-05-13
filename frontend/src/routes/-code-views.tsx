@@ -35,9 +35,46 @@ export interface CodeCommitDetailViewModel {
   ownerName: string;
   parentCommit: { commitId: string; commitShortId: string } | null;
   path: string;
+  permissions: {
+    canComment: boolean;
+    canUpdateThreadState: boolean;
+  };
   projectName: string;
   selectedBranch: string;
+  threads: CodeReviewThreadViewModel[];
 }
+
+export interface CodeReviewCommentViewModel {
+  authorId: number;
+  authorLabel: string;
+  authorLoginId: string;
+  canDelete: boolean;
+  contentsHtml: string;
+  contentsMarkdown: string;
+  createdLabel: string;
+  id: number;
+  threadId: number;
+}
+
+export interface CodeReviewThreadViewModel {
+  authorId: number;
+  authorLabel: string;
+  authorLoginId: string;
+  comments: CodeReviewCommentViewModel[];
+  commitId: string;
+  createdLabel: string;
+  endLine?: number;
+  id: number;
+  path: string;
+  prevCommitId: string;
+  startLine?: number;
+  state: string;
+}
+
+export type CommitDiscussionCommentSubmitInput = {
+  contentsMarkdown: string;
+  threadId?: number;
+};
 
 export interface CodeCompareViewModel {
   commitA: CodeHistoryViewModel["commits"][number] | null;
@@ -237,6 +274,18 @@ function diffAnchorId(path: string) {
   return path.replace(/[/.]/g, "-");
 }
 
+function commitDiscussionApiHref(
+  runtimeConfig: RuntimeConfig,
+  commitDetail: CodeCommitDetailViewModel,
+  suffix: string,
+) {
+  return `${runtimeConfig.apiBaseUrl}/v1/projects/${encodeURIComponent(
+    commitDetail.ownerName,
+  )}/${encodeURIComponent(commitDetail.projectName)}/commit/${encodeURIComponent(
+    commitDetail.commit?.commitId ?? "",
+  )}${suffix}`;
+}
+
 export function CodeBrowserPage(props: {
   code: CodeBrowserViewModel | null;
   detail: ProjectDetailViewModel | null;
@@ -390,6 +439,10 @@ export function CodeBrowserPage(props: {
 export function CodeCommitDetailPage(props: {
   commitDetail: CodeCommitDetailViewModel | null;
   detail: ProjectDetailViewModel | null;
+  onCloseThread?: (threadId: number) => Promise<void> | void;
+  onCreateComment?: (input: CommitDiscussionCommentSubmitInput) => Promise<void> | void;
+  onDeleteComment?: (commentId: number) => Promise<void> | void;
+  onOpenThread?: (threadId: number) => Promise<void> | void;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
@@ -453,7 +506,14 @@ export function CodeCommitDetailPage(props: {
                 <p>{`Clone URL: ${detail.cloneUrl ?? ""}`}</p>
               </div>
             ) : (
-              <CodeCommitDiffView commitDetail={commitDetail} />
+              <CodeCommitDiffView
+                commitDetail={commitDetail}
+                runtimeConfig={props.runtimeConfig}
+                onCloseThread={props.onCloseThread}
+                onCreateComment={props.onCreateComment}
+                onDeleteComment={props.onDeleteComment}
+                onOpenThread={props.onOpenThread}
+              />
             )}
           </div>
           <button className="pull-left ybtn" id="watch-button" type="button">
@@ -763,10 +823,34 @@ function CodeBranchRow(props: {
   );
 }
 
-function CodeCommitDiffView(props: { commitDetail: CodeCommitDetailViewModel | null }) {
+function CodeCommitDiffView(props: {
+  commitDetail: CodeCommitDetailViewModel | null;
+  onCloseThread?: (threadId: number) => Promise<void> | void;
+  onCreateComment?: (input: CommitDiscussionCommentSubmitInput) => Promise<void> | void;
+  onDeleteComment?: (commentId: number) => Promise<void> | void;
+  onOpenThread?: (threadId: number) => Promise<void> | void;
+  runtimeConfig: RuntimeConfig;
+}) {
   const commitDetail = props.commitDetail;
   const commit = commitDetail?.commit;
   const files = commitDetail?.files ?? [];
+  const threads = commitDetail?.threads ?? [];
+  const nonRangedThreads = threads.filter((thread) => !thread.path);
+  const openThreads = threads.filter((thread) => thread.state.toLowerCase() !== "closed");
+  const closedThreads = threads.filter((thread) => thread.state.toLowerCase() === "closed");
+  const [commentText, setCommentText] = React.useState("");
+  const canComment = commitDetail?.permissions.canComment ?? false;
+
+  async function submitComment(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const contentsMarkdown = commentText.trim();
+    if (!contentsMarkdown || !props.onCreateComment) {
+      return;
+    }
+    await props.onCreateComment({ contentsMarkdown });
+    setCommentText("");
+  }
+
   return (
     <div className="codediff-wrap">
       <button className="ybtn ybtn-default btn-show-reviewcards" type="button">
@@ -820,10 +904,42 @@ function CodeCommitDiffView(props: { commitDetail: CodeCommitDetailViewModel | n
         </div>
 
         <div className="board-comment-wrap">
-          <div className="non-ranged-threads-wrap"></div>
-          <form className="review-form board-comment-form">
-            <textarea aria-label="Commit comment" disabled></textarea>
-            <button className="ybtn" disabled type="button">
+          <div className="non-ranged-threads-wrap">
+            {commitDetail
+              ? nonRangedThreads.map((thread) => (
+                  <CommitDiscussionThread
+                    commitDetail={commitDetail}
+                    key={thread.id}
+                    runtimeConfig={props.runtimeConfig}
+                    thread={thread}
+                    onCloseThread={props.onCloseThread}
+                    onCreateComment={props.onCreateComment}
+                    onDeleteComment={props.onDeleteComment}
+                    onOpenThread={props.onOpenThread}
+                  />
+                ))
+              : null}
+          </div>
+          <form
+            action={
+              commitDetail
+                ? commitDiscussionApiHref(props.runtimeConfig, commitDetail, "/comments")
+                : "#"
+            }
+            className="review-form board-comment-form"
+            method="post"
+            onSubmit={(event) => {
+              void submitComment(event);
+            }}
+          >
+            <textarea
+              aria-label="Commit comment"
+              disabled={!canComment}
+              name="contentsMarkdown"
+              onChange={(event) => setCommentText(event.currentTarget.value)}
+              value={commentText}
+            ></textarea>
+            <button className="ybtn" disabled={!canComment} type="submit">
               Comment
             </button>
           </form>
@@ -835,16 +951,168 @@ function CodeCommitDiffView(props: { commitDetail: CodeCommitDetailViewModel | n
           <button className="ybtn ybtn-default btn-hide-reviewcards" type="button">
             Hide review cards
           </button>
+          <ul className="nav nav-tabs">
+            <li className="active">
+              <a href="#reviewcards-open">{`Open ${openThreads.length}`}</a>
+            </li>
+            <li>
+              <a href="#reviewcards-closed">{`Closed ${closedThreads.length}`}</a>
+            </li>
+          </ul>
           <div className="tab-content review-list">
             <div className="tab-pane active" id="reviewcards-open">
-              <span>Open 0</span>
+              {openThreads.length === 0 ? (
+                <span>Open 0</span>
+              ) : (
+                openThreads.map((thread) => (
+                  <CommitDiscussionReviewCard key={thread.id} thread={thread} />
+                ))
+              )}
             </div>
             <div className="tab-pane" id="reviewcards-closed">
-              <span>Closed 0</span>
+              {closedThreads.length === 0 ? (
+                <span>Closed 0</span>
+              ) : (
+                closedThreads.map((thread) => (
+                  <CommitDiscussionReviewCard key={thread.id} thread={thread} />
+                ))
+              )}
             </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function CommitDiscussionReviewCard(props: { thread: CodeReviewThreadViewModel }) {
+  const firstComment = props.thread.comments[0];
+  return (
+    <a
+      className={`review-card ${props.thread.state.toLowerCase()}`}
+      href={`#thread-${props.thread.id}`}
+    >
+      <p className="content">{firstComment?.contentsMarkdown ?? ""}</p>
+      <span className="date" title={props.thread.createdLabel}>
+        {props.thread.createdLabel}
+      </span>
+    </a>
+  );
+}
+
+function CommitDiscussionThread(props: {
+  commitDetail: CodeCommitDetailViewModel;
+  onCloseThread?: (threadId: number) => Promise<void> | void;
+  onCreateComment?: (input: CommitDiscussionCommentSubmitInput) => Promise<void> | void;
+  onDeleteComment?: (commentId: number) => Promise<void> | void;
+  onOpenThread?: (threadId: number) => Promise<void> | void;
+  runtimeConfig: RuntimeConfig;
+  thread: CodeReviewThreadViewModel;
+}) {
+  const [replyText, setReplyText] = React.useState("");
+  const state = props.thread.state.toLowerCase() === "closed" ? "closed" : "open";
+  const canComment = props.commitDetail.permissions.canComment;
+  const stateSuffix = `/threads/${props.thread.id}/${state === "closed" ? "open" : "close"}`;
+  const stateAction = commitDiscussionApiHref(props.runtimeConfig, props.commitDetail, stateSuffix);
+
+  async function submitReply(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const contentsMarkdown = replyText.trim();
+    if (!contentsMarkdown || !props.onCreateComment) {
+      return;
+    }
+    await props.onCreateComment({ contentsMarkdown, threadId: props.thread.id });
+    setReplyText("");
+  }
+
+  return (
+    <div className={`comment-thread-wrap ${state}`} id={`thread-${props.thread.id}`}>
+      <div className="btn-thread-here btn-thread-minimize">
+        <button className="ybtn ybtn-default ybtn-small" type="button">
+          Comments
+        </button>
+      </div>
+      <ul className="comments">
+        {props.thread.comments.map((comment) => (
+          <li className="comment" id={`comment-${comment.id}`} key={comment.id}>
+            <div className="comment-avatar">
+              <span className="avatar-wrap">{comment.authorLoginId || comment.authorLabel}</span>
+            </div>
+            <div className="media-body">
+              <div className="meta-info">
+                <span className="comment_author pull-left">
+                  <strong>{comment.authorLoginId || comment.authorLabel}</strong>
+                </span>
+                <span className="ago">
+                  <a href={`#comment-${comment.id}`} title={comment.createdLabel}>
+                    {comment.createdLabel}
+                  </a>
+                </span>
+                {comment.canDelete ? (
+                  <span className="edit pull-right">
+                    <button
+                      className="btn-transparent pull-right close"
+                      data-request-method="delete"
+                      data-request-uri={commitDiscussionApiHref(
+                        props.runtimeConfig,
+                        props.commitDetail,
+                        `/comments/${comment.id}`,
+                      )}
+                      onClick={() => {
+                        void props.onDeleteComment?.(comment.id);
+                      }}
+                      type="button"
+                    >
+                      Delete
+                    </button>
+                  </span>
+                ) : null}
+              </div>
+              <div
+                className="comment-body markdown-wrap"
+                dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
+              ></div>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="thread-actrow">
+        <button
+          className="ybtn ybtn-small"
+          data-request-method="post"
+          data-request-uri={stateAction}
+          onClick={() => {
+            if (state === "closed") {
+              void props.onOpenThread?.(props.thread.id);
+            } else {
+              void props.onCloseThread?.(props.thread.id);
+            }
+          }}
+          type="button"
+        >
+          {state === "closed" ? "Open" : "Close"}
+        </button>
+      </div>
+      <form
+        action={commitDiscussionApiHref(props.runtimeConfig, props.commitDetail, "/comments")}
+        className="review-form thread-comment-form"
+        method="post"
+        onSubmit={(event) => {
+          void submitReply(event);
+        }}
+      >
+        <input name="threadId" type="hidden" value={props.thread.id} />
+        <textarea
+          aria-label="Reply to commit comment"
+          disabled={!canComment}
+          name="contentsMarkdown"
+          onChange={(event) => setReplyText(event.currentTarget.value)}
+          value={replyText}
+        ></textarea>
+        <button className="ybtn" disabled={!canComment} type="submit">
+          Comment
+        </button>
+      </form>
     </div>
   );
 }

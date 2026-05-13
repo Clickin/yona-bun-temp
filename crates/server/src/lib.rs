@@ -2485,6 +2485,18 @@ struct RestCodeCommitDetailQuery {
     path: String,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestCommitCommentBody {
+    #[serde(default)]
+    attachment_ids: Vec<i64>,
+    contents_markdown: String,
+    end_line: Option<i32>,
+    path: Option<String>,
+    start_line: Option<i32>,
+    thread_id: Option<i64>,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestCodeHistoryResponse {
@@ -2512,8 +2524,17 @@ struct RestCodeCommitDetailResponse {
     owner_name: String,
     parent_commit: Option<RestCodeCommitParent>,
     path: String,
+    permissions: RestCodeCommitPermissions,
     project_name: String,
     selected_branch: String,
+    threads: Vec<RestReviewThread>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestCodeCommitPermissions {
+    can_comment: bool,
+    can_update_thread_state: bool,
 }
 
 #[derive(Serialize)]
@@ -2699,6 +2720,7 @@ struct RestReviewComment {
     author_id: i64,
     author_label: String,
     author_login_id: String,
+    can_delete: bool,
     contents_html: String,
     contents_markdown: String,
     created_label: String,
@@ -3825,6 +3847,112 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             query,
                             session_manager,
                             backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/commit/{commit_id}/comments",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, commit_id)): Path<(
+                    String,
+                    String,
+                    String,
+                )>,
+                      Json(body): Json<RestCommitCommentBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_create_commit_discussion_comment(
+                            headers,
+                            owner_name,
+                            project_name,
+                            commit_id,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/commit/{commit_id}/comments/{comment_id}",
+            delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, commit_id, comment_id)): Path<(
+                    String,
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_delete_commit_discussion_comment(
+                            headers,
+                            owner_name,
+                            project_name,
+                            commit_id,
+                            comment_id,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/commit/{commit_id}/threads/{thread_id}/close",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, commit_id, thread_id)): Path<(
+                    String,
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_commit_discussion_thread_state(
+                            headers,
+                            owner_name,
+                            project_name,
+                            commit_id,
+                            thread_id,
+                            "closed".to_string(),
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/commit/{commit_id}/threads/{thread_id}/open",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, commit_id, thread_id)): Path<(
+                    String,
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_commit_discussion_thread_state(
+                            headers,
+                            owner_name,
+                            project_name,
+                            commit_id,
+                            thread_id,
+                            "open".to_string(),
+                            service,
                         )
                         .await
                     }
@@ -7063,7 +7191,7 @@ async fn rest_read_code_history(
     }
 
     let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
-    let snapshot = yona_rust_vcs::read_code_history(
+    let mut snapshot = yona_rust_vcs::read_code_history(
         &repo_path,
         Some(query.branch.as_str()).filter(|value| !value.trim().is_empty()),
         &query.path,
@@ -7071,6 +7199,23 @@ async fn rest_read_code_history(
     )
     .map_err(code_browser_error)
     .map_err(RestRouteError::from_connect_error)?;
+    let commit_ids = snapshot
+        .commits
+        .iter()
+        .map(|commit| commit.commit_id.clone())
+        .collect::<Vec<_>>();
+    let comment_counts = repository
+        .count_commit_discussion_threads_by_commit(
+            authorization.project.id,
+            &commit_ids,
+            Some(&query.path),
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    for commit in &mut snapshot.commits {
+        commit.comment_count = *comment_counts.get(&commit.commit_id).unwrap_or(&0);
+    }
 
     Ok(Json(code_history_response_from_snapshot(
         &authorization.project.owner_name,
@@ -7119,21 +7264,241 @@ async fn rest_read_code_commit_detail(
         };
     }
 
+    Ok(Json(
+        rest_code_commit_detail_response(repository, &authorization, actor_id, &commit_id, &query)
+            .await?,
+    ))
+}
+
+async fn rest_code_commit_detail_response(
+    repository: &PilotRepository,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor_id: Option<i64>,
+    commit_id: &str,
+    query: &RestCodeCommitDetailQuery,
+) -> Result<RestCodeCommitDetailResponse, RestRouteError> {
     let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
-    let snapshot = yona_rust_vcs::read_commit_detail(
+    let mut snapshot = yona_rust_vcs::read_commit_detail(
         &repo_path,
-        &commit_id,
+        commit_id,
         Some(query.branch.as_str()).filter(|value| !value.trim().is_empty()),
         &query.path,
     )
     .map_err(code_browser_error)
     .map_err(RestRouteError::from_connect_error)?;
+    let threads = repository
+        .list_commit_discussion_threads(authorization.project.id, commit_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    if let Some(commit) = snapshot.commit.as_mut() {
+        commit.comment_count = threads.len() as u32;
+    }
 
-    Ok(Json(code_commit_detail_response_from_snapshot(
-        &authorization.project.owner_name,
-        &authorization.project.project_name,
+    Ok(code_commit_detail_response_from_snapshot(
+        authorization,
+        actor_id,
         snapshot,
+        threads,
+    ))
+}
+
+async fn rest_create_commit_discussion_comment(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    commit_id: String,
+    body: RestCommitCommentBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestCodeCommitDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    if body.contents_markdown.trim().is_empty() {
+        return Err(RestRouteError::bad_request("commit comment is required"));
+    }
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let query = RestCodeCommitDetailQuery::default();
+    let current = rest_code_commit_detail_response(
+        repository,
+        &authorization,
+        Some(actor.id),
+        &commit_id,
+        &query,
+    )
+    .await?;
+    if !current.permissions.can_comment {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("commit comment is not allowed"),
+        ));
+    }
+    repository
+        .create_commit_discussion_comment(persistence::CreateCommitDiscussionCommentInput {
+            actor_display_name: actor.display_name.clone(),
+            actor_id: actor.id,
+            actor_login_id: actor.login_id.clone(),
+            attachment_ids: body.attachment_ids,
+            commit_id: commit_id.clone(),
+            contents_markdown: body.contents_markdown,
+            end_line: body.end_line,
+            owner_name: owner_name.clone(),
+            path: body.path,
+            project_name: project_name.clone(),
+            start_line: body.start_line,
+            thread_id: body.thread_id,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("commit discussion thread not found"))?;
+    Ok(Json(
+        rest_code_commit_detail_response(
+            repository,
+            &authorization,
+            Some(actor.id),
+            &commit_id,
+            &query,
+        )
+        .await?,
+    ))
+}
+
+async fn rest_update_commit_discussion_thread_state(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    commit_id: String,
+    thread_id: i64,
+    state: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestReviewThread>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let query = RestCodeCommitDetailQuery::default();
+    let current = rest_code_commit_detail_response(
+        repository,
+        &authorization,
+        Some(actor.id),
+        &commit_id,
+        &query,
+    )
+    .await?;
+    let thread = current
+        .threads
+        .iter()
+        .find(|thread| thread.id == thread_id)
+        .ok_or_else(|| RestRouteError::not_found("commit discussion thread not found"))?;
+    let can_moderate = project_update_allowed(&authorization).unwrap_or(false);
+    if !(can_moderate || thread.author_id == actor.id) {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("commit discussion thread update is not allowed"),
+        ));
+    }
+    let next_state = normalize_identifier(&state);
+    if next_state != "open" && next_state != "closed" {
+        return Err(RestRouteError::bad_request(
+            "invalid commit discussion thread state",
+        ));
+    }
+    let record = repository
+        .update_commit_discussion_thread_state(persistence::CommitDiscussionThreadStateInput {
+            actor_id: actor.id,
+            actor_login_id: actor.login_id.clone(),
+            commit_id,
+            owner_name,
+            project_name,
+            state: next_state,
+            thread_id,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("commit discussion thread not found"))?;
+    Ok(Json(rest_commit_thread_from_record(
+        record,
+        Some(actor.id),
+        can_moderate,
     )))
+}
+
+async fn rest_delete_commit_discussion_comment(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    commit_id: String,
+    comment_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Json<RestCodeCommitDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let query = RestCodeCommitDetailQuery::default();
+    let current = rest_code_commit_detail_response(
+        repository,
+        &authorization,
+        Some(actor.id),
+        &commit_id,
+        &query,
+    )
+    .await?;
+    let can_moderate = project_update_allowed(&authorization).unwrap_or(false);
+    let comment = current
+        .threads
+        .iter()
+        .flat_map(|thread| thread.comments.iter())
+        .find(|comment| comment.id == comment_id)
+        .ok_or_else(|| RestRouteError::not_found("commit comment not found"))?;
+    if !(can_moderate || comment.author_id == actor.id) {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("commit comment delete is not allowed"),
+        ));
+    }
+    repository
+        .delete_commit_discussion_comment(persistence::DeleteCommitDiscussionCommentInput {
+            actor_id: actor.id,
+            comment_id,
+            commit_id: commit_id.clone(),
+            owner_name,
+            project_name,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("commit comment not found"))?;
+    Ok(Json(
+        rest_code_commit_detail_response(
+            repository,
+            &authorization,
+            Some(actor.id),
+            &commit_id,
+            &query,
+        )
+        .await?,
+    ))
 }
 
 async fn rest_read_code_compare(
@@ -17257,10 +17622,18 @@ fn rest_pull_request_list_from_record(
 }
 
 fn rest_review_comment_from_record(record: persistence::ReviewCommentRecord) -> RestReviewComment {
+    rest_review_comment_from_record_with_permissions(record, false)
+}
+
+fn rest_review_comment_from_record_with_permissions(
+    record: persistence::ReviewCommentRecord,
+    can_delete: bool,
+) -> RestReviewComment {
     RestReviewComment {
         author_id: record.author_id.unwrap_or_default(),
         author_label: record.author_label,
         author_login_id: record.author_login_id,
+        can_delete,
         contents_html: render_markdown_html(&record.contents_markdown),
         contents_markdown: record.contents_markdown,
         created_label: record.created_label,
@@ -17278,6 +17651,34 @@ fn rest_review_thread_from_record(record: persistence::ReviewThreadRecord) -> Re
             .comments
             .into_iter()
             .map(rest_review_comment_from_record)
+            .collect(),
+        commit_id: record.commit_id,
+        created_label: record.created_label,
+        end_line: record.end_line,
+        id: record.id,
+        path: record.path,
+        prev_commit_id: record.prev_commit_id,
+        start_line: record.start_line,
+        state: record.state,
+    }
+}
+
+fn rest_commit_thread_from_record(
+    record: persistence::ReviewThreadRecord,
+    actor_id: Option<i64>,
+    can_moderate: bool,
+) -> RestReviewThread {
+    RestReviewThread {
+        author_id: record.author_id.unwrap_or_default(),
+        author_label: record.author_label,
+        author_login_id: record.author_login_id,
+        comments: record
+            .comments
+            .into_iter()
+            .map(|comment| {
+                let can_delete = can_moderate || comment.author_id == actor_id;
+                rest_review_comment_from_record_with_permissions(comment, can_delete)
+            })
             .collect(),
         commit_id: record.commit_id,
         created_label: record.created_label,
@@ -17529,10 +17930,12 @@ fn code_history_response_from_snapshot(
 }
 
 fn code_commit_detail_response_from_snapshot(
-    owner_name: &str,
-    project_name: &str,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor_id: Option<i64>,
     snapshot: CodeCommitDetailSnapshot,
+    threads: Vec<persistence::ReviewThreadRecord>,
 ) -> RestCodeCommitDetailResponse {
+    let can_moderate = actor_id.is_some() && project_update_allowed(authorization).unwrap_or(false);
     RestCodeCommitDetailResponse {
         branches: snapshot
             .branches
@@ -17554,11 +17957,19 @@ fn code_commit_detail_response_from_snapshot(
             .map(code_commit_file_diff_to_rest)
             .collect(),
         no_head: snapshot.no_head,
-        owner_name: owner_name.to_string(),
+        owner_name: authorization.project.owner_name.clone(),
         parent_commit: snapshot.parent_commit.map(code_commit_parent_to_rest),
         path: snapshot.path,
-        project_name: project_name.to_string(),
+        permissions: RestCodeCommitPermissions {
+            can_comment: actor_id.is_some(),
+            can_update_thread_state: can_moderate,
+        },
+        project_name: authorization.project.project_name.clone(),
         selected_branch: snapshot.selected_branch,
+        threads: threads
+            .into_iter()
+            .map(|thread| rest_commit_thread_from_record(thread, actor_id, can_moderate))
+            .collect(),
     }
 }
 

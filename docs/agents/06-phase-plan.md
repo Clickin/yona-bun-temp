@@ -55,7 +55,8 @@
 - Phase 3F complete: read-only commit detail/diff parity over `GET /api/v1/projects/:owner/:project/commit/:id` and legacy route `/:owner/:project/commit/:id`, including commit metadata, first-parent link metadata, branch/path list-back state, unified diff patches, missing-commit 404, and legacy `code/diff.scala.html` class/id anchors.
 - Phase 3G complete: read-only compare parity over `GET /api/v1/projects/:owner/:project/compare/:revA..:revB` and legacy route `/:owner/:project/compare/:revA..:revB`, including both commit projections, missing-revision 404, unified diff patches, empty-diff state, and legacy `code/compare.scala.html` class/id anchors.
 - Phase 3H complete: branch management parity over `GET /api/v1/projects/:owner/:project/branches`, `POST /api/v1/projects/:owner/:project/branches/default`, and `DELETE /api/v1/projects/:owner/:project/branches`, including legacy `branches.scala.html` table anchors, default branch first, branch-row latest PR links, non-default delete, project update permission, and real Git `HEAD` mutation.
-- Remaining Phase 3 follow-ups: commit comments/thread lifecycle, Smart HTTP, repository provisioning, and SVN wrapper integration.
+- Phase 3I complete: Git commit discussion parity over `GET/POST/DELETE /api/v1/projects/:owner/:project/commit/:id/comments` and `POST /api/v1/projects/:owner/:project/commit/:id/threads/:threadId/open|close`, including non-ranged commit comments, replies, author/moderator delete, thread cards, thread state changes, comment counts, event rows, and notification-mail staging.
+- Remaining Phase 3 follow-ups: Smart HTTP, repository provisioning, inline ranged code-comment UX, and SVN wrapper integration.
 
 ## Phase 4: 풀 리퀘스트와 리뷰
 

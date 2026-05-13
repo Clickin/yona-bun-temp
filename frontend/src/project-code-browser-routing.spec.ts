@@ -293,8 +293,62 @@ describe("project code browser routing", () => {
         commitShortId: "1234567",
       },
       path: "src/main.rs",
+      permissions: {
+        canComment: true,
+        canUpdateThreadState: true,
+      },
       projectName: "projectYobi",
       selectedBranch: "main",
+      threads: [
+        {
+          authorId: 1,
+          authorLabel: "Owner",
+          authorLoginId: "owner",
+          comments: [
+            {
+              authorId: 1,
+              authorLabel: "Owner",
+              authorLoginId: "owner",
+              canDelete: true,
+              contentsHtml: "<p>First commit note</p>",
+              contentsMarkdown: "First commit note",
+              createdLabel: "2026-04-21",
+              id: 11,
+              threadId: 7,
+            },
+          ],
+          commitId: "abcdef1234567890abcdef1234567890abcdef12",
+          createdLabel: "2026-04-21",
+          id: 7,
+          path: "",
+          prevCommitId: "",
+          state: "open",
+        },
+        {
+          authorId: 2,
+          authorLabel: "Reviewer",
+          authorLoginId: "reviewer",
+          comments: [
+            {
+              authorId: 2,
+              authorLabel: "Reviewer",
+              authorLoginId: "reviewer",
+              canDelete: false,
+              contentsHtml: "<p>Closed note</p>",
+              contentsMarkdown: "Closed note",
+              createdLabel: "2026-04-22",
+              id: 12,
+              threadId: 8,
+            },
+          ],
+          commitId: "abcdef1234567890abcdef1234567890abcdef12",
+          createdLabel: "2026-04-22",
+          id: 8,
+          path: "",
+          prevCommitId: "",
+          state: "closed",
+        },
+      ],
     });
 
     expect(detailHtml).toContain('id="code-browse-wrap"');
@@ -307,10 +361,28 @@ describe("project code browser routing", () => {
     expect(detailHtml).toContain('class="diff-body"');
     expect(detailHtml).toContain('class="board-comment-wrap"');
     expect(detailHtml).toContain('class="non-ranged-threads-wrap"');
+    expect(detailHtml).toContain('id="thread-7"');
+    expect(detailHtml).toContain('class="comment-thread-wrap open"');
+    expect(detailHtml).toContain('id="comment-11"');
+    expect(detailHtml).toContain("First commit note");
+    expect(detailHtml).toContain('data-request-method="delete"');
+    expect(detailHtml).toContain(
+      'data-request-uri="/yona/api/v1/projects/owner/projectYobi/commit/abcdef1234567890abcdef1234567890abcdef12/comments/11"',
+    );
     expect(detailHtml).toContain('class="review-form board-comment-form"');
+    expect(detailHtml).not.toContain('aria-label="Commit comment" disabled=""');
     expect(detailHtml).toContain('class="review-wrap span-hard-wrap"');
     expect(detailHtml).toContain('id="reviewcards-open"');
+    expect(detailHtml).toContain("Open 1");
     expect(detailHtml).toContain('id="reviewcards-closed"');
+    expect(detailHtml).toContain("Closed 1");
+    expect(detailHtml).toContain('href="#thread-7"');
+    expect(detailHtml).toContain(
+      'data-request-uri="/yona/api/v1/projects/owner/projectYobi/commit/abcdef1234567890abcdef1234567890abcdef12/threads/7/close"',
+    );
+    expect(detailHtml).toContain(
+      'data-request-uri="/yona/api/v1/projects/owner/projectYobi/commit/abcdef1234567890abcdef1234567890abcdef12/threads/8/open"',
+    );
     expect(detailHtml).toContain('id="watch-button"');
     expect(detailHtml).toContain('href="/yona/owner/projectYobi/commits/main/src/main.rs"');
     expect(detailHtml).toContain("@abcdef1234567890abcdef1234567890abcdef12");
