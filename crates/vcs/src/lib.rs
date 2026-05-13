@@ -119,6 +119,24 @@ pub struct CodeCompareSnapshot {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeBranchListSnapshot {
+    pub branches: Vec<CodeBranchListItemRecord>,
+    pub default_branch: String,
+    pub no_head: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeBranchListItemRecord {
+    pub commit_date: String,
+    pub commit_id: String,
+    pub commit_message: String,
+    pub commit_short_id: String,
+    pub is_default: bool,
+    pub name: String,
+    pub short_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestDiffSnapshot {
     pub commits: Vec<PullRequestDiffCommitRecord>,
     pub files: Vec<PullRequestChangedFileRecord>,
@@ -150,6 +168,8 @@ pub enum VcsError {
     InvalidRepositoryPath,
     #[error("invalid repository object path")]
     InvalidPath,
+    #[error("invalid repository branch")]
+    InvalidBranch,
     #[error("repository object not found")]
     NotFound,
     #[error("git command failed: {0}")]
@@ -391,6 +411,62 @@ pub fn read_compare_diff(
     })
 }
 
+pub fn read_branch_list(repo_path: &Path) -> Result<CodeBranchListSnapshot, VcsError> {
+    if !repo_path.exists() {
+        return Ok(no_head_branch_list());
+    }
+    if !has_head(repo_path) {
+        return Ok(no_head_branch_list());
+    }
+    let default_branch = default_branch(repo_path).unwrap_or_default();
+    let branches = list_branch_details(repo_path, &default_branch)?;
+    if branches.is_empty() {
+        return Ok(no_head_branch_list());
+    }
+    Ok(CodeBranchListSnapshot {
+        branches,
+        default_branch,
+        no_head: false,
+    })
+}
+
+pub fn set_default_branch(
+    repo_path: &Path,
+    branch_name: &str,
+) -> Result<CodeBranchListSnapshot, VcsError> {
+    if !repo_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    let branch_name = normalize_branch_name(branch_name)?;
+    let branches = list_branches(repo_path)?;
+    if !branch_exists(&branches, &branch_name) {
+        return Err(VcsError::NotFound);
+    }
+    let target = format!("refs/heads/{branch_name}");
+    git_output(repo_path, &["symbolic-ref", "HEAD", &target])?;
+    read_branch_list(repo_path)
+}
+
+pub fn delete_branch(
+    repo_path: &Path,
+    branch_name: &str,
+) -> Result<CodeBranchListSnapshot, VcsError> {
+    if !repo_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    let branch_name = normalize_branch_name(branch_name)?;
+    let default_branch = default_branch(repo_path).unwrap_or_default();
+    if branch_name == default_branch {
+        return Err(VcsError::InvalidBranch);
+    }
+    let branches = list_branches(repo_path)?;
+    if !branch_exists(&branches, &branch_name) {
+        return Err(VcsError::NotFound);
+    }
+    git_output(repo_path, &["branch", "-D", &branch_name])?;
+    read_branch_list(repo_path)
+}
+
 pub fn read_pull_request_diff(
     repo_path: &Path,
     from_branch: &str,
@@ -526,6 +602,14 @@ fn no_head_compare_snapshot(rev_a: &str, rev_b: &str) -> CodeCompareSnapshot {
     }
 }
 
+fn no_head_branch_list() -> CodeBranchListSnapshot {
+    CodeBranchListSnapshot {
+        branches: Vec::new(),
+        default_branch: String::new(),
+        no_head: true,
+    }
+}
+
 fn list_branches(repo_path: &Path) -> Result<Vec<CodeBranchRecord>, VcsError> {
     let output = git_output(
         repo_path,
@@ -541,9 +625,66 @@ fn list_branches(repo_path: &Path) -> Result<Vec<CodeBranchRecord>, VcsError> {
         .collect())
 }
 
+fn list_branch_details(
+    repo_path: &Path,
+    default_branch: &str,
+) -> Result<Vec<CodeBranchListItemRecord>, VcsError> {
+    let output = git_output(
+        repo_path,
+        &[
+            "for-each-ref",
+            "--sort=-committerdate",
+            "--format=%(refname:short)%1f%(objectname)%1f%(objectname:short)%1f%(contents:subject)%1f%(committerdate:short)",
+            "refs/heads",
+        ],
+    )?;
+    let mut branches = output
+        .lines()
+        .filter_map(|line| {
+            let mut parts = line.split('\x1f');
+            let name = parts.next()?.trim().to_string();
+            if name.is_empty() {
+                return None;
+            }
+            let commit_id = parts.next().unwrap_or_default().trim().to_string();
+            let commit_short_id = parts.next().unwrap_or_default().trim().to_string();
+            let commit_message = parts.next().unwrap_or_default().trim().to_string();
+            let commit_date = parts.next().unwrap_or_default().trim().to_string();
+            Some(CodeBranchListItemRecord {
+                commit_date,
+                commit_id,
+                commit_message,
+                commit_short_id,
+                is_default: name == default_branch,
+                short_name: name.clone(),
+                name,
+            })
+        })
+        .collect::<Vec<_>>();
+    branches.sort_by(|left, right| {
+        right
+            .is_default
+            .cmp(&left.is_default)
+            .then_with(|| right.commit_date.cmp(&left.commit_date))
+            .then_with(|| left.name.cmp(&right.name))
+    });
+    Ok(branches)
+}
+
 fn branch_exists(branches: &[CodeBranchRecord], name: &str) -> bool {
     let normalized = name.trim();
     !normalized.is_empty() && branches.iter().any(|branch| branch.name == normalized)
+}
+
+fn normalize_branch_name(branch_name: &str) -> Result<String, VcsError> {
+    let trimmed = branch_name
+        .trim()
+        .strip_prefix("refs/heads/")
+        .unwrap_or_else(|| branch_name.trim());
+    if trimmed.is_empty() || trimmed.contains('\0') {
+        return Err(VcsError::InvalidBranch);
+    }
+    Ok(trimmed.to_string())
 }
 
 fn revision_exists(repo_path: &Path, revision: &str) -> bool {

@@ -95,6 +95,52 @@ async fn rest_get(app: axum::Router, path: &str, cookie_header: Option<&str>) ->
         .unwrap()
 }
 
+async fn rest_post_json(
+    app: axum::Router,
+    path: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    payload: serde_json::Value,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(Method::POST)
+        .uri(format!("/yona/api/v1{path}"))
+        .header(http::header::CONTENT_TYPE, "application/json");
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+
+    app.oneshot(builder.body(Body::from(payload.to_string())).unwrap())
+        .await
+        .unwrap()
+}
+
+async fn rest_delete_json(
+    app: axum::Router,
+    path: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    payload: serde_json::Value,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(Method::DELETE)
+        .uri(format!("/yona/api/v1{path}"))
+        .header(http::header::CONTENT_TYPE, "application/json");
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+
+    app.oneshot(builder.body(Body::from(payload.to_string())).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn direct_get(app: axum::Router, path: &str, cookie_header: Option<&str>) -> Response<Body> {
     let mut builder = Request::builder()
         .method(Method::GET)
@@ -283,6 +329,20 @@ fn append_bare_repository_commit(
         Some(work.path()),
     );
     run_git(&["push", "origin", "main"], Some(work.path()));
+}
+
+fn create_bare_repository_branch(yona_data: &Path, project_id: i64, branch: &str) {
+    let bare_repo = yona_data.join("repo").join(format!("{project_id}.git"));
+    run_git(
+        &[
+            "--git-dir",
+            bare_repo.to_str().unwrap(),
+            "branch",
+            branch,
+            "main",
+        ],
+        None,
+    );
 }
 
 fn bare_repository_head_commit_id(yona_data: &Path, project_id: i64) -> String {
@@ -678,6 +738,200 @@ async fn rest_compare_reports_missing_commit_as_not_found() {
     .await;
 
     assert_eq!(missing.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn rest_branch_list_renders_default_branch_first_with_legacy_actions() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+    create_bare_repository_branch(data_dir.path(), project.id, "topic/branch-admin");
+    let created_pull_request = response_json(
+        rest_post_json(
+            app.clone(),
+            "/owners/owner/projects/projectYobi/pull-requests",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "fromProjectId": project.id,
+                "toProjectId": project.id,
+                "fromBranch": "topic/branch-admin",
+                "toBranch": "main",
+                "title": "Branch admin pull request",
+                "bodyMarkdown": "Branch admin body"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    let response =
+        response_json(rest_get(app, "/projects/owner/projectYobi/branches", Some(&cookie)).await)
+            .await;
+
+    assert_eq!(response["ownerName"], "owner");
+    assert_eq!(response["projectName"], "projectYobi");
+    assert_eq!(response["defaultBranch"], "main");
+    assert!(!json_bool(&response, "noHead"));
+    assert_eq!(response["permissions"]["canUpdate"], true);
+    assert_eq!(response["permissions"]["canDelete"], true);
+    let branches = response["branches"].as_array().unwrap();
+    assert_eq!(branches[0]["name"], "main");
+    assert_eq!(branches[0]["isDefault"], true);
+    assert_eq!(branches[0]["commitShortId"].as_str().unwrap().len(), 7);
+    assert_eq!(branches[0]["commitMessage"], "Initial commit");
+    assert!(branches
+        .iter()
+        .any(|branch| branch["name"] == "topic/branch-admin"
+            && branch["shortName"] == "topic/branch-admin"
+            && branch["isDefault"] == false
+            && branch["pullRequest"]["ownerName"] == "owner"
+            && branch["pullRequest"]["projectName"] == "projectYobi"
+            && branch["pullRequest"]["pullRequestNumber"]
+                == created_pull_request["pullRequestNumber"]
+            && branch["pullRequest"]["state"] == "open"));
+}
+
+#[tokio::test]
+async fn rest_branch_default_mutation_moves_git_head() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+    create_bare_repository_branch(data_dir.path(), project.id, "topic/default");
+
+    let response = response_json(
+        rest_post_json(
+            app,
+            "/projects/owner/projectYobi/branches/default",
+            Some(&cookie),
+            Some(&csrf),
+            json!({ "branchName": "topic/default" }),
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(response["defaultBranch"], "topic/default");
+    assert_eq!(response["branches"][0]["name"], "topic/default");
+    assert_eq!(response["branches"][0]["isDefault"], true);
+    let bare_repo = data_dir
+        .path()
+        .join("repo")
+        .join(format!("{}.git", project.id));
+    let output = Command::new("git")
+        .args([
+            "--git-dir",
+            bare_repo.to_str().unwrap(),
+            "symbolic-ref",
+            "--short",
+            "HEAD",
+        ])
+        .output()
+        .expect("symbolic-ref HEAD");
+    assert!(output.status.success());
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap().trim(),
+        "topic/default"
+    );
+}
+
+#[tokio::test]
+async fn rest_branch_delete_removes_non_default_branch_and_rejects_default() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+    create_bare_repository_branch(data_dir.path(), project.id, "topic/delete-me");
+
+    let response = response_json(
+        rest_delete_json(
+            app.clone(),
+            "/projects/owner/projectYobi/branches",
+            Some(&cookie),
+            Some(&csrf),
+            json!({ "branchName": "topic/delete-me" }),
+        )
+        .await,
+    )
+    .await;
+    assert!(!response["branches"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|branch| branch["name"] == "topic/delete-me"));
+
+    let rejected = rest_delete_json(
+        app,
+        "/projects/owner/projectYobi/branches",
+        Some(&cookie),
+        Some(&csrf),
+        json!({ "branchName": "main" }),
+    )
+    .await;
+    assert_eq!(rejected.status(), StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn rest_branch_mutation_requires_project_update_permission() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+    create_bare_repository_branch(data_dir.path(), project.id, "topic/forbidden");
+    let (reader_csrf, reader_cookie) = register_user(app.clone(), "reader").await;
+
+    let rejected = rest_post_json(
+        app,
+        "/projects/owner/projectYobi/branches/default",
+        Some(&reader_cookie),
+        Some(&reader_csrf),
+        json!({ "branchName": "topic/forbidden" }),
+    )
+    .await;
+
+    assert_eq!(rejected.status(), StatusCode::FORBIDDEN);
 }
 
 #[tokio::test]

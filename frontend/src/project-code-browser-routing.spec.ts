@@ -4,9 +4,11 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
+  CodeBranchListPage,
   CodeBrowserPage,
   CodeComparePage,
   CodeCommitDetailPage,
+  type CodeBranchListViewModel,
   type CodeCompareViewModel,
   CodeHistoryPage,
   type CodeCommitDetailViewModel,
@@ -78,6 +80,18 @@ function renderCompare(compare: CodeCompareViewModel) {
   );
 }
 
+function renderBranches(branchList: CodeBranchListViewModel) {
+  return renderToStaticMarkup(
+    React.createElement(CodeBranchListPage, {
+      branchList,
+      detail: projectDetail,
+      runtimeConfig,
+      onDeleteBranch: async () => {},
+      onSetDefaultBranch: async () => {},
+    }),
+  );
+}
+
 describe("project code browser routing", () => {
   it("keeps the project code route inside the project route tree", () => {
     const codeRouteSource = fs.readFileSync(
@@ -121,6 +135,20 @@ describe("project code browser routing", () => {
     expect(compareRouteSource).toContain("/$owner/$projectName/compare/$revisionRange");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/compare/$revisionRange'");
     expect(routeTreeSource).toContain("OwnerProjectNameCompareRevisionRangeRoute");
+  });
+
+  it("keeps the branches route inside the project route tree", () => {
+    const branchRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/branches/route.tsx"),
+      "utf8",
+    );
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+
+    expect(branchRouteSource).toContain("createFileRoute");
+    expect(branchRouteSource).toContain("/$owner/$projectName/branches");
+    expect(branchRouteSource).toContain("useMutation");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/branches'");
+    expect(routeTreeSource).toContain("OwnerProjectNameBranchesRoute");
   });
 
   it("renders legacy raw/open/image file action anchors", () => {
@@ -348,5 +376,62 @@ describe("project code browser routing", () => {
     });
     expect(emptyCompareHtml).toContain('class="alert"');
     expect(emptyCompareHtml).toContain("No changes");
+  });
+
+  it("renders legacy branch list table and mutation anchors", () => {
+    const branchHtml = renderBranches({
+      branches: [
+        {
+          commitDate: "2026-04-21",
+          commitId: "abcdef1234567890abcdef1234567890abcdef12",
+          commitMessage: "Initial commit",
+          commitShortId: "abcdef1",
+          isDefault: true,
+          name: "main",
+          pullRequest: null,
+          shortName: "main",
+        },
+        {
+          commitDate: "2026-04-22",
+          commitId: "1234567890abcdef1234567890abcdef12345678",
+          commitMessage: "Topic work",
+          commitShortId: "1234567",
+          isDefault: false,
+          name: "topic/branch-admin",
+          pullRequest: {
+            ownerName: "owner",
+            projectName: "projectYobi",
+            pullRequestNumber: 7,
+            state: "open",
+          },
+          shortName: "topic/branch-admin",
+        },
+      ],
+      defaultBranch: "main",
+      noHead: false,
+      ownerName: "owner",
+      permissions: {
+        canDelete: true,
+        canUpdate: true,
+      },
+      projectName: "projectYobi",
+    });
+
+    expect(branchHtml).toContain('class="table branch-list-wrap"');
+    expect(branchHtml).toContain('class="head"');
+    expect(branchHtml).toContain('class="branchName"');
+    expect(branchHtml).toContain('class="headBranch ml10"');
+    expect(branchHtml).toContain('href="/yona/owner/projectYobi/code/main"');
+    expect(branchHtml).toContain('href="/yona/owner/projectYobi/commits/main"');
+    expect(branchHtml).toContain('class="commitId"');
+    expect(branchHtml).toContain('class="pullRequest"');
+    expect(branchHtml).toContain('href="/yona/owner/projectYobi/pullRequest/7"');
+    expect(branchHtml).toContain('class="actions"');
+    expect(branchHtml).toContain('data-request-method="post"');
+    expect(branchHtml).toContain(
+      'data-request-uri="/yona/owner/projectYobi/code/topic%2Fbranch-admin/setAsDefault"',
+    );
+    expect(branchHtml).toContain('data-request-method="delete"');
+    expect(branchHtml).toContain('href="/yona/owner/projectYobi/code/topic%2Fbranch-admin/"');
   });
 });
