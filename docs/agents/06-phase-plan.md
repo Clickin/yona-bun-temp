@@ -43,7 +43,8 @@
 - Phase 2L complete: issue sharable-user search over `/api/v1/owners/:owner/projects/:project/issues/:number/sharable-users`, direct sharer timeline/notification row side effects, and issue/comment `@user`/`@org`/`@owner/project` mention indexing, suggestions, and notification rows.
 - Phase 2M complete: issue reference `#issue` autocomplete over `/api/v1/owners/:owner/projects/:project/issue-references`, with project read ACL, readable fork-origin issue search, exact-number-first ordering, and create/edit/detail/comment textarea insertion.
 - Phase 2N complete: notification inbox/list over `/api/v1/notifications`, legacy `/notification` route body, notification mail queue staging/drain helper, and project-target issue sharer mutation by public project member expansion.
-- Remaining Phase 2 packets: notification read state/full SMTP batching, group sharer mutation if legacy evidence requires it, and Phase 6 label copy flow. Legacy external `/-_-api/v1/**` compatibility is no longer an app Phase 2 packet; it belongs to a separate migrator/export/import deliverable.
+- Phase 2O complete: legacy project-scoped Markdown preview route `POST /markdown/:user/:project` renders sanitized HTML from JSON `{body, breaks}` with project READ ACL and hard-line-break preview semantics. Verification: `markdown_contract`.
+- Remaining Phase 2 packets: notification read state/full SMTP batching, group sharer mutation if legacy evidence requires it, Markdown mention/issue autolink and syntax highlighting parity, and Phase 6 label copy flow. Legacy external `/-_-api/v1/**` compatibility is no longer an app Phase 2 packet; it belongs to a separate migrator/export/import deliverable.
 
 ## Phase 3: 저장소와 VCS
 

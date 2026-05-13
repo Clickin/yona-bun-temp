@@ -968,24 +968,26 @@ GET   /sites/export            → 데이터 익스포트
 **Legacy 라우트**:
 
 ```
-POST  /markdown                → 마크다운 → HTML 변환
+POST  /markdown/:user/:project → 프로젝트 컨텍스트 마크다운 preview HTML 변환
 ```
 
 #### 기능 목록과 상태
 
-| 기능            | Legacy 동작                      | 현재 상태 | Phase |
-| --------------- | -------------------------------- | --------- | ----- |
-| 마크다운 렌더링 | GFM + 확장 문법                  | gap       | 2     |
-| @멘션 링크      | `@username` → 사용자 프로필 링크 | gap       | 2     |
-| 이슈 참조       | `#123` → 이슈 링크               | gap       | 2     |
-| 자동 링크       | URL 자동 링크 변환               | gap       | 2     |
-| 코드 블록       | syntax highlighting              | gap       | 2     |
-| 이미지          | 인라인 이미지 표시               | gap       | 2     |
-| 체크리스트      | `- [ ]` / `- [x]`                | gap       | 2     |
-| XSS 방지        | HTML sanitization                | gap       | 2     |
+| 기능                   | Legacy 동작                      | 현재 상태 | Phase |
+| ---------------------- | -------------------------------- | --------- | ----- |
+| Preview API            | JSON `{body, breaks}` → HTML     | Phase 2O 구현 | 2     |
+| 마크다운 렌더링        | GFM + 확장 문법                  | partial   | 2     |
+| @멘션 링크             | `@username` → 사용자 프로필 링크 | gap       | 2     |
+| 이슈 참조              | `#123` → 이슈 링크               | gap       | 2     |
+| 자동 링크              | URL 자동 링크 변환               | gap       | 2     |
+| 코드 블록              | syntax highlighting              | gap       | 2     |
+| 이미지                 | 인라인 이미지 표시               | gap       | 2     |
+| 체크리스트             | `- [ ]` / `- [x]`                | partial   | 2     |
+| XSS 방지               | HTML sanitization                | Phase 2O 구현 | 2     |
 
 #### 검수 기준
 
+- [x] `POST /markdown/:user/:project` preview route: project READ ACL, JSON `{body, breaks}`, sanitized HTML response
 - [ ] GFM (GitHub Flavored Markdown) 호환 렌더링
 - [ ] `@username` → 사용자 프로필 링크 변환
 - [ ] `#123` → 동일 프로젝트 이슈 링크 변환
@@ -1240,7 +1242,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, mail queue staging |
 | 웹훅              | ❌ 미구현         | DB 엔티티만 존재                                                 |
 | 관리자            | ❌ 미구현         |                                                                  |
-| 마크다운          | 🔶 이슈 범위 구현 | Issue body/comment sanitized HTML projection                     |
+| 마크다운          | 🔶 Phase 2O 구현  | Issue/board/milestone/PR sanitized HTML projection plus legacy `POST /markdown/:user/:project` preview route; mention/issue autolink and syntax highlighting remain gaps |
 | REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1` legacy external API는 app scope에서 미지원이며 별도 migrator/export/import deliverable로 분리 |
 | Frontend 라우트   | ✅ 구현           | legacy issueform/editform 포함                                   |
 | Frontend 테스트   | 🔶 부분           | API client, route parity, E2E smoke                              |

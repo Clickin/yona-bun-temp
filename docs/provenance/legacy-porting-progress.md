@@ -340,6 +340,7 @@ Interpretation:
 
 ## Markdown
 
+- [x] Legacy project-scoped preview route `POST /markdown/:user/:project`
 - [x] Basic Markdown rendering on issue surfaces
 - [x] Basic Markdown rendering on milestone surfaces
 - [x] HTML sanitization on implemented render path

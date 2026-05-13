@@ -4,7 +4,7 @@ pub mod session;
 
 use axum::extract::{Form, Multipart, Query, RawQuery};
 use axum::http::HeaderMap;
-use axum::response::{IntoResponse, Redirect, Response};
+use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::routing::{any, delete, get, patch, post, put};
 use axum::{extract::Path, http::Method};
 use axum::{Json, Router};
@@ -13,7 +13,7 @@ use buffa::view::{MessageView, OwnedView};
 use http::header::SET_COOKIE;
 use http::{HeaderValue, StatusCode};
 use md5::{Digest, Md5};
-use pulldown_cmark::{html, Options, Parser};
+use pulldown_cmark::{html, Event, Options, Parser};
 use runtime_config::normalize_base_path;
 use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Deserializer, Serialize};
@@ -283,6 +283,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let image_code_base_path = base_path.clone();
     let archive_code_backend = route_backend.clone();
     let archive_code_session_manager = session_manager.clone();
+    let markdown_backend = route_backend.clone();
+    let markdown_session_manager = session_manager.clone();
     let rest_router = build_rest_router(pilot_service.clone());
 
     let mut base_router = Router::new()
@@ -484,6 +486,26 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             revision,
                             archive_code_session_manager.clone(),
                             archive_code_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/markdown/{owner}/{project}",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project)): Path<(String, String)>,
+                      Json(body): Json<DirectMarkdownRenderBody>| {
+                    async move {
+                        direct_render_markdown(
+                            headers,
+                            owner,
+                            project,
+                            body,
+                            markdown_session_manager.clone(),
+                            markdown_backend.clone(),
                         )
                         .await
                     }
@@ -1668,6 +1690,39 @@ fn direct_status_from_connect_error(error: ConnectError) -> StatusCode {
     } else {
         StatusCode::INTERNAL_SERVER_ERROR
     }
+}
+
+#[derive(Debug, Deserialize)]
+struct DirectMarkdownRenderBody {
+    #[serde(default)]
+    body: String,
+    #[serde(default)]
+    breaks: bool,
+}
+
+async fn direct_render_markdown(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    body: DirectMarkdownRenderBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let session = session_manager.read_session_from_headers(&headers);
+    if let Err(error) = require_project_read(
+        &repository,
+        &owner,
+        &project,
+        session.as_ref().and_then(|session| session.user_id),
+    )
+    .await
+    {
+        return direct_status_from_connect_error(error).into_response();
+    }
+    Html(render_markdown_html_with_breaks(&body.body, body.breaks)).into_response()
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -12234,13 +12289,27 @@ fn project_update_allowed(
 }
 
 fn render_markdown_html(markdown: &str) -> String {
+    render_markdown_html_with_breaks(markdown, false)
+}
+
+fn render_markdown_html_with_breaks(markdown: &str, breaks: bool) -> String {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_TABLES);
     options.insert(Options::ENABLE_STRIKETHROUGH);
     options.insert(Options::ENABLE_TASKLISTS);
     let parser = Parser::new_ext(markdown, options);
     let mut rendered = String::new();
-    html::push_html(&mut rendered, parser);
+    if breaks {
+        html::push_html(
+            &mut rendered,
+            parser.map(|event| match event {
+                Event::SoftBreak => Event::HardBreak,
+                event => event,
+            }),
+        );
+    } else {
+        html::push_html(&mut rendered, parser);
+    }
     ammonia::clean(&rendered)
 }
 
