@@ -96,6 +96,31 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/code/$branch/$'");
   });
 
+  it("requires a real project commit history route instead of a placeholder page", () => {
+    const commitsRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/commits/route.tsx"),
+      "utf8",
+    );
+    const commitsIndexRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/commits/index.tsx"),
+      "utf8",
+    );
+    const commitsRouteHelperSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/commits/-code-history-route.tsx"),
+      "utf8",
+    );
+
+    expect(commitsRouteSource).not.toContain("PlaceholderPage");
+    expect(commitsRouteSource).toContain("Outlet");
+    expect(commitsIndexRouteSource).toContain("CodeHistoryRouteView");
+    expect(commitsRouteHelperSource).toContain("readCodeHistory");
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/commits/'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/commits/$branch'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/commits/$branch/'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/commits/$branch/$'");
+  });
+
   it("requires real search routes and legacy search class anchors", () => {
     const globalSearchRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/search/route.tsx"),

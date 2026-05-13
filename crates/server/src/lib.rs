@@ -31,7 +31,8 @@ use yona_rust_domain::{
 use yona_rust_integrations::{deliver, OutboundMail};
 use yona_rust_search::SearchType;
 use yona_rust_vcs::{
-    CodeBrowserSnapshot, CodeEntryRecord, CodeFileBytesRecord, CodeFileRecord, VcsError,
+    CodeBrowserSnapshot, CodeCommitRecord, CodeEntryRecord, CodeFileBytesRecord, CodeFileRecord,
+    CodeHistorySnapshot, VcsError,
 };
 
 #[allow(clippy::missing_panics_doc)]
@@ -2470,6 +2471,56 @@ struct RestCodeBrowserQuery {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+struct RestCodeHistoryQuery {
+    branch: String,
+    page: u32,
+    path: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestCodeHistoryResponse {
+    branches: Vec<RestCodeBranch>,
+    breadcrumbs: Vec<RestCodeBreadcrumb>,
+    commits: Vec<RestCodeCommit>,
+    has_newer: bool,
+    has_older: bool,
+    no_head: bool,
+    owner_name: String,
+    page: u32,
+    path: String,
+    project_name: String,
+    selected_branch: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestCodeBranch {
+    name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestCodeBreadcrumb {
+    name: String,
+    path: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestCodeCommit {
+    author_date: String,
+    author_email: String,
+    author_name: String,
+    comment_count: u32,
+    commit_id: String,
+    commit_short_id: String,
+    message: String,
+    short_message: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 struct RestPullRequestListQuery {
     category: String,
     contributor_id: i64,
@@ -3619,6 +3670,30 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                     let backend = backend.clone();
                     async move {
                         rest_read_code_browser(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/commits",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestCodeHistoryQuery>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_read_code_history(
                             headers,
                             owner_name,
                             project_name,
@@ -6723,6 +6798,62 @@ async fn rest_read_code_browser(
     .map_err(RestRouteError::from_connect_error)?;
 
     Ok(Json(code_browser_response_from_snapshot(
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+        snapshot,
+    )))
+}
+
+async fn rest_read_code_history(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: RestCodeHistoryQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestCodeHistoryResponse>, RestRouteError> {
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unimplemented("code history requires repository backend"),
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(&owner_name, &project_name, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+    if !project_read_allowed(&authorization, actor_id.is_none())
+        .map_err(RestRouteError::from_connect_error)?
+        || !project_code_menu_visible(&authorization, true)
+    {
+        return if actor_id.is_none() {
+            Err(RestRouteError::from_connect_error(
+                ConnectError::unauthenticated("project read is not allowed"),
+            ))
+        } else {
+            Err(RestRouteError::from_connect_error(
+                ConnectError::permission_denied("project read is not allowed"),
+            ))
+        };
+    }
+
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let snapshot = yona_rust_vcs::read_code_history(
+        &repo_path,
+        Some(query.branch.as_str()).filter(|value| !value.trim().is_empty()),
+        &query.path,
+        query.page,
+    )
+    .map_err(code_browser_error)
+    .map_err(RestRouteError::from_connect_error)?;
+
+    Ok(Json(code_history_response_from_snapshot(
         &authorization.project.owner_name,
         &authorization.project.project_name,
         snapshot,
@@ -16901,6 +17032,54 @@ fn code_file_to_proto(file: CodeFileRecord) -> CodeFile {
         size: file.size,
         text: file.text,
         ..Default::default()
+    }
+}
+
+fn code_history_response_from_snapshot(
+    owner_name: &str,
+    project_name: &str,
+    snapshot: CodeHistorySnapshot,
+) -> RestCodeHistoryResponse {
+    RestCodeHistoryResponse {
+        branches: snapshot
+            .branches
+            .into_iter()
+            .map(|branch| RestCodeBranch { name: branch.name })
+            .collect(),
+        breadcrumbs: snapshot
+            .breadcrumbs
+            .into_iter()
+            .map(|breadcrumb| RestCodeBreadcrumb {
+                name: breadcrumb.name,
+                path: breadcrumb.path,
+            })
+            .collect(),
+        commits: snapshot
+            .commits
+            .into_iter()
+            .map(code_commit_to_rest)
+            .collect(),
+        has_newer: snapshot.has_newer,
+        has_older: snapshot.has_older,
+        no_head: snapshot.no_head,
+        owner_name: owner_name.to_string(),
+        page: snapshot.page,
+        path: snapshot.path,
+        project_name: project_name.to_string(),
+        selected_branch: snapshot.selected_branch,
+    }
+}
+
+fn code_commit_to_rest(commit: CodeCommitRecord) -> RestCodeCommit {
+    RestCodeCommit {
+        author_date: commit.author_date,
+        author_email: commit.author_email,
+        author_name: commit.author_name,
+        comment_count: commit.comment_count,
+        commit_id: commit.commit_id,
+        commit_short_id: commit.commit_short_id,
+        message: commit.message,
+        short_message: commit.short_message,
     }
 }
 

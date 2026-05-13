@@ -247,6 +247,44 @@ fn seed_bare_repository(yona_data: &Path, project_id: i64) {
     );
 }
 
+fn append_bare_repository_commit(
+    yona_data: &Path,
+    project_id: i64,
+    path: &str,
+    contents: &str,
+    message: &str,
+) {
+    let bare_repo = yona_data.join("repo").join(format!("{project_id}.git"));
+    let work = tempdir().expect("work repo");
+    run_git(
+        &[
+            "clone",
+            bare_repo.to_str().unwrap(),
+            work.path().to_str().unwrap(),
+        ],
+        None,
+    );
+    let file_path = work.path().join(path);
+    if let Some(parent) = file_path.parent() {
+        fs::create_dir_all(parent).expect("commit parent");
+    }
+    fs::write(&file_path, contents).expect("commit file");
+    run_git(&["add", "."], Some(work.path()));
+    run_git(
+        &[
+            "-c",
+            "user.email=second@example.com",
+            "-c",
+            "user.name=Second Author",
+            "commit",
+            "-m",
+            message,
+        ],
+        Some(work.path()),
+    );
+    run_git(&["push", "origin", "main"], Some(work.path()));
+}
+
 #[tokio::test]
 async fn code_browser_reads_root_folder_and_text_file_from_git_repo() {
     let _guard = yona_data_env_lock()
@@ -376,6 +414,66 @@ async fn rest_code_browser_reads_root_folder_and_text_file_from_git_repo() {
     assert_eq!(file["file"]["path"], "src/main.rs");
     assert_eq!(file["file"]["text"], "fn main() {}\n");
     assert!(!json_bool(&file["file"], "isBinary"));
+}
+
+#[tokio::test]
+async fn rest_commit_history_lists_branch_and_path_commits_from_git_repo() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+    append_bare_repository_commit(
+        data_dir.path(),
+        project.id,
+        "src/main.rs",
+        "fn main() {\n    println!(\"history\");\n}\n",
+        "Update main function",
+    );
+
+    let response = response_json(
+        rest_get(
+            app,
+            "/projects/owner/projectYobi/commits?branch=main&path=src%2Fmain.rs",
+            None,
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(response["ownerName"], "owner");
+    assert_eq!(response["projectName"], "projectYobi");
+    assert_eq!(response["selectedBranch"], "main");
+    assert_eq!(response["path"], "src/main.rs");
+    assert_eq!(response["page"], 0);
+    assert_eq!(response["hasNewer"], false);
+    assert_eq!(response["hasOlder"], false);
+    assert!(response["branches"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|branch| branch["name"] == "main"));
+    assert_eq!(response["breadcrumbs"][0]["name"], "src");
+    assert_eq!(response["breadcrumbs"][1]["path"], "src/main.rs");
+
+    let commits = response["commits"].as_array().unwrap();
+    assert_eq!(commits.len(), 2);
+    assert_eq!(commits[0]["shortMessage"], "Update main function");
+    assert_eq!(commits[0]["authorName"], "Second Author");
+    assert_eq!(commits[0]["authorEmail"], "second@example.com");
+    assert_eq!(commits[0]["commentCount"], 0);
+    assert_eq!(commits[1]["shortMessage"], "Initial commit");
+    assert!(commits[0]["commitId"].as_str().unwrap().len() >= 40);
+    assert!(commits[0]["commitShortId"].as_str().unwrap().len() >= 7);
 }
 
 #[tokio::test]
