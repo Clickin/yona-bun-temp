@@ -2,16 +2,18 @@
 
 ## Scope
 
-- Phase 3A/3B/3C/3D/3E/3F read-only Git code browser parity slice.
-- Covers existing Git repository read paths only: no-head state, branch selector, breadcrumbs, folder listing, text file view, raw file streaming, browser-open file streaming, image preview streaming, branch archive download, numbered syntax-highlighted text rendering, commit history listing, and read-only commit detail/diff rendering.
-- Does not cover repository provisioning, Smart HTTP, commit comments/thread lifecycle, branch administration, compare, inline edit, or SVN.
+- Phase 3A/3B/3C/3D/3E/3F/3G read-only Git code browser parity slice.
+- Covers existing Git repository read paths only: no-head state, branch selector, breadcrumbs, folder listing, text file view, raw file streaming, browser-open file streaming, image preview streaming, branch archive download, numbered syntax-highlighted text rendering, commit history listing, read-only commit detail/diff rendering, and read-only commit compare rendering.
+- Does not cover repository provisioning, Smart HTTP, commit comments/thread lifecycle, branch administration, inline edit, or SVN.
 
 ## Legacy Sources
 
 - `yona-original/app/controllers/CodeApp.java`
 - `yona-original/app/controllers/CodeHistoryApp.java`
+- `yona-original/app/controllers/CompareApp.java`
 - `yona-original/app/views/code/view.scala.html`
 - `yona-original/app/views/code/history.scala.html`
+- `yona-original/app/views/code/compare.scala.html`
 - `yona-original/app/views/code/partial_view_folder.scala.html`
 - `yona-original/app/views/code/partial_view_file.scala.html`
 - `yona-original/app/playRepository/GitRepository.java`
@@ -29,23 +31,25 @@
 - Legacy text file rendering used `#showCode` plus Ace; Rust keeps the same `#showCode`/`.code-wrap` anchors and renders line-numbered syntax token spans without adding a frontend dependency.
 - Legacy `CodeHistoryApp.historyUntilHead` and `CodeHistoryApp.history` map to `GET /api/v1/projects/:owner/:project/commits` plus SPA file routes. Rust uses the system `git log` wrapper with explicit argv, keeps the legacy 25-item page size, supports branch and path-scoped history, and exposes `hasOlder`/`hasNewer` instead of fabricating commits.
 - Legacy `CodeHistoryApp.show` and `code/diff.scala.html` map to `GET /api/v1/projects/:owner/:project/commit/:id` plus SPA route `/:owner/:project/commit/:id`. Rust reads real Git commit metadata, first-parent metadata, and unified diff patches through explicit git argv and keeps the legacy diff shell anchors such as `#code-browse-wrap`, `.codediff-wrap`, `.commitInfo`, `.diff-body`, `.board-comment-wrap`, and review card containers. Commit comment creation and thread lifecycle remain outside this read-only slice.
+- Legacy `CompareApp.compare` and `code/compare.scala.html` map to `GET /api/v1/projects/:owner/:project/compare/:revA..:revB` plus SPA route `/:owner/:project/compare/:revA..:revB`. Rust verifies both revisions as Git commits, returns 404 for missing revisions, and renders the read-only `.commitInfo`, `.commitId`, and `.diff-body.discommentable` compare shell without enabling comments.
 
-## Phase 3A/3B/3C/3D/3E/3F Evidence
+## Phase 3A/3B/3C/3D/3E/3F/3G Evidence
 
 | Evidence | Rust target |
 | --- | --- |
-| REST contract | `GET /api/v1/projects/:owner/:project/code`, `GET /api/v1/projects/:owner/:project/commits`, and `GET /api/v1/projects/:owner/:project/commit/:id` guarded by `crates/server/tests/code_browser_contract.rs` |
+| REST contract | `GET /api/v1/projects/:owner/:project/code`, `GET /api/v1/projects/:owner/:project/commits`, `GET /api/v1/projects/:owner/:project/commit/:id`, and `GET /api/v1/projects/:owner/:project/compare/:revA..:revB` guarded by `crates/server/tests/code_browser_contract.rs` |
 | Git read adapter | `crates/vcs/src/lib.rs` |
 | Server behavior | `crates/server/src/lib.rs` |
 | UI route surface | `frontend/src/routes/$owner/$projectName/code/**`, `frontend/src/routes/-code-views.tsx` |
 | Commit history route surface | `frontend/src/routes/$owner/$projectName/commits/**`, `frontend/src/routes/-code-views.tsx` |
 | Commit detail route surface | `frontend/src/routes/$owner/$projectName/commit/$commitId/route.tsx`, `frontend/src/routes/-code-views.tsx` |
+| Compare route surface | `frontend/src/routes/$owner/$projectName/compare/$revisionRange/route.tsx`, `frontend/src/routes/-code-views.tsx` |
 | Regression tests | `cargo test -p yona-rust-pilot-server --test code_browser_contract`; `pnpm --dir frontend test`; `pnpm --dir frontend test:e2e` |
 
 ## Remaining Phase 3 Follow-ups
 
 - Repository provisioning on project creation.
-- Commit comments/thread lifecycle, compare, and branch management.
+- Commit comments/thread lifecycle and branch management.
 - Smart HTTP clone/pull/push and post-receive hooks.
 - SVN remains deferred.
 

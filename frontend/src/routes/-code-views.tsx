@@ -39,6 +39,17 @@ export interface CodeCommitDetailViewModel {
   selectedBranch: string;
 }
 
+export interface CodeCompareViewModel {
+  commitA: CodeHistoryViewModel["commits"][number] | null;
+  commitB: CodeHistoryViewModel["commits"][number] | null;
+  files: Array<{ path: string; patch: string }>;
+  noHead: boolean;
+  ownerName: string;
+  projectName: string;
+  revA: string;
+  revB: string;
+}
+
 function fallbackProjectDetail(): ProjectDetailViewModel {
   return {
     enrollmentRequested: false,
@@ -383,6 +394,57 @@ export function CodeCommitDetailPage(props: {
           <a className="ybtn pull-right" href={listHref}>
             List
           </a>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export function CodeComparePage(props: {
+  compare: CodeCompareViewModel | null;
+  detail: ProjectDetailViewModel | null;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const detail = props.detail ?? fallbackProjectDetail();
+  const compare = props.compare;
+  const files = compare?.files ?? [];
+  const revA = compare?.commitA?.commitId ?? compare?.revA ?? "";
+  const revB = compare?.commitB?.commitId ?? compare?.revB ?? "";
+
+  return (
+    <main className="app-shell">
+      <p className="eyebrow">Yona Rust Project</p>
+      <h1>Compare</h1>
+      <p>{`${detail.ownerName}/${detail.projectName}`}</p>
+      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="project-page-wrap">
+        <div className="code-browse-wrap">
+          {compare?.noHead ? (
+            <div className="alert alert-block">
+              <h2>The repository is empty!</h2>
+              <p>{`Clone URL: ${detail.cloneUrl ?? ""}`}</p>
+            </div>
+          ) : (
+            <>
+              <p className="commitInfo">
+                <strong className="commitId">{revA && revB ? `@${revA}..${revB}` : ""}</strong>
+              </p>
+              {files.length === 0 ? (
+                <div className="alert">No changes</div>
+              ) : (
+                <div className="diff-body discommentable">
+                  {files.map((file) => (
+                    <article className="diff-file" id={diffAnchorId(file.path)} key={file.path}>
+                      <h2>{file.path}</h2>
+                      <pre className="diff-code">
+                        <code>{file.patch}</code>
+                      </pre>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </main>
