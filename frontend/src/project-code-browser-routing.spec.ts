@@ -5,7 +5,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
   CodeBrowserPage,
+  CodeComparePage,
   CodeCommitDetailPage,
+  type CodeCompareViewModel,
   CodeHistoryPage,
   type CodeCommitDetailViewModel,
   type CodeHistoryViewModel,
@@ -66,6 +68,16 @@ function renderCommitDetail(commitDetail: CodeCommitDetailViewModel) {
   );
 }
 
+function renderCompare(compare: CodeCompareViewModel) {
+  return renderToStaticMarkup(
+    React.createElement(CodeComparePage, {
+      compare,
+      detail: projectDetail,
+      runtimeConfig,
+    }),
+  );
+}
+
 describe("project code browser routing", () => {
   it("keeps the project code route inside the project route tree", () => {
     const codeRouteSource = fs.readFileSync(
@@ -96,6 +108,19 @@ describe("project code browser routing", () => {
     expect(commitRouteSource).toContain("/$owner/$projectName/commit/$commitId");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/commit/$commitId'");
     expect(routeTreeSource).toContain("OwnerProjectNameCommitCommitIdRoute");
+  });
+
+  it("keeps the compare route inside the project route tree", () => {
+    const compareRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/compare/$revisionRange/route.tsx"),
+      "utf8",
+    );
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+
+    expect(compareRouteSource).toContain("createFileRoute");
+    expect(compareRouteSource).toContain("/$owner/$projectName/compare/$revisionRange");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/compare/$revisionRange'");
+    expect(routeTreeSource).toContain("OwnerProjectNameCompareRevisionRangeRoute");
   });
 
   it("renders legacy raw/open/image file action anchors", () => {
@@ -263,5 +288,65 @@ describe("project code browser routing", () => {
     expect(detailHtml).toContain("@abcdef1234567890abcdef1234567890abcdef12");
     expect(detailHtml).toContain("Second Author");
     expect(detailHtml).toContain("+    println!(&quot;detail&quot;);");
+  });
+
+  it("renders legacy compare diff shell anchors", () => {
+    const compareHtml = renderCompare({
+      commitA: {
+        authorDate: "2026-04-20",
+        authorEmail: "author@example.com",
+        authorName: "Author",
+        commentCount: 0,
+        commitId: "1234567890abcdef1234567890abcdef12345678",
+        commitShortId: "1234567",
+        message: "Initial commit",
+        shortMessage: "Initial commit",
+      },
+      commitB: {
+        authorDate: "2026-04-21",
+        authorEmail: "second@example.com",
+        authorName: "Second Author",
+        commentCount: 0,
+        commitId: "abcdef1234567890abcdef1234567890abcdef12",
+        commitShortId: "abcdef1",
+        message: "Update main function",
+        shortMessage: "Update main function",
+      },
+      files: [
+        {
+          patch:
+            'diff --git a/src/main.rs b/src/main.rs\n--- a/src/main.rs\n+++ b/src/main.rs\n@@ -1 +1,3 @@\n fn main() {\n+    println!("compare");\n }\n',
+          path: "src/main.rs",
+        },
+      ],
+      noHead: false,
+      ownerName: "owner",
+      projectName: "projectYobi",
+      revA: "1234567890abcdef1234567890abcdef12345678",
+      revB: "abcdef1234567890abcdef1234567890abcdef12",
+    });
+
+    expect(compareHtml).toContain('class="project-page-wrap"');
+    expect(compareHtml).toContain('class="code-browse-wrap"');
+    expect(compareHtml).toContain('class="commitInfo"');
+    expect(compareHtml).toContain(
+      "@1234567890abcdef1234567890abcdef12345678..abcdef1234567890abcdef1234567890abcdef12",
+    );
+    expect(compareHtml).toContain('class="diff-body discommentable"');
+    expect(compareHtml).toContain('id="src-main-rs"');
+    expect(compareHtml).toContain("+    println!(&quot;compare&quot;);");
+
+    const emptyCompareHtml = renderCompare({
+      commitA: null,
+      commitB: null,
+      files: [],
+      noHead: false,
+      ownerName: "owner",
+      projectName: "projectYobi",
+      revA: "abcdef1",
+      revB: "abcdef1",
+    });
+    expect(emptyCompareHtml).toContain('class="alert"');
+    expect(emptyCompareHtml).toContain("No changes");
   });
 });

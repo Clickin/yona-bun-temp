@@ -109,6 +109,16 @@ pub struct CodeCommitFileDiffRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CodeCompareSnapshot {
+    pub commit_a: Option<CodeCommitRecord>,
+    pub commit_b: Option<CodeCommitRecord>,
+    pub files: Vec<CodeCommitFileDiffRecord>,
+    pub no_head: bool,
+    pub rev_a: String,
+    pub rev_b: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestDiffSnapshot {
     pub commits: Vec<PullRequestDiffCommitRecord>,
     pub files: Vec<PullRequestChangedFileRecord>,
@@ -340,6 +350,47 @@ pub fn read_commit_detail(
     })
 }
 
+pub fn read_compare_diff(
+    repo_path: &Path,
+    rev_a: &str,
+    rev_b: &str,
+) -> Result<CodeCompareSnapshot, VcsError> {
+    let rev_a = rev_a.trim();
+    let rev_b = rev_b.trim();
+    if rev_a.is_empty() || rev_b.is_empty() {
+        return Err(VcsError::NotFound);
+    }
+    if !repo_path.exists() {
+        return Ok(no_head_compare_snapshot(rev_a, rev_b));
+    }
+    if !has_head(repo_path) {
+        return Ok(no_head_compare_snapshot(rev_a, rev_b));
+    }
+    ensure_commit_exists(repo_path, rev_a)?;
+    ensure_commit_exists(repo_path, rev_b)?;
+    let commit_a = read_commit_record(repo_path, rev_a)?;
+    let commit_b = read_commit_record(repo_path, rev_b)?;
+    let diff = git_output(
+        repo_path,
+        &[
+            "diff",
+            "--find-renames",
+            "--patch",
+            "--unified=3",
+            rev_a,
+            rev_b,
+        ],
+    )?;
+    Ok(CodeCompareSnapshot {
+        commit_a: Some(commit_a),
+        commit_b: Some(commit_b),
+        files: parse_commit_diff_files(&diff),
+        no_head: false,
+        rev_a: rev_a.to_string(),
+        rev_b: rev_b.to_string(),
+    })
+}
+
 pub fn read_pull_request_diff(
     repo_path: &Path,
     from_branch: &str,
@@ -461,6 +512,17 @@ fn no_head_commit_detail_snapshot() -> CodeCommitDetailSnapshot {
         parent_commit: None,
         path: String::new(),
         selected_branch: String::new(),
+    }
+}
+
+fn no_head_compare_snapshot(rev_a: &str, rev_b: &str) -> CodeCompareSnapshot {
+    CodeCompareSnapshot {
+        commit_a: None,
+        commit_b: None,
+        files: Vec::new(),
+        no_head: true,
+        rev_a: rev_a.to_string(),
+        rev_b: rev_b.to_string(),
     }
 }
 

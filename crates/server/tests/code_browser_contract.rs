@@ -599,6 +599,88 @@ async fn rest_commit_detail_reports_missing_commit_as_not_found() {
 }
 
 #[tokio::test]
+async fn rest_compare_reads_commit_pair_and_diff_from_git_repo() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+    let base_commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+    append_bare_repository_commit(
+        data_dir.path(),
+        project.id,
+        "src/main.rs",
+        "fn main() {\n    println!(\"compare\");\n}\n",
+        "Update main function",
+    );
+    let head_commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+
+    let response = response_json(
+        rest_get(
+            app,
+            &format!("/projects/owner/projectYobi/compare/{base_commit_id}..{head_commit_id}"),
+            None,
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(response["ownerName"], "owner");
+    assert_eq!(response["projectName"], "projectYobi");
+    assert!(!json_bool(&response, "noHead"));
+    assert_eq!(response["revA"], base_commit_id);
+    assert_eq!(response["revB"], head_commit_id);
+    assert_eq!(response["commitA"]["commitId"], base_commit_id);
+    assert_eq!(response["commitA"]["shortMessage"], "Initial commit");
+    assert_eq!(response["commitB"]["commitId"], head_commit_id);
+    assert_eq!(response["commitB"]["shortMessage"], "Update main function");
+
+    let files = response["files"].as_array().unwrap();
+    assert_eq!(files.len(), 1);
+    assert_eq!(files[0]["path"], "src/main.rs");
+    let patch = files[0]["patch"].as_str().unwrap();
+    assert!(patch.contains("diff --git a/src/main.rs b/src/main.rs"));
+    assert!(patch.contains("+    println!(\"compare\");"));
+}
+
+#[tokio::test]
+async fn rest_compare_reports_missing_commit_as_not_found() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+    let head_commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+
+    let missing = rest_get(
+        app,
+        &format!("/projects/owner/projectYobi/compare/doesnotexist..{head_commit_id}"),
+        None,
+    )
+    .await;
+
+    assert_eq!(missing.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
 async fn direct_code_file_routes_stream_raw_open_and_image_bytes() {
     let _guard = yona_data_env_lock()
         .lock()

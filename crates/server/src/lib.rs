@@ -32,8 +32,8 @@ use yona_rust_integrations::{deliver, OutboundMail};
 use yona_rust_search::SearchType;
 use yona_rust_vcs::{
     CodeBrowserSnapshot, CodeCommitDetailSnapshot, CodeCommitFileDiffRecord,
-    CodeCommitParentRecord, CodeCommitRecord, CodeEntryRecord, CodeFileBytesRecord, CodeFileRecord,
-    CodeHistorySnapshot, VcsError,
+    CodeCommitParentRecord, CodeCommitRecord, CodeCompareSnapshot, CodeEntryRecord,
+    CodeFileBytesRecord, CodeFileRecord, CodeHistorySnapshot, VcsError,
 };
 
 #[allow(clippy::missing_panics_doc)]
@@ -2518,6 +2518,19 @@ struct RestCodeCommitDetailResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RestCodeCompareResponse {
+    commit_a: Option<RestCodeCommit>,
+    commit_b: Option<RestCodeCommit>,
+    files: Vec<RestCodeCommitFileDiff>,
+    no_head: bool,
+    owner_name: String,
+    project_name: String,
+    rev_a: String,
+    rev_b: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RestCodeCommitParent {
     commit_id: String,
     commit_short_id: String,
@@ -3764,6 +3777,33 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             project_name,
                             commit_id,
                             query,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/projects/{owner_name}/{project_name}/compare/{revision_range}",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, revision_range)): Path<(
+                    String,
+                    String,
+                    String,
+                )>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_read_code_compare(
+                            headers,
+                            owner_name,
+                            project_name,
+                            revision_range,
                             session_manager,
                             backend,
                         )
@@ -6977,6 +7017,62 @@ async fn rest_read_code_commit_detail(
     .map_err(RestRouteError::from_connect_error)?;
 
     Ok(Json(code_commit_detail_response_from_snapshot(
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+        snapshot,
+    )))
+}
+
+async fn rest_read_code_compare(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    revision_range: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestCodeCompareResponse>, RestRouteError> {
+    let Some((rev_a, rev_b)) = revision_range.split_once("..") else {
+        return Err(RestRouteError::bad_request(
+            "compare revision range must use revA..revB",
+        ));
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unimplemented("compare requires repository backend"),
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(&owner_name, &project_name, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+    if !project_read_allowed(&authorization, actor_id.is_none())
+        .map_err(RestRouteError::from_connect_error)?
+        || !project_code_menu_visible(&authorization, true)
+    {
+        return if actor_id.is_none() {
+            Err(RestRouteError::from_connect_error(
+                ConnectError::unauthenticated("project read is not allowed"),
+            ))
+        } else {
+            Err(RestRouteError::from_connect_error(
+                ConnectError::permission_denied("project read is not allowed"),
+            ))
+        };
+    }
+
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let snapshot = yona_rust_vcs::read_compare_diff(&repo_path, rev_a, rev_b)
+        .map_err(code_browser_error)
+        .map_err(RestRouteError::from_connect_error)?;
+
+    Ok(Json(code_compare_response_from_snapshot(
         &authorization.project.owner_name,
         &authorization.project.project_name,
         snapshot,
@@ -17224,6 +17320,27 @@ fn code_commit_detail_response_from_snapshot(
         path: snapshot.path,
         project_name: project_name.to_string(),
         selected_branch: snapshot.selected_branch,
+    }
+}
+
+fn code_compare_response_from_snapshot(
+    owner_name: &str,
+    project_name: &str,
+    snapshot: CodeCompareSnapshot,
+) -> RestCodeCompareResponse {
+    RestCodeCompareResponse {
+        commit_a: snapshot.commit_a.map(code_commit_to_rest),
+        commit_b: snapshot.commit_b.map(code_commit_to_rest),
+        files: snapshot
+            .files
+            .into_iter()
+            .map(code_commit_file_diff_to_rest)
+            .collect(),
+        no_head: snapshot.no_head,
+        owner_name: owner_name.to_string(),
+        project_name: project_name.to_string(),
+        rev_a: snapshot.rev_a,
+        rev_b: snapshot.rev_b,
     }
 }
 

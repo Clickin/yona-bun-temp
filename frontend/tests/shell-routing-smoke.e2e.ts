@@ -468,6 +468,50 @@ test.beforeEach(async ({ page }) => {
     },
   );
 
+  await page.route(
+    /\/api\/v1\/projects\/admin\/projectYobi\/compare\/[^/?]+(?:\?.*)?$/,
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({
+          commitA: {
+            authorDate: "2026-04-20",
+            authorEmail: "seed@example.com",
+            authorName: "Seed",
+            commentCount: 0,
+            commitId: "1234567890abcdef1234567890abcdef12345678",
+            commitShortId: "1234567",
+            message: "Initial commit",
+            shortMessage: "Initial commit",
+          },
+          commitB: {
+            authorDate: "2026-04-21",
+            authorEmail: "author@example.com",
+            authorName: "Author",
+            commentCount: 0,
+            commitId: "abcdef1234567890abcdef1234567890abcdef12",
+            commitShortId: "abcdef1",
+            message: "Update main function",
+            shortMessage: "Update main function",
+          },
+          files: [
+            {
+              patch:
+                'diff --git a/src/main.rs b/src/main.rs\n--- a/src/main.rs\n+++ b/src/main.rs\n@@ -1 +1,3 @@\n fn main() {\n+    println!("compare");\n }\n',
+              path: "src/main.rs",
+            },
+          ],
+          noHead: false,
+          ownerName: "admin",
+          projectName: "projectYobi",
+          revA: "1234567890abcdef1234567890abcdef12345678",
+          revB: "abcdef1234567890abcdef1234567890abcdef12",
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+
   await page.route(apiV1Route("/auth/sign-out"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
@@ -815,6 +859,14 @@ test("project commit history routes render branch and path-scoped lists", async 
     "href",
     "/yona/admin/projectYobi/commits/main/src/main.rs",
   );
+
+  await page.goto("/yona/admin/projectYobi/compare/1234567..abcdef1");
+  await expect(page.getByRole("heading", { name: "Compare" })).toBeVisible();
+  await expect(page.locator(".commitInfo")).toContainText(
+    "@1234567890abcdef1234567890abcdef12345678..abcdef1234567890abcdef1234567890abcdef12",
+  );
+  await expect(page.locator(".diff-body.discommentable")).toContainText('println!("compare")');
+  await expect(page.locator("#src-main-rs")).toBeVisible();
 });
 
 test("organization issue route renders cross-project issue inbox", async ({ page }) => {
