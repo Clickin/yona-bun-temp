@@ -1,31 +1,33 @@
 use crate::repo_types::{
     AppUserInput, AppUserRecord, AttachmentRecord, CreateIssueCommentInput, CreateIssueInput,
     CreateOrganizationInput, CreatePostingCommentInput, CreatePostingInput, CreateProjectInput,
-    CreateProjectLabelCategoryInput, CreateProjectLabelInput, CreateUserInput,
-    IssueAssignableUserRecord, IssueAssignableUserSearchRecord, IssueAttachmentRecord,
-    IssueCommentRecord, IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord,
-    IssueListFilter, IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord,
-    IssueRecord, IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord,
-    MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
-    NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
-    OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
-    OrganizationIssueListFilter, OrganizationIssueListRecord, OrganizationIssueProjectOptionRecord,
-    OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationPostingListFilter,
-    OrganizationPostingListRecord, OrganizationPostingProjectOptionRecord, OrganizationRecord,
-    OrganizationViewerRecord, PostingCommentRecord, PostingListFilter, PostingRecord,
-    ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord, ProjectIssueListItemRecord,
-    ProjectIssueListRecord, ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord,
-    ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
+    CreateProjectLabelCategoryInput, CreateProjectLabelInput, CreatePullRequestCommentInput,
+    CreatePullRequestInput, CreatePullRequestResult, CreateUserInput, IssueAssignableUserRecord,
+    IssueAssignableUserSearchRecord, IssueAttachmentRecord, IssueCommentRecord,
+    IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter,
+    IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueRecord,
+    IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, MassUpdateIssuesInput,
+    MentionSyncResult, MilestoneListFilter, MilestoneMutationInput, NotificationActorRecord,
+    NotificationItemRecord, NotificationListRecord, OrganizationAuthorizationRecord,
+    OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
+    OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
+    OrganizationMemberRecord, OrganizationPostingListFilter, OrganizationPostingListRecord,
+    OrganizationPostingProjectOptionRecord, OrganizationRecord, OrganizationViewerRecord,
+    PostingCommentRecord, PostingListFilter, PostingRecord, ProjectAuthorizationRecord,
+    ProjectEnrollmentRequestRecord, ProjectIssueListItemRecord, ProjectIssueListRecord,
+    ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord, ProjectListEntry,
+    ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
     ProjectMilestoneSummaryRecord, ProjectPostingListItemRecord, ProjectPostingListRecord,
     ProjectRecord, ProjectViewerRecord, PullRequestCommitRecord, PullRequestDetailRecord,
     PullRequestEventRecord, PullRequestListFilter, PullRequestListItemRecord,
-    PullRequestListRecord, PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter,
-    ReviewThreadListRecord, ReviewThreadRecord, SearchContextRecord, SearchCountsRecord,
-    SearchItemRecord, SearchRepositoryInput, SearchResultRecord, SearchScope,
+    PullRequestListRecord, PullRequestReviewInput, PullRequestStateInput,
+    PullRequestThreadStateInput, PullRequestUserRecord, ReviewCommentRecord,
+    ReviewThreadListFilter, ReviewThreadListRecord, ReviewThreadRecord, SearchContextRecord,
+    SearchCountsRecord, SearchItemRecord, SearchRepositoryInput, SearchResultRecord, SearchScope,
     ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateIssueCommentInput,
     UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput,
     UpdatePostingInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
-    UpdateProjectLabelInput, UserIssueCandidateRecord, UserIssueListFilter,
+    UpdateProjectLabelInput, UpdatePullRequestInput, UserIssueCandidateRecord, UserIssueListFilter,
     WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
     WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
@@ -5438,6 +5440,440 @@ impl AppRepository {
             .map(Some)
     }
 
+    pub async fn create_pull_request(
+        &self,
+        input: CreatePullRequestInput,
+    ) -> Result<Option<CreatePullRequestResult>, DbErr> {
+        let Some(from_project) = self.read_project_by_id(input.from_project_id).await? else {
+            return Ok(None);
+        };
+        let Some(to_project) = self.read_project_by_id(input.to_project_id).await? else {
+            return Ok(None);
+        };
+        let from_branch = input.from_branch.trim().to_string();
+        let to_branch = input.to_branch.trim().to_string();
+
+        if let Some(duplicate) = self
+            .find_duplicate_open_pull_request(
+                from_project.id,
+                to_project.id,
+                &from_branch,
+                &to_branch,
+            )
+            .await?
+        {
+            let detail = self
+                .pull_request_detail_from_model(duplicate, &to_project, Some(input.actor_id))
+                .await?;
+            return Ok(Some(CreatePullRequestResult::Duplicate(detail)));
+        }
+
+        let receiver_id = self
+            .find_user_by_login_id(&to_project.owner_name)
+            .await?
+            .map(|user| user.id)
+            .unwrap_or(input.actor_id);
+        let pull_request_number = self.next_pull_request_number(to_project.id).await?;
+        let now = current_datetime();
+        let created = pull_request::ActiveModel {
+            id: NotSet,
+            title: Set(Some(input.values.title.trim().to_string())),
+            to_project_id: Set(Some(to_project.id)),
+            from_project_id: Set(Some(from_project.id)),
+            to_branch: Set(Some(to_branch)),
+            from_branch: Set(Some(from_branch)),
+            contributor_id: Set(Some(input.actor_id)),
+            receiver_id: Set(Some(receiver_id)),
+            created: Set(Some(now)),
+            updated: Set(Some(now)),
+            received: Set(None),
+            state: Set(Some(1)),
+            is_conflict: Set(Some(0)),
+            is_merging: Set(Some(0)),
+            last_commit_id: Set(None),
+            merged_commit_id_from: Set(None),
+            merged_commit_id_to: Set(None),
+            number: Set(Some(pull_request_number)),
+        }
+        .insert(&self.db)
+        .await?;
+        self.write_text_column(
+            "pull_request",
+            "body",
+            created.id,
+            &input.values.body_markdown,
+        )
+        .await?;
+        self.bind_attachments("PULL_REQUEST", created.id, &input.values.attachment_ids)
+            .await?;
+        self.watch_pull_request(created.id, input.actor_id).await?;
+        self.create_pull_request_event(
+            created.id,
+            &input.actor_login_id,
+            "NEW_PULL_REQUEST",
+            "",
+            &input.values.title,
+        )
+        .await?;
+        let receiver_ids = self
+            .pull_request_notification_receiver_ids(
+                to_project.id,
+                created.id,
+                created.contributor_id,
+                created.receiver_id,
+                "NEW_PULL_REQUEST",
+            )
+            .await?;
+        self.create_notification_event_for_receivers(
+            input.actor_id,
+            "PULL_REQUEST",
+            &created.id.to_string(),
+            "NEW_PULL_REQUEST",
+            "",
+            &input.values.title,
+            &receiver_ids,
+        )
+        .await?;
+
+        let detail = self
+            .pull_request_detail_from_model(created, &to_project, Some(input.actor_id))
+            .await?;
+        Ok(Some(CreatePullRequestResult::Created(detail)))
+    }
+
+    pub async fn update_pull_request(
+        &self,
+        input: UpdatePullRequestInput,
+    ) -> Result<Option<PullRequestDetailRecord>, DbErr> {
+        let Some((project, model)) = self
+            .read_project_pull_request_model(
+                &input.owner_name,
+                &input.project_name,
+                input.pull_request_number,
+            )
+            .await?
+        else {
+            return Ok(None);
+        };
+        let mut active = pull_request::ActiveModel::from(model);
+        active.title = Set(Some(input.values.title.trim().to_string()));
+        active.updated = Set(Some(current_datetime()));
+        let updated = active.update(&self.db).await?;
+        self.write_text_column(
+            "pull_request",
+            "body",
+            updated.id,
+            &input.values.body_markdown,
+        )
+        .await?;
+        self.bind_attachments("PULL_REQUEST", updated.id, &input.values.attachment_ids)
+            .await?;
+
+        self.pull_request_detail_from_model(updated, &project, Some(input.actor_id))
+            .await
+            .map(Some)
+    }
+
+    pub async fn update_pull_request_state(
+        &self,
+        input: PullRequestStateInput,
+    ) -> Result<Option<PullRequestDetailRecord>, DbErr> {
+        let Some((project, model)) = self
+            .read_project_pull_request_model(
+                &input.owner_name,
+                &input.project_name,
+                input.pull_request_number,
+            )
+            .await?
+        else {
+            return Ok(None);
+        };
+        let old_state = pull_request_lifecycle_state(model.state);
+        let next_state = if normalize_identity(&input.state) == "closed" {
+            "closed"
+        } else {
+            "open"
+        };
+        let next_raw = if next_state == "closed" { 2 } else { 1 };
+        let mut active = pull_request::ActiveModel::from(model.clone());
+        active.state = Set(Some(next_raw));
+        active.is_conflict = Set(Some(0));
+        active.updated = Set(Some(current_datetime()));
+        let updated = active.update(&self.db).await?;
+        self.create_pull_request_event(
+            updated.id,
+            &input.actor_login_id,
+            "PULL_REQUEST_STATE_CHANGED",
+            &old_state,
+            next_state,
+        )
+        .await?;
+        let receiver_ids = self
+            .pull_request_notification_receiver_ids(
+                project.id,
+                updated.id,
+                updated.contributor_id,
+                updated.receiver_id,
+                "PULL_REQUEST_STATE_CHANGED",
+            )
+            .await?;
+        self.create_notification_event_for_receivers(
+            input.actor_id,
+            "PULL_REQUEST",
+            &updated.id.to_string(),
+            "PULL_REQUEST_STATE_CHANGED",
+            &old_state,
+            next_state,
+            &receiver_ids,
+        )
+        .await?;
+
+        self.pull_request_detail_from_model(updated, &project, Some(input.actor_id))
+            .await
+            .map(Some)
+    }
+
+    pub async fn set_pull_request_review(
+        &self,
+        input: PullRequestReviewInput,
+    ) -> Result<Option<PullRequestDetailRecord>, DbErr> {
+        let Some((project, model)) = self
+            .read_project_pull_request_model(
+                &input.owner_name,
+                &input.project_name,
+                input.pull_request_number,
+            )
+            .await?
+        else {
+            return Ok(None);
+        };
+        let existing = pull_request_reviewers::Entity::find_by_id((model.id, input.actor_id))
+            .one(&self.db)
+            .await?;
+        if input.reviewed {
+            if existing.is_none() {
+                pull_request_reviewers::ActiveModel {
+                    pull_request_id: Set(model.id),
+                    user_id: Set(input.actor_id),
+                }
+                .insert(&self.db)
+                .await?;
+            }
+        } else if existing.is_some() {
+            pull_request_reviewers::Entity::delete_by_id((model.id, input.actor_id))
+                .exec(&self.db)
+                .await?;
+        }
+        let (old_value, new_value) = if input.reviewed {
+            ("CANCEL", "DONE")
+        } else {
+            ("DONE", "CANCEL")
+        };
+        self.create_pull_request_event(
+            model.id,
+            &input.actor_login_id,
+            "PULL_REQUEST_REVIEW_STATE_CHANGED",
+            old_value,
+            new_value,
+        )
+        .await?;
+        let receiver_ids = self
+            .pull_request_notification_receiver_ids(
+                project.id,
+                model.id,
+                model.contributor_id,
+                model.receiver_id,
+                "PULL_REQUEST_REVIEW_STATE_CHANGED",
+            )
+            .await?;
+        self.create_notification_event_for_receivers(
+            input.actor_id,
+            "PULL_REQUEST",
+            &model.id.to_string(),
+            "PULL_REQUEST_REVIEW_STATE_CHANGED",
+            old_value,
+            new_value,
+            &receiver_ids,
+        )
+        .await?;
+
+        self.pull_request_detail_from_model(model, &project, Some(input.actor_id))
+            .await
+            .map(Some)
+    }
+
+    pub async fn create_pull_request_comment(
+        &self,
+        input: CreatePullRequestCommentInput,
+    ) -> Result<Option<PullRequestDetailRecord>, DbErr> {
+        let Some((project, model)) = self
+            .read_project_pull_request_model(
+                &input.owner_name,
+                &input.project_name,
+                input.pull_request_number,
+            )
+            .await?
+        else {
+            return Ok(None);
+        };
+        let thread_id = if let Some(thread_id) = input.thread_id {
+            let Some(thread) = comment_thread::Entity::find_by_id(thread_id)
+                .one(&self.db)
+                .await?
+            else {
+                return Ok(None);
+            };
+            if thread.pull_request_id != Some(model.id) {
+                return Ok(None);
+            }
+            thread.id
+        } else {
+            let commit_id = input
+                .commit_id
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned)
+                .or_else(|| model.merged_commit_id_to.clone());
+            comment_thread::ActiveModel {
+                dtype: Set("NonRangedCodeCommentThread".to_string()),
+                id: NotSet,
+                author_id: Set(Some(input.actor_id)),
+                author_login_id: Set(Some(input.actor_login_id.clone())),
+                author_name: Set(Some(input.actor_display_name.clone())),
+                state: Set(Some("open".to_string())),
+                created_date: Set(Some(current_datetime())),
+                pull_request_id: Set(Some(model.id)),
+                project_id: Set(Some(project.id)),
+                prev_commit_id: Set(model.merged_commit_id_from.clone()),
+                commit_id: Set(commit_id),
+                path: Set(None),
+                start_side: Set(None),
+                start_line: Set(None),
+                start_column: Set(None),
+                end_side: Set(None),
+                end_line: Set(None),
+                end_column: Set(None),
+            }
+            .insert(&self.db)
+            .await?
+            .id
+        };
+        let created = review_comment::ActiveModel {
+            id: NotSet,
+            created_date: Set(Some(current_datetime())),
+            author_id: Set(Some(input.actor_id)),
+            author_login_id: Set(Some(input.actor_login_id.clone())),
+            author_name: Set(Some(input.actor_display_name.clone())),
+            thread_id: Set(Some(thread_id)),
+        }
+        .insert(&self.db)
+        .await?;
+        self.write_text_column(
+            "review_comment",
+            "contents",
+            created.id,
+            &input.contents_markdown,
+        )
+        .await?;
+        self.bind_attachments("REVIEW_COMMENT", created.id, &input.attachment_ids)
+            .await?;
+        self.create_pull_request_event(
+            model.id,
+            &input.actor_login_id,
+            "NEW_REVIEW_COMMENT",
+            "",
+            &input.contents_markdown,
+        )
+        .await?;
+        let receiver_ids = self
+            .pull_request_notification_receiver_ids(
+                project.id,
+                model.id,
+                model.contributor_id,
+                model.receiver_id,
+                "NEW_REVIEW_COMMENT",
+            )
+            .await?;
+        self.create_notification_event_for_receivers(
+            input.actor_id,
+            "REVIEW_COMMENT",
+            &created.id.to_string(),
+            "NEW_REVIEW_COMMENT",
+            "",
+            &input.contents_markdown,
+            &receiver_ids,
+        )
+        .await?;
+
+        self.pull_request_detail_from_model(model, &project, Some(input.actor_id))
+            .await
+            .map(Some)
+    }
+
+    pub async fn update_pull_request_thread_state(
+        &self,
+        input: PullRequestThreadStateInput,
+    ) -> Result<Option<ReviewThreadRecord>, DbErr> {
+        let Some((_project, model)) = self
+            .read_project_pull_request_model(
+                &input.owner_name,
+                &input.project_name,
+                input.pull_request_number,
+            )
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(thread) = comment_thread::Entity::find_by_id(input.thread_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        if thread.pull_request_id != Some(model.id) {
+            return Ok(None);
+        }
+        let old_state = review_thread_state(thread.state.as_deref());
+        let next_state = if normalize_identity(&input.state) == "closed" {
+            "closed"
+        } else {
+            "open"
+        };
+        let mut active = comment_thread::ActiveModel::from(thread);
+        active.state = Set(Some(next_state.to_string()));
+        let updated = active.update(&self.db).await?;
+        self.create_pull_request_event(
+            model.id,
+            &input.actor_login_id,
+            "REVIEW_THREAD_STATE_CHANGED",
+            &old_state,
+            next_state,
+        )
+        .await?;
+        let receiver_ids = self
+            .pull_request_notification_receiver_ids(
+                updated.project_id.unwrap_or_default(),
+                model.id,
+                model.contributor_id,
+                model.receiver_id,
+                "REVIEW_THREAD_STATE_CHANGED",
+            )
+            .await?;
+        self.create_notification_event_for_receivers(
+            input.actor_id,
+            "PULL_REQUEST",
+            &model.id.to_string(),
+            "REVIEW_THREAD_STATE_CHANGED",
+            &old_state,
+            next_state,
+            &receiver_ids,
+        )
+        .await?;
+        let comments = self.list_review_comments(updated.id).await?;
+        self.review_thread_record(updated, comments).await.map(Some)
+    }
+
     pub async fn list_project_review_threads(
         &self,
         project: &ProjectRecord,
@@ -7336,6 +7772,37 @@ impl AppRepository {
         Ok(project_last.max(max_existing) + 1)
     }
 
+    async fn next_pull_request_number(&self, project_id: i64) -> Result<i64, DbErr> {
+        let max_existing = pull_request::Entity::find()
+            .filter(pull_request::Column::ToProjectId.eq(Some(project_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| row.number)
+            .max()
+            .unwrap_or_default();
+        Ok(max_existing + 1)
+    }
+
+    async fn find_duplicate_open_pull_request(
+        &self,
+        from_project_id: i64,
+        to_project_id: i64,
+        from_branch: &str,
+        to_branch: &str,
+    ) -> Result<Option<pull_request::Model>, DbErr> {
+        pull_request::Entity::find()
+            .filter(pull_request::Column::FromProjectId.eq(Some(from_project_id)))
+            .filter(pull_request::Column::ToProjectId.eq(Some(to_project_id)))
+            .filter(pull_request::Column::FromBranch.eq(Some(from_branch.to_string())))
+            .filter(pull_request::Column::ToBranch.eq(Some(to_branch.to_string())))
+            .filter(pull_request_open_condition())
+            .order_by_desc(pull_request::Column::Updated)
+            .order_by_desc(pull_request::Column::Id)
+            .one(&self.db)
+            .await
+    }
+
     async fn resolve_assignee_id(
         &self,
         project_id: i64,
@@ -8031,6 +8498,24 @@ impl AppRepository {
             .is_some())
     }
 
+    async fn watch_pull_request(&self, pull_request_id: i64, user_id: i64) -> Result<(), DbErr> {
+        if self
+            .is_pull_request_watched_by(pull_request_id, user_id)
+            .await?
+        {
+            return Ok(());
+        }
+        watch::ActiveModel {
+            id: NotSet,
+            user_id: Set(Some(user_id)),
+            resource_type: Set(Some("PULL_REQUEST".to_string())),
+            resource_id: Set(Some(pull_request_id.to_string())),
+        }
+        .insert(&self.db)
+        .await?;
+        Ok(())
+    }
+
     async fn is_posting_watched_by(&self, posting_id: i64, user_id: i64) -> Result<bool, DbErr> {
         Ok(watch::Entity::find()
             .filter(watch::Column::UserId.eq(Some(user_id)))
@@ -8113,6 +8598,30 @@ impl AppRepository {
         self.write_text_column("issue_event", "old_value", created.id, old_value)
             .await?;
         self.write_text_column("issue_event", "new_value", created.id, new_value)
+            .await?;
+        Ok(())
+    }
+
+    async fn create_pull_request_event(
+        &self,
+        pull_request_id: i64,
+        sender_login_id: &str,
+        event_type: &str,
+        old_value: &str,
+        new_value: &str,
+    ) -> Result<(), DbErr> {
+        let created = pull_request_event::ActiveModel {
+            id: NotSet,
+            created: Set(Some(current_datetime())),
+            sender_login_id: Set(empty_to_none(Some(sender_login_id.to_string()))),
+            pull_request_id: Set(Some(pull_request_id)),
+            event_type: Set(Some(event_type.to_string())),
+        }
+        .insert(&self.db)
+        .await?;
+        self.write_text_column("pull_request_event", "old_value", created.id, old_value)
+            .await?;
+        self.write_text_column("pull_request_event", "new_value", created.id, new_value)
             .await?;
         Ok(())
     }
@@ -8319,6 +8828,68 @@ impl AppRepository {
             .into_iter()
             .collect::<HashSet<_>>();
         receivers.retain(|user_id| !posting_unwatchers.contains(user_id));
+        receivers.retain(|user_id| !event_unwatchers.contains(user_id));
+        Ok(receivers)
+    }
+
+    async fn pull_request_notification_receiver_ids(
+        &self,
+        project_id: i64,
+        pull_request_id: i64,
+        contributor_id: Option<i64>,
+        receiver_id: Option<i64>,
+        event_type: &str,
+    ) -> Result<Vec<i64>, DbErr> {
+        let mut receivers = Vec::new();
+        let mut seen = HashSet::new();
+        push_unique_user_id(&mut receivers, &mut seen, contributor_id);
+        push_unique_user_id(&mut receivers, &mut seen, receiver_id);
+
+        for reviewer in pull_request_reviewers::Entity::find()
+            .filter(pull_request_reviewers::Column::PullRequestId.eq(pull_request_id))
+            .all(&self.db)
+            .await?
+        {
+            push_unique_user_id(&mut receivers, &mut seen, Some(reviewer.user_id));
+        }
+
+        for user_id in self
+            .active_watch_user_ids("PULL_REQUEST", &pull_request_id.to_string())
+            .await?
+        {
+            push_unique_user_id(&mut receivers, &mut seen, Some(user_id));
+        }
+
+        for user_id in self
+            .active_watch_user_ids("PROJECT", &project_id.to_string())
+            .await?
+        {
+            if self
+                .project_notification_enabled_for_user(user_id, project_id, event_type)
+                .await?
+            {
+                push_unique_user_id(&mut receivers, &mut seen, Some(user_id));
+            }
+        }
+
+        for user_id in self
+            .explicit_project_notification_user_ids(project_id, event_type, true)
+            .await?
+        {
+            push_unique_user_id(&mut receivers, &mut seen, Some(user_id));
+        }
+
+        let pull_request_unwatchers = self
+            .active_unwatch_user_ids("PULL_REQUEST", &pull_request_id.to_string())
+            .await?
+            .into_iter()
+            .collect::<HashSet<_>>();
+        let event_unwatchers = self
+            .explicit_project_notification_user_ids(project_id, event_type, false)
+            .await?
+            .into_iter()
+            .collect::<HashSet<_>>();
+        receivers.retain(|user_id| !pull_request_unwatchers.contains(user_id));
         receivers.retain(|user_id| !event_unwatchers.contains(user_id));
         Ok(receivers)
     }
@@ -8570,6 +9141,11 @@ impl AppRepository {
                 .notification_posting_target(&normalized_type, resource_id)
                 .await;
         }
+        if matches!(normalized_type.as_str(), "pull_request" | "review_comment") {
+            return self
+                .notification_pull_request_target(&normalized_type, resource_id)
+                .await;
+        }
         if normalized_type == "project" {
             return self.notification_project_target(resource_id).await;
         }
@@ -8677,6 +9253,65 @@ impl AppRepository {
                 project.owner_name, project.project_name, post_number, comment_anchor
             ),
             posting_model.title.unwrap_or_default(),
+        ))
+    }
+
+    async fn notification_pull_request_target(
+        &self,
+        resource_type: &str,
+        resource_id: i64,
+    ) -> Result<(String, String), DbErr> {
+        let mut comment_anchor = String::new();
+        let pull_request_model = match resource_type {
+            "pull_request" => {
+                pull_request::Entity::find_by_id(resource_id)
+                    .one(&self.db)
+                    .await?
+            }
+            "review_comment" => {
+                let Some(comment) = review_comment::Entity::find_by_id(resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok((String::new(), String::new()));
+                };
+                comment_anchor = format!("/changes#comment-{}", comment.id);
+                let Some(thread_id) = comment.thread_id else {
+                    return Ok((String::new(), String::new()));
+                };
+                let Some(thread) = comment_thread::Entity::find_by_id(thread_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok((String::new(), String::new()));
+                };
+                match thread.pull_request_id {
+                    Some(pull_request_id) => {
+                        pull_request::Entity::find_by_id(pull_request_id)
+                            .one(&self.db)
+                            .await?
+                    }
+                    None => None,
+                }
+            }
+            _ => None,
+        };
+        let Some(pull_request_model) = pull_request_model else {
+            return Ok((String::new(), String::new()));
+        };
+        let Some(project_id) = pull_request_model.to_project_id else {
+            return Ok((String::new(), String::new()));
+        };
+        let Some(project) = self.read_project_by_id(project_id).await? else {
+            return Ok((String::new(), String::new()));
+        };
+        let pull_request_number = pull_request_model.number.unwrap_or_default();
+        Ok((
+            format!(
+                "/{}/{}/pullRequest/{}{}",
+                project.owner_name, project.project_name, pull_request_number, comment_anchor
+            ),
+            pull_request_model.title.unwrap_or_default(),
         ))
     }
 

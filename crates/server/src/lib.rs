@@ -2479,6 +2479,47 @@ struct RestPullRequestListQuery {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+struct RestPullRequestFormQuery {
+    from_branch: String,
+    from_project_id: i64,
+    to_branch: String,
+    to_project_id: i64,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestCreateBody {
+    #[serde(default)]
+    attachment_ids: Vec<i64>,
+    body_markdown: String,
+    from_branch: String,
+    from_project_id: i64,
+    title: String,
+    to_branch: String,
+    to_project_id: i64,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestEditBody {
+    #[serde(default)]
+    attachment_ids: Vec<i64>,
+    body_markdown: String,
+    title: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestCommentBody {
+    #[serde(default)]
+    attachment_ids: Vec<i64>,
+    commit_id: Option<String>,
+    contents_markdown: String,
+    thread_id: Option<i64>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 struct RestOrganizationPullRequestListQuery {
     category: String,
     filter: String,
@@ -2589,6 +2630,44 @@ struct RestPullRequestListResponse {
     page_num: u32,
     page_size: u32,
     total_count: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestProjectOption {
+    id: i64,
+    owner_name: String,
+    project_name: String,
+    selected: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestBranchOption {
+    name: String,
+    selected: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestFormSelected {
+    from_branch: String,
+    from_project_id: i64,
+    to_branch: String,
+    to_project_id: i64,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPullRequestFormOptionsResponse {
+    from_branches: Vec<RestPullRequestBranchOption>,
+    from_projects: Vec<RestPullRequestProjectOption>,
+    mode: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pull_request: Option<RestPullRequestDetailResponse>,
+    selected: RestPullRequestFormSelected,
+    to_branches: Vec<RestPullRequestBranchOption>,
+    to_projects: Vec<RestPullRequestProjectOption>,
 }
 
 #[derive(Clone, Serialize)]
@@ -3901,6 +3980,39 @@ fn build_rest_pull_request_router(service: PilotServiceImpl) -> Router {
                         .await
                     }
                 }
+            })
+            .post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestPullRequestCreateBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_create_pull_request(headers, owner_name, project_name, body, service)
+                            .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/form-options",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestPullRequestFormQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_read_pull_request_create_form_options(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            service,
+                        )
+                        .await
+                    }
+                }
             }),
         )
         .route(
@@ -3920,6 +4032,233 @@ fn build_rest_pull_request_router(service: PilotServiceImpl) -> Router {
                             owner_name,
                             project_name,
                             pull_request_number,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>,
+                      Json(body): Json<RestPullRequestEditBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_pull_request(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/form-options",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_read_pull_request_edit_form_options(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/close",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_pull_request_state(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            "closed".to_string(),
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/open",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_pull_request_state(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            "open".to_string(),
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/review",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_set_pull_request_review(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            true,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/unreview",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_set_pull_request_review(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            false,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/comments",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>,
+                      Json(body): Json<RestPullRequestCommentBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_create_pull_request_comment(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/threads/{thread_id}/close",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number, thread_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_pull_request_thread_state(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            thread_id,
+                            "closed".to_string(),
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/threads/{thread_id}/open",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number, thread_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_pull_request_thread_state(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            thread_id,
+                            "open".to_string(),
                             service,
                         )
                         .await
@@ -6482,6 +6821,640 @@ fn rest_review_thread_filter(
             "open".to_string()
         },
     }
+}
+
+fn rest_pull_request_branch_error(error: VcsError) -> RestRouteError {
+    match error {
+        VcsError::NotFound => RestRouteError::bad_request("pull request repository is empty"),
+        _ => RestRouteError::from_connect_error(internal_error(error)),
+    }
+}
+
+async fn rest_require_pull_request_option_project(
+    repository: &PilotRepository,
+    project_id: i64,
+    actor_id: Option<i64>,
+) -> Result<persistence::ProjectAuthorizationRecord, RestRouteError> {
+    let project = repository
+        .read_project_by_id(project_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    rest_require_project_code_read(
+        repository,
+        &project.owner_name,
+        &project.project_name,
+        actor_id,
+    )
+    .await
+}
+
+async fn rest_pull_request_project_options(
+    repository: &PilotRepository,
+    actor_id: Option<i64>,
+    selected_project_id: i64,
+) -> Result<Vec<RestPullRequestProjectOption>, RestRouteError> {
+    let projects = repository
+        .list_projects()
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let mut options = Vec::new();
+    for project in projects {
+        let Some(authorization) = repository
+            .read_project_authorization(&project.owner_name, &project.project_name, actor_id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+        else {
+            continue;
+        };
+        if project_read_allowed(&authorization, actor_id.is_none())
+            .map_err(RestRouteError::from_connect_error)?
+            && project_code_menu_visible(&authorization, true)
+        {
+            options.push(RestPullRequestProjectOption {
+                id: authorization.project.id,
+                owner_name: authorization.project.owner_name,
+                project_name: authorization.project.project_name,
+                selected: authorization.project.id == selected_project_id,
+            });
+        }
+    }
+    Ok(options)
+}
+
+fn rest_pull_request_branch_options(
+    project: &persistence::ProjectRecord,
+    selected_branch: &str,
+) -> Result<(Vec<RestPullRequestBranchOption>, String), RestRouteError> {
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), project.id);
+    let branches = yona_rust_vcs::list_repository_branches(&repo_path)
+        .map_err(rest_pull_request_branch_error)?;
+    if branches.is_empty() {
+        return Err(RestRouteError::bad_request(
+            "pull request repository is empty",
+        ));
+    }
+    let selected = selected_branch.trim();
+    let selected = if selected.is_empty() {
+        branches[0].name.clone()
+    } else if branches.iter().any(|branch| branch.name == selected) {
+        selected.to_string()
+    } else {
+        return Err(RestRouteError::bad_request(
+            "pull request branch is not available",
+        ));
+    };
+    let options = branches
+        .into_iter()
+        .map(|branch| RestPullRequestBranchOption {
+            selected: branch.name == selected,
+            name: branch.name,
+        })
+        .collect();
+    Ok((options, selected))
+}
+
+fn rest_pull_request_mutation_input(
+    title: String,
+    body_markdown: String,
+    attachment_ids: Vec<i64>,
+) -> Result<persistence::PullRequestMutationInput, RestRouteError> {
+    if title.trim().is_empty() {
+        return Err(RestRouteError::bad_request(
+            "pull request title is required",
+        ));
+    }
+    if body_markdown.trim().is_empty() {
+        return Err(RestRouteError::bad_request("pull request body is required"));
+    }
+    Ok(persistence::PullRequestMutationInput {
+        attachment_ids,
+        body_markdown,
+        title,
+    })
+}
+
+async fn rest_pull_request_detail_response(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    pull_request_number: i64,
+    actor_id: Option<i64>,
+) -> Result<RestPullRequestDetailResponse, RestRouteError> {
+    let authorization =
+        rest_require_project_code_read(repository, owner_name, project_name, actor_id).await?;
+    let record = repository
+        .read_pull_request_detail(owner_name, project_name, pull_request_number, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
+    rest_pull_request_detail_from_record(record, &authorization, actor_id)
+        .map_err(RestRouteError::from_connect_error)
+}
+
+async fn rest_read_pull_request_create_form_options(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: RestPullRequestFormQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestFormOptionsResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let target_authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let from_project_id = if query.from_project_id > 0 {
+        query.from_project_id
+    } else {
+        target_authorization.project.id
+    };
+    let to_project_id = if query.to_project_id > 0 {
+        query.to_project_id
+    } else {
+        target_authorization.project.id
+    };
+    let from_authorization =
+        rest_require_pull_request_option_project(repository, from_project_id, Some(actor.id))
+            .await?;
+    let to_authorization =
+        rest_require_pull_request_option_project(repository, to_project_id, Some(actor.id)).await?;
+    let project_options = rest_pull_request_project_options(
+        repository,
+        Some(actor.id),
+        target_authorization.project.id,
+    )
+    .await?;
+    let (from_branches, selected_from_branch) =
+        rest_pull_request_branch_options(&from_authorization.project, &query.from_branch)?;
+    let (to_branches, selected_to_branch) =
+        rest_pull_request_branch_options(&to_authorization.project, &query.to_branch)?;
+
+    Ok(Json(RestPullRequestFormOptionsResponse {
+        from_branches,
+        from_projects: project_options
+            .iter()
+            .map(|option| RestPullRequestProjectOption {
+                id: option.id,
+                owner_name: option.owner_name.clone(),
+                project_name: option.project_name.clone(),
+                selected: option.id == from_project_id,
+            })
+            .collect(),
+        mode: "create".to_string(),
+        pull_request: None,
+        selected: RestPullRequestFormSelected {
+            from_branch: selected_from_branch,
+            from_project_id,
+            to_branch: selected_to_branch,
+            to_project_id,
+        },
+        to_branches,
+        to_projects: project_options
+            .into_iter()
+            .map(|option| RestPullRequestProjectOption {
+                selected: option.id == to_project_id,
+                ..option
+            })
+            .collect(),
+    }))
+}
+
+async fn rest_read_pull_request_edit_form_options(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestFormOptionsResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let pull_request = rest_pull_request_detail_response(
+        repository,
+        &owner_name,
+        &project_name,
+        pull_request_number,
+        Some(actor.id),
+    )
+    .await?;
+    let from_project = repository
+        .read_project_by_owner_and_name(
+            &pull_request.from_owner_name,
+            &pull_request.from_project_name,
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("source project not found"))?;
+    let to_project = repository
+        .read_project_by_owner_and_name(&pull_request.owner_name, &pull_request.project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("target project not found"))?;
+    rest_require_pull_request_option_project(repository, from_project.id, Some(actor.id)).await?;
+    rest_require_pull_request_option_project(repository, to_project.id, Some(actor.id)).await?;
+    let project_options =
+        rest_pull_request_project_options(repository, Some(actor.id), to_project.id).await?;
+    let (from_branches, selected_from_branch) =
+        rest_pull_request_branch_options(&from_project, &pull_request.from_branch)?;
+    let (to_branches, selected_to_branch) =
+        rest_pull_request_branch_options(&to_project, &pull_request.to_branch)?;
+
+    Ok(Json(RestPullRequestFormOptionsResponse {
+        from_branches,
+        from_projects: project_options
+            .iter()
+            .map(|option| RestPullRequestProjectOption {
+                id: option.id,
+                owner_name: option.owner_name.clone(),
+                project_name: option.project_name.clone(),
+                selected: option.id == from_project.id,
+            })
+            .collect(),
+        mode: "edit".to_string(),
+        pull_request: Some(pull_request),
+        selected: RestPullRequestFormSelected {
+            from_branch: selected_from_branch,
+            from_project_id: from_project.id,
+            to_branch: selected_to_branch,
+            to_project_id: to_project.id,
+        },
+        to_branches,
+        to_projects: project_options
+            .into_iter()
+            .map(|option| RestPullRequestProjectOption {
+                selected: option.id == to_project.id,
+                ..option
+            })
+            .collect(),
+    }))
+}
+
+async fn rest_create_pull_request(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestPullRequestCreateBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    if body.from_project_id <= 0 || body.to_project_id <= 0 {
+        return Err(RestRouteError::bad_request(
+            "pull request project is required",
+        ));
+    }
+    if body.from_branch.trim().is_empty() || body.to_branch.trim().is_empty() {
+        return Err(RestRouteError::bad_request(
+            "pull request branch is required",
+        ));
+    }
+    let values =
+        rest_pull_request_mutation_input(body.title, body.body_markdown, body.attachment_ids)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let route_authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    if route_authorization.project.id != body.to_project_id {
+        return Err(RestRouteError::bad_request(
+            "pull request target project does not match route",
+        ));
+    }
+    let from_authorization =
+        rest_require_pull_request_option_project(repository, body.from_project_id, Some(actor.id))
+            .await?;
+    let to_authorization =
+        rest_require_pull_request_option_project(repository, body.to_project_id, Some(actor.id))
+            .await?;
+    rest_pull_request_branch_options(&from_authorization.project, &body.from_branch)?;
+    rest_pull_request_branch_options(&to_authorization.project, &body.to_branch)?;
+
+    let detail = repository
+        .create_pull_request(persistence::CreatePullRequestInput {
+            actor_display_name: actor.display_name.clone(),
+            actor_id: actor.id,
+            actor_login_id: actor.login_id.clone(),
+            from_branch: body.from_branch,
+            from_project_id: body.from_project_id,
+            to_branch: body.to_branch,
+            to_project_id: body.to_project_id,
+            values,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    let record = match detail {
+        persistence::CreatePullRequestResult::Created(record)
+        | persistence::CreatePullRequestResult::Duplicate(record) => record,
+    };
+    Ok(Json(
+        rest_pull_request_detail_from_record(record, &to_authorization, Some(actor.id))
+            .map_err(RestRouteError::from_connect_error)?,
+    ))
+}
+
+async fn rest_update_pull_request(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    body: RestPullRequestEditBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let values =
+        rest_pull_request_mutation_input(body.title, body.body_markdown, body.attachment_ids)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let current = rest_pull_request_detail_response(
+        repository,
+        &owner_name,
+        &project_name,
+        pull_request_number,
+        Some(actor.id),
+    )
+    .await?;
+    if !current.permissions.can_update {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("pull request update is not allowed"),
+        ));
+    }
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let record = repository
+        .update_pull_request(persistence::UpdatePullRequestInput {
+            actor_id: actor.id,
+            actor_login_id: actor.login_id.clone(),
+            owner_name,
+            project_name,
+            pull_request_number,
+            values,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
+    Ok(Json(
+        rest_pull_request_detail_from_record(record, &authorization, Some(actor.id))
+            .map_err(RestRouteError::from_connect_error)?,
+    ))
+}
+
+async fn rest_update_pull_request_state(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    state: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let current = rest_pull_request_detail_response(
+        repository,
+        &owner_name,
+        &project_name,
+        pull_request_number,
+        Some(actor.id),
+    )
+    .await?;
+    if !current.permissions.can_update_state {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("pull request state update is not allowed"),
+        ));
+    }
+    let next_state = normalize_identifier(&state);
+    match next_state.as_str() {
+        "closed" if current.state != "open" && current.state != "conflict" => {
+            return Err(RestRouteError::bad_request("pull request is not open"));
+        }
+        "open" if current.state != "closed" => {
+            return Err(RestRouteError::bad_request("pull request is not closed"));
+        }
+        "open" | "closed" => {}
+        _ => return Err(RestRouteError::bad_request("invalid pull request state")),
+    }
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let record = repository
+        .update_pull_request_state(persistence::PullRequestStateInput {
+            actor_id: actor.id,
+            actor_login_id: actor.login_id.clone(),
+            owner_name,
+            project_name,
+            pull_request_number,
+            state: next_state,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
+    Ok(Json(
+        rest_pull_request_detail_from_record(record, &authorization, Some(actor.id))
+            .map_err(RestRouteError::from_connect_error)?,
+    ))
+}
+
+async fn rest_set_pull_request_review(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    reviewed: bool,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let current = rest_pull_request_detail_response(
+        repository,
+        &owner_name,
+        &project_name,
+        pull_request_number,
+        Some(actor.id),
+    )
+    .await?;
+    if !current.permissions.can_review {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("pull request review is not allowed"),
+        ));
+    }
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let record = repository
+        .set_pull_request_review(persistence::PullRequestReviewInput {
+            actor_id: actor.id,
+            actor_login_id: actor.login_id.clone(),
+            owner_name,
+            project_name,
+            pull_request_number,
+            reviewed,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
+    Ok(Json(
+        rest_pull_request_detail_from_record(record, &authorization, Some(actor.id))
+            .map_err(RestRouteError::from_connect_error)?,
+    ))
+}
+
+async fn rest_create_pull_request_comment(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    body: RestPullRequestCommentBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    if body.contents_markdown.trim().is_empty() {
+        return Err(RestRouteError::bad_request(
+            "pull request comment is required",
+        ));
+    }
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let current = rest_pull_request_detail_response(
+        repository,
+        &owner_name,
+        &project_name,
+        pull_request_number,
+        Some(actor.id),
+    )
+    .await?;
+    if !current.permissions.can_comment {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("pull request comment is not allowed"),
+        ));
+    }
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let record = repository
+        .create_pull_request_comment(persistence::CreatePullRequestCommentInput {
+            actor_display_name: actor.display_name.clone(),
+            actor_id: actor.id,
+            actor_login_id: actor.login_id.clone(),
+            attachment_ids: body.attachment_ids,
+            commit_id: body.commit_id,
+            contents_markdown: body.contents_markdown,
+            owner_name,
+            project_name,
+            pull_request_number,
+            thread_id: body.thread_id,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
+    Ok(Json(
+        rest_pull_request_detail_from_record(record, &authorization, Some(actor.id))
+            .map_err(RestRouteError::from_connect_error)?,
+    ))
+}
+
+async fn rest_update_pull_request_thread_state(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    thread_id: i64,
+    state: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestReviewThread>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let current = rest_pull_request_detail_response(
+        repository,
+        &owner_name,
+        &project_name,
+        pull_request_number,
+        Some(actor.id),
+    )
+    .await?;
+    let thread = current
+        .threads
+        .iter()
+        .find(|thread| thread.id == thread_id)
+        .ok_or_else(|| RestRouteError::not_found("review thread not found"))?;
+    if !(current.permissions.can_review
+        || current.permissions.can_update_state
+        || thread.author_id == actor.id)
+    {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("review thread state update is not allowed"),
+        ));
+    }
+    let next_state = normalize_identifier(&state);
+    if next_state != "open" && next_state != "closed" {
+        return Err(RestRouteError::bad_request("invalid review thread state"));
+    }
+    let record = repository
+        .update_pull_request_thread_state(persistence::PullRequestThreadStateInput {
+            actor_id: actor.id,
+            actor_login_id: actor.login_id.clone(),
+            owner_name,
+            project_name,
+            pull_request_number,
+            state: next_state,
+            thread_id,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("review thread not found"))?;
+    Ok(Json(rest_review_thread_from_record(record)))
 }
 
 async fn rest_list_project_pull_requests(

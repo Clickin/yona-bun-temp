@@ -157,6 +157,60 @@ export type PullRequestChangesResponse = {
   threads: ReviewThread[];
 };
 
+export type PullRequestProjectOption = {
+  id: number;
+  ownerName: string;
+  projectName: string;
+  selected: boolean;
+};
+
+export type PullRequestBranchOption = {
+  name: string;
+  selected: boolean;
+};
+
+export type PullRequestFormSelected = {
+  fromBranch: string;
+  fromProjectId: number;
+  toBranch: string;
+  toProjectId: number;
+};
+
+export type PullRequestFormOptionsResponse = {
+  fromBranches: PullRequestBranchOption[];
+  fromProjects: PullRequestProjectOption[];
+  mode: "create" | "edit" | string;
+  pullRequest?: PullRequestDetailResponse;
+  selected: PullRequestFormSelected;
+  toBranches: PullRequestBranchOption[];
+  toProjects: PullRequestProjectOption[];
+};
+
+export type PullRequestFormOptionsQuery = Partial<PullRequestFormSelected>;
+
+export type PullRequestCreateInput = ProjectScopeInput & {
+  attachmentIds?: number[];
+  bodyMarkdown: string;
+  fromBranch: string;
+  fromProjectId: number;
+  title: string;
+  toBranch: string;
+  toProjectId: number;
+};
+
+export type PullRequestEditInput = PullRequestScopeInput & {
+  attachmentIds?: number[];
+  bodyMarkdown: string;
+  title: string;
+};
+
+export type PullRequestCommentInput = PullRequestScopeInput & {
+  attachmentIds?: number[];
+  commitId?: string;
+  contentsMarkdown: string;
+  threadId?: number;
+};
+
 export type ReviewThreadListResponse = {
   closedCount: number;
   items: ReviewThread[];
@@ -233,6 +287,24 @@ function reviewThreadListSearch(input: ReviewThreadListQuery): string {
   }
   search.set("pageNum", String(input.pageNum || 1));
   return search.toString();
+}
+
+function pullRequestFormOptionsSearch(input: PullRequestFormOptionsQuery = {}): string {
+  const search = new URLSearchParams();
+  if (input.fromProjectId) {
+    search.set("fromProjectId", String(input.fromProjectId));
+  }
+  if (input.toProjectId) {
+    search.set("toProjectId", String(input.toProjectId));
+  }
+  if (input.fromBranch) {
+    search.set("fromBranch", input.fromBranch);
+  }
+  if (input.toBranch) {
+    search.set("toBranch", input.toBranch);
+  }
+  const serialized = search.toString();
+  return serialized === "" ? "" : `?${serialized}`;
 }
 
 function normalizeUser(user: Partial<PullRequestUser> | undefined): PullRequestUser {
@@ -355,6 +427,74 @@ function normalizeReviewThreadList(
   };
 }
 
+function normalizeProjectOption(
+  option: Partial<PullRequestProjectOption> | undefined,
+): PullRequestProjectOption {
+  return {
+    id: option?.id ?? 0,
+    ownerName: option?.ownerName ?? "",
+    projectName: option?.projectName ?? "",
+    selected: option?.selected ?? false,
+  };
+}
+
+function normalizeBranchOption(
+  option: Partial<PullRequestBranchOption> | undefined,
+): PullRequestBranchOption {
+  return {
+    name: option?.name ?? "",
+    selected: option?.selected ?? false,
+  };
+}
+
+function normalizeFormOptions(
+  response: Partial<PullRequestFormOptionsResponse>,
+): PullRequestFormOptionsResponse {
+  return {
+    fromBranches: (response.fromBranches ?? []).map(normalizeBranchOption),
+    fromProjects: (response.fromProjects ?? []).map(normalizeProjectOption),
+    mode: response.mode ?? "create",
+    pullRequest: response.pullRequest ? normalizeDetail(response.pullRequest) : undefined,
+    selected: {
+      fromBranch: response.selected?.fromBranch ?? "",
+      fromProjectId: response.selected?.fromProjectId ?? 0,
+      toBranch: response.selected?.toBranch ?? "",
+      toProjectId: response.selected?.toProjectId ?? 0,
+    },
+    toBranches: (response.toBranches ?? []).map(normalizeBranchOption),
+    toProjects: (response.toProjects ?? []).map(normalizeProjectOption),
+  };
+}
+
+function createPullRequestBody(input: PullRequestCreateInput) {
+  return {
+    attachmentIds: input.attachmentIds ?? [],
+    bodyMarkdown: input.bodyMarkdown,
+    fromBranch: input.fromBranch,
+    fromProjectId: input.fromProjectId,
+    title: input.title,
+    toBranch: input.toBranch,
+    toProjectId: input.toProjectId,
+  };
+}
+
+function editPullRequestBody(input: PullRequestEditInput) {
+  return {
+    attachmentIds: input.attachmentIds ?? [],
+    bodyMarkdown: input.bodyMarkdown,
+    title: input.title,
+  };
+}
+
+function commentPullRequestBody(input: PullRequestCommentInput) {
+  return {
+    attachmentIds: input.attachmentIds ?? [],
+    commitId: input.commitId,
+    contentsMarkdown: input.contentsMarkdown,
+    threadId: input.threadId,
+  };
+}
+
 export async function listProjectPullRequests(
   runtimeConfig: RuntimeConfig,
   input: ProjectScopeInput & PullRequestListQuery,
@@ -381,6 +521,32 @@ export async function listOrganizationPullRequests(
     { fetchImpl, method: "GET" },
   );
   return normalizeListResponse(payload);
+}
+
+export async function readPullRequestCreateFormOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectScopeInput & { query?: PullRequestFormOptionsQuery },
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestFormOptionsResponse> {
+  const payload = await restFetch<Partial<PullRequestFormOptionsResponse>>(
+    runtimeConfig,
+    `${projectPath(input)}/pull-requests/form-options${pullRequestFormOptionsSearch(input.query)}`,
+    { fetchImpl, method: "GET" },
+  );
+  return normalizeFormOptions(payload);
+}
+
+export async function readPullRequestEditFormOptions(
+  runtimeConfig: RuntimeConfig,
+  input: PullRequestScopeInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestFormOptionsResponse> {
+  const payload = await restFetch<Partial<PullRequestFormOptionsResponse>>(
+    runtimeConfig,
+    pullRequestPath(input, "/form-options"),
+    { fetchImpl, method: "GET" },
+  );
+  return normalizeFormOptions(payload);
 }
 
 export async function readPullRequestDetail(
@@ -427,6 +593,134 @@ export async function listProjectReviews(
   return normalizeReviewThreadList(payload);
 }
 
+export function createPullRequestRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestCreateInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestDetailResponse> {
+  return restFetch<Partial<PullRequestDetailResponse>>(
+    runtimeConfig,
+    `${projectPath(input)}/pull-requests`,
+    {
+      body: createPullRequestBody(input),
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
+  ).then(normalizeDetail);
+}
+
+export function updatePullRequestRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestEditInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestDetailResponse> {
+  return restFetch<Partial<PullRequestDetailResponse>>(runtimeConfig, pullRequestPath(input), {
+    body: editPullRequestBody(input),
+    csrfToken,
+    fetchImpl,
+    method: "PATCH",
+  }).then(normalizeDetail);
+}
+
+export function closePullRequestRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestScopeInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestDetailResponse> {
+  return restFetch<Partial<PullRequestDetailResponse>>(
+    runtimeConfig,
+    pullRequestPath(input, "/close"),
+    { csrfToken, fetchImpl, method: "POST" },
+  ).then(normalizeDetail);
+}
+
+export function openPullRequestRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestScopeInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestDetailResponse> {
+  return restFetch<Partial<PullRequestDetailResponse>>(
+    runtimeConfig,
+    pullRequestPath(input, "/open"),
+    { csrfToken, fetchImpl, method: "POST" },
+  ).then(normalizeDetail);
+}
+
+export function reviewPullRequestRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestScopeInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestDetailResponse> {
+  return restFetch<Partial<PullRequestDetailResponse>>(
+    runtimeConfig,
+    pullRequestPath(input, "/review"),
+    { csrfToken, fetchImpl, method: "POST" },
+  ).then(normalizeDetail);
+}
+
+export function unreviewPullRequestRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestScopeInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestDetailResponse> {
+  return restFetch<Partial<PullRequestDetailResponse>>(
+    runtimeConfig,
+    pullRequestPath(input, "/unreview"),
+    { csrfToken, fetchImpl, method: "POST" },
+  ).then(normalizeDetail);
+}
+
+export function createPullRequestCommentRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestCommentInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestDetailResponse> {
+  return restFetch<Partial<PullRequestDetailResponse>>(
+    runtimeConfig,
+    pullRequestPath(input, "/comments"),
+    {
+      body: commentPullRequestBody(input),
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
+  ).then(normalizeDetail);
+}
+
+export function closePullRequestThreadRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestScopeInput & { threadId: number },
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReviewThread> {
+  return restFetch<Partial<ReviewThread>>(
+    runtimeConfig,
+    pullRequestPath(input, `/threads/${input.threadId}/close`),
+    { csrfToken, fetchImpl, method: "POST" },
+  ).then(normalizeThread);
+}
+
+export function openPullRequestThreadRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestScopeInput & { threadId: number },
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReviewThread> {
+  return restFetch<Partial<ReviewThread>>(
+    runtimeConfig,
+    pullRequestPath(input, `/threads/${input.threadId}/open`),
+    { csrfToken, fetchImpl, method: "POST" },
+  ).then(normalizeThread);
+}
+
 export function projectPullRequestListQueryOptions(
   runtimeConfig: RuntimeConfig,
   input: ProjectScopeInput & PullRequestListQuery,
@@ -439,6 +733,41 @@ export function projectPullRequestListQueryOptions(
       filter: input.filter ?? "",
       pageNum: input.pageNum ?? 1,
     }),
+  });
+}
+
+export function pullRequestCreateFormOptionsQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectScopeInput & { query?: PullRequestFormOptionsQuery },
+) {
+  const normalizedQuery = {
+    fromBranch: input.query?.fromBranch ?? "",
+    fromProjectId: input.query?.fromProjectId ?? 0,
+    toBranch: input.query?.toBranch ?? "",
+    toProjectId: input.query?.toProjectId ?? 0,
+  };
+  return queryOptions({
+    queryFn: () => readPullRequestCreateFormOptions(runtimeConfig, input),
+    queryKey: apiQueryKeys.project.pullRequestCreateFormOptions(
+      input.ownerName,
+      input.projectName,
+      normalizedQuery,
+    ),
+  });
+}
+
+export function pullRequestEditFormOptionsQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: PullRequestScopeInput,
+) {
+  const pullRequestNumber = toNumber(input.pullRequestNumber);
+  return queryOptions({
+    queryFn: () => readPullRequestEditFormOptions(runtimeConfig, input),
+    queryKey: apiQueryKeys.project.pullRequestEditFormOptions(
+      input.ownerName,
+      input.projectName,
+      pullRequestNumber,
+    ),
   });
 }
 

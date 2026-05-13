@@ -1,7 +1,17 @@
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Outlet, createFileRoute } from "@tanstack/react-router";
-import { pullRequestDetailQueryOptions } from "../../../../../api/pull-requests";
+import {
+  closePullRequestRest,
+  closePullRequestThreadRest,
+  createPullRequestCommentRest,
+  openPullRequestRest,
+  openPullRequestThreadRest,
+  pullRequestDetailQueryOptions,
+  reviewPullRequestRest,
+  unreviewPullRequestRest,
+} from "../../../../../api/pull-requests";
+import { apiQueryKeys } from "../../../../../api/query-keys";
 import { readProjectContainer } from "../../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../../app-view-models";
@@ -30,11 +40,14 @@ function PullRequestDetailRouteComponent() {
 
 function PullRequestDetailLeafRouteComponent() {
   const { owner, projectName, pullRequestNumber } = Route.useParams();
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, currentSession, runtimeConfig, setErrorMessage } =
+    useAppRuntime();
+  const queryClient = useQueryClient();
   const parsedNumber = Number(pullRequestNumber);
+  const scope = { ownerName: owner, projectName, pullRequestNumber: parsedNumber };
   const containerQuery = useQuery({
     queryFn: () => readProjectContainer(runtimeConfig, owner, projectName),
-    queryKey: ["api", "v1", "owners", owner, "projects", projectName, "container"],
+    queryKey: apiQueryKeys.project.container(owner, projectName),
   });
   const pullRequestQuery = useQuery(
     pullRequestDetailQueryOptions(runtimeConfig, {
@@ -45,6 +58,149 @@ function PullRequestDetailLeafRouteComponent() {
   );
   const error = containerQuery.error ?? pullRequestQuery.error;
   const failureKind = classifyConnectFailure(error);
+  const mutationError = React.useCallback(
+    (fallback: string) => (error: unknown) => {
+      setErrorMessage(error instanceof Error ? error.message : fallback);
+    },
+    [setErrorMessage],
+  );
+  const closeMutation = useMutation({
+    mutationFn: () => closePullRequestRest(runtimeConfig, csrfToken, scope),
+    onError: mutationError("Close pull request failed."),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(
+        apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
+        updated,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
+  const openMutation = useMutation({
+    mutationFn: () => openPullRequestRest(runtimeConfig, csrfToken, scope),
+    onError: mutationError("Reopen pull request failed."),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(
+        apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
+        updated,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
+  const reviewMutation = useMutation({
+    mutationFn: () => reviewPullRequestRest(runtimeConfig, csrfToken, scope),
+    onError: mutationError("Review pull request failed."),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(
+        apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
+        updated,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
+  const unreviewMutation = useMutation({
+    mutationFn: () => unreviewPullRequestRest(runtimeConfig, csrfToken, scope),
+    onError: mutationError("Unreview pull request failed."),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(
+        apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
+        updated,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
+  const commentMutation = useMutation({
+    mutationFn: (contentsMarkdown: string) =>
+      createPullRequestCommentRest(runtimeConfig, csrfToken, {
+        ...scope,
+        contentsMarkdown,
+      }),
+    onError: mutationError("Create pull request comment failed."),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(
+        apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
+        updated,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
+  const closeThreadMutation = useMutation({
+    mutationFn: (threadId: number) =>
+      closePullRequestThreadRest(runtimeConfig, csrfToken, {
+        ...scope,
+        threadId,
+      }),
+    onError: mutationError("Close review thread failed."),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
+  const openThreadMutation = useMutation({
+    mutationFn: (threadId: number) =>
+      openPullRequestThreadRest(runtimeConfig, csrfToken, {
+        ...scope,
+        threadId,
+      }),
+    onError: mutationError("Open review thread failed."),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
 
   useDocumentTitle(pullRequestQuery.data?.title ?? "Pull Request");
   React.useEffect(() => {
@@ -72,6 +228,28 @@ function PullRequestDetailLeafRouteComponent() {
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       pullRequest={pullRequestQuery.data}
       runtimeConfig={runtimeConfig}
+      viewerId={currentSession ? Number(currentSession.actorId) : undefined}
+      onClose={async () => {
+        await closeMutation.mutateAsync();
+      }}
+      onCommentSubmit={async (contentsMarkdown) => {
+        await commentMutation.mutateAsync(contentsMarkdown);
+      }}
+      onOpen={async () => {
+        await openMutation.mutateAsync();
+      }}
+      onReview={async () => {
+        await reviewMutation.mutateAsync();
+      }}
+      onThreadClose={async (threadId) => {
+        await closeThreadMutation.mutateAsync(threadId);
+      }}
+      onThreadOpen={async (threadId) => {
+        await openThreadMutation.mutateAsync(threadId);
+      }}
+      onUnreview={async () => {
+        await unreviewMutation.mutateAsync();
+      }}
     />
   );
 }
