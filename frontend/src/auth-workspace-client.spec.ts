@@ -152,7 +152,6 @@ describe("organization and project REST wrappers", () => {
       "project/name",
       fetchMock as unknown as typeof fetch,
     );
-
     const readCalls = fetchMock.mock.calls as unknown as Array<
       [string, { credentials: string; headers: Headers; method: string }]
     >;

@@ -4,17 +4,28 @@ import {
   renderOrganizationSettings,
   renderProjectDetail,
   renderProjectSettings,
+  renderProjectWatchers,
 } from "./auth-workspace-shell.test-helpers";
 
 describe("wave 2A container parity", () => {
   it("renders the organization home hero, project filter, gated CTA, roster bubbles, and settings entry", () => {
     const html = renderOrganizationDetail({
       adminMembers: [
-        { avatarUrl: "/avatars/admin.png", loginId: "admin", role: "org_admin", userLabel: "Admin" },
+        {
+          avatarUrl: "/avatars/admin.png",
+          loginId: "admin",
+          role: "org_admin",
+          userLabel: "Admin",
+        },
       ],
       description: "Web labs",
       memberMembers: [
-        { avatarUrl: "/avatars/member.png", loginId: "member", role: "org_member", userLabel: "Member" },
+        {
+          avatarUrl: "/avatars/member.png",
+          loginId: "member",
+          role: "org_member",
+          userLabel: "Member",
+        },
       ],
       organizationName: "weblabs",
       viewerCanCreateProject: true,
@@ -169,5 +180,51 @@ describe("wave 2A container parity", () => {
     expect(projectSettingsHtml).toContain("Reviews");
     expect(projectSettingsHtml).toContain("Milestones");
     expect(projectSettingsHtml).toContain("Boards");
+  });
+
+  it("renders the legacy project watchers page shell and member list anchors", () => {
+    const html = renderProjectWatchers(
+      {
+        enrollmentRequested: false,
+        isFavorited: false,
+        organizationName: "",
+        ownerName: "weblabs",
+        overview: "Project watched by members",
+        projectName: "projectYobi",
+        projectScope: "public",
+        viewerCanEnroll: false,
+        viewerCanUpdate: false,
+        watchCount: 2,
+      },
+      [
+        {
+          avatarUrl: "/avatars/alice.png",
+          loginId: "alice",
+          userId: 2,
+          userLabel: "Alice",
+        },
+        {
+          avatarUrl: "/avatars/bob.png",
+          loginId: "bob",
+          userId: 3,
+          userLabel: "Bob",
+        },
+      ],
+    );
+
+    expect(html).toContain('class="page-wrap-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain("This project&#x27;s watcher list.");
+    expect(html).toContain("* This list contains only those who can access this project.");
+    expect(html).toContain('class="members project row-fluid"');
+    expect(html).toContain('class="member span6 span-hard-wrap"');
+    expect(html).toContain('class="avatar-wrap mlarge pull-left mr10"');
+    expect(html).toContain('width="64"');
+    expect(html).toContain('height="64"');
+    expect(html).toContain('class="member-name"');
+    expect(html).toContain("Alice");
+    expect(html).toContain("@alice");
+    expect(html).toContain("Bob");
+    expect(html).toContain("@bob");
   });
 });

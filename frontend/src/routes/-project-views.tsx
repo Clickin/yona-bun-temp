@@ -1,6 +1,7 @@
 import * as React from "react";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { BoardPostDetail } from "../api/boards";
+import type { ProjectWatcher } from "../api/org-project";
 import type { ProjectDetailViewModel } from "./-view-models";
 
 export function buildProjectHref(
@@ -261,7 +262,18 @@ export function ProjectDetailPage(props: {
       </section>
       <section>
         <h2>Watchers</h2>
-        <p>{detail.watchCount ?? 0}</p>
+        <p>
+          <a
+            href={buildProjectHref(
+              props.runtimeConfig,
+              detail.ownerName,
+              detail.projectName,
+              "watchers",
+            )}
+          >
+            {detail.watchCount ?? 0}
+          </a>
+        </p>
       </section>
       <section>
         <h2>Clone URL</h2>
@@ -363,6 +375,53 @@ export function ProjectDetailPage(props: {
           <p>{`Progress: ${detail.currentMilestone.completionPercent}%`}</p>
         </section>
       ) : null}
+    </main>
+  );
+}
+
+export function ProjectWatchersPage(props: {
+  detail: ProjectDetailViewModel | null | undefined;
+  runtimeConfig: RuntimeConfig;
+  watchers: ProjectWatcher[] | null | undefined;
+}) {
+  const detail = props.detail ?? {
+    enrollmentRequested: false,
+    isFavorited: false,
+    organizationName: "",
+    overview: "",
+    ownerName: "",
+    projectName: "",
+    projectScope: "public",
+    viewerCanEnroll: false,
+    viewerCanUpdate: false,
+  };
+  const watchers = props.watchers ?? [];
+
+  return (
+    <main className="app-shell">
+      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <h4>
+            <strong>This project's watcher list.</strong>
+          </h4>
+          <p>* This list contains only those who can access this project.</p>
+          <ul className="members project row-fluid">
+            {watchers.map((watcher) => (
+              <li className="member span6 span-hard-wrap" key={watcher.loginId}>
+                <a
+                  className="avatar-wrap mlarge pull-left mr10"
+                  href={prefixBasePath(props.runtimeConfig.basePath, `/${watcher.loginId}`)}
+                >
+                  <img alt="" height="64" src={watcher.avatarUrl} width="64" />
+                </a>
+                <div className="member-name">{watcher.userLabel}</div>
+                <div className="member-id">{`@${watcher.loginId}`}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </main>
   );
 }

@@ -20,10 +20,10 @@ use crate::repo_types::{
     ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord, ProjectListEntry,
     ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
     ProjectMilestoneSummaryRecord, ProjectPostingListItemRecord, ProjectPostingListRecord,
-    ProjectRecord, ProjectViewerRecord, PullRequestCommitRecord, PullRequestDetailRecord,
-    PullRequestEventRecord, PullRequestListFilter, PullRequestListItemRecord,
-    PullRequestListRecord, PullRequestReviewInput, PullRequestStateInput,
-    PullRequestThreadStateInput, PullRequestUserRecord, ReviewCommentRecord,
+    ProjectRecord, ProjectViewerRecord, ProjectWatcherRecord, PullRequestCommitRecord,
+    PullRequestDetailRecord, PullRequestEventRecord, PullRequestListFilter,
+    PullRequestListItemRecord, PullRequestListRecord, PullRequestReviewInput,
+    PullRequestStateInput, PullRequestThreadStateInput, PullRequestUserRecord, ReviewCommentRecord,
     ReviewThreadListFilter, ReviewThreadListRecord, ReviewThreadRecord, SearchContextRecord,
     SearchCountsRecord, SearchItemRecord, SearchRepositoryInput, SearchResultRecord, SearchScope,
     ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateIssueCommentInput,
@@ -4671,6 +4671,35 @@ impl AppRepository {
             .filter(watch::Column::ResourceId.eq(Some(project_id.to_string())))
             .count(&self.db)
             .await? as u32)
+    }
+
+    pub async fn list_project_watchers(
+        &self,
+        project_id: i64,
+    ) -> Result<Vec<ProjectWatcherRecord>, DbErr> {
+        let rows = watch::Entity::find()
+            .filter(watch::Column::ResourceType.eq(Some("PROJECT".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(project_id.to_string())))
+            .all(&self.db)
+            .await?;
+
+        let mut watchers = Vec::new();
+        for row in rows {
+            let Some(user_id) = row.user_id else {
+                continue;
+            };
+            let Some(user) = self.find_user_by_id(user_id).await? else {
+                continue;
+            };
+            watchers.push(ProjectWatcherRecord {
+                email_address: user.email_address,
+                login_id: user.login_id,
+                user_id,
+                user_label: user.display_name,
+            });
+        }
+        watchers.sort_by(|left, right| left.login_id.cmp(&right.login_id));
+        Ok(watchers)
     }
 
     pub async fn read_project_menu_settings(

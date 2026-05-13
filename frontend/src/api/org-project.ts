@@ -45,6 +45,17 @@ type ProjectUpdateInput = ProjectPathInput & {
   projectScope: string;
 };
 
+export type ProjectWatcher = {
+  avatarUrl: string;
+  loginId: string;
+  userId: number;
+  userLabel: string;
+};
+
+export type ReadProjectWatchersResponse = {
+  watchers: ProjectWatcher[];
+};
+
 function toInt64Number(value: bigint | number): number {
   return Number(value);
 }
@@ -408,6 +419,32 @@ export function readProjectMembersRest(
       method: "GET",
     },
   );
+}
+
+export function readProjectWatchersRest(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadProjectWatchersResponse> {
+  return restFetch<ReadProjectWatchersResponse>(
+    runtimeConfig,
+    projectPath(ownerName, projectName, "/watchers"),
+    {
+      fetchImpl,
+      method: "GET",
+    },
+  );
+}
+
+export function readProjectWatchersQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectPathInput,
+) {
+  return queryOptions({
+    queryFn: () => readProjectWatchersRest(runtimeConfig, input.ownerName, input.projectName),
+    queryKey: apiQueryKeys.project.watchers(input.ownerName, input.projectName),
+  });
 }
 
 export function updateProjectRest(

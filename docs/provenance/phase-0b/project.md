@@ -41,6 +41,7 @@
 | `ProjectAppTest` visibility cases | public/protected/private visibility gates readable discovery | `crates/domain` read matrix + `crates/server` query contract test |
 | `EnrollProjectAppTest` | enrollment request and cancel stay guest-only, not-found for missing projects, idempotent | `crates/domain` enrollment service + `crates/server` mutation contract test |
 | `RecentlyVisitedProjectsTest` and `WatchProjectAppTest` | recent visits dedupe/reorder and favorites remain workspace-local behavior | `crates/domain` workspace service + `crates/persistence` workspace repo + `frontend` route/UI test |
+| `ProjectApp.watchers` and `project/watchers.scala.html` | watcher list is project READ-gated and shows only actual watchers who can access the project | `/api/v1/owners/:owner/projects/:project/watchers` + `frontend/src/routes/$owner/$projectName/watchers` |
 
 ## Explicit Gaps
 
@@ -49,7 +50,7 @@
 - org enrollment management
 - full workspace settings and default landing UX parity
 - project member management beyond read-only summary
-- project watchers, webhooks, change VCS, statistics
+- project webhooks, change VCS, statistics
 
 이 항목들은 후속 follow-up과 provenance gap으로 계속 남는다.
 
@@ -58,3 +59,9 @@
 - `R0-3` now covers project create/detail/settings, visibility-aware read, guest-only enrollment request/cancel, read-only member summary, and workspace favorite/recent linkage in `repo root`.
 - The Wave 0 route-foundation slice also mounts the public `/projects` directory in `frontend` through file routes under `src/routes/projects/**`, with route-parity tests and a shell-routing Playwright smoke pack.
 - Project detail read records recent visits for authenticated viewers, and `/me` now reflects favorite/recent project state through `GET /api/v1/workspace`.
+
+## Phase 2P Delivery Note
+
+- `Phase 2P` restores the project watcher list page from `ProjectApp.watchers` and `project/watchers.scala.html`.
+- The REST contract is `GET /api/v1/owners/:owner/projects/:project/watchers`; it applies project READ ACL, returns deterministic watcher rows, and filters the list to users who can still read the project.
+- The frontend route `/:owner/:project/watchers` preserves the legacy `.page-wrap-outer`, `.project-page-wrap`, `.members.project.row-fluid`, `.member.span6.span-hard-wrap`, `.avatar-wrap`, `.member-name`, and `.member-id` anchors.
