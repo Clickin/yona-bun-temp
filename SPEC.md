@@ -704,7 +704,7 @@ POST  /:owner/:project/$service<git-upload-pack|git-receive-pack> → Git 프로
 | 인증              | Basic Auth (username + password/token)          | gap       | 3     |
 | 권한 체크         | 프로젝트 공개범위 + 멤버 역할에 따른 read/write | gap       | 3     |
 | Post-receive hook | push 후 알림/이벤트 발생                        | gap       | 3     |
-| 저장소 초기 생성  | 프로젝트 생성 시 bare repo 생성                 | gap       | 3     |
+| 저장소 초기 생성  | 프로젝트 생성 시 bare repo 생성                 | implemented (Phase 3J) | 3     |
 
 #### 검수 기준
 
@@ -1233,7 +1233,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 이슈              | ✅ Phase 2A 구현  | CRUD, 댓글, 타임라인, watch/vote/assignee, mass update, Markdown |
 | 게시판            | 🔶 Phase 5B 구현  | project/organization board app surface                           |
 | 라벨/마일스톤     | ✅ 구현           | 라벨/카테고리 관리, 마일스톤 CRUD/state 구현                     |
-| 코드 브라우저     | 🔶 Phase 3I 구현  | Git 폴더/파일 보기, 브랜치 선택기, raw/open/image 파일 표면, archive download, syntax/line-number 표시, commit history/detail diff/compare, commit comments/thread lifecycle, branch list/latest PR/default/delete |
+| 코드 브라우저     | 🔶 Phase 3J 구현  | Git 폴더/파일 보기, 브랜치 선택기, raw/open/image 파일 표면, archive download, syntax/line-number 표시, commit history/detail diff/compare, commit comments/thread lifecycle, branch list/latest PR/default/delete, project create 시 bare Git repository provisioning |
 | Git Smart HTTP    | ❌ 미구현         |                                                                  |
 | PR/리뷰           | 🔶 Phase 4B 구현  | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, 일반 PR comment, thread open/close. merge/fork/ranged inline review CRUD/branch cleanup은 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
@@ -1405,7 +1405,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Board: posting list/detail/create/update/delete/comment flows
 - Label follow-up: copyLabels Phase 6 and legacy external label/project API parity
 - Milestone follow-up: migration export and search milestone result type
-- Code follow-up: Smart HTTP, repository provisioning, inline ranged code-comment UX, SVN wrapper integration
+- Code follow-up: Smart HTTP, inline ranged code-comment UX, SVN wrapper integration
 - PullRequest follow-up: merge/conflict acceptance, ranged inline review comment edit/delete, reviewer assignment/threshold lifecycle, fork/clone, branch cleanup/restore
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: read state, SMTP scheduler/delivery, draft-time merge, recipient limit, and full mail notification parity

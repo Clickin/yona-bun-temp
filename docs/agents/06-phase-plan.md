@@ -56,7 +56,8 @@
 - Phase 3G complete: read-only compare parity over `GET /api/v1/projects/:owner/:project/compare/:revA..:revB` and legacy route `/:owner/:project/compare/:revA..:revB`, including both commit projections, missing-revision 404, unified diff patches, empty-diff state, and legacy `code/compare.scala.html` class/id anchors.
 - Phase 3H complete: branch management parity over `GET /api/v1/projects/:owner/:project/branches`, `POST /api/v1/projects/:owner/:project/branches/default`, and `DELETE /api/v1/projects/:owner/:project/branches`, including legacy `branches.scala.html` table anchors, default branch first, branch-row latest PR links, non-default delete, project update permission, and real Git `HEAD` mutation.
 - Phase 3I complete: Git commit discussion parity over `GET/POST/DELETE /api/v1/projects/:owner/:project/commit/:id/comments` and `POST /api/v1/projects/:owner/:project/commit/:id/threads/:threadId/open|close`, including non-ranged commit comments, replies, author/moderator delete, thread cards, thread state changes, comment counts, event rows, and notification-mail staging.
-- Remaining Phase 3 follow-ups: Smart HTTP, repository provisioning, inline ranged code-comment UX, and SVN wrapper integration.
+- Phase 3J complete: project creation provisions the legacy default Git repository at `YONA_DATA/repo/<project_id>.git`, stores `vcs = GIT`, and returns the existing no-head code-browser state for the empty bare repository.
+- Remaining Phase 3 follow-ups: Smart HTTP, inline ranged code-comment UX, and SVN wrapper integration.
 
 ## Phase 4: 풀 리퀘스트와 리뷰
 
