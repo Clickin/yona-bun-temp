@@ -8,6 +8,12 @@ export const apiQueryKeys = {
       [...apiQueryKeys.project.base(ownerName, projectName), "container"] as const,
     codeBranches: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.project.base(ownerName, projectName), "branches"] as const,
+    commitDetail: (
+      ownerName: string,
+      projectName: string,
+      commitId: string,
+      input: { branch: string; path: string },
+    ) => [...apiQueryKeys.project.base(ownerName, projectName), "commit", commitId, input] as const,
     issueReferences: (ownerName: string, projectName: string, input: { query: string }) =>
       [
         ...apiQueryKeys.project.base(ownerName, projectName),

@@ -1029,6 +1029,42 @@ pub struct PullRequestThreadStateInput {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateCommitDiscussionCommentInput {
+    pub actor_display_name: String,
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub attachment_ids: Vec<i64>,
+    pub commit_id: String,
+    pub contents_markdown: String,
+    pub end_line: Option<i32>,
+    pub owner_name: String,
+    pub path: Option<String>,
+    pub project_name: String,
+    pub start_line: Option<i32>,
+    pub thread_id: Option<i64>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CommitDiscussionThreadStateInput {
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub commit_id: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub state: String,
+    pub thread_id: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DeleteCommitDiscussionCommentInput {
+    pub actor_id: i64,
+    pub comment_id: i64,
+    pub commit_id: String,
+    pub owner_name: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestUserRecord {
     pub login_id: String,
     pub user_id: i64,

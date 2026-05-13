@@ -1,7 +1,7 @@
 use axum::body::Body;
 use http::{HeaderMap, Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
-use sea_orm::Database;
+use sea_orm::{ConnectionTrait, Database, DatabaseConnection, Statement};
 use serde_json::json;
 use std::fs;
 use std::path::Path;
@@ -35,6 +35,23 @@ async fn build_app_with_repository() -> (axum::Router, AppRepository) {
     );
 
     (app, app_repo)
+}
+
+async fn build_app_with_repository_and_db() -> (axum::Router, AppRepository, DatabaseConnection) {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    let app_repo = AppRepository::new(db.clone());
+    let app = create_router_with_app_repository(
+        RuntimeConfig {
+            base_path: "/yona".to_string(),
+            public_origin: String::new(),
+        },
+        app_repo.clone(),
+    );
+
+    (app, app_repo, db)
 }
 
 async fn bootstrap(app: axum::Router) -> (String, String) {
@@ -139,6 +156,19 @@ async fn rest_delete_json(
     app.oneshot(builder.body(Body::from(payload.to_string())).unwrap())
         .await
         .unwrap()
+}
+
+async fn count_event_rows(db: &DatabaseConnection, event_type: &str) -> u64 {
+    let backend = db.get_database_backend();
+    let rows = db
+        .query_all(Statement::from_sql_and_values(
+            backend,
+            "SELECT id FROM notification_event WHERE event_type = ?",
+            vec![event_type.to_string().into()],
+        ))
+        .await
+        .expect("count notification events");
+    rows.len() as u64
 }
 
 async fn direct_get(app: axum::Router, path: &str, cookie_header: Option<&str>) -> Response<Body> {
@@ -629,6 +659,179 @@ async fn rest_commit_detail_reads_commit_metadata_and_diff_from_git_repo() {
     let patch = files[0]["patch"].as_str().unwrap();
     assert!(patch.contains("diff --git a/src/main.rs b/src/main.rs"));
     assert!(patch.contains("+    println!(\"detail\");"));
+}
+
+#[tokio::test]
+async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, db) = build_app_with_repository_and_db().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+    append_bare_repository_commit(
+        data_dir.path(),
+        project.id,
+        "src/main.rs",
+        "fn main() {\n    println!(\"discussion\");\n}\n",
+        "Discuss main function",
+    );
+    let commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+    let detail_path = format!("/projects/owner/projectYobi/commit/{commit_id}?branch=main");
+    let comments_path = format!("/projects/owner/projectYobi/commit/{commit_id}/comments");
+
+    let initial = response_json(rest_get(app.clone(), &detail_path, Some(&cookie)).await).await;
+    assert_eq!(initial["permissions"]["canComment"], true);
+    assert_eq!(initial["threads"].as_array().unwrap().len(), 0);
+
+    let created = response_json(
+        rest_post_json(
+            app.clone(),
+            &comments_path,
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "contentsMarkdown": "First **commit** note"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(created["commit"]["commentCount"], 1);
+    assert_eq!(created["threads"].as_array().unwrap().len(), 1);
+    assert_eq!(created["threads"][0]["state"], "open");
+    assert_eq!(created["threads"][0]["commitId"], commit_id);
+    assert_eq!(created["threads"][0]["authorLoginId"], "owner");
+    assert_eq!(
+        created["threads"][0]["comments"][0]["contentsMarkdown"],
+        "First **commit** note"
+    );
+    assert!(created["threads"][0]["comments"][0]["contentsHtml"]
+        .as_str()
+        .unwrap()
+        .contains("<strong>commit</strong>"));
+    assert_eq!(created["threads"][0]["comments"][0]["canDelete"], true);
+    let thread_id = created["threads"][0]["id"].as_i64().unwrap();
+
+    let replied = response_json(
+        rest_post_json(
+            app.clone(),
+            &comments_path,
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "contentsMarkdown": "Reply on the same thread",
+                "threadId": thread_id
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        replied["threads"][0]["comments"].as_array().unwrap().len(),
+        2
+    );
+    let reply_id = replied["threads"][0]["comments"][1]["id"].as_i64().unwrap();
+
+    let closed = response_json(
+        rest_post_json(
+            app.clone(),
+            &format!("/projects/owner/projectYobi/commit/{commit_id}/threads/{thread_id}/close"),
+            Some(&cookie),
+            Some(&csrf),
+            json!({}),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(closed["state"], "closed");
+
+    let reopened = response_json(
+        rest_post_json(
+            app.clone(),
+            &format!("/projects/owner/projectYobi/commit/{commit_id}/threads/{thread_id}/open"),
+            Some(&cookie),
+            Some(&csrf),
+            json!({}),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(reopened["state"], "open");
+
+    let after_delete = response_json(
+        rest_delete_json(
+            app.clone(),
+            &format!("/projects/owner/projectYobi/commit/{commit_id}/comments/{reply_id}"),
+            Some(&cookie),
+            Some(&csrf),
+            json!({}),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        after_delete["threads"][0]["comments"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+
+    let refreshed = response_json(rest_get(app, &detail_path, Some(&cookie)).await).await;
+    assert_eq!(refreshed["commit"]["commentCount"], 1);
+    assert_eq!(
+        refreshed["threads"][0]["comments"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    assert_eq!(count_event_rows(&db, "NEW_REVIEW_COMMENT").await, 2);
+    assert_eq!(
+        count_event_rows(&db, "REVIEW_THREAD_STATE_CHANGED").await,
+        2
+    );
+}
+
+#[tokio::test]
+async fn rest_commit_comment_create_requires_authenticated_session() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+    let commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+
+    let response = rest_post_json(
+        app,
+        &format!("/projects/owner/projectYobi/commit/{commit_id}/comments"),
+        None,
+        None,
+        json!({
+            "contentsMarkdown": "Anonymous commit note"
+        }),
+    )
+    .await;
+
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
