@@ -131,7 +131,7 @@ Interpretation:
 - [x] Member list read
 - [ ] Full project member management
 - [ ] Project delete confirmation flow
-- [ ] Project watchers page
+- [x] Project watchers page
 - [ ] Webhooks
 - [ ] Project transfer
 - [ ] Git/SVN type change

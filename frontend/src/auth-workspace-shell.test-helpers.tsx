@@ -1,4 +1,5 @@
 import { renderToString } from "react-dom/server";
+import type { ProjectWatcher } from "./api/org-project";
 import type { RuntimeConfig } from "./runtime-config";
 import { HomePage } from "./routes/-home-view";
 import {
@@ -8,10 +9,7 @@ import {
   ResetPasswordPage,
   VerifyUserPage,
 } from "./routes/-auth-views";
-import {
-  OrganizationDirectoryPage,
-  ProjectDirectoryPage,
-} from "./routes/-directory-views";
+import { OrganizationDirectoryPage, ProjectDirectoryPage } from "./routes/-directory-views";
 import { WorkspacePage } from "./routes/-workspace-views";
 import {
   type WorkspaceSettingsSection,
@@ -28,6 +26,7 @@ import {
   ProjectDetailPage,
   ProjectNewPage,
   ProjectSettingsPage,
+  ProjectWatchersPage,
 } from "./routes/-project-views";
 import { PlaceholderPage } from "./routes/-shared";
 import type {
@@ -76,18 +75,14 @@ export function renderLostPassword(
   routeHref: string,
   runtimeConfig: RuntimeConfig = testRuntimeConfig,
 ): string {
-  return renderToString(
-    <LostPasswordPage routeHref={routeHref} runtimeConfig={runtimeConfig} />,
-  );
+  return renderToString(<LostPasswordPage routeHref={routeHref} runtimeConfig={runtimeConfig} />);
 }
 
 export function renderResetPassword(
   routeHref: string,
   runtimeConfig: RuntimeConfig = testRuntimeConfig,
 ): string {
-  return renderToString(
-    <ResetPasswordPage routeHref={routeHref} runtimeConfig={runtimeConfig} />,
-  );
+  return renderToString(<ResetPasswordPage routeHref={routeHref} runtimeConfig={runtimeConfig} />);
 }
 
 export function renderVerifyUser(
@@ -141,11 +136,7 @@ export function renderOrganizationDirectory(
   runtimeConfig: RuntimeConfig = testRuntimeConfig,
 ): string {
   return renderToString(
-    <OrganizationDirectoryPage
-      directory={directory}
-      href={href}
-      runtimeConfig={runtimeConfig}
-    />,
+    <OrganizationDirectoryPage directory={directory} href={href} runtimeConfig={runtimeConfig} />,
   );
 }
 
@@ -158,9 +149,7 @@ export function renderOrganizationDetail(
   );
 }
 
-export function renderOrganizationSettings(
-  detail: OrganizationDetailViewModel | null,
-): string {
+export function renderOrganizationSettings(detail: OrganizationDetailViewModel | null): string {
   return renderToString(
     <OrganizationSettingsPage detail={detail} runtimeConfig={testRuntimeConfig} />,
   );
@@ -170,17 +159,13 @@ export function renderOrganizationNew(): string {
   return renderToString(<OrganizationNewPage />);
 }
 
-export function renderOrganizationMembersAdmin(
-  detail: OrganizationAdminViewModel | null,
-): string {
+export function renderOrganizationMembersAdmin(detail: OrganizationAdminViewModel | null): string {
   return renderToString(
     <OrganizationMembersPage detail={detail} runtimeConfig={testRuntimeConfig} />,
   );
 }
 
-export function renderOrganizationDelete(
-  detail: OrganizationAdminViewModel | null,
-): string {
+export function renderOrganizationDelete(detail: OrganizationAdminViewModel | null): string {
   return renderToString(
     <OrganizationDeletePage detail={detail} runtimeConfig={testRuntimeConfig} />,
   );
@@ -190,14 +175,19 @@ export function renderProjectDetail(
   detail: ProjectDetailViewModel | null,
   _members: ProjectMembersViewModel | null = null,
 ): string {
-  return renderToString(
-    <ProjectDetailPage detail={detail} runtimeConfig={testRuntimeConfig} />,
-  );
+  return renderToString(<ProjectDetailPage detail={detail} runtimeConfig={testRuntimeConfig} />);
 }
 
 export function renderProjectSettings(detail: ProjectDetailViewModel | null): string {
+  return renderToString(<ProjectSettingsPage detail={detail} runtimeConfig={testRuntimeConfig} />);
+}
+
+export function renderProjectWatchers(
+  detail: ProjectDetailViewModel | null,
+  watchers: ProjectWatcher[] | null,
+): string {
   return renderToString(
-    <ProjectSettingsPage detail={detail} runtimeConfig={testRuntimeConfig} />,
+    <ProjectWatchersPage detail={detail} runtimeConfig={testRuntimeConfig} watchers={watchers} />,
   );
 }
 
@@ -205,9 +195,6 @@ export function renderProjectNew(): string {
   return renderToString(<ProjectNewPage />);
 }
 
-export function renderPlaceholder(
-  href: string,
-  title: string,
-): string {
+export function renderPlaceholder(href: string, title: string): string {
   return renderToString(<PlaceholderPage href={href} title={title} />);
 }

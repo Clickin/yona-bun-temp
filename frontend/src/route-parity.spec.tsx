@@ -51,7 +51,20 @@ describe("file-route parity harness", () => {
     );
     expect(routeTreeSource).toContain("fullPath: '/search'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/search'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/watchers'");
     expect(routeTreeSource).toContain("fullPath: '/organizations/$organizationName/search'");
+  });
+
+  it("requires a real project watcher list route instead of a placeholder page", () => {
+    const watchersRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/watchers/route.tsx"),
+      "utf8",
+    );
+
+    expect(watchersRouteSource).not.toContain("PlaceholderPage");
+    expect(watchersRouteSource).toContain("ProjectWatchersPage");
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/watchers'");
   });
 
   it("requires real project issue routes instead of placeholder pages", () => {
