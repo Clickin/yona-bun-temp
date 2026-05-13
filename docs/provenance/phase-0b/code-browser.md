@@ -2,9 +2,9 @@
 
 ## Scope
 
-- Phase 3A/3B/3C/3D/3E/3F/3G read-only Git code browser parity, Phase 3H branch administration parity, Phase 3I Git commit discussion parity, and Phase 3J repository provisioning.
-- Covers Git repository paths: project creation provisioning, no-head state, branch selector, breadcrumbs, folder listing, text file view, raw file streaming, browser-open file streaming, image preview streaming, branch archive download, numbered syntax-highlighted text rendering, commit history listing, commit detail/diff rendering, commit non-ranged comments/replies/delete/thread open-close, commit comment counts, commit compare rendering, branch list rendering, branch-row latest PR links, default branch mutation, and non-default branch delete.
-- Does not cover Smart HTTP, inline ranged code-comment UX, inline edit, or SVN.
+- Phase 3A/3B/3C/3D/3E/3F/3G read-only Git code browser parity, Phase 3H branch administration parity, Phase 3I Git commit discussion parity, Phase 3J repository provisioning, and Phase 3K read-only Smart HTTP upload-pack.
+- Covers Git repository paths: project creation provisioning, no-head state, branch selector, breadcrumbs, folder listing, text file view, raw file streaming, browser-open file streaming, image preview streaming, branch archive download, numbered syntax-highlighted text rendering, commit history listing, commit detail/diff rendering, commit non-ranged comments/replies/delete/thread open-close, commit comment counts, commit compare rendering, branch list rendering, branch-row latest PR links, default branch mutation, non-default branch delete, and direct Git upload-pack advertisement/RPC for clone/fetch.
+- Does not cover Smart HTTP receive-pack/push auth/hooks, Basic Auth/token clone credentials, inline ranged code-comment UX, inline edit, or SVN.
 
 ## Legacy Sources
 
@@ -12,6 +12,7 @@
 - `yona-original/app/controllers/CodeHistoryApp.java`
 - `yona-original/app/controllers/BranchApp.java`
 - `yona-original/app/controllers/CompareApp.java`
+- `yona-original/app/controllers/GitApp.java`
 - `yona-original/app/controllers/ProjectApp.java`
 - `yona-original/app/controllers/api/ProjectApi.java`
 - `yona-original/app/views/code/view.scala.html`
@@ -41,12 +42,14 @@
 - Legacy `CodeHistoryApp.newComment`, `CommentApp.delete`, and `CommentThreadApp.open/close` map to `POST /api/v1/projects/:owner/:project/commit/:id/comments`, `DELETE /api/v1/projects/:owner/:project/commit/:id/comments/:commentId`, and `POST /api/v1/projects/:owner/:project/commit/:id/threads/:threadId/open|close`. Rust implements Git non-ranged commit comments and replies as `NonRangedCodeCommentThread` plus `ReviewComment`, preserves author/project-update delete and thread-state authorization, records `NEW_REVIEW_COMMENT` and `REVIEW_THREAD_STATE_CHANGED` notification rows, and stages notification mail. SVN `CommitComment` remains deferred.
 - Legacy `CompareApp.compare` and `code/compare.scala.html` map to `GET /api/v1/projects/:owner/:project/compare/:revA..:revB` plus SPA route `/:owner/:project/compare/:revA..:revB`. Rust verifies both revisions as Git commits, returns 404 for missing revisions, and renders the read-only `.commitInfo`, `.commitId`, and `.diff-body.discommentable` compare shell without enabling comments.
 - Legacy `BranchApp.branches`, `BranchApp.setAsDefault`, and `BranchApp.deleteBranch` map to `GET /api/v1/projects/:owner/:project/branches`, `POST /api/v1/projects/:owner/:project/branches/default`, and `DELETE /api/v1/projects/:owner/:project/branches` plus SPA route `/:owner/:project/branches`. Rust keeps branch names in JSON bodies so names containing `/` do not depend on route segment decoding, projects the latest matching branch pull request like `PullRequest.findTheLatestOneFrom`, requires project update permission for mutations, rejects deleting the default branch, and mutates real bare-repository refs through explicit git argv.
+- Legacy `GitApp.advertise` and `GitApp.serviceRpc` map to direct routes `GET /:owner/:project/info/refs?service=git-upload-pack` and `POST /:owner/:project/git-upload-pack`. Rust implements the read-only `git-upload-pack` side with native `git upload-pack --stateless-rpc`, preserves the legacy service advertisement packet shape, and reuses code read ACL/menu visibility. `git-receive-pack`, Basic Auth/token credentials, push hooks, and post-receive notifications remain separate follow-up scope.
 
-## Phase 3A/3B/3C/3D/3E/3F/3G/3H/3I/3J Evidence
+## Phase 3A/3B/3C/3D/3E/3F/3G/3H/3I/3J/3K Evidence
 
 | Evidence | Rust target |
 | --- | --- |
 | REST contract | `POST /api/v1/owners/:owner/projects`, `GET /api/v1/projects/:owner/:project/code`, `GET /api/v1/projects/:owner/:project/commits`, `GET/POST/DELETE /api/v1/projects/:owner/:project/commit/:id/comments`, `POST /api/v1/projects/:owner/:project/commit/:id/threads/:threadId/open|close`, `GET /api/v1/projects/:owner/:project/compare/:revA..:revB`, `GET /api/v1/projects/:owner/:project/branches`, `POST /api/v1/projects/:owner/:project/branches/default`, and `DELETE /api/v1/projects/:owner/:project/branches` guarded by `crates/server/tests/code_browser_contract.rs` |
+| Direct Git Smart HTTP routes | `GET /:owner/:project/info/refs?service=git-upload-pack`, `POST /:owner/:project/git-upload-pack` guarded by `crates/server/tests/code_browser_contract.rs` |
 | Git read adapter | `crates/vcs/src/lib.rs` |
 | Server behavior | `crates/server/src/lib.rs` |
 | UI route surface | `frontend/src/routes/$owner/$projectName/code/**`, `frontend/src/routes/-code-views.tsx` |
@@ -58,7 +61,7 @@
 
 ## Remaining Phase 3 Follow-ups
 
-- Smart HTTP clone/pull/push and post-receive hooks.
+- Smart HTTP receive-pack/push authorization, Basic Auth/token clone credentials, and post-receive hooks.
 - Inline ranged code-comment UX remains deferred; Phase 3I covers non-ranged Git commit discussion.
 - SVN remains deferred.
 

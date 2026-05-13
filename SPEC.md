@@ -187,7 +187,7 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 | Phase 0  | Rust workspace promotion, 문서 정리, provenance 갱신                         | ✅ **완료**                                   |
 | Phase 1  | 인증, Workspace, 조직, 프로젝트                                                | ✅ **완료**                                   |
 | Phase 2  | 이슈, 댓글, 첨부, 라벨, 마일스톤                                               | 🔶 부분 구현                                  |
-| Phase 3  | 저장소 브라우저, Smart HTTP, 커밋 토론, VCS                                    | 🔶 Phase 3I 구현                              |
+| Phase 3  | 저장소 브라우저, Smart HTTP, 커밋 토론, VCS                                    | 🔶 Phase 3K 구현                              |
 | Phase 4 | Pull Request, 코드 리뷰                              | 후속                                          |
 | Phase 5 | 검색, 게시판, 알림, 연동(Webhook)                    | 후속                                          |
 | Phase 6 | 관리자, 마이그레이션 도구, 배포 하드닝               | 후속                                          |
@@ -686,12 +686,12 @@ GET   /:owner/:project/compare/:revA..:revB → 커밋 비교
 
 ### FG-10: Git Smart HTTP Protocol
 
-**Legacy 참조**: `yona-original/app/controllers/GitApp.java`, `app/models/PlayRepository.java`
+**Legacy 참조**: `yona-original/app/controllers/GitApp.java`, `app/playRepository/RepositoryService.java`, `app/playRepository/PlayRepository.java`
 
 **Legacy 라우트**:
 
 ```
-POST  /:owner/:project/info/refs                              → Git refs 광고
+GET   /:owner/:project/info/refs                              → Git refs 광고
 POST  /:owner/:project/$service<git-upload-pack|git-receive-pack> → Git 프로토콜
 ```
 
@@ -699,16 +699,16 @@ POST  /:owner/:project/$service<git-upload-pack|git-receive-pack> → Git 프로
 
 | 기능              | Legacy 동작                                     | 현재 상태 | Phase |
 | ----------------- | ----------------------------------------------- | --------- | ----- |
-| git clone (HTTPS) | Smart HTTP upload-pack                          | gap       | 3     |
+| git clone/fetch (HTTPS) | Smart HTTP upload-pack                    | implemented (Phase 3K read-only upload-pack) | 3     |
 | git push (HTTPS)  | Smart HTTP receive-pack                         | gap       | 3     |
-| 인증              | Basic Auth (username + password/token)          | gap       | 3     |
-| 권한 체크         | 프로젝트 공개범위 + 멤버 역할에 따른 read/write | gap       | 3     |
+| 인증              | Basic Auth (username + password/token)          | gap (Phase 3K supports public/read session only) | 3     |
+| 권한 체크         | 프로젝트 공개범위 + 멤버 역할에 따른 read/write | partial (upload-pack read ACL only) | 3     |
 | Post-receive hook | push 후 알림/이벤트 발생                        | gap       | 3     |
 | 저장소 초기 생성  | 프로젝트 생성 시 bare repo 생성                 | implemented (Phase 3J) | 3     |
 
 #### 검수 기준
 
-- [ ] `git clone http://host/:owner/:project.git` 가 동작한다
+- [x] public/read-authorized `git-upload-pack` advertisement/RPC works over legacy `/:owner/:project` Smart HTTP routes
 - [ ] `git push` 시 인증된 사용자만 성공하고, read-only 사용자는 거부된다
 - [ ] 프로젝트 공개범위에 따라 clone 인증 요구 여부가 결정된다 (public: 인증 불요, private: 인증 필요)
 - [ ] push 후 `notification_event` 생성 및 branch push 기록
@@ -750,7 +750,7 @@ review thread open/close mutation을 추가했다. `/api/v1/owners/:owner/projec
 `/:number`, `/:number/changes`, `/reviews`, `/api/v1/organizations/:organization/pull-requests`
 가 project READ + code-accessible-member-only 정책을 통과한 viewer에게만 열리며, mutation은
 CSRF + authenticated session + detail permission projection을 요구한다. Merge accept/conflict 처리,
-fork/clone, from branch delete/restore, Smart HTTP, webhook delivery, legacy external `/-_-api/v1/**`
+fork/clone, from branch delete/restore, Smart HTTP write-side/VCS lifecycle, webhook delivery, legacy external `/-_-api/v1/**`
 compatibility는 이번 app runtime batch에서 제외한다.
 
 | 기능                       | Legacy 동작                          | 현재 상태 | Phase |
@@ -1233,8 +1233,8 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 이슈              | ✅ Phase 2A 구현  | CRUD, 댓글, 타임라인, watch/vote/assignee, mass update, Markdown |
 | 게시판            | 🔶 Phase 5B 구현  | project/organization board app surface                           |
 | 라벨/마일스톤     | ✅ 구현           | 라벨/카테고리 관리, 마일스톤 CRUD/state 구현                     |
-| 코드 브라우저     | 🔶 Phase 3J 구현  | Git 폴더/파일 보기, 브랜치 선택기, raw/open/image 파일 표면, archive download, syntax/line-number 표시, commit history/detail diff/compare, commit comments/thread lifecycle, branch list/latest PR/default/delete, project create 시 bare Git repository provisioning |
-| Git Smart HTTP    | ❌ 미구현         |                                                                  |
+| 코드 브라우저     | 🔶 Phase 3K 구현  | Git 폴더/파일 보기, 브랜치 선택기, raw/open/image 파일 표면, archive download, syntax/line-number 표시, commit history/detail diff/compare, commit comments/thread lifecycle, branch list/latest PR/default/delete, project create 시 bare Git repository provisioning |
+| Git Smart HTTP    | 🔶 Phase 3K 구현  | read-only upload-pack advertisement/RPC. receive-pack/push, Basic Auth/token, post-receive hook은 gap |
 | PR/리뷰           | 🔶 Phase 4B 구현  | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, 일반 PR comment, thread open/close. merge/fork/ranged inline review CRUD/branch cleanup은 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, mail queue staging |
@@ -1405,7 +1405,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Board: posting list/detail/create/update/delete/comment flows
 - Label follow-up: copyLabels Phase 6 and legacy external label/project API parity
 - Milestone follow-up: migration export and search milestone result type
-- Code follow-up: Smart HTTP, inline ranged code-comment UX, SVN wrapper integration
+- Code follow-up: Smart HTTP receive-pack/push auth/hooks, Basic Auth/token clone credentials, inline ranged code-comment UX, SVN wrapper integration
 - PullRequest follow-up: merge/conflict acceptance, ranged inline review comment edit/delete, reviewer assignment/threshold lifecycle, fork/clone, branch cleanup/restore
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: read state, SMTP scheduler/delivery, draft-time merge, recipient limit, and full mail notification parity

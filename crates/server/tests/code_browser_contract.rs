@@ -184,6 +184,24 @@ async fn direct_get(app: axum::Router, path: &str, cookie_header: Option<&str>) 
         .unwrap()
 }
 
+async fn direct_post_bytes(
+    app: axum::Router,
+    path: &str,
+    cookie_header: Option<&str>,
+    body: Vec<u8>,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(Method::POST)
+        .uri(format!("/yona{path}"));
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+
+    app.oneshot(builder.body(Body::from(body)).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn response_bytes(response: Response<Body>) -> (StatusCode, HeaderMap, Vec<u8>) {
     let status = response.status();
     let headers = response.headers().clone();
@@ -329,6 +347,74 @@ async fn rest_project_create_provisions_empty_bare_git_repository() {
             .map_or(0, Vec::len),
         0
     );
+}
+
+#[tokio::test]
+async fn direct_git_upload_pack_advertises_and_serves_public_fetch() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("created project");
+    seed_bare_repository(data_dir.path(), project.id);
+
+    let head_commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+
+    let (advertise_status, advertise_headers, advertise_body) = response_bytes(
+        direct_get(
+            app.clone(),
+            "/owner/projectYobi/info/refs?service=git-upload-pack",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(advertise_status, StatusCode::OK);
+    assert_eq!(
+        advertise_headers[http::header::CONTENT_TYPE]
+            .to_str()
+            .unwrap(),
+        "application/x-git-upload-pack-advertisement"
+    );
+    assert!(advertise_body.starts_with(b"001e# service=git-upload-pack\n0000"));
+    assert!(advertise_body
+        .windows(b"refs/heads/main".len())
+        .any(|window| window == b"refs/heads/main"));
+
+    let mut request_body = pkt_line(&format!("want {head_commit_id}\n"));
+    request_body.extend_from_slice(b"0000");
+    request_body.extend_from_slice(&pkt_line("done\n"));
+    let (rpc_status, rpc_headers, rpc_body) = response_bytes(
+        direct_post_bytes(
+            app,
+            "/owner/projectYobi/git-upload-pack",
+            None,
+            request_body,
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(rpc_status, StatusCode::OK);
+    assert_eq!(
+        rpc_headers[http::header::CONTENT_TYPE].to_str().unwrap(),
+        "application/x-git-upload-pack-result"
+    );
+    assert!(rpc_body
+        .windows(b"PACK".len())
+        .any(|window| window == b"PACK"));
+}
+
+fn pkt_line(value: &str) -> Vec<u8> {
+    format!("{:04x}{value}", value.len() + 4).into_bytes()
 }
 
 fn run_git(args: &[&str], cwd: Option<&Path>) {

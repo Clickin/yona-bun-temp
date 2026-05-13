@@ -1,3 +1,4 @@
+use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::thread;
@@ -206,6 +207,27 @@ pub fn create_bare_repository(repo_path: &Path) -> Result<(), VcsError> {
             String::from_utf8_lossy(&output.stderr).trim().to_string(),
         ))
     }
+}
+
+pub fn advertise_upload_pack(repo_path: &Path) -> Result<Vec<u8>, VcsError> {
+    if !repo_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    let mut response = packet_line("# service=git-upload-pack\n");
+    response.extend_from_slice(b"0000");
+    response.extend(run_git_upload_pack(
+        repo_path,
+        &["--stateless-rpc", "--advertise-refs"],
+        None,
+    )?);
+    Ok(response)
+}
+
+pub fn upload_pack(repo_path: &Path, request: &[u8]) -> Result<Vec<u8>, VcsError> {
+    if !repo_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    run_git_upload_pack(repo_path, &["--stateless-rpc"], Some(request))
 }
 
 pub fn read_code_browser(
@@ -1071,6 +1093,10 @@ fn breadcrumbs_for_path(path: &str) -> Vec<CodeBreadcrumbRecord> {
     breadcrumbs
 }
 
+fn packet_line(value: &str) -> Vec<u8> {
+    format!("{:04x}{value}", value.len() + 4).into_bytes()
+}
+
 fn normalize_repo_path(path: &str) -> Result<String, VcsError> {
     let trimmed = path.trim().trim_matches('/');
     if trimmed.is_empty() {
@@ -1144,5 +1170,43 @@ fn git_bytes(repo_path: &Path, args: &[&str]) -> Result<Vec<u8>, VcsError> {
         Err(VcsError::NotFound)
     } else {
         Err(VcsError::GitFailed(stderr))
+    }
+}
+
+fn run_git_upload_pack(
+    repo_path: &Path,
+    args: &[&str],
+    input: Option<&[u8]>,
+) -> Result<Vec<u8>, VcsError> {
+    let mut command = Command::new("git");
+    command.arg("upload-pack").args(args).arg(repo_path);
+    if input.is_some() {
+        command.stdin(Stdio::piped());
+    } else {
+        command.stdin(Stdio::null());
+    }
+    command.stdout(Stdio::piped()).stderr(Stdio::piped());
+    let mut child = command.spawn().map_err(|_| VcsError::GitUnavailable)?;
+    if let Some(input) = input {
+        let mut stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| VcsError::GitFailed("git upload-pack stdin unavailable".to_string()))?;
+        stdin
+            .write_all(input)
+            .map_err(|error| VcsError::GitFailed(error.to_string()))?;
+    }
+    let output = child
+        .wait_with_output()
+        .map_err(|_| VcsError::GitUnavailable)?;
+    if output.status.success() {
+        Ok(output.stdout)
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        if stderr.contains("not our ref") || stderr.contains("bad object") {
+            Err(VcsError::NotFound)
+        } else {
+            Err(VcsError::GitFailed(stderr))
+        }
     }
 }

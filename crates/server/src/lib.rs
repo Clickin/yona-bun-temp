@@ -283,6 +283,10 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let image_code_base_path = base_path.clone();
     let archive_code_backend = route_backend.clone();
     let archive_code_session_manager = session_manager.clone();
+    let git_advertise_backend = route_backend.clone();
+    let git_advertise_session_manager = session_manager.clone();
+    let git_upload_pack_backend = route_backend.clone();
+    let git_upload_pack_session_manager = session_manager.clone();
     let rest_router = build_rest_router(pilot_service.clone());
 
     let mut base_router = Router::new()
@@ -484,6 +488,46 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             revision,
                             archive_code_session_manager.clone(),
                             archive_code_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/info/refs",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner, project)): Path<(String, String)>,
+                      RawQuery(raw_query): RawQuery| {
+                    async move {
+                        direct_git_advertise(
+                            headers,
+                            owner,
+                            project,
+                            raw_query,
+                            git_advertise_session_manager.clone(),
+                            git_advertise_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/git-upload-pack",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project)): Path<(String, String)>,
+                      body: axum::body::Bytes| {
+                    async move {
+                        direct_git_upload_pack(
+                            headers,
+                            owner,
+                            project,
+                            body.to_vec(),
+                            git_upload_pack_session_manager.clone(),
+                            git_upload_pack_backend.clone(),
                         )
                         .await
                     }
@@ -1769,6 +1813,128 @@ async fn direct_code_archive(
         Ok(bytes) => direct_code_archive_response(bytes, &project_name, &revision),
         Err(error) => direct_code_file_error(error),
     }
+}
+
+async fn direct_git_advertise(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    raw_query: Option<String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    match direct_git_service(raw_query.as_deref()).as_deref() {
+        Some("git-upload-pack") => {}
+        Some(service) => return unsupported_git_service_response(service),
+        None => return (StatusCode::FORBIDDEN, "Unsupported service: getanyfile").into_response(),
+    }
+    let authorization = match direct_git_read_authorization(
+        &headers,
+        &owner_name,
+        &project_name,
+        &session_manager,
+        &backend,
+    )
+    .await
+    {
+        Ok(authorization) => authorization,
+        Err(response) => return response,
+    };
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    match yona_rust_vcs::advertise_upload_pack(&repo_path) {
+        Ok(bytes) => direct_git_response(bytes, "application/x-git-upload-pack-advertisement"),
+        Err(error) => direct_code_file_error(error),
+    }
+}
+
+async fn direct_git_upload_pack(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: Vec<u8>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let authorization = match direct_git_read_authorization(
+        &headers,
+        &owner_name,
+        &project_name,
+        &session_manager,
+        &backend,
+    )
+    .await
+    {
+        Ok(authorization) => authorization,
+        Err(response) => return response,
+    };
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    match yona_rust_vcs::upload_pack(&repo_path, &body) {
+        Ok(bytes) => direct_git_response(bytes, "application/x-git-upload-pack-result"),
+        Err(error) => direct_code_file_error(error),
+    }
+}
+
+async fn direct_git_read_authorization(
+    headers: &HeaderMap,
+    owner_name: &str,
+    project_name: &str,
+    session_manager: &SessionManager,
+    backend: &PilotBackend,
+) -> Result<persistence::ProjectAuthorizationRecord, Response> {
+    let actor_id = session_manager
+        .read_session_from_headers(headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = backend else {
+        return Err(StatusCode::NOT_IMPLEMENTED.into_response());
+    };
+    let authorization = match repository
+        .read_project_authorization(owner_name, project_name, actor_id)
+        .await
+    {
+        Ok(Some(authorization)) => authorization,
+        Ok(None) => return Err(StatusCode::NOT_FOUND.into_response()),
+        Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR.into_response()),
+    };
+    let read_allowed = match project_read_allowed(&authorization, actor_id.is_none()) {
+        Ok(allowed) => allowed,
+        Err(_) => return Err(StatusCode::BAD_REQUEST.into_response()),
+    };
+    if !read_allowed || !project_code_menu_visible(&authorization, true) {
+        return if actor_id.is_none() {
+            Err(StatusCode::UNAUTHORIZED.into_response())
+        } else {
+            Err(StatusCode::FORBIDDEN.into_response())
+        };
+    }
+
+    Ok(authorization)
+}
+
+fn direct_git_response(bytes: Vec<u8>, content_type: &'static str) -> Response {
+    let mut response = bytes.into_response();
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static(content_type),
+    );
+    response
+}
+
+fn unsupported_git_service_response(service: &str) -> Response {
+    (
+        StatusCode::FORBIDDEN,
+        format!("Unsupported service: '{service}'"),
+    )
+        .into_response()
+}
+
+fn direct_git_service(raw_query: Option<&str>) -> Option<String> {
+    raw_query.and_then(|query| {
+        query.split('&').find_map(|pair| {
+            let (raw_key, raw_value) = pair.split_once('=')?;
+            (decode_query_component(raw_key) == "service")
+                .then(|| decode_query_component(raw_value))
+        })
+    })
 }
 
 fn direct_code_archive_response(bytes: Vec<u8>, project_name: &str, revision: &str) -> Response {
