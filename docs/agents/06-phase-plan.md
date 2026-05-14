@@ -94,7 +94,8 @@
 - Phase 6I complete: Site-admin diagnostics read surface over `GET /api/v1/sites/diagnostics` and `/sites/diagnostic`, including site_admin-only access, legacy site settings sidebar, `.title_area`, no-error branch, and error-list `<pre>` rows.
 - Phase 6J complete: Site-admin update read/unwatch surface over `GET /api/v1/sites/update`, `POST /api/v1/sites/update/unwatch`, and `/sites/update`, including site_admin-only access, CSRF-protected notification hide, legacy site settings sidebar, `.title_area`, current-version line, update/download branch, and no-update branch.
 - Phase 6K complete: Site-admin test-mail surface over `GET /api/v1/sites/mail`, `POST /api/v1/sites/mail`, and `/sites/mail`, including site_admin-only access, CSRF-protected test-mail send, legacy `#mailForm`, sender default, missing SMTP config warning, success/failure alert branches, and integrations outbox/SMTP delivery.
-- Remaining admin surface follow-ups: massmail, remote release discovery, and non-current data import/export scope.
+- Phase 6L complete: Site-admin mass-mail recipient surface over `GET /api/v1/sites/massmail`, `POST /api/v1/sites/mail-list`, and `/sites/massmail`, including site_admin-only access, CSRF-protected recipient expansion, legacy `.mess-mail-wrap`, `#mailtoAll`, `#mailtoPrj`, `#project-list-wrap`, `#input-project`, `#select-project`, `#selected-projects`, `#write-email`, and `mailto:` handoff anchors.
+- Remaining admin surface follow-ups: remote release discovery and non-current data import/export scope.
 - migration tooling
 - deployment hardening
 - remaining deferred scope review

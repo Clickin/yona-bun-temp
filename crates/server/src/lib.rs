@@ -2288,6 +2288,25 @@ struct RestSiteMailBody {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RestSiteMassMailResponse {
+    ok: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteMassMailListBody {
+    all: Option<bool>,
+    projects: Option<Vec<String>>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteMassMailListResponse {
+    emails: Vec<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RestNotificationActor {
     avatar_url: String,
     display_name: String,
@@ -3720,6 +3739,26 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Json(body): Json<RestSiteMailBody>| {
                     let service = service.clone();
                     async move { rest_send_site_mail(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/sites/massmail",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_read_site_massmail(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/sites/mail-list",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestSiteMassMailListBody>| {
+                    let service = service.clone();
+                    async move { rest_read_site_massmail_recipients(headers, body, service).await }
                 }
             }),
         )
@@ -7355,6 +7394,44 @@ async fn rest_send_site_mail(
         Ok(()) => Ok(Json(rest_site_mail_response(true, None))),
         Err(error) => Ok(Json(rest_site_mail_response(false, Some(error)))),
     }
+}
+
+async fn rest_read_site_massmail(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteMassMailResponse>, RestRouteError> {
+    let _repository = require_site_admin_repository_read(
+        &headers,
+        &service.session_manager,
+        &service.backend,
+        "site admin mass mail",
+    )
+    .await?;
+    Ok(Json(RestSiteMassMailResponse { ok: true }))
+}
+
+async fn rest_read_site_massmail_recipients(
+    headers: HeaderMap,
+    body: RestSiteMassMailListBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteMassMailListResponse>, RestRouteError> {
+    let repository =
+        require_site_admin_repository(&headers, &service.session_manager, &service.backend).await?;
+    let emails = if body.all.unwrap_or(false) {
+        repository
+            .list_site_mass_mail_all_recipients()
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+    } else {
+        repository
+            .list_site_mass_mail_project_recipients(&body.projects.unwrap_or_default())
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+    };
+
+    Ok(Json(RestSiteMassMailListResponse { emails }))
 }
 
 async fn rest_read_site_diagnostics(

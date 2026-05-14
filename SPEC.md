@@ -934,7 +934,8 @@ DELETE /sites/user/delete       → 사용자 삭제
 DELETE /sites/project/delete/:id → 프로젝트 삭제
 GET   /sites/mail              → 메일 설정
 POST  /sites/mail              → 테스트 메일 발송
-POST  /sites/mailList          → 대량 메일 발송
+GET   /sites/massmail          → 대량 메일 작성
+POST  /sites/mailList          → 대량 메일 수신자 조회
 GET   /sites/diagnostic        → 시스템 진단
 GET   /sites/update            → 업데이트 확인
 POST  /sites/unwatchUpdate     → 업데이트 알림 숨김
@@ -950,7 +951,7 @@ GET   /sites/export            → 데이터 익스포트
 | 사용자 목록/관리       | 목록, 검색, 관리자 토글, 계정 잠금 | 🔶 Phase 6A/6E/6F/6H 사용자 목록과 관리자/잠금/게스트 토글, reset password, delete 구현 | 6     |
 | 프로젝트 목록/관리     | 목록, 검색, 삭제                   | ✅ Phase 6B/6G 프로젝트 목록 read surface와 삭제 구현 | 6     |
 | 게시글/이슈 목록       | 전체 게시글/이슈 관리              | 🔶 Phase 6C/6D 게시글/이슈 목록 read surface 구현 | 6     |
-| 메일 설정/테스트       | SMTP 테스트, 대량 메일             | 🔶 Phase 6K test-mail 구현; massmail deferred | 6     |
+| 메일 설정/테스트       | SMTP 테스트, 대량 메일             | 🔶 Phase 6K test-mail, Phase 6L massmail recipient/mailto 구현 | 6     |
 | 시스템 진단            | DB 상태, 메모리 등                 | 🔶 Phase 6I diagnostics read surface 구현 | 6     |
 | 데이터 임포트/익스포트 | 전체 데이터 백업/복원              | deferred  | 2차   |
 | 업데이트 확인          | 새 버전 확인, 알림 숨김            | 🔶 Phase 6J update shell와 unwatchUpdate 구현; remote release discovery deferred | 6     |
@@ -963,9 +964,9 @@ GET   /sites/export            → 데이터 익스포트
 - [~] 게시글/이슈 목록: 전체 게시글 페이지네이션, 이슈 open/closed 탭과 페이지네이션 read surface 구현
 - [~] 시스템 진단: site_admin 전용 `/sites/diagnostic` shell과 `Diagnostic.checkAll()` 호환 response shape 구현
 - [~] 업데이트 확인: site_admin 전용 `/sites/update` shell과 `unwatchUpdate` 알림 숨김 mutation 구현
-- [~] 메일 설정/테스트: site_admin 전용 `/sites/mail` shell과 test-mail 발송 구현
+- [~] 메일 설정/테스트: site_admin 전용 `/sites/mail` shell/test-mail 발송과 `/sites/massmail` recipient/mailto surface 구현
 
-**Phase 6A/6B/6C/6D/6E/6F/6G/6H/6I/6J/6K 구현 메모**: app runtime REST는 `GET /api/v1/sites/users?state=&query=&pageNum=&pageSize=`와
+**Phase 6A/6B/6C/6D/6E/6F/6G/6H/6I/6J/6K/6L 구현 메모**: app runtime REST는 `GET /api/v1/sites/users?state=&query=&pageNum=&pageSize=`와
 `GET /api/v1/sites/projects?filter=&pageNum=&pageSize=`, `GET /api/v1/sites/posts?pageNum=&pageSize=`,
 `GET /api/v1/sites/issues?state=&pageNum=&pageSize=`를 제공한다. `/sites/userList`는 legacy
 `siteMngLayout.scala.html`/`userList.scala.html`의 사이드바, 탭, 검색, dense row class anchor를 복원하고, `/sites/projectList`는
@@ -980,7 +981,8 @@ GET   /sites/export            → 데이터 익스포트
 `GET /api/v1/sites/diagnostics`는 `/sites/diagnostic`에서 사용하는 legacy `Diagnostic.checkAll()` 형태의 error list를 반환하며, 현재 Rust slice는 no-error branch와 error-list rendering을 복원한다.
 `GET /api/v1/sites/update`와 `POST /api/v1/sites/update/unwatch`는 `/sites/update`의 legacy update shell, current-version line, update/download branch, and `unwatchUpdate` 알림 숨김 동작을 복원한다. 실제 remote release tag discovery는 network/VCS lifecycle과 분리해 후속 scope로 남긴다.
 `GET /api/v1/sites/mail`과 `POST /api/v1/sites/mail`은 `/sites/mail`의 legacy `mailForm`, sender default, missing SMTP config warning, and test-mail delivery path를 복원한다.
-`data/import/export`, massmail, and remote release discovery는 별도 Phase 6 follow-up 또는 deferred scope다.
+`GET /api/v1/sites/massmail`과 `POST /api/v1/sites/mail-list`는 `/sites/massmail`의 legacy `.mess-mail-wrap`, all/project radio selection, selected project labels, and `mailto:` handoff를 복원한다. 이 slice는 legacy `mailList()` recipient expansion parity이며 server-side bulk SMTP delivery를 추가하지 않는다.
+`data/import/export` and remote release discovery는 별도 Phase 6 follow-up 또는 deferred scope다.
 
 ---
 

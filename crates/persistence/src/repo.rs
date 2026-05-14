@@ -1175,6 +1175,46 @@ impl AppRepository {
         })
     }
 
+    pub async fn list_site_mass_mail_all_recipients(&self) -> Result<Vec<String>, DbErr> {
+        let users = n4user::Entity::find().all(&self.db).await?;
+        let mut emails = users
+            .into_iter()
+            .filter_map(|user| {
+                user.email
+                    .map(|email| email.trim().to_string())
+                    .filter(|email| !email.is_empty())
+            })
+            .collect::<Vec<_>>();
+        emails.sort();
+        emails.dedup();
+        Ok(emails)
+    }
+
+    pub async fn list_site_mass_mail_project_recipients(
+        &self,
+        project_names: &[String],
+    ) -> Result<Vec<String>, DbErr> {
+        let mut emails = Vec::new();
+        for project_name in project_names {
+            let Some((owner_name, project_name)) = project_name.split_once('/') else {
+                continue;
+            };
+            let members = self
+                .read_project_members(owner_name.trim(), project_name.trim())
+                .await?;
+            emails.extend(
+                members
+                    .members
+                    .into_iter()
+                    .map(|member| member.email_address.trim().to_string())
+                    .filter(|email| !email.is_empty()),
+            );
+        }
+        emails.sort();
+        emails.dedup();
+        Ok(emails)
+    }
+
     pub async fn user_login_id_exists(&self, login_id: &str) -> Result<bool, DbErr> {
         let normalized = normalize_identity(login_id);
         if normalized.is_empty() {

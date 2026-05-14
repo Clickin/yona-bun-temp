@@ -23,6 +23,8 @@ import {
   deleteSiteUserRest,
   readSiteDiagnosticsQueryOptions,
   readSiteMailQueryOptions,
+  readSiteMassMailQueryOptions,
+  readSiteMassMailRecipientsRest,
   readSiteUpdateQueryOptions,
   sendSiteMailRest,
   listSiteIssuesQueryOptions,
@@ -342,6 +344,14 @@ describe("api query keys", () => {
     expect(options.queryFn).toEqual(expect.any(Function));
   });
 
+  it("builds site-admin mass-mail query options from canonical query keys", () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const options = readSiteMassMailQueryOptions(runtimeConfig);
+
+    expect(options.queryKey).toEqual(apiQueryKeys.siteAdmin.massMail());
+    expect(options.queryFn).toEqual(expect.any(Function));
+  });
+
   it("uses POST for site-admin user action REST mutations", async () => {
     const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
     const requests: string[] = [];
@@ -489,6 +499,34 @@ describe("api query keys", () => {
         to: "recipient@example.com",
       },
     ]);
+  });
+
+  it("uses POST JSON for site-admin mass-mail recipient resolution", async () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const requests: string[] = [];
+    const bodies: unknown[] = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      requests.push(`${init?.method ?? ""} ${String(input)}`);
+      bodies.push(JSON.parse(String(init?.body ?? "{}")));
+      return new Response(JSON.stringify({ emails: ["member@example.com"] }), {
+        headers: { "content-type": "application/json" },
+        status: 200,
+      });
+    };
+
+    const response = await readSiteMassMailRecipientsRest(
+      runtimeConfig,
+      "csrf",
+      {
+        all: false,
+        projects: ["admin/projectYobi"],
+      },
+      fetchImpl,
+    );
+
+    expect(response.emails).toEqual(["member@example.com"]);
+    expect(requests).toEqual(["POST /yona/api/v1/sites/mail-list"]);
+    expect(bodies).toEqual([{ all: false, projects: ["admin/projectYobi"] }]);
   });
 
   it("uses PATCH for board update REST mutations", async () => {

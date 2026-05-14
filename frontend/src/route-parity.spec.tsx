@@ -236,6 +236,20 @@ describe("file-route parity harness", () => {
     expect(siteRouteSource).toContain("site.mail.sended");
   });
 
+  it("requires a real site-admin mass-mail route instead of a follow-up shell", () => {
+    const siteRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/sites/$pageName/route.tsx"),
+      "utf8",
+    );
+
+    expect(siteRouteSource).toContain("SiteAdminMassMailPage");
+    expect(siteRouteSource).toContain("readSiteMassMailQueryOptions");
+    expect(siteRouteSource).toContain("readSiteMassMailRecipientsRest");
+    expect(siteRouteSource).toContain("mailtoAll");
+    expect(siteRouteSource).toContain("project-list-wrap");
+    expect(siteRouteSource).toContain("write-email");
+  });
+
   it("requires real project issue routes instead of placeholder pages", () => {
     const issueListRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/$owner/$projectName/issues/route.tsx"),

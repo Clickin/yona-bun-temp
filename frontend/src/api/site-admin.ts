@@ -185,6 +185,19 @@ export type SiteMailInput = {
   to: string;
 };
 
+export type SiteMassMailResponse = {
+  ok: boolean;
+};
+
+export type SiteMassMailRecipientsInput = {
+  all: boolean;
+  projects: string[];
+};
+
+export type SiteMassMailRecipientsResponse = {
+  emails: string[];
+};
+
 export const SITE_USER_STATES: SiteUserState[] = [
   "ACTIVE",
   "LOCKED",
@@ -454,6 +467,22 @@ function normalizeSiteMailResponse(response: Partial<SiteMailResponse>): SiteMai
   };
 }
 
+function normalizeSiteMassMailResponse(
+  response: Partial<SiteMassMailResponse>,
+): SiteMassMailResponse {
+  return {
+    ok: response.ok ?? true,
+  };
+}
+
+function normalizeSiteMassMailRecipientsResponse(
+  response: Partial<SiteMassMailRecipientsResponse>,
+): SiteMassMailRecipientsResponse {
+  return {
+    emails: (response.emails ?? []).map(String),
+  };
+}
+
 export function listSiteUsersRest(
   runtimeConfig: RuntimeConfig,
   input: Partial<SiteUsersQueryInput> = {},
@@ -669,6 +698,29 @@ export function sendSiteMailRest(
   }).then(normalizeSiteMailResponse);
 }
 
+export function readSiteMassMailRest(
+  runtimeConfig: RuntimeConfig,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteMassMailResponse> {
+  return restFetch<Partial<SiteMassMailResponse>>(runtimeConfig, "/sites/massmail", {
+    fetchImpl,
+  }).then(normalizeSiteMassMailResponse);
+}
+
+export function readSiteMassMailRecipientsRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: SiteMassMailRecipientsInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteMassMailRecipientsResponse> {
+  return restFetch<Partial<SiteMassMailRecipientsResponse>>(runtimeConfig, "/sites/mail-list", {
+    body: input,
+    csrfToken,
+    fetchImpl,
+    method: "POST",
+  }).then(normalizeSiteMassMailRecipientsResponse);
+}
+
 export function listSiteUsersQueryOptions(
   runtimeConfig: RuntimeConfig,
   input: Partial<SiteUsersQueryInput> = {},
@@ -731,5 +783,12 @@ export function readSiteMailQueryOptions(runtimeConfig: RuntimeConfig) {
   return queryOptions({
     queryFn: () => readSiteMailRest(runtimeConfig),
     queryKey: apiQueryKeys.siteAdmin.mail(),
+  });
+}
+
+export function readSiteMassMailQueryOptions(runtimeConfig: RuntimeConfig) {
+  return queryOptions({
+    queryFn: () => readSiteMassMailRest(runtimeConfig),
+    queryKey: apiQueryKeys.siteAdmin.massMail(),
   });
 }

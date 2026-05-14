@@ -621,3 +621,55 @@ test("renders legacy site-admin mail shell and sends a test mail", async ({ page
   ]);
   await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
 });
+
+test("renders legacy site-admin mass-mail shell and resolves recipients", async ({ page }) => {
+  const seenPosts: unknown[] = [];
+  await page.route(apiV1Route("/sites/massmail"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({ ok: true }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/sites/mail-list"), async (route) => {
+    const body = JSON.parse(route.request().postData() || "{}");
+    seenPosts.push(body);
+    await route.fulfill({
+      body: JSON.stringify({
+        emails: body.all ? ["admin@example.com", "member@example.com"] : ["member@example.com"],
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/sites/massmail");
+
+  await expect(page.locator(".site-setting-nav li.active")).toContainText("Mass Mail");
+  await expect(page.locator(".title_area h2")).toHaveText("Send mass mails");
+  await expect(page.locator("#mailtoAll")).toBeChecked();
+  await expect(page.locator("#mailtoPrj")).not.toBeChecked();
+  await expect(page.locator("#project-list-wrap")).toHaveClass(/hide/);
+  await page.locator("#write-email").click();
+  await expect(page.locator("#massMailForm")).toHaveAttribute(
+    "action",
+    "mailto:admin@example.com,member@example.com",
+  );
+
+  await page.locator("#mailtoPrj").check();
+  await expect(page.locator("#project-list-wrap")).not.toHaveClass(/hide/);
+  await page.locator("#input-project").fill("admin/projectYobi");
+  await page.locator("#select-project").click();
+  await expect(page.locator("#selected-projects .label")).toContainText("admin/projectYobi");
+  await page.locator("#write-email").click();
+  await expect(page.locator("#massMailForm")).toHaveAttribute(
+    "action",
+    "mailto:member@example.com",
+  );
+
+  expect(seenPosts).toEqual([
+    { all: true, projects: [] },
+    { all: false, projects: ["admin/projectYobi"] },
+  ]);
+  await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
+});

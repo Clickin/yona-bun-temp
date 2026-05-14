@@ -1,11 +1,11 @@
 # Site Admin Provenance
 
-Status: Phase 6K partial parity.
+Status: Phase 6L partial parity.
 
 ## Legacy Anchors
 
 - `yona-original/conf/routes`: `/sites/userList`, `/sites/projectList`, `/sites/postList`, `/sites/issueList`, `/sites/mail`, `/sites/massmail`, `/sites/diagnostic`, `/sites/update`, and destructive admin mutation routes.
-- `yona-original/app/controllers/SiteApp.java`: `@With(SiteManagerAuthAction.class)` site-admin gate, `userList(pageNum, query)` state/query dispatch, `projectList(filter, pageNum)` project-name search, `postList(pageNum)` recent-post paging, `issueList(pageNum)` default-OPEN state filtering, `update()` current/update-version rendering, `unwatchUpdate()` notification hiding, `writeMail()` SMTP config warning, and `sendMail()` test-mail delivery.
+- `yona-original/app/controllers/SiteApp.java`: `@With(SiteManagerAuthAction.class)` site-admin gate, `userList(pageNum, query)` state/query dispatch, `projectList(filter, pageNum)` project-name search, `postList(pageNum)` recent-post paging, `issueList(pageNum)` default-OPEN state filtering, `update()` current/update-version rendering, `unwatchUpdate()` notification hiding, `writeMail()` SMTP config warning, `sendMail()` test-mail delivery, `massMail()` shell, and `mailList()` all-user/project-member recipient expansion.
 - `yona-original/app/views/site/siteMngLayout.scala.html`: `.site-breadcrumb-outer`, `.site-setting-wrap`, `.site-setting-nav`, and sidebar order.
 - `yona-original/app/views/site/userList.scala.html`: `.title_area`, `.form-search`, `.nav-tabs`, `.listhead`, `.user-list-wrap`, row actions, and site-admin count badge.
 - `yona-original/app/views/site/projectList.scala.html`: `.title_area`, `.form-search`, `.listhead`, `.project-list-wrap`, project links, and delete button `data-toggle="delete-project"` anchors.
@@ -14,8 +14,9 @@ Status: Phase 6K partial parity.
 - `yona-original/app/views/site/update.scala.html`: `.title_area`, current-version line, update-available download branch, no-update branch, and error branch.
 - `yona-original/app/views/partial_update_notification.scala.html`: `site.update.notification.hide` button with `data-request-method="post"` and `data-request-uri`.
 - `yona-original/app/views/site/mail.scala.html`: `.title_area`, alert branches, `#mailForm`, `form-horizontal`, `control-group`, `mail-btn-wrap`, and `site.mail.*` form anchors.
+- `yona-original/app/views/site/massMail.scala.html` and `public/javascripts/service/yobi.site.MassMail.js`: `.mess-mail-wrap`, `#mailtoAll`, `#mailtoPrj`, `#project-list-wrap`, `#input-project`, `#select-project`, `#selected-projects`, `#write-email`, and browser `mailto:` handoff after `mailList()` returns recipients.
 
-## Phase 6A/6B/6C/6D/6E/6F/6G/6H/6I/6J/6K Mapping
+## Phase 6A/6B/6C/6D/6E/6F/6G/6H/6I/6J/6K/6L Mapping
 
 - `GET /api/v1/sites/users?state=&query=&pageNum=&pageSize=` lists users for site-admin sessions only.
 - `DELETE /api/v1/sites/users/:userId` restores the legacy user-list delete action for site-admin sessions with CSRF checks and the only-project-manager guard.
@@ -28,6 +29,8 @@ Status: Phase 6K partial parity.
 - `POST /api/v1/sites/update/unwatch` restores the legacy update notification hide action for site-admin sessions with CSRF checks.
 - `GET /api/v1/sites/mail` returns the site-admin-only test-mail form state, including legacy SMTP config warning items and sender default.
 - `POST /api/v1/sites/mail` restores the legacy test-mail action for site-admin sessions with CSRF checks and the existing integrations delivery path.
+- `GET /api/v1/sites/massmail` returns the site-admin-only mass-mail shell state.
+- `POST /api/v1/sites/mail-list` restores legacy `SiteApp.mailList` recipient expansion for all users or selected `owner/project` member lists with CSRF checks, deterministic sorting, and duplicate removal.
 - `POST /api/v1/sites/users/:loginId/toggle-site-admin`, `/toggle-account-lock`, `/toggle-guest-mode`, and `/reset-password` restore the legacy user-row mutations for site-admin sessions with CSRF checks.
 - `frontend/src/routes/sites/$pageName/route.tsx` restores `/sites/userList` with the legacy site settings sidebar, tabs, search form, dense list rows, and pagination summary.
 - The same route restores `/sites/projectList` with the legacy site settings sidebar, project search form, dense project rows, and the project-delete confirmation modal.
@@ -36,13 +39,13 @@ Status: Phase 6K partial parity.
 - The same route restores `/sites/diagnostic` with the legacy site settings sidebar, `.title_area`, diagnostics heading, no-error branch, and error-list `<pre>` rows.
 - The same route restores `/sites/update` with the legacy site settings sidebar, `.title_area`, `site.update.isAvailable`, `site.update.download`, `site.update.currentVersion`, `site.update.isNotNecessary`, and `site.update.notification.hide` anchors.
 - The same route restores `/sites/mail` with the legacy site settings sidebar, `.title_area`, `#mailForm`, `site.mail.notConfigured`, `site.mail.sended`, `site.mail.fail`, and `site.mail.*` field/button anchors.
+- The same route restores `/sites/massmail` with the legacy site settings sidebar, `.title_area`, `.mess-mail-wrap`, all/project radio selection, project label selection, `#write-email`, and `#massMailForm` `mailto:` action handoff. This is recipient-resolution parity, not server-side bulk SMTP delivery.
 - `frontend/src/api/site-admin.ts` normalizes omitted REST fields and exposes TanStack Query options.
 - User-list role, account-lock, guest-mode, and reset-password controls now post through typed REST mutations. Reset password directly replaces the target password hash and shows the returned temporary password inline, matching `UserApp.resetUserPasswordBySiteManager`.
 - User delete now uses the legacy `account-delete` confirmation modal, marks the user `deleted` instead of hard-deleting the row, scrubs password/email state, clears project memberships and assignee links, and refreshes the deleted-user tab after success.
 
 ## Remaining Gaps
 
-- Mass mail (`/sites/massmail` and `/sites/mailList`) remains a separate recipient-expansion packet.
 - Remote release tag discovery for update check remains deferred; Phase 6J restores the local page and hide action without network/JGit discovery.
 - Data import/export remains deferred outside current app parity scope.
 

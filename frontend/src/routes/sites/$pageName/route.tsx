@@ -18,6 +18,8 @@ import {
   normalizeSiteUsersQuery,
   readSiteDiagnosticsQueryOptions,
   readSiteMailQueryOptions,
+  readSiteMassMailQueryOptions,
+  readSiteMassMailRecipientsRest,
   readSiteUpdateQueryOptions,
   resetSiteUserPasswordRest,
   sendSiteMailRest,
@@ -34,6 +36,8 @@ import {
   type SiteIssueState,
   type SiteMailInput,
   type SiteMailResponse,
+  type SiteMassMailRecipientsInput,
+  type SiteMassMailResponse,
   type SitePostListItem,
   type SitePostsQueryInput,
   type SitePostsResponse,
@@ -263,6 +267,10 @@ function SiteAdminRouteComponent() {
     ...readSiteMailQueryOptions(runtimeConfig),
     enabled: canRender && pageName === "mail",
   });
+  const siteMassMailQuery = useQuery({
+    ...readSiteMassMailQueryOptions(runtimeConfig),
+    enabled: canRender && pageName === "massmail",
+  });
   const userActionError = React.useCallback(
     (error: Error, fallback: string) => {
       setErrorMessage(error instanceof Error ? error.message : fallback);
@@ -325,6 +333,12 @@ function SiteAdminRouteComponent() {
     onError: (error) => userActionError(error, "Send site mail failed."),
     onSuccess: (response) => queryClient.setQueryData(apiQueryKeys.siteAdmin.mail(), response),
   });
+  const readSiteMassMailRecipientsMutation = useMutation({
+    mutationFn: (input: SiteMassMailRecipientsInput) =>
+      readSiteMassMailRecipientsRest(runtimeConfig, csrfToken, input),
+    onError: (error) => userActionError(error, "Read mass-mail recipients failed."),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.massMail() }),
+  });
 
   useDocumentTitle(
     pageName === "userList"
@@ -341,7 +355,9 @@ function SiteAdminRouteComponent() {
                 ? "Software Update"
                 : pageName === "mail"
                   ? "Send email"
-                  : "Site Admin",
+                  : pageName === "massmail"
+                    ? "Send mass mails"
+                    : "Site Admin",
   );
 
   React.useEffect(() => {
@@ -376,7 +392,9 @@ function SiteAdminRouteComponent() {
                 ? siteUpdateQuery.error
                 : pageName === "mail"
                   ? siteMailQuery.error
-                  : userListQuery.error;
+                  : pageName === "massmail"
+                    ? siteMassMailQuery.error
+                    : userListQuery.error;
     if (!error) {
       return;
     }
@@ -400,7 +418,9 @@ function SiteAdminRouteComponent() {
                   ? "Read site update failed."
                   : pageName === "mail"
                     ? "Read site mail failed."
-                    : "Read site users failed.",
+                    : pageName === "massmail"
+                      ? "Read site mass mail failed."
+                      : "Read site users failed.",
     );
   }, [
     diagnosticsQuery.error,
@@ -410,6 +430,7 @@ function SiteAdminRouteComponent() {
     projectListQuery.error,
     setErrorMessage,
     siteMailQuery.error,
+    siteMassMailQuery.error,
     siteUpdateQuery.error,
     userListQuery.error,
   ]);
@@ -495,6 +516,18 @@ function SiteAdminRouteComponent() {
         isSending={sendSiteMailMutation.isPending}
         onSend={(input) => sendSiteMailMutation.mutate(input)}
         response={siteMailQuery.data}
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
+
+  if (pageName === "massmail") {
+    return (
+      <SiteAdminMassMailPage
+        isLoading={siteMassMailQuery.isLoading}
+        isResolving={readSiteMassMailRecipientsMutation.isPending}
+        onResolveRecipients={(input) => readSiteMassMailRecipientsMutation.mutateAsync(input)}
+        response={siteMassMailQuery.data}
         runtimeConfig={runtimeConfig}
       />
     );
@@ -975,6 +1008,135 @@ function SiteAdminMailPage(props: {
             </div>
           </form>
         </>
+      )}
+    </SiteAdminLayout>
+  );
+}
+
+function SiteAdminMassMailPage(props: {
+  isLoading: boolean;
+  isResolving: boolean;
+  onResolveRecipients: (input: SiteMassMailRecipientsInput) => Promise<{ emails: string[] }>;
+  response: SiteMassMailResponse | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const [mailingType, setMailingType] = React.useState<"all" | "projects">("all");
+  const [projectInput, setProjectInput] = React.useState("");
+  const [selectedProjects, setSelectedProjects] = React.useState<string[]>([]);
+  const [mailtoAction, setMailtoAction] = React.useState("mailto:");
+  const isProjectMode = mailingType === "projects";
+  const isReady = props.response?.ok ?? false;
+
+  function addProject() {
+    const nextProject = projectInput.trim();
+    if (!nextProject || selectedProjects.includes(nextProject)) {
+      return;
+    }
+    setSelectedProjects((current) => [...current, nextProject]);
+    setProjectInput("");
+  }
+
+  function removeProject(projectName: string) {
+    setSelectedProjects((current) => current.filter((item) => item !== projectName));
+  }
+
+  function resolveRecipients() {
+    void props
+      .onResolveRecipients({
+        all: !isProjectMode,
+        projects: isProjectMode ? selectedProjects : [],
+      })
+      .then((response) => {
+        setMailtoAction(`mailto:${response.emails.join(",")}`);
+      });
+  }
+
+  return (
+    <SiteAdminLayout activePageName="massmail" runtimeConfig={props.runtimeConfig}>
+      <div className="title_area">
+        <h2 className="pull-left">Send mass mails</h2>
+      </div>
+      {props.isLoading ? (
+        <p>Loading…</p>
+      ) : (
+        <div className="mess-mail-wrap">
+          <div className="control-group">
+            <label className="radio" htmlFor="mailtoAll">
+              <input
+                checked={mailingType === "all"}
+                data-action="hide"
+                data-toggle="mail-type"
+                id="mailtoAll"
+                name="mailingType"
+                onChange={() => setMailingType("all")}
+                type="radio"
+                value="all"
+              />
+              site.massMail.toAll
+            </label>
+          </div>
+          <div className="control-group">
+            <label className="radio" htmlFor="mailtoPrj">
+              <input
+                checked={mailingType === "projects"}
+                data-action="show"
+                data-toggle="mail-type"
+                id="mailtoPrj"
+                name="mailingType"
+                onChange={() => setMailingType("projects")}
+                type="radio"
+                value="projects"
+              />
+              site.massMail.toProjects
+            </label>
+          </div>
+          <div className={isProjectMode ? "" : "hide"} id="project-list-wrap">
+            <div className="input-append">
+              <input
+                id="input-project"
+                onChange={(event) => setProjectInput(event.currentTarget.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    addProject();
+                  }
+                }}
+                type="text"
+                value={projectInput}
+              />
+              <button className="ybtn" id="select-project" onClick={addProject} type="button">
+                Select
+              </button>
+            </div>
+            <div id="selected-projects">
+              {selectedProjects.map((projectName) => (
+                <span className="label label-info" key={projectName}>
+                  {projectName}
+                  <button
+                    aria-label={`Remove ${projectName}`}
+                    className="close"
+                    onClick={() => removeProject(projectName)}
+                    type="button"
+                  >
+                    x
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="actions">
+            <button
+              className="ybtn ybtn-primary"
+              disabled={props.isResolving || !isReady}
+              id="write-email"
+              onClick={resolveRecipients}
+              type="button"
+            >
+              site.massMail.write
+            </button>
+          </div>
+          <form action={mailtoAction} id="massMailForm" method="post" />
+        </div>
       )}
     </SiteAdminLayout>
   );

@@ -920,3 +920,85 @@ async fn site_admin_mail_requires_admin_and_sends_legacy_test_mail() {
 
     std::env::remove_var("SMTP_FROM");
 }
+
+#[tokio::test]
+async fn site_admin_massmail_requires_admin_and_resolves_legacy_mail_list() {
+    let (app, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "admin").await;
+    let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
+    let (_, outside_cookie, _) = register_user(app.clone(), "outside").await;
+    mark_site_admin(&db, admin_id).await;
+    let project_id = create_project(&db, "admin", "projectYobi", "overview").await;
+    AppRepository::new(db.clone())
+        .add_project_membership(project_id, member_id, "member")
+        .await
+        .expect("project membership");
+
+    let forbidden = rest_get(
+        app.clone(),
+        "/yona/api/v1/sites/massmail",
+        Some(&outside_cookie),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let massmail = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/sites/massmail",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(massmail["ok"], true);
+
+    let invalid_csrf = rest_post_json(
+        app.clone(),
+        "/yona/api/v1/sites/mail-list",
+        Some(&admin_cookie),
+        None,
+        json!({ "all": true }),
+    )
+    .await;
+    assert_eq!(invalid_csrf.status(), StatusCode::FORBIDDEN);
+
+    let forbidden_post = rest_post_json(
+        app.clone(),
+        "/yona/api/v1/sites/mail-list",
+        Some(&member_cookie),
+        Some(&member_csrf),
+        json!({ "all": true }),
+    )
+    .await;
+    assert_eq!(forbidden_post.status(), StatusCode::FORBIDDEN);
+
+    let all = response_json(
+        rest_post_json(
+            app.clone(),
+            "/yona/api/v1/sites/mail-list",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            json!({ "all": true }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        all["emails"],
+        json!(["admin@example.com", "member@example.com", "outside@example.com"])
+    );
+
+    let project = response_json(
+        rest_post_json(
+            app,
+            "/yona/api/v1/sites/mail-list",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            json!({ "projects": ["admin/projectYobi"] }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(project["emails"], json!(["member@example.com"]));
+}
