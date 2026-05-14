@@ -18,6 +18,8 @@
 - `yona-original/app/controllers/ProjectApp.java`
 - `yona-original/app/views/project/webhooks.scala.html`
 - `yona-original/app/views/project/partial_webhooks_list.scala.html`
+- `yona-original/app/controllers/StatisticsApp.java`
+- `yona-original/app/views/project/statistics.scala.html`
 - `yona-original/app/models/Webhook.java`
 - `yona-original/app/models/enumeration/WebhookType.java`
 
@@ -47,6 +49,7 @@
 | `RecentlyVisitedProjectsTest` and `WatchProjectAppTest` | recent visits dedupe/reorder and favorites remain workspace-local behavior | `crates/domain` workspace service + `crates/persistence` workspace repo + `frontend` route/UI test |
 | `ProjectApp.watchers` and `project/watchers.scala.html` | watcher list is project READ-gated and shows only actual watchers who can access the project | `/api/v1/owners/:owner/projects/:project/watchers` + `frontend/src/routes/$owner/$projectName/watchers` |
 | `ProjectApp.webhooks/newWebhook/deleteWebhook` and `project/webhooks.scala.html` | webhook management is project UPDATE-gated and preserves payload URL, secret, webhook type, and git-push-only fields | `/api/v1/owners/:owner/projects/:project/webhooks` + `frontend/src/routes/$owner/$projectName/webhooks` |
+| `StatisticsApp.statistics` and `project/statistics.scala.html` | statistics route is a project-read page shell whose only body is `Under Construction` | `frontend/src/routes/$owner/$projectName/statistics` |
 
 ## Explicit Gaps
 
@@ -55,7 +58,7 @@
 - org enrollment management
 - full workspace settings and default landing UX parity
 - project member management beyond read-only summary
-- webhook delivery/payload/HMAC/history, change VCS, statistics
+- webhook delivery/payload/HMAC/history and change VCS
 
 이 항목들은 후속 follow-up과 provenance gap으로 계속 남는다.
 
@@ -78,3 +81,9 @@
 - Delete is intentionally project-scoped in the Rust app surface even though the legacy controller deletes by raw id after the route-level update gate.
 - The frontend route `/:owner/:project/webhooks` preserves the legacy `.page-wrap-outer`, `.project-page-wrap.webhook-editor-wrap`, `#formNewWebhook`, `.new-webhook-wrap`, `.form-legend`, `.input-webhook-payload`, `.input-webhook-secret`, `#gitPush`, `#webhooksList`, `.webhook-list-wrap`, `.row-fluid.list-item.vertical-align`, and delete-button `data-request-*` anchors.
 - Webhook event payload generation, HTTP delivery, HMAC signing, retry/history, and event-specific dispatch are still Phase 5 integration follow-ups.
+
+## Phase 2R Delivery Note
+
+- `Phase 2R` restores the project statistics route from `StatisticsApp.statistics` and `project/statistics.scala.html`.
+- Legacy Yona does not provide metrics on this page; it renders only `.page-wrap-outer`, `.project-page-wrap`, and `<h1>Under Construction</h1>`.
+- The Rust route `/:owner/:project/statistics` reuses the existing project container read to preserve project visibility handling and intentionally does not add new statistics APIs or invented metrics.
