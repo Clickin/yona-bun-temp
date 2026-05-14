@@ -2495,6 +2495,24 @@ struct RestProjectOverviewBody {
     overview: String,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectWatcher {
+    avatar_url: String,
+    login_id: String,
+    user_id: i64,
+    user_label: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectWatchersResponse {
+    owner_name: String,
+    project_name: String,
+    total_count: u32,
+    watchers: Vec<RestProjectWatcher>,
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RestProjectLabelCreateBody {
@@ -4414,6 +4432,16 @@ fn build_rest_org_project_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
                     let service = service.clone();
                     async move { rest_read_project_members(headers, owner_name, project_name, service).await }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/watchers",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move { rest_read_project_watchers(headers, owner_name, project_name, service).await }
                 }
             }),
         )
@@ -6481,6 +6509,62 @@ async fn rest_read_project_members(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_read_project_watchers(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project watchers require repository backend",
+        ));
+    };
+    let authorization = require_project_read(repository, &owner_name, &project_name, actor_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let watcher_list = repository
+        .list_project_watchers(authorization.project.id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+
+    let mut watchers = Vec::new();
+    for watcher in watcher_list.watchers {
+        let Some(watcher_authorization) = repository
+            .read_project_authorization(&owner_name, &project_name, Some(watcher.user_id))
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+        else {
+            continue;
+        };
+        if !project_read_allowed(&watcher_authorization, false)
+            .map_err(RestRouteError::from_connect_error)?
+        {
+            continue;
+        }
+        watchers.push(RestProjectWatcher {
+            avatar_url: gravatar_url(&watcher.email_address),
+            login_id: watcher.login_id,
+            user_id: watcher.user_id,
+            user_label: watcher.user_label,
+        });
+    }
+
+    Ok(Json(RestProjectWatchersResponse {
+        owner_name,
+        project_name,
+        total_count: watchers.len() as u32,
+        watchers,
+    })
+    .into_response())
 }
 
 async fn rest_update_project(

@@ -341,6 +341,32 @@ test.beforeEach(async ({ page }) => {
     });
   });
 
+  await page.route(apiV1Route("/owners/admin/projects/projectYobi/watchers"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        ownerName: "admin",
+        projectName: "projectYobi",
+        totalCount: 2,
+        watchers: [
+          {
+            avatarUrl: "/avatars/admin.png",
+            loginId: "admin",
+            userId: 1,
+            userLabel: "Admin",
+          },
+          {
+            avatarUrl: "/avatars/nori.png",
+            loginId: "nori",
+            userId: 2,
+            userLabel: "Nori",
+          },
+        ],
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
   await page.route(apiV1Route("/projects/admin/projectYobi/issues/1"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
@@ -1126,6 +1152,21 @@ test("project issue label management route renders the legacy label editor shell
   await page.locator('#copyLabel input[name="projectName"]').fill("sourceLabels");
   await page.locator("#copyLabel").getByRole("button", { name: "label.copy" }).click();
   await expect(page.getByText("Copied")).toBeVisible();
+});
+
+test("project watchers route renders the legacy watcher directory shell", async ({ page }) => {
+  await page.goto("/yona/admin/projectYobi/watchers");
+  await expect(page.getByText("project.watcher.title")).toBeVisible();
+  await expect(page.getByText("project.watcher.description")).toBeVisible();
+  await expect(page.locator(".page-wrap-outer .project-page-wrap")).toBeVisible();
+  await expect(page.locator("ul.members.project.row-fluid")).toBeVisible();
+  await expect(page.locator("li.member.span6.span-hard-wrap")).toHaveCount(2);
+  await expect(page.locator(".member-name", { hasText: "Admin" })).toBeVisible();
+  await expect(page.locator(".member-id", { hasText: "@nori" })).toBeVisible();
+  await expect(page.locator('a.avatar-wrap[href="/yona/admin"] img')).toHaveAttribute(
+    "src",
+    "/avatars/admin.png",
+  );
 });
 
 test("project milestone routes render list detail and form shells", async ({ page }) => {

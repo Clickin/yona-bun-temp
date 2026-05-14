@@ -46,6 +46,10 @@
 - Phase 6 label copy complete: `POST /api/v1/owners/:owner/projects/:project/labels/copy` and legacy direct `POST /:owner/:project/copyLabels` copy readable source project labels into an updatable target while reusing duplicate labels/categories.
 - Remaining Phase 2 packets: notification read state/full SMTP batching and group sharer mutation if legacy evidence requires it. Legacy external `/-_-api/v1/**` compatibility is no longer an app Phase 2 packet; it belongs to a separate migrator/export/import deliverable.
 
+## Phase 1 closeout follow-ups
+
+- Project watchers page complete: `GET /api/v1/owners/:owner/projects/:project/watchers` and `/:owner/:project/watchers` list actual project watchers behind project READ ACL with legacy `project/watchers.scala.html` class anchors.
+
 ## Phase 3: 저장소와 VCS
 
 - Phase 3A complete: read-only Git code browser with existing repo detection, no-head state, branch selector, breadcrumbs, folder entries, and text file view.

@@ -430,7 +430,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 | 프로젝트 설정        | 이름/설명/공개범위 변경, 메뉴 토글                 | ✅ 구현           | 1     |
 | 프로젝트 삭제        | 확인 + 삭제                                        | gap               | 2     |
 | 멤버 관리            | 멤버 추가/삭제/역할변경                            | gap (읽기만 구현) | 2     |
-| 감시자 (Watchers)    | 프로젝트 감시/해제, 감시자 목록                    | ✅ 토글 구현      | 1     |
+| 감시자 (Watchers)    | 프로젝트 감시/해제, 감시자 목록                    | ✅ 구현           | 1     |
 | 즐겨찾기             | 프로젝트 즐겨찾기 토글                             | ✅ 구현           | 1     |
 | 가입 요청            | 비멤버가 가입 요청/취소                            | ✅ 구현           | 1     |
 | 웹훅 관리            | CRUD, event type, secret                           | gap               | 5     |
@@ -448,6 +448,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 - [ ] 공개범위별 접근 제어: public(누구나 읽기), protected(조직 멤버 읽기), private(프로젝트 멤버만)
 - [ ] site_admin은 모든 프로젝트에 read + write 권한 (legacy `ProjectApp` 동작)
 - [ ] 프로젝트 목록 페이지네이션: 한 페이지 10개, legacy `pageNum` 방식
+- [x] `/:owner/:project/watchers`는 READ 가능한 프로젝트의 실제 watcher 목록을 legacy `project/watchers.scala.html` class anchor로 표시한다
 
 ---
 

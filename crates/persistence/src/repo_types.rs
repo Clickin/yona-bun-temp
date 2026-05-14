@@ -727,6 +727,19 @@ pub struct ProjectMemberDirectoryRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectWatcherRecord {
+    pub email_address: String,
+    pub login_id: String,
+    pub user_id: i64,
+    pub user_label: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectWatcherListRecord {
+    pub watchers: Vec<ProjectWatcherRecord>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectMenuSettingsRecord {
     pub board: bool,
     pub code: bool,

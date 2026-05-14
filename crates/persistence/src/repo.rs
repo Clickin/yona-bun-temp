@@ -20,18 +20,19 @@ use crate::repo_types::{
     ProjectIssueListRecord, ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord,
     ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
     ProjectMilestoneSummaryRecord, ProjectPostingListItemRecord, ProjectPostingListRecord,
-    ProjectRecord, ProjectViewerRecord, PullRequestCommitRecord, PullRequestDetailRecord,
-    PullRequestEventRecord, PullRequestListFilter, PullRequestListItemRecord,
-    PullRequestListRecord, PullRequestReviewInput, PullRequestStateInput,
-    PullRequestThreadStateInput, PullRequestUserRecord, ReviewCommentRecord,
-    ReviewThreadListFilter, ReviewThreadListRecord, ReviewThreadRecord, SearchContextRecord,
-    SearchCountsRecord, SearchItemRecord, SearchRepositoryInput, SearchResultRecord, SearchScope,
-    ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateIssueCommentInput,
-    UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput,
-    UpdatePostingInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
-    UpdateProjectLabelInput, UpdatePullRequestInput, UserIssueCandidateRecord, UserIssueListFilter,
-    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
-    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    ProjectRecord, ProjectViewerRecord, ProjectWatcherListRecord, ProjectWatcherRecord,
+    PullRequestCommitRecord, PullRequestDetailRecord, PullRequestEventRecord,
+    PullRequestListFilter, PullRequestListItemRecord, PullRequestListRecord,
+    PullRequestReviewInput, PullRequestStateInput, PullRequestThreadStateInput,
+    PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
+    ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
+    SearchRepositoryInput, SearchResultRecord, SearchScope, ToggleFavoriteIssueResult,
+    ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
+    UpdateOrganizationInput, UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
+    UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestInput,
+    UserIssueCandidateRecord, UserIssueListFilter, WatchedProjectNotificationsRecord,
+    WorkspaceEmailRecord, WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
+    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
@@ -4737,6 +4738,40 @@ impl AppRepository {
             .filter(watch::Column::ResourceId.eq(Some(project_id.to_string())))
             .count(&self.db)
             .await? as u32)
+    }
+
+    pub async fn list_project_watchers(
+        &self,
+        project_id: i64,
+    ) -> Result<ProjectWatcherListRecord, DbErr> {
+        let watch_rows = watch::Entity::find()
+            .filter(watch::Column::ResourceType.eq(Some("PROJECT".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(project_id.to_string())))
+            .all(&self.db)
+            .await?;
+
+        let mut watchers = Vec::new();
+        for watch_row in watch_rows {
+            let Some(user_id) = watch_row.user_id else {
+                continue;
+            };
+            let Some(user) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+                continue;
+            };
+            let login_id = user.login_id.unwrap_or_default();
+            if login_id.is_empty() {
+                continue;
+            }
+            watchers.push(ProjectWatcherRecord {
+                email_address: user.email.unwrap_or_default(),
+                login_id,
+                user_id,
+                user_label: user.name.unwrap_or_default(),
+            });
+        }
+        watchers.sort_by(|left, right| left.login_id.cmp(&right.login_id));
+
+        Ok(ProjectWatcherListRecord { watchers })
     }
 
     pub async fn read_project_menu_settings(

@@ -875,6 +875,70 @@ async fn rest_project_routes_cover_directory_views_and_mutations() {
 }
 
 #[tokio::test]
+async fn rest_project_watchers_lists_actual_watchers_with_read_acl() {
+    let (app, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/watch",
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+
+    let watchers = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/watchers",
+            None,
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(watchers["ownerName"], "owner");
+    assert_eq!(watchers["projectName"], "projectYobi");
+    assert_eq!(watchers["totalCount"], 1);
+    assert_eq!(watchers["watchers"][0]["loginId"], "guest");
+    assert_eq!(watchers["watchers"][0]["userLabel"], "guest");
+    assert!(watchers["watchers"][0]["avatarUrl"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("gravatar"));
+
+    create_project_rest(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "privateYobi",
+        "private watchers",
+        "private",
+    )
+    .await;
+    let forbidden = rest(
+        app,
+        Method::GET,
+        "/yona/api/v1/owners/owner/projects/privateYobi/watchers",
+        None,
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
 async fn rest_issue_meta_routes_manage_participation_assignment_sharing_and_comment_votes() {
     let (app, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;

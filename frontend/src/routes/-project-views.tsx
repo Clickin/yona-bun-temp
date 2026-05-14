@@ -1,6 +1,7 @@
 import * as React from "react";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { BoardPostDetail } from "../api/boards";
+import type { ProjectWatchersResponse } from "../api/org-project";
 import type { ProjectDetailViewModel } from "./-view-models";
 
 export function buildProjectHref(
@@ -261,7 +262,17 @@ export function ProjectDetailPage(props: {
       </section>
       <section>
         <h2>Watchers</h2>
-        <p>{detail.watchCount ?? 0}</p>
+        <a
+          className="btn watcher-count no-border"
+          href={buildProjectHref(
+            props.runtimeConfig,
+            detail.ownerName,
+            detail.projectName,
+            "watchers",
+          )}
+        >
+          {detail.watchCount ?? 0}
+        </a>
       </section>
       <section>
         <h2>Clone URL</h2>
@@ -363,6 +374,52 @@ export function ProjectDetailPage(props: {
           <p>{`Progress: ${detail.currentMilestone.completionPercent}%`}</p>
         </section>
       ) : null}
+    </main>
+  );
+}
+
+export function ProjectWatchersPage(props: {
+  detail: ProjectWatchersResponse | null | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const detail = props.detail ?? {
+    ownerName: "",
+    projectName: "",
+    totalCount: 0,
+    watchers: [],
+  };
+
+  return (
+    <main className="app-shell">
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <h4>
+            <strong>project.watcher.title</strong>
+          </h4>
+          <p>project.watcher.description</p>
+          <ul className="members project row-fluid">
+            {detail.watchers.map((watcher) => (
+              <li className="member span6 span-hard-wrap" key={watcher.loginId}>
+                <a
+                  className="avatar-wrap mlarge pull-left mr10"
+                  href={prefixBasePath(props.runtimeConfig.basePath, `/${watcher.loginId}`)}
+                >
+                  {watcher.avatarUrl ? (
+                    <img
+                      alt={`${watcher.userLabel || watcher.loginId} avatar`}
+                      height={64}
+                      src={watcher.avatarUrl}
+                      width={64}
+                    />
+                  ) : null}
+                </a>
+                <div className="member-name">{watcher.userLabel || watcher.loginId}</div>
+                <div className="member-id">{`@${watcher.loginId}`}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </main>
   );
 }
