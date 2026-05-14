@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   DEFAULT_SITE_ISSUES_QUERY,
@@ -16,6 +16,9 @@ import {
   normalizeSiteUsersQuery,
   SITE_ISSUE_STATES,
   SITE_USER_STATES,
+  toggleSiteUserAccountLockRest,
+  toggleSiteUserGuestModeRest,
+  toggleSiteUserRoleRest,
   type SiteIssueListItem,
   type SiteIssuesQueryInput,
   type SiteIssuesResponse,
@@ -32,6 +35,7 @@ import {
   type SiteUserState,
 } from "../../../api/site-admin";
 import { useAppRuntime } from "../../../app-runtime-context";
+import { apiQueryKeys } from "../../../api/query-keys";
 import { prefixBasePath, type RuntimeConfig } from "../../../runtime-config";
 import {
   classifyConnectFailure,
@@ -181,9 +185,21 @@ function siteIssuesHref(
   return siteHref(runtimeConfig, `/sites/issueList?${params}`);
 }
 
+function siteUserActionApiHref(
+  runtimeConfig: RuntimeConfig,
+  loginId: string,
+  action: "toggle-account-lock" | "toggle-guest-mode" | "toggle-site-admin",
+): string {
+  return prefixBasePath(
+    runtimeConfig.basePath,
+    `/api/v1/sites/users/${encodeURIComponent(loginId)}/${action}`,
+  );
+}
+
 function SiteAdminRouteComponent() {
   const { pageName } = Route.useParams();
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const queryClient = useQueryClient();
   const routeHref = `/sites/${pageName}`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
   const userQuery = React.useMemo(readSiteUsersQuery, [pageName]);
@@ -206,6 +222,31 @@ function SiteAdminRouteComponent() {
   const issueListQuery = useQuery({
     ...listSiteIssuesQueryOptions(runtimeConfig, issueQuery),
     enabled: canRender && pageName === "issueList",
+  });
+  const userActionError = React.useCallback(
+    (error: Error, fallback: string) => {
+      setErrorMessage(error instanceof Error ? error.message : fallback);
+    },
+    [setErrorMessage],
+  );
+  const toggleGuestMutation = useMutation({
+    mutationFn: (loginId: string) => toggleSiteUserGuestModeRest(runtimeConfig, csrfToken, loginId),
+    onError: (error) => userActionError(error, "Toggle guest mode failed."),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: [...apiQueryKeys.v1(), "sites", "users"] }),
+  });
+  const toggleAccountLockMutation = useMutation({
+    mutationFn: (loginId: string) =>
+      toggleSiteUserAccountLockRest(runtimeConfig, csrfToken, loginId),
+    onError: (error) => userActionError(error, "Toggle account lock failed."),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: [...apiQueryKeys.v1(), "sites", "users"] }),
+  });
+  const toggleSiteAdminMutation = useMutation({
+    mutationFn: (loginId: string) => toggleSiteUserRoleRest(runtimeConfig, csrfToken, loginId),
+    onError: (error) => userActionError(error, "Toggle site-admin role failed."),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: [...apiQueryKeys.v1(), "sites", "users"] }),
   });
 
   useDocumentTitle(
@@ -338,6 +379,14 @@ function SiteAdminRouteComponent() {
   return (
     <SiteAdminUserListPage
       isLoading={userListQuery.isLoading}
+      isMutating={
+        toggleGuestMutation.isPending ||
+        toggleAccountLockMutation.isPending ||
+        toggleSiteAdminMutation.isPending
+      }
+      onToggleAccountLock={(loginId) => toggleAccountLockMutation.mutate(loginId)}
+      onToggleGuestMode={(loginId) => toggleGuestMutation.mutate(loginId)}
+      onToggleSiteAdminRole={(loginId) => toggleSiteAdminMutation.mutate(loginId)}
       query={userQuery}
       response={userListQuery.data}
       runtimeConfig={runtimeConfig}
@@ -720,6 +769,10 @@ function SiteAdminProjectRow(props: { item: SiteProjectListItem; runtimeConfig: 
 
 function SiteAdminUserListPage(props: {
   isLoading: boolean;
+  isMutating: boolean;
+  onToggleAccountLock: (loginId: string) => void;
+  onToggleGuestMode: (loginId: string) => void;
+  onToggleSiteAdminRole: (loginId: string) => void;
   query: SiteUsersQueryInput;
   response: SiteUsersResponse | undefined;
   runtimeConfig: RuntimeConfig;
@@ -790,8 +843,12 @@ function SiteAdminUserListPage(props: {
         <ul className="user-list-wrap">
           {items.map((item) => (
             <SiteAdminUserRow
+              isMutating={props.isMutating}
               item={item}
               key={item.id}
+              onToggleAccountLock={props.onToggleAccountLock}
+              onToggleGuestMode={props.onToggleGuestMode}
+              onToggleSiteAdminRole={props.onToggleSiteAdminRole}
               query={props.query}
               runtimeConfig={props.runtimeConfig}
             />
@@ -818,7 +875,11 @@ function SiteAdminUserListPage(props: {
 }
 
 function SiteAdminUserRow(props: {
+  isMutating: boolean;
   item: SiteUserListItem;
+  onToggleAccountLock: (loginId: string) => void;
+  onToggleGuestMode: (loginId: string) => void;
+  onToggleSiteAdminRole: (loginId: string) => void;
   query: SiteUsersQueryInput;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -858,12 +919,30 @@ function SiteAdminUserRow(props: {
         <div className="span5 listitem-col action-buttons">
           <button
             className={`ybtn ybtn-small ${props.item.isGuest ? "ybtn-success" : ""}`}
-            disabled
+            data-request-method="post"
+            data-request-uri={siteUserActionApiHref(
+              props.runtimeConfig,
+              props.item.loginId,
+              "toggle-guest-mode",
+            )}
+            disabled={props.isMutating}
+            onClick={() => props.onToggleGuestMode(props.item.loginId)}
             type="button"
           >
             {props.item.isGuest ? "Make normal user" : "Make guest"}
           </button>
-          <button className="ybtn ybtn-small" disabled type="button">
+          <button
+            className="ybtn ybtn-small"
+            data-request-method="post"
+            data-request-uri={siteUserActionApiHref(
+              props.runtimeConfig,
+              props.item.loginId,
+              "toggle-account-lock",
+            )}
+            disabled={props.isMutating}
+            onClick={() => props.onToggleAccountLock(props.item.loginId)}
+            type="button"
+          >
             {props.item.state === "locked" ? "Unlock account" : "Lock account"}
           </button>
           <button className="ybtn ybtn-small" disabled type="button">
@@ -871,7 +950,14 @@ function SiteAdminUserRow(props: {
           </button>
           <button
             className={`ybtn ybtn-small ${props.item.isSiteAdmin ? "ybtn-info" : "label-info"}`}
-            disabled
+            data-request-method="post"
+            data-request-uri={siteUserActionApiHref(
+              props.runtimeConfig,
+              props.item.loginId,
+              "toggle-site-admin",
+            )}
+            disabled={props.isMutating}
+            onClick={() => props.onToggleSiteAdminRole(props.item.loginId)}
             type="button"
           >
             {props.item.isSiteAdmin ? "Revoke site admin" : "Make site admin"}

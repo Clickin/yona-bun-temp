@@ -123,7 +123,11 @@ test("renders legacy site-admin user list shell and filters without placeholders
   await expect(page.locator(".nav-tabs li.active")).toContainText("Unlocked");
   await expect(page.locator(".user-list-wrap .user-name")).toHaveText("Member");
   await expect(page.locator(".action-buttons button")).toHaveCount(5);
-  await expect(page.locator(".action-buttons button").first()).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Make guest" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Lock account" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Make site admin" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Reset password" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Delete" })).toBeDisabled();
 });
 
 test("renders forbidden shell when site-admin API rejects the viewer", async ({ page }) => {
@@ -145,6 +149,105 @@ test("renders forbidden shell when site-admin API rejects the viewer", async ({ 
 
   await expect(page.getByRole("heading", { name: "Forbidden" })).toBeVisible();
   await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
+});
+
+test("posts legacy site-admin user row action toggles and refreshes the list", async ({ page }) => {
+  let isGuest = false;
+  let isSiteAdmin = false;
+  let state = "active";
+  const seenActions: string[] = [];
+
+  await page.route(apiV1Route("/sites/users**"), async (route) => {
+    if (route.request().method() === "GET") {
+      const items =
+        state === "active"
+          ? [
+              {
+                avatarUrl: "https://example.test/member.png",
+                createdAt: "2026-05-01T00:00:00",
+                createdLabel: "2026-05-01",
+                displayName: "Member",
+                emailAddress: "member@example.com",
+                id: "2",
+                isGuest,
+                isSiteAdmin,
+                lastStateModifiedAt: "",
+                lastStateModifiedLabel: "",
+                loginId: "member",
+                state,
+              },
+            ]
+          : [];
+      await route.fulfill({
+        body: JSON.stringify({
+          hasMore: false,
+          items,
+          pageNum: 1,
+          pageSize: 30,
+          query: "member",
+          state: "ACTIVE",
+          tabs: [
+            { state: "ACTIVE", total: state === "active" ? 1 : 0 },
+            { state: "LOCKED", total: state === "locked" ? 1 : 0 },
+            { state: "DELETED", total: 0 },
+            { state: "GUEST", total: isGuest ? 1 : 0 },
+            { state: "SITE_ADMIN", total: isSiteAdmin ? 1 : 0 },
+          ],
+          total: items.length,
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+      return;
+    }
+
+    const path = new URL(route.request().url()).pathname;
+    seenActions.push(path);
+    if (path.endsWith("/toggle-guest-mode")) {
+      isGuest = !isGuest;
+    } else if (path.endsWith("/toggle-account-lock")) {
+      state = state === "locked" ? "active" : "locked";
+    } else if (path.endsWith("/toggle-site-admin")) {
+      isSiteAdmin = !isSiteAdmin;
+    }
+    await route.fulfill({
+      body: JSON.stringify({
+        avatarUrl: "https://example.test/member.png",
+        createdAt: "2026-05-01T00:00:00",
+        createdLabel: "2026-05-01",
+        displayName: "Member",
+        emailAddress: "member@example.com",
+        id: "2",
+        isGuest,
+        isSiteAdmin,
+        lastStateModifiedAt: "",
+        lastStateModifiedLabel: "",
+        loginId: "member",
+        state,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/sites/userList?state=ACTIVE&query=member");
+
+  const makeGuest = page.getByRole("button", { name: "Make guest" });
+  await expect(makeGuest).toBeEnabled();
+  await makeGuest.click();
+  await expect(page.getByRole("button", { name: "Make normal user" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Make site admin" }).click();
+  await expect(page.getByRole("button", { name: "Revoke site admin" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Lock account" }).click();
+  await expect(page.getByText("No users found.")).toBeVisible();
+
+  expect(seenActions).toEqual([
+    "/yona/api/v1/sites/users/member/toggle-guest-mode",
+    "/yona/api/v1/sites/users/member/toggle-site-admin",
+    "/yona/api/v1/sites/users/member/toggle-account-lock",
+  ]);
 });
 
 test("renders legacy site-admin project list shell and filters without placeholders", async ({

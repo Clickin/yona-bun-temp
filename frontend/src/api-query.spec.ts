@@ -23,6 +23,9 @@ import {
   listSitePostsQueryOptions,
   listSiteProjectsQueryOptions,
   listSiteUsersQueryOptions,
+  toggleSiteUserAccountLockRest,
+  toggleSiteUserGuestModeRest,
+  toggleSiteUserRoleRest,
 } from "./api/site-admin";
 
 describe("api query keys", () => {
@@ -305,6 +308,41 @@ describe("api query keys", () => {
       }),
     );
     expect(options.queryFn).toEqual(expect.any(Function));
+  });
+
+  it("uses POST for site-admin user action REST mutations", async () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const requests: string[] = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      requests.push(`${init?.method ?? ""} ${String(input)}`);
+      return new Response(
+        JSON.stringify({
+          avatarUrl: "",
+          createdAt: "",
+          createdLabel: "",
+          displayName: "Member",
+          emailAddress: "member@example.com",
+          id: "2",
+          isGuest: false,
+          isSiteAdmin: true,
+          lastStateModifiedAt: "",
+          lastStateModifiedLabel: "",
+          loginId: "member",
+          state: "active",
+        }),
+        { headers: { "content-type": "application/json" }, status: 200 },
+      );
+    };
+
+    await toggleSiteUserRoleRest(runtimeConfig, "csrf", "member", fetchImpl);
+    await toggleSiteUserAccountLockRest(runtimeConfig, "csrf", "member", fetchImpl);
+    await toggleSiteUserGuestModeRest(runtimeConfig, "csrf", "member", fetchImpl);
+
+    expect(requests).toEqual([
+      "POST /yona/api/v1/sites/users/member/toggle-site-admin",
+      "POST /yona/api/v1/sites/users/member/toggle-account-lock",
+      "POST /yona/api/v1/sites/users/member/toggle-guest-mode",
+    ]);
   });
 
   it("uses PATCH for board update REST mutations", async () => {

@@ -3510,6 +3510,56 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/sites/users/{login_id}/toggle-site-admin",
+            post({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_toggle_site_user_role(headers, login_id, session_manager, backend)
+                            .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/sites/users/{login_id}/toggle-account-lock",
+            post({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_toggle_site_user_account_lock(
+                            headers,
+                            login_id,
+                            session_manager,
+                            backend,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/sites/users/{login_id}/toggle-guest-mode",
+            post({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_toggle_site_user_guest_mode(headers, login_id, session_manager, backend)
+                            .await
+                    }
+                }
+            }),
+        )
+        .route(
             "/sites/projects",
             get({
                 let session_manager = session_manager.clone();
@@ -6496,33 +6546,33 @@ async fn rest_list_notifications(
     Ok(Json(rest_notifications_response(record, &base_path)))
 }
 
+fn rest_site_user_item(item: persistence::SiteAdminUserRecord) -> RestSiteUserItem {
+    RestSiteUserItem {
+        avatar_url: gravatar_url(&item.email_address),
+        created_at: item
+            .created
+            .map(|created| created.format("%Y-%m-%dT%H:%M:%S").to_string())
+            .unwrap_or_default(),
+        created_label: format_project_date_label(item.created),
+        display_name: item.display_name,
+        email_address: item.email_address,
+        id: item.id.to_string(),
+        is_guest: item.is_guest,
+        is_site_admin: item.is_site_admin,
+        last_state_modified_at: item
+            .last_state_modified
+            .map(|modified| modified.format("%Y-%m-%dT%H:%M:%S").to_string())
+            .unwrap_or_default(),
+        last_state_modified_label: format_project_date_label(item.last_state_modified),
+        login_id: item.login_id,
+        state: item.state,
+    }
+}
+
 fn rest_site_users_response(record: persistence::SiteAdminUserListRecord) -> RestSiteUsersResponse {
     RestSiteUsersResponse {
         has_more: record.has_more,
-        items: record
-            .items
-            .into_iter()
-            .map(|item| RestSiteUserItem {
-                avatar_url: gravatar_url(&item.email_address),
-                created_at: item
-                    .created
-                    .map(|created| created.format("%Y-%m-%dT%H:%M:%S").to_string())
-                    .unwrap_or_default(),
-                created_label: format_project_date_label(item.created),
-                display_name: item.display_name,
-                email_address: item.email_address,
-                id: item.id.to_string(),
-                is_guest: item.is_guest,
-                is_site_admin: item.is_site_admin,
-                last_state_modified_at: item
-                    .last_state_modified
-                    .map(|modified| modified.format("%Y-%m-%dT%H:%M:%S").to_string())
-                    .unwrap_or_default(),
-                last_state_modified_label: format_project_date_label(item.last_state_modified),
-                login_id: item.login_id,
-                state: item.state,
-            })
-            .collect(),
+        items: record.items.into_iter().map(rest_site_user_item).collect(),
         page_num: record.page_num,
         page_size: record.page_size,
         query: record.query,
@@ -6694,6 +6744,90 @@ async fn rest_list_site_users(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(rest_site_users_response(record)))
+}
+
+async fn require_site_admin_repository(
+    headers: &HeaderMap,
+    session_manager: &SessionManager,
+    backend: &PilotBackend,
+) -> Result<PilotRepository, RestRouteError> {
+    let session =
+        require_session(session_manager, headers).map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(session_manager, headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let Some(user_id) = session.user_id else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unauthenticated("missing pilot user"),
+        ));
+    };
+    let PilotBackend::Repository(repository) = backend else {
+        return Err(RestRouteError::not_implemented(
+            "site admin mutation requires repository backend",
+        ));
+    };
+    let actor = repository
+        .find_user_by_id(user_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::unauthenticated("missing pilot user"))
+        })?;
+    if !actor.is_site_admin {
+        return Err(RestRouteError::permission_denied(
+            "site admin mutation is not allowed",
+        ));
+    }
+
+    Ok(repository.clone())
+}
+
+async fn rest_toggle_site_user_role(
+    headers: HeaderMap,
+    login_id: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestSiteUserItem>, RestRouteError> {
+    let repository = require_site_admin_repository(&headers, &session_manager, &backend).await?;
+    let record = repository
+        .toggle_site_admin_role(&login_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("site admin user not found"))?;
+    Ok(Json(rest_site_user_item(record)))
+}
+
+async fn rest_toggle_site_user_account_lock(
+    headers: HeaderMap,
+    login_id: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestSiteUserItem>, RestRouteError> {
+    let repository = require_site_admin_repository(&headers, &session_manager, &backend).await?;
+    let record = repository
+        .toggle_site_user_account_lock(&login_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("site admin user not found"))?;
+    Ok(Json(rest_site_user_item(record)))
+}
+
+async fn rest_toggle_site_user_guest_mode(
+    headers: HeaderMap,
+    login_id: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestSiteUserItem>, RestRouteError> {
+    let repository = require_site_admin_repository(&headers, &session_manager, &backend).await?;
+    let record = repository
+        .toggle_site_user_guest_mode(&login_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("site admin user not found"))?;
+    Ok(Json(rest_site_user_item(record)))
 }
 
 async fn rest_list_site_projects(

@@ -229,20 +229,7 @@ export function normalizeSiteIssuesQuery(
 }
 
 function normalizeSiteUsersResponse(response: Partial<SiteUsersResponse>): SiteUsersResponse {
-  const items = (response.items ?? []).map((item) => ({
-    avatarUrl: item.avatarUrl ?? "",
-    createdAt: item.createdAt ?? "",
-    createdLabel: item.createdLabel ?? "",
-    displayName: item.displayName ?? "",
-    emailAddress: item.emailAddress ?? "",
-    id: item.id ?? "",
-    isGuest: item.isGuest ?? false,
-    isSiteAdmin: item.isSiteAdmin ?? false,
-    lastStateModifiedAt: item.lastStateModifiedAt ?? "",
-    lastStateModifiedLabel: item.lastStateModifiedLabel ?? "",
-    loginId: item.loginId ?? "",
-    state: item.state ?? "",
-  }));
+  const items = (response.items ?? []).map(normalizeSiteUserItem);
   const state = normalizeSiteUserState(response.state);
   return {
     hasMore: response.hasMore ?? false,
@@ -258,6 +245,23 @@ function normalizeSiteUsersResponse(response: Partial<SiteUsersResponse>): SiteU
       total: tab.total ?? 0,
     })),
     total: response.total ?? items.length,
+  };
+}
+
+function normalizeSiteUserItem(item: Partial<SiteUserListItem>): SiteUserListItem {
+  return {
+    avatarUrl: item.avatarUrl ?? "",
+    createdAt: item.createdAt ?? "",
+    createdLabel: item.createdLabel ?? "",
+    displayName: item.displayName ?? "",
+    emailAddress: item.emailAddress ?? "",
+    id: item.id ?? "",
+    isGuest: item.isGuest ?? false,
+    isSiteAdmin: item.isSiteAdmin ?? false,
+    lastStateModifiedAt: item.lastStateModifiedAt ?? "",
+    lastStateModifiedLabel: item.lastStateModifiedLabel ?? "",
+    loginId: item.loginId ?? "",
+    state: item.state ?? "",
   };
 }
 
@@ -360,6 +364,57 @@ export function listSiteUsersRest(
   return restFetch<Partial<SiteUsersResponse>>(runtimeConfig, `/sites/users?${params}`, {
     fetchImpl,
   }).then(normalizeSiteUsersResponse);
+}
+
+function postSiteUserActionRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  loginId: string,
+  action: "toggle-account-lock" | "toggle-guest-mode" | "toggle-site-admin",
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteUserListItem> {
+  return restFetch<Partial<SiteUserListItem>>(
+    runtimeConfig,
+    `/sites/users/${encodeURIComponent(loginId)}/${action}`,
+    {
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
+  ).then(normalizeSiteUserItem);
+}
+
+export function toggleSiteUserRoleRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  loginId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteUserListItem> {
+  return postSiteUserActionRest(runtimeConfig, csrfToken, loginId, "toggle-site-admin", fetchImpl);
+}
+
+export function toggleSiteUserAccountLockRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  loginId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteUserListItem> {
+  return postSiteUserActionRest(
+    runtimeConfig,
+    csrfToken,
+    loginId,
+    "toggle-account-lock",
+    fetchImpl,
+  );
+}
+
+export function toggleSiteUserGuestModeRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  loginId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteUserListItem> {
+  return postSiteUserActionRest(runtimeConfig, csrfToken, loginId, "toggle-guest-mode", fetchImpl);
 }
 
 export function listSiteProjectsRest(

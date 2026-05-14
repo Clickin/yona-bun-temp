@@ -135,6 +135,25 @@ fn site_project_matches_filter(record: &SiteAdminProjectRecord, filter: &str) ->
         || normalize_identity(&record.project_name).contains(&normalized_filter)
 }
 
+fn site_admin_user_record_from_model_with_admin_ids(
+    user: n4user::Model,
+    site_admin_ids: &HashSet<i64>,
+) -> SiteAdminUserRecord {
+    let login_id = user.login_id.unwrap_or_default();
+    let display_name = user.name.unwrap_or_else(|| login_id.clone());
+    SiteAdminUserRecord {
+        created: user.created_date,
+        display_name,
+        email_address: user.email.unwrap_or_default(),
+        id: user.id,
+        is_guest: user.is_guest.unwrap_or_default() != 0,
+        is_site_admin: site_admin_ids.contains(&user.id),
+        last_state_modified: user.last_state_modified_date,
+        login_id,
+        state: user.state.unwrap_or_default(),
+    }
+}
+
 fn issue_assignable_user_matches(user: &n4user::Model, query: &str, search_type: &str) -> bool {
     let query = query.trim();
     let normalized_query = normalize_identity(query);
@@ -723,21 +742,7 @@ impl AppRepository {
             .filter(|user| {
                 normalize_optional(user.login_id.as_deref()).as_deref() != Some("anonymous")
             })
-            .map(|user| {
-                let login_id = user.login_id.unwrap_or_default();
-                let display_name = user.name.unwrap_or_else(|| login_id.clone());
-                SiteAdminUserRecord {
-                    created: user.created_date,
-                    display_name,
-                    email_address: user.email.unwrap_or_default(),
-                    id: user.id,
-                    is_guest: user.is_guest.unwrap_or_default() != 0,
-                    is_site_admin: site_admin_ids.contains(&user.id),
-                    last_state_modified: user.last_state_modified_date,
-                    login_id,
-                    state: user.state.unwrap_or_default(),
-                }
-            })
+            .map(|user| site_admin_user_record_from_model_with_admin_ids(user, &site_admin_ids))
             .collect::<Vec<_>>();
 
         users.sort_by(|left, right| {
@@ -782,6 +787,82 @@ impl AppRepository {
             tabs,
             total,
         })
+    }
+
+    pub async fn toggle_site_admin_role(
+        &self,
+        login_id: &str,
+    ) -> Result<Option<SiteAdminUserRecord>, DbErr> {
+        let Some(user) = self.find_user_model_by_login_id(login_id).await? else {
+            return Ok(None);
+        };
+        if normalize_optional(user.login_id.as_deref()).as_deref() == Some("anonymous") {
+            return Ok(None);
+        }
+
+        if let Some(existing) = site_admin::Entity::find()
+            .filter(site_admin::Column::AdminId.eq(Some(user.id)))
+            .one(&self.db)
+            .await?
+        {
+            site_admin::Entity::delete_by_id(existing.id)
+                .exec(&self.db)
+                .await?;
+        } else {
+            self.ensure_site_admin(user.id).await?;
+        }
+
+        self.site_admin_user_record_from_current_model(user.id)
+            .await
+    }
+
+    pub async fn toggle_site_user_account_lock(
+        &self,
+        login_id: &str,
+    ) -> Result<Option<SiteAdminUserRecord>, DbErr> {
+        let Some(user) = self.find_user_model_by_login_id(login_id).await? else {
+            return Ok(None);
+        };
+        if normalize_optional(user.login_id.as_deref()).as_deref() == Some("anonymous") {
+            return Ok(None);
+        }
+
+        let next_state = if normalize_optional(user.state.as_deref()).as_deref() == Some("active") {
+            "locked"
+        } else {
+            "active"
+        };
+        let mut active = n4user::ActiveModel::from(user);
+        active.state = Set(Some(next_state.to_string()));
+        active.last_state_modified_date = Set(Some(current_datetime()));
+        let updated = active.update(&self.db).await?;
+
+        self.site_admin_user_record_from_current_model(updated.id)
+            .await
+    }
+
+    pub async fn toggle_site_user_guest_mode(
+        &self,
+        login_id: &str,
+    ) -> Result<Option<SiteAdminUserRecord>, DbErr> {
+        let Some(user) = self.find_user_model_by_login_id(login_id).await? else {
+            return Ok(None);
+        };
+        if normalize_optional(user.login_id.as_deref()).as_deref() == Some("anonymous") {
+            return Ok(None);
+        }
+
+        let next_guest = if user.is_guest.unwrap_or_default() == 0 {
+            1
+        } else {
+            0
+        };
+        let mut active = n4user::ActiveModel::from(user);
+        active.is_guest = Set(Some(next_guest));
+        let updated = active.update(&self.db).await?;
+
+        self.site_admin_user_record_from_current_model(updated.id)
+            .await
     }
 
     pub async fn list_site_admin_projects(
@@ -8018,6 +8099,45 @@ impl AppRepository {
             login_id: model.login_id.unwrap_or_default(),
             password_hash: model.password.unwrap_or_default(),
         })
+    }
+
+    async fn find_user_model_by_login_id(
+        &self,
+        login_id: &str,
+    ) -> Result<Option<n4user::Model>, DbErr> {
+        let normalized = normalize_identity(login_id);
+        if normalized.is_empty() {
+            return Ok(None);
+        }
+
+        let users = n4user::Entity::find().all(&self.db).await?;
+        for user in users {
+            if normalize_optional(user.login_id.as_deref()).as_deref() == Some(normalized.as_str())
+            {
+                return Ok(Some(user));
+            }
+        }
+
+        Ok(None)
+    }
+
+    async fn site_admin_user_record_from_current_model(
+        &self,
+        user_id: i64,
+    ) -> Result<Option<SiteAdminUserRecord>, DbErr> {
+        let Some(user) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+            return Ok(None);
+        };
+        let site_admin_ids: HashSet<i64> = site_admin::Entity::find()
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| row.admin_id)
+            .collect();
+        Ok(Some(site_admin_user_record_from_model_with_admin_ids(
+            user,
+            &site_admin_ids,
+        )))
     }
 
     async fn list_connected_social_providers_for_user(

@@ -225,6 +225,24 @@ async fn rest_get(app: axum::Router, uri: &str, cookie_header: Option<&str>) -> 
         .unwrap()
 }
 
+async fn rest_post(
+    app: axum::Router,
+    uri: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+) -> Response<Body> {
+    let mut builder = Request::builder().method(Method::POST).uri(uri);
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+    app.oneshot(builder.body(Body::empty()).unwrap())
+        .await
+        .unwrap()
+}
+
 #[tokio::test]
 async fn site_admin_user_list_requires_site_admin_and_filters_legacy_tabs() {
     let (app, db) = build_app_with_repository().await;
@@ -270,6 +288,104 @@ async fn site_admin_user_list_requires_site_admin_and_filters_legacy_tabs() {
     assert_eq!(site_admins["items"][0]["loginId"], "admin");
     assert_eq!(site_admins["items"][0]["isSiteAdmin"], true);
     assert_eq!(site_admins["tabs"][4]["state"], "SITE_ADMIN");
+}
+
+#[tokio::test]
+async fn site_admin_user_list_actions_require_admin_csrf_and_toggle_legacy_flags() {
+    let (app, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "admin").await;
+    let (member_csrf, member_cookie, _) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let forbidden = rest_post(
+        app.clone(),
+        "/yona/api/v1/sites/users/member/toggle-site-admin",
+        Some(&member_cookie),
+        Some(&member_csrf),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let invalid_csrf = rest_post(
+        app.clone(),
+        "/yona/api/v1/sites/users/member/toggle-account-lock",
+        Some(&admin_cookie),
+        None,
+    )
+    .await;
+    assert_eq!(invalid_csrf.status(), StatusCode::FORBIDDEN);
+
+    let upgraded = response_json(
+        rest_post(
+            app.clone(),
+            "/yona/api/v1/sites/users/member/toggle-site-admin",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(upgraded["loginId"], "member");
+    assert_eq!(upgraded["isSiteAdmin"], true);
+
+    let site_admins = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/sites/users?state=SITE_ADMIN&pageNum=1&pageSize=30",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(site_admins["total"], 2);
+
+    let locked = response_json(
+        rest_post(
+            app.clone(),
+            "/yona/api/v1/sites/users/member/toggle-account-lock",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(locked["loginId"], "member");
+    assert_eq!(locked["state"], "locked");
+
+    let locked_list = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/sites/users?state=LOCKED&pageNum=1&pageSize=30",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(locked_list["items"][0]["loginId"], "member");
+
+    let guest = response_json(
+        rest_post(
+            app.clone(),
+            "/yona/api/v1/sites/users/member/toggle-guest-mode",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(guest["loginId"], "member");
+    assert_eq!(guest["isGuest"], true);
+
+    let guest_list = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/sites/users?state=GUEST&pageNum=1&pageSize=30",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(guest_list["items"][0]["loginId"], "member");
 }
 
 #[tokio::test]

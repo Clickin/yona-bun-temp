@@ -139,9 +139,14 @@ describe("file-route parity harness", () => {
     expect(siteRouteSource).not.toContain("PlaceholderPage");
     expect(siteRouteSource).toContain("SiteAdminUserListPage");
     expect(siteRouteSource).toContain("listSiteUsersQueryOptions");
+    expect(siteRouteSource).toContain("useMutation");
+    expect(siteRouteSource).toContain("toggleSiteUserRoleRest");
+    expect(siteRouteSource).toContain("toggleSiteUserAccountLockRest");
+    expect(siteRouteSource).toContain("toggleSiteUserGuestModeRest");
     expect(siteRouteSource).toContain("site-setting-wrap");
     expect(siteRouteSource).toContain("site-setting-nav");
     expect(siteRouteSource).toContain("user-list-wrap");
+    expect(siteRouteSource).toContain("data-request-uri");
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
     expect(routeTreeSource).toContain("fullPath: '/sites/$pageName'");
   });
