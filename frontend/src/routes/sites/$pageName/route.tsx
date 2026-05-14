@@ -6,6 +6,7 @@ import {
   DEFAULT_SITE_POSTS_QUERY,
   DEFAULT_SITE_PROJECTS_QUERY,
   DEFAULT_SITE_USERS_QUERY,
+  deleteSiteProjectRest,
   listSiteIssuesQueryOptions,
   listSitePostsQueryOptions,
   listSiteProjectsQueryOptions,
@@ -208,6 +209,10 @@ function SiteAdminRouteComponent() {
   const postQuery = React.useMemo(readSitePostsQuery, [pageName]);
   const issueQuery = React.useMemo(readSiteIssuesQuery, [pageName]);
   const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [deleteProjectTarget, setDeleteProjectTarget] = React.useState<{
+    id: string;
+    label: string;
+  } | null>(null);
   const [resetPasswordsByLoginId, setResetPasswordsByLoginId] = React.useState<
     Record<string, string>
   >({});
@@ -261,6 +266,14 @@ function SiteAdminRouteComponent() {
         [response.loginId]: response.newPassword,
       }));
       void queryClient.invalidateQueries({ queryKey: [...apiQueryKeys.v1(), "sites", "users"] });
+    },
+  });
+  const deleteProjectMutation = useMutation({
+    mutationFn: (projectId: string) => deleteSiteProjectRest(runtimeConfig, csrfToken, projectId),
+    onError: (error) => userActionError(error, "Delete project failed."),
+    onSuccess: () => {
+      setDeleteProjectTarget(null);
+      void queryClient.invalidateQueries({ queryKey: [...apiQueryKeys.v1(), "sites", "projects"] });
     },
   });
 
@@ -348,7 +361,12 @@ function SiteAdminRouteComponent() {
   if (pageName === "projectList") {
     return (
       <SiteAdminProjectListPage
+        deleteProjectTarget={deleteProjectTarget}
+        isDeleting={deleteProjectMutation.isPending}
         isLoading={projectListQuery.isLoading}
+        onCancelDeleteProject={() => setDeleteProjectTarget(null)}
+        onConfirmDeleteProject={(projectId) => deleteProjectMutation.mutate(projectId)}
+        onRequestDeleteProject={(target) => setDeleteProjectTarget(target)}
         query={projectQuery}
         response={projectListQuery.data}
         runtimeConfig={runtimeConfig}
@@ -646,7 +664,12 @@ function SiteAdminIssueRow(props: { item: SiteIssueListItem; runtimeConfig: Runt
 }
 
 function SiteAdminProjectListPage(props: {
+  deleteProjectTarget: { id: string; label: string } | null;
+  isDeleting: boolean;
   isLoading: boolean;
+  onCancelDeleteProject: () => void;
+  onConfirmDeleteProject: (projectId: string) => void;
+  onRequestDeleteProject: (target: { id: string; label: string }) => void;
   query: SiteProjectsQueryInput;
   response: SiteProjectsResponse | undefined;
   runtimeConfig: RuntimeConfig;
@@ -698,7 +721,13 @@ function SiteAdminProjectListPage(props: {
       ) : (
         <ul className="project-list-wrap">
           {items.map((item) => (
-            <SiteAdminProjectRow item={item} key={item.id} runtimeConfig={props.runtimeConfig} />
+            <SiteAdminProjectRow
+              isDeleting={props.isDeleting}
+              item={item}
+              key={item.id}
+              onRequestDeleteProject={props.onRequestDeleteProject}
+              runtimeConfig={props.runtimeConfig}
+            />
           ))}
         </ul>
       )}
@@ -717,37 +746,45 @@ function SiteAdminProjectListPage(props: {
           </a>
         ) : null}
       </div>
-      <div aria-hidden="true" className="modal fade" id="alertDeletionWrap">
-        <div className="modal-header">
-          <button className="close" disabled type="button">
-            ×
-          </button>
-          <span id="project-name" />
-          Delete project
-        </div>
-        <div className="modal-body">
-          <p>Project delete remains a follow-up parity slice.</p>
-        </div>
-        <div className="modal-footer">
-          <button
-            aria-label="Delete project"
-            className="ybtn ybtn-danger"
-            disabled
-            id="projectDeleteBtn"
-            type="button"
-          >
+      {props.deleteProjectTarget ? (
+        <div aria-hidden="false" className="modal fade in" id="alertDeletionWrap">
+          <div className="modal-header">
+            <button className="close" onClick={props.onCancelDeleteProject} type="button">
+              ×
+            </button>
+            <span id="project-name">{props.deleteProjectTarget.label}</span>
             Delete project
-          </button>
-          <button aria-label="Cancel project deletion" className="ybtn" disabled type="button">
-            Cancel deletion
-          </button>
+          </div>
+          <div className="modal-body">
+            <p>Delete this project?</p>
+          </div>
+          <div className="modal-footer">
+            <button
+              aria-label="Delete project"
+              className="ybtn ybtn-danger"
+              disabled={props.isDeleting}
+              id="projectDeleteBtn"
+              onClick={() => props.onConfirmDeleteProject(props.deleteProjectTarget?.id ?? "")}
+              type="button"
+            >
+              Delete project
+            </button>
+            <button className="ybtn" onClick={props.onCancelDeleteProject} type="button">
+              Cancel deletion
+            </button>
+          </div>
         </div>
-      </div>
+      ) : null}
     </SiteAdminLayout>
   );
 }
 
-function SiteAdminProjectRow(props: { item: SiteProjectListItem; runtimeConfig: RuntimeConfig }) {
+function SiteAdminProjectRow(props: {
+  isDeleting: boolean;
+  item: SiteProjectListItem;
+  onRequestDeleteProject: (target: { id: string; label: string }) => void;
+  runtimeConfig: RuntimeConfig;
+}) {
   const projectHref = siteHref(props.runtimeConfig, props.item.projectPath);
   const projectLabel = `${props.item.ownerName}/${props.item.projectName}`;
   return (
@@ -775,7 +812,8 @@ function SiteAdminProjectRow(props: { item: SiteProjectListItem; runtimeConfig: 
           data-href={siteHref(props.runtimeConfig, props.item.deletePath)}
           data-project-name={projectLabel}
           data-toggle="delete-project"
-          disabled
+          disabled={props.isDeleting}
+          onClick={() => props.onRequestDeleteProject({ id: props.item.id, label: projectLabel })}
           type="button"
         >
           Delete

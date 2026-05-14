@@ -272,29 +272,43 @@ test("posts legacy site-admin user row action toggles and refreshes the list", a
 test("renders legacy site-admin project list shell and filters without placeholders", async ({
   page,
 }) => {
+  let deleted = false;
+  const seenDeletes: string[] = [];
   await page.route(apiV1Route("/sites/projects**"), async (route) => {
+    if (route.request().method() === "DELETE") {
+      seenDeletes.push(new URL(route.request().url()).pathname);
+      deleted = true;
+      await route.fulfill({
+        body: JSON.stringify({ ok: true }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+      return;
+    }
     const url = new URL(route.request().url());
     const filter = url.searchParams.get("filter") || "";
     await route.fulfill({
       body: JSON.stringify({
         filter,
         hasMore: false,
-        items: [
-          {
-            createdAt: "2026-05-01T00:00:00",
-            createdLabel: "2026-05-01",
-            deletePath: "/sites/project/delete/7",
-            id: "7",
-            logoUrl: "",
-            overview: "Needle overview",
-            ownerName: "admin",
-            projectName: "needleProject",
-            projectPath: "/admin/needleProject",
-          },
-        ],
+        items: deleted
+          ? []
+          : [
+              {
+                createdAt: "2026-05-01T00:00:00",
+                createdLabel: "2026-05-01",
+                deletePath: "/sites/project/delete/7",
+                id: "7",
+                logoUrl: "",
+                overview: "Needle overview",
+                ownerName: "admin",
+                projectName: "needleProject",
+                projectPath: "/admin/needleProject",
+              },
+            ],
         pageNum: 1,
         pageSize: 25,
-        total: 1,
+        total: deleted ? 0 : 1,
       }),
       headers: restJsonHeaders,
       status: 200,
@@ -312,7 +326,13 @@ test("renders legacy site-admin project list shell and filters without placehold
     "data-href",
     "/yona/sites/project/delete/7",
   );
-  await expect(page.locator("[data-toggle='delete-project']")).toBeDisabled();
+  await expect(page.locator("[data-toggle='delete-project']")).toBeEnabled();
+  await page.locator("[data-toggle='delete-project']").click();
+  await expect(page.locator("#alertDeletionWrap")).toBeVisible();
+  await expect(page.locator("#project-name")).toHaveText("admin/needleProject");
+  await page.getByRole("button", { name: "Delete project" }).click();
+  await expect(page.getByText("No projects found.")).toBeVisible();
+  expect(seenDeletes).toEqual(["/yona/api/v1/sites/projects/7"]);
   await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
 });
 

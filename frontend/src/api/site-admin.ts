@@ -64,6 +64,11 @@ export type SiteProjectListItem = {
   projectPath: string;
 };
 
+export type SiteProjectDeleteResponse = {
+  ok: boolean;
+  redirectPath: string;
+};
+
 export type SitePostListItem = {
   authorAvatarUrl: string;
   authorLabel: string;
@@ -307,6 +312,15 @@ function normalizeSiteProjectsResponse(
   };
 }
 
+function normalizeSiteProjectDeleteResponse(
+  response: Partial<SiteProjectDeleteResponse>,
+): SiteProjectDeleteResponse {
+  return {
+    ok: response.ok ?? false,
+    redirectPath: response.redirectPath ?? "/sites/projectList",
+  };
+}
+
 function normalizeSitePostsResponse(response: Partial<SitePostsResponse>): SitePostsResponse {
   const items = (response.items ?? []).map((item) => ({
     authorAvatarUrl: item.authorAvatarUrl ?? "",
@@ -465,6 +479,23 @@ export function listSiteProjectsRest(
   return restFetch<Partial<SiteProjectsResponse>>(runtimeConfig, `/sites/projects?${params}`, {
     fetchImpl,
   }).then(normalizeSiteProjectsResponse);
+}
+
+export function deleteSiteProjectRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  projectId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteProjectDeleteResponse> {
+  return restFetch<Partial<SiteProjectDeleteResponse>>(
+    runtimeConfig,
+    `/sites/projects/${encodeURIComponent(projectId)}`,
+    {
+      csrfToken,
+      fetchImpl,
+      method: "DELETE",
+    },
+  ).then(normalizeSiteProjectDeleteResponse);
 }
 
 export function listSitePostsRest(

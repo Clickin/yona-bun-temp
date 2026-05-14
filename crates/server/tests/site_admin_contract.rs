@@ -244,6 +244,24 @@ async fn rest_post(
         .unwrap()
 }
 
+async fn rest_delete(
+    app: axum::Router,
+    uri: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+) -> Response<Body> {
+    let mut builder = Request::builder().method(Method::DELETE).uri(uri);
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+    app.oneshot(builder.body(Body::empty()).unwrap())
+        .await
+        .unwrap()
+}
+
 #[tokio::test]
 async fn site_admin_user_list_requires_site_admin_and_filters_legacy_tabs() {
     let (app, db) = build_app_with_repository().await;
@@ -416,8 +434,8 @@ async fn site_admin_user_list_actions_require_admin_csrf_and_toggle_legacy_flags
 #[tokio::test]
 async fn site_admin_project_list_requires_site_admin_and_filters_legacy_names() {
     let (app, db) = build_app_with_repository().await;
-    let (_, admin_cookie, admin_id) = register_user(app.clone(), "admin").await;
-    let (_, member_cookie, _) = register_user(app.clone(), "member").await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "admin").await;
+    let (member_csrf, member_cookie, _) = register_user(app.clone(), "member").await;
     create_project(&db, "admin", "alpha", "Alpha overview").await;
     let expected_project_id =
         create_project(&db, "admin", "needleProject", "Needle overview").await;
@@ -434,7 +452,7 @@ async fn site_admin_project_list_requires_site_admin_and_filters_legacy_names() 
 
     let projects = response_json(
         rest_get(
-            app,
+            app.clone(),
             "/yona/api/v1/sites/projects?filter=needle&pageNum=1&pageSize=25",
             Some(&admin_cookie),
         )
@@ -454,6 +472,52 @@ async fn site_admin_project_list_requires_site_admin_and_filters_legacy_names() 
         projects["items"][0]["deletePath"],
         format!("/sites/project/delete/{expected_project_id}")
     );
+
+    let forbidden_delete = rest_delete(
+        app.clone(),
+        &format!("/yona/api/v1/sites/projects/{expected_project_id}"),
+        Some(&member_cookie),
+        Some(&member_csrf),
+    )
+    .await;
+    assert_eq!(forbidden_delete.status(), StatusCode::FORBIDDEN);
+
+    let missing_csrf_delete = rest_delete(
+        app.clone(),
+        &format!("/yona/api/v1/sites/projects/{expected_project_id}"),
+        Some(&admin_cookie),
+        None,
+    )
+    .await;
+    assert_eq!(missing_csrf_delete.status(), StatusCode::FORBIDDEN);
+
+    let deleted = response_json(
+        rest_delete(
+            app.clone(),
+            &format!("/yona/api/v1/sites/projects/{expected_project_id}"),
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(deleted["ok"], true);
+
+    let after_delete = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/sites/projects?filter=needle&pageNum=1&pageSize=25",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(after_delete["total"], 0);
+    assert!(AppRepository::new(db)
+        .read_project_by_id(expected_project_id)
+        .await
+        .unwrap()
+        .is_none());
 }
 
 #[tokio::test]

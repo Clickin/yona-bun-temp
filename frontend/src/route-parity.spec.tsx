@@ -161,6 +161,8 @@ describe("file-route parity harness", () => {
 
     expect(siteRouteSource).toContain("SiteAdminProjectListPage");
     expect(siteRouteSource).toContain("listSiteProjectsQueryOptions");
+    expect(siteRouteSource).toContain("deleteSiteProjectRest");
+    expect(siteRouteSource).toContain("useMutation");
     expect(siteRouteSource).toContain("project-list-wrap");
     expect(siteRouteSource).toContain('data-toggle="delete-project"');
     expect(siteRouteSource).not.toContain("This site-admin page remains a follow-up parity slice");

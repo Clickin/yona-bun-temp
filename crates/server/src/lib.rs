@@ -3596,6 +3596,21 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/sites/projects/{project_id}",
+            delete({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap, Path(project_id): Path<i64>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_delete_site_project(headers, project_id, session_manager, backend)
+                            .await
+                    }
+                }
+            }),
+        )
+        .route(
             "/sites/posts",
             get({
                 let session_manager = session_manager.clone();
@@ -6939,6 +6954,39 @@ async fn rest_list_site_projects(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(rest_site_projects_response(record)))
+}
+
+async fn rest_delete_site_project(
+    headers: HeaderMap,
+    project_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestProjectDeleteResponse>, RestRouteError> {
+    let repository = require_site_admin_repository(&headers, &session_manager, &backend).await?;
+    let project = repository
+        .read_project_by_id(project_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    let deleted = repository
+        .delete_project_by_owner_and_name(&project.owner_name, &project.project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    if !deleted {
+        return Err(RestRouteError::not_found("project not found"));
+    }
+
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), project_id);
+    yona_rust_vcs::delete_repository(&repo_path).map_err(|error| {
+        RestRouteError::internal(format!("failed to delete repository: {error}"))
+    })?;
+
+    Ok(Json(RestProjectDeleteResponse {
+        ok: true,
+        redirect_path: "/sites/projectList".to_string(),
+    }))
 }
 
 async fn rest_list_site_posts(
