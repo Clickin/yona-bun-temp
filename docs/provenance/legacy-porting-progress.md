@@ -16,7 +16,7 @@ Last updated: 2026-05-10
 Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace, organization/project ownership, issue-tracker core behavior, PR/review read surfaces, and board/posting core app behavior.
-- The largest remaining gaps are still code hosting/VCS write/serve flows, PR/review mutations and merge/fork lifecycle, board/posting follow-ups, notification fan-out/read state, webhooks, site admin, full-text/indexed search hardening, and separate migrator/external API compatibility.
+- The largest remaining gaps are still code hosting/VCS write/serve flows, PR/review merge/fork lifecycle, board/posting follow-ups, notification fan-out/read state, webhook delivery/HMAC/history, site admin, full-text/indexed search hardening, and separate migrator/external API compatibility.
 - Percentages are approximate. Update them only when a slice lands with tests and provenance updates.
 
 ## Update Protocol
@@ -42,7 +42,7 @@ Interpretation:
 | Pull Request / Review                   | [~] Started               | Phase 4A restores read-only project/org PR lists, PR detail, changes, and review lists; PR/review mutations remain deferred. |
 | Board / Posting                         | [~] Strong partial        | Project board CRUD/comment/watch/notice/README/label flows and organization board list exist over `/api/v1`; Git README sync, issue template/file edit, and legacy external API compatibility remain. |
 | Search                                  | [~] Strong partial        | Global/project/organization app search exists over `/api/v1` with all legacy result tabs, counts, snippets, pagination, and ACL filtering; full-text/indexed search and external API compatibility remain deferred. |
-| Notifications / Webhooks / Admin / External REST | [ ] Mostly missing | Notification inbox/list and mail queue staging exist; webhooks/admin remain missing, and `/-_-api/v1` compatibility is separate migrator scope. |
+| Notifications / Webhooks / Admin / External REST | [ ] Mostly missing | Notification inbox/list, mail queue staging, and project webhook CRUD exist; webhook delivery/admin remain missing, and `/-_-api/v1` compatibility is separate migrator scope. |
 
 ## Foundation / Deployment / DB
 
@@ -132,7 +132,7 @@ Interpretation:
 - [ ] Full project member management
 - [ ] Project delete confirmation flow
 - [x] Project watchers page
-- [ ] Webhooks
+- [x] Project webhook CRUD
 - [ ] Project transfer
 - [ ] Git/SVN type change
 - [ ] Project statistics
@@ -305,7 +305,7 @@ Interpretation:
 
 ## Webhooks
 
-- [ ] Webhook CRUD
+- [x] Webhook CRUD
 - [ ] Event payload generation
 - [ ] Secret/HMAC verification
 - [ ] Issue event type

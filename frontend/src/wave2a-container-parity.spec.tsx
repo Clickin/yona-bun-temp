@@ -1,3 +1,5 @@
+import * as React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
   renderOrganizationDetail,
@@ -5,7 +7,9 @@ import {
   renderProjectDetail,
   renderProjectSettings,
   renderProjectWatchers,
+  testRuntimeConfig,
 } from "./auth-workspace-shell.test-helpers";
+import { ProjectWebhooksPage } from "./routes/-project-views";
 
 describe("wave 2A container parity", () => {
   it("renders the organization home hero, project filter, gated CTA, roster bubbles, and settings entry", () => {
@@ -226,5 +230,60 @@ describe("wave 2A container parity", () => {
     expect(html).toContain("@alice");
     expect(html).toContain("Bob");
     expect(html).toContain("@bob");
+  });
+
+  it("renders the legacy project webhook editor shell and list anchors", () => {
+    const html = renderToStaticMarkup(
+      <ProjectWebhooksPage
+        detail={{
+          enrollmentRequested: false,
+          isFavorited: false,
+          organizationName: "",
+          ownerName: "weblabs",
+          overview: "Project webhook hooks",
+          projectName: "projectYobi",
+          projectScope: "public",
+          viewerCanEnroll: false,
+          viewerCanUpdate: true,
+        }}
+        response={{
+          permissions: {
+            canCreate: true,
+            canDelete: true,
+          },
+          webhooks: [
+            {
+              gitPush: true,
+              id: 7,
+              payloadUrl: "https://hooks.example.test/yona",
+              secret: "token-123",
+              webhookType: "DETAIL_SLACK",
+            },
+          ],
+        }}
+        runtimeConfig={testRuntimeConfig}
+      />,
+    );
+
+    expect(html).toContain('class="project-page-wrap webhook-editor-wrap"');
+    expect(html).toContain('id="formNewWebhook"');
+    expect(html).toContain('class="new-webhook-wrap"');
+    expect(html).toContain('class="form-legend"');
+    expect(html).toContain('name="payloadUrl"');
+    expect(html).toContain('class="input-webhook-payload"');
+    expect(html).toContain('name="secret"');
+    expect(html).toContain('class="input-webhook-secret"');
+    expect(html).toContain('name="webhookType"');
+    expect(html).toContain('value="DETAIL_SLACK"');
+    expect(html).toContain('id="gitPush"');
+    expect(html).toContain('class="form-wrap form-actions"');
+    expect(html).toContain('id="webhooksList"');
+    expect(html).toContain('class="webhook-list-wrap"');
+    expect(html).toContain('data-webhook-id="7"');
+    expect(html).toContain('class="row-fluid list-item vertical-align"');
+    expect(html).toContain('class="span5 payload-url"');
+    expect(html).toContain('class="span2 secret text-center"');
+    expect(html).toContain('data-request-method="delete"');
+    expect(html).toContain('data-request-uri="/yona/weblabs/projectYobi/webhooks/7"');
   });
 });

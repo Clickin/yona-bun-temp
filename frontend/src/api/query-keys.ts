@@ -8,6 +8,8 @@ export const apiQueryKeys = {
       [...apiQueryKeys.project.base(ownerName, projectName), "container"] as const,
     watchers: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.project.base(ownerName, projectName), "watchers"] as const,
+    webhooks: (ownerName: string, projectName: string) =>
+      [...apiQueryKeys.project.base(ownerName, projectName), "webhooks"] as const,
     codeBranches: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.project.base(ownerName, projectName), "branches"] as const,
     commitDetail: (

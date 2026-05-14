@@ -16,6 +16,10 @@
 - `yona-original/test/models/RecentlyVisitedProjectsTest.java`
 - `yona-original/test/controllers/WatchProjectAppTest.java`
 - `yona-original/app/controllers/ProjectApp.java`
+- `yona-original/app/views/project/webhooks.scala.html`
+- `yona-original/app/views/project/partial_webhooks_list.scala.html`
+- `yona-original/app/models/Webhook.java`
+- `yona-original/app/models/enumeration/WebhookType.java`
 
 ## Current Baseline And Canonical Target
 
@@ -42,6 +46,7 @@
 | `EnrollProjectAppTest` | enrollment request and cancel stay guest-only, not-found for missing projects, idempotent | `crates/domain` enrollment service + `crates/server` mutation contract test |
 | `RecentlyVisitedProjectsTest` and `WatchProjectAppTest` | recent visits dedupe/reorder and favorites remain workspace-local behavior | `crates/domain` workspace service + `crates/persistence` workspace repo + `frontend` route/UI test |
 | `ProjectApp.watchers` and `project/watchers.scala.html` | watcher list is project READ-gated and shows only actual watchers who can access the project | `/api/v1/owners/:owner/projects/:project/watchers` + `frontend/src/routes/$owner/$projectName/watchers` |
+| `ProjectApp.webhooks/newWebhook/deleteWebhook` and `project/webhooks.scala.html` | webhook management is project UPDATE-gated and preserves payload URL, secret, webhook type, and git-push-only fields | `/api/v1/owners/:owner/projects/:project/webhooks` + `frontend/src/routes/$owner/$projectName/webhooks` |
 
 ## Explicit Gaps
 
@@ -50,7 +55,7 @@
 - org enrollment management
 - full workspace settings and default landing UX parity
 - project member management beyond read-only summary
-- project webhooks, change VCS, statistics
+- webhook delivery/payload/HMAC/history, change VCS, statistics
 
 이 항목들은 후속 follow-up과 provenance gap으로 계속 남는다.
 
@@ -65,3 +70,11 @@
 - `Phase 2P` restores the project watcher list page from `ProjectApp.watchers` and `project/watchers.scala.html`.
 - The REST contract is `GET /api/v1/owners/:owner/projects/:project/watchers`; it applies project READ ACL, returns deterministic watcher rows, and filters the list to users who can still read the project.
 - The frontend route `/:owner/:project/watchers` preserves the legacy `.page-wrap-outer`, `.project-page-wrap`, `.members.project.row-fluid`, `.member.span6.span-hard-wrap`, `.avatar-wrap`, `.member-name`, and `.member-id` anchors.
+
+## Phase 2Q Delivery Note
+
+- `Phase 2Q` restores the project webhook management page from `ProjectApp.webhooks`, `ProjectApp.newWebhook`, `ProjectApp.deleteWebhook`, `project/webhooks.scala.html`, and `partial_webhooks_list.scala.html`.
+- The REST contract is `GET/POST /api/v1/owners/:owner/projects/:project/webhooks` and `DELETE /api/v1/owners/:owner/projects/:project/webhooks/:id`; it applies project UPDATE ACL, validates payload URL, secret length, webhook type, and stores git-push-only state.
+- Delete is intentionally project-scoped in the Rust app surface even though the legacy controller deletes by raw id after the route-level update gate.
+- The frontend route `/:owner/:project/webhooks` preserves the legacy `.page-wrap-outer`, `.project-page-wrap.webhook-editor-wrap`, `#formNewWebhook`, `.new-webhook-wrap`, `.form-legend`, `.input-webhook-payload`, `.input-webhook-secret`, `#gitPush`, `#webhooksList`, `.webhook-list-wrap`, `.row-fluid.list-item.vertical-align`, and delete-button `data-request-*` anchors.
+- Webhook event payload generation, HTTP delivery, HMAC signing, retry/history, and event-specific dispatch are still Phase 5 integration follow-ups.

@@ -3,35 +3,36 @@ use crate::repo_types::{
     CommitDiscussionThreadStateInput, CreateCommitDiscussionCommentInput, CreateIssueCommentInput,
     CreateIssueInput, CreateOrganizationInput, CreatePostingCommentInput, CreatePostingInput,
     CreateProjectInput, CreateProjectLabelCategoryInput, CreateProjectLabelInput,
-    CreatePullRequestCommentInput, CreatePullRequestInput, CreatePullRequestResult,
-    CreateUserInput, DeleteCommitDiscussionCommentInput, IssueAssignableUserRecord,
-    IssueAssignableUserSearchRecord, IssueAttachmentRecord, IssueCommentRecord,
-    IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter,
-    IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueRecord,
-    IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, MassUpdateIssuesInput,
-    MentionSyncResult, MilestoneListFilter, MilestoneMutationInput, NotificationActorRecord,
-    NotificationItemRecord, NotificationListRecord, OrganizationAuthorizationRecord,
-    OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
-    OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
-    OrganizationMemberRecord, OrganizationPostingListFilter, OrganizationPostingListRecord,
-    OrganizationPostingProjectOptionRecord, OrganizationRecord, OrganizationViewerRecord,
-    PostingCommentRecord, PostingListFilter, PostingRecord, ProjectAuthorizationRecord,
-    ProjectEnrollmentRequestRecord, ProjectIssueListItemRecord, ProjectIssueListRecord,
-    ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord, ProjectListEntry,
-    ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
+    CreateProjectWebhookInput, CreatePullRequestCommentInput, CreatePullRequestInput,
+    CreatePullRequestResult, CreateUserInput, DeleteCommitDiscussionCommentInput,
+    IssueAssignableUserRecord, IssueAssignableUserSearchRecord, IssueAttachmentRecord,
+    IssueCommentRecord, IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord,
+    IssueListFilter, IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord,
+    IssueRecord, IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord,
+    MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
+    NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
+    OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
+    OrganizationIssueListFilter, OrganizationIssueListRecord, OrganizationIssueProjectOptionRecord,
+    OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationPostingListFilter,
+    OrganizationPostingListRecord, OrganizationPostingProjectOptionRecord, OrganizationRecord,
+    OrganizationViewerRecord, PostingCommentRecord, PostingListFilter, PostingRecord,
+    ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord, ProjectIssueListItemRecord,
+    ProjectIssueListRecord, ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord,
+    ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
     ProjectMilestoneSummaryRecord, ProjectPostingListItemRecord, ProjectPostingListRecord,
-    ProjectRecord, ProjectViewerRecord, ProjectWatcherRecord, PullRequestCommitRecord,
-    PullRequestDetailRecord, PullRequestEventRecord, PullRequestListFilter,
-    PullRequestListItemRecord, PullRequestListRecord, PullRequestReviewInput,
-    PullRequestStateInput, PullRequestThreadStateInput, PullRequestUserRecord, ReviewCommentRecord,
-    ReviewThreadListFilter, ReviewThreadListRecord, ReviewThreadRecord, SearchContextRecord,
-    SearchCountsRecord, SearchItemRecord, SearchRepositoryInput, SearchResultRecord, SearchScope,
-    ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateIssueCommentInput,
-    UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput,
-    UpdatePostingInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
-    UpdateProjectLabelInput, UpdatePullRequestInput, UserIssueCandidateRecord, UserIssueListFilter,
-    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
-    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    ProjectRecord, ProjectViewerRecord, ProjectWatcherRecord, ProjectWebhookRecord,
+    PullRequestCommitRecord, PullRequestDetailRecord, PullRequestEventRecord,
+    PullRequestListFilter, PullRequestListItemRecord, PullRequestListRecord,
+    PullRequestReviewInput, PullRequestStateInput, PullRequestThreadStateInput,
+    PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
+    ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
+    SearchRepositoryInput, SearchResultRecord, SearchScope, ToggleFavoriteIssueResult,
+    ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
+    UpdateOrganizationInput, UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
+    UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestInput,
+    UserIssueCandidateRecord, UserIssueListFilter, WatchedProjectNotificationsRecord,
+    WorkspaceEmailRecord, WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
+    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
@@ -43,7 +44,7 @@ use crate::{
     project_menu_setting, project_user, pull_request, pull_request_commit, pull_request_event,
     pull_request_reviewers, recent_project, review_comment, role, site_admin, unwatch,
     user_credential, user_enrolled_organization, user_enrolled_project, user_project_notification,
-    user_setting, user_verification, watch,
+    user_setting, user_verification, watch, webhook,
 };
 use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
@@ -337,6 +338,16 @@ fn prefixed_verification_code(prefix: &str) -> String {
 
 fn current_datetime() -> DateTime {
     DateTimeUtc::from(SystemTime::now()).naive_utc()
+}
+
+fn project_webhook_record_from_model(row: webhook::Model) -> ProjectWebhookRecord {
+    ProjectWebhookRecord {
+        git_push: row.git_push.unwrap_or_default() != 0,
+        id: row.id,
+        payload_url: row.payload_url.unwrap_or_default(),
+        secret: row.secret.unwrap_or_default(),
+        webhook_type: row.webhook_type.unwrap_or_default(),
+    }
 }
 
 fn current_timestamp_millis() -> i64 {
@@ -4700,6 +4711,55 @@ impl AppRepository {
         }
         watchers.sort_by(|left, right| left.login_id.cmp(&right.login_id));
         Ok(watchers)
+    }
+
+    pub async fn list_project_webhooks(
+        &self,
+        project_id: i64,
+    ) -> Result<Vec<ProjectWebhookRecord>, DbErr> {
+        let rows = webhook::Entity::find()
+            .filter(webhook::Column::ProjectId.eq(Some(project_id)))
+            .order_by_asc(webhook::Column::Id)
+            .all(&self.db)
+            .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(project_webhook_record_from_model)
+            .collect())
+    }
+
+    pub async fn create_project_webhook(
+        &self,
+        project_id: i64,
+        input: CreateProjectWebhookInput,
+    ) -> Result<ProjectWebhookRecord, DbErr> {
+        let row = webhook::ActiveModel {
+            id: NotSet,
+            project_id: Set(Some(project_id)),
+            payload_url: Set(Some(input.payload_url)),
+            secret: Set(Some(input.secret)),
+            created_at: Set(Some(current_datetime())),
+            git_push: Set(Some(if input.git_push { 1 } else { 0 })),
+            webhook_type: Set(Some(input.webhook_type)),
+        }
+        .insert(&self.db)
+        .await?;
+
+        Ok(project_webhook_record_from_model(row))
+    }
+
+    pub async fn delete_project_webhook(
+        &self,
+        project_id: i64,
+        webhook_id: i64,
+    ) -> Result<bool, DbErr> {
+        let result = webhook::Entity::delete_many()
+            .filter(webhook::Column::Id.eq(webhook_id))
+            .filter(webhook::Column::ProjectId.eq(Some(project_id)))
+            .exec(&self.db)
+            .await?;
+        Ok(result.rows_affected > 0)
     }
 
     pub async fn read_project_menu_settings(

@@ -433,7 +433,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 | 감시자 (Watchers)    | 프로젝트 감시/해제, 감시자 목록                    | ✅ 구현           | 2P    |
 | 즐겨찾기             | 프로젝트 즐겨찾기 토글                             | ✅ 구현           | 1     |
 | 가입 요청            | 비멤버가 가입 요청/취소                            | ✅ 구현           | 1     |
-| 웹훅 관리            | CRUD, event type, secret                           | gap               | 5     |
+| 웹훅 관리            | CRUD, event type, secret                           | ✅ CRUD 구현; 발송 gap | 2Q/5  |
 | 프로젝트 이관        | 다른 owner로 이관                                  | gap               | 6     |
 | VCS 변경             | Git ↔ SVN                                          | deferred          | 2차   |
 | 프로젝트 통계        | 활동 통계                                          | gap               | 5     |
@@ -868,15 +868,15 @@ DELETE /:owner/:project/webhooks/:id  → 웹훅 삭제
 
 | 기능        | Legacy 동작                              | 현재 상태 | Phase |
 | ----------- | ---------------------------------------- | --------- | ----- |
-| 웹훅 CRUD   | payload URL, secret, active, 이벤트 타입 | gap       | 5     |
+| 웹훅 CRUD   | payload URL, secret, active, 이벤트 타입 | ✅ Phase 2Q app CRUD 구현 | 2Q    |
 | 이벤트 발송 | JSON payload를 설정된 URL로 POST         | gap       | 5     |
-| Secret 검증 | HMAC-SHA256 서명                         | gap       | 5     |
+| Secret 검증 | HMAC-SHA256 서명                         | gap (secret 저장만 구현) | 5     |
 | 이벤트 타입 | issue, pull_request, comment, review 등  | gap       | 5     |
 | 실행 이력   | 발송 성공/실패 기록                      | gap       | 5     |
 
 #### 검수 기준
 
-- [ ] 웹훅 생성: payload URL, secret, 이벤트 타입 선택 — legacy 동일
+- [x] 웹훅 생성: payload URL, secret, 이벤트 타입 선택 — legacy 동일
 - [ ] JSON payload: legacy `Webhook.sendPayload()` 포맷과 호환
 - [ ] Secret: `X-Yona-Signature` 헤더에 HMAC-SHA256 서명 포함
 - [ ] 실행 실패 시 재시도 로직 (legacy는 비동기 재시도)
@@ -1410,7 +1410,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: read state, SMTP scheduler/delivery, draft-time merge, recipient limit, and full mail notification parity
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope
-- Webhook: project webhook CRUD
+- Webhook follow-up: event payload generation/delivery, HMAC signing, retry/history, and event-specific dispatch
 - Admin: users/projects/site-admin/account-lock/test-mail surfaces
 - Markdown: app-level markdown preview API if legacy evidence requires it
 

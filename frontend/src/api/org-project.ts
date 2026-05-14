@@ -56,6 +56,31 @@ export type ReadProjectWatchersResponse = {
   watchers: ProjectWatcher[];
 };
 
+export type ProjectWebhookType = "SIMPLE" | "DETAIL_SLACK" | "DETAIL_HANGOUT_CHAT" | "JSON";
+
+export type ProjectWebhook = {
+  gitPush: boolean;
+  id: number;
+  payloadUrl: string;
+  secret: string;
+  webhookType: ProjectWebhookType;
+};
+
+export type ReadProjectWebhooksResponse = {
+  permissions: {
+    canCreate: boolean;
+    canDelete: boolean;
+  };
+  webhooks: ProjectWebhook[];
+};
+
+export type ProjectWebhookInput = {
+  gitPush: boolean;
+  payloadUrl: string;
+  secret: string;
+  webhookType: ProjectWebhookType;
+};
+
 function toInt64Number(value: bigint | number): number {
   return Number(value);
 }
@@ -445,6 +470,72 @@ export function readProjectWatchersQueryOptions(
     queryFn: () => readProjectWatchersRest(runtimeConfig, input.ownerName, input.projectName),
     queryKey: apiQueryKeys.project.watchers(input.ownerName, input.projectName),
   });
+}
+
+export function readProjectWebhooksRest(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadProjectWebhooksResponse> {
+  return restFetch<ReadProjectWebhooksResponse>(
+    runtimeConfig,
+    projectPath(ownerName, projectName, "/webhooks"),
+    {
+      fetchImpl,
+      method: "GET",
+    },
+  );
+}
+
+export function readProjectWebhooksQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectPathInput,
+) {
+  return queryOptions({
+    queryFn: () => readProjectWebhooksRest(runtimeConfig, input.ownerName, input.projectName),
+    queryKey: apiQueryKeys.project.webhooks(input.ownerName, input.projectName),
+  });
+}
+
+export function createProjectWebhookRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectPathInput & ProjectWebhookInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadProjectWebhooksResponse> {
+  return restFetch<ReadProjectWebhooksResponse>(
+    runtimeConfig,
+    projectPath(input.ownerName, input.projectName, "/webhooks"),
+    {
+      body: {
+        gitPush: input.gitPush,
+        payloadUrl: input.payloadUrl,
+        secret: input.secret,
+        webhookType: input.webhookType,
+      },
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
+  );
+}
+
+export function deleteProjectWebhookRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectPathInput & { webhookId: number },
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadProjectWebhooksResponse> {
+  return restFetch<ReadProjectWebhooksResponse>(
+    runtimeConfig,
+    projectPath(input.ownerName, input.projectName, `/webhooks/${input.webhookId}`),
+    {
+      csrfToken,
+      fetchImpl,
+      method: "DELETE",
+    },
+  );
 }
 
 export function updateProjectRest(

@@ -44,6 +44,7 @@
 - Phase 2M complete: issue reference `#issue` autocomplete over `/api/v1/owners/:owner/projects/:project/issue-references`, with project read ACL, readable fork-origin issue search, exact-number-first ordering, and create/edit/detail/comment textarea insertion.
 - Phase 2N complete: notification inbox/list over `/api/v1/notifications`, legacy `/notification` route body, notification mail queue staging/drain helper, and project-target issue sharer mutation by public project member expansion.
 - Phase 2P complete: project watcher list parity over `/api/v1/owners/:owner/projects/:project/watchers` and legacy `/:owner/:project/watchers` route shell, with project READ ACL, actual-readable watcher filtering, avatar/login/display projections, and legacy `project/watchers.scala.html` class anchors.
+- Phase 2Q complete: project webhook CRUD app surface over `/api/v1/owners/:owner/projects/:project/webhooks` and legacy `/:owner/:project/webhooks` route shell, with project UPDATE ACL, payload URL/secret/type/gitPush validation, project-scoped delete, and legacy `project/webhooks.scala.html` / `partial_webhooks_list.scala.html` class anchors. Webhook delivery, HMAC signing, dispatch events, and retry/history remain Phase 5 integration follow-ups.
 - Remaining Phase 2 packets: notification read state/full SMTP batching, group sharer mutation if legacy evidence requires it, and Phase 6 label copy flow. Legacy external `/-_-api/v1/**` compatibility is no longer an app Phase 2 packet; it belongs to a separate migrator/export/import deliverable.
 
 ## Phase 3: 저장소와 VCS
@@ -74,7 +75,7 @@
 - Remaining board follow-ups: Git-backed README commit/sync, issue template edit, online code file edit, and legacy external `/-_-api/v1/**` compatibility for migrator scope.
 - Remaining search follow-ups: full-text/index-backed search, ranking beyond legacy sort, async indexing, and legacy external `/-_-api/v1/**` search compatibility only if the separate migrator/export scope requires it.
 - notifications
-- integrations
+- integrations: webhook delivery payload/HMAC/retry/history now starts from the Phase 2Q project webhook CRUD baseline.
 
 ## Phase 6: 관리자 기능과 하드닝
 
