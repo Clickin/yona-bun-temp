@@ -21,7 +21,10 @@ use session::{SessionConfig, SessionManager};
 use std::{
     collections::HashMap,
     path::PathBuf,
-    sync::{Mutex, OnceLock},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex, OnceLock,
+    },
     vec,
 };
 
@@ -212,6 +215,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
         public_origin: public_origin.clone(),
         session_manager: session_manager.clone(),
         backend: backend.clone(),
+        site_update_watch_state: Arc::new(AtomicBool::new(true)),
     };
     let route_backend = backend.clone();
     let browser_runtime = BrowserRuntimeConfig::from_base_path(&base_path);
@@ -2256,6 +2260,16 @@ struct RestSiteDiagnosticsResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RestSiteUpdateResponse {
+    current_version: String,
+    version_to_update: Option<String>,
+    release_url: Option<String>,
+    has_update: bool,
+    is_watched: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RestNotificationActor {
     avatar_url: String,
     display_name: String,
@@ -3651,6 +3665,26 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     async move { rest_list_site_issues(headers, query, session_manager, backend).await }
+                }
+            }),
+        )
+        .route(
+            "/sites/update",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_read_site_update(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/sites/update/unwatch",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_unwatch_site_update(headers, service).await }
                 }
             }),
         )
@@ -6853,6 +6887,41 @@ async fn require_site_admin_repository(
     Ok(repository.clone())
 }
 
+async fn require_site_admin_repository_read(
+    headers: &HeaderMap,
+    session_manager: &SessionManager,
+    backend: &PilotBackend,
+    action: &'static str,
+) -> Result<PilotRepository, RestRouteError> {
+    let session =
+        require_session(session_manager, headers).map_err(RestRouteError::from_connect_error)?;
+    let Some(user_id) = session.user_id else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unauthenticated("missing pilot user"),
+        ));
+    };
+    let PilotBackend::Repository(repository) = backend else {
+        return Err(RestRouteError::not_implemented(format!(
+            "{action} requires repository backend"
+        )));
+    };
+    let actor = repository
+        .find_user_by_id(user_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::unauthenticated("missing pilot user"))
+        })?;
+    if !actor.is_site_admin {
+        return Err(RestRouteError::permission_denied(format!(
+            "{action} is not allowed"
+        )));
+    }
+
+    Ok(repository.clone())
+}
+
 async fn rest_toggle_site_user_role(
     headers: HeaderMap,
     login_id: String,
@@ -7144,6 +7213,45 @@ async fn rest_list_site_issues(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(rest_site_issues_response(record)))
+}
+
+fn rest_site_update_response(is_watched: bool) -> RestSiteUpdateResponse {
+    let version_to_update = None;
+    RestSiteUpdateResponse {
+        current_version: env!("CARGO_PKG_VERSION").to_string(),
+        has_update: version_to_update.is_some(),
+        is_watched,
+        release_url: None,
+        version_to_update,
+    }
+}
+
+async fn rest_read_site_update(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteUpdateResponse>, RestRouteError> {
+    let _repository = require_site_admin_repository_read(
+        &headers,
+        &service.session_manager,
+        &service.backend,
+        "site admin update",
+    )
+    .await?;
+    Ok(Json(rest_site_update_response(
+        service.site_update_watch_state.load(Ordering::SeqCst),
+    )))
+}
+
+async fn rest_unwatch_site_update(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteUpdateResponse>, RestRouteError> {
+    let _repository =
+        require_site_admin_repository(&headers, &service.session_manager, &service.backend).await?;
+    service
+        .site_update_watch_state
+        .store(false, Ordering::SeqCst);
+    Ok(Json(rest_site_update_response(false)))
 }
 
 async fn rest_read_site_diagnostics(
@@ -12940,6 +13048,7 @@ struct PilotServiceImpl {
     public_origin: String,
     session_manager: SessionManager,
     backend: PilotBackend,
+    site_update_watch_state: Arc<AtomicBool>,
 }
 
 impl PilotServiceImpl {

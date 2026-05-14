@@ -22,6 +22,7 @@ import {
   deleteSiteProjectRest,
   deleteSiteUserRest,
   readSiteDiagnosticsQueryOptions,
+  readSiteUpdateQueryOptions,
   listSiteIssuesQueryOptions,
   listSitePostsQueryOptions,
   listSiteProjectsQueryOptions,
@@ -30,6 +31,7 @@ import {
   toggleSiteUserAccountLockRest,
   toggleSiteUserGuestModeRest,
   toggleSiteUserRoleRest,
+  unwatchSiteUpdateRest,
 } from "./api/site-admin";
 
 describe("api query keys", () => {
@@ -322,6 +324,14 @@ describe("api query keys", () => {
     expect(options.queryFn).toEqual(expect.any(Function));
   });
 
+  it("builds site-admin update query options from canonical query keys", () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const options = readSiteUpdateQueryOptions(runtimeConfig);
+
+    expect(options.queryKey).toEqual(apiQueryKeys.siteAdmin.update());
+    expect(options.queryFn).toEqual(expect.any(Function));
+  });
+
   it("uses POST for site-admin user action REST mutations", async () => {
     const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
     const requests: string[] = [];
@@ -400,6 +410,31 @@ describe("api query keys", () => {
     await deleteSiteUserRest(runtimeConfig, "csrf", "2", fetchImpl);
 
     expect(requests).toEqual(["DELETE /yona/api/v1/sites/users/2"]);
+  });
+
+  it("uses POST for site-admin update unwatch REST mutations", async () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const requests: string[] = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      requests.push(`${init?.method ?? ""} ${String(input)}`);
+      return new Response(
+        JSON.stringify({
+          currentVersion: "0.1.0",
+          hasUpdate: false,
+          isWatched: false,
+          releaseUrl: null,
+          versionToUpdate: null,
+        }),
+        {
+          headers: { "content-type": "application/json" },
+          status: 200,
+        },
+      );
+    };
+
+    await unwatchSiteUpdateRest(runtimeConfig, "csrf", fetchImpl);
+
+    expect(requests).toEqual(["POST /yona/api/v1/sites/update/unwatch"]);
   });
 
   it("uses PATCH for board update REST mutations", async () => {

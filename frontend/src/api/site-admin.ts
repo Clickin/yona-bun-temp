@@ -163,6 +163,14 @@ export type SiteDiagnosticsResponse = {
   total: number;
 };
 
+export type SiteUpdateResponse = {
+  currentVersion: string;
+  hasUpdate: boolean;
+  isWatched: boolean;
+  releaseUrl: string | null;
+  versionToUpdate: string | null;
+};
+
 export const SITE_USER_STATES: SiteUserState[] = [
   "ACTIVE",
   "LOCKED",
@@ -413,6 +421,16 @@ function normalizeSiteDiagnosticsResponse(
   };
 }
 
+function normalizeSiteUpdateResponse(response: Partial<SiteUpdateResponse>): SiteUpdateResponse {
+  return {
+    currentVersion: response.currentVersion ?? "",
+    hasUpdate: response.hasUpdate ?? Boolean(response.versionToUpdate),
+    isWatched: response.isWatched ?? true,
+    releaseUrl: response.releaseUrl ?? null,
+    versionToUpdate: response.versionToUpdate ?? null,
+  };
+}
+
 export function listSiteUsersRest(
   runtimeConfig: RuntimeConfig,
   input: Partial<SiteUsersQueryInput> = {},
@@ -584,6 +602,27 @@ export function readSiteDiagnosticsRest(
   }).then(normalizeSiteDiagnosticsResponse);
 }
 
+export function readSiteUpdateRest(
+  runtimeConfig: RuntimeConfig,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteUpdateResponse> {
+  return restFetch<Partial<SiteUpdateResponse>>(runtimeConfig, "/sites/update", {
+    fetchImpl,
+  }).then(normalizeSiteUpdateResponse);
+}
+
+export function unwatchSiteUpdateRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteUpdateResponse> {
+  return restFetch<Partial<SiteUpdateResponse>>(runtimeConfig, "/sites/update/unwatch", {
+    csrfToken,
+    fetchImpl,
+    method: "POST",
+  }).then(normalizeSiteUpdateResponse);
+}
+
 export function listSiteUsersQueryOptions(
   runtimeConfig: RuntimeConfig,
   input: Partial<SiteUsersQueryInput> = {},
@@ -632,5 +671,12 @@ export function readSiteDiagnosticsQueryOptions(runtimeConfig: RuntimeConfig) {
   return queryOptions({
     queryFn: () => readSiteDiagnosticsRest(runtimeConfig),
     queryKey: apiQueryKeys.siteAdmin.diagnostics(),
+  });
+}
+
+export function readSiteUpdateQueryOptions(runtimeConfig: RuntimeConfig) {
+  return queryOptions({
+    queryFn: () => readSiteUpdateRest(runtimeConfig),
+    queryKey: apiQueryKeys.siteAdmin.update(),
   });
 }

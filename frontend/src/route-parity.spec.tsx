@@ -208,6 +208,20 @@ describe("file-route parity harness", () => {
     expect(siteRouteSource).toContain("site.diagnostic.errorFound");
   });
 
+  it("requires a real site-admin update route instead of a follow-up shell", () => {
+    const siteRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/sites/$pageName/route.tsx"),
+      "utf8",
+    );
+
+    expect(siteRouteSource).toContain("SiteAdminUpdatePage");
+    expect(siteRouteSource).toContain("readSiteUpdateQueryOptions");
+    expect(siteRouteSource).toContain("unwatchSiteUpdateRest");
+    expect(siteRouteSource).toContain("site.update.currentVersion");
+    expect(siteRouteSource).toContain("site.update.isNotNecessary");
+    expect(siteRouteSource).toContain("site.update.download");
+  });
+
   it("requires real project issue routes instead of placeholder pages", () => {
     const issueListRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/$owner/$projectName/issues/route.tsx"),

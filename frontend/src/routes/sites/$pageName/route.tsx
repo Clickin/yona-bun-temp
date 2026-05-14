@@ -17,12 +17,14 @@ import {
   normalizeSiteProjectsQuery,
   normalizeSiteUsersQuery,
   readSiteDiagnosticsQueryOptions,
+  readSiteUpdateQueryOptions,
   resetSiteUserPasswordRest,
   SITE_ISSUE_STATES,
   SITE_USER_STATES,
   toggleSiteUserAccountLockRest,
   toggleSiteUserGuestModeRest,
   toggleSiteUserRoleRest,
+  unwatchSiteUpdateRest,
   type SiteDiagnosticsResponse,
   type SiteIssueListItem,
   type SiteIssuesQueryInput,
@@ -34,6 +36,7 @@ import {
   type SiteProjectListItem,
   type SiteProjectsQueryInput,
   type SiteProjectsResponse,
+  type SiteUpdateResponse,
   type SiteUserListItem,
   type SiteUsersQueryInput,
   type SiteUsersResponse,
@@ -201,6 +204,10 @@ function siteUserActionApiHref(
   );
 }
 
+function siteUpdateUnwatchApiHref(runtimeConfig: RuntimeConfig): string {
+  return prefixBasePath(runtimeConfig.basePath, "/api/v1/sites/update/unwatch");
+}
+
 function SiteAdminRouteComponent() {
   const { pageName } = Route.useParams();
   const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
@@ -243,6 +250,10 @@ function SiteAdminRouteComponent() {
   const diagnosticsQuery = useQuery({
     ...readSiteDiagnosticsQueryOptions(runtimeConfig),
     enabled: canRender && pageName === "diagnostic",
+  });
+  const siteUpdateQuery = useQuery({
+    ...readSiteUpdateQueryOptions(runtimeConfig),
+    enabled: canRender && pageName === "update",
   });
   const userActionError = React.useCallback(
     (error: Error, fallback: string) => {
@@ -296,6 +307,11 @@ function SiteAdminRouteComponent() {
       void queryClient.invalidateQueries({ queryKey: [...apiQueryKeys.v1(), "sites", "projects"] });
     },
   });
+  const unwatchSiteUpdateMutation = useMutation({
+    mutationFn: () => unwatchSiteUpdateRest(runtimeConfig, csrfToken),
+    onError: (error) => userActionError(error, "Hide update notification failed."),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.update() }),
+  });
 
   useDocumentTitle(
     pageName === "userList"
@@ -308,7 +324,9 @@ function SiteAdminRouteComponent() {
             ? "Site Issues"
             : pageName === "diagnostic"
               ? "Site Diagnostics"
-              : "Site Admin",
+              : pageName === "update"
+                ? "Software Update"
+                : "Site Admin",
   );
 
   React.useEffect(() => {
@@ -339,7 +357,9 @@ function SiteAdminRouteComponent() {
             ? issueListQuery.error
             : pageName === "diagnostic"
               ? diagnosticsQuery.error
-              : userListQuery.error;
+              : pageName === "update"
+                ? siteUpdateQuery.error
+                : userListQuery.error;
     if (!error) {
       return;
     }
@@ -359,7 +379,9 @@ function SiteAdminRouteComponent() {
               ? "Read site issues failed."
               : pageName === "diagnostic"
                 ? "Read site diagnostics failed."
-                : "Read site users failed.",
+                : pageName === "update"
+                  ? "Read site update failed."
+                  : "Read site users failed.",
     );
   }, [
     diagnosticsQuery.error,
@@ -368,6 +390,7 @@ function SiteAdminRouteComponent() {
     postListQuery.error,
     projectListQuery.error,
     setErrorMessage,
+    siteUpdateQuery.error,
     userListQuery.error,
   ]);
 
@@ -428,6 +451,18 @@ function SiteAdminRouteComponent() {
       <SiteAdminDiagnosticsPage
         isLoading={diagnosticsQuery.isLoading}
         response={diagnosticsQuery.data}
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
+
+  if (pageName === "update") {
+    return (
+      <SiteAdminUpdatePage
+        isLoading={siteUpdateQuery.isLoading}
+        isUnwatching={unwatchSiteUpdateMutation.isPending}
+        onUnwatch={() => unwatchSiteUpdateMutation.mutate()}
+        response={siteUpdateQuery.data}
         runtimeConfig={runtimeConfig}
       />
     );
@@ -733,6 +768,63 @@ function SiteAdminDiagnosticsPage(props: {
             ))}
           </ul>
         </>
+      )}
+    </SiteAdminLayout>
+  );
+}
+
+function SiteAdminUpdatePage(props: {
+  isLoading: boolean;
+  isUnwatching: boolean;
+  onUnwatch: () => void;
+  response: SiteUpdateResponse | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const response = props.response;
+  const hasUpdate = response?.hasUpdate ?? false;
+  const releaseUrl = response?.releaseUrl;
+
+  return (
+    <SiteAdminLayout activePageName="update" runtimeConfig={props.runtimeConfig}>
+      <div className="title_area">
+        <h2 className="pull-left">Software Update</h2>
+      </div>
+      {props.isLoading ? (
+        <p>Loading…</p>
+      ) : (
+        <div className="site-update-wrap">
+          {hasUpdate ? (
+            <>
+              <p>site.update.isAvailable</p>
+              {releaseUrl ? (
+                <p>
+                  <a className="ybtn ybtn-success" href={releaseUrl}>
+                    site.update.download
+                  </a>
+                </p>
+              ) : null}
+              {response?.isWatched ? (
+                <p className="site-update-notification">
+                  <button
+                    className="ybtn ybtn-small"
+                    data-request-method="post"
+                    data-request-uri={siteUpdateUnwatchApiHref(props.runtimeConfig)}
+                    disabled={props.isUnwatching}
+                    onClick={props.onUnwatch}
+                    type="button"
+                  >
+                    site.update.notification.hide
+                  </button>
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p>site.update.isNotNecessary</p>
+          )}
+          {response?.currentVersion ? (
+            <p>{`site.update.currentVersion ${response.currentVersion}`}</p>
+          ) : null}
+        </div>
       )}
     </SiteAdminLayout>
   );

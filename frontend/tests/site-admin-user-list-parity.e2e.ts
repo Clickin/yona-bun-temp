@@ -529,3 +529,42 @@ test("renders legacy site-admin diagnostics shell without placeholders", async (
   await expect(page.locator("pre").nth(1)).toContainText("The Email Receiver is not initialized");
   await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
 });
+
+test("renders legacy site-admin update shell and hides update notification", async ({ page }) => {
+  let isWatched = true;
+  const seenPosts: string[] = [];
+  await page.route(apiV1Route("/sites/update**"), async (route) => {
+    if (route.request().method() === "POST") {
+      seenPosts.push(new URL(route.request().url()).pathname);
+      isWatched = false;
+    }
+    await route.fulfill({
+      body: JSON.stringify({
+        currentVersion: "0.1.0",
+        hasUpdate: true,
+        isWatched,
+        releaseUrl: "https://github.com/yona-projects/yona/releases/tag/v0.2.0",
+        versionToUpdate: "0.2.0",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/sites/update");
+
+  await expect(page.locator(".site-setting-nav li.active")).toContainText("Update");
+  await expect(page.locator(".title_area h2")).toHaveText("Software Update");
+  await expect(page.getByText("site.update.isAvailable")).toBeVisible();
+  await expect(page.getByText("site.update.currentVersion 0.1.0")).toBeVisible();
+  await expect(page.getByRole("link", { name: "site.update.download" })).toHaveAttribute(
+    "href",
+    "https://github.com/yona-projects/yona/releases/tag/v0.2.0",
+  );
+  const hideButton = page.getByRole("button", { name: "site.update.notification.hide" });
+  await expect(hideButton).toBeVisible();
+  await hideButton.click();
+  await expect(hideButton).toHaveCount(0);
+  expect(seenPosts).toEqual(["/yona/api/v1/sites/update/unwatch"]);
+  await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
+});

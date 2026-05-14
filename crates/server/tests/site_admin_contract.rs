@@ -745,3 +745,67 @@ async fn site_admin_diagnostics_requires_site_admin_and_reports_empty_legacy_res
     assert_eq!(diagnostics["hasErrors"], false);
     assert_eq!(diagnostics["total"], 0);
 }
+
+#[tokio::test]
+async fn site_admin_update_requires_admin_and_unwatches_legacy_notification() {
+    let (app, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "admin").await;
+    let (member_csrf, member_cookie, _) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let forbidden = rest_get(
+        app.clone(),
+        "/yona/api/v1/sites/update",
+        Some(&member_cookie),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let update = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/sites/update",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(update["hasUpdate"], false);
+    assert_eq!(update["isWatched"], true);
+    assert_eq!(update["versionToUpdate"], serde_json::Value::Null);
+    assert_eq!(update["releaseUrl"], serde_json::Value::Null);
+    assert!(update["currentVersion"]
+        .as_str()
+        .is_some_and(|value| !value.is_empty()));
+
+    let invalid_csrf = rest_post(
+        app.clone(),
+        "/yona/api/v1/sites/update/unwatch",
+        Some(&admin_cookie),
+        None,
+    )
+    .await;
+    assert_eq!(invalid_csrf.status(), StatusCode::FORBIDDEN);
+
+    let forbidden_post = rest_post(
+        app.clone(),
+        "/yona/api/v1/sites/update/unwatch",
+        Some(&member_cookie),
+        Some(&member_csrf),
+    )
+    .await;
+    assert_eq!(forbidden_post.status(), StatusCode::FORBIDDEN);
+
+    let unwatched = response_json(
+        rest_post(
+            app,
+            "/yona/api/v1/sites/update/unwatch",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(unwatched["hasUpdate"], false);
+    assert_eq!(unwatched["isWatched"], false);
+}
