@@ -716,7 +716,9 @@ pub struct ProjectMemberRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectEnrollmentRequestRecord {
+    pub email_address: String,
     pub login_id: String,
+    pub user_id: i64,
     pub user_label: String,
 }
 

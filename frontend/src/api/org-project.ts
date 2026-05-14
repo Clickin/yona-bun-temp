@@ -34,6 +34,10 @@ type ProjectPathInput = {
   projectName: string;
 };
 
+type ProjectMembershipInput = ProjectPathInput & {
+  userId: bigint | number;
+};
+
 type ProjectCreateInput = {
   overview: string;
   projectName: string;
@@ -50,6 +54,37 @@ export type ProjectWatcher = {
   loginId: string;
   userId: number;
   userLabel: string;
+};
+
+export type ProjectMemberEntry = {
+  avatarUrl: string;
+  isOwner: boolean;
+  loginId: string;
+  role: string;
+  userId: number;
+  userLabel: string;
+};
+
+export type ProjectEnrollmentRequestEntry = {
+  avatarUrl: string;
+  loginId: string;
+  userId: number;
+  userLabel: string;
+};
+
+export type ProjectMemberRoleOption = {
+  label: string;
+  role: string;
+};
+
+export type ProjectMembersResponse = {
+  enrollmentRequests: ProjectEnrollmentRequestEntry[];
+  members: ProjectMemberEntry[];
+  ownerName: string;
+  projectName: string;
+  redirectPath?: string;
+  roleOptions: ProjectMemberRoleOption[];
+  viewerCanUpdate: boolean;
 };
 
 export type ProjectWatchersResponse = {
@@ -420,6 +455,90 @@ export function readProjectMembersRest(
     {
       fetchImpl,
       method: "GET",
+    },
+  );
+}
+
+function readProjectMemberDirectoryRest(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectMembersResponse> {
+  return restFetch<ProjectMembersResponse>(
+    runtimeConfig,
+    projectPath(ownerName, projectName, "/members"),
+    {
+      fetchImpl,
+      method: "GET",
+    },
+  );
+}
+
+export function readProjectMembersQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectPathInput,
+) {
+  return queryOptions({
+    queryFn: () =>
+      readProjectMemberDirectoryRest(runtimeConfig, input.ownerName, input.projectName),
+    queryKey: apiQueryKeys.project.members(input.ownerName, input.projectName),
+  });
+}
+
+export function addProjectMemberRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectPathInput & { loginId: string },
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectMembersResponse> {
+  return restFetch<ProjectMembersResponse>(
+    runtimeConfig,
+    projectPath(input.ownerName, input.projectName, "/members"),
+    {
+      body: {
+        loginId: input.loginId,
+      },
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
+  );
+}
+
+export function updateProjectMemberRoleRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectMembershipInput & { role: string },
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectMembersResponse> {
+  return restFetch<ProjectMembersResponse>(
+    runtimeConfig,
+    projectPath(input.ownerName, input.projectName, `/members/${toInt64Number(input.userId)}`),
+    {
+      body: {
+        role: input.role,
+      },
+      csrfToken,
+      fetchImpl,
+      method: "PATCH",
+    },
+  );
+}
+
+export function deleteProjectMemberRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectMembershipInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectMembersResponse> {
+  return restFetch<ProjectMembersResponse>(
+    runtimeConfig,
+    projectPath(input.ownerName, input.projectName, `/members/${toInt64Number(input.userId)}`),
+    {
+      csrfToken,
+      fetchImpl,
+      method: "DELETE",
     },
   );
 }

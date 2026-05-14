@@ -17,6 +17,7 @@
 - `yona-original/test/models/RecentlyVisitedProjectsTest.java`
 - `yona-original/test/controllers/WatchProjectAppTest.java`
 - `yona-original/app/controllers/ProjectApp.java`
+- `yona-original/app/views/project/members.scala.html`
 - `yona-original/app/views/project/watchers.scala.html`
 
 ## Current Baseline And Canonical Target
@@ -40,6 +41,7 @@
 | `ProjectApp.newProject` | create under personal owner is allowed; org owner create requires org-admin authority | `crates/domain` create service + `crates/server` mutation contract test |
 | `ProjectApp.project` | detail read is permission filtered and records recent visit semantics | `crates/domain` detail resolution + `frontend` route/UI test |
 | `ProjectApp.projectOverviewUpdate` | manager-level actor can update overview content | `crates/domain` update service + `crates/server` mutation contract test |
+| `ProjectApp.members`, `newMember`, `editMember`, `deleteMember` and `project/members.scala.html` | member administration is UPDATE-gated except self-leave, preserves owner guards, accepts enrollment requests through add-member, and uses legacy member row/action anchors | `GET/POST/PATCH/DELETE /api/v1/owners/:owner/projects/:project/members` + `/:owner/:project/members` route + contract/unit/Playwright assertions |
 | `ProjectApp.watchers` and `project/watchers.scala.html` | watcher directory is READ-gated, resolves actual project watchers, and preserves `page-wrap-outer` / `members project row-fluid` member list anchors | `GET /api/v1/owners/:owner/projects/:project/watchers` + `/:owner/:project/watchers` route + contract/unit/Playwright assertions |
 | `ProjectAppTest` visibility cases | public/protected/private visibility gates readable discovery | `crates/domain` read matrix + `crates/server` query contract test |
 | `EnrollProjectAppTest` | enrollment request and cancel stay guest-only, not-found for missing projects, idempotent | `crates/domain` enrollment service + `crates/server` mutation contract test |
@@ -51,14 +53,14 @@
 - project transfer
 - org enrollment management
 - full workspace settings and default landing UX parity
-- project member management beyond read-only summary
 - webhooks, change VCS, statistics
 
 이 항목들은 후속 follow-up과 provenance gap으로 계속 남는다.
 
 ## R0-3 Delivery Note
 
-- `R0-3` now covers project create/detail/settings, visibility-aware read, guest-only enrollment request/cancel, read-only member summary, and workspace favorite/recent linkage in `repo root`.
+- `R0-3` now covers project create/detail/settings, visibility-aware read, guest-only enrollment request/cancel, member summary, and workspace favorite/recent linkage in `repo root`.
 - The Wave 0 route-foundation slice also mounts the public `/projects` directory in `frontend` through file routes under `src/routes/projects/**`, with route-parity tests and a shell-routing Playwright smoke pack.
 - Project detail read records recent visits for authenticated viewers, and `/me` now reflects favorite/recent project state through `GET /api/v1/workspace`.
 - The project watcher closeout adds an app REST watcher directory and legacy deep-link route for `/:owner/:project/watchers`; unreadable projects keep the project READ denial while readable projects list actual watcher users with legacy member-row class anchors.
+- The project member management closeout adds the UPDATE-gated legacy deep-link route for `/:owner/:project/members`, app REST add/role/delete mutations, enrollment cleanup, member-accept notification/mail staging, owner/self-leave guards, and legacy `project/members.scala.html` class anchors.

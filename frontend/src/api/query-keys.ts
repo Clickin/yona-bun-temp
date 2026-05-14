@@ -76,6 +76,8 @@ export const apiQueryKeys = {
     ) => [...apiQueryKeys.project.base(ownerName, projectName), "reviews", input] as const,
     labels: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.project.base(ownerName, projectName), "labels"] as const,
+    members: (ownerName: string, projectName: string) =>
+      [...apiQueryKeys.project.base(ownerName, projectName), "members"] as const,
     watchers: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.project.base(ownerName, projectName), "watchers"] as const,
     postFormOptions: (ownerName: string, projectName: string) =>

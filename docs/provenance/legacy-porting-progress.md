@@ -129,7 +129,7 @@ Interpretation:
 - [x] Favorite project toggle
 - [x] Recent project visit recording
 - [x] Member list read
-- [ ] Full project member management
+- [x] Full project member management
 - [ ] Project delete confirmation flow
 - [x] Project watchers page
 - [ ] Webhooks

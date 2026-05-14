@@ -48,6 +48,7 @@
 
 ## Phase 1 closeout follow-ups
 
+- Project member management complete: `GET/POST/PATCH/DELETE /api/v1/owners/:owner/projects/:project/members` and `/:owner/:project/members` restore the legacy UPDATE-gated members page, add/member role/delete/self-leave flows, enrollment cleanup, member-accept notification/mail staging, owner guards, and `project/members.scala.html` class anchors.
 - Project watchers page complete: `GET /api/v1/owners/:owner/projects/:project/watchers` and `/:owner/:project/watchers` list actual project watchers behind project READ ACL with legacy `project/watchers.scala.html` class anchors.
 
 ## Phase 3: 저장소와 VCS

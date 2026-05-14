@@ -433,6 +433,30 @@ describe("file-route parity harness", () => {
     expect(detailRouteSource).toContain("useMutation");
   });
 
+  it("requires project member management route to use real legacy anchors and mutations", () => {
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/members'");
+
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/members/route.tsx"),
+      "utf8",
+    );
+    expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).toContain("useQuery");
+    expect(routeSource).toContain("useMutation");
+    expect(routeSource).toContain("apiQueryKeys.project.members");
+
+    const viewSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-project-views.tsx"),
+      "utf8",
+    );
+    expect(viewSource).toContain("ProjectMembersPage");
+    expect(viewSource).toContain('id="addNewMember"');
+    expect(viewSource).toContain('className="members project row-fluid"');
+    expect(viewSource).toContain('data-action="apply"');
+    expect(viewSource).toContain('data-action="delete"');
+  });
+
   it("keeps the public home title and entry CTA/navigation order stable", () => {
     const html = renderHome();
 

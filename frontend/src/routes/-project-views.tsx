@@ -1,7 +1,7 @@
 import * as React from "react";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { BoardPostDetail } from "../api/boards";
-import type { ProjectWatchersResponse } from "../api/org-project";
+import type { ProjectMembersResponse, ProjectWatchersResponse } from "../api/org-project";
 import type { ProjectDetailViewModel } from "./-view-models";
 
 export function buildProjectHref(
@@ -418,6 +418,187 @@ export function ProjectWatchersPage(props: {
               </li>
             ))}
           </ul>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export function ProjectMembersPage(props: {
+  detail: ProjectMembersResponse | null | undefined;
+  pending?: boolean;
+  runtimeConfig: RuntimeConfig;
+  onAddMember?: (loginId: string) => void;
+  onDeleteMember?: (userId: number) => void;
+  onUpdateMemberRole?: (userId: number, role: string) => void;
+}) {
+  const detail = props.detail ?? {
+    enrollmentRequests: [],
+    members: [],
+    ownerName: "",
+    projectName: "",
+    roleOptions: [],
+    viewerCanUpdate: false,
+  };
+  const [loginId, setLoginId] = React.useState("");
+  const memberPath = `/${detail.ownerName}/${detail.projectName}/members`;
+
+  return (
+    <main className="app-shell">
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="inner-bubble">
+            <form
+              action={prefixBasePath(props.runtimeConfig.basePath, memberPath)}
+              className="nm"
+              id="addNewMember"
+              method="post"
+              onSubmit={(event) => {
+                event.preventDefault();
+                props.onAddMember?.(loginId);
+              }}
+            >
+              <input
+                autoComplete="off"
+                className="text uname"
+                data-provider="typeahead"
+                id="loginId"
+                name="loginId"
+                onChange={(event) => setLoginId(event.target.value)}
+                pattern="^[a-zA-Z0-9-]+([_.][a-zA-Z0-9-]+)*$"
+                placeholder="project.members.addMember"
+                required
+                title="user.wrongloginId.alert"
+                type="text"
+                value={loginId}
+              />
+              <button className="ybtn ybtn-success" type="submit">
+                <i className="yobicon-addfriend" /> button.add
+              </button>
+            </form>
+          </div>
+
+          <ul className="members project row-fluid">
+            {detail.members.map((member) => (
+              <li className="member span6 span-hard-wrap" key={member.userId}>
+                <a
+                  className="avatar-wrap mlarge pull-left mr10"
+                  href={prefixBasePath(props.runtimeConfig.basePath, `/${member.loginId}`)}
+                >
+                  {member.avatarUrl ? (
+                    <img
+                      alt={`${member.userLabel || member.loginId} avatar`}
+                      height={64}
+                      src={member.avatarUrl}
+                      width={64}
+                    />
+                  ) : null}
+                </a>
+                <div className="member-name">{member.userLabel || member.loginId}</div>
+                <div className="member-id">{`@${member.loginId}`}</div>
+                <div className="member-setting">
+                  {member.isOwner ? (
+                    <span className="label owner">user.role.owner</span>
+                  ) : (
+                    <>
+                      <div className="btn-group" data-name={`roleof-${member.loginId}`}>
+                        <button
+                          className="btn dropdown-toggle large"
+                          data-toggle="dropdown"
+                          type="button"
+                        >
+                          <span className="d-label">{`user.role.${member.role}`}</span>
+                          <span className="d-caret">
+                            <span className="caret" />
+                          </span>
+                        </button>
+                        <ul className="dropdown-menu">
+                          {detail.roleOptions.map((roleOption) => (
+                            <li
+                              className={roleOption.role === member.role ? "active" : undefined}
+                              data-selected={roleOption.role === member.role ? "true" : undefined}
+                              data-value={roleOption.role}
+                              key={`${member.userId}-${roleOption.role}`}
+                            >
+                              <button
+                                data-action="apply"
+                                data-href={`/${detail.ownerName}/${detail.projectName}/member/${member.userId}/edit`}
+                                data-loginid={member.loginId}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  props.onUpdateMemberRole?.(member.userId, roleOption.role);
+                                }}
+                                type="button"
+                              >
+                                {`user.role.${roleOption.label}`}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <button
+                        className="ybtn ybtn-danger ybtn-small"
+                        data-action="delete"
+                        data-href={`/${detail.ownerName}/${detail.projectName}/member/${member.userId}/delete`}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          props.onDeleteMember?.(member.userId);
+                        }}
+                        type="button"
+                      >
+                        button.delete
+                      </button>
+                    </>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {detail.enrollmentRequests.length > 0 ? (
+            <>
+              <legend>
+                <h3>{`project.member.enrollment.request (${detail.enrollmentRequests.length})`}</h3>
+              </legend>
+              <div className="row-fluid">
+                {detail.enrollmentRequests.map((request) => (
+                  <div className="span2" key={request.userId}>
+                    <div className="pull-left mr10">
+                      <a href={prefixBasePath(props.runtimeConfig.basePath, `/${request.loginId}`)}>
+                        {request.avatarUrl ? (
+                          <img
+                            alt={`${request.userLabel || request.loginId} avatar`}
+                            className="img-circle"
+                            height={65}
+                            src={request.avatarUrl}
+                            width={65}
+                          />
+                        ) : null}
+                      </a>
+                    </div>
+                    <div className="pull-left project-member-enrollment-info">
+                      <span>
+                        <a
+                          href={prefixBasePath(props.runtimeConfig.basePath, `/${request.loginId}`)}
+                        >
+                          <strong>{request.userLabel || request.loginId}</strong>
+                        </a>
+                      </span>
+                      <span>{`(${request.loginId})`}</span>
+                      <button
+                        className="ybtn ybtn-info ybtn-mini blue enrollAcceptBtn"
+                        data-loginid={request.loginId}
+                        onClick={() => props.onAddMember?.(request.loginId)}
+                        type="button"
+                      >
+                        <i className="yobicon-addfriend" /> button.add
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
     </main>
