@@ -6,6 +6,7 @@ import {
   cancelEnrollOrganization,
   cancelEnrollProject,
   changePassword,
+  copyProjectLabels,
   createOrganization,
   createIssue,
   createIssueComment,
@@ -1315,6 +1316,41 @@ describe("issue metadata REST clients", () => {
       labelColor: "#f44336",
       labelName: "Bug",
     });
+  });
+
+  it("posts copyProjectLabels to the v1 label copy endpoint with source project fields", async () => {
+    const fetchMock = vi.fn(async () =>
+      okJsonResponse({
+        copied: 1,
+        labels: [],
+        skipped: 0,
+      }),
+    );
+
+    const result = await copyProjectLabels(
+      runtimeConfig,
+      "csrf-label-copy",
+      {
+        fromOwnerName: "source",
+        fromProjectName: "template",
+        ownerName: "owner",
+        projectName: "projectYobi",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      { body: string; headers: Headers; method: string },
+    ];
+    expect(requestUrl).toBe("/yona/api/v1/owners/owner/projects/projectYobi/labels/copy");
+    expect(requestInit.headers.get("x-csrf-token")).toBe("csrf-label-copy");
+    expect(requestInit.method).toBe("POST");
+    expect(JSON.parse(requestInit.body)).toEqual({
+      fromOwnerName: "source",
+      fromProjectName: "template",
+    });
+    expect(result.copied).toBe(1);
   });
 
   it("reads listProjectMilestones from the v1 milestones endpoint with query params", async () => {

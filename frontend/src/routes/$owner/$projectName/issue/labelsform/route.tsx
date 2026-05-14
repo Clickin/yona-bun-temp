@@ -1,6 +1,7 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  copyProjectLabels,
   createProjectLabel,
   deleteProjectLabel,
   deleteProjectLabelCategory,
@@ -12,7 +13,7 @@ import {
 } from "../../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../../app-runtime-context";
 import { toProjectContainerView } from "../../../../../app-view-models";
-import { ProjectMenu } from "../../../../-project-views";
+import { buildProjectHref, ProjectMenu } from "../../../../-project-views";
 import type { ProjectDetailViewModel } from "../../../../-view-models";
 import {
   classifyConnectFailure,
@@ -167,6 +168,9 @@ function IssueLabelsFormPage(props: {
       <h1>Issue Labels</h1>
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <section className="new-label-wrap">
+        <IssueLabelCopyForm {...props} />
+      </section>
+      <section className="new-label-wrap">
         <strong className="form-legend">Add new label</strong>
         <IssueLabelCreateForm {...props} />
       </section>
@@ -232,6 +236,59 @@ function IssueLabelsFormPage(props: {
         )}
       </section>
     </main>
+  );
+}
+
+function IssueLabelCopyForm(props: {
+  csrfToken: string;
+  onChanged: () => Promise<void>;
+  owner: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const [fromOwnerName, setFromOwnerName] = React.useState("");
+  const [fromProjectName, setFromProjectName] = React.useState("");
+  return (
+    <form
+      action={buildProjectHref(props.runtimeConfig, props.owner, props.projectName, "copyLabels")}
+      className="new-label-wrap"
+      id="copyLabel"
+      method="post"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void copyProjectLabels(props.runtimeConfig, props.csrfToken, {
+          fromOwnerName,
+          fromProjectName,
+          ownerName: props.owner,
+          projectName: props.projectName,
+        }).then(props.onChanged);
+      }}
+    >
+      <strong className="form-legend">label.copy.append</strong>
+      <div className="form-wrap">
+        <input
+          className="input-label mr5"
+          name="owner"
+          onChange={(event) => setFromOwnerName(event.currentTarget.value)}
+          placeholder="project.owner"
+          type="text"
+          value={fromOwnerName}
+        />
+        <input
+          className="input-label"
+          name="projectName"
+          onChange={(event) => setFromProjectName(event.currentTarget.value)}
+          placeholder="project.name"
+          type="text"
+          value={fromProjectName}
+        />
+      </div>
+      <button className="ybtn ybtn-info btn-submit" type="submit">
+        label.copy
+      </button>
+      <div>label.copy.description</div>
+      <div>label.copy.description2</div>
+    </form>
   );
 }
 

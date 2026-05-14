@@ -571,6 +571,7 @@ POST  /:owner/:project/issue/labels        → 라벨 생성
 PUT   /:owner/:project/issue/label/:id     → 라벨 수정
 DELETE /:owner/:project/issue/label/:id/delete → 라벨 삭제
 GET   /:owner/:project/issue/labelsform    → 라벨 관리 폼
+POST  /:owner/:project/copyLabels          → 다른 프로젝트 라벨 복사
 GET   /labels                              → 전역 라벨
 GET   /categories                          → 전역 카테고리
 ```
@@ -583,7 +584,7 @@ GET   /categories                          → 전역 카테고리
 | 라벨 카테고리      | 라벨을 카테고리별 그룹핑                | ✅ Phase 2B 구현    | 2     |
 | 라벨 필터링        | 이슈/게시판 목록에서 라벨 필터          | ✅ Phase 2A/2B 구현 | 2     |
 | 라벨 색상 CSS      | 자동 생성 CSS (`IssueLabel.labelCSS()`) | ✅ Phase 2B 구현    | 2     |
-| 라벨 복사          | 프로젝트 간 라벨 복사                   | gap                 | 6     |
+| 라벨 복사          | 프로젝트 간 라벨 복사                   | ✅ Phase 6 구현     | 6     |
 
 #### 검수 기준
 
@@ -591,6 +592,7 @@ GET   /categories                          → 전역 카테고리
 - [ ] 라벨 색상이 legacy와 동일하게 배경색 + 텍스트색으로 표시
 - [ ] 이슈 필터에서 라벨 선택 시 해당 라벨이 붙은 이슈만 필터링
 - [ ] 카테고리별 라벨 그룹핑이 legacy `labelsform` 화면과 동일
+- [x] `copyLabels`가 읽기 가능한 source 프로젝트의 라벨을 update 가능한 target 프로젝트로 복사하고 중복 라벨을 재사용한다
 
 ---
 
@@ -1403,7 +1405,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 
 - Issue follow-up: notification read state/full mail batching, group sharer mutation, and remaining issue-adjacent parity gaps
 - Board: posting list/detail/create/update/delete/comment flows
-- Label follow-up: copyLabels Phase 6 and legacy external label/project API parity
+- Label follow-up: legacy external label/project API parity for the separate migrator/export/import scope
 - Milestone follow-up: migration export and search milestone result type
 - Code follow-up: Smart HTTP, inline ranged code-comment UX, SVN wrapper integration
 - PullRequest follow-up: merge/conflict acceptance, ranged inline review comment edit/delete, reviewer assignment/threshold lifecycle, fork/clone, branch cleanup/restore

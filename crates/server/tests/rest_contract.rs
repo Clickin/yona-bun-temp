@@ -1529,6 +1529,78 @@ async fn rest_label_routes_manage_labels_and_categories() {
     .await;
     assert_eq!(labels["labels"].as_array().unwrap().len(), 1);
 
+    create_project_rest(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "sourceLabels",
+        "source label project",
+        "public",
+    )
+    .await;
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/sourceLabels/labels",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "categoryName": "Type",
+                "categoryIsExclusive": true,
+                "labelColor": "#2196f3",
+                "labelName": "Feature"
+            })),
+        )
+        .await,
+    )
+    .await;
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/sourceLabels/labels",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "categoryName": "Type",
+                "categoryIsExclusive": true,
+                "labelColor": "#111111",
+                "labelName": "Bug"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let copied = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/labels/copy",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "fromOwnerName": "owner",
+                "fromProjectName": "sourceLabels"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(copied["copied"], 1);
+    assert_eq!(copied["skipped"], 1);
+    assert!(copied["labels"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|label| label["name"] == "Feature" && label["categoryName"] == "Type"));
+    assert!(copied["labels"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|label| label["name"] == "Bug" && label["color"] == "#f44336"));
+
     let updated_category = ok_json(
         rest(
             app.clone(),

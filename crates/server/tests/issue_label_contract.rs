@@ -113,6 +113,15 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String) {
 }
 
 async fn create_public_project(app: axum::Router, cookie: &str, csrf: &str) {
+    create_public_project_named(app, cookie, csrf, "projectYobi").await;
+}
+
+async fn create_public_project_named(
+    app: axum::Router,
+    cookie: &str,
+    csrf: &str,
+    project_name: &str,
+) {
     let response = rpc(
         app,
         "CreateProject",
@@ -120,7 +129,7 @@ async fn create_public_project(app: axum::Router, cookie: &str, csrf: &str) {
         Some(csrf),
         json!({
             "ownerName": "owner",
-            "projectName": "projectYobi",
+            "projectName": project_name,
             "overview": "label parity",
             "projectScope": "public"
         }),
@@ -262,6 +271,7 @@ async fn issue_label_legacy_routes_preserve_json_form_css_and_method_override() 
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_public_project(app.clone(), &cookie, &csrf).await;
+    create_public_project_named(app.clone(), &cookie, &csrf, "sourceLabels").await;
 
     let create_response = app
         .clone()
@@ -287,6 +297,75 @@ async fn issue_label_legacy_routes_preserve_json_form_css_and_method_override() 
     let created: serde_json::Value =
         serde_json::from_str(&response_text(create_response).await).unwrap();
     assert_eq!(created["name"], "UI");
+
+    let source_label_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/owner/sourceLabels/issue/labels")
+                .header(http::header::COOKIE, &cookie)
+                .header("x-csrf-token", &csrf)
+                .header(http::header::ACCEPT, "application/json")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .body(Body::from(
+                    "labelName=Copied&labelColor=2196f3&categoryName=FromSource&categoryIsExclusive=true",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(source_label_response.status(), StatusCode::CREATED);
+
+    let copy_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/owner/projectYobi/copyLabels")
+                .header(http::header::COOKIE, &cookie)
+                .header("x-csrf-token", &csrf)
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .body(Body::from("owner=owner&projectName=sourceLabels"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(copy_response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        copy_response
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/owner/projectYobi/issue/labelsform")
+    );
+
+    let copied_labels_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/owner/projectYobi/issue/labels")
+                .header(http::header::ACCEPT, "application/json")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(copied_labels_response.status(), StatusCode::OK);
+    let copied_labels: serde_json::Value =
+        serde_json::from_str(&response_text(copied_labels_response).await).unwrap();
+    assert!(copied_labels
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|label| label["name"] == "Copied" && label["category"] == "FromSource"));
 
     let css_response = app
         .clone()

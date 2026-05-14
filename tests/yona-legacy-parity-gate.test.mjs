@@ -131,6 +131,21 @@ test("maps notification inbox frontend files to the issue notification slice", (
   );
 });
 
+test("maps project label API files to the issue lifecycle slice", () => {
+  const result = runGate([
+    "frontend/src/api/project-labels.ts",
+    "crates/server/tests/issue_label_contract.rs",
+    "docs/provenance/core-parity-audit.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["issue-lifecycle"],
+  );
+});
+
 test("maps shared frontend query keys to the API query boundary", () => {
   const result = runGate([
     "frontend/src/api/query-keys.ts",

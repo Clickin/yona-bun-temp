@@ -34,6 +34,17 @@ type ProjectLabelCategoryInput = ProjectScope & {
   categoryName: string;
 };
 
+type ProjectLabelCopyInput = ProjectScope & {
+  fromOwnerName: string;
+  fromProjectName: string;
+};
+
+export type ProjectLabelCopyResponse = {
+  copied: number;
+  labels: ListProjectLabelsResponse["labels"];
+  skipped: number;
+};
+
 function toInt64Number(value: bigint | number): number {
   return Number(value);
 }
@@ -157,6 +168,27 @@ export async function deleteProjectLabelRest(
       csrfToken,
       fetchImpl,
       method: "DELETE",
+    },
+  );
+}
+
+export function copyProjectLabelsRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectLabelCopyInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectLabelCopyResponse> {
+  return restFetch<ProjectLabelCopyResponse>(
+    runtimeConfig,
+    `${projectPath(input.ownerName, input.projectName)}/labels/copy`,
+    {
+      body: {
+        fromOwnerName: input.fromOwnerName,
+        fromProjectName: input.fromProjectName,
+      },
+      csrfToken,
+      fetchImpl,
+      method: "POST",
     },
   );
 }

@@ -1069,12 +1069,63 @@ test("organization issue route renders cross-project issue inbox", async ({ page
 test("project issue label management route renders the legacy label editor shell", async ({
   page,
 }) => {
+  let copied = false;
+  await page.route(apiV1Route("/owners/admin/projects/projectYobi/labels"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        labels: copied
+          ? [
+              {
+                categoryId: "11",
+                categoryIsExclusive: true,
+                categoryName: "FromSource",
+                color: "#2196f3",
+                id: "17",
+                name: "Copied",
+              },
+            ]
+          : [],
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/owners/admin/projects/projectYobi/labels/copy"), async (route) => {
+    copied = true;
+    await route.fulfill({
+      body: JSON.stringify({
+        copied: 1,
+        labels: [
+          {
+            categoryId: "11",
+            categoryIsExclusive: true,
+            categoryName: "FromSource",
+            color: "#2196f3",
+            id: "17",
+            name: "Copied",
+          },
+        ],
+        skipped: 0,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
   await page.goto("/yona/admin/projectYobi/issue/labelsform");
   await expect(page.getByRole("heading", { name: "Issue Labels" })).toBeVisible();
+  await expect(page.locator("#copyLabel")).toBeVisible();
+  await expect(page.getByText("label.copy.append")).toBeVisible();
+  await expect(page.getByPlaceholder("project.owner")).toBeVisible();
+  await expect(page.getByPlaceholder("project.name")).toBeVisible();
   await expect(page.getByText("Add new label")).toBeVisible();
-  await expect(page.getByPlaceholder("Category")).toBeVisible();
-  await expect(page.getByPlaceholder("Name")).toBeVisible();
+  await expect(page.getByPlaceholder("Category", { exact: true })).toBeVisible();
+  await expect(page.getByPlaceholder("Name", { exact: true })).toBeVisible();
   await expect(page.getByText("No label exists")).toBeVisible();
+  await page.locator('#copyLabel input[name="owner"]').fill("owner");
+  await page.locator('#copyLabel input[name="projectName"]').fill("sourceLabels");
+  await page.locator("#copyLabel").getByRole("button", { name: "label.copy" }).click();
+  await expect(page.getByText("Copied")).toBeVisible();
 });
 
 test("project milestone routes render list detail and form shells", async ({ page }) => {

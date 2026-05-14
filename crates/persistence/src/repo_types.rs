@@ -364,6 +364,13 @@ pub struct UpdateProjectLabelInput {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CopyProjectLabelsResult {
+    pub copied: u32,
+    pub labels: Vec<IssueLabelRecord>,
+    pub skipped: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CreateProjectLabelCategoryInput {
     pub category_is_exclusive: bool,
     pub category_name: String,
