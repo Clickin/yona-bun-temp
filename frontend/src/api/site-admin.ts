@@ -171,6 +171,20 @@ export type SiteUpdateResponse = {
   versionToUpdate: string | null;
 };
 
+export type SiteMailResponse = {
+  errorMessage: string | null;
+  notConfiguredItems: string[];
+  sender: string;
+  sended: boolean;
+};
+
+export type SiteMailInput = {
+  body: string;
+  from: string;
+  subject: string;
+  to: string;
+};
+
 export const SITE_USER_STATES: SiteUserState[] = [
   "ACTIVE",
   "LOCKED",
@@ -431,6 +445,15 @@ function normalizeSiteUpdateResponse(response: Partial<SiteUpdateResponse>): Sit
   };
 }
 
+function normalizeSiteMailResponse(response: Partial<SiteMailResponse>): SiteMailResponse {
+  return {
+    errorMessage: response.errorMessage ?? null,
+    notConfiguredItems: (response.notConfiguredItems ?? []).map(String),
+    sender: response.sender ?? "",
+    sended: response.sended ?? false,
+  };
+}
+
 export function listSiteUsersRest(
   runtimeConfig: RuntimeConfig,
   input: Partial<SiteUsersQueryInput> = {},
@@ -623,6 +646,29 @@ export function unwatchSiteUpdateRest(
   }).then(normalizeSiteUpdateResponse);
 }
 
+export function readSiteMailRest(
+  runtimeConfig: RuntimeConfig,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteMailResponse> {
+  return restFetch<Partial<SiteMailResponse>>(runtimeConfig, "/sites/mail", {
+    fetchImpl,
+  }).then(normalizeSiteMailResponse);
+}
+
+export function sendSiteMailRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: SiteMailInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteMailResponse> {
+  return restFetch<Partial<SiteMailResponse>>(runtimeConfig, "/sites/mail", {
+    body: input,
+    csrfToken,
+    fetchImpl,
+    method: "POST",
+  }).then(normalizeSiteMailResponse);
+}
+
 export function listSiteUsersQueryOptions(
   runtimeConfig: RuntimeConfig,
   input: Partial<SiteUsersQueryInput> = {},
@@ -678,5 +724,12 @@ export function readSiteUpdateQueryOptions(runtimeConfig: RuntimeConfig) {
   return queryOptions({
     queryFn: () => readSiteUpdateRest(runtimeConfig),
     queryKey: apiQueryKeys.siteAdmin.update(),
+  });
+}
+
+export function readSiteMailQueryOptions(runtimeConfig: RuntimeConfig) {
+  return queryOptions({
+    queryFn: () => readSiteMailRest(runtimeConfig),
+    queryKey: apiQueryKeys.siteAdmin.mail(),
   });
 }

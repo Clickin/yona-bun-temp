@@ -93,7 +93,8 @@
 - Phase 6H complete: Site-admin user delete over `DELETE /api/v1/sites/users/:userId`, including site_admin-only access, CSRF checks, legacy only-manager guard, soft-delete state scrub, membership/assignee cleanup, and the legacy `account-delete` confirmation modal.
 - Phase 6I complete: Site-admin diagnostics read surface over `GET /api/v1/sites/diagnostics` and `/sites/diagnostic`, including site_admin-only access, legacy site settings sidebar, `.title_area`, no-error branch, and error-list `<pre>` rows.
 - Phase 6J complete: Site-admin update read/unwatch surface over `GET /api/v1/sites/update`, `POST /api/v1/sites/update/unwatch`, and `/sites/update`, including site_admin-only access, CSRF-protected notification hide, legacy site settings sidebar, `.title_area`, current-version line, update/download branch, and no-update branch.
-- Remaining admin surface follow-ups: mail/massmail, remote release discovery, and non-current data import/export scope.
+- Phase 6K complete: Site-admin test-mail surface over `GET /api/v1/sites/mail`, `POST /api/v1/sites/mail`, and `/sites/mail`, including site_admin-only access, CSRF-protected test-mail send, legacy `#mailForm`, sender default, missing SMTP config warning, success/failure alert branches, and integrations outbox/SMTP delivery.
+- Remaining admin surface follow-ups: massmail, remote release discovery, and non-current data import/export scope.
 - migration tooling
 - deployment hardening
 - remaining deferred scope review

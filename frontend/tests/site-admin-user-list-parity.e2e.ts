@@ -568,3 +568,56 @@ test("renders legacy site-admin update shell and hides update notification", asy
   expect(seenPosts).toEqual(["/yona/api/v1/sites/update/unwatch"]);
   await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
 });
+
+test("renders legacy site-admin mail shell and sends a test mail", async ({ page }) => {
+  let sended = false;
+  const seenPosts: Array<{ body: unknown; path: string }> = [];
+  await page.route(apiV1Route("/sites/mail"), async (route) => {
+    if (route.request().method() === "POST") {
+      seenPosts.push({
+        body: JSON.parse(route.request().postData() || "{}"),
+        path: new URL(route.request().url()).pathname,
+      });
+      sended = true;
+    }
+    await route.fulfill({
+      body: JSON.stringify({
+        errorMessage: null,
+        notConfiguredItems: ["smtp.host", "smtp.user", "smtp.password"],
+        sender: "site@example.com",
+        sended,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/sites/mail");
+
+  await expect(page.locator(".site-setting-nav li.active")).toContainText("Send Mail");
+  await expect(page.locator(".title_area h2")).toHaveText("Send email");
+  await expect(page.locator("#mailForm")).toBeVisible();
+  await expect(page.locator("input[name='from']")).toHaveValue("site@example.com");
+  await expect(page.getByText("site.mail.notConfigured")).toBeVisible();
+  await expect(page.getByText("smtp.host")).toBeVisible();
+
+  await page.locator("input[name='from']").fill("sender@example.com");
+  await page.locator("input[name='to']").fill("recipient@example.com");
+  await page.locator("input[name='subject']").fill("Subject");
+  await page.locator("textarea[name='body']").fill("Mail body");
+  await page.getByRole("button", { name: "site.mail.send" }).click();
+
+  await expect(page.getByText("site.mail.sended")).toBeVisible();
+  expect(seenPosts).toEqual([
+    {
+      body: {
+        body: "Mail body",
+        from: "sender@example.com",
+        subject: "Subject",
+        to: "recipient@example.com",
+      },
+      path: "/yona/api/v1/sites/mail",
+    },
+  ]);
+  await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
+});

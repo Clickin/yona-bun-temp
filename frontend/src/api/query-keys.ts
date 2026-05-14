@@ -144,6 +144,7 @@ export const apiQueryKeys = {
   },
   siteAdmin: {
     diagnostics: () => [...apiQueryKeys.v1(), "sites", "diagnostics"] as const,
+    mail: () => [...apiQueryKeys.v1(), "sites", "mail"] as const,
     update: () => [...apiQueryKeys.v1(), "sites", "update"] as const,
     issues: (input: { pageNum: number; pageSize: number; state: string }) =>
       [

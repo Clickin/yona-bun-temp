@@ -5,6 +5,7 @@ use http_body_util::BodyExt;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, Set};
 use serde_json::json;
 use tower::ServiceExt;
+use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
     site_admin, AppRepository, CreateIssueInput, CreatePostingInput, CreateProjectInput,
     IssueMutationInput, PostingMutationInput,
@@ -240,6 +241,28 @@ async fn rest_post(
         builder = builder.header("x-csrf-token", csrf);
     }
     app.oneshot(builder.body(Body::empty()).unwrap())
+        .await
+        .unwrap()
+}
+
+async fn rest_post_json(
+    app: axum::Router,
+    uri: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    body: serde_json::Value,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(Method::POST)
+        .uri(uri)
+        .header(http::header::CONTENT_TYPE, "application/json");
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+    app.oneshot(builder.body(Body::from(body.to_string())).unwrap())
         .await
         .unwrap()
 }
@@ -808,4 +831,92 @@ async fn site_admin_update_requires_admin_and_unwatches_legacy_notification() {
     .await;
     assert_eq!(unwatched["hasUpdate"], false);
     assert_eq!(unwatched["isWatched"], false);
+}
+
+#[tokio::test]
+async fn site_admin_mail_requires_admin_and_sends_legacy_test_mail() {
+    clear_test_outbox();
+    std::env::remove_var("SMTP_ENABLED");
+    std::env::remove_var("SMTP_HOST");
+    std::env::remove_var("SMTP_USER");
+    std::env::remove_var("SMTP_PASS");
+    std::env::set_var("SMTP_FROM", "site@example.com");
+
+    let (app, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "admin").await;
+    let (member_csrf, member_cookie, _) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let forbidden = rest_get(app.clone(), "/yona/api/v1/sites/mail", Some(&member_cookie)).await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let mail =
+        response_json(rest_get(app.clone(), "/yona/api/v1/sites/mail", Some(&admin_cookie)).await)
+            .await;
+    assert_eq!(mail["sender"], "site@example.com");
+    assert_eq!(mail["sended"], false);
+    assert_eq!(mail["errorMessage"], serde_json::Value::Null);
+    assert_eq!(
+        mail["notConfiguredItems"],
+        json!(["smtp.host", "smtp.user", "smtp.password"])
+    );
+
+    let invalid_csrf = rest_post_json(
+        app.clone(),
+        "/yona/api/v1/sites/mail",
+        Some(&admin_cookie),
+        None,
+        json!({
+            "from": "sender@example.com",
+            "to": "recipient@example.com",
+            "subject": "Subject",
+            "body": "Mail body"
+        }),
+    )
+    .await;
+    assert_eq!(invalid_csrf.status(), StatusCode::FORBIDDEN);
+
+    let forbidden_post = rest_post_json(
+        app.clone(),
+        "/yona/api/v1/sites/mail",
+        Some(&member_cookie),
+        Some(&member_csrf),
+        json!({
+            "from": "sender@example.com",
+            "to": "recipient@example.com",
+            "subject": "Subject",
+            "body": "Mail body"
+        }),
+    )
+    .await;
+    assert_eq!(forbidden_post.status(), StatusCode::FORBIDDEN);
+
+    let sent = response_json(
+        rest_post_json(
+            app,
+            "/yona/api/v1/sites/mail",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            json!({
+                "from": "sender@example.com",
+                "to": "recipient@example.com",
+                "subject": "Subject",
+                "body": "Mail body"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(sent["sender"], "site@example.com");
+    assert_eq!(sent["sended"], true);
+    assert_eq!(sent["errorMessage"], serde_json::Value::Null);
+
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].from, "sender@example.com");
+    assert_eq!(outbox[0].to, "recipient@example.com");
+    assert_eq!(outbox[0].subject, "Subject");
+    assert_eq!(outbox[0].body, "Mail body");
+
+    std::env::remove_var("SMTP_FROM");
 }

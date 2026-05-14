@@ -22,7 +22,9 @@ import {
   deleteSiteProjectRest,
   deleteSiteUserRest,
   readSiteDiagnosticsQueryOptions,
+  readSiteMailQueryOptions,
   readSiteUpdateQueryOptions,
+  sendSiteMailRest,
   listSiteIssuesQueryOptions,
   listSitePostsQueryOptions,
   listSiteProjectsQueryOptions,
@@ -332,6 +334,14 @@ describe("api query keys", () => {
     expect(options.queryFn).toEqual(expect.any(Function));
   });
 
+  it("builds site-admin mail query options from canonical query keys", () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const options = readSiteMailQueryOptions(runtimeConfig);
+
+    expect(options.queryKey).toEqual(apiQueryKeys.siteAdmin.mail());
+    expect(options.queryFn).toEqual(expect.any(Function));
+  });
+
   it("uses POST for site-admin user action REST mutations", async () => {
     const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
     const requests: string[] = [];
@@ -435,6 +445,50 @@ describe("api query keys", () => {
     await unwatchSiteUpdateRest(runtimeConfig, "csrf", fetchImpl);
 
     expect(requests).toEqual(["POST /yona/api/v1/sites/update/unwatch"]);
+  });
+
+  it("uses POST JSON for site-admin mail REST mutations", async () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const requests: string[] = [];
+    const bodies: unknown[] = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      requests.push(`${init?.method ?? ""} ${String(input)}`);
+      bodies.push(JSON.parse(String(init?.body ?? "{}")));
+      return new Response(
+        JSON.stringify({
+          errorMessage: null,
+          notConfiguredItems: [],
+          sender: "site@example.com",
+          sended: true,
+        }),
+        {
+          headers: { "content-type": "application/json" },
+          status: 200,
+        },
+      );
+    };
+
+    await sendSiteMailRest(
+      runtimeConfig,
+      "csrf",
+      {
+        body: "Mail body",
+        from: "sender@example.com",
+        subject: "Subject",
+        to: "recipient@example.com",
+      },
+      fetchImpl,
+    );
+
+    expect(requests).toEqual(["POST /yona/api/v1/sites/mail"]);
+    expect(bodies).toEqual([
+      {
+        body: "Mail body",
+        from: "sender@example.com",
+        subject: "Subject",
+        to: "recipient@example.com",
+      },
+    ]);
   });
 
   it("uses PATCH for board update REST mutations", async () => {

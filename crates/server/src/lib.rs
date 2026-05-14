@@ -2270,6 +2270,24 @@ struct RestSiteUpdateResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RestSiteMailResponse {
+    error_message: Option<String>,
+    not_configured_items: Vec<String>,
+    sender: String,
+    sended: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteMailBody {
+    from: String,
+    to: String,
+    subject: String,
+    body: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RestNotificationActor {
     avatar_url: String,
     display_name: String,
@@ -3685,6 +3703,23 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap| {
                     let service = service.clone();
                     async move { rest_unwatch_site_update(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/sites/mail",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_read_site_mail(headers, service).await }
+                }
+            })
+            .post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestSiteMailBody>| {
+                    let service = service.clone();
+                    async move { rest_send_site_mail(headers, body, service).await }
                 }
             }),
         )
@@ -7252,6 +7287,74 @@ async fn rest_unwatch_site_update(
         .site_update_watch_state
         .store(false, Ordering::SeqCst);
     Ok(Json(rest_site_update_response(false)))
+}
+
+fn site_mail_not_configured_items() -> Vec<String> {
+    [
+        ("smtp.host", "SMTP_HOST"),
+        ("smtp.user", "SMTP_USER"),
+        ("smtp.password", "SMTP_PASS"),
+    ]
+    .into_iter()
+    .filter_map(|(legacy_key, env_key)| {
+        std::env::var(env_key)
+            .ok()
+            .filter(|value| !value.trim().is_empty())
+            .map(|_| ())
+            .is_none()
+            .then(|| legacy_key.to_string())
+    })
+    .collect()
+}
+
+fn rest_site_mail_response(sended: bool, error_message: Option<String>) -> RestSiteMailResponse {
+    RestSiteMailResponse {
+        error_message,
+        not_configured_items: site_mail_not_configured_items(),
+        sender: default_smtp_from(),
+        sended,
+    }
+}
+
+async fn rest_read_site_mail(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteMailResponse>, RestRouteError> {
+    let _repository = require_site_admin_repository_read(
+        &headers,
+        &service.session_manager,
+        &service.backend,
+        "site admin mail",
+    )
+    .await?;
+    Ok(Json(rest_site_mail_response(false, None)))
+}
+
+async fn rest_send_site_mail(
+    headers: HeaderMap,
+    body: RestSiteMailBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteMailResponse>, RestRouteError> {
+    let _repository =
+        require_site_admin_repository(&headers, &service.session_manager, &service.backend).await?;
+    if body.from.trim().is_empty()
+        || body.to.trim().is_empty()
+        || body.subject.trim().is_empty()
+        || body.body.trim().is_empty()
+    {
+        return Err(RestRouteError::bad_request("mail fields are required"));
+    }
+
+    let result = deliver(OutboundMail {
+        body: body.body,
+        from: body.from,
+        subject: body.subject,
+        to: body.to,
+    });
+    match result {
+        Ok(()) => Ok(Json(rest_site_mail_response(true, None))),
+        Err(error) => Ok(Json(rest_site_mail_response(false, Some(error)))),
+    }
 }
 
 async fn rest_read_site_diagnostics(

@@ -17,8 +17,10 @@ import {
   normalizeSiteProjectsQuery,
   normalizeSiteUsersQuery,
   readSiteDiagnosticsQueryOptions,
+  readSiteMailQueryOptions,
   readSiteUpdateQueryOptions,
   resetSiteUserPasswordRest,
+  sendSiteMailRest,
   SITE_ISSUE_STATES,
   SITE_USER_STATES,
   toggleSiteUserAccountLockRest,
@@ -30,6 +32,8 @@ import {
   type SiteIssuesQueryInput,
   type SiteIssuesResponse,
   type SiteIssueState,
+  type SiteMailInput,
+  type SiteMailResponse,
   type SitePostListItem,
   type SitePostsQueryInput,
   type SitePostsResponse,
@@ -255,6 +259,10 @@ function SiteAdminRouteComponent() {
     ...readSiteUpdateQueryOptions(runtimeConfig),
     enabled: canRender && pageName === "update",
   });
+  const siteMailQuery = useQuery({
+    ...readSiteMailQueryOptions(runtimeConfig),
+    enabled: canRender && pageName === "mail",
+  });
   const userActionError = React.useCallback(
     (error: Error, fallback: string) => {
       setErrorMessage(error instanceof Error ? error.message : fallback);
@@ -312,6 +320,11 @@ function SiteAdminRouteComponent() {
     onError: (error) => userActionError(error, "Hide update notification failed."),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.update() }),
   });
+  const sendSiteMailMutation = useMutation({
+    mutationFn: (input: SiteMailInput) => sendSiteMailRest(runtimeConfig, csrfToken, input),
+    onError: (error) => userActionError(error, "Send site mail failed."),
+    onSuccess: (response) => queryClient.setQueryData(apiQueryKeys.siteAdmin.mail(), response),
+  });
 
   useDocumentTitle(
     pageName === "userList"
@@ -326,7 +339,9 @@ function SiteAdminRouteComponent() {
               ? "Site Diagnostics"
               : pageName === "update"
                 ? "Software Update"
-                : "Site Admin",
+                : pageName === "mail"
+                  ? "Send email"
+                  : "Site Admin",
   );
 
   React.useEffect(() => {
@@ -359,7 +374,9 @@ function SiteAdminRouteComponent() {
               ? diagnosticsQuery.error
               : pageName === "update"
                 ? siteUpdateQuery.error
-                : userListQuery.error;
+                : pageName === "mail"
+                  ? siteMailQuery.error
+                  : userListQuery.error;
     if (!error) {
       return;
     }
@@ -381,7 +398,9 @@ function SiteAdminRouteComponent() {
                 ? "Read site diagnostics failed."
                 : pageName === "update"
                   ? "Read site update failed."
-                  : "Read site users failed.",
+                  : pageName === "mail"
+                    ? "Read site mail failed."
+                    : "Read site users failed.",
     );
   }, [
     diagnosticsQuery.error,
@@ -390,6 +409,7 @@ function SiteAdminRouteComponent() {
     postListQuery.error,
     projectListQuery.error,
     setErrorMessage,
+    siteMailQuery.error,
     siteUpdateQuery.error,
     userListQuery.error,
   ]);
@@ -463,6 +483,18 @@ function SiteAdminRouteComponent() {
         isUnwatching={unwatchSiteUpdateMutation.isPending}
         onUnwatch={() => unwatchSiteUpdateMutation.mutate()}
         response={siteUpdateQuery.data}
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
+
+  if (pageName === "mail") {
+    return (
+      <SiteAdminMailPage
+        isLoading={siteMailQuery.isLoading}
+        isSending={sendSiteMailMutation.isPending}
+        onSend={(input) => sendSiteMailMutation.mutate(input)}
+        response={siteMailQuery.data}
         runtimeConfig={runtimeConfig}
       />
     );
@@ -825,6 +857,124 @@ function SiteAdminUpdatePage(props: {
             <p>{`site.update.currentVersion ${response.currentVersion}`}</p>
           ) : null}
         </div>
+      )}
+    </SiteAdminLayout>
+  );
+}
+
+function SiteAdminMailPage(props: {
+  isLoading: boolean;
+  isSending: boolean;
+  onSend: (input: SiteMailInput) => void;
+  response: SiteMailResponse | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const response = props.response;
+  const notConfiguredItems = response?.notConfiguredItems ?? [];
+
+  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    props.onSend({
+      body: String(formData.get("body") ?? ""),
+      from: String(formData.get("from") ?? ""),
+      subject: String(formData.get("subject") ?? ""),
+      to: String(formData.get("to") ?? ""),
+    });
+  }
+
+  return (
+    <SiteAdminLayout activePageName="mail" runtimeConfig={props.runtimeConfig}>
+      <div className="title_area">
+        <h2 className="pull-left">Send email</h2>
+      </div>
+      {props.isLoading ? (
+        <p>Loading…</p>
+      ) : (
+        <>
+          {response?.errorMessage ? (
+            <div className="alert alert-error">
+              <p>site.mail.fail</p>
+              <p>{response.errorMessage}</p>
+            </div>
+          ) : null}
+          {response?.sended ? <div className="alert alert-success">site.mail.sended</div> : null}
+          {notConfiguredItems.length > 0 ? (
+            <div className="alert alert-error">
+              <p>site.mail.notConfigured</p>
+              <ul>
+                {notConfiguredItems.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          <form
+            action={siteHref(props.runtimeConfig, "/sites/mail")}
+            className="form-horizontal"
+            id="mailForm"
+            method="post"
+            onSubmit={onSubmit}
+          >
+            <div className="control-group">
+              <label className="control-label span3" htmlFor="site-mail-from">
+                site.mail.from
+              </label>
+              <div className="controls">
+                <input
+                  className="span4"
+                  defaultValue={response?.sender ?? ""}
+                  id="site-mail-from"
+                  name="from"
+                  placeholder="site.mail.fromPlaceholder"
+                  required
+                  type="text"
+                />
+              </div>
+            </div>
+            <div className="control-group">
+              <label className="control-label" htmlFor="site-mail-to">
+                site.mail.to
+              </label>
+              <div className="controls">
+                <input
+                  className="span4"
+                  id="site-mail-to"
+                  name="to"
+                  placeholder="site.mail.toPlaceholder"
+                  required
+                  type="text"
+                />
+              </div>
+            </div>
+            <div className="control-group mr10">
+              <label className="control-label" htmlFor="site-mail-subject">
+                site.mail.subject
+              </label>
+              <div className="controls">
+                <input className="span12" id="site-mail-subject" name="subject" type="text" />
+              </div>
+            </div>
+            <div className="control-group mr10">
+              <label className="control-label" htmlFor="body">
+                site.mail.body
+              </label>
+              <div className="controls">
+                <textarea
+                  className="span12 input-xlarge textbody"
+                  id="body"
+                  name="body"
+                  rows={16}
+                />
+              </div>
+            </div>
+            <div className="span12 mail-btn-wrap">
+              <button className="ybtn ybtn-primary" disabled={props.isSending} type="submit">
+                <strong>site.mail.send</strong>
+              </button>
+            </div>
+          </form>
+        </>
       )}
     </SiteAdminLayout>
   );

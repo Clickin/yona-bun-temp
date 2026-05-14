@@ -222,6 +222,20 @@ describe("file-route parity harness", () => {
     expect(siteRouteSource).toContain("site.update.download");
   });
 
+  it("requires a real site-admin mail route instead of a follow-up shell", () => {
+    const siteRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/sites/$pageName/route.tsx"),
+      "utf8",
+    );
+
+    expect(siteRouteSource).toContain("SiteAdminMailPage");
+    expect(siteRouteSource).toContain("readSiteMailQueryOptions");
+    expect(siteRouteSource).toContain("sendSiteMailRest");
+    expect(siteRouteSource).toContain("mailForm");
+    expect(siteRouteSource).toContain("site.mail.notConfigured");
+    expect(siteRouteSource).toContain("site.mail.sended");
+  });
+
   it("requires real project issue routes instead of placeholder pages", () => {
     const issueListRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/$owner/$projectName/issues/route.tsx"),
