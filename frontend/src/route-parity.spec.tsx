@@ -144,11 +144,13 @@ describe("file-route parity harness", () => {
     expect(siteRouteSource).toContain("toggleSiteUserAccountLockRest");
     expect(siteRouteSource).toContain("toggleSiteUserGuestModeRest");
     expect(siteRouteSource).toContain("resetSiteUserPasswordRest");
+    expect(siteRouteSource).toContain("deleteSiteUserRest");
     expect(siteRouteSource).toContain("site-setting-wrap");
     expect(siteRouteSource).toContain("site-setting-nav");
     expect(siteRouteSource).toContain("user-list-wrap");
     expect(siteRouteSource).toContain("data-request-uri");
     expect(siteRouteSource).toContain('data-toggle="reset-password"');
+    expect(siteRouteSource).toContain('data-toggle="account-delete"');
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
     expect(routeTreeSource).toContain("fullPath: '/sites/$pageName'");
   });

@@ -127,7 +127,11 @@ test("renders legacy site-admin user list shell and filters without placeholders
   await expect(page.getByRole("button", { name: "Lock account" })).toBeEnabled();
   await expect(page.getByRole("button", { name: "Make site admin" })).toBeEnabled();
   await expect(page.getByRole("button", { name: "Reset password" })).toBeEnabled();
-  await expect(page.getByRole("button", { name: "Delete" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Delete" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Delete" })).toHaveAttribute(
+    "data-toggle",
+    "account-delete",
+  );
 });
 
 test("renders forbidden shell when site-admin API rejects the viewer", async ({ page }) => {
@@ -267,6 +271,73 @@ test("posts legacy site-admin user row action toggles and refreshes the list", a
     "/yona/api/v1/sites/users/member/toggle-site-admin",
     "/yona/api/v1/sites/users/member/toggle-account-lock",
   ]);
+});
+
+test("posts legacy site-admin user delete through the confirmation modal", async ({ page }) => {
+  let deleted = false;
+  const seenDeletes: string[] = [];
+  await page.route(apiV1Route("/sites/users**"), async (route) => {
+    if (route.request().method() === "DELETE") {
+      seenDeletes.push(new URL(route.request().url()).pathname);
+      deleted = true;
+      await route.fulfill({
+        body: JSON.stringify({ ok: true }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+      return;
+    }
+
+    await route.fulfill({
+      body: JSON.stringify({
+        hasMore: false,
+        items: deleted
+          ? []
+          : [
+              {
+                avatarUrl: "https://example.test/member.png",
+                createdAt: "2026-05-01T00:00:00",
+                createdLabel: "2026-05-01",
+                displayName: "Member",
+                emailAddress: "member@example.com",
+                id: "2",
+                isGuest: false,
+                isSiteAdmin: false,
+                lastStateModifiedAt: "",
+                lastStateModifiedLabel: "",
+                loginId: "member",
+                state: "active",
+              },
+            ],
+        pageNum: 1,
+        pageSize: 30,
+        query: "member",
+        state: "ACTIVE",
+        tabs: [
+          { state: "ACTIVE", total: deleted ? 0 : 1 },
+          { state: "LOCKED", total: 0 },
+          { state: "DELETED", total: deleted ? 1 : 0 },
+          { state: "GUEST", total: 0 },
+          { state: "SITE_ADMIN", total: 0 },
+        ],
+        total: deleted ? 0 : 1,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/sites/userList?state=ACTIVE&query=member");
+
+  const deleteButton = page.locator("[data-toggle='account-delete']");
+  await expect(deleteButton).toBeEnabled();
+  await expect(deleteButton).toHaveAttribute("data-href", "/yona/sites/user/delete/2");
+  await deleteButton.click();
+  await expect(page.locator("#alertDeletionWrap")).toBeVisible();
+  await expect(page.locator("#userInfo")).toHaveText("Member(member)");
+  await page.locator("#accountToggleBtn").click();
+  await expect(page.getByText("No users found.")).toBeVisible();
+  expect(seenDeletes).toEqual(["/yona/api/v1/sites/users/2"]);
 });
 
 test("renders legacy site-admin project list shell and filters without placeholders", async ({

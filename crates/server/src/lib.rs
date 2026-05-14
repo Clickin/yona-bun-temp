@@ -3584,6 +3584,18 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/sites/users/{user_id}",
+            delete({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap, Path(user_id): Path<i64>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move { rest_delete_site_user(headers, user_id, session_manager, backend).await }
+                }
+            }),
+        )
+        .route(
             "/sites/projects",
             get({
                 let session_manager = session_manager.clone();
@@ -6913,6 +6925,51 @@ async fn rest_reset_site_user_password(
         login_id: target.login_id,
         name: target.display_name,
         new_password,
+    }))
+}
+
+async fn rest_delete_site_user(
+    headers: HeaderMap,
+    user_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestProjectDeleteResponse>, RestRouteError> {
+    let repository = require_site_admin_repository(&headers, &session_manager, &backend).await?;
+    let target = repository
+        .find_user_by_id(user_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("site admin user not found"))?;
+    if target.login_id.eq_ignore_ascii_case("anonymous") {
+        return Err(RestRouteError::permission_denied(
+            "anonymous user deletion is not allowed",
+        ));
+    }
+    if repository
+        .site_admin_user_is_only_project_manager(user_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+    {
+        return Err(RestRouteError::permission_denied(
+            "site user is the only manager of a project",
+        ));
+    }
+
+    let deleted = repository
+        .delete_site_admin_user(user_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .is_some();
+    if !deleted {
+        return Err(RestRouteError::not_found("site admin user not found"));
+    }
+
+    Ok(Json(RestProjectDeleteResponse {
+        ok: true,
+        redirect_path: "/sites/userList".to_string(),
     }))
 }
 

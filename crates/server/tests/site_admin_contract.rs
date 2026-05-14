@@ -432,6 +432,77 @@ async fn site_admin_user_list_actions_require_admin_csrf_and_toggle_legacy_flags
 }
 
 #[tokio::test]
+async fn site_admin_user_delete_requires_admin_csrf_and_only_manager_guard() {
+    let (app, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "admin").await;
+    let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
+    let project_id = create_project(&db, "member", "owned", "Owned overview").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let forbidden = rest_delete(
+        app.clone(),
+        &format!("/yona/api/v1/sites/users/{member_id}"),
+        Some(&member_cookie),
+        Some(&member_csrf),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let invalid_csrf = rest_delete(
+        app.clone(),
+        &format!("/yona/api/v1/sites/users/{member_id}"),
+        Some(&admin_cookie),
+        None,
+    )
+    .await;
+    assert_eq!(invalid_csrf.status(), StatusCode::FORBIDDEN);
+
+    let only_manager = rest_delete(
+        app.clone(),
+        &format!("/yona/api/v1/sites/users/{member_id}"),
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+    )
+    .await;
+    assert_eq!(only_manager.status(), StatusCode::FORBIDDEN);
+
+    AppRepository::new(db.clone())
+        .add_project_membership(project_id, admin_id, "manager")
+        .await
+        .expect("second manager");
+
+    let deleted = response_json(
+        rest_delete(
+            app.clone(),
+            &format!("/yona/api/v1/sites/users/{member_id}"),
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(deleted["ok"], true);
+
+    let deleted_users = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/sites/users?state=DELETED&query=member&pageNum=1&pageSize=30",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(deleted_users["total"], 1);
+    assert_eq!(deleted_users["items"][0]["loginId"], "member");
+    assert_eq!(deleted_users["items"][0]["displayName"], "[DELETED]member");
+    assert_eq!(
+        deleted_users["items"][0]["emailAddress"],
+        "deleted-member@noreply.yona.io"
+    );
+    assert_eq!(deleted_users["items"][0]["state"], "deleted");
+}
+
+#[tokio::test]
 async fn site_admin_project_list_requires_site_admin_and_filters_legacy_names() {
     let (app, db) = build_app_with_repository().await;
     let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "admin").await;

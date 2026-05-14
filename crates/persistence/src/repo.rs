@@ -865,6 +865,122 @@ impl AppRepository {
             .await
     }
 
+    pub async fn site_admin_user_is_only_project_manager(
+        &self,
+        user_id: i64,
+    ) -> Result<bool, DbErr> {
+        let Some(user) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+            return Ok(false);
+        };
+        let Some(login_id) = normalize_optional(user.login_id.as_deref()) else {
+            return Ok(false);
+        };
+
+        let mut manager_project_ids = HashSet::new();
+        let memberships = project_user::Entity::find()
+            .filter(project_user::Column::UserId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?;
+        for membership in memberships {
+            if normalize_identity(&self.role_name_for_id(membership.role_id).await?) != "manager" {
+                continue;
+            }
+            let Some(project_id) = membership.project_id else {
+                continue;
+            };
+            manager_project_ids.insert(project_id);
+        }
+        for project in project::Entity::find().all(&self.db).await? {
+            if normalize_optional(project.owner.as_deref()).as_deref() == Some(login_id.as_str()) {
+                manager_project_ids.insert(project.id);
+            }
+        }
+
+        for project_id in manager_project_ids {
+            let project_managers = project_user::Entity::find()
+                .filter(project_user::Column::ProjectId.eq(Some(project_id)))
+                .all(&self.db)
+                .await?;
+            let mut has_other_manager = false;
+            for role_id in project_managers
+                .into_iter()
+                .filter(|row| row.user_id != Some(user_id))
+                .filter_map(|row| row.role_id)
+            {
+                if normalize_identity(&self.role_name_for_id(Some(role_id)).await?) == "manager" {
+                    has_other_manager = true;
+                    break;
+                }
+            }
+            if !has_other_manager {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
+    }
+
+    pub async fn delete_site_admin_user(
+        &self,
+        user_id: i64,
+    ) -> Result<Option<SiteAdminUserRecord>, DbErr> {
+        let Some(user) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+            return Ok(None);
+        };
+        if normalize_optional(user.login_id.as_deref()).as_deref() == Some("anonymous") {
+            return Ok(None);
+        }
+
+        let login_id = user.login_id.clone().unwrap_or_default();
+        let display_name = user.name.clone().unwrap_or_else(|| login_id.clone());
+        let assignee_ids = assignee::Entity::find()
+            .filter(assignee::Column::UserId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect::<Vec<_>>();
+
+        let txn = self.db.begin().await?;
+        if !assignee_ids.is_empty() {
+            issue::Entity::update_many()
+                .filter(issue::Column::AssigneeId.is_in(assignee_ids.iter().copied().map(Some)))
+                .col_expr(issue::Column::AssigneeId, Expr::value(Option::<i64>::None))
+                .exec(&txn)
+                .await?;
+        }
+        assignee::Entity::delete_many()
+            .filter(assignee::Column::UserId.eq(Some(user_id)))
+            .exec(&txn)
+            .await?;
+        project_user::Entity::delete_many()
+            .filter(project_user::Column::UserId.eq(Some(user_id)))
+            .exec(&txn)
+            .await?;
+        user_enrolled_project::Entity::delete_many()
+            .filter(user_enrolled_project::Column::UserId.eq(user_id))
+            .exec(&txn)
+            .await?;
+        notification_event_n4user::Entity::delete_many()
+            .filter(notification_event_n4user::Column::N4userId.eq(user_id))
+            .exec(&txn)
+            .await?;
+
+        let mut active = n4user::ActiveModel::from(user);
+        active.name = Set(Some(format!("[DELETED]{display_name}")));
+        active.password = Set(Some(String::new()));
+        active.password_salt = Set(Some(String::new()));
+        active.email = Set(Some(format!("deleted-{login_id}@noreply.yona.io")));
+        active.remember_me = Set(Some(0));
+        active.state = Set(Some("deleted".to_string()));
+        active.last_state_modified_date = Set(Some(current_datetime()));
+        let updated = active.update(&txn).await?;
+        txn.commit().await?;
+
+        self.site_admin_user_record_from_current_model(updated.id)
+            .await
+    }
+
     pub async fn list_site_admin_projects(
         &self,
         filter: &str,

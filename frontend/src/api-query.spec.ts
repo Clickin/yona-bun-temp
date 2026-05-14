@@ -20,6 +20,7 @@ import {
 } from "./api/search";
 import {
   deleteSiteProjectRest,
+  deleteSiteUserRest,
   listSiteIssuesQueryOptions,
   listSitePostsQueryOptions,
   listSiteProjectsQueryOptions,
@@ -374,6 +375,22 @@ describe("api query keys", () => {
     await deleteSiteProjectRest(runtimeConfig, "csrf", "7", fetchImpl);
 
     expect(requests).toEqual(["DELETE /yona/api/v1/sites/projects/7"]);
+  });
+
+  it("uses DELETE for site-admin user delete REST mutations", async () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const requests: string[] = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      requests.push(`${init?.method ?? ""} ${String(input)}`);
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { "content-type": "application/json" },
+        status: 200,
+      });
+    };
+
+    await deleteSiteUserRest(runtimeConfig, "csrf", "2", fetchImpl);
+
+    expect(requests).toEqual(["DELETE /yona/api/v1/sites/users/2"]);
   });
 
   it("uses PATCH for board update REST mutations", async () => {

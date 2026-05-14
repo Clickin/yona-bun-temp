@@ -52,6 +52,11 @@ export type SiteUserPasswordResetResponse = {
   newPassword: string;
 };
 
+export type SiteUserDeleteResponse = {
+  ok: boolean;
+  redirectPath: string;
+};
+
 export type SiteProjectListItem = {
   createdAt: string;
   createdLabel: string;
@@ -288,6 +293,15 @@ function normalizeSiteUserPasswordResetResponse(
   };
 }
 
+function normalizeSiteUserDeleteResponse(
+  response: Partial<SiteUserDeleteResponse>,
+): SiteUserDeleteResponse {
+  return {
+    ok: response.ok ?? false,
+    redirectPath: response.redirectPath ?? "/sites/userList",
+  };
+}
+
 function normalizeSiteProjectsResponse(
   response: Partial<SiteProjectsResponse>,
 ): SiteProjectsResponse {
@@ -464,6 +478,23 @@ export function resetSiteUserPasswordRest(
       method: "POST",
     },
   ).then(normalizeSiteUserPasswordResetResponse);
+}
+
+export function deleteSiteUserRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  userId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteUserDeleteResponse> {
+  return restFetch<Partial<SiteUserDeleteResponse>>(
+    runtimeConfig,
+    `/sites/users/${encodeURIComponent(userId)}`,
+    {
+      csrfToken,
+      fetchImpl,
+      method: "DELETE",
+    },
+  ).then(normalizeSiteUserDeleteResponse);
 }
 
 export function listSiteProjectsRest(

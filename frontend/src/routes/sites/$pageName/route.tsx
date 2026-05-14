@@ -7,6 +7,7 @@ import {
   DEFAULT_SITE_PROJECTS_QUERY,
   DEFAULT_SITE_USERS_QUERY,
   deleteSiteProjectRest,
+  deleteSiteUserRest,
   listSiteIssuesQueryOptions,
   listSitePostsQueryOptions,
   listSiteProjectsQueryOptions,
@@ -213,6 +214,11 @@ function SiteAdminRouteComponent() {
     id: string;
     label: string;
   } | null>(null);
+  const [deleteUserTarget, setDeleteUserTarget] = React.useState<{
+    id: string;
+    loginId: string;
+    name: string;
+  } | null>(null);
   const [resetPasswordsByLoginId, setResetPasswordsByLoginId] = React.useState<
     Record<string, string>
   >({});
@@ -265,6 +271,14 @@ function SiteAdminRouteComponent() {
         ...current,
         [response.loginId]: response.newPassword,
       }));
+      void queryClient.invalidateQueries({ queryKey: [...apiQueryKeys.v1(), "sites", "users"] });
+    },
+  });
+  const deleteUserMutation = useMutation({
+    mutationFn: (userId: string) => deleteSiteUserRest(runtimeConfig, csrfToken, userId),
+    onError: (error) => userActionError(error, "Delete user failed."),
+    onSuccess: () => {
+      setDeleteUserTarget(null);
       void queryClient.invalidateQueries({ queryKey: [...apiQueryKeys.v1(), "sites", "users"] });
     },
   });
@@ -416,8 +430,13 @@ function SiteAdminRouteComponent() {
         toggleGuestMutation.isPending ||
         toggleAccountLockMutation.isPending ||
         toggleSiteAdminMutation.isPending ||
-        resetPasswordMutation.isPending
+        resetPasswordMutation.isPending ||
+        deleteUserMutation.isPending
       }
+      deleteUserTarget={deleteUserTarget}
+      onCancelDeleteUser={() => setDeleteUserTarget(null)}
+      onConfirmDeleteUser={(userId) => deleteUserMutation.mutate(userId)}
+      onRequestDeleteUser={(target) => setDeleteUserTarget(target)}
       onResetPassword={(loginId) => resetPasswordMutation.mutate(loginId)}
       onToggleAccountLock={(loginId) => toggleAccountLockMutation.mutate(loginId)}
       onToggleGuestMode={(loginId) => toggleGuestMutation.mutate(loginId)}
@@ -824,8 +843,12 @@ function SiteAdminProjectRow(props: {
 }
 
 function SiteAdminUserListPage(props: {
+  deleteUserTarget: { id: string; loginId: string; name: string } | null;
   isLoading: boolean;
   isMutating: boolean;
+  onCancelDeleteUser: () => void;
+  onConfirmDeleteUser: (userId: string) => void;
+  onRequestDeleteUser: (target: { id: string; loginId: string; name: string }) => void;
   onResetPassword: (loginId: string) => void;
   onToggleAccountLock: (loginId: string) => void;
   onToggleGuestMode: (loginId: string) => void;
@@ -904,6 +927,7 @@ function SiteAdminUserListPage(props: {
               isMutating={props.isMutating}
               item={item}
               key={item.id}
+              onRequestDeleteUser={props.onRequestDeleteUser}
               onResetPassword={props.onResetPassword}
               onToggleAccountLock={props.onToggleAccountLock}
               onToggleGuestMode={props.onToggleGuestMode}
@@ -930,6 +954,36 @@ function SiteAdminUserListPage(props: {
           </a>
         ) : null}
       </div>
+      {props.deleteUserTarget ? (
+        <div aria-hidden="false" className="modal fade in" id="alertDeletionWrap">
+          <div className="modal-header">
+            <button className="close" onClick={props.onCancelDeleteUser} type="button">
+              ×
+            </button>
+            Delete user
+          </div>
+          <div className="modal-body">
+            <p id="userInfo">
+              {props.deleteUserTarget.name}({props.deleteUserTarget.loginId})
+            </p>
+          </div>
+          <div className="modal-footer">
+            <button
+              aria-label="Delete user"
+              className="ybtn ybtn-danger"
+              disabled={props.isMutating}
+              id="accountToggleBtn"
+              onClick={() => props.onConfirmDeleteUser(props.deleteUserTarget?.id ?? "")}
+              type="button"
+            >
+              Delete user
+            </button>
+            <button className="ybtn" onClick={props.onCancelDeleteUser} type="button">
+              Cancel deletion
+            </button>
+          </div>
+        </div>
+      ) : null}
     </SiteAdminLayout>
   );
 }
@@ -937,6 +991,7 @@ function SiteAdminUserListPage(props: {
 function SiteAdminUserRow(props: {
   isMutating: boolean;
   item: SiteUserListItem;
+  onRequestDeleteUser: (target: { id: string; loginId: string; name: string }) => void;
   onResetPassword: (loginId: string) => void;
   onToggleAccountLock: (loginId: string) => void;
   onToggleGuestMode: (loginId: string) => void;
@@ -1043,7 +1098,22 @@ function SiteAdminUserRow(props: {
           >
             {props.item.isSiteAdmin ? "Revoke site admin" : "Make site admin"}
           </button>
-          <button className="ybtn ybtn-small ybtn-danger" disabled type="button">
+          <button
+            className="ybtn ybtn-small ybtn-danger"
+            data-href={siteHref(props.runtimeConfig, `/sites/user/delete/${props.item.id}`)}
+            data-toggle="account-delete"
+            data-user-id={props.item.loginId}
+            data-user-name={props.item.displayName || props.item.loginId}
+            disabled={props.isMutating}
+            onClick={() =>
+              props.onRequestDeleteUser({
+                id: props.item.id,
+                loginId: props.item.loginId,
+                name: props.item.displayName || props.item.loginId,
+              })
+            }
+            type="button"
+          >
             Delete
           </button>
         </div>

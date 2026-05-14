@@ -1,6 +1,6 @@
 # Site Admin Provenance
 
-Status: Phase 6G partial parity.
+Status: Phase 6H partial parity.
 
 ## Legacy Anchors
 
@@ -12,9 +12,10 @@ Status: Phase 6G partial parity.
 - `yona-original/app/views/site/postList.scala.html`: `.post-list-wrap`, `.post-info-wrap`, `.post-meta-wrap`, `.post-project`, `.post-title`, and comment-count anchors.
 - `yona-original/app/views/site/issueList.scala.html`: `.nav.nav-tabs`, `.post-list-wrap`, `.post-info-wrap`, `.post-meta-wrap`, `.post-project`, `.post-title`, and issue comment anchors.
 
-## Phase 6A/6B/6C/6D/6E/6F/6G Mapping
+## Phase 6A/6B/6C/6D/6E/6F/6G/6H Mapping
 
 - `GET /api/v1/sites/users?state=&query=&pageNum=&pageSize=` lists users for site-admin sessions only.
+- `DELETE /api/v1/sites/users/:userId` restores the legacy user-list delete action for site-admin sessions with CSRF checks and the only-project-manager guard.
 - `GET /api/v1/sites/projects?filter=&pageNum=&pageSize=` lists projects for site-admin sessions only and preserves legacy `Project.findByName` name-filter semantics.
 - `DELETE /api/v1/sites/projects/:projectId` restores the legacy project-list delete action for site-admin sessions with CSRF checks.
 - `GET /api/v1/sites/posts?pageNum=&pageSize=` lists recent postings for site-admin sessions only, preserving legacy created-date descending order.
@@ -26,11 +27,10 @@ Status: Phase 6G partial parity.
 - The same route restores `/sites/issueList` with the legacy site settings sidebar, open/closed tabs, dense issue rows, project links, issue links, author metadata, and comment anchors.
 - `frontend/src/api/site-admin.ts` normalizes omitted REST fields and exposes TanStack Query options.
 - User-list role, account-lock, guest-mode, and reset-password controls now post through typed REST mutations. Reset password directly replaces the target password hash and shows the returned temporary password inline, matching `UserApp.resetUserPasswordBySiteManager`.
-- User delete still renders disabled because its legacy only-manager guard is not implemented yet.
+- User delete now uses the legacy `account-delete` confirmation modal, marks the user `deleted` instead of hard-deleting the row, scrubs password/email state, clears project memberships and assignee links, and refreshes the deleted-user tab after success.
 
 ## Remaining Gaps
 
-- User delete.
 - SMTP test mail, mass mail, diagnostics, update check, and unwatchUpdate.
 - Data import/export remains deferred outside current app parity scope.
 
