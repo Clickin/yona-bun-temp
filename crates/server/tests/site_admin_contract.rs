@@ -4,7 +4,7 @@ use http_body_util::BodyExt;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, Set};
 use serde_json::json;
 use tower::ServiceExt;
-use yona_rust_persistence::{site_admin, AppRepository};
+use yona_rust_persistence::{site_admin, AppRepository, CreateProjectInput};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
@@ -133,6 +133,25 @@ async fn mark_site_admin(db: &DatabaseConnection, user_id: i64) {
     .expect("site admin row");
 }
 
+async fn create_project(
+    db: &DatabaseConnection,
+    owner_name: &str,
+    project_name: &str,
+    overview: &str,
+) -> i64 {
+    let project = AppRepository::new(db.clone())
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: owner_name.to_string(),
+            overview: Some(overview.to_string()),
+            project_name: project_name.to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .expect("project");
+    project.id
+}
+
 async fn rest_get(app: axum::Router, uri: &str, cookie_header: Option<&str>) -> Response<Body> {
     let mut builder = Request::builder().method(Method::GET).uri(uri);
     if let Some(cookie_header) = cookie_header {
@@ -188,4 +207,47 @@ async fn site_admin_user_list_requires_site_admin_and_filters_legacy_tabs() {
     assert_eq!(site_admins["items"][0]["loginId"], "admin");
     assert_eq!(site_admins["items"][0]["isSiteAdmin"], true);
     assert_eq!(site_admins["tabs"][4]["state"], "SITE_ADMIN");
+}
+
+#[tokio::test]
+async fn site_admin_project_list_requires_site_admin_and_filters_legacy_names() {
+    let (app, db) = build_app_with_repository().await;
+    let (_, admin_cookie, admin_id) = register_user(app.clone(), "admin").await;
+    let (_, member_cookie, _) = register_user(app.clone(), "member").await;
+    create_project(&db, "admin", "alpha", "Alpha overview").await;
+    let expected_project_id =
+        create_project(&db, "admin", "needleProject", "Needle overview").await;
+    create_project(&db, "member", "other", "Other overview").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let forbidden = rest_get(
+        app.clone(),
+        "/yona/api/v1/sites/projects?filter=needle",
+        Some(&member_cookie),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let projects = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/sites/projects?filter=needle&pageNum=1&pageSize=25",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(projects["filter"], "needle");
+    assert_eq!(projects["pageNum"], 1);
+    assert_eq!(projects["pageSize"], 25);
+    assert_eq!(projects["total"], 1);
+    assert_eq!(projects["items"][0]["id"], expected_project_id.to_string());
+    assert_eq!(projects["items"][0]["ownerName"], "admin");
+    assert_eq!(projects["items"][0]["projectName"], "needleProject");
+    assert_eq!(projects["items"][0]["overview"], "Needle overview");
+    assert_eq!(projects["items"][0]["projectPath"], "/admin/needleProject");
+    assert_eq!(
+        projects["items"][0]["deletePath"],
+        format!("/sites/project/delete/{expected_project_id}")
+    );
 }

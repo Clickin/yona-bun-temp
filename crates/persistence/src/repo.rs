@@ -27,14 +27,14 @@ use crate::repo_types::{
     PullRequestReviewInput, PullRequestStateInput, PullRequestThreadStateInput,
     PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
     ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
-    SearchRepositoryInput, SearchResultRecord, SearchScope, SiteAdminUserListRecord,
-    SiteAdminUserRecord, SiteAdminUserTabRecord, ToggleFavoriteIssueResult,
-    ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
-    UpdateOrganizationInput, UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
-    UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestInput,
-    UserIssueCandidateRecord, UserIssueListFilter, WatchedProjectNotificationsRecord,
-    WorkspaceEmailRecord, WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
-    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    SearchRepositoryInput, SearchResultRecord, SearchScope, SiteAdminProjectListRecord,
+    SiteAdminProjectRecord, SiteAdminUserListRecord, SiteAdminUserRecord, SiteAdminUserTabRecord,
+    ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateIssueCommentInput,
+    UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput,
+    UpdatePostingInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
+    UpdateProjectLabelInput, UpdatePullRequestInput, UserIssueCandidateRecord, UserIssueListFilter,
+    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
+    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
@@ -118,6 +118,12 @@ fn site_user_matches_query(record: &SiteAdminUserRecord, query: &str) -> bool {
     ]
     .iter()
     .any(|value| normalize_identity(value).contains(&normalized_query))
+}
+
+fn site_project_matches_filter(record: &SiteAdminProjectRecord, filter: &str) -> bool {
+    let normalized_filter = normalize_identity(filter);
+    normalized_filter.is_empty()
+        || normalize_identity(&record.project_name).contains(&normalized_filter)
 }
 
 fn issue_assignable_user_matches(user: &n4user::Model, query: &str, search_type: &str) -> bool {
@@ -765,6 +771,59 @@ impl AppRepository {
             query,
             state: selected_state,
             tabs,
+            total,
+        })
+    }
+
+    pub async fn list_site_admin_projects(
+        &self,
+        filter: &str,
+        page_num: u32,
+        page_size: u32,
+    ) -> Result<SiteAdminProjectListRecord, DbErr> {
+        let filter = filter.trim().to_string();
+        let page_num = page_num.max(1);
+        let page_size = page_size.clamp(1, 100);
+        let mut projects = self
+            .list_projects()
+            .await?
+            .into_iter()
+            .map(|project| SiteAdminProjectRecord {
+                created: project.created_date,
+                id: project.id,
+                owner_name: project.owner_name,
+                overview: project.overview.unwrap_or_default(),
+                project_name: project.project_name,
+            })
+            .collect::<Vec<_>>();
+
+        projects.sort_by(|left, right| {
+            right
+                .created
+                .cmp(&left.created)
+                .then_with(|| left.owner_name.cmp(&right.owner_name))
+                .then_with(|| left.project_name.cmp(&right.project_name))
+        });
+
+        let matching = projects
+            .into_iter()
+            .filter(|record| site_project_matches_filter(record, &filter))
+            .collect::<Vec<_>>();
+        let total = matching.len() as u32;
+        let start = ((page_num - 1) * page_size) as usize;
+        let items = matching
+            .into_iter()
+            .skip(start)
+            .take(page_size as usize)
+            .collect::<Vec<_>>();
+        let has_more = total as usize > start + items.len();
+
+        Ok(SiteAdminProjectListRecord {
+            filter,
+            has_more,
+            items,
+            page_num,
+            page_size,
             total,
         })
     }

@@ -146,3 +146,50 @@ test("renders forbidden shell when site-admin API rejects the viewer", async ({ 
   await expect(page.getByRole("heading", { name: "Forbidden" })).toBeVisible();
   await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
 });
+
+test("renders legacy site-admin project list shell and filters without placeholders", async ({
+  page,
+}) => {
+  await page.route(apiV1Route("/sites/projects**"), async (route) => {
+    const url = new URL(route.request().url());
+    const filter = url.searchParams.get("filter") || "";
+    await route.fulfill({
+      body: JSON.stringify({
+        filter,
+        hasMore: false,
+        items: [
+          {
+            createdAt: "2026-05-01T00:00:00",
+            createdLabel: "2026-05-01",
+            deletePath: "/sites/project/delete/7",
+            id: "7",
+            logoUrl: "",
+            overview: "Needle overview",
+            ownerName: "admin",
+            projectName: "needleProject",
+            projectPath: "/admin/needleProject",
+          },
+        ],
+        pageNum: 1,
+        pageSize: 25,
+        total: 1,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/sites/projectList?filter=needle");
+
+  await expect(page.locator(".site-setting-wrap")).toBeVisible();
+  await expect(page.locator(".site-setting-nav li.active")).toContainText("Projects");
+  await expect(page.locator(".form-search input[name='filter']")).toHaveValue("needle");
+  await expect(page.locator(".project-list-wrap")).toBeVisible();
+  await expect(page.locator(".project-list-wrap .project-name")).toHaveText("admin/needleProject");
+  await expect(page.locator("[data-toggle='delete-project']")).toHaveAttribute(
+    "data-href",
+    "/yona/sites/project/delete/7",
+  );
+  await expect(page.locator("[data-toggle='delete-project']")).toBeDisabled();
+  await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
+});

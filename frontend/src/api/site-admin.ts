@@ -12,6 +12,12 @@ export type SiteUsersQueryInput = {
   state: SiteUserState;
 };
 
+export type SiteProjectsQueryInput = {
+  filter: string;
+  pageNum: number;
+  pageSize: number;
+};
+
 export type SiteUserListItem = {
   avatarUrl: string;
   createdAt: string;
@@ -25,6 +31,18 @@ export type SiteUserListItem = {
   lastStateModifiedLabel: string;
   loginId: string;
   state: string;
+};
+
+export type SiteProjectListItem = {
+  createdAt: string;
+  createdLabel: string;
+  deletePath: string;
+  id: string;
+  logoUrl: string;
+  overview: string;
+  ownerName: string;
+  projectName: string;
+  projectPath: string;
 };
 
 export type SiteUserTab = {
@@ -43,6 +61,15 @@ export type SiteUsersResponse = {
   total: number;
 };
 
+export type SiteProjectsResponse = {
+  filter: string;
+  hasMore: boolean;
+  items: SiteProjectListItem[];
+  pageNum: number;
+  pageSize: number;
+  total: number;
+};
+
 export const SITE_USER_STATES: SiteUserState[] = [
   "ACTIVE",
   "LOCKED",
@@ -56,6 +83,12 @@ export const DEFAULT_SITE_USERS_QUERY: SiteUsersQueryInput = {
   pageSize: 30,
   query: "",
   state: "ACTIVE",
+};
+
+export const DEFAULT_SITE_PROJECTS_QUERY: SiteProjectsQueryInput = {
+  filter: "",
+  pageNum: 1,
+  pageSize: 25,
 };
 
 function normalizeSiteUserState(value: unknown): SiteUserState {
@@ -73,6 +106,16 @@ export function normalizeSiteUsersQuery(
     pageSize: Math.max(1, Number(input.pageSize || DEFAULT_SITE_USERS_QUERY.pageSize)),
     query: input.query ?? "",
     state: normalizeSiteUserState(input.state),
+  };
+}
+
+export function normalizeSiteProjectsQuery(
+  input: Partial<SiteProjectsQueryInput> = {},
+): SiteProjectsQueryInput {
+  return {
+    filter: input.filter ?? "",
+    pageNum: Math.max(1, Number(input.pageNum || DEFAULT_SITE_PROJECTS_QUERY.pageNum)),
+    pageSize: Math.max(1, Number(input.pageSize || DEFAULT_SITE_PROJECTS_QUERY.pageSize)),
   };
 }
 
@@ -109,6 +152,30 @@ function normalizeSiteUsersResponse(response: Partial<SiteUsersResponse>): SiteU
   };
 }
 
+function normalizeSiteProjectsResponse(
+  response: Partial<SiteProjectsResponse>,
+): SiteProjectsResponse {
+  const items = (response.items ?? []).map((item) => ({
+    createdAt: item.createdAt ?? "",
+    createdLabel: item.createdLabel ?? "",
+    deletePath: item.deletePath ?? "",
+    id: item.id ?? "",
+    logoUrl: item.logoUrl ?? "",
+    overview: item.overview ?? "",
+    ownerName: item.ownerName ?? "",
+    projectName: item.projectName ?? "",
+    projectPath: item.projectPath ?? "",
+  }));
+  return {
+    filter: response.filter ?? "",
+    hasMore: response.hasMore ?? false,
+    items,
+    pageNum: response.pageNum ?? DEFAULT_SITE_PROJECTS_QUERY.pageNum,
+    pageSize: response.pageSize ?? DEFAULT_SITE_PROJECTS_QUERY.pageSize,
+    total: response.total ?? items.length,
+  };
+}
+
 export function listSiteUsersRest(
   runtimeConfig: RuntimeConfig,
   input: Partial<SiteUsersQueryInput> = {},
@@ -125,6 +192,21 @@ export function listSiteUsersRest(
   }).then(normalizeSiteUsersResponse);
 }
 
+export function listSiteProjectsRest(
+  runtimeConfig: RuntimeConfig,
+  input: Partial<SiteProjectsQueryInput> = {},
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteProjectsResponse> {
+  const query = normalizeSiteProjectsQuery(input);
+  const params = new URLSearchParams();
+  params.set("filter", query.filter);
+  params.set("pageNum", String(query.pageNum));
+  params.set("pageSize", String(query.pageSize));
+  return restFetch<Partial<SiteProjectsResponse>>(runtimeConfig, `/sites/projects?${params}`, {
+    fetchImpl,
+  }).then(normalizeSiteProjectsResponse);
+}
+
 export function listSiteUsersQueryOptions(
   runtimeConfig: RuntimeConfig,
   input: Partial<SiteUsersQueryInput> = {},
@@ -133,5 +215,16 @@ export function listSiteUsersQueryOptions(
   return queryOptions({
     queryFn: () => listSiteUsersRest(runtimeConfig, query),
     queryKey: apiQueryKeys.siteAdmin.users(query),
+  });
+}
+
+export function listSiteProjectsQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: Partial<SiteProjectsQueryInput> = {},
+) {
+  const query = normalizeSiteProjectsQuery(input);
+  return queryOptions({
+    queryFn: () => listSiteProjectsRest(runtimeConfig, query),
+    queryKey: apiQueryKeys.siteAdmin.projects(query),
   });
 }

@@ -2,10 +2,16 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  DEFAULT_SITE_PROJECTS_QUERY,
   DEFAULT_SITE_USERS_QUERY,
+  listSiteProjectsQueryOptions,
   listSiteUsersQueryOptions,
+  normalizeSiteProjectsQuery,
   normalizeSiteUsersQuery,
   SITE_USER_STATES,
+  type SiteProjectListItem,
+  type SiteProjectsQueryInput,
+  type SiteProjectsResponse,
   type SiteUserListItem,
   type SiteUsersQueryInput,
   type SiteUsersResponse,
@@ -58,6 +64,19 @@ function readSiteUsersQuery(): SiteUsersQueryInput {
   });
 }
 
+function readSiteProjectsQuery(): SiteProjectsQueryInput {
+  if (typeof window === "undefined") {
+    return DEFAULT_SITE_PROJECTS_QUERY;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  return normalizeSiteProjectsQuery({
+    filter: params.get("filter") ?? "",
+    pageNum: Number(params.get("pageNum") || DEFAULT_SITE_PROJECTS_QUERY.pageNum),
+    pageSize: Number(params.get("pageSize") || DEFAULT_SITE_PROJECTS_QUERY.pageSize),
+  });
+}
+
 function siteHref(runtimeConfig: RuntimeConfig, href: string): string {
   return prefixBasePath(runtimeConfig.basePath, href);
 }
@@ -78,39 +97,77 @@ function siteUsersHref(
   return siteHref(runtimeConfig, `/sites/userList?${params}`);
 }
 
+function siteProjectsHref(
+  runtimeConfig: RuntimeConfig,
+  input: Partial<SiteProjectsQueryInput> = {},
+): string {
+  const query = normalizeSiteProjectsQuery(input);
+  const params = new URLSearchParams();
+  if (query.filter) {
+    params.set("filter", query.filter);
+  }
+  if (query.pageNum > 1) {
+    params.set("pageNum", String(query.pageNum));
+  }
+  return siteHref(runtimeConfig, `/sites/projectList?${params}`);
+}
+
 function SiteAdminRouteComponent() {
   const { pageName } = Route.useParams();
   const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
   const routeHref = `/sites/${pageName}`;
   const canRender = useRequireAuthenticatedRoute(routeHref);
-  const query = React.useMemo(readSiteUsersQuery, [pageName]);
+  const userQuery = React.useMemo(readSiteUsersQuery, [pageName]);
+  const projectQuery = React.useMemo(readSiteProjectsQuery, [pageName]);
   const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
   const userListQuery = useQuery({
-    ...listSiteUsersQueryOptions(runtimeConfig, query),
+    ...listSiteUsersQueryOptions(runtimeConfig, userQuery),
     enabled: canRender && pageName === "userList",
   });
+  const projectListQuery = useQuery({
+    ...listSiteProjectsQueryOptions(runtimeConfig, projectQuery),
+    enabled: canRender && pageName === "projectList",
+  });
 
-  useDocumentTitle(pageName === "userList" ? "Site Users" : "Site Admin");
+  useDocumentTitle(
+    pageName === "userList"
+      ? "Site Users"
+      : pageName === "projectList"
+        ? "Site Projects"
+        : "Site Admin",
+  );
 
   React.useEffect(() => {
     setFailureKind(null);
-  }, [pageName, query.pageNum, query.pageSize, query.query, query.state]);
+  }, [
+    pageName,
+    projectQuery.filter,
+    projectQuery.pageNum,
+    projectQuery.pageSize,
+    userQuery.pageNum,
+    userQuery.pageSize,
+    userQuery.query,
+    userQuery.state,
+  ]);
 
   React.useEffect(() => {
-    if (!userListQuery.error) {
+    const error = pageName === "projectList" ? projectListQuery.error : userListQuery.error;
+    if (!error) {
       return;
     }
-    const nextFailureKind = classifyConnectFailure(userListQuery.error);
+    const nextFailureKind = classifyConnectFailure(error);
     if (nextFailureKind) {
       setFailureKind(nextFailureKind);
       return;
     }
     setErrorMessage(
-      userListQuery.error instanceof Error
-        ? userListQuery.error.message
-        : "Read site users failed.",
+      error instanceof Error
+        ? error.message
+        : pageName === "projectList"
+          ? "Read site projects failed."
+          : "Read site users failed.",
     );
-  }, [setErrorMessage, userListQuery.error]);
+  }, [pageName, projectListQuery.error, setErrorMessage, userListQuery.error]);
 
   if (bootstrapping || !canRender) {
     return (
@@ -126,6 +183,17 @@ function SiteAdminRouteComponent() {
     return <NotFoundPage href={routeHref} />;
   }
 
+  if (pageName === "projectList") {
+    return (
+      <SiteAdminProjectListPage
+        isLoading={projectListQuery.isLoading}
+        query={projectQuery}
+        response={projectListQuery.data}
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
+
   if (pageName !== "userList") {
     return (
       <SiteAdminLayout activePageName={pageName} runtimeConfig={runtimeConfig}>
@@ -134,7 +202,7 @@ function SiteAdminRouteComponent() {
             {SITE_ADMIN_MENU.find((item) => item.pageName === pageName)?.label ?? "Site Admin"}
           </h2>
         </div>
-        <div className="warning-none">This site-admin page remains a follow-up parity slice.</div>
+        <div className="warning-none">This site-admin surface is still deferred.</div>
       </SiteAdminLayout>
     );
   }
@@ -142,7 +210,7 @@ function SiteAdminRouteComponent() {
   return (
     <SiteAdminUserListPage
       isLoading={userListQuery.isLoading}
-      query={query}
+      query={userQuery}
       response={userListQuery.data}
       runtimeConfig={runtimeConfig}
     />
@@ -181,6 +249,146 @@ function SiteAdminLayout(props: {
         </div>
       </div>
     </main>
+  );
+}
+
+function SiteAdminProjectListPage(props: {
+  isLoading: boolean;
+  query: SiteProjectsQueryInput;
+  response: SiteProjectsResponse | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const response = props.response;
+  const items = response?.items ?? [];
+
+  return (
+    <SiteAdminLayout activePageName="projectList" runtimeConfig={props.runtimeConfig}>
+      <div className="title_area">
+        <h2 className="pull-left">Projects</h2>
+        <form
+          action={siteHref(props.runtimeConfig, "/sites/projectList")}
+          className="form-search pull-right"
+          method="get"
+        >
+          <div className="search-bar">
+            <input
+              className="textbox"
+              defaultValue={props.query.filter}
+              name="filter"
+              placeholder="Search projects"
+              type="text"
+            />
+            <button className="search-btn" type="submit">
+              Search
+            </button>
+          </div>
+        </form>
+      </div>
+      <div className="row-fluid listhead project-list-head">
+        <div className="span5 listhead-title">
+          <strong>Project name</strong>
+        </div>
+        <div className="span4 listhead-title">
+          <strong>Project description</strong>
+        </div>
+        <div className="span2 listhead-title">
+          <strong>Created</strong>
+        </div>
+        <div className="span1 listhead-title">
+          <strong>&nbsp;</strong>
+        </div>
+      </div>
+      {props.isLoading ? (
+        <p>Loading…</p>
+      ) : items.length === 0 ? (
+        <div className="warning-none">No projects found.</div>
+      ) : (
+        <ul className="project-list-wrap">
+          {items.map((item) => (
+            <SiteAdminProjectRow item={item} key={item.id} runtimeConfig={props.runtimeConfig} />
+          ))}
+        </ul>
+      )}
+      <div id="pagination">
+        <span>{`Page ${response?.pageNum ?? props.query.pageNum}`}</span>
+        <span>{`Total ${response?.total ?? 0}`}</span>
+        {response?.hasMore ? (
+          <a
+            className="ybtn"
+            href={siteProjectsHref(props.runtimeConfig, {
+              ...props.query,
+              pageNum: props.query.pageNum + 1,
+            })}
+          >
+            Next
+          </a>
+        ) : null}
+      </div>
+      <div aria-hidden="true" className="modal fade" id="alertDeletionWrap">
+        <div className="modal-header">
+          <button className="close" disabled type="button">
+            ×
+          </button>
+          <span id="project-name" />
+          Delete project
+        </div>
+        <div className="modal-body">
+          <p>Project delete remains a follow-up parity slice.</p>
+        </div>
+        <div className="modal-footer">
+          <button
+            aria-label="Delete project"
+            className="ybtn ybtn-danger"
+            disabled
+            id="projectDeleteBtn"
+            type="button"
+          >
+            Delete project
+          </button>
+          <button aria-label="Cancel project deletion" className="ybtn" disabled type="button">
+            Cancel deletion
+          </button>
+        </div>
+      </div>
+    </SiteAdminLayout>
+  );
+}
+
+function SiteAdminProjectRow(props: { item: SiteProjectListItem; runtimeConfig: RuntimeConfig }) {
+  const projectHref = siteHref(props.runtimeConfig, props.item.projectPath);
+  const projectLabel = `${props.item.ownerName}/${props.item.projectName}`;
+  return (
+    <li className="row-fluid listitem">
+      <div className="span5 listitem-col">
+        <a className="avatar-wrap list-avatar" href={projectHref}>
+          {props.item.logoUrl ? (
+            <img alt={props.item.projectName} src={props.item.logoUrl} />
+          ) : null}
+          {projectLabel}
+        </a>
+        <a className="project-name" href={projectHref}>
+          {projectLabel}
+        </a>
+      </div>
+      <div className="span4 listitem-col">
+        <span className="project-overview">{props.item.overview}</span>
+      </div>
+      <div className="span2 listitem-col created-date">
+        <span title={props.item.createdAt}>{props.item.createdLabel}</span>
+      </div>
+      <div className="span1 listitem-col">
+        <button
+          className="ybtn ybtn-danger"
+          data-href={siteHref(props.runtimeConfig, props.item.deletePath)}
+          data-project-name={projectLabel}
+          data-toggle="delete-project"
+          disabled
+          type="button"
+        >
+          Delete
+        </button>
+      </div>
+    </li>
   );
 }
 

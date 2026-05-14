@@ -146,6 +146,19 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain("fullPath: '/sites/$pageName'");
   });
 
+  it("requires a real site-admin project list route instead of a follow-up shell", () => {
+    const siteRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/sites/$pageName/route.tsx"),
+      "utf8",
+    );
+
+    expect(siteRouteSource).toContain("SiteAdminProjectListPage");
+    expect(siteRouteSource).toContain("listSiteProjectsQueryOptions");
+    expect(siteRouteSource).toContain("project-list-wrap");
+    expect(siteRouteSource).toContain('data-toggle="delete-project"');
+    expect(siteRouteSource).not.toContain("This site-admin page remains a follow-up parity slice");
+  });
+
   it("requires real project issue routes instead of placeholder pages", () => {
     const issueListRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/$owner/$projectName/issues/route.tsx"),
