@@ -88,7 +88,8 @@
 - Phase 6C complete: Site-admin post list read surface over `/api/v1/sites/posts` and `/sites/postList`, including site_admin-only access, recent post paging, legacy project/post/comment anchors, author metadata, and dense post rows.
 - Phase 6D complete: Site-admin issue list read surface over `/api/v1/sites/issues` and `/sites/issueList`, including site_admin-only access, default OPEN state filtering, open/closed tabs, legacy project/issue/comment anchors, author metadata, and dense issue rows.
 - Phase 6E complete: Site-admin user row action mutations over `/api/v1/sites/users/:loginId/toggle-site-admin`, `/toggle-account-lock`, and `/toggle-guest-mode`, including site_admin-only access, CSRF checks, legacy flag/state transitions, enabled legacy row buttons, and Query invalidation.
-- Remaining admin surface follow-ups: reset password, user/project delete, mail/massmail, diagnostics, update, and non-current data import/export scope.
+- Phase 6F complete: Site-admin reset-password row action over `/api/v1/sites/users/:loginId/reset-password`, including site_admin-only access, CSRF checks, direct temporary password hash replacement, and the legacy inline new-password alert.
+- Remaining admin surface follow-ups: user/project delete, mail/massmail, diagnostics, update, and non-current data import/export scope.
 - migration tooling
 - deployment hardening
 - remaining deferred scope review

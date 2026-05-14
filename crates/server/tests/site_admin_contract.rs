@@ -1,4 +1,5 @@
 use axum::body::Body;
+use bcrypt::verify;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, Set};
@@ -314,6 +315,30 @@ async fn site_admin_user_list_actions_require_admin_csrf_and_toggle_legacy_flags
     )
     .await;
     assert_eq!(invalid_csrf.status(), StatusCode::FORBIDDEN);
+
+    let reset_password = response_json(
+        rest_post(
+            app.clone(),
+            "/yona/api/v1/sites/users/member/reset-password",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(reset_password["loginId"], "member");
+    assert_eq!(reset_password["name"], "member");
+    assert_eq!(reset_password["isSuccess"], true);
+    let new_password = reset_password["newPassword"]
+        .as_str()
+        .expect("new password");
+    assert_eq!(new_password.len(), 6);
+    let member = AppRepository::new(db.clone())
+        .find_user_by_identifier("member")
+        .await
+        .unwrap()
+        .expect("member after site-admin reset");
+    assert!(verify(new_password, &member.password_hash).unwrap());
 
     let upgraded = response_json(
         rest_post(

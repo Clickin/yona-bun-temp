@@ -126,7 +126,7 @@ test("renders legacy site-admin user list shell and filters without placeholders
   await expect(page.getByRole("button", { name: "Make guest" })).toBeEnabled();
   await expect(page.getByRole("button", { name: "Lock account" })).toBeEnabled();
   await expect(page.getByRole("button", { name: "Make site admin" })).toBeEnabled();
-  await expect(page.getByRole("button", { name: "Reset password" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Reset password" })).toBeEnabled();
   await expect(page.getByRole("button", { name: "Delete" })).toBeDisabled();
 });
 
@@ -203,6 +203,19 @@ test("posts legacy site-admin user row action toggles and refreshes the list", a
 
     const path = new URL(route.request().url()).pathname;
     seenActions.push(path);
+    if (path.endsWith("/reset-password")) {
+      await route.fulfill({
+        body: JSON.stringify({
+          isSuccess: true,
+          loginId: "member",
+          name: "Member",
+          newPassword: "abc123",
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+      return;
+    }
     if (path.endsWith("/toggle-guest-mode")) {
       isGuest = !isGuest;
     } else if (path.endsWith("/toggle-account-lock")) {
@@ -232,6 +245,11 @@ test("posts legacy site-admin user row action toggles and refreshes the list", a
 
   await page.goto("/yona/sites/userList?state=ACTIVE&query=member");
 
+  const resetPassword = page.getByRole("button", { name: "Reset password" });
+  await expect(resetPassword).toBeEnabled();
+  await resetPassword.click();
+  await expect(page.getByText("New password: abc123")).toBeVisible();
+
   const makeGuest = page.getByRole("button", { name: "Make guest" });
   await expect(makeGuest).toBeEnabled();
   await makeGuest.click();
@@ -244,6 +262,7 @@ test("posts legacy site-admin user row action toggles and refreshes the list", a
   await expect(page.getByText("No users found.")).toBeVisible();
 
   expect(seenActions).toEqual([
+    "/yona/api/v1/sites/users/member/reset-password",
     "/yona/api/v1/sites/users/member/toggle-guest-mode",
     "/yona/api/v1/sites/users/member/toggle-site-admin",
     "/yona/api/v1/sites/users/member/toggle-account-lock",

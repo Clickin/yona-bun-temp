@@ -45,6 +45,13 @@ export type SiteUserListItem = {
   state: string;
 };
 
+export type SiteUserPasswordResetResponse = {
+  isSuccess: boolean;
+  loginId: string;
+  name: string;
+  newPassword: string;
+};
+
 export type SiteProjectListItem = {
   createdAt: string;
   createdLabel: string;
@@ -265,6 +272,17 @@ function normalizeSiteUserItem(item: Partial<SiteUserListItem>): SiteUserListIte
   };
 }
 
+function normalizeSiteUserPasswordResetResponse(
+  response: Partial<SiteUserPasswordResetResponse>,
+): SiteUserPasswordResetResponse {
+  return {
+    isSuccess: response.isSuccess ?? false,
+    loginId: response.loginId ?? "",
+    name: response.name ?? "",
+    newPassword: response.newPassword ?? "",
+  };
+}
+
 function normalizeSiteProjectsResponse(
   response: Partial<SiteProjectsResponse>,
 ): SiteProjectsResponse {
@@ -415,6 +433,23 @@ export function toggleSiteUserGuestModeRest(
   fetchImpl: typeof fetch = fetch,
 ): Promise<SiteUserListItem> {
   return postSiteUserActionRest(runtimeConfig, csrfToken, loginId, "toggle-guest-mode", fetchImpl);
+}
+
+export function resetSiteUserPasswordRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  loginId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteUserPasswordResetResponse> {
+  return restFetch<Partial<SiteUserPasswordResetResponse>>(
+    runtimeConfig,
+    `/sites/users/${encodeURIComponent(loginId)}/reset-password`,
+    {
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
+  ).then(normalizeSiteUserPasswordResetResponse);
 }
 
 export function listSiteProjectsRest(

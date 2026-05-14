@@ -23,6 +23,7 @@ import {
   listSitePostsQueryOptions,
   listSiteProjectsQueryOptions,
   listSiteUsersQueryOptions,
+  resetSiteUserPasswordRest,
   toggleSiteUserAccountLockRest,
   toggleSiteUserGuestModeRest,
   toggleSiteUserRoleRest,
@@ -315,6 +316,17 @@ describe("api query keys", () => {
     const requests: string[] = [];
     const fetchImpl: typeof fetch = async (input, init) => {
       requests.push(`${init?.method ?? ""} ${String(input)}`);
+      if (String(input).endsWith("/reset-password")) {
+        return new Response(
+          JSON.stringify({
+            isSuccess: true,
+            loginId: "member",
+            name: "Member",
+            newPassword: "abc123",
+          }),
+          { headers: { "content-type": "application/json" }, status: 200 },
+        );
+      }
       return new Response(
         JSON.stringify({
           avatarUrl: "",
@@ -337,11 +349,13 @@ describe("api query keys", () => {
     await toggleSiteUserRoleRest(runtimeConfig, "csrf", "member", fetchImpl);
     await toggleSiteUserAccountLockRest(runtimeConfig, "csrf", "member", fetchImpl);
     await toggleSiteUserGuestModeRest(runtimeConfig, "csrf", "member", fetchImpl);
+    await resetSiteUserPasswordRest(runtimeConfig, "csrf", "member", fetchImpl);
 
     expect(requests).toEqual([
       "POST /yona/api/v1/sites/users/member/toggle-site-admin",
       "POST /yona/api/v1/sites/users/member/toggle-account-lock",
       "POST /yona/api/v1/sites/users/member/toggle-guest-mode",
+      "POST /yona/api/v1/sites/users/member/reset-password",
     ]);
   });
 

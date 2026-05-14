@@ -14,6 +14,7 @@ import {
   normalizeSitePostsQuery,
   normalizeSiteProjectsQuery,
   normalizeSiteUsersQuery,
+  resetSiteUserPasswordRest,
   SITE_ISSUE_STATES,
   SITE_USER_STATES,
   toggleSiteUserAccountLockRest,
@@ -188,7 +189,7 @@ function siteIssuesHref(
 function siteUserActionApiHref(
   runtimeConfig: RuntimeConfig,
   loginId: string,
-  action: "toggle-account-lock" | "toggle-guest-mode" | "toggle-site-admin",
+  action: "reset-password" | "toggle-account-lock" | "toggle-guest-mode" | "toggle-site-admin",
 ): string {
   return prefixBasePath(
     runtimeConfig.basePath,
@@ -207,6 +208,9 @@ function SiteAdminRouteComponent() {
   const postQuery = React.useMemo(readSitePostsQuery, [pageName]);
   const issueQuery = React.useMemo(readSiteIssuesQuery, [pageName]);
   const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
+  const [resetPasswordsByLoginId, setResetPasswordsByLoginId] = React.useState<
+    Record<string, string>
+  >({});
   const userListQuery = useQuery({
     ...listSiteUsersQueryOptions(runtimeConfig, userQuery),
     enabled: canRender && pageName === "userList",
@@ -247,6 +251,17 @@ function SiteAdminRouteComponent() {
     onError: (error) => userActionError(error, "Toggle site-admin role failed."),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: [...apiQueryKeys.v1(), "sites", "users"] }),
+  });
+  const resetPasswordMutation = useMutation({
+    mutationFn: (loginId: string) => resetSiteUserPasswordRest(runtimeConfig, csrfToken, loginId),
+    onError: (error) => userActionError(error, "Reset password failed."),
+    onSuccess: (response) => {
+      setResetPasswordsByLoginId((current) => ({
+        ...current,
+        [response.loginId]: response.newPassword,
+      }));
+      void queryClient.invalidateQueries({ queryKey: [...apiQueryKeys.v1(), "sites", "users"] });
+    },
   });
 
   useDocumentTitle(
@@ -382,12 +397,15 @@ function SiteAdminRouteComponent() {
       isMutating={
         toggleGuestMutation.isPending ||
         toggleAccountLockMutation.isPending ||
-        toggleSiteAdminMutation.isPending
+        toggleSiteAdminMutation.isPending ||
+        resetPasswordMutation.isPending
       }
+      onResetPassword={(loginId) => resetPasswordMutation.mutate(loginId)}
       onToggleAccountLock={(loginId) => toggleAccountLockMutation.mutate(loginId)}
       onToggleGuestMode={(loginId) => toggleGuestMutation.mutate(loginId)}
       onToggleSiteAdminRole={(loginId) => toggleSiteAdminMutation.mutate(loginId)}
       query={userQuery}
+      resetPasswordsByLoginId={resetPasswordsByLoginId}
       response={userListQuery.data}
       runtimeConfig={runtimeConfig}
     />
@@ -770,10 +788,12 @@ function SiteAdminProjectRow(props: { item: SiteProjectListItem; runtimeConfig: 
 function SiteAdminUserListPage(props: {
   isLoading: boolean;
   isMutating: boolean;
+  onResetPassword: (loginId: string) => void;
   onToggleAccountLock: (loginId: string) => void;
   onToggleGuestMode: (loginId: string) => void;
   onToggleSiteAdminRole: (loginId: string) => void;
   query: SiteUsersQueryInput;
+  resetPasswordsByLoginId: Record<string, string>;
   response: SiteUsersResponse | undefined;
   runtimeConfig: RuntimeConfig;
 }) {
@@ -846,10 +866,12 @@ function SiteAdminUserListPage(props: {
               isMutating={props.isMutating}
               item={item}
               key={item.id}
+              onResetPassword={props.onResetPassword}
               onToggleAccountLock={props.onToggleAccountLock}
               onToggleGuestMode={props.onToggleGuestMode}
               onToggleSiteAdminRole={props.onToggleSiteAdminRole}
               query={props.query}
+              resetPassword={props.resetPasswordsByLoginId[item.loginId] ?? ""}
               runtimeConfig={props.runtimeConfig}
             />
           ))}
@@ -877,10 +899,12 @@ function SiteAdminUserListPage(props: {
 function SiteAdminUserRow(props: {
   isMutating: boolean;
   item: SiteUserListItem;
+  onResetPassword: (loginId: string) => void;
   onToggleAccountLock: (loginId: string) => void;
   onToggleGuestMode: (loginId: string) => void;
   onToggleSiteAdminRole: (loginId: string) => void;
   query: SiteUsersQueryInput;
+  resetPassword: string;
   runtimeConfig: RuntimeConfig;
 }) {
   const profileHref = siteHref(
@@ -945,9 +969,28 @@ function SiteAdminUserRow(props: {
           >
             {props.item.state === "locked" ? "Unlock account" : "Lock account"}
           </button>
-          <button className="ybtn ybtn-small" disabled type="button">
+          <button
+            className="ybtn ybtn-small"
+            data-href={siteUserActionApiHref(
+              props.runtimeConfig,
+              props.item.loginId,
+              "reset-password",
+            )}
+            data-toggle="reset-password"
+            disabled={props.isMutating}
+            onClick={() => props.onResetPassword(props.item.loginId)}
+            type="button"
+          >
             Reset password
           </button>
+          {props.resetPassword ? (
+            <div className="alert alert-success">
+              <button className="close" disabled type="button">
+                ×
+              </button>
+              <h4>{`New password: ${props.resetPassword}`}</h4>
+            </div>
+          ) : null}
           <button
             className={`ybtn ybtn-small ${props.item.isSiteAdmin ? "ybtn-info" : "label-info"}`}
             data-request-method="post"

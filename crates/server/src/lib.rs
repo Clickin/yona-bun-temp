@@ -2126,6 +2126,15 @@ struct RestSiteUserItem {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RestSiteUserPasswordResetResponse {
+    is_success: bool,
+    login_id: String,
+    name: String,
+    new_password: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RestSiteUserTab {
     state: String,
     total: u32,
@@ -3554,6 +3563,21 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                     let backend = backend.clone();
                     async move {
                         rest_toggle_site_user_guest_mode(headers, login_id, session_manager, backend)
+                            .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/sites/users/{login_id}/reset-password",
+            post({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move {
+                        rest_reset_site_user_password(headers, login_id, session_manager, backend)
                             .await
                     }
                 }
@@ -6828,6 +6852,53 @@ async fn rest_toggle_site_user_guest_mode(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("site admin user not found"))?;
     Ok(Json(rest_site_user_item(record)))
+}
+
+fn random_site_admin_temporary_password() -> String {
+    use rand::{distributions::Alphanumeric, Rng};
+
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(6)
+        .map(char::from)
+        .collect()
+}
+
+async fn rest_reset_site_user_password(
+    headers: HeaderMap,
+    login_id: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestSiteUserPasswordResetResponse>, RestRouteError> {
+    let repository = require_site_admin_repository(&headers, &session_manager, &backend).await?;
+    let target = repository
+        .find_user_by_login_id(&login_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("site admin user not found"))?;
+    if target.login_id.eq_ignore_ascii_case("anonymous") {
+        return Err(RestRouteError::permission_denied(
+            "anonymous user password reset is not allowed",
+        ));
+    }
+
+    let new_password = random_site_admin_temporary_password();
+    let password_hash = hash(&new_password, DEFAULT_COST)
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    repository
+        .update_password_hash_for_user(target.id, &password_hash)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+
+    Ok(Json(RestSiteUserPasswordResetResponse {
+        is_success: true,
+        login_id: target.login_id,
+        name: target.display_name,
+        new_password,
+    }))
 }
 
 async fn rest_list_site_projects(
