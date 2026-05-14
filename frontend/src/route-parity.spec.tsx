@@ -52,6 +52,7 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain("fullPath: '/search'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/search'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/watchers'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/webhooks'");
     expect(routeTreeSource).toContain("fullPath: '/organizations/$organizationName/search'");
   });
 
@@ -65,6 +66,20 @@ describe("file-route parity harness", () => {
     expect(watchersRouteSource).toContain("ProjectWatchersPage");
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/watchers'");
+  });
+
+  it("requires a real project webhook route instead of a placeholder page", () => {
+    const webhooksRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/webhooks/route.tsx"),
+      "utf8",
+    );
+
+    expect(webhooksRouteSource).not.toContain("PlaceholderPage");
+    expect(webhooksRouteSource).toContain("ProjectWebhooksPage");
+    expect(webhooksRouteSource).toContain("useQuery");
+    expect(webhooksRouteSource).toContain("useMutation");
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/webhooks'");
   });
 
   it("requires real project issue routes instead of placeholder pages", () => {

@@ -2045,6 +2045,39 @@ struct RestProjectWatchersResponse {
     watchers: Vec<RestProjectWatcherItem>,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectWebhookItem {
+    git_push: bool,
+    id: i64,
+    payload_url: String,
+    secret: String,
+    webhook_type: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectWebhookPermissions {
+    can_create: bool,
+    can_delete: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectWebhooksResponse {
+    permissions: RestProjectWebhookPermissions,
+    webhooks: Vec<RestProjectWebhookItem>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestProjectWebhookBody {
+    git_push: Option<bool>,
+    payload_url: String,
+    secret: String,
+    webhook_type: String,
+}
+
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestProjectPostsQuery {
@@ -4356,6 +4389,48 @@ fn build_rest_org_project_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/owners/{owner_name}/projects/{project_name}/webhooks",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move { rest_read_project_webhooks(headers, owner_name, project_name, service).await }
+                }
+            })
+            .post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestProjectWebhookBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_create_project_webhook(headers, owner_name, project_name, body, service)
+                            .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/webhooks/{webhook_id}",
+            delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, webhook_id)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_delete_project_webhook(
+                            headers,
+                            owner_name,
+                            project_name,
+                            webhook_id,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
             "/owners/{owner_name}/projects/{project_name}/overview",
             patch({
                 let service = service.clone();
@@ -6447,6 +6522,189 @@ async fn rest_read_project_watchers(
     }
 
     Ok(Json(RestProjectWatchersResponse { watchers }).into_response())
+}
+
+async fn rest_project_webhook_update_authorization(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    actor_id: i64,
+) -> Result<persistence::ProjectAuthorizationRecord, RestRouteError> {
+    let authorization = require_project_read(repository, owner_name, project_name, Some(actor_id))
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project webhook update is not allowed"),
+        ));
+    }
+    Ok(authorization)
+}
+
+fn rest_project_webhook_type_code(value: &str) -> Result<i16, RestRouteError> {
+    let normalized = value.trim().to_ascii_uppercase();
+    match normalized.as_str() {
+        "" | "SIMPLE" => Ok(0),
+        "DETAIL_SLACK" => Ok(1),
+        "DETAIL_HANGOUT_CHAT" => Ok(2),
+        "JSON" => Ok(3),
+        _ => Err(RestRouteError::bad_request("invalid webhook type")),
+    }
+}
+
+fn rest_project_webhook_type_name(code: i16) -> String {
+    match code {
+        1 => "DETAIL_SLACK",
+        2 => "DETAIL_HANGOUT_CHAT",
+        3 => "JSON",
+        _ => "SIMPLE",
+    }
+    .to_string()
+}
+
+fn rest_project_webhook_input(
+    body: RestProjectWebhookBody,
+) -> Result<persistence::CreateProjectWebhookInput, RestRouteError> {
+    let payload_url = body.payload_url.trim().to_string();
+    if payload_url.is_empty() {
+        return Err(RestRouteError::bad_request(
+            "webhook payload url is required",
+        ));
+    }
+    if payload_url.len() > 2000 {
+        return Err(RestRouteError::bad_request(
+            "webhook payload url is too long",
+        ));
+    }
+    let secret = body.secret.trim().to_string();
+    if secret.len() > 250 {
+        return Err(RestRouteError::bad_request("webhook secret is too long"));
+    }
+    let webhook_type = rest_project_webhook_type_code(&body.webhook_type)?;
+    Ok(persistence::CreateProjectWebhookInput {
+        git_push: webhook_type == 3 || body.git_push.unwrap_or(false),
+        payload_url,
+        secret,
+        webhook_type,
+    })
+}
+
+fn rest_project_webhook_item_from_record(
+    record: persistence::ProjectWebhookRecord,
+) -> RestProjectWebhookItem {
+    RestProjectWebhookItem {
+        git_push: record.git_push,
+        id: record.id,
+        payload_url: record.payload_url,
+        secret: record.secret,
+        webhook_type: rest_project_webhook_type_name(record.webhook_type),
+    }
+}
+
+async fn rest_project_webhooks_response(
+    repository: &PilotRepository,
+    project_id: i64,
+) -> Result<RestProjectWebhooksResponse, RestRouteError> {
+    let webhooks = repository
+        .list_project_webhooks(project_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .into_iter()
+        .map(rest_project_webhook_item_from_record)
+        .collect();
+    Ok(RestProjectWebhooksResponse {
+        permissions: RestProjectWebhookPermissions {
+            can_create: true,
+            can_delete: true,
+        },
+        webhooks,
+    })
+}
+
+async fn rest_read_project_webhooks(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        rest_project_webhook_update_authorization(repository, &owner_name, &project_name, actor.id)
+            .await?;
+    Ok(
+        Json(rest_project_webhooks_response(repository, authorization.project.id).await?)
+            .into_response(),
+    )
+}
+
+async fn rest_create_project_webhook(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectWebhookBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        rest_project_webhook_update_authorization(repository, &owner_name, &project_name, actor.id)
+            .await?;
+    let input = rest_project_webhook_input(body)?;
+    repository
+        .create_project_webhook(authorization.project.id, input)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+
+    Ok(
+        Json(rest_project_webhooks_response(repository, authorization.project.id).await?)
+            .into_response(),
+    )
+}
+
+async fn rest_delete_project_webhook(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    webhook_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        rest_project_webhook_update_authorization(repository, &owner_name, &project_name, actor.id)
+            .await?;
+    let deleted = repository
+        .delete_project_webhook(authorization.project.id, webhook_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    if !deleted {
+        return Err(RestRouteError::not_found("webhook not found"));
+    }
+
+    Ok(
+        Json(rest_project_webhooks_response(repository, authorization.project.id).await?)
+            .into_response(),
+    )
 }
 
 async fn rest_update_project(

@@ -716,6 +716,23 @@ pub struct ProjectWatcherRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectWebhookRecord {
+    pub git_push: bool,
+    pub id: i64,
+    pub payload_url: String,
+    pub secret: String,
+    pub webhook_type: i16,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateProjectWebhookInput {
+    pub git_push: bool,
+    pub payload_url: String,
+    pub secret: String,
+    pub webhook_type: i16,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectEnrollmentRequestRecord {
     pub login_id: String,
     pub user_label: String,
