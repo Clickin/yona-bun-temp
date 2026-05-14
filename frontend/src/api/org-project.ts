@@ -8,8 +8,8 @@ import type {
   OrganizationRedirectResult,
   ProjectContainer,
   ProjectDetail,
+  ReadProjectMembersResponse as GeneratedReadProjectMembersResponse,
   ReadOrganizationMembersResponse,
-  ReadProjectMembersResponse,
   ToggleFavoriteProjectResponse,
 } from "../gen/yona/pilot/v1/pilot_pb";
 import { queryOptions } from "@tanstack/react-query";
@@ -32,6 +32,10 @@ type OrganizationMembershipInput = OrganizationNameInput & {
 type ProjectPathInput = {
   ownerName: string;
   projectName: string;
+};
+
+type ProjectMembershipInput = ProjectPathInput & {
+  userId: bigint | number;
 };
 
 type ProjectCreateInput = {
@@ -85,6 +89,40 @@ export type ProjectDeleteResponse = {
   ok: boolean;
   redirectPath: string;
 };
+
+export type ProjectMemberRoleOption = {
+  label: string;
+  role: "manager" | "member";
+};
+
+export type ProjectMember = {
+  avatarUrl: string;
+  isOwner: boolean;
+  loginId: string;
+  role: "manager" | "member" | string;
+  userId: number;
+  userLabel: string;
+};
+
+export type ProjectEnrollmentRequest = {
+  avatarUrl: string;
+  loginId: string;
+  userId: number;
+  userLabel: string;
+};
+
+export type ReadProjectMembersResponse = {
+  enrollmentRequests: ProjectEnrollmentRequest[];
+  members: ProjectMember[];
+  permissions: {
+    canUpdate: boolean;
+  };
+  redirectPath?: string;
+  roleOptions: ProjectMemberRoleOption[];
+};
+
+type ReadProjectMembersRestResponse = GeneratedReadProjectMembersResponse &
+  ReadProjectMembersResponse;
 
 function toInt64Number(value: bigint | number): number {
   return Number(value);
@@ -440,13 +478,80 @@ export function readProjectMembersRest(
   ownerName: string,
   projectName: string,
   fetchImpl: typeof fetch = fetch,
-): Promise<ReadProjectMembersResponse> {
-  return restFetch<ReadProjectMembersResponse>(
+): Promise<ReadProjectMembersRestResponse> {
+  return restFetch<ReadProjectMembersRestResponse>(
     runtimeConfig,
     projectPath(ownerName, projectName, "/members"),
     {
       fetchImpl,
       method: "GET",
+    },
+  );
+}
+
+export function readProjectMembersQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectPathInput,
+) {
+  return queryOptions({
+    queryFn: () => readProjectMembersRest(runtimeConfig, input.ownerName, input.projectName),
+    queryKey: apiQueryKeys.project.members(input.ownerName, input.projectName),
+  });
+}
+
+export function addProjectMemberRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectPathInput & { loginId: string },
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadProjectMembersResponse> {
+  return restFetch<ReadProjectMembersResponse>(
+    runtimeConfig,
+    projectPath(input.ownerName, input.projectName, "/members"),
+    {
+      body: {
+        loginId: input.loginId,
+      },
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
+  );
+}
+
+export function updateProjectMemberRoleRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectMembershipInput & { role: string },
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadProjectMembersResponse> {
+  return restFetch<ReadProjectMembersResponse>(
+    runtimeConfig,
+    projectPath(input.ownerName, input.projectName, `/members/${toInt64Number(input.userId)}`),
+    {
+      body: {
+        role: input.role,
+      },
+      csrfToken,
+      fetchImpl,
+      method: "PATCH",
+    },
+  );
+}
+
+export function deleteProjectMemberRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectMembershipInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ReadProjectMembersResponse> {
+  return restFetch<ReadProjectMembersResponse>(
+    runtimeConfig,
+    projectPath(input.ownerName, input.projectName, `/members/${toInt64Number(input.userId)}`),
+    {
+      csrfToken,
+      fetchImpl,
+      method: "DELETE",
     },
   );
 }

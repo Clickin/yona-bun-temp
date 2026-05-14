@@ -52,6 +52,7 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain("fullPath: '/search'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/search'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/watchers'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/members'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/webhooks'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/statistics'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/deleteform'");
@@ -68,6 +69,23 @@ describe("file-route parity harness", () => {
     expect(watchersRouteSource).toContain("ProjectWatchersPage");
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/watchers'");
+  });
+
+  it("requires a real project member management route instead of a placeholder page", () => {
+    const membersRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/members/route.tsx"),
+      "utf8",
+    );
+
+    expect(membersRouteSource).not.toContain("PlaceholderPage");
+    expect(membersRouteSource).toContain("ProjectMembersPage");
+    expect(membersRouteSource).toContain("readProjectMembersQueryOptions");
+    expect(membersRouteSource).toContain("useMutation");
+    expect(membersRouteSource).toContain("addProjectMemberRest");
+    expect(membersRouteSource).toContain("updateProjectMemberRoleRest");
+    expect(membersRouteSource).toContain("deleteProjectMemberRest");
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/members'");
   });
 
   it("requires a real project webhook route instead of a placeholder page", () => {

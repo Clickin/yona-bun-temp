@@ -2,10 +2,12 @@ import * as React from "react";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { BoardPostDetail } from "../api/boards";
 import type {
+  ProjectMember,
   ProjectWatcher,
   ProjectWebhook,
   ProjectWebhookInput,
   ProjectWebhookType,
+  ReadProjectMembersResponse,
   ReadProjectWebhooksResponse,
 } from "../api/org-project";
 import type { ProjectDetailViewModel } from "./-view-models";
@@ -454,6 +456,259 @@ export function ProjectStatisticsPage(props: {
       <div className="page-wrap-outer">
         <div className="project-page-wrap">
           <h1>Under Construction</h1>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function projectMemberRoleLabel(response: ReadProjectMembersResponse, role: string): string {
+  return response.roleOptions.find((option) => option.role === role)?.label ?? role;
+}
+
+function ProjectMemberAdminSubMenu(props: {
+  detail: ProjectDetailViewModel;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const membersHref = buildProjectHref(
+    props.runtimeConfig,
+    props.detail.ownerName,
+    props.detail.projectName,
+    "members",
+  );
+  const settingsHref = buildProjectHref(
+    props.runtimeConfig,
+    props.detail.ownerName,
+    props.detail.projectName,
+    "settingform",
+  );
+  const deleteHref = buildProjectHref(
+    props.runtimeConfig,
+    props.detail.ownerName,
+    props.detail.projectName,
+    "deleteform",
+  );
+
+  return (
+    <aside className="lnb">
+      <ul className="nav nav-tabs nav-stacked">
+        <li className="active">
+          <a href={membersHref} id="subMenuProjectMember">
+            project.members
+          </a>
+        </li>
+        <li>
+          <a href={settingsHref} id="subMenuProjectSetting">
+            Project settings
+          </a>
+        </li>
+        <li>
+          <a href={deleteHref} id="subMenuProjectDelete">
+            Delete project
+          </a>
+        </li>
+      </ul>
+    </aside>
+  );
+}
+
+function ProjectMemberCard(props: {
+  detail: ProjectDetailViewModel;
+  member: ProjectMember;
+  pending?: boolean;
+  response: ReadProjectMembersResponse;
+  runtimeConfig: RuntimeConfig;
+  onDeleteMember?: (member: ProjectMember) => void | Promise<void>;
+  onUpdateMemberRole?: (member: ProjectMember, role: string) => void | Promise<void>;
+}) {
+  const memberHref = prefixBasePath(props.runtimeConfig.basePath, `/${props.member.loginId}`);
+  const memberDeleteHref = buildProjectHref(
+    props.runtimeConfig,
+    props.detail.ownerName,
+    props.detail.projectName,
+    `members/${props.member.userId}/delete`,
+  );
+  const memberEditHref = buildProjectHref(
+    props.runtimeConfig,
+    props.detail.ownerName,
+    props.detail.projectName,
+    `member/${props.member.userId}/edit`,
+  );
+  const canMutate = props.response.permissions.canUpdate && !props.member.isOwner && !props.pending;
+
+  return (
+    <li className="member span6 span-hard-wrap">
+      <a className="avatar-wrap mlarge pull-left mr10" href={memberHref}>
+        <img alt="" height="64" src={props.member.avatarUrl} width="64" />
+      </a>
+      <div className="member-name">
+        {props.member.userLabel}
+        {props.member.isOwner ? <span className="label owner">owner</span> : null}
+      </div>
+      <div className="member-id">{`@${props.member.loginId}`}</div>
+      {props.response.permissions.canUpdate && !props.member.isOwner ? (
+        <div className="member-setting">
+          <div className="btn-group" data-name={`roleof-${props.member.loginId}`}>
+            <button className="dropdown-toggle large" disabled={props.pending} type="button">
+              <span className="d-label">
+                {projectMemberRoleLabel(props.response, props.member.role)}
+              </span>
+              <span className="d-caret" />
+            </button>
+            <ul className="dropdown-menu">
+              {props.response.roleOptions.map((roleOption) => (
+                <li key={`${props.member.userId}-${roleOption.role}`}>
+                  <button
+                    data-action="apply"
+                    data-href={memberEditHref}
+                    data-login-id={props.member.loginId}
+                    data-role={roleOption.role}
+                    disabled={!canMutate}
+                    onClick={() => void props.onUpdateMemberRole?.(props.member, roleOption.role)}
+                    type="button"
+                  >
+                    {roleOption.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <button
+            className="ybtn ybtn-danger ybtn-small"
+            data-action="delete"
+            data-href={memberDeleteHref}
+            data-login-id={props.member.loginId}
+            disabled={!canMutate}
+            onClick={() => void props.onDeleteMember?.(props.member)}
+            type="button"
+          >
+            Delete
+          </button>
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+export function ProjectMembersPage(props: {
+  detail: ProjectDetailViewModel | null | undefined;
+  onAddMember?: (loginId: string) => void | Promise<void>;
+  onDeleteMember?: (member: ProjectMember) => void | Promise<void>;
+  onUpdateMemberRole?: (member: ProjectMember, role: string) => void | Promise<void>;
+  pending?: boolean;
+  response: ReadProjectMembersResponse | null | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const detail = props.detail ?? {
+    enrollmentRequested: false,
+    isFavorited: false,
+    organizationName: "",
+    overview: "",
+    ownerName: "",
+    projectName: "",
+    projectScope: "public",
+    viewerCanEnroll: false,
+    viewerCanUpdate: false,
+  };
+  const response = props.response ?? {
+    enrollmentRequests: [],
+    members: [],
+    permissions: {
+      canUpdate: false,
+    },
+    roleOptions: [],
+  };
+  const [loginId, setLoginId] = React.useState("");
+
+  return (
+    <main className="app-shell">
+      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <ProjectMemberAdminSubMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+          <section className="content-wrap frm-wrap">
+            <div className="inner-bubble">
+              <form
+                className="nm"
+                id="addNewMember"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const nextLoginId = loginId.trim();
+                  if (!nextLoginId) {
+                    return;
+                  }
+                  void Promise.resolve(props.onAddMember?.(nextLoginId)).then(() => {
+                    setLoginId("");
+                  });
+                }}
+              >
+                <input
+                  className="text uname"
+                  id="loginId"
+                  name="loginId"
+                  pattern="^[A-Za-z0-9_.-]+$"
+                  placeholder="project.members.addMember"
+                  type="text"
+                  value={loginId}
+                  onChange={(event) => setLoginId(event.target.value)}
+                />
+                <button
+                  className="ybtn ybtn-success"
+                  disabled={!response.permissions.canUpdate || props.pending}
+                  type="submit"
+                >
+                  <i aria-hidden="true" className="yobicon-addfriend" />
+                  Add
+                </button>
+              </form>
+            </div>
+
+            <ul className="members project row-fluid">
+              {response.members.map((member) => (
+                <ProjectMemberCard
+                  detail={detail}
+                  key={member.userId}
+                  member={member}
+                  pending={props.pending}
+                  response={response}
+                  runtimeConfig={props.runtimeConfig}
+                  onDeleteMember={props.onDeleteMember}
+                  onUpdateMemberRole={props.onUpdateMemberRole}
+                />
+              ))}
+            </ul>
+
+            {response.enrollmentRequests.length > 0 ? (
+              <section className="enrollment-requests">
+                <h4>project.member.enrollment.request</h4>
+                <ul className="enrollment-request-list">
+                  {response.enrollmentRequests.map((request) => (
+                    <li className="enrollment-request" key={request.userId}>
+                      <a
+                        className="avatar-wrap mlarge pull-left mr10"
+                        href={prefixBasePath(props.runtimeConfig.basePath, `/${request.loginId}`)}
+                      >
+                        <img alt="" height="64" src={request.avatarUrl} width="64" />
+                      </a>
+                      <div className="member-name">{request.userLabel}</div>
+                      <div className="member-id">{`@${request.loginId}`}</div>
+                      <div className="member-setting">
+                        <button
+                          className="enrollAcceptBtn"
+                          data-login-id={request.loginId}
+                          disabled={!response.permissions.canUpdate || props.pending}
+                          onClick={() => void props.onAddMember?.(request.loginId)}
+                          type="button"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+          </section>
         </div>
       </div>
     </main>

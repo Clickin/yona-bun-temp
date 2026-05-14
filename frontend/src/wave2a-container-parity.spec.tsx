@@ -11,6 +11,7 @@ import {
 } from "./auth-workspace-shell.test-helpers";
 import {
   ProjectDeletePage,
+  ProjectMembersPage,
   ProjectStatisticsPage,
   ProjectWebhooksPage,
 } from "./routes/-project-views";
@@ -312,6 +313,74 @@ describe("wave 2A container parity", () => {
     expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain("<h1>Under Construction</h1>");
+  });
+
+  it("renders the legacy project member management shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectMembersPage
+        detail={{
+          enrollmentRequested: false,
+          isFavorited: false,
+          organizationName: "",
+          ownerName: "weblabs",
+          overview: "Project members shell",
+          projectName: "projectYobi",
+          projectScope: "public",
+          viewerCanEnroll: false,
+          viewerCanUpdate: true,
+        }}
+        response={{
+          enrollmentRequests: [
+            {
+              avatarUrl: "/avatars/alice.png",
+              loginId: "alice",
+              userId: 2,
+              userLabel: "Alice",
+            },
+          ],
+          members: [
+            {
+              avatarUrl: "/avatars/owner.png",
+              isOwner: true,
+              loginId: "weblabs",
+              role: "manager",
+              userId: 1,
+              userLabel: "Web Labs",
+            },
+            {
+              avatarUrl: "/avatars/bob.png",
+              isOwner: false,
+              loginId: "bob",
+              role: "member",
+              userId: 3,
+              userLabel: "Bob",
+            },
+          ],
+          permissions: {
+            canUpdate: true,
+          },
+          roleOptions: [
+            { label: "user.role.manager", role: "manager" },
+            { label: "user.role.member", role: "member" },
+          ],
+        }}
+        runtimeConfig={testRuntimeConfig}
+      />,
+    );
+
+    expect(html).toContain('id="subMenuProjectMember"');
+    expect(html).toContain('class="inner-bubble"');
+    expect(html).toContain('id="addNewMember"');
+    expect(html).toContain('id="loginId"');
+    expect(html).toContain('class="text uname"');
+    expect(html).toContain('class="members project row-fluid"');
+    expect(html).toContain('class="member span6 span-hard-wrap"');
+    expect(html).toContain('class="member-setting"');
+    expect(html).toContain('data-name="roleof-bob"');
+    expect(html).toContain('data-action="apply"');
+    expect(html).toContain('data-action="delete"');
+    expect(html).toContain('class="label owner"');
+    expect(html).toContain('class="enrollAcceptBtn"');
   });
 
   it("renders the legacy project delete confirmation shell", () => {

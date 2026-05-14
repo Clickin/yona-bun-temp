@@ -4560,6 +4560,24 @@ impl AppRepository {
         Ok(())
     }
 
+    pub async fn delete_project_membership(
+        &self,
+        project_id: i64,
+        user_id: i64,
+    ) -> Result<(), DbErr> {
+        if let Some(existing) = project_user::Entity::find()
+            .filter(project_user::Column::ProjectId.eq(Some(project_id)))
+            .filter(project_user::Column::UserId.eq(Some(user_id)))
+            .one(&self.db)
+            .await?
+        {
+            project_user::Entity::delete_by_id(existing.id)
+                .exec(&self.db)
+                .await?;
+        }
+        Ok(())
+    }
+
     pub async fn read_public_project_by_id(
         &self,
         project_id: i64,
@@ -4896,7 +4914,9 @@ impl AppRepository {
                 continue;
             };
             enrollment_requests.push(ProjectEnrollmentRequestRecord {
+                email_address: user.email_address,
                 login_id: user.login_id,
+                user_id: user.id,
                 user_label: user.display_name,
             });
         }

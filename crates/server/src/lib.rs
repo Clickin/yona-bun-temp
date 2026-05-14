@@ -2459,6 +2459,62 @@ struct RestOrganizationMemberRoleBody {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct RestProjectMemberBody {
+    login_id: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectMemberRoleBody {
+    role: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectMemberPermissions {
+    can_update: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectMemberRoleOption {
+    label: String,
+    role: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectMemberItem {
+    avatar_url: String,
+    is_owner: bool,
+    login_id: String,
+    role: String,
+    user_id: i64,
+    user_label: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectEnrollmentRequestItem {
+    avatar_url: String,
+    login_id: String,
+    user_id: i64,
+    user_label: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectMembersResponse {
+    enrollment_requests: Vec<RestProjectEnrollmentRequestItem>,
+    members: Vec<RestProjectMemberItem>,
+    permissions: RestProjectMemberPermissions,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    redirect_path: Option<String>,
+    role_options: Vec<RestProjectMemberRoleOption>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct RestProjectCreateBody {
     overview: String,
     project_name: String,
@@ -4397,6 +4453,51 @@ fn build_rest_org_project_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
                     let service = service.clone();
                     async move { rest_read_project_members(headers, owner_name, project_name, service).await }
+                }
+            })
+            .post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestProjectMemberBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_add_project_member(headers, owner_name, project_name, body, service)
+                            .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/members/{user_id}",
+            patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, user_id)): Path<(String, String, i64)>,
+                      Json(body): Json<RestProjectMemberRoleBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_project_member_role(
+                            headers,
+                            owner_name,
+                            project_name,
+                            user_id,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, user_id)): Path<(String, String, i64)>| {
+                    let service = service.clone();
+                    async move {
+                        rest_delete_project_member(headers, owner_name, project_name, user_id, service)
+                            .await
+                    }
                 }
             }),
         )
@@ -6484,17 +6585,202 @@ async fn rest_read_project_members(
     project_name: String,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
-    let request = ReadProjectMembersRequest {
-        owner_name,
-        project_name,
-        ..Default::default()
-    };
-    let request = rest_owned_view::<ReadProjectMembersRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
-        .read_project_members(Context::new(headers), request)
-        .await
+    let session = require_session(&service.session_manager, &headers)
         .map_err(RestRouteError::from_connect_error)?;
-    Ok(rest_json_response(payload, ctx))
+    let actor = rest_authenticated_user(&service, session.user_id).await?;
+    let repository = rest_repository(&service)?;
+    let authorization =
+        rest_project_member_authorization(repository, &owner_name, &project_name, actor.id, true)
+            .await?;
+    let response = rest_project_members_response(repository, &authorization, true, None).await?;
+    Ok(rest_json_response(response, Context::new(headers)))
+}
+
+async fn rest_add_project_member(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectMemberBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor = rest_authenticated_user(&service, session.user_id).await?;
+    let repository = rest_repository(&service)?;
+    let authorization =
+        rest_project_member_authorization(repository, &owner_name, &project_name, actor.id, true)
+            .await?;
+    let login_id = body.login_id.trim();
+    let target_user = repository
+        .find_user_by_login_id(login_id)
+        .await
+        .map_err(rest_internal_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::invalid_argument(
+                "project member is unknown",
+            ))
+        })?;
+    if !target_user.is_confirmed {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::invalid_argument("project member is not active"),
+        ));
+    }
+    let directory = repository
+        .read_project_members(&owner_name, &project_name)
+        .await
+        .map_err(rest_internal_error)?;
+    if directory
+        .members
+        .iter()
+        .any(|member| member.user_id == target_user.id)
+    {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::invalid_argument("project member already exists"),
+        ));
+    }
+    repository
+        .add_project_membership(authorization.project.id, target_user.id, "member")
+        .await
+        .map_err(rest_internal_error)?;
+    repository
+        .delete_project_enrollment_request(authorization.project.id, target_user.id)
+        .await
+        .map_err(rest_internal_error)?;
+    repository
+        .set_project_watch(target_user.id, authorization.project.id, true)
+        .await
+        .map_err(rest_internal_error)?;
+
+    let refreshed =
+        rest_refreshed_project_authorization(repository, &owner_name, &project_name, actor.id)
+            .await?;
+    let can_update =
+        project_update_allowed(&refreshed).map_err(RestRouteError::from_connect_error)?;
+    let response = rest_project_members_response(repository, &refreshed, can_update, None).await?;
+    Ok(rest_json_response(response, Context::new(headers)))
+}
+
+async fn rest_update_project_member_role(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    user_id: i64,
+    body: RestProjectMemberRoleBody,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor = rest_authenticated_user(&service, session.user_id).await?;
+    let repository = rest_repository(&service)?;
+    let authorization =
+        rest_project_member_authorization(repository, &owner_name, &project_name, actor.id, true)
+            .await?;
+    if body.role != "manager" && body.role != "member" {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::invalid_argument("project member role is invalid"),
+        ));
+    }
+
+    let directory = repository
+        .read_project_members(&owner_name, &project_name)
+        .await
+        .map_err(rest_internal_error)?;
+    let Some(target_member) = directory
+        .members
+        .iter()
+        .find(|member| member.user_id == user_id)
+    else {
+        return Err(RestRouteError::from_connect_error(ConnectError::not_found(
+            "project member not found",
+        )));
+    };
+    if rest_project_member_is_owner(&authorization.project, target_member) {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::invalid_argument("project owner must be a manager"),
+        ));
+    }
+    repository
+        .add_project_membership(authorization.project.id, user_id, &body.role)
+        .await
+        .map_err(rest_internal_error)?;
+
+    let refreshed =
+        rest_refreshed_project_authorization(repository, &owner_name, &project_name, actor.id)
+            .await?;
+    let can_update =
+        project_update_allowed(&refreshed).map_err(RestRouteError::from_connect_error)?;
+    let response = rest_project_members_response(repository, &refreshed, can_update, None).await?;
+    Ok(rest_json_response(response, Context::new(headers)))
+}
+
+async fn rest_delete_project_member(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    user_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor = rest_authenticated_user(&service, session.user_id).await?;
+    let repository = rest_repository(&service)?;
+    let authorization =
+        rest_refreshed_project_authorization(repository, &owner_name, &project_name, actor.id)
+            .await?;
+    let can_update =
+        project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)?;
+    if !can_update && actor.id != user_id {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project update is not allowed"),
+        ));
+    }
+    let directory = repository
+        .read_project_members(&owner_name, &project_name)
+        .await
+        .map_err(rest_internal_error)?;
+    let Some(target_member) = directory
+        .members
+        .iter()
+        .find(|member| member.user_id == user_id)
+    else {
+        return Err(RestRouteError::from_connect_error(ConnectError::not_found(
+            "project member not found",
+        )));
+    };
+    if rest_project_member_is_owner(&authorization.project, target_member) {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project owner cannot leave"),
+        ));
+    }
+
+    repository
+        .delete_project_membership(authorization.project.id, user_id)
+        .await
+        .map_err(rest_internal_error)?;
+
+    let refreshed =
+        rest_refreshed_project_authorization(repository, &owner_name, &project_name, actor.id)
+            .await?;
+    let redirect_path = if actor.id == user_id {
+        if project_read_allowed(&refreshed, false).map_err(RestRouteError::from_connect_error)? {
+            format!("/{owner_name}/{project_name}")
+        } else {
+            "/".to_string()
+        }
+    } else {
+        format!("/{owner_name}/{project_name}/members")
+    };
+    let can_update = project_update_allowed(&refreshed).unwrap_or(false);
+    let response =
+        rest_project_members_response(repository, &refreshed, can_update, Some(redirect_path))
+            .await?;
+    Ok(rest_json_response(response, Context::new(headers)))
 }
 
 async fn rest_read_project_watchers(
@@ -8090,6 +8376,20 @@ fn rest_repository(service: &PilotServiceImpl) -> Result<&PilotRepository, RestR
     }
 }
 
+fn rest_internal_error(error: impl ToString) -> RestRouteError {
+    RestRouteError::from_connect_error(internal_error(error))
+}
+
+async fn rest_authenticated_user(
+    service: &PilotServiceImpl,
+    user_id: Option<i64>,
+) -> Result<persistence::AppUserRecord, RestRouteError> {
+    let repository = rest_repository(service)?;
+    require_authenticated_user(repository, user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)
+}
+
 fn rest_actor_id(service: &PilotServiceImpl, headers: &HeaderMap) -> Option<i64> {
     service
         .session_manager
@@ -8111,6 +8411,104 @@ async fn rest_require_project_code_read(
         return Err(RestRouteError::from_connect_error(error));
     }
     Ok(authorization)
+}
+
+async fn rest_refreshed_project_authorization(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    actor_id: i64,
+) -> Result<persistence::ProjectAuthorizationRecord, RestRouteError> {
+    repository
+        .read_project_authorization(owner_name, project_name, Some(actor_id))
+        .await
+        .map_err(rest_internal_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })
+}
+
+async fn rest_project_member_authorization(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    actor_id: i64,
+    require_update: bool,
+) -> Result<persistence::ProjectAuthorizationRecord, RestRouteError> {
+    let authorization =
+        rest_refreshed_project_authorization(repository, owner_name, project_name, actor_id)
+            .await?;
+    if require_update
+        && !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)?
+    {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project update is not allowed"),
+        ));
+    }
+    Ok(authorization)
+}
+
+fn rest_project_role_options() -> Vec<RestProjectMemberRoleOption> {
+    vec![
+        RestProjectMemberRoleOption {
+            label: "user.role.manager".to_string(),
+            role: "manager".to_string(),
+        },
+        RestProjectMemberRoleOption {
+            label: "user.role.member".to_string(),
+            role: "member".to_string(),
+        },
+    ]
+}
+
+fn rest_project_member_is_owner(
+    project: &persistence::ProjectRecord,
+    member: &persistence::ProjectMemberRecord,
+) -> bool {
+    project.organization_id.is_none()
+        && normalize_identifier(&project.owner_name) == normalize_identifier(&member.login_id)
+}
+
+async fn rest_project_members_response(
+    repository: &PilotRepository,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    can_update: bool,
+    redirect_path: Option<String>,
+) -> Result<RestProjectMembersResponse, RestRouteError> {
+    let directory = repository
+        .read_project_members(
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+        )
+        .await
+        .map_err(rest_internal_error)?;
+    Ok(RestProjectMembersResponse {
+        enrollment_requests: directory
+            .enrollment_requests
+            .into_iter()
+            .map(|request| RestProjectEnrollmentRequestItem {
+                avatar_url: gravatar_url(&request.email_address),
+                login_id: request.login_id,
+                user_id: request.user_id,
+                user_label: request.user_label,
+            })
+            .collect(),
+        members: directory
+            .members
+            .into_iter()
+            .map(|member| RestProjectMemberItem {
+                avatar_url: gravatar_url(&member.email_address),
+                is_owner: rest_project_member_is_owner(&authorization.project, &member),
+                login_id: member.login_id,
+                role: member.role,
+                user_id: member.user_id,
+                user_label: member.user_label,
+            })
+            .collect(),
+        permissions: RestProjectMemberPermissions { can_update },
+        redirect_path,
+        role_options: rest_project_role_options(),
+    })
 }
 
 fn rest_pull_request_filter(

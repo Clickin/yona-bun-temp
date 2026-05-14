@@ -21,6 +21,7 @@
 - `yona-original/app/controllers/StatisticsApp.java`
 - `yona-original/app/views/project/statistics.scala.html`
 - `yona-original/app/views/project/delete.scala.html`
+- `yona-original/app/views/project/members.scala.html`
 - `yona-original/app/models/Webhook.java`
 - `yona-original/app/models/enumeration/WebhookType.java`
 
@@ -49,6 +50,7 @@
 | `EnrollProjectAppTest` | enrollment request and cancel stay guest-only, not-found for missing projects, idempotent | `crates/domain` enrollment service + `crates/server` mutation contract test |
 | `RecentlyVisitedProjectsTest` and `WatchProjectAppTest` | recent visits dedupe/reorder and favorites remain workspace-local behavior | `crates/domain` workspace service + `crates/persistence` workspace repo + `frontend` route/UI test |
 | `ProjectApp.watchers` and `project/watchers.scala.html` | watcher list is project READ-gated and shows only actual watchers who can access the project | `/api/v1/owners/:owner/projects/:project/watchers` + `frontend/src/routes/$owner/$projectName/watchers` |
+| `ProjectApp.members/newMember/editMember/deleteMember` and `project/members.scala.html` | project member management is project UPDATE-gated, accepts enrollment requests by adding the user as member, protects the owner role, lets a non-owner member leave, and preserves legacy member-list classes/actions | `GET/POST /api/v1/owners/:owner/projects/:project/members`, `PATCH/DELETE /api/v1/owners/:owner/projects/:project/members/:userId`, and `frontend/src/routes/$owner/$projectName/members` |
 | `ProjectApp.webhooks/newWebhook/deleteWebhook` and `project/webhooks.scala.html` | webhook management is project UPDATE-gated and preserves payload URL, secret, webhook type, and git-push-only fields | `/api/v1/owners/:owner/projects/:project/webhooks` + `frontend/src/routes/$owner/$projectName/webhooks` |
 | `StatisticsApp.statistics` and `project/statistics.scala.html` | statistics route is a project-read page shell whose only body is `Under Construction` | `frontend/src/routes/$owner/$projectName/statistics` |
 | `ProjectApp.deleteForm/deleteProject`, `Project.delete`, and `project/delete.scala.html` | project deletion is project UPDATE/DELETE-gated, uses an explicit confirmation checkbox/modal, hard-deletes the DB project, and removes the backing repository | `DELETE /api/v1/owners/:owner/projects/:project` + `frontend/src/routes/$owner/$projectName/deleteform` |
@@ -58,7 +60,6 @@
 - project transfer
 - org enrollment management
 - full workspace settings and default landing UX parity
-- project member management beyond read-only summary
 - webhook delivery/payload/HMAC/history and change VCS
 
 이 항목들은 후속 follow-up과 provenance gap으로 계속 남는다.
@@ -95,3 +96,9 @@
 - The REST contract is `DELETE /api/v1/owners/:owner/projects/:project`; it requires an authenticated session, CSRF, project read resolution, and project update/delete authority before hard-deleting the project row graph.
 - Repository removal follows the legacy order: after successful DB deletion, the backing bare Git repository at `YONA_DATA/repo/<project_id>.git` is removed. Missing repositories are tolerated as no-op filesystem state.
 - The frontend route `/:owner/:project/deleteform` preserves the legacy `.page-wrap-outer`, `.project-page-wrap`, `#subMenuProjectDelete`, `.bubble-wrap.gray.wp`, `.cu-label`, `.cu-desc`, `#accept`, `.bg-checkbox.label-agreement`, `.box-wrap.bottom`, `#btnDelete`, `#alertDeletion`, and `#btnDeleteExec` anchors.
+
+## Phase 2T Delivery Note
+
+- `Phase 2T` restores project member management from `ProjectApp.members`, `ProjectApp.newMember`, `ProjectApp.editMember`, `ProjectApp.deleteMember`, and `project/members.scala.html`.
+- The REST contract is `GET/POST /api/v1/owners/:owner/projects/:project/members` plus `PATCH/DELETE /api/v1/owners/:owner/projects/:project/members/:userId`; it requires project UPDATE for management, lets a non-owner member delete themselves, rejects owner role downgrade/leave, clears accepted enrollment requests, and starts project watching for newly added members.
+- The frontend route `/:owner/:project/members` preserves `.page-wrap-outer`, `.project-page-wrap`, `.content-wrap.frm-wrap`, `.inner-bubble`, `#subMenuProjectMember`, `#addNewMember`, `#loginId`, `.members.project.row-fluid`, `.member.span6.span-hard-wrap`, `.member-setting`, `.label.owner`, and `.enrollAcceptBtn` anchors.
