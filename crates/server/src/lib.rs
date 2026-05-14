@@ -2525,6 +2525,13 @@ struct RestProjectMemberDirectoryResponse {
     viewer_can_update: bool,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectDeleteResponse {
+    ok: bool,
+    redirect_path: String,
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RestProjectCreateBody {
@@ -4454,6 +4461,13 @@ fn build_rest_org_project_router(service: PilotServiceImpl) -> Router {
                       Json(body): Json<RestProjectUpdateBody>| {
                     let service = service.clone();
                     async move { rest_update_project(headers, owner_name, project_name, body, service).await }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move { rest_delete_project(headers, owner_name, project_name, service).await }
                 }
             }),
         )
@@ -7019,6 +7033,64 @@ async fn rest_update_project_overview(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_delete_project(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project delete requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(&owner_name, &project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project delete is not allowed"),
+        ));
+    }
+    let project_id = authorization.project.id;
+
+    repository
+        .delete_project_by_owner_and_name(&owner_name, &project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    {
+        let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), project_id);
+        let _guard = repository_provisioning_lock()
+            .lock()
+            .map_err(|_| internal_error("repository provisioning lock poisoned"))
+            .map_err(RestRouteError::from_connect_error)?;
+        yona_rust_vcs::delete_repository(&repo_path)
+            .map_err(code_browser_error)
+            .map_err(RestRouteError::from_connect_error)?;
+    }
+
+    Ok(Json(RestProjectDeleteResponse {
+        ok: true,
+        redirect_path: "/".to_string(),
+    })
+    .into_response())
 }
 
 async fn rest_enroll_project(

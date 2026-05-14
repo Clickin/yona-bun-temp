@@ -130,7 +130,7 @@ Interpretation:
 - [x] Recent project visit recording
 - [x] Member list read
 - [x] Full project member management
-- [ ] Project delete confirmation flow
+- [x] Project delete confirmation flow
 - [x] Project watchers page
 - [ ] Webhooks
 - [ ] Project transfer

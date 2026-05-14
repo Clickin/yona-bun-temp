@@ -605,6 +605,184 @@ export function ProjectMembersPage(props: {
   );
 }
 
+function ProjectSettingsSubMenu(props: {
+  active: "delete" | "labels" | "members" | "setting" | "transfer" | "vcs" | "webhooks";
+  detail: Pick<ProjectDetailViewModel, "ownerName" | "projectName" | "showCode">;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { detail, runtimeConfig } = props;
+  const itemClass = (name: typeof props.active) => (props.active === name ? "active" : undefined);
+
+  return (
+    <ul className="nav nav-tabs">
+      <li className={itemClass("setting")} id="subMenuProjectSetting">
+        <a
+          href={buildProjectHref(
+            runtimeConfig,
+            detail.ownerName,
+            detail.projectName,
+            "settingform",
+          )}
+        >
+          project.setting
+        </a>
+      </li>
+      <li className={itemClass("members")} id="subMenuProjectMember">
+        <a href={buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "members")}>
+          project.member
+        </a>
+      </li>
+      <li className={itemClass("labels")} id="subMenuIssueLabel">
+        <a
+          href={buildProjectHref(
+            runtimeConfig,
+            detail.ownerName,
+            detail.projectName,
+            "issue/labelsform",
+          )}
+        >
+          issue.label
+        </a>
+      </li>
+      <li className={itemClass("webhooks")} id="subMenuWebhook">
+        <a href={buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "webhooks")}>
+          project.webhook
+        </a>
+      </li>
+      <li className={itemClass("transfer")} id="subMenuProjectTransfer">
+        <a href={buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "transfer")}>
+          project.transfer
+        </a>
+      </li>
+      <li className={itemClass("delete")} id="subMenuProjectDelete">
+        <a
+          href={buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "deleteform")}
+        >
+          project.delete
+        </a>
+      </li>
+      <li
+        className={itemClass("vcs")}
+        id="subMenuProjectChangeVCS"
+        style={detail.showCode === false ? { display: "none" } : undefined}
+      >
+        <a
+          href={buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "changeVCS")}
+        >
+          project.changeVCS
+        </a>
+      </li>
+    </ul>
+  );
+}
+
+export function ProjectDeletePage(props: {
+  detail: ProjectDetailViewModel | null | undefined;
+  pending?: boolean;
+  runtimeConfig: RuntimeConfig;
+  onDeleteProject?: (ownerName: string, projectName: string) => void;
+}) {
+  const detail = props.detail ?? {
+    enrollmentRequested: false,
+    isFavorited: false,
+    organizationName: "",
+    overview: "",
+    ownerName: "",
+    projectName: "",
+    projectScope: "public",
+    viewerCanEnroll: false,
+    viewerCanUpdate: false,
+  };
+  const [accepted, setAccepted] = React.useState(false);
+  const [modalOpen, setModalOpen] = React.useState(false);
+
+  return (
+    <main className="app-shell">
+      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <ProjectSettingsSubMenu
+            active="delete"
+            detail={detail}
+            runtimeConfig={props.runtimeConfig}
+          />
+
+          <div className="bubble-wrap gray wp">
+            <div className="cu-label">project.delete</div>
+            <div className="cu-desc">
+              <p>
+                <strong className="notice">project.delete.description</strong>
+              </p>
+              <p>
+                <input
+                  autoComplete="off"
+                  checked={accepted}
+                  className="checkbox"
+                  id="accept"
+                  onChange={(event) => setAccepted(event.target.checked)}
+                  type="checkbox"
+                />
+                <label className="bg-checkbox label-agreement" htmlFor="accept">
+                  project.delete.accept
+                </label>
+              </p>
+            </div>
+          </div>
+          <div className="box-wrap bottom">
+            <button
+              className="ybtn ybtn-danger"
+              data-toggle="modal"
+              disabled={!accepted || props.pending}
+              id="btnDelete"
+              onClick={() => setModalOpen(true)}
+              type="button"
+            >
+              <i className="yobicon-database-remove" /> project.delete.this
+            </button>
+          </div>
+
+          <div className={modalOpen ? "modal" : "modal hide"} id="alertDeletion">
+            <div className="modal-header">
+              <button
+                className="close"
+                data-dismiss="modal"
+                onClick={() => setModalOpen(false)}
+                type="button"
+              >
+                x
+              </button>
+              <h3>project.delete.requestion</h3>
+            </div>
+            <div className="modal-body">
+              <p>project.delete.description</p>
+              <p>project.delete.reaccept</p>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="ybtn ybtn-danger"
+                disabled={props.pending}
+                id="btnDeleteExec"
+                onClick={() => props.onDeleteProject?.(detail.ownerName, detail.projectName)}
+                type="button"
+              >
+                button.yes
+              </button>
+              <button
+                className="ybtn"
+                data-dismiss="modal"
+                onClick={() => setModalOpen(false)}
+                type="button"
+              >
+                button.no
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 export function ProjectSettingsPage(props: {
   detail: ProjectDetailViewModel | null | undefined;
   pending?: boolean;

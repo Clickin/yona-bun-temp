@@ -208,6 +208,28 @@ pub fn create_bare_repository(repo_path: &Path) -> Result<(), VcsError> {
     }
 }
 
+pub fn delete_repository(repo_path: &Path) -> Result<(), VcsError> {
+    if !repo_path.exists() {
+        return Ok(());
+    }
+    if !repo_path.is_dir() {
+        return Err(VcsError::FilesystemFailed(format!(
+            "{} exists and is not a directory",
+            repo_path.display()
+        )));
+    }
+    let file_name = repo_path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .ok_or(VcsError::InvalidRepositoryPath)?;
+    if !file_name.ends_with(".git") {
+        return Err(VcsError::InvalidRepositoryPath);
+    }
+
+    std::fs::remove_dir_all(repo_path)
+        .map_err(|error| VcsError::FilesystemFailed(error.to_string()))
+}
+
 pub fn read_code_browser(
     repo_path: &Path,
     branch: Option<&str>,

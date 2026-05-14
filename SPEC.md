@@ -429,7 +429,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 | 프로젝트 생성        | owner 선택(개인/조직), 이름, VCS 타입, 공개범위    | ✅ 구현           | 1     |
 | 프로젝트 홈          | overview(README), 최근 활동, 코드 링크             | ✅ 기본 구현      | 1     |
 | 프로젝트 설정        | 이름/설명/공개범위 변경, 메뉴 토글                 | ✅ 구현           | 1     |
-| 프로젝트 삭제        | 확인 + 삭제                                        | gap               | 2     |
+| 프로젝트 삭제        | 확인 + 삭제                                        | ✅ 구현           | 2     |
 | 멤버 관리            | 멤버 추가/삭제/역할변경                            | ✅ 구현           | 2     |
 | 감시자 (Watchers)    | 프로젝트 감시/해제, 감시자 목록                    | ✅ 구현           | 1     |
 | 즐겨찾기             | 프로젝트 즐겨찾기 토글                             | ✅ 구현           | 1     |
@@ -451,6 +451,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 - [ ] 프로젝트 목록 페이지네이션: 한 페이지 10개, legacy `pageNum` 방식
 - [x] `/:owner/:project/watchers`는 READ 가능한 프로젝트의 실제 watcher 목록을 legacy `project/watchers.scala.html` class anchor로 표시한다
 - [x] `/:owner/:project/members`는 UPDATE 가능한 프로젝트의 멤버 추가/역할 변경/삭제/가입 요청 수락을 legacy `project/members.scala.html` class anchor와 `/api/v1/owners/:owner/projects/:project/members` REST mutation으로 제공한다
+- [x] `/:owner/:project/deleteform`은 UPDATE 가능한 프로젝트의 legacy `project/delete.scala.html` 확인 셸을 보존하고 `/api/v1/owners/:owner/projects/:project` DELETE로 프로젝트 DB 상태와 bare Git repository를 삭제한 뒤 `/`로 이동한다
 
 ---
 

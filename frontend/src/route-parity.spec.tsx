@@ -457,6 +457,29 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain('data-action="delete"');
   });
 
+  it("requires project delete confirmation route to preserve legacy anchors and mutation wiring", () => {
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/deleteform'");
+
+    const routePath = path.resolve(__dirname, "routes/$owner/$projectName/deleteform/route.tsx");
+    expect(fs.existsSync(routePath)).toBe(true);
+    const routeSource = fs.readFileSync(routePath, "utf8");
+    expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).toContain("deleteProjectRest");
+    expect(routeSource).toContain("navigateToAppHref");
+
+    const viewSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-project-views.tsx"),
+      "utf8",
+    );
+    expect(viewSource).toContain("ProjectDeletePage");
+    expect(viewSource).toContain('id="subMenuProjectDelete"');
+    expect(viewSource).toContain('id="accept"');
+    expect(viewSource).toContain('id="btnDelete"');
+    expect(viewSource).toContain('id="alertDeletion"');
+    expect(viewSource).toContain('id="btnDeleteExec"');
+  });
+
   it("keeps the public home title and entry CTA/navigation order stable", () => {
     const html = renderHome();
 

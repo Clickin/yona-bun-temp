@@ -87,6 +87,11 @@ export type ProjectMembersResponse = {
   viewerCanUpdate: boolean;
 };
 
+export type ProjectDeleteResponse = {
+  ok: boolean;
+  redirectPath: string;
+};
+
 export type ProjectWatchersResponse = {
   ownerName: string;
   projectName: string;
@@ -403,6 +408,23 @@ export function readProjectDetailRest(
     fetchImpl,
     method: "GET",
   });
+}
+
+export function deleteProjectRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectPathInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectDeleteResponse> {
+  return restFetch<ProjectDeleteResponse>(
+    runtimeConfig,
+    projectPath(input.ownerName, input.projectName),
+    {
+      csrfToken,
+      fetchImpl,
+      method: "DELETE",
+    },
+  );
 }
 
 export function readProjectContainerRest(
