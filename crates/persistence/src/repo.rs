@@ -27,8 +27,9 @@ use crate::repo_types::{
     PullRequestReviewInput, PullRequestStateInput, PullRequestThreadStateInput,
     PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
     ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
-    SearchRepositoryInput, SearchResultRecord, SearchScope, SiteAdminProjectListRecord,
-    SiteAdminProjectRecord, SiteAdminUserListRecord, SiteAdminUserRecord, SiteAdminUserTabRecord,
+    SearchRepositoryInput, SearchResultRecord, SearchScope, SiteAdminPostListRecord,
+    SiteAdminPostRecord, SiteAdminProjectListRecord, SiteAdminProjectRecord,
+    SiteAdminUserListRecord, SiteAdminUserRecord, SiteAdminUserTabRecord,
     ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateIssueCommentInput,
     UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput,
     UpdatePostingInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
@@ -820,6 +821,66 @@ impl AppRepository {
 
         Ok(SiteAdminProjectListRecord {
             filter,
+            has_more,
+            items,
+            page_num,
+            page_size,
+            total,
+        })
+    }
+
+    pub async fn list_site_admin_posts(
+        &self,
+        page_num: u32,
+        page_size: u32,
+    ) -> Result<SiteAdminPostListRecord, DbErr> {
+        let page_num = page_num.max(1);
+        let page_size = page_size.clamp(1, 100);
+        let rows = posting::Entity::find()
+            .order_by_desc(posting::Column::CreatedDate)
+            .order_by_desc(posting::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut posts = Vec::new();
+
+        for row in rows {
+            let Some(project_id) = row.project_id else {
+                continue;
+            };
+            let Some(project_model) = project::Entity::find_by_id(project_id)
+                .one(&self.db)
+                .await?
+            else {
+                continue;
+            };
+            let Some(project_record) = self.project_record_from_model(project_model).await? else {
+                continue;
+            };
+            let author_login_id = row.author_login_id.unwrap_or_default();
+            let author_label = row.author_name.unwrap_or_else(|| author_login_id.clone());
+            posts.push(SiteAdminPostRecord {
+                author_label,
+                author_login_id,
+                comment_count: row.num_of_comments.unwrap_or_default().max(0) as u32,
+                created: row.created_date,
+                id: row.id,
+                owner_name: project_record.owner_name,
+                post_number: row.number.unwrap_or_default(),
+                project_name: project_record.project_name,
+                title: row.title.unwrap_or_default(),
+            });
+        }
+
+        let total = posts.len() as u32;
+        let start = ((page_num - 1) * page_size) as usize;
+        let items = posts
+            .into_iter()
+            .skip(start)
+            .take(page_size as usize)
+            .collect::<Vec<_>>();
+        let has_more = total as usize > start + items.len();
+
+        Ok(SiteAdminPostListRecord {
             has_more,
             items,
             page_num,

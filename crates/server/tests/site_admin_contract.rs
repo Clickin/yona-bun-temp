@@ -4,7 +4,9 @@ use http_body_util::BodyExt;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, Set};
 use serde_json::json;
 use tower::ServiceExt;
-use yona_rust_persistence::{site_admin, AppRepository, CreateProjectInput};
+use yona_rust_persistence::{
+    site_admin, AppRepository, CreatePostingInput, CreateProjectInput, PostingMutationInput,
+};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
@@ -152,6 +154,36 @@ async fn create_project(
     project.id
 }
 
+async fn create_posting(
+    db: &DatabaseConnection,
+    actor_id: i64,
+    actor_login_id: &str,
+    owner_name: &str,
+    project_name: &str,
+    title: &str,
+) -> i64 {
+    let post = AppRepository::new(db.clone())
+        .create_posting(CreatePostingInput {
+            actor_display_name: actor_login_id.to_string(),
+            actor_id,
+            actor_login_id: actor_login_id.to_string(),
+            owner_name: owner_name.to_string(),
+            project_name: project_name.to_string(),
+            values: PostingMutationInput {
+                attachment_ids: Vec::new(),
+                body_markdown: "body".to_string(),
+                label_ids: Vec::new(),
+                notice: false,
+                readme: false,
+                title: title.to_string(),
+            },
+        })
+        .await
+        .expect("posting")
+        .expect("created posting");
+    post.id
+}
+
 async fn rest_get(app: axum::Router, uri: &str, cookie_header: Option<&str>) -> Response<Body> {
     let mut builder = Request::builder().method(Method::GET).uri(uri);
     if let Some(cookie_header) = cookie_header {
@@ -249,5 +281,49 @@ async fn site_admin_project_list_requires_site_admin_and_filters_legacy_names() 
     assert_eq!(
         projects["items"][0]["deletePath"],
         format!("/sites/project/delete/{expected_project_id}")
+    );
+}
+
+#[tokio::test]
+async fn site_admin_post_list_requires_site_admin_and_lists_recent_posts() {
+    let (app, db) = build_app_with_repository().await;
+    let (_, admin_cookie, admin_id) = register_user(app.clone(), "admin").await;
+    let (_, member_cookie, _) = register_user(app.clone(), "member").await;
+    create_project(&db, "admin", "projectYobi", "Project overview").await;
+    let expected_post_id =
+        create_posting(&db, admin_id, "admin", "admin", "projectYobi", "Admin post").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let forbidden = rest_get(
+        app.clone(),
+        "/yona/api/v1/sites/posts",
+        Some(&member_cookie),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let posts = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/sites/posts?pageNum=1&pageSize=30",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(posts["pageNum"], 1);
+    assert_eq!(posts["pageSize"], 30);
+    assert_eq!(posts["total"], 1);
+    assert_eq!(posts["items"][0]["id"], expected_post_id.to_string());
+    assert_eq!(posts["items"][0]["ownerName"], "admin");
+    assert_eq!(posts["items"][0]["projectName"], "projectYobi");
+    assert_eq!(posts["items"][0]["postNumber"], "1");
+    assert_eq!(posts["items"][0]["title"], "Admin post");
+    assert_eq!(posts["items"][0]["authorLoginId"], "admin");
+    assert_eq!(posts["items"][0]["projectPath"], "/admin/projectYobi");
+    assert_eq!(posts["items"][0]["postPath"], "/admin/projectYobi/post/1");
+    assert_eq!(
+        posts["items"][0]["commentsPath"],
+        "/admin/projectYobi/post/1#comments"
     );
 }

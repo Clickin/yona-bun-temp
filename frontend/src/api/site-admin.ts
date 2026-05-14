@@ -18,6 +18,11 @@ export type SiteProjectsQueryInput = {
   pageSize: number;
 };
 
+export type SitePostsQueryInput = {
+  pageNum: number;
+  pageSize: number;
+};
+
 export type SiteUserListItem = {
   avatarUrl: string;
   createdAt: string;
@@ -45,6 +50,23 @@ export type SiteProjectListItem = {
   projectPath: string;
 };
 
+export type SitePostListItem = {
+  authorAvatarUrl: string;
+  authorLabel: string;
+  authorLoginId: string;
+  commentCount: number;
+  commentsPath: string;
+  createdAt: string;
+  createdLabel: string;
+  id: string;
+  ownerName: string;
+  postNumber: string;
+  postPath: string;
+  projectName: string;
+  projectPath: string;
+  title: string;
+};
+
 export type SiteUserTab = {
   state: SiteUserState;
   total: number;
@@ -70,6 +92,14 @@ export type SiteProjectsResponse = {
   total: number;
 };
 
+export type SitePostsResponse = {
+  hasMore: boolean;
+  items: SitePostListItem[];
+  pageNum: number;
+  pageSize: number;
+  total: number;
+};
+
 export const SITE_USER_STATES: SiteUserState[] = [
   "ACTIVE",
   "LOCKED",
@@ -89,6 +119,11 @@ export const DEFAULT_SITE_PROJECTS_QUERY: SiteProjectsQueryInput = {
   filter: "",
   pageNum: 1,
   pageSize: 25,
+};
+
+export const DEFAULT_SITE_POSTS_QUERY: SitePostsQueryInput = {
+  pageNum: 1,
+  pageSize: 30,
 };
 
 function normalizeSiteUserState(value: unknown): SiteUserState {
@@ -116,6 +151,15 @@ export function normalizeSiteProjectsQuery(
     filter: input.filter ?? "",
     pageNum: Math.max(1, Number(input.pageNum || DEFAULT_SITE_PROJECTS_QUERY.pageNum)),
     pageSize: Math.max(1, Number(input.pageSize || DEFAULT_SITE_PROJECTS_QUERY.pageSize)),
+  };
+}
+
+export function normalizeSitePostsQuery(
+  input: Partial<SitePostsQueryInput> = {},
+): SitePostsQueryInput {
+  return {
+    pageNum: Math.max(1, Number(input.pageNum || DEFAULT_SITE_POSTS_QUERY.pageNum)),
+    pageSize: Math.max(1, Number(input.pageSize || DEFAULT_SITE_POSTS_QUERY.pageSize)),
   };
 }
 
@@ -176,6 +220,32 @@ function normalizeSiteProjectsResponse(
   };
 }
 
+function normalizeSitePostsResponse(response: Partial<SitePostsResponse>): SitePostsResponse {
+  const items = (response.items ?? []).map((item) => ({
+    authorAvatarUrl: item.authorAvatarUrl ?? "",
+    authorLabel: item.authorLabel ?? "",
+    authorLoginId: item.authorLoginId ?? "",
+    commentCount: item.commentCount ?? 0,
+    commentsPath: item.commentsPath ?? "",
+    createdAt: item.createdAt ?? "",
+    createdLabel: item.createdLabel ?? "",
+    id: item.id ?? "",
+    ownerName: item.ownerName ?? "",
+    postNumber: item.postNumber ?? "",
+    postPath: item.postPath ?? "",
+    projectName: item.projectName ?? "",
+    projectPath: item.projectPath ?? "",
+    title: item.title ?? "",
+  }));
+  return {
+    hasMore: response.hasMore ?? false,
+    items,
+    pageNum: response.pageNum ?? DEFAULT_SITE_POSTS_QUERY.pageNum,
+    pageSize: response.pageSize ?? DEFAULT_SITE_POSTS_QUERY.pageSize,
+    total: response.total ?? items.length,
+  };
+}
+
 export function listSiteUsersRest(
   runtimeConfig: RuntimeConfig,
   input: Partial<SiteUsersQueryInput> = {},
@@ -207,6 +277,20 @@ export function listSiteProjectsRest(
   }).then(normalizeSiteProjectsResponse);
 }
 
+export function listSitePostsRest(
+  runtimeConfig: RuntimeConfig,
+  input: Partial<SitePostsQueryInput> = {},
+  fetchImpl: typeof fetch = fetch,
+): Promise<SitePostsResponse> {
+  const query = normalizeSitePostsQuery(input);
+  const params = new URLSearchParams();
+  params.set("pageNum", String(query.pageNum));
+  params.set("pageSize", String(query.pageSize));
+  return restFetch<Partial<SitePostsResponse>>(runtimeConfig, `/sites/posts?${params}`, {
+    fetchImpl,
+  }).then(normalizeSitePostsResponse);
+}
+
 export function listSiteUsersQueryOptions(
   runtimeConfig: RuntimeConfig,
   input: Partial<SiteUsersQueryInput> = {},
@@ -226,5 +310,16 @@ export function listSiteProjectsQueryOptions(
   return queryOptions({
     queryFn: () => listSiteProjectsRest(runtimeConfig, query),
     queryKey: apiQueryKeys.siteAdmin.projects(query),
+  });
+}
+
+export function listSitePostsQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: Partial<SitePostsQueryInput> = {},
+) {
+  const query = normalizeSitePostsQuery(input);
+  return queryOptions({
+    queryFn: () => listSitePostsRest(runtimeConfig, query),
+    queryKey: apiQueryKeys.siteAdmin.posts(query),
   });
 }

@@ -2,13 +2,19 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  DEFAULT_SITE_POSTS_QUERY,
   DEFAULT_SITE_PROJECTS_QUERY,
   DEFAULT_SITE_USERS_QUERY,
+  listSitePostsQueryOptions,
   listSiteProjectsQueryOptions,
   listSiteUsersQueryOptions,
+  normalizeSitePostsQuery,
   normalizeSiteProjectsQuery,
   normalizeSiteUsersQuery,
   SITE_USER_STATES,
+  type SitePostListItem,
+  type SitePostsQueryInput,
+  type SitePostsResponse,
   type SiteProjectListItem,
   type SiteProjectsQueryInput,
   type SiteProjectsResponse,
@@ -77,6 +83,18 @@ function readSiteProjectsQuery(): SiteProjectsQueryInput {
   });
 }
 
+function readSitePostsQuery(): SitePostsQueryInput {
+  if (typeof window === "undefined") {
+    return DEFAULT_SITE_POSTS_QUERY;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  return normalizeSitePostsQuery({
+    pageNum: Number(params.get("pageNum") || DEFAULT_SITE_POSTS_QUERY.pageNum),
+    pageSize: Number(params.get("pageSize") || DEFAULT_SITE_POSTS_QUERY.pageSize),
+  });
+}
+
 function siteHref(runtimeConfig: RuntimeConfig, href: string): string {
   return prefixBasePath(runtimeConfig.basePath, href);
 }
@@ -112,6 +130,18 @@ function siteProjectsHref(
   return siteHref(runtimeConfig, `/sites/projectList?${params}`);
 }
 
+function sitePostsHref(
+  runtimeConfig: RuntimeConfig,
+  input: Partial<SitePostsQueryInput> = {},
+): string {
+  const query = normalizeSitePostsQuery(input);
+  const params = new URLSearchParams();
+  if (query.pageNum > 1) {
+    params.set("pageNum", String(query.pageNum));
+  }
+  return siteHref(runtimeConfig, `/sites/postList?${params}`);
+}
+
 function SiteAdminRouteComponent() {
   const { pageName } = Route.useParams();
   const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
@@ -119,6 +149,7 @@ function SiteAdminRouteComponent() {
   const canRender = useRequireAuthenticatedRoute(routeHref);
   const userQuery = React.useMemo(readSiteUsersQuery, [pageName]);
   const projectQuery = React.useMemo(readSiteProjectsQuery, [pageName]);
+  const postQuery = React.useMemo(readSitePostsQuery, [pageName]);
   const [failureKind, setFailureKind] = React.useState<null | "forbidden" | "not-found">(null);
   const userListQuery = useQuery({
     ...listSiteUsersQueryOptions(runtimeConfig, userQuery),
@@ -128,19 +159,27 @@ function SiteAdminRouteComponent() {
     ...listSiteProjectsQueryOptions(runtimeConfig, projectQuery),
     enabled: canRender && pageName === "projectList",
   });
+  const postListQuery = useQuery({
+    ...listSitePostsQueryOptions(runtimeConfig, postQuery),
+    enabled: canRender && pageName === "postList",
+  });
 
   useDocumentTitle(
     pageName === "userList"
       ? "Site Users"
       : pageName === "projectList"
         ? "Site Projects"
-        : "Site Admin",
+        : pageName === "postList"
+          ? "Site Posts"
+          : "Site Admin",
   );
 
   React.useEffect(() => {
     setFailureKind(null);
   }, [
     pageName,
+    postQuery.pageNum,
+    postQuery.pageSize,
     projectQuery.filter,
     projectQuery.pageNum,
     projectQuery.pageSize,
@@ -151,7 +190,12 @@ function SiteAdminRouteComponent() {
   ]);
 
   React.useEffect(() => {
-    const error = pageName === "projectList" ? projectListQuery.error : userListQuery.error;
+    const error =
+      pageName === "projectList"
+        ? projectListQuery.error
+        : pageName === "postList"
+          ? postListQuery.error
+          : userListQuery.error;
     if (!error) {
       return;
     }
@@ -165,9 +209,11 @@ function SiteAdminRouteComponent() {
         ? error.message
         : pageName === "projectList"
           ? "Read site projects failed."
-          : "Read site users failed.",
+          : pageName === "postList"
+            ? "Read site posts failed."
+            : "Read site users failed.",
     );
-  }, [pageName, projectListQuery.error, setErrorMessage, userListQuery.error]);
+  }, [pageName, postListQuery.error, projectListQuery.error, setErrorMessage, userListQuery.error]);
 
   if (bootstrapping || !canRender) {
     return (
@@ -189,6 +235,17 @@ function SiteAdminRouteComponent() {
         isLoading={projectListQuery.isLoading}
         query={projectQuery}
         response={projectListQuery.data}
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
+
+  if (pageName === "postList") {
+    return (
+      <SiteAdminPostListPage
+        isLoading={postListQuery.isLoading}
+        query={postQuery}
+        response={postListQuery.data}
         runtimeConfig={runtimeConfig}
       />
     );
@@ -249,6 +306,97 @@ function SiteAdminLayout(props: {
         </div>
       </div>
     </main>
+  );
+}
+
+function SiteAdminPostListPage(props: {
+  isLoading: boolean;
+  query: SitePostsQueryInput;
+  response: SitePostsResponse | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const response = props.response;
+  const items = response?.items ?? [];
+
+  return (
+    <SiteAdminLayout activePageName="postList" runtimeConfig={props.runtimeConfig}>
+      <div className="title_area">
+        <h2 className="pull-left">Posts</h2>
+      </div>
+      {props.isLoading ? (
+        <p>Loading…</p>
+      ) : items.length === 0 ? (
+        <div className="warning-none">No posts found.</div>
+      ) : (
+        <ul className="post-list-wrap">
+          {items.map((item) => (
+            <SiteAdminPostRow item={item} key={item.id} runtimeConfig={props.runtimeConfig} />
+          ))}
+        </ul>
+      )}
+      <div id="pagination">
+        <span>{`Page ${response?.pageNum ?? props.query.pageNum}`}</span>
+        <span>{`Total ${response?.total ?? 0}`}</span>
+        {response?.hasMore ? (
+          <a
+            className="ybtn"
+            href={sitePostsHref(props.runtimeConfig, {
+              ...props.query,
+              pageNum: props.query.pageNum + 1,
+            })}
+          >
+            Next
+          </a>
+        ) : null}
+      </div>
+    </SiteAdminLayout>
+  );
+}
+
+function SiteAdminPostRow(props: { item: SitePostListItem; runtimeConfig: RuntimeConfig }) {
+  const projectHref = siteHref(props.runtimeConfig, props.item.projectPath);
+  const postHref = siteHref(props.runtimeConfig, props.item.postPath);
+  const commentsHref = siteHref(props.runtimeConfig, props.item.commentsPath);
+  const authorHref = siteHref(
+    props.runtimeConfig,
+    `/users/${encodeURIComponent(props.item.authorLoginId)}`,
+  );
+  return (
+    <li className="row-fluid listitem">
+      <a className="avatar-wrap list-avatar" href={projectHref}>
+        {`${props.item.ownerName}/${props.item.projectName}`}
+      </a>
+      <div className="post-info-wrap">
+        <a className="post-project" href={projectHref}>
+          {`${props.item.ownerName}/${props.item.projectName}`}
+        </a>
+        <span className="post-info-separator">·</span>
+        <a className="post-title" href={postHref}>
+          {props.item.title}
+        </a>
+      </div>
+      <div className="post-meta-wrap">
+        <a className="avatar-wrap" href={authorHref}>
+          {props.item.authorAvatarUrl ? (
+            <img
+              alt={props.item.authorLabel}
+              height="16"
+              src={props.item.authorAvatarUrl}
+              width="16"
+            />
+          ) : null}
+        </a>
+        <a className="post-meta-item" href={authorHref}>
+          {props.item.authorLabel}
+        </a>
+        <span className="post-meta-item" title={props.item.createdAt}>
+          {props.item.createdLabel}
+        </span>
+        <span className="post-comments post-meta-item">
+          <a href={commentsHref}>{props.item.commentCount}</a>
+        </span>
+      </div>
+    </li>
   );
 }
 

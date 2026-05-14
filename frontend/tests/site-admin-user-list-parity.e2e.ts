@@ -193,3 +193,46 @@ test("renders legacy site-admin project list shell and filters without placehold
   await expect(page.locator("[data-toggle='delete-project']")).toBeDisabled();
   await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
 });
+
+test("renders legacy site-admin post list shell without placeholders", async ({ page }) => {
+  await page.route(apiV1Route("/sites/posts**"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        hasMore: false,
+        items: [
+          {
+            authorAvatarUrl: "https://example.test/admin.png",
+            authorLabel: "Admin",
+            authorLoginId: "admin",
+            commentCount: 2,
+            commentsPath: "/admin/projectYobi/post/1#comments",
+            createdAt: "2026-05-01T00:00:00",
+            createdLabel: "2026-05-01",
+            id: "11",
+            ownerName: "admin",
+            postNumber: "1",
+            postPath: "/admin/projectYobi/post/1",
+            projectName: "projectYobi",
+            projectPath: "/admin/projectYobi",
+            title: "Admin post",
+          },
+        ],
+        pageNum: 1,
+        pageSize: 30,
+        total: 1,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/sites/postList");
+
+  await expect(page.locator(".site-setting-nav li.active")).toContainText("Posts");
+  await expect(page.locator(".post-list-wrap")).toBeVisible();
+  await expect(page.locator(".post-list-wrap .post-project")).toHaveText("admin/projectYobi");
+  await expect(page.locator(".post-list-wrap .post-title")).toHaveText("Admin post");
+  await expect(page.locator(".post-meta-wrap .post-meta-item").first()).toHaveText("Admin");
+  await expect(page.locator(".post-comments")).toContainText("2");
+  await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
+});

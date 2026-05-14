@@ -669,6 +669,38 @@ h1 {
   grid-template-columns: 5fr 4fr 2fr 1fr;
 }
 
+.site-admin-page .post-list-wrap {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.site-admin-page .post-list-wrap .listitem {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 4px 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #ececec;
+}
+
+.site-admin-page .post-list-wrap .list-avatar {
+  grid-row: 1 / span 2;
+}
+
+.site-admin-page .post-info-wrap,
+.site-admin-page .post-meta-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.site-admin-page .post-meta-wrap {
+  color: #878787;
+  font-size: 12px;
+}
+
 .listitem-col {
   min-width: 0;
 }

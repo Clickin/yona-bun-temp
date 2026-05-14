@@ -159,6 +159,18 @@ describe("file-route parity harness", () => {
     expect(siteRouteSource).not.toContain("This site-admin page remains a follow-up parity slice");
   });
 
+  it("requires a real site-admin post list route instead of a follow-up shell", () => {
+    const siteRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/sites/$pageName/route.tsx"),
+      "utf8",
+    );
+
+    expect(siteRouteSource).toContain("SiteAdminPostListPage");
+    expect(siteRouteSource).toContain("listSitePostsQueryOptions");
+    expect(siteRouteSource).toContain("post-list-wrap");
+    expect(siteRouteSource).toContain("post-meta-wrap");
+  });
+
   it("requires real project issue routes instead of placeholder pages", () => {
     const issueListRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/$owner/$projectName/issues/route.tsx"),

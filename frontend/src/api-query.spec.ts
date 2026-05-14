@@ -18,7 +18,11 @@ import {
   organizationSearchQueryOptions,
   projectSearchQueryOptions,
 } from "./api/search";
-import { listSiteProjectsQueryOptions, listSiteUsersQueryOptions } from "./api/site-admin";
+import {
+  listSitePostsQueryOptions,
+  listSiteProjectsQueryOptions,
+  listSiteUsersQueryOptions,
+} from "./api/site-admin";
 
 describe("api query keys", () => {
   it("includes owner, project, and query in project issue-reference keys", () => {
@@ -263,6 +267,22 @@ describe("api query keys", () => {
         filter: "needle",
         pageNum: 2,
         pageSize: 25,
+      }),
+    );
+    expect(options.queryFn).toEqual(expect.any(Function));
+  });
+
+  it("builds site-admin post list query options from canonical query keys", () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const options = listSitePostsQueryOptions(runtimeConfig, {
+      pageNum: 2,
+      pageSize: 30,
+    });
+
+    expect(options.queryKey).toEqual(
+      apiQueryKeys.siteAdmin.posts({
+        pageNum: 2,
+        pageSize: 30,
       }),
     );
     expect(options.queryFn).toEqual(expect.any(Function));

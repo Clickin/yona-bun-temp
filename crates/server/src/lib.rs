@@ -2092,6 +2092,13 @@ struct RestSiteProjectsQuery {
     page_size: u32,
 }
 
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSitePostsQuery {
+    page_num: u32,
+    page_size: u32,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestSiteUserItem {
@@ -2149,6 +2156,35 @@ struct RestSiteProjectsResponse {
     filter: String,
     has_more: bool,
     items: Vec<RestSiteProjectItem>,
+    page_num: u32,
+    page_size: u32,
+    total: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSitePostItem {
+    author_avatar_url: String,
+    author_label: String,
+    author_login_id: String,
+    comment_count: u32,
+    comments_path: String,
+    created_at: String,
+    created_label: String,
+    id: String,
+    owner_name: String,
+    post_number: String,
+    post_path: String,
+    project_name: String,
+    project_path: String,
+    title: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSitePostsResponse {
+    has_more: bool,
+    items: Vec<RestSitePostItem>,
     page_num: u32,
     page_size: u32,
     total: u32,
@@ -3435,6 +3471,18 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     async move { rest_list_site_projects(headers, query, session_manager, backend).await }
+                }
+            }),
+        )
+        .route(
+            "/sites/posts",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap, Query(query): Query<RestSitePostsQuery>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move { rest_list_site_posts(headers, query, session_manager, backend).await }
                 }
             }),
         )
@@ -6465,6 +6513,42 @@ fn rest_site_projects_response(
     }
 }
 
+fn rest_site_posts_response(record: persistence::SiteAdminPostListRecord) -> RestSitePostsResponse {
+    RestSitePostsResponse {
+        has_more: record.has_more,
+        items: record
+            .items
+            .into_iter()
+            .map(|item| {
+                let project_path = format!("/{}/{}", item.owner_name, item.project_name);
+                let post_path = format!("{}/post/{}", project_path, item.post_number);
+                RestSitePostItem {
+                    author_avatar_url: String::new(),
+                    author_label: item.author_label,
+                    author_login_id: item.author_login_id,
+                    comment_count: item.comment_count,
+                    comments_path: format!("{post_path}#comments"),
+                    created_at: item
+                        .created
+                        .map(|created| created.format("%Y-%m-%dT%H:%M:%S").to_string())
+                        .unwrap_or_default(),
+                    created_label: format_project_date_label(item.created),
+                    id: item.id.to_string(),
+                    owner_name: item.owner_name,
+                    post_number: item.post_number.to_string(),
+                    post_path,
+                    project_name: item.project_name,
+                    project_path,
+                    title: item.title,
+                }
+            })
+            .collect(),
+        page_num: record.page_num,
+        page_size: record.page_size,
+        total: record.total,
+    }
+}
+
 async fn rest_list_site_users(
     headers: HeaderMap,
     query: RestSiteUsersQuery,
@@ -6543,6 +6627,46 @@ async fn rest_list_site_projects(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(rest_site_projects_response(record)))
+}
+
+async fn rest_list_site_posts(
+    headers: HeaderMap,
+    query: RestSitePostsQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestSitePostsResponse>, RestRouteError> {
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    let Some(user_id) = session.user_id else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unauthenticated("missing pilot user"),
+        ));
+    };
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "site admin posts require repository backend",
+        ));
+    };
+    let actor = repository
+        .find_user_by_id(user_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::unauthenticated("missing pilot user"))
+        })?;
+    if !actor.is_site_admin {
+        return Err(RestRouteError::permission_denied(
+            "site admin post list is not allowed",
+        ));
+    }
+
+    let record = repository
+        .list_site_admin_posts(query.page_num, query.page_size)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(rest_site_posts_response(record)))
 }
 
 async fn rest_record_recent_project_visit(
