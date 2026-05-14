@@ -86,6 +86,37 @@ pub struct SiteAdminPostListRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SiteAdminIssueRecord {
+    pub author_label: String,
+    pub author_login_id: String,
+    pub comment_count: u32,
+    pub created: Option<DateTime>,
+    pub id: i64,
+    pub issue_number: i64,
+    pub owner_name: String,
+    pub project_name: String,
+    pub state: String,
+    pub title: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SiteAdminIssueTabRecord {
+    pub state: String,
+    pub total: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SiteAdminIssueListRecord {
+    pub has_more: bool,
+    pub items: Vec<SiteAdminIssueRecord>,
+    pub page_num: u32,
+    pub page_size: u32,
+    pub state: String,
+    pub tabs: Vec<SiteAdminIssueTabRecord>,
+    pub total: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IssueRecord {
     pub author_id: Option<i64>,
     pub author_label: String,

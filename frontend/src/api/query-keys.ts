@@ -143,6 +143,17 @@ export const apiQueryKeys = {
       [...apiQueryKeys.v1(), "notifications", { from: input.from, size: input.size }] as const,
   },
   siteAdmin: {
+    issues: (input: { pageNum: number; pageSize: number; state: string }) =>
+      [
+        ...apiQueryKeys.v1(),
+        "sites",
+        "issues",
+        {
+          pageNum: input.pageNum,
+          pageSize: input.pageSize,
+          state: input.state,
+        },
+      ] as const,
     posts: (input: { pageNum: number; pageSize: number }) =>
       [
         ...apiQueryKeys.v1(),

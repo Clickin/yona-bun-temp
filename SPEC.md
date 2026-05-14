@@ -948,7 +948,7 @@ GET   /sites/export            → 데이터 익스포트
 | ---------------------- | ---------------------------------- | --------- | ----- |
 | 사용자 목록/관리       | 목록, 검색, 관리자 토글, 계정 잠금 | 🔶 Phase 6A 사용자 목록 read surface 구현; 토글/잠금/삭제 gap | 6     |
 | 프로젝트 목록/관리     | 목록, 검색, 삭제                   | 🔶 Phase 6B 프로젝트 목록 read surface 구현; 삭제 gap | 6     |
-| 게시글/이슈 목록       | 전체 게시글/이슈 관리              | 🔶 Phase 6C 게시글 목록 read surface 구현; 이슈 목록 gap | 6     |
+| 게시글/이슈 목록       | 전체 게시글/이슈 관리              | 🔶 Phase 6C/6D 게시글/이슈 목록 read surface 구현 | 6     |
 | 메일 설정/테스트       | SMTP 테스트, 대량 메일             | gap       | 6     |
 | 시스템 진단            | DB 상태, 메모리 등                 | gap       | 6     |
 | 데이터 임포트/익스포트 | 전체 데이터 백업/복원              | deferred  | 2차   |
@@ -956,19 +956,20 @@ GET   /sites/export            → 데이터 익스포트
 
 #### 검수 기준
 
-- [~] 관리자 화면: `/sites/userList`와 `/sites/projectList`는 site_admin 역할만 접근 가능; 나머지 `/sites/*`는 follow-up shell
+- [~] 관리자 화면: `/sites/userList`, `/sites/projectList`, `/sites/postList`, `/sites/issueList`는 site_admin 역할만 접근 가능; 나머지 `/sites/*`는 follow-up shell
 - [~] 사용자 목록: 검색, 페이지네이션, active/locked/deleted/guest/site-admin 탭 read surface 구현; 관리자 역할 토글, 계정 잠금/해제, 삭제는 follow-up
 - [~] 프로젝트 목록: 검색, 페이지네이션 read surface 구현; 프로젝트 삭제는 follow-up
-- [~] 게시글 목록: 전체 게시글 페이지네이션 read surface 구현; 이슈 목록은 follow-up
+- [~] 게시글/이슈 목록: 전체 게시글 페이지네이션, 이슈 open/closed 탭과 페이지네이션 read surface 구현
 
-**Phase 6A/6B 구현 메모**: app runtime REST는 `GET /api/v1/sites/users?state=&query=&pageNum=&pageSize=`와
-`GET /api/v1/sites/projects?filter=&pageNum=&pageSize=`, `GET /api/v1/sites/posts?pageNum=&pageSize=`를 제공한다. `/sites/userList`는 legacy
+**Phase 6A/6B/6C/6D 구현 메모**: app runtime REST는 `GET /api/v1/sites/users?state=&query=&pageNum=&pageSize=`와
+`GET /api/v1/sites/projects?filter=&pageNum=&pageSize=`, `GET /api/v1/sites/posts?pageNum=&pageSize=`,
+`GET /api/v1/sites/issues?state=&pageNum=&pageSize=`를 제공한다. `/sites/userList`는 legacy
 `siteMngLayout.scala.html`/`userList.scala.html`의 사이드바, 탭, 검색, dense row class anchor를 복원하고, `/sites/projectList`는
 `projectList.scala.html`의 검색, `.project-list-wrap`, `.listhead`, 삭제 버튼 data anchor를 복원한다. `/sites/postList`는
-`postList.scala.html`의 `.post-list-wrap`, `.post-info-wrap`, `.post-meta-wrap`, project/post/comment anchors를 복원한다.
+`postList.scala.html`의 `.post-list-wrap`, `.post-info-wrap`, `.post-meta-wrap`, project/post/comment anchors를 복원한다. `/sites/issueList`는
+`issueList.scala.html`의 open/closed 탭, `.post-list-wrap`, `.post-info-wrap`, `.post-meta-wrap`, project/issue/comment anchors를 복원한다.
 mutation buttons는 destructive/admin side-effect batch 전까지 disabled follow-up 상태로 둔다. `data/import/export`, update check, mail/massmail,
-issue admin list, site-admin role toggle, account lock, guest toggle, reset password, user/project delete는 별도 Phase 6 follow-up 또는
-deferred scope다.
+site-admin role toggle, account lock, guest toggle, reset password, user/project delete는 별도 Phase 6 follow-up 또는 deferred scope다.
 
 ---
 

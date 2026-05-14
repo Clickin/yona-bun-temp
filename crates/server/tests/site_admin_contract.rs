@@ -5,7 +5,8 @@ use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, Set};
 use serde_json::json;
 use tower::ServiceExt;
 use yona_rust_persistence::{
-    site_admin, AppRepository, CreatePostingInput, CreateProjectInput, PostingMutationInput,
+    site_admin, AppRepository, CreateIssueInput, CreatePostingInput, CreateProjectInput,
+    IssueMutationInput, PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -184,6 +185,36 @@ async fn create_posting(
     post.id
 }
 
+async fn create_issue(
+    db: &DatabaseConnection,
+    actor_id: i64,
+    actor_login_id: &str,
+    owner_name: &str,
+    project_name: &str,
+    title: &str,
+) -> i64 {
+    let issue = AppRepository::new(db.clone())
+        .create_issue(CreateIssueInput {
+            actor_display_name: actor_login_id.to_string(),
+            actor_id,
+            actor_login_id: actor_login_id.to_string(),
+            owner_name: owner_name.to_string(),
+            project_name: project_name.to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: None,
+                attachment_ids: Vec::new(),
+                body_markdown: "body".to_string(),
+                label_ids: Vec::new(),
+                milestone_id: None,
+                title: title.to_string(),
+            },
+        })
+        .await
+        .expect("issue")
+        .expect("created issue");
+    issue.issue_number
+}
+
 async fn rest_get(app: axum::Router, uri: &str, cookie_header: Option<&str>) -> Response<Body> {
     let mut builder = Request::builder().method(Method::GET).uri(uri);
     if let Some(cookie_header) = cookie_header {
@@ -326,4 +357,92 @@ async fn site_admin_post_list_requires_site_admin_and_lists_recent_posts() {
         posts["items"][0]["commentsPath"],
         "/admin/projectYobi/post/1#comments"
     );
+}
+
+#[tokio::test]
+async fn site_admin_issue_list_requires_site_admin_and_filters_legacy_state_tabs() {
+    let (app, db) = build_app_with_repository().await;
+    let (_, admin_cookie, admin_id) = register_user(app.clone(), "admin").await;
+    let (_, member_cookie, _) = register_user(app.clone(), "member").await;
+    create_project(&db, "admin", "projectYobi", "Project overview").await;
+    let open_issue_number =
+        create_issue(&db, admin_id, "admin", "admin", "projectYobi", "Open issue").await;
+    let closed_issue_number = create_issue(
+        &db,
+        admin_id,
+        "admin",
+        "admin",
+        "projectYobi",
+        "Closed issue",
+    )
+    .await;
+    AppRepository::new(db.clone())
+        .update_issue_state("admin", "projectYobi", closed_issue_number, "closed")
+        .await
+        .expect("close issue")
+        .expect("closed issue");
+    mark_site_admin(&db, admin_id).await;
+
+    let forbidden = rest_get(
+        app.clone(),
+        "/yona/api/v1/sites/issues?state=open",
+        Some(&member_cookie),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let default_open = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/sites/issues?pageNum=1&pageSize=30",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(default_open["state"], "OPEN");
+    assert_eq!(default_open["pageNum"], 1);
+    assert_eq!(default_open["pageSize"], 30);
+    assert_eq!(default_open["total"], 1);
+    assert_eq!(default_open["tabs"][0]["state"], "OPEN");
+    assert_eq!(default_open["tabs"][0]["total"], 1);
+    assert_eq!(default_open["tabs"][1]["state"], "CLOSED");
+    assert_eq!(default_open["tabs"][1]["total"], 1);
+    assert_eq!(
+        default_open["items"][0]["issueNumber"],
+        open_issue_number.to_string()
+    );
+    assert_eq!(default_open["items"][0]["title"], "Open issue");
+    assert_eq!(default_open["items"][0]["authorLoginId"], "admin");
+    assert_eq!(default_open["items"][0]["ownerName"], "admin");
+    assert_eq!(default_open["items"][0]["projectName"], "projectYobi");
+    assert_eq!(
+        default_open["items"][0]["projectPath"],
+        "/admin/projectYobi"
+    );
+    assert_eq!(
+        default_open["items"][0]["issuePath"],
+        format!("/admin/projectYobi/issue/{open_issue_number}")
+    );
+    assert_eq!(
+        default_open["items"][0]["commentsPath"],
+        format!("/admin/projectYobi/issue/{open_issue_number}#comments")
+    );
+
+    let closed = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/sites/issues?state=closed&pageNum=1&pageSize=30",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(closed["state"], "CLOSED");
+    assert_eq!(closed["total"], 1);
+    assert_eq!(
+        closed["items"][0]["issueNumber"],
+        closed_issue_number.to_string()
+    );
+    assert_eq!(closed["items"][0]["title"], "Closed issue");
 }

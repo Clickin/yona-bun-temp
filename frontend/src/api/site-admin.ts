@@ -4,6 +4,7 @@ import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
 
 export type SiteUserState = "ACTIVE" | "DELETED" | "GUEST" | "LOCKED" | "SITE_ADMIN";
+export type SiteIssueState = "OPEN" | "CLOSED";
 
 export type SiteUsersQueryInput = {
   pageNum: number;
@@ -21,6 +22,12 @@ export type SiteProjectsQueryInput = {
 export type SitePostsQueryInput = {
   pageNum: number;
   pageSize: number;
+};
+
+export type SiteIssuesQueryInput = {
+  pageNum: number;
+  pageSize: number;
+  state: SiteIssueState;
 };
 
 export type SiteUserListItem = {
@@ -67,8 +74,31 @@ export type SitePostListItem = {
   title: string;
 };
 
+export type SiteIssueListItem = {
+  authorAvatarUrl: string;
+  authorLabel: string;
+  authorLoginId: string;
+  commentCount: number;
+  commentsPath: string;
+  createdAt: string;
+  createdLabel: string;
+  id: string;
+  issueNumber: string;
+  issuePath: string;
+  ownerName: string;
+  projectName: string;
+  projectPath: string;
+  state: SiteIssueState;
+  title: string;
+};
+
 export type SiteUserTab = {
   state: SiteUserState;
+  total: number;
+};
+
+export type SiteIssueTab = {
+  state: SiteIssueState;
   total: number;
 };
 
@@ -100,6 +130,16 @@ export type SitePostsResponse = {
   total: number;
 };
 
+export type SiteIssuesResponse = {
+  hasMore: boolean;
+  items: SiteIssueListItem[];
+  pageNum: number;
+  pageSize: number;
+  state: SiteIssueState;
+  tabs: SiteIssueTab[];
+  total: number;
+};
+
 export const SITE_USER_STATES: SiteUserState[] = [
   "ACTIVE",
   "LOCKED",
@@ -107,6 +147,8 @@ export const SITE_USER_STATES: SiteUserState[] = [
   "GUEST",
   "SITE_ADMIN",
 ];
+
+export const SITE_ISSUE_STATES: SiteIssueState[] = ["OPEN", "CLOSED"];
 
 export const DEFAULT_SITE_USERS_QUERY: SiteUsersQueryInput = {
   pageNum: 1,
@@ -126,11 +168,24 @@ export const DEFAULT_SITE_POSTS_QUERY: SitePostsQueryInput = {
   pageSize: 30,
 };
 
+export const DEFAULT_SITE_ISSUES_QUERY: SiteIssuesQueryInput = {
+  pageNum: 1,
+  pageSize: 30,
+  state: "OPEN",
+};
+
 function normalizeSiteUserState(value: unknown): SiteUserState {
   const normalized = String(value ?? "").toUpperCase();
   return SITE_USER_STATES.includes(normalized as SiteUserState)
     ? (normalized as SiteUserState)
     : "ACTIVE";
+}
+
+function normalizeSiteIssueState(value: unknown): SiteIssueState {
+  const normalized = String(value ?? "").toUpperCase();
+  return SITE_ISSUE_STATES.includes(normalized as SiteIssueState)
+    ? (normalized as SiteIssueState)
+    : "OPEN";
 }
 
 export function normalizeSiteUsersQuery(
@@ -160,6 +215,16 @@ export function normalizeSitePostsQuery(
   return {
     pageNum: Math.max(1, Number(input.pageNum || DEFAULT_SITE_POSTS_QUERY.pageNum)),
     pageSize: Math.max(1, Number(input.pageSize || DEFAULT_SITE_POSTS_QUERY.pageSize)),
+  };
+}
+
+export function normalizeSiteIssuesQuery(
+  input: Partial<SiteIssuesQueryInput> = {},
+): SiteIssuesQueryInput {
+  return {
+    pageNum: Math.max(1, Number(input.pageNum || DEFAULT_SITE_ISSUES_QUERY.pageNum)),
+    pageSize: Math.max(1, Number(input.pageSize || DEFAULT_SITE_ISSUES_QUERY.pageSize)),
+    state: normalizeSiteIssueState(input.state),
   };
 }
 
@@ -246,6 +311,41 @@ function normalizeSitePostsResponse(response: Partial<SitePostsResponse>): SiteP
   };
 }
 
+function normalizeSiteIssuesResponse(response: Partial<SiteIssuesResponse>): SiteIssuesResponse {
+  const items = (response.items ?? []).map((item) => ({
+    authorAvatarUrl: item.authorAvatarUrl ?? "",
+    authorLabel: item.authorLabel ?? "",
+    authorLoginId: item.authorLoginId ?? "",
+    commentCount: item.commentCount ?? 0,
+    commentsPath: item.commentsPath ?? "",
+    createdAt: item.createdAt ?? "",
+    createdLabel: item.createdLabel ?? "",
+    id: item.id ?? "",
+    issueNumber: item.issueNumber ?? "",
+    issuePath: item.issuePath ?? "",
+    ownerName: item.ownerName ?? "",
+    projectName: item.projectName ?? "",
+    projectPath: item.projectPath ?? "",
+    state: normalizeSiteIssueState(item.state),
+    title: item.title ?? "",
+  }));
+  const state = normalizeSiteIssueState(response.state);
+  return {
+    hasMore: response.hasMore ?? false,
+    items,
+    pageNum: response.pageNum ?? DEFAULT_SITE_ISSUES_QUERY.pageNum,
+    pageSize: response.pageSize ?? DEFAULT_SITE_ISSUES_QUERY.pageSize,
+    state,
+    tabs: (
+      response.tabs ?? SITE_ISSUE_STATES.map((tabState) => ({ state: tabState, total: 0 }))
+    ).map((tab) => ({
+      state: normalizeSiteIssueState(tab.state),
+      total: tab.total ?? 0,
+    })),
+    total: response.total ?? items.length,
+  };
+}
+
 export function listSiteUsersRest(
   runtimeConfig: RuntimeConfig,
   input: Partial<SiteUsersQueryInput> = {},
@@ -291,6 +391,21 @@ export function listSitePostsRest(
   }).then(normalizeSitePostsResponse);
 }
 
+export function listSiteIssuesRest(
+  runtimeConfig: RuntimeConfig,
+  input: Partial<SiteIssuesQueryInput> = {},
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteIssuesResponse> {
+  const query = normalizeSiteIssuesQuery(input);
+  const params = new URLSearchParams();
+  params.set("state", query.state);
+  params.set("pageNum", String(query.pageNum));
+  params.set("pageSize", String(query.pageSize));
+  return restFetch<Partial<SiteIssuesResponse>>(runtimeConfig, `/sites/issues?${params}`, {
+    fetchImpl,
+  }).then(normalizeSiteIssuesResponse);
+}
+
 export function listSiteUsersQueryOptions(
   runtimeConfig: RuntimeConfig,
   input: Partial<SiteUsersQueryInput> = {},
@@ -321,5 +436,16 @@ export function listSitePostsQueryOptions(
   return queryOptions({
     queryFn: () => listSitePostsRest(runtimeConfig, query),
     queryKey: apiQueryKeys.siteAdmin.posts(query),
+  });
+}
+
+export function listSiteIssuesQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: Partial<SiteIssuesQueryInput> = {},
+) {
+  const query = normalizeSiteIssuesQuery(input);
+  return queryOptions({
+    queryFn: () => listSiteIssuesRest(runtimeConfig, query),
+    queryKey: apiQueryKeys.siteAdmin.issues(query),
   });
 }

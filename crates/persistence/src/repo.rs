@@ -27,15 +27,16 @@ use crate::repo_types::{
     PullRequestReviewInput, PullRequestStateInput, PullRequestThreadStateInput,
     PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
     ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
-    SearchRepositoryInput, SearchResultRecord, SearchScope, SiteAdminPostListRecord,
-    SiteAdminPostRecord, SiteAdminProjectListRecord, SiteAdminProjectRecord,
-    SiteAdminUserListRecord, SiteAdminUserRecord, SiteAdminUserTabRecord,
-    ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateIssueCommentInput,
-    UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput,
-    UpdatePostingInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
-    UpdateProjectLabelInput, UpdatePullRequestInput, UserIssueCandidateRecord, UserIssueListFilter,
-    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
-    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    SearchRepositoryInput, SearchResultRecord, SearchScope, SiteAdminIssueListRecord,
+    SiteAdminIssueRecord, SiteAdminIssueTabRecord, SiteAdminPostListRecord, SiteAdminPostRecord,
+    SiteAdminProjectListRecord, SiteAdminProjectRecord, SiteAdminUserListRecord,
+    SiteAdminUserRecord, SiteAdminUserTabRecord, ToggleFavoriteIssueResult,
+    ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
+    UpdateOrganizationInput, UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
+    UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestInput,
+    UserIssueCandidateRecord, UserIssueListFilter, WatchedProjectNotificationsRecord,
+    WorkspaceEmailRecord, WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
+    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
@@ -93,6 +94,13 @@ fn normalize_site_user_state(value: &str) -> String {
         "GUEST" => "GUEST".to_string(),
         "SITE_ADMIN" => "SITE_ADMIN".to_string(),
         _ => "ACTIVE".to_string(),
+    }
+}
+
+fn normalize_site_issue_state(value: &str) -> String {
+    match value.trim().to_ascii_uppercase().as_str() {
+        "CLOSED" => "CLOSED".to_string(),
+        _ => "OPEN".to_string(),
     }
 }
 
@@ -885,6 +893,87 @@ impl AppRepository {
             items,
             page_num,
             page_size,
+            total,
+        })
+    }
+
+    pub async fn list_site_admin_issues(
+        &self,
+        state: &str,
+        page_num: u32,
+        page_size: u32,
+    ) -> Result<SiteAdminIssueListRecord, DbErr> {
+        let selected_state = normalize_site_issue_state(state);
+        let page_num = page_num.max(1);
+        let page_size = page_size.clamp(1, 100);
+        let tabs = ["OPEN", "CLOSED"].into_iter().map(|tab_state| async move {
+            let total = issue::Entity::find()
+                .filter(issue::Column::State.eq(Some(issue_state_to_raw(tab_state))))
+                .count(&self.db)
+                .await? as u32;
+            Ok::<SiteAdminIssueTabRecord, DbErr>(SiteAdminIssueTabRecord {
+                state: tab_state.to_string(),
+                total,
+            })
+        });
+        let mut tab_records = Vec::new();
+        for tab in tabs {
+            tab_records.push(tab.await?);
+        }
+
+        let rows = issue::Entity::find()
+            .filter(issue::Column::State.eq(Some(issue_state_to_raw(&selected_state))))
+            .order_by_desc(issue::Column::CreatedDate)
+            .order_by_desc(issue::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut issues = Vec::new();
+
+        for row in rows {
+            let Some(project_id) = row.project_id else {
+                continue;
+            };
+            let Some(project_model) = project::Entity::find_by_id(project_id)
+                .one(&self.db)
+                .await?
+            else {
+                continue;
+            };
+            let Some(project_record) = self.project_record_from_model(project_model).await? else {
+                continue;
+            };
+            let author_login_id = row.author_login_id.unwrap_or_default();
+            let author_label = row.author_name.unwrap_or_else(|| author_login_id.clone());
+            issues.push(SiteAdminIssueRecord {
+                author_label,
+                author_login_id,
+                comment_count: row.num_of_comments.unwrap_or_default().max(0) as u32,
+                created: row.created_date,
+                id: row.id,
+                issue_number: row.number.unwrap_or_default(),
+                owner_name: project_record.owner_name,
+                project_name: project_record.project_name,
+                state: issue_state_from_raw(row.state).to_ascii_uppercase(),
+                title: row.title.unwrap_or_default(),
+            });
+        }
+
+        let total = issues.len() as u32;
+        let start = ((page_num - 1) * page_size) as usize;
+        let items = issues
+            .into_iter()
+            .skip(start)
+            .take(page_size as usize)
+            .collect::<Vec<_>>();
+        let has_more = total as usize > start + items.len();
+
+        Ok(SiteAdminIssueListRecord {
+            has_more,
+            items,
+            page_num,
+            page_size,
+            state: selected_state,
+            tabs: tab_records,
             total,
         })
     }

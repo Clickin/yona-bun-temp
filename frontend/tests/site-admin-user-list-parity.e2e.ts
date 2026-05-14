@@ -236,3 +236,57 @@ test("renders legacy site-admin post list shell without placeholders", async ({ 
   await expect(page.locator(".post-comments")).toContainText("2");
   await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
 });
+
+test("renders legacy site-admin issue list shell and state tabs without placeholders", async ({
+  page,
+}) => {
+  await page.route(apiV1Route("/sites/issues**"), async (route) => {
+    const url = new URL(route.request().url());
+    const state = (url.searchParams.get("state") || "open").toUpperCase();
+    await route.fulfill({
+      body: JSON.stringify({
+        hasMore: false,
+        items: [
+          {
+            authorAvatarUrl: "https://example.test/admin.png",
+            authorLabel: "Admin",
+            authorLoginId: "admin",
+            commentCount: 3,
+            commentsPath: "/admin/projectYobi/issue/12#comments",
+            createdAt: "2026-05-01T00:00:00",
+            createdLabel: "2026-05-01",
+            id: "31",
+            issueNumber: "12",
+            issuePath: "/admin/projectYobi/issue/12",
+            ownerName: "admin",
+            projectName: "projectYobi",
+            projectPath: "/admin/projectYobi",
+            state,
+            title: "Closed issue",
+          },
+        ],
+        pageNum: 1,
+        pageSize: 30,
+        state,
+        tabs: [
+          { state: "OPEN", total: 1 },
+          { state: "CLOSED", total: 1 },
+        ],
+        total: 1,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/sites/issueList?state=closed");
+
+  await expect(page.locator(".site-setting-nav li.active")).toContainText("Issues");
+  await expect(page.locator(".nav-tabs li.active")).toContainText("Closed");
+  await expect(page.locator(".post-list-wrap")).toBeVisible();
+  await expect(page.locator(".post-list-wrap .post-project")).toHaveText("admin/projectYobi");
+  await expect(page.locator(".post-list-wrap .post-title")).toHaveText("Closed issue");
+  await expect(page.locator(".post-meta-wrap .post-meta-item").first()).toHaveText("Admin");
+  await expect(page.locator(".post-comments")).toContainText("3");
+  await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
+});

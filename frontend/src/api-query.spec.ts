@@ -19,6 +19,7 @@ import {
   projectSearchQueryOptions,
 } from "./api/search";
 import {
+  listSiteIssuesQueryOptions,
   listSitePostsQueryOptions,
   listSiteProjectsQueryOptions,
   listSiteUsersQueryOptions,
@@ -283,6 +284,24 @@ describe("api query keys", () => {
       apiQueryKeys.siteAdmin.posts({
         pageNum: 2,
         pageSize: 30,
+      }),
+    );
+    expect(options.queryFn).toEqual(expect.any(Function));
+  });
+
+  it("builds site-admin issue list query options from canonical query keys", () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const options = listSiteIssuesQueryOptions(runtimeConfig, {
+      pageNum: 2,
+      pageSize: 30,
+      state: "CLOSED",
+    });
+
+    expect(options.queryKey).toEqual(
+      apiQueryKeys.siteAdmin.issues({
+        pageNum: 2,
+        pageSize: 30,
+        state: "CLOSED",
       }),
     );
     expect(options.queryFn).toEqual(expect.any(Function));
