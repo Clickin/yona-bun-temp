@@ -135,7 +135,7 @@ Interpretation:
 - [x] Project webhook CRUD
 - [ ] Project transfer
 - [ ] Git/SVN type change
-- [ ] Project statistics
+- [x] Project statistics shell
 - [ ] Full legacy project home/dashboard/history composition
 
 ## Issues

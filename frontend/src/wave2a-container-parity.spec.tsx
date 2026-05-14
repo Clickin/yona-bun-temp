@@ -9,7 +9,7 @@ import {
   renderProjectWatchers,
   testRuntimeConfig,
 } from "./auth-workspace-shell.test-helpers";
-import { ProjectWebhooksPage } from "./routes/-project-views";
+import { ProjectStatisticsPage, ProjectWebhooksPage } from "./routes/-project-views";
 
 describe("wave 2A container parity", () => {
   it("renders the organization home hero, project filter, gated CTA, roster bubbles, and settings entry", () => {
@@ -285,5 +285,28 @@ describe("wave 2A container parity", () => {
     expect(html).toContain('class="span2 secret text-center"');
     expect(html).toContain('data-request-method="delete"');
     expect(html).toContain('data-request-uri="/yona/weblabs/projectYobi/webhooks/7"');
+  });
+
+  it("renders the legacy project statistics under-construction shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectStatisticsPage
+        detail={{
+          enrollmentRequested: false,
+          isFavorited: false,
+          organizationName: "",
+          ownerName: "weblabs",
+          overview: "Project statistics shell",
+          projectName: "projectYobi",
+          projectScope: "public",
+          viewerCanEnroll: false,
+          viewerCanUpdate: false,
+        }}
+        runtimeConfig={testRuntimeConfig}
+      />,
+    );
+
+    expect(html).toContain('class="page-wrap-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain("<h1>Under Construction</h1>");
   });
 });

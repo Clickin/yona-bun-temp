@@ -436,7 +436,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 | 웹훅 관리            | CRUD, event type, secret                           | ✅ CRUD 구현; 발송 gap | 2Q/5  |
 | 프로젝트 이관        | 다른 owner로 이관                                  | gap               | 6     |
 | VCS 변경             | Git ↔ SVN                                          | deferred          | 2차   |
-| 프로젝트 통계        | 활동 통계                                          | gap               | 5     |
+| 프로젝트 통계        | legacy는 Under Construction shell만 제공           | ✅ shell parity 구현 | 2R    |
 | 프로젝트 메뉴 설정   | code/issue/milestone/board/pullRequest 토글        | ✅ 구현           | 1     |
 | 프로젝트 공개범위    | public/protected/private + ACL 체크                | ✅ 구현           | 1     |
 | Overview/README      | 마크다운 편집 가능한 프로젝트 소개                 | ✅ 구현           | 1     |

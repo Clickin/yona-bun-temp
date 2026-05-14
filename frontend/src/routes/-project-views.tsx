@@ -432,6 +432,34 @@ export function ProjectWatchersPage(props: {
   );
 }
 
+export function ProjectStatisticsPage(props: {
+  detail: ProjectDetailViewModel | null | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const detail = props.detail ?? {
+    enrollmentRequested: false,
+    isFavorited: false,
+    organizationName: "",
+    overview: "",
+    ownerName: "",
+    projectName: "",
+    projectScope: "public",
+    viewerCanEnroll: false,
+    viewerCanUpdate: false,
+  };
+
+  return (
+    <main className="app-shell">
+      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <h1>Under Construction</h1>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 const webhookTypeOptions: Array<{ label: string; value: ProjectWebhookType }> = [
   { label: "Simple", value: "SIMPLE" },
   { label: "Slack", value: "DETAIL_SLACK" },
