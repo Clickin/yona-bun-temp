@@ -2075,6 +2075,52 @@ struct RestNotificationsQuery {
     size: u32,
 }
 
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteUsersQuery {
+    page_num: u32,
+    page_size: u32,
+    query: String,
+    state: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteUserItem {
+    avatar_url: String,
+    created_at: String,
+    created_label: String,
+    display_name: String,
+    email_address: String,
+    id: String,
+    is_guest: bool,
+    is_site_admin: bool,
+    last_state_modified_at: String,
+    last_state_modified_label: String,
+    login_id: String,
+    state: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteUserTab {
+    state: String,
+    total: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteUsersResponse {
+    has_more: bool,
+    items: Vec<RestSiteUserItem>,
+    page_num: u32,
+    page_size: u32,
+    query: String,
+    state: String,
+    tabs: Vec<RestSiteUserTab>,
+    total: u32,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestNotificationActor {
@@ -3332,6 +3378,18 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                         rest_list_notifications(headers, query, session_manager, backend, base_path)
                             .await
                     }
+                }
+            }),
+        )
+        .route(
+            "/sites/users",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap, Query(query): Query<RestSiteUsersQuery>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move { rest_list_site_users(headers, query, session_manager, backend).await }
                 }
             }),
         )
@@ -6284,6 +6342,89 @@ async fn rest_list_notifications(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(rest_notifications_response(record, &base_path)))
+}
+
+fn rest_site_users_response(record: persistence::SiteAdminUserListRecord) -> RestSiteUsersResponse {
+    RestSiteUsersResponse {
+        has_more: record.has_more,
+        items: record
+            .items
+            .into_iter()
+            .map(|item| RestSiteUserItem {
+                avatar_url: gravatar_url(&item.email_address),
+                created_at: item
+                    .created
+                    .map(|created| created.format("%Y-%m-%dT%H:%M:%S").to_string())
+                    .unwrap_or_default(),
+                created_label: format_project_date_label(item.created),
+                display_name: item.display_name,
+                email_address: item.email_address,
+                id: item.id.to_string(),
+                is_guest: item.is_guest,
+                is_site_admin: item.is_site_admin,
+                last_state_modified_at: item
+                    .last_state_modified
+                    .map(|modified| modified.format("%Y-%m-%dT%H:%M:%S").to_string())
+                    .unwrap_or_default(),
+                last_state_modified_label: format_project_date_label(item.last_state_modified),
+                login_id: item.login_id,
+                state: item.state,
+            })
+            .collect(),
+        page_num: record.page_num,
+        page_size: record.page_size,
+        query: record.query,
+        state: record.state,
+        tabs: record
+            .tabs
+            .into_iter()
+            .map(|tab| RestSiteUserTab {
+                state: tab.state,
+                total: tab.total,
+            })
+            .collect(),
+        total: record.total,
+    }
+}
+
+async fn rest_list_site_users(
+    headers: HeaderMap,
+    query: RestSiteUsersQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestSiteUsersResponse>, RestRouteError> {
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    let Some(user_id) = session.user_id else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unauthenticated("missing pilot user"),
+        ));
+    };
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "site admin users require repository backend",
+        ));
+    };
+    let actor = repository
+        .find_user_by_id(user_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::unauthenticated("missing pilot user"))
+        })?;
+    if !actor.is_site_admin {
+        return Err(RestRouteError::permission_denied(
+            "site admin user list is not allowed",
+        ));
+    }
+
+    let record = repository
+        .list_site_admin_users(&query.state, &query.query, query.page_num, query.page_size)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(rest_site_users_response(record)))
 }
 
 async fn rest_record_recent_project_visit(

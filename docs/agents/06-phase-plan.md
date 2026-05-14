@@ -83,7 +83,8 @@
 
 ## Phase 6: 관리자 기능과 하드닝
 
-- admin surface
+- Phase 6A complete: Site-admin user list read surface over `/api/v1/sites/users` and `/sites/userList`, including site_admin-only access, state/search/page query, legacy site settings sidebar, user tabs, dense user rows, and disabled follow-up action controls for mutations.
+- Remaining admin surface follow-ups: site-admin role toggle, account lock/unlock, guest toggle, reset password, user/project delete, project/post/issue admin lists, mail/massmail, diagnostics, update, and non-current data import/export scope.
 - migration tooling
 - deployment hardening
 - remaining deferred scope review

@@ -278,6 +278,22 @@ const DOMAIN_BUCKETS = [
     ],
   },
   {
+    id: "site-admin-core-surface",
+    label: "Site admin core surface",
+    status: "gap",
+    implementationPatterns: [
+      /^frontend\/src\/api\/site-admin\.ts$/i,
+      /^frontend\/src\/routes\/sites\/\$pageName\/route\.tsx$/i,
+      /^frontend\/.*site-admin/i,
+      /^crates\/(?:server|persistence)\/.*site[_-]admin/i,
+    ],
+    testKeywords: ["site-admin", "site_admin", "sites", "route-parity"],
+    provenanceDocs: [
+      "docs/provenance/phase-0b/site-admin.md",
+      "docs/provenance/core-parity-audit.md",
+    ],
+  },
+  {
     id: "issue-lifecycle",
     label: "Issue lifecycle",
     status: "gap",

@@ -18,6 +18,7 @@ import {
   organizationSearchQueryOptions,
   projectSearchQueryOptions,
 } from "./api/search";
+import { listSiteUsersQueryOptions } from "./api/site-admin";
 
 describe("api query keys", () => {
   it("includes owner, project, and query in project issue-reference keys", () => {
@@ -227,6 +228,26 @@ describe("api query keys", () => {
         searchType: "post",
       }),
     );
+  });
+
+  it("builds site-admin user list query options from canonical query keys", () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const options = listSiteUsersQueryOptions(runtimeConfig, {
+      pageNum: 2,
+      pageSize: 30,
+      query: "needle",
+      state: "SITE_ADMIN",
+    });
+
+    expect(options.queryKey).toEqual(
+      apiQueryKeys.siteAdmin.users({
+        pageNum: 2,
+        pageSize: 30,
+        query: "needle",
+        state: "SITE_ADMIN",
+      }),
+    );
+    expect(options.queryFn).toEqual(expect.any(Function));
   });
 
   it("uses PATCH for board update REST mutations", async () => {

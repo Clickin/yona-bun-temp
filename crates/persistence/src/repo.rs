@@ -27,7 +27,8 @@ use crate::repo_types::{
     PullRequestReviewInput, PullRequestStateInput, PullRequestThreadStateInput,
     PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
     ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
-    SearchRepositoryInput, SearchResultRecord, SearchScope, ToggleFavoriteIssueResult,
+    SearchRepositoryInput, SearchResultRecord, SearchScope, SiteAdminUserListRecord,
+    SiteAdminUserRecord, SiteAdminUserTabRecord, ToggleFavoriteIssueResult,
     ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
     UpdateOrganizationInput, UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
     UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestInput,
@@ -82,6 +83,41 @@ fn empty_to_none(value: Option<String>) -> Option<String> {
 
 fn user_state_from_confirmed(is_confirmed: bool) -> Option<String> {
     Some(if is_confirmed { "active" } else { "pending" }.to_string())
+}
+
+fn normalize_site_user_state(value: &str) -> String {
+    match value.trim().to_ascii_uppercase().as_str() {
+        "LOCKED" => "LOCKED".to_string(),
+        "DELETED" => "DELETED".to_string(),
+        "GUEST" => "GUEST".to_string(),
+        "SITE_ADMIN" => "SITE_ADMIN".to_string(),
+        _ => "ACTIVE".to_string(),
+    }
+}
+
+fn site_user_matches_state(record: &SiteAdminUserRecord, state: &str) -> bool {
+    match state {
+        "LOCKED" => record.state.eq_ignore_ascii_case("locked"),
+        "DELETED" => record.state.eq_ignore_ascii_case("deleted"),
+        "GUEST" => record.is_guest,
+        "SITE_ADMIN" => record.is_site_admin,
+        _ => record.state.eq_ignore_ascii_case("active"),
+    }
+}
+
+fn site_user_matches_query(record: &SiteAdminUserRecord, query: &str) -> bool {
+    let normalized_query = normalize_identity(query);
+    if normalized_query.is_empty() {
+        return true;
+    }
+
+    [
+        &record.login_id,
+        &record.display_name,
+        &record.email_address,
+    ]
+    .iter()
+    .any(|value| normalize_identity(value).contains(&normalized_query))
 }
 
 fn issue_assignable_user_matches(user: &n4user::Model, query: &str, search_type: &str) -> bool {
@@ -646,6 +682,91 @@ impl AppRepository {
         };
 
         self.app_user_record_from_model(user).await.map(Some)
+    }
+
+    pub async fn list_site_admin_users(
+        &self,
+        state: &str,
+        query: &str,
+        page_num: u32,
+        page_size: u32,
+    ) -> Result<SiteAdminUserListRecord, DbErr> {
+        let selected_state = normalize_site_user_state(state);
+        let page_num = page_num.max(1);
+        let page_size = page_size.clamp(1, 100);
+        let query = query.trim().to_string();
+        let site_admin_ids: HashSet<i64> = site_admin::Entity::find()
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| row.admin_id)
+            .collect();
+        let mut users = n4user::Entity::find()
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter(|user| {
+                normalize_optional(user.login_id.as_deref()).as_deref() != Some("anonymous")
+            })
+            .map(|user| {
+                let login_id = user.login_id.unwrap_or_default();
+                let display_name = user.name.unwrap_or_else(|| login_id.clone());
+                SiteAdminUserRecord {
+                    created: user.created_date,
+                    display_name,
+                    email_address: user.email.unwrap_or_default(),
+                    id: user.id,
+                    is_guest: user.is_guest.unwrap_or_default() != 0,
+                    is_site_admin: site_admin_ids.contains(&user.id),
+                    last_state_modified: user.last_state_modified_date,
+                    login_id,
+                    state: user.state.unwrap_or_default(),
+                }
+            })
+            .collect::<Vec<_>>();
+
+        users.sort_by(|left, right| {
+            right
+                .created
+                .cmp(&left.created)
+                .then_with(|| left.login_id.cmp(&right.login_id))
+        });
+
+        let states = ["ACTIVE", "LOCKED", "DELETED", "GUEST", "SITE_ADMIN"];
+        let tabs = states
+            .iter()
+            .map(|state| SiteAdminUserTabRecord {
+                state: (*state).to_string(),
+                total: users
+                    .iter()
+                    .filter(|record| site_user_matches_state(record, state))
+                    .count() as u32,
+            })
+            .collect::<Vec<_>>();
+        let matching = users
+            .into_iter()
+            .filter(|record| site_user_matches_state(record, &selected_state))
+            .filter(|record| site_user_matches_query(record, &query))
+            .collect::<Vec<_>>();
+        let total = matching.len() as u32;
+        let start = ((page_num - 1) * page_size) as usize;
+        let items = matching
+            .into_iter()
+            .skip(start)
+            .take(page_size as usize)
+            .collect::<Vec<_>>();
+        let has_more = total as usize > start + items.len();
+
+        Ok(SiteAdminUserListRecord {
+            has_more,
+            items,
+            page_num,
+            page_size,
+            query,
+            state: selected_state,
+            tabs,
+            total,
+        })
     }
 
     pub async fn user_login_id_exists(&self, login_id: &str) -> Result<bool, DbErr> {

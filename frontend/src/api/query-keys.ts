@@ -142,6 +142,20 @@ export const apiQueryKeys = {
     list: (input: { from: number; size: number }) =>
       [...apiQueryKeys.v1(), "notifications", { from: input.from, size: input.size }] as const,
   },
+  siteAdmin: {
+    users: (input: { pageNum: number; pageSize: number; query: string; state: string }) =>
+      [
+        ...apiQueryKeys.v1(),
+        "sites",
+        "users",
+        {
+          pageNum: input.pageNum,
+          pageSize: input.pageSize,
+          query: input.query,
+          state: input.state,
+        },
+      ] as const,
+  },
   search: {
     all: () => [...apiQueryKeys.v1(), "search"] as const,
     global: (input: { keyword: string; pageNum: number; searchType: string }) =>

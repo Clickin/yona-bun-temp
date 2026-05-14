@@ -946,7 +946,7 @@ GET   /sites/export            → 데이터 익스포트
 
 | 기능                   | Legacy 동작                        | 현재 상태 | Phase |
 | ---------------------- | ---------------------------------- | --------- | ----- |
-| 사용자 목록/관리       | 목록, 검색, 관리자 토글, 계정 잠금 | gap       | 6     |
+| 사용자 목록/관리       | 목록, 검색, 관리자 토글, 계정 잠금 | 🔶 Phase 6A 사용자 목록 read surface 구현; 토글/잠금/삭제 gap | 6     |
 | 프로젝트 목록/관리     | 목록, 검색, 삭제                   | gap       | 6     |
 | 게시글/이슈 목록       | 전체 게시글/이슈 관리              | gap       | 6     |
 | 메일 설정/테스트       | SMTP 테스트, 대량 메일             | gap       | 6     |
@@ -956,9 +956,15 @@ GET   /sites/export            → 데이터 익스포트
 
 #### 검수 기준
 
-- [ ] 관리자 화면: `/sites/*` 경로, site_admin 역할만 접근 가능
-- [ ] 사용자 목록: 검색, 페이지네이션, 관리자 역할 토글, 계정 잠금/해제
+- [~] 관리자 화면: `/sites/userList`는 site_admin 역할만 접근 가능; 나머지 `/sites/*`는 follow-up shell
+- [~] 사용자 목록: 검색, 페이지네이션, active/locked/deleted/guest/site-admin 탭 read surface 구현; 관리자 역할 토글, 계정 잠금/해제, 삭제는 follow-up
 - [ ] 프로젝트 목록: 검색, 페이지네이션, 프로젝트 삭제
+
+**Phase 6A 구현 메모**: app runtime REST는 `GET /api/v1/sites/users?state=&query=&pageNum=&pageSize=`만 제공한다.
+`/sites/userList`는 legacy `siteMngLayout.scala.html`/`userList.scala.html`의 사이드바, 탭, 검색, dense row class anchor를 복원하고,
+mutation buttons는 destructive/admin side-effect batch 전까지 disabled follow-up 상태로 둔다. `data/import/export`, update check, mail/massmail,
+project/post/issue admin lists, site-admin role toggle, account lock, guest toggle, reset password, user/project delete는 별도 Phase 6 follow-up 또는
+deferred scope다.
 
 ---
 

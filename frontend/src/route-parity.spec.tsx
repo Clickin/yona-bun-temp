@@ -130,6 +130,22 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/deleteform'");
   });
 
+  it("requires a real site-admin user list route instead of a placeholder page", () => {
+    const siteRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/sites/$pageName/route.tsx"),
+      "utf8",
+    );
+
+    expect(siteRouteSource).not.toContain("PlaceholderPage");
+    expect(siteRouteSource).toContain("SiteAdminUserListPage");
+    expect(siteRouteSource).toContain("listSiteUsersQueryOptions");
+    expect(siteRouteSource).toContain("site-setting-wrap");
+    expect(siteRouteSource).toContain("site-setting-nav");
+    expect(siteRouteSource).toContain("user-list-wrap");
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/sites/$pageName'");
+  });
+
   it("requires real project issue routes instead of placeholder pages", () => {
     const issueListRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/$owner/$projectName/issues/route.tsx"),

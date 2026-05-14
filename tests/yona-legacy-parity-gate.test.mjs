@@ -147,6 +147,26 @@ test("passes notification route alias changes with route parity evidence", () =>
   );
 });
 
+test("maps site admin route and API files to the site admin parity slice", () => {
+  const result = runGate([
+    "frontend/src/api/site-admin.ts",
+    "frontend/src/routes/sites/$pageName/route.tsx",
+    "frontend/src/route-parity.spec.tsx",
+    "docs/provenance/phase-0b/site-admin.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["site-admin-core-surface"],
+  );
+  assert.equal(
+    result.unmappedImplementationFiles.includes("frontend/src/api/site-admin.ts"),
+    false,
+  );
+});
+
 test("maps shared frontend query keys to the API query boundary", () => {
   const result = runGate([
     "frontend/src/api/query-keys.ts",
