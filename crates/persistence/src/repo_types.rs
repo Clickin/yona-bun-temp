@@ -381,6 +381,20 @@ pub struct UpdateProjectLabelCategoryInput {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CopyProjectLabelsInput {
+    pub source_owner_name: String,
+    pub source_project_name: String,
+    pub target_owner_name: String,
+    pub target_project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CopyProjectLabelsResult {
+    pub copied: usize,
+    pub skipped: usize,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IssueMilestoneRecord {
     pub attachments: Vec<IssueAttachmentRecord>,
     pub closed_issue_count: u32,

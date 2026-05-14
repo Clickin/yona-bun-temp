@@ -191,7 +191,7 @@ Interpretation:
 - [x] Exclusive category flag
 - [x] Label CSS generation/direct legacy routes
 - [x] Label filtering basics on issue routes
-- [ ] Copy labels between projects
+- [x] Copy labels between projects
 
 ## Milestones
 

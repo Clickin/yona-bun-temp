@@ -34,6 +34,16 @@ type ProjectLabelCategoryInput = ProjectScope & {
   categoryName: string;
 };
 
+type ProjectLabelCopyInput = ProjectScope & {
+  sourceOwnerName: string;
+  sourceProjectName: string;
+};
+
+export type ProjectLabelCopyResponse = {
+  copied: number;
+  skipped: number;
+};
+
 function toInt64Number(value: bigint | number): number {
   return Number(value);
 }
@@ -114,6 +124,27 @@ export function createProjectLabelRest(
         categoryName: input.categoryName,
         labelColor: input.labelColor,
         labelName: input.labelName,
+      },
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
+  );
+}
+
+export function copyProjectLabelsRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectLabelCopyInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectLabelCopyResponse> {
+  return restFetch<ProjectLabelCopyResponse>(
+    runtimeConfig,
+    `${projectPath(input.ownerName, input.projectName)}/labels/copy`,
+    {
+      body: {
+        sourceOwnerName: input.sourceOwnerName,
+        sourceProjectName: input.sourceProjectName,
       },
       csrfToken,
       fetchImpl,

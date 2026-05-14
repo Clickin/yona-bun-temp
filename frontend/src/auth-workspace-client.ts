@@ -136,6 +136,7 @@ import {
   updateProjectRest,
 } from "./api/org-project";
 import {
+  copyProjectLabelsRest,
   createProjectLabelCategoryRest,
   createProjectLabelRest,
   deleteProjectLabelCategoryRest,
@@ -975,6 +976,20 @@ export async function createProjectLabel(
     },
     fetchImpl,
   );
+}
+
+export async function copyProjectLabels(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: {
+    ownerName: string;
+    projectName: string;
+    sourceOwnerName: string;
+    sourceProjectName: string;
+  },
+  fetchImpl: typeof fetch = fetch,
+) {
+  return copyProjectLabelsRest(runtimeConfig, csrfToken, input, fetchImpl);
 }
 
 export async function updateProjectLabel(

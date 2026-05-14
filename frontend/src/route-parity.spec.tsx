@@ -146,6 +146,22 @@ describe("file-route parity harness", () => {
     expect(issueDetailRouteSource).toContain("onCommentVoteToggle");
   });
 
+  it("keeps the legacy issue-label copy form wired to a real mutation", () => {
+    const issueLabelsRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/issue/labelsform/route.tsx"),
+      "utf8",
+    );
+    const issueLabelsApiSource = fs.readFileSync(
+      path.resolve(__dirname, "api/project-labels.ts"),
+      "utf8",
+    );
+
+    expect(issueLabelsRouteSource).not.toContain("PlaceholderPage");
+    expect(issueLabelsRouteSource).toContain('id="copyLabel"');
+    expect(issueLabelsRouteSource).toContain("copyProjectLabels");
+    expect(issueLabelsApiSource).toContain("/labels/copy");
+  });
+
   it("requires a real project code browser route instead of a placeholder page", () => {
     const codeRouteSource = fs.readFileSync(
       path.resolve(__dirname, "routes/$owner/$projectName/code/route.tsx"),

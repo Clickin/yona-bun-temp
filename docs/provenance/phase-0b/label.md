@@ -4,7 +4,7 @@
 
 - Phase 2B project issue label/category management parity.
 - Covers label/category list, create, update, delete, labelsform surface, legacy direct JSON/form routes, and label CSS.
-- `copyLabels` remains Phase 6 follow-up scope.
+- Phase 6A adds project-to-project label copy parity.
 
 ## Legacy Sources
 
@@ -26,9 +26,9 @@
 | `IssueLabelApp.newLabel`                                                      | create label, reuse existing category, return 204 on duplicate                  | `CreateProjectLabel` RPC + direct POST form route                    |
 | `IssueLabelApp.update/delete`                                                 | update/delete labels with project update/delete authority                       | `UpdateProjectLabel` / `DeleteProjectLabel` RPC and direct routes    |
 | `IssueLabelApp.categories/category/newCategory/updateCategory/deleteCategory` | category CRUD with duplicate-name protection                                    | label category RPCs and direct category routes                       |
+| `IssueLabelApp.copyLabels` and `IssueLabel.copyIssueLabels`                   | append missing labels from a readable source project, reuse matching categories, and skip duplicate target labels | `POST /api/v1/owners/:owner/projects/:project/labels/copy` + direct `POST /:owner/:project/copyLabels` |
 | `issueLabelColor.scala.html`                                                  | generate label CSS with readable foreground color                               | direct `GET /:owner/:project/issue/labels.css`                       |
 
 ## Remaining Follow-ups
 
-- `copyLabels` stays Phase 6 because `SPEC.md` classifies label copy as later scope.
 - REST `/-_-api/v1` label/project API parity stays with the REST API packet.

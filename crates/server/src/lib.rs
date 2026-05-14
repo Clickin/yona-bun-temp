@@ -237,6 +237,9 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let label_list_session_manager = session_manager.clone();
     let label_create_backend = route_backend.clone();
     let label_create_session_manager = session_manager.clone();
+    let label_copy_backend = route_backend.clone();
+    let label_copy_session_manager = session_manager.clone();
+    let label_copy_base_path = base_path.clone();
     let label_css_backend = route_backend.clone();
     let label_css_session_manager = session_manager.clone();
     let label_update_backend = route_backend.clone();
@@ -513,6 +516,23 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         form,
                         label_create_session_manager.clone(),
                         label_create_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/copyLabels",
+            post(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_copy_issue_labels(
+                        headers,
+                        owner,
+                        project,
+                        form,
+                        label_copy_session_manager.clone(),
+                        label_copy_backend.clone(),
+                        label_copy_base_path.clone(),
                     )
                     .await
                 }
@@ -1383,6 +1403,53 @@ async fn direct_create_issue_label(
         Ok(None) => StatusCode::NOT_FOUND.into_response(),
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
+}
+
+async fn direct_copy_issue_labels(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let PilotBackend::Repository(repository) = backend else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let session = match direct_project_update_allowed(
+        &headers,
+        &owner,
+        &project,
+        &session_manager,
+        &repository,
+        true,
+    )
+    .await
+    {
+        Ok(session) => session,
+        Err(response) => return response,
+    };
+
+    let source_owner = form_value(&form, &["owner", "sourceOwnerName"]).trim();
+    let source_project = form_value(&form, &["projectName", "sourceProjectName"]).trim();
+    if !source_owner.is_empty()
+        && !source_project.is_empty()
+        && require_project_read(&repository, source_owner, source_project, session.user_id)
+            .await
+            .is_ok()
+    {
+        let _ = repository
+            .copy_project_labels(persistence::CopyProjectLabelsInput {
+                source_owner_name: source_owner.to_string(),
+                source_project_name: source_project.to_string(),
+                target_owner_name: owner.clone(),
+                target_project_name: project.clone(),
+            })
+            .await;
+    }
+
+    redirect_to(&base_path, &format!("/{owner}/{project}/issue/labelsform"))
 }
 
 async fn direct_issue_label_css(
@@ -2566,6 +2633,22 @@ struct RestProjectLabelCategoryBody {
     #[serde(default)]
     category_is_exclusive: bool,
     category_name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectLabelCopyBody {
+    #[serde(alias = "owner")]
+    source_owner_name: String,
+    #[serde(alias = "projectName")]
+    source_project_name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectLabelCopyResponse {
+    copied: usize,
+    skipped: usize,
 }
 
 #[derive(Default, Deserialize)]
@@ -5429,6 +5512,21 @@ fn build_rest_issue_meta_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/owners/{owner_name}/projects/{project_name}/labels/copy",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Json(body): Json<RestProjectLabelCopyBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_copy_project_labels(headers, owner_name, project_name, body, service)
+                            .await
+                    }
+                }
+            }),
+        )
+        .route(
             "/owners/{owner_name}/projects/{project_name}/labels/{label_id}",
             patch({
                 let service = service.clone();
@@ -7495,6 +7593,53 @@ async fn rest_create_project_label(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_copy_project_labels(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: RestProjectLabelCopyBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestProjectLabelCopyResponse>, RestRouteError> {
+    let actor_id = rest_actor_id(&service, &headers);
+    let actor = rest_authenticated_user(&service, actor_id).await?;
+    let repository = rest_repository(&service)?;
+    let target_authorization =
+        require_project_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+    if !project_update_allowed(&target_authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project label copy is not allowed"),
+        ));
+    }
+    require_project_read(
+        repository,
+        &body.source_owner_name,
+        &body.source_project_name,
+        Some(actor.id),
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+
+    let result = repository
+        .copy_project_labels(persistence::CopyProjectLabelsInput {
+            source_owner_name: body.source_owner_name,
+            source_project_name: body.source_project_name,
+            target_owner_name: owner_name,
+            target_project_name: project_name,
+        })
+        .await
+        .map_err(rest_internal_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::not_found("project not found"))
+        })?;
+
+    Ok(Json(RestProjectLabelCopyResponse {
+        copied: result.copied,
+        skipped: result.skipped,
+    }))
 }
 
 async fn rest_update_project_label(

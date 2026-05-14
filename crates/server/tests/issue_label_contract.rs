@@ -112,7 +112,7 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String) {
     (csrf, cookie_header)
 }
 
-async fn create_public_project(app: axum::Router, cookie: &str, csrf: &str) {
+async fn create_project(app: axum::Router, cookie: &str, csrf: &str, project_name: &str) {
     let response = rpc(
         app,
         "CreateProject",
@@ -120,13 +120,17 @@ async fn create_public_project(app: axum::Router, cookie: &str, csrf: &str) {
         Some(csrf),
         json!({
             "ownerName": "owner",
-            "projectName": "projectYobi",
+            "projectName": project_name,
             "overview": "label parity",
             "projectScope": "public"
         }),
     )
     .await;
     assert_eq!(response.status(), StatusCode::OK);
+}
+
+async fn create_public_project(app: axum::Router, cookie: &str, csrf: &str) {
+    create_project(app, cookie, csrf, "projectYobi").await;
 }
 
 #[tokio::test]
@@ -255,6 +259,143 @@ async fn issue_label_rpc_manages_labels_categories_and_cleanup() {
         .as_array()
         .map(Vec::is_empty)
         .unwrap_or(true));
+}
+
+#[tokio::test]
+async fn issue_label_copy_appends_missing_labels_from_readable_project() {
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "projectYobi").await;
+    create_project(app.clone(), &cookie, &csrf, "sourceYobi").await;
+
+    let existing = response_json(
+        rpc(
+            app.clone(),
+            "CreateProjectLabel",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "labelName": "Bug",
+                "labelColor": "222222",
+                "categoryName": "Type",
+                "categoryIsExclusive": false
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(existing["created"], true);
+
+    let source_bug = response_json(
+        rpc(
+            app.clone(),
+            "CreateProjectLabel",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "sourceYobi",
+                "labelName": "Bug",
+                "labelColor": "111111",
+                "categoryName": "Type",
+                "categoryIsExclusive": true
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(source_bug["created"], true);
+
+    let source_feature = response_json(
+        rpc(
+            app.clone(),
+            "CreateProjectLabel",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "sourceYobi",
+                "labelName": "Feature",
+                "labelColor": "00aa00",
+                "categoryName": "Type",
+                "categoryIsExclusive": true
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(source_feature["created"], true);
+
+    let copied = response_json(
+        app.clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::POST)
+                    .uri("/yona/api/v1/owners/owner/projects/projectYobi/labels/copy")
+                    .header(http::header::COOKIE, &cookie)
+                    .header("x-csrf-token", &csrf)
+                    .header(http::header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(
+                        r#"{"sourceOwnerName":"owner","sourceProjectName":"sourceYobi"}"#,
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(copied["copied"], 1);
+    assert_eq!(copied["skipped"], 1);
+
+    let listed = response_json(
+        rpc(
+            app.clone(),
+            "ListProjectLabels",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let labels = listed["labels"].as_array().unwrap();
+    assert_eq!(labels.len(), 2);
+    assert!(labels
+        .iter()
+        .any(|label| label["name"] == "Bug" && label["color"] == "#222222"));
+    assert!(labels
+        .iter()
+        .any(|label| label["name"] == "Feature" && label["color"] == "#00aa00"));
+
+    let legacy_response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/owner/projectYobi/copyLabels")
+                .header(http::header::COOKIE, &cookie)
+                .header("x-csrf-token", &csrf)
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .body(Body::from("owner=owner&projectName=sourceYobi"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(legacy_response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        legacy_response
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/owner/projectYobi/issue/labelsform")
+    );
 }
 
 #[tokio::test]

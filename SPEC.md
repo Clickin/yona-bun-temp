@@ -584,7 +584,7 @@ GET   /categories                          → 전역 카테고리
 | 라벨 카테고리      | 라벨을 카테고리별 그룹핑                | ✅ Phase 2B 구현    | 2     |
 | 라벨 필터링        | 이슈/게시판 목록에서 라벨 필터          | ✅ Phase 2A/2B 구현 | 2     |
 | 라벨 색상 CSS      | 자동 생성 CSS (`IssueLabel.labelCSS()`) | ✅ Phase 2B 구현    | 2     |
-| 라벨 복사          | 프로젝트 간 라벨 복사                   | gap                 | 6     |
+| 라벨 복사          | 프로젝트 간 라벨 복사                   | ✅ Phase 6A 구현    | 6     |
 
 #### 검수 기준
 
@@ -1404,7 +1404,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 
 - Issue follow-up: notification read state/full mail batching, group sharer mutation, and remaining issue-adjacent parity gaps
 - Board: posting list/detail/create/update/delete/comment flows
-- Label follow-up: copyLabels Phase 6 and legacy external label/project API parity
+- Label follow-up: legacy external label/project API parity
 - Milestone follow-up: migration export and search milestone result type
 - Code follow-up: Smart HTTP, inline ranged code-comment UX, SVN wrapper integration
 - PullRequest follow-up: merge/conflict acceptance, ranged inline review comment edit/delete, reviewer assignment/threshold lifecycle, fork/clone, branch cleanup/restore

@@ -1,24 +1,25 @@
 use crate::repo_types::{
     AppUserInput, AppUserRecord, AttachmentRecord, BranchPullRequestRecord,
-    CommitDiscussionThreadStateInput, CreateCommitDiscussionCommentInput, CreateIssueCommentInput,
-    CreateIssueInput, CreateOrganizationInput, CreatePostingCommentInput, CreatePostingInput,
-    CreateProjectInput, CreateProjectLabelCategoryInput, CreateProjectLabelInput,
-    CreateProjectWebhookInput, CreatePullRequestCommentInput, CreatePullRequestInput,
-    CreatePullRequestResult, CreateUserInput, DeleteCommitDiscussionCommentInput,
-    IssueAssignableUserRecord, IssueAssignableUserSearchRecord, IssueAttachmentRecord,
-    IssueCommentRecord, IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord,
-    IssueListFilter, IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord,
-    IssueRecord, IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord,
-    MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
-    NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
-    OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
-    OrganizationIssueListFilter, OrganizationIssueListRecord, OrganizationIssueProjectOptionRecord,
-    OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationPostingListFilter,
-    OrganizationPostingListRecord, OrganizationPostingProjectOptionRecord, OrganizationRecord,
-    OrganizationViewerRecord, PostingCommentRecord, PostingListFilter, PostingRecord,
-    ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord, ProjectIssueListItemRecord,
-    ProjectIssueListRecord, ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord,
-    ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
+    CommitDiscussionThreadStateInput, CopyProjectLabelsInput, CopyProjectLabelsResult,
+    CreateCommitDiscussionCommentInput, CreateIssueCommentInput, CreateIssueInput,
+    CreateOrganizationInput, CreatePostingCommentInput, CreatePostingInput, CreateProjectInput,
+    CreateProjectLabelCategoryInput, CreateProjectLabelInput, CreateProjectWebhookInput,
+    CreatePullRequestCommentInput, CreatePullRequestInput, CreatePullRequestResult,
+    CreateUserInput, DeleteCommitDiscussionCommentInput, IssueAssignableUserRecord,
+    IssueAssignableUserSearchRecord, IssueAttachmentRecord, IssueCommentRecord,
+    IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter,
+    IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueRecord,
+    IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, MassUpdateIssuesInput,
+    MentionSyncResult, MilestoneListFilter, MilestoneMutationInput, NotificationActorRecord,
+    NotificationItemRecord, NotificationListRecord, OrganizationAuthorizationRecord,
+    OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
+    OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
+    OrganizationMemberRecord, OrganizationPostingListFilter, OrganizationPostingListRecord,
+    OrganizationPostingProjectOptionRecord, OrganizationRecord, OrganizationViewerRecord,
+    PostingCommentRecord, PostingListFilter, PostingRecord, ProjectAuthorizationRecord,
+    ProjectEnrollmentRequestRecord, ProjectIssueListItemRecord, ProjectIssueListRecord,
+    ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord, ProjectListEntry,
+    ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
     ProjectMilestoneSummaryRecord, ProjectPostingListItemRecord, ProjectPostingListRecord,
     ProjectRecord, ProjectViewerRecord, ProjectWatcherRecord, ProjectWebhookRecord,
     PullRequestCommitRecord, PullRequestDetailRecord, PullRequestEventRecord,
@@ -453,6 +454,10 @@ fn bool_to_i16(value: bool) -> i16 {
     } else {
         0
     }
+}
+
+fn i16_to_bool(value: Option<i16>) -> bool {
+    value.unwrap_or_default() != 0
 }
 
 fn is_unique_posting_number_conflict(error: &DbErr) -> bool {
@@ -3541,6 +3546,82 @@ impl AppRepository {
             .into_iter()
             .map(issue_label_category_record)
             .collect())
+    }
+
+    pub async fn copy_project_labels(
+        &self,
+        input: CopyProjectLabelsInput,
+    ) -> Result<Option<CopyProjectLabelsResult>, DbErr> {
+        let Some(source_project) = self
+            .read_project_by_owner_and_name(&input.source_owner_name, &input.source_project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(target_project) = self
+            .read_project_by_owner_and_name(&input.target_owner_name, &input.target_project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+
+        let source_labels = issue_label::Entity::find()
+            .filter(issue_label::Column::ProjectId.eq(Some(source_project.id)))
+            .order_by_asc(issue_label::Column::Name)
+            .all(&self.db)
+            .await?;
+        let mut copied = 0;
+        let mut skipped = 0;
+
+        for source_label in source_labels {
+            let Some(source_category_id) = source_label.category_id else {
+                continue;
+            };
+            let Some(source_category) =
+                issue_label_category::Entity::find_by_id(source_category_id)
+                    .one(&self.db)
+                    .await?
+            else {
+                continue;
+            };
+            let category_name = source_category.name.unwrap_or_default();
+            let label_name = source_label.name.clone().unwrap_or_default();
+            if category_name.trim().is_empty() || label_name.trim().is_empty() {
+                continue;
+            }
+            let target_category = self
+                .find_or_create_issue_label_category(
+                    target_project.id,
+                    &category_name,
+                    i16_to_bool(source_category.is_exclusive),
+                )
+                .await?;
+            if self
+                .find_issue_label_by_project_category_name(
+                    target_project.id,
+                    target_category.id,
+                    &label_name,
+                )
+                .await?
+                .is_some()
+            {
+                skipped += 1;
+                continue;
+            }
+
+            issue_label::ActiveModel {
+                id: NotSet,
+                category_id: Set(Some(target_category.id)),
+                color: Set(source_label.color.clone()),
+                name: Set(Some(label_name.trim().to_string())),
+                project_id: Set(Some(target_project.id)),
+            }
+            .insert(&self.db)
+            .await?;
+            copied += 1;
+        }
+
+        Ok(Some(CopyProjectLabelsResult { copied, skipped }))
     }
 
     pub async fn create_project_label(

@@ -33,6 +33,7 @@
 
 - Phase 2A complete: issue CRUD, comments, state mutation, watch/vote/assignee, mass update, Markdown rendering, and issue/comment attachment binding on Rust canonical stack.
 - Phase 2B complete: project issue label/category management screens, REST CRUD, legacy direct label/category routes, and label CSS.
+- Phase 6A complete: project issue label copy app surface over `POST /api/v1/owners/:owner/projects/:project/labels/copy` plus legacy direct `/:owner/:project/copyLabels`, preserving `project/issuelabels.scala.html` `#copyLabel` form anchors, readable-source gating, target update gating, category reuse, duplicate label skip, and append-only copy semantics.
 - Phase 2C complete: milestone management screens/REST CRUD, legacy direct mutation routes, state toggles, issue aggregation, Markdown description rendering, and milestone attachment binding.
 - Phase 2E complete: core issue sharer read/comment ACL, REST share/unshare by login ID, and issue detail sharer sidebar controls.
 - Phase 2F complete: organization issue listing body parity with visible-project aggregation, core filters, and organization shell route.
@@ -48,7 +49,7 @@
 - Phase 2R complete: project statistics route shell parity for legacy `StatisticsApp.statistics` and `project/statistics.scala.html`; the route is project read-gated through the existing container API and intentionally renders the legacy `Under Construction` shell rather than inventing metrics.
 - Phase 2S complete: project delete confirmation parity over `DELETE /api/v1/owners/:owner/projects/:project` and legacy `/:owner/:project/deleteform` route shell, with project UPDATE ACL, hard DB project removal, bare Git repository deletion, and legacy `project/delete.scala.html` class/id anchors.
 - Phase 2T complete: project member management parity over `GET/POST /api/v1/owners/:owner/projects/:project/members` and `PATCH/DELETE /api/v1/owners/:owner/projects/:project/members/:userId`, plus legacy `/:owner/:project/members` route shell, with project UPDATE ACL, enrollment acceptance, role changes, non-owner self-leave, owner protection, newly added member watch setup, and legacy `project/members.scala.html` class/action anchors.
-- Remaining Phase 2 packets: notification read state/full SMTP batching, group sharer mutation if legacy evidence requires it, and Phase 6 label copy flow. Legacy external `/-_-api/v1/**` compatibility is no longer an app Phase 2 packet; it belongs to a separate migrator/export/import deliverable.
+- Remaining Phase 2 packets: notification read state/full SMTP batching and group sharer mutation if legacy evidence requires it. Legacy external `/-_-api/v1/**` compatibility is no longer an app Phase 2 packet; it belongs to a separate migrator/export/import deliverable.
 
 ## Phase 3: 저장소와 VCS
 

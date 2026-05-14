@@ -1,6 +1,7 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  copyProjectLabels,
   createProjectLabel,
   deleteProjectLabel,
   deleteProjectLabelCategory,
@@ -167,6 +168,12 @@ function IssueLabelsFormPage(props: {
       <h1>Issue Labels</h1>
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <section className="new-label-wrap">
+        <strong className="form-legend">label.copy.append</strong>
+        <IssueLabelCopyForm {...props} />
+        <div>label.copy.description</div>
+        <div>label.copy.description2</div>
+      </section>
+      <section className="new-label-wrap">
         <strong className="form-legend">Add new label</strong>
         <IssueLabelCreateForm {...props} />
       </section>
@@ -232,6 +239,56 @@ function IssueLabelsFormPage(props: {
         )}
       </section>
     </main>
+  );
+}
+
+function IssueLabelCopyForm(props: {
+  csrfToken: string;
+  onChanged: () => Promise<void>;
+  owner: string;
+  projectName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const [sourceOwnerName, setSourceOwnerName] = React.useState("");
+  const [sourceProjectName, setSourceProjectName] = React.useState("");
+  return (
+    <form
+      action={`${props.runtimeConfig.basePath}/${props.owner}/${props.projectName}/copyLabels`}
+      className="new-label-wrap"
+      id="copyLabel"
+      method="post"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void copyProjectLabels(props.runtimeConfig, props.csrfToken, {
+          ownerName: props.owner,
+          projectName: props.projectName,
+          sourceOwnerName,
+          sourceProjectName,
+        }).then(props.onChanged);
+      }}
+    >
+      <div className="form-wrap">
+        <input
+          className="input-label mr5"
+          name="owner"
+          onChange={(event) => setSourceOwnerName(event.currentTarget.value)}
+          placeholder="project.owner"
+          type="text"
+          value={sourceOwnerName}
+        />
+        <input
+          className="input-label"
+          name="projectName"
+          onChange={(event) => setSourceProjectName(event.currentTarget.value)}
+          placeholder="project.name"
+          type="text"
+          value={sourceProjectName}
+        />
+      </div>
+      <button className="ybtn ybtn-info btn-submit" type="submit">
+        label.copy
+      </button>
+    </form>
   );
 }
 
