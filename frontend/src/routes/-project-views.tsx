@@ -632,6 +632,112 @@ export function ProjectWebhooksPage(props: {
   );
 }
 
+export function ProjectDeletePage(props: {
+  detail: ProjectDetailViewModel | null | undefined;
+  onDelete?: () => void | Promise<void>;
+  pending?: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const detail = props.detail ?? {
+    enrollmentRequested: false,
+    isFavorited: false,
+    organizationName: "",
+    overview: "",
+    ownerName: "",
+    projectName: "",
+    projectScope: "public",
+    viewerCanEnroll: false,
+    viewerCanUpdate: false,
+  };
+  const [accepted, setAccepted] = React.useState(false);
+  const settingsHref = buildProjectHref(
+    props.runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    "settingform",
+  );
+  const deleteHref = buildProjectHref(
+    props.runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    "deleteform",
+  );
+
+  return (
+    <main className="app-shell">
+      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <aside className="lnb">
+            <ul className="nav nav-tabs nav-stacked">
+              <li>
+                <a href={settingsHref} id="subMenuProjectSetting">
+                  Project settings
+                </a>
+              </li>
+              <li className="active">
+                <a href={deleteHref} id="subMenuProjectDelete">
+                  Delete project
+                </a>
+              </li>
+            </ul>
+          </aside>
+          <section className="content-wrap frm-wrap">
+            <h3>{`${detail.ownerName} / ${detail.projectName}`}</h3>
+            <div className="bubble-wrap gray wp">
+              <div className="cu-label">project.delete</div>
+              <div className="cu-desc">
+                <p>project.delete.description</p>
+                <strong className="notice">project.delete.notice</strong>
+              </div>
+            </div>
+            <label className="bg-checkbox label-agreement" htmlFor="accept">
+              <input
+                checked={accepted}
+                id="accept"
+                name="accept"
+                onChange={(event) => setAccepted(event.target.checked)}
+                type="checkbox"
+              />
+              project.delete.accept
+            </label>
+            <div className="box-wrap bottom">
+              <a
+                className="ybtn ybtn-danger"
+                data-toggle="modal"
+                href="#alertDeletion"
+                id="btnDelete"
+              >
+                <i aria-hidden="true" className="yobicon-database-remove" />
+                Delete
+              </a>
+            </div>
+            <div className="modal hide fade" id="alertDeletion" role="dialog">
+              <div className="modal-header">
+                <h4>project.delete</h4>
+              </div>
+              <div className="modal-body">
+                <p>project.delete.confirm</p>
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="ybtn ybtn-danger"
+                  disabled={!accepted || props.pending}
+                  id="btnDeleteExec"
+                  onClick={() => void props.onDelete?.()}
+                  type="button"
+                >
+                  {props.pending ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 export function ProjectSettingsPage(props: {
   detail: ProjectDetailViewModel | null | undefined;
   pending?: boolean;

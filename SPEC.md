@@ -401,6 +401,7 @@ POST  /projects                       → 프로젝트 생성
 GET   /:owner/:project                → 프로젝트 홈
 GET   /:owner/:project/settingform    → 프로젝트 설정
 POST  /:owner/:project/setting        → 프로젝트 설정 저장
+GET   /:owner/:project/deleteform     → 프로젝트 삭제 확인
 DELETE /:owner/:project/delete        → 프로젝트 삭제
 GET   /:owner/:project/members        → 프로젝트 멤버
 POST  /:owner/:project/members        → 멤버 추가
@@ -428,7 +429,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 | 프로젝트 생성        | owner 선택(개인/조직), 이름, VCS 타입, 공개범위    | ✅ 구현           | 1     |
 | 프로젝트 홈          | overview(README), 최근 활동, 코드 링크             | ✅ 기본 구현      | 1     |
 | 프로젝트 설정        | 이름/설명/공개범위 변경, 메뉴 토글                 | ✅ 구현           | 1     |
-| 프로젝트 삭제        | 확인 + 삭제                                        | gap               | 2     |
+| 프로젝트 삭제        | 확인 + 삭제                                        | ✅ 구현           | 2S    |
 | 멤버 관리            | 멤버 추가/삭제/역할변경                            | gap (읽기만 구현) | 2     |
 | 감시자 (Watchers)    | 프로젝트 감시/해제, 감시자 목록                    | ✅ 구현           | 2P    |
 | 즐겨찾기             | 프로젝트 즐겨찾기 토글                             | ✅ 구현           | 1     |

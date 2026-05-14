@@ -3,7 +3,7 @@
 > Status dashboard. This document is a progress mirror for humans and agents.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, and the narrower provenance docs under `docs/provenance/**`.
 
-Last updated: 2026-05-10
+Last updated: 2026-05-14
 
 ## Progress Estimate
 
@@ -130,7 +130,7 @@ Interpretation:
 - [x] Recent project visit recording
 - [x] Member list read
 - [ ] Full project member management
-- [ ] Project delete confirmation flow
+- [x] Project delete confirmation flow
 - [x] Project watchers page
 - [x] Project webhook CRUD
 - [ ] Project transfer

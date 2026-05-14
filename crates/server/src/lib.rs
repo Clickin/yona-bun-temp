@@ -1891,6 +1891,14 @@ impl RestRouteError {
         }
     }
 
+    fn permission_denied(message: impl Into<String>) -> Self {
+        Self {
+            code: Some("permission_denied"),
+            message: message.into(),
+            status: StatusCode::FORBIDDEN,
+        }
+    }
+
     fn not_implemented(message: impl Into<String>) -> Self {
         Self {
             code: None,
@@ -2463,6 +2471,13 @@ struct RestProjectUpdateBody {
     overview: String,
     project_name: String,
     project_scope: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectDeleteResponse {
+    ok: bool,
+    redirect_path: String,
 }
 
 #[derive(Deserialize)]
@@ -4345,6 +4360,13 @@ fn build_rest_org_project_router(service: PilotServiceImpl) -> Router {
                       Json(body): Json<RestProjectUpdateBody>| {
                     let service = service.clone();
                     async move { rest_update_project(headers, owner_name, project_name, body, service).await }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap, Path((owner_name, project_name)): Path<(String, String)>| {
+                    let service = service.clone();
+                    async move { rest_delete_project(headers, owner_name, project_name, service).await }
                 }
             }),
         )
@@ -6730,6 +6752,51 @@ async fn rest_update_project(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_delete_project(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        require_project_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::permission_denied(
+            "project delete is not allowed",
+        ));
+    }
+    let project_id = authorization.project.id;
+    let deleted = repository
+        .delete_project_by_owner_and_name(&owner_name, &project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    if !deleted {
+        return Err(RestRouteError::not_found("project not found"));
+    }
+
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), project_id);
+    yona_rust_vcs::delete_repository(&repo_path).map_err(|error| {
+        RestRouteError::internal(format!("failed to delete repository: {error}"))
+    })?;
+
+    Ok(Json(RestProjectDeleteResponse {
+        ok: true,
+        redirect_path: "/".to_string(),
+    })
+    .into_response())
 }
 
 async fn rest_update_project_overview(

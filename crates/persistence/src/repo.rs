@@ -36,15 +36,17 @@ use crate::repo_types::{
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
-    assignee, attachment, comment_thread, email, favorite_issue, favorite_organization,
-    favorite_project, issue, issue_comment, issue_comment_voter, issue_event, issue_issue_label,
-    issue_label, issue_label_category, issue_sharer, issue_voter, linked_account, mention,
-    milestone, n4user, notification_event, notification_event_n4user, notification_mail,
-    organization, organization_user, posting, posting_comment, posting_issue_label, project,
-    project_menu_setting, project_user, pull_request, pull_request_commit, pull_request_event,
-    pull_request_reviewers, recent_project, review_comment, role, site_admin, unwatch,
-    user_credential, user_enrolled_organization, user_enrolled_project, user_project_notification,
-    user_setting, user_verification, watch, webhook,
+    assignee, attachment, comment_thread, comment_thread_n4user, commit_comment, email,
+    favorite_issue, favorite_organization, favorite_project, issue, issue_comment,
+    issue_comment_voter, issue_event, issue_issue_label, issue_label, issue_label_category,
+    issue_sharer, issue_voter, linked_account, mention, milestone, n4user, notification_event,
+    notification_event_n4user, notification_mail, organization, organization_user, posting,
+    posting_comment, posting_issue_label, project, project_label, project_menu_setting,
+    project_pushed_branch, project_transfer, project_user, project_visitation, pull_request,
+    pull_request_commit, pull_request_event, pull_request_reviewers, recent_project,
+    review_comment, role, site_admin, title_head, unwatch, user_credential,
+    user_enrolled_organization, user_enrolled_project, user_project_notification, user_setting,
+    user_verification, watch, webhook,
 };
 use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
@@ -4271,6 +4273,259 @@ impl AppRepository {
         self.project_record_from_model(created)
             .await?
             .ok_or_else(|| DbErr::Custom("project owner/name missing".to_string()))
+    }
+
+    pub async fn delete_project_by_owner_and_name(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+    ) -> Result<bool, DbErr> {
+        let Some(project_record) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(false);
+        };
+        let project_id = project_record.id;
+        let txn = self.db.begin().await?;
+
+        let issue_ids = issue::Entity::find()
+            .select_only()
+            .column(issue::Column::Id)
+            .filter(issue::Column::ProjectId.eq(Some(project_id)))
+            .into_tuple::<i64>()
+            .all(&txn)
+            .await?;
+        let posting_ids = posting::Entity::find()
+            .select_only()
+            .column(posting::Column::Id)
+            .filter(posting::Column::ProjectId.eq(Some(project_id)))
+            .into_tuple::<i64>()
+            .all(&txn)
+            .await?;
+        let pull_request_ids = pull_request::Entity::find()
+            .select_only()
+            .column(pull_request::Column::Id)
+            .filter(
+                Condition::any()
+                    .add(pull_request::Column::FromProjectId.eq(Some(project_id)))
+                    .add(pull_request::Column::ToProjectId.eq(Some(project_id))),
+            )
+            .into_tuple::<i64>()
+            .all(&txn)
+            .await?;
+        let thread_ids = comment_thread::Entity::find()
+            .select_only()
+            .column(comment_thread::Column::Id)
+            .filter(
+                Condition::any()
+                    .add(comment_thread::Column::ProjectId.eq(Some(project_id)))
+                    .add(
+                        comment_thread::Column::PullRequestId
+                            .is_in(pull_request_ids.iter().copied().map(Some)),
+                    ),
+            )
+            .into_tuple::<i64>()
+            .all(&txn)
+            .await?;
+        let issue_comment_ids = issue_comment::Entity::find()
+            .select_only()
+            .column(issue_comment::Column::Id)
+            .filter(issue_comment::Column::ProjectId.eq(project_id))
+            .into_tuple::<i64>()
+            .all(&txn)
+            .await?;
+
+        if !issue_comment_ids.is_empty() {
+            issue_comment_voter::Entity::delete_many()
+                .filter(issue_comment_voter::Column::IssueCommentId.is_in(issue_comment_ids))
+                .exec(&txn)
+                .await?;
+        }
+        issue_comment::Entity::delete_many()
+            .filter(issue_comment::Column::ProjectId.eq(project_id))
+            .exec(&txn)
+            .await?;
+        if !issue_ids.is_empty() {
+            let issue_id_filter = issue_ids.iter().copied().map(Some);
+            favorite_issue::Entity::delete_many()
+                .filter(favorite_issue::Column::IssueId.is_in(issue_id_filter.clone()))
+                .exec(&txn)
+                .await?;
+            issue_voter::Entity::delete_many()
+                .filter(issue_voter::Column::IssueId.is_in(issue_id_filter.clone()))
+                .exec(&txn)
+                .await?;
+            issue_sharer::Entity::delete_many()
+                .filter(issue_sharer::Column::IssueId.is_in(issue_id_filter.clone()))
+                .exec(&txn)
+                .await?;
+            issue_event::Entity::delete_many()
+                .filter(issue_event::Column::IssueId.is_in(issue_id_filter.clone()))
+                .exec(&txn)
+                .await?;
+            issue_issue_label::Entity::delete_many()
+                .filter(issue_issue_label::Column::IssueId.is_in(issue_id_filter))
+                .exec(&txn)
+                .await?;
+            issue::Entity::delete_many()
+                .filter(issue::Column::Id.is_in(issue_ids.iter().copied()))
+                .exec(&txn)
+                .await?;
+        }
+
+        posting_comment::Entity::delete_many()
+            .filter(posting_comment::Column::ProjectId.eq(project_id))
+            .exec(&txn)
+            .await?;
+        if !posting_ids.is_empty() {
+            posting_issue_label::Entity::delete_many()
+                .filter(
+                    posting_issue_label::Column::PostingId
+                        .is_in(posting_ids.iter().copied().map(Some)),
+                )
+                .exec(&txn)
+                .await?;
+            posting::Entity::delete_many()
+                .filter(posting::Column::Id.is_in(posting_ids.iter().copied()))
+                .exec(&txn)
+                .await?;
+        }
+
+        if !thread_ids.is_empty() {
+            review_comment::Entity::delete_many()
+                .filter(
+                    review_comment::Column::ThreadId.is_in(thread_ids.iter().copied().map(Some)),
+                )
+                .exec(&txn)
+                .await?;
+            comment_thread_n4user::Entity::delete_many()
+                .filter(
+                    comment_thread_n4user::Column::CommentThreadId
+                        .is_in(thread_ids.iter().copied()),
+                )
+                .exec(&txn)
+                .await?;
+            comment_thread::Entity::delete_many()
+                .filter(comment_thread::Column::Id.is_in(thread_ids.iter().copied()))
+                .exec(&txn)
+                .await?;
+        }
+        if !pull_request_ids.is_empty() {
+            let pull_request_id_filter = pull_request_ids.iter().copied().map(Some);
+            pull_request_commit::Entity::delete_many()
+                .filter(
+                    pull_request_commit::Column::PullRequestId
+                        .is_in(pull_request_id_filter.clone()),
+                )
+                .exec(&txn)
+                .await?;
+            pull_request_event::Entity::delete_many()
+                .filter(
+                    pull_request_event::Column::PullRequestId.is_in(pull_request_id_filter.clone()),
+                )
+                .exec(&txn)
+                .await?;
+            pull_request_reviewers::Entity::delete_many()
+                .filter(pull_request_reviewers::Column::PullRequestId.is_in(pull_request_id_filter))
+                .exec(&txn)
+                .await?;
+            pull_request::Entity::delete_many()
+                .filter(pull_request::Column::Id.is_in(pull_request_ids.iter().copied()))
+                .exec(&txn)
+                .await?;
+        }
+
+        project::Entity::update_many()
+            .filter(project::Column::OriginalProjectId.eq(Some(project_id)))
+            .col_expr(
+                project::Column::OriginalProjectId,
+                Expr::value(Option::<i64>::None),
+            )
+            .exec(&txn)
+            .await?;
+        assignee::Entity::delete_many()
+            .filter(assignee::Column::ProjectId.eq(Some(project_id)))
+            .exec(&txn)
+            .await?;
+        commit_comment::Entity::delete_many()
+            .filter(commit_comment::Column::ProjectId.eq(Some(project_id)))
+            .exec(&txn)
+            .await?;
+        favorite_project::Entity::delete_many()
+            .filter(favorite_project::Column::ProjectId.eq(Some(project_id)))
+            .exec(&txn)
+            .await?;
+        recent_project::Entity::delete_many()
+            .filter(recent_project::Column::ProjectId.eq(Some(project_id)))
+            .exec(&txn)
+            .await?;
+        project_visitation::Entity::delete_many()
+            .filter(project_visitation::Column::ProjectId.eq(Some(project_id)))
+            .exec(&txn)
+            .await?;
+        project_user::Entity::delete_many()
+            .filter(project_user::Column::ProjectId.eq(Some(project_id)))
+            .exec(&txn)
+            .await?;
+        user_enrolled_project::Entity::delete_many()
+            .filter(user_enrolled_project::Column::ProjectId.eq(project_id))
+            .exec(&txn)
+            .await?;
+        user_project_notification::Entity::delete_many()
+            .filter(user_project_notification::Column::ProjectId.eq(Some(project_id)))
+            .exec(&txn)
+            .await?;
+        project_menu_setting::Entity::delete_many()
+            .filter(project_menu_setting::Column::ProjectId.eq(Some(project_id)))
+            .exec(&txn)
+            .await?;
+        project_pushed_branch::Entity::delete_many()
+            .filter(project_pushed_branch::Column::ProjectId.eq(Some(project_id)))
+            .exec(&txn)
+            .await?;
+        project_transfer::Entity::delete_many()
+            .filter(project_transfer::Column::ProjectId.eq(Some(project_id)))
+            .exec(&txn)
+            .await?;
+        webhook::Entity::delete_many()
+            .filter(webhook::Column::ProjectId.eq(Some(project_id)))
+            .exec(&txn)
+            .await?;
+        title_head::Entity::delete_many()
+            .filter(title_head::Column::ProjectId.eq(Some(project_id)))
+            .exec(&txn)
+            .await?;
+        project_label::Entity::delete_many()
+            .filter(project_label::Column::ProjectId.eq(project_id))
+            .exec(&txn)
+            .await?;
+        issue_label::Entity::delete_many()
+            .filter(issue_label::Column::ProjectId.eq(Some(project_id)))
+            .exec(&txn)
+            .await?;
+        issue_label_category::Entity::delete_many()
+            .filter(issue_label_category::Column::ProjectId.eq(Some(project_id)))
+            .exec(&txn)
+            .await?;
+        milestone::Entity::delete_many()
+            .filter(milestone::Column::ProjectId.eq(Some(project_id)))
+            .exec(&txn)
+            .await?;
+        watch::Entity::delete_many()
+            .filter(watch::Column::ResourceType.eq(Some("PROJECT".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(project_id.to_string())))
+            .exec(&txn)
+            .await?;
+        unwatch::Entity::delete_many()
+            .filter(unwatch::Column::ResourceType.eq(Some("PROJECT".to_string())))
+            .filter(unwatch::Column::ResourceId.eq(Some(project_id.to_string())))
+            .exec(&txn)
+            .await?;
+
+        let result = project::Entity::delete_by_id(project_id).exec(&txn).await?;
+        txn.commit().await?;
+        Ok(result.rows_affected > 0)
     }
 
     pub async fn add_project_membership(

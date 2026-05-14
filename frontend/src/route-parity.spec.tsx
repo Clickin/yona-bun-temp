@@ -54,6 +54,7 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/watchers'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/webhooks'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/statistics'");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/deleteform'");
     expect(routeTreeSource).toContain("fullPath: '/organizations/$organizationName/search'");
   });
 
@@ -94,6 +95,20 @@ describe("file-route parity harness", () => {
     expect(statisticsRouteSource).toContain("useQuery");
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/statistics'");
+  });
+
+  it("requires a real project delete confirmation route instead of a placeholder page", () => {
+    const deleteRouteSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/$owner/$projectName/deleteform/route.tsx"),
+      "utf8",
+    );
+
+    expect(deleteRouteSource).not.toContain("PlaceholderPage");
+    expect(deleteRouteSource).toContain("ProjectDeletePage");
+    expect(deleteRouteSource).toContain("deleteProjectRest");
+    expect(deleteRouteSource).toContain("useMutation");
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/deleteform'");
   });
 
   it("requires real project issue routes instead of placeholder pages", () => {

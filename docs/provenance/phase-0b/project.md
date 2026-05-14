@@ -20,6 +20,7 @@
 - `yona-original/app/views/project/partial_webhooks_list.scala.html`
 - `yona-original/app/controllers/StatisticsApp.java`
 - `yona-original/app/views/project/statistics.scala.html`
+- `yona-original/app/views/project/delete.scala.html`
 - `yona-original/app/models/Webhook.java`
 - `yona-original/app/models/enumeration/WebhookType.java`
 
@@ -50,10 +51,10 @@
 | `ProjectApp.watchers` and `project/watchers.scala.html` | watcher list is project READ-gated and shows only actual watchers who can access the project | `/api/v1/owners/:owner/projects/:project/watchers` + `frontend/src/routes/$owner/$projectName/watchers` |
 | `ProjectApp.webhooks/newWebhook/deleteWebhook` and `project/webhooks.scala.html` | webhook management is project UPDATE-gated and preserves payload URL, secret, webhook type, and git-push-only fields | `/api/v1/owners/:owner/projects/:project/webhooks` + `frontend/src/routes/$owner/$projectName/webhooks` |
 | `StatisticsApp.statistics` and `project/statistics.scala.html` | statistics route is a project-read page shell whose only body is `Under Construction` | `frontend/src/routes/$owner/$projectName/statistics` |
+| `ProjectApp.deleteForm/deleteProject`, `Project.delete`, and `project/delete.scala.html` | project deletion is project UPDATE/DELETE-gated, uses an explicit confirmation checkbox/modal, hard-deletes the DB project, and removes the backing repository | `DELETE /api/v1/owners/:owner/projects/:project` + `frontend/src/routes/$owner/$projectName/deleteform` |
 
 ## Explicit Gaps
 
-- delete project
 - project transfer
 - org enrollment management
 - full workspace settings and default landing UX parity
@@ -87,3 +88,10 @@
 - `Phase 2R` restores the project statistics route from `StatisticsApp.statistics` and `project/statistics.scala.html`.
 - Legacy Yona does not provide metrics on this page; it renders only `.page-wrap-outer`, `.project-page-wrap`, and `<h1>Under Construction</h1>`.
 - The Rust route `/:owner/:project/statistics` reuses the existing project container read to preserve project visibility handling and intentionally does not add new statistics APIs or invented metrics.
+
+## Phase 2S Delivery Note
+
+- `Phase 2S` restores the project delete confirmation flow from `ProjectApp.deleteForm`, `ProjectApp.deleteProject`, `Project.delete`, and `project/delete.scala.html`.
+- The REST contract is `DELETE /api/v1/owners/:owner/projects/:project`; it requires an authenticated session, CSRF, project read resolution, and project update/delete authority before hard-deleting the project row graph.
+- Repository removal follows the legacy order: after successful DB deletion, the backing bare Git repository at `YONA_DATA/repo/<project_id>.git` is removed. Missing repositories are tolerated as no-op filesystem state.
+- The frontend route `/:owner/:project/deleteform` preserves the legacy `.page-wrap-outer`, `.project-page-wrap`, `#subMenuProjectDelete`, `.bubble-wrap.gray.wp`, `.cu-label`, `.cu-desc`, `#accept`, `.bg-checkbox.label-agreement`, `.box-wrap.bottom`, `#btnDelete`, `#alertDeletion`, and `#btnDeleteExec` anchors.

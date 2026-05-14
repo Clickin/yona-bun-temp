@@ -81,6 +81,11 @@ export type ProjectWebhookInput = {
   webhookType: ProjectWebhookType;
 };
 
+export type ProjectDeleteResponse = {
+  ok: boolean;
+  redirectPath: string;
+};
+
 function toInt64Number(value: bigint | number): number {
   return Number(value);
 }
@@ -560,6 +565,20 @@ export function updateProjectRest(
       method: "PATCH",
     },
   );
+}
+
+export function deleteProjectRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  ownerName: string,
+  projectName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectDeleteResponse> {
+  return restFetch<ProjectDeleteResponse>(runtimeConfig, projectPath(ownerName, projectName), {
+    csrfToken,
+    fetchImpl,
+    method: "DELETE",
+  });
 }
 
 export function updateProjectOverviewRest(

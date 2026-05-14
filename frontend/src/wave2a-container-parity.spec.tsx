@@ -9,7 +9,11 @@ import {
   renderProjectWatchers,
   testRuntimeConfig,
 } from "./auth-workspace-shell.test-helpers";
-import { ProjectStatisticsPage, ProjectWebhooksPage } from "./routes/-project-views";
+import {
+  ProjectDeletePage,
+  ProjectStatisticsPage,
+  ProjectWebhooksPage,
+} from "./routes/-project-views";
 
 describe("wave 2A container parity", () => {
   it("renders the organization home hero, project filter, gated CTA, roster bubbles, and settings entry", () => {
@@ -308,5 +312,38 @@ describe("wave 2A container parity", () => {
     expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain("<h1>Under Construction</h1>");
+  });
+
+  it("renders the legacy project delete confirmation shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectDeletePage
+        detail={{
+          enrollmentRequested: false,
+          isFavorited: false,
+          organizationName: "",
+          ownerName: "weblabs",
+          overview: "Project delete shell",
+          projectName: "projectYobi",
+          projectScope: "public",
+          viewerCanEnroll: false,
+          viewerCanUpdate: true,
+        }}
+        runtimeConfig={testRuntimeConfig}
+      />,
+    );
+
+    expect(html).toContain('class="page-wrap-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('id="subMenuProjectDelete"');
+    expect(html).toContain('class="bubble-wrap gray wp"');
+    expect(html).toContain('class="cu-label"');
+    expect(html).toContain('class="cu-desc"');
+    expect(html).toContain('id="accept"');
+    expect(html).toContain('class="bg-checkbox label-agreement"');
+    expect(html).toContain('class="box-wrap bottom"');
+    expect(html).toContain('id="btnDelete"');
+    expect(html).toContain('href="#alertDeletion"');
+    expect(html).toContain('id="alertDeletion"');
+    expect(html).toContain('id="btnDeleteExec"');
   });
 });

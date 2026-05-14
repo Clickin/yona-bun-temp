@@ -208,6 +208,20 @@ pub fn create_bare_repository(repo_path: &Path) -> Result<(), VcsError> {
     }
 }
 
+pub fn delete_repository(repo_path: &Path) -> Result<(), VcsError> {
+    if !repo_path.exists() {
+        return Ok(());
+    }
+    if !repo_path.is_dir() {
+        return Err(VcsError::FilesystemFailed(format!(
+            "{} exists and is not a directory",
+            repo_path.display()
+        )));
+    }
+    std::fs::remove_dir_all(repo_path)
+        .map_err(|error| VcsError::FilesystemFailed(error.to_string()))
+}
+
 pub fn read_code_browser(
     repo_path: &Path,
     branch: Option<&str>,
