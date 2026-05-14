@@ -201,7 +201,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | Legacy sharer source        | `yona-original/app/controllers/api/IssueApi.java#findSharableUsers`, `#updateSharer`, `yona-original/public/javascripts/service/yona.issue.Sharer.js` |
 | REST contract               | `/api/v1/notifications`, `/api/v1/owners/:owner/projects/:project/issues/:number/sharable-users`, `/api/v1/owners/:owner/projects/:project/issues/:number/sharers`, `crates/server/tests/notification_contract.rs`, `crates/server/tests/issue_sharer_contract.rs` |
 | Backend behavior            | `crates/persistence/src/repo.rs`, `crates/persistence/src/repo_types.rs`, `crates/server/src/lib.rs`                                        |
-| UI route surface            | `frontend/src/routes/notification/route.tsx`, `frontend/src/api/notifications.ts`, `frontend/src/api/issue-meta.ts`, `frontend/src/routes/-issue-views.tsx` |
+| UI route surface            | `frontend/src/routes/notification/route.tsx`, `frontend/src/routes/notifications/route.tsx`, `frontend/src/api/notifications.ts`, `frontend/src/api/issue-meta.ts`, `frontend/src/routes/-issue-views.tsx` |
 | Regression tests            | `cargo test -p yona-rust-pilot-server --test notification_contract --test issue_sharer_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts route-parity.spec.tsx` |
 
 ## Remaining Phase 2 Follow-ups

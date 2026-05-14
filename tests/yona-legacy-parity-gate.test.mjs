@@ -131,6 +131,22 @@ test("maps notification inbox frontend files to the issue notification slice", (
   );
 });
 
+test("passes notification route alias changes with route parity evidence", () => {
+  const result = runGate([
+    "frontend/src/routes/notification/route.tsx",
+    "frontend/src/routes/notifications/route.tsx",
+    "frontend/src/route-parity.spec.tsx",
+    "docs/provenance/phase-0b/issue.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.equal(
+    result.unmappedImplementationFiles.includes("frontend/src/routes/notifications/route.tsx"),
+    false,
+  );
+});
+
 test("maps shared frontend query keys to the API query boundary", () => {
   const result = runGate([
     "frontend/src/api/query-keys.ts",

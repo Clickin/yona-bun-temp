@@ -35,6 +35,7 @@ describe("file-route parity harness", () => {
     expect(routeTreeSource).toContain("fullPath: '/projects'");
     expect(routeTreeSource).toContain("fullPath: '/orgs'");
     expect(routeTreeSource).toContain("fullPath: '/notification'");
+    expect(routeTreeSource).toContain("fullPath: '/notifications'");
     expect(routeTreeSource).toContain("fullPath: '/user/editform'");
     expect(routeTreeSource).toContain("fullPath: '/user/issues'");
     expect(routeTreeSource).toContain("fullPath: '/verify/$loginId/$verificationCode'");
@@ -281,12 +282,19 @@ describe("file-route parity harness", () => {
 
   it("requires a real notification inbox route using TanStack Query", () => {
     const notificationRoutePath = path.resolve(__dirname, "routes/notification/route.tsx");
+    const notificationsAliasRoutePath = path.resolve(__dirname, "routes/notifications/route.tsx");
 
     expect(fs.existsSync(notificationRoutePath)).toBe(true);
     const notificationRouteSource = fs.readFileSync(notificationRoutePath, "utf8");
     expect(notificationRouteSource).not.toContain("PlaceholderPage");
     expect(notificationRouteSource).toContain("useQuery");
     expect(notificationRouteSource).toContain("listNotificationsQueryOptions");
+
+    expect(fs.existsSync(notificationsAliasRoutePath)).toBe(true);
+    const notificationsAliasRouteSource = fs.readFileSync(notificationsAliasRoutePath, "utf8");
+    expect(notificationsAliasRouteSource).not.toContain("PlaceholderPage");
+    expect(notificationsAliasRouteSource).toContain('createFileRoute("/notifications")');
+    expect(notificationsAliasRouteSource).toContain("NotificationRouteComponent");
   });
 
   it("requires real board routes and board API wiring instead of placeholders", () => {
