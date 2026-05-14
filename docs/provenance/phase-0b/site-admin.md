@@ -1,6 +1,6 @@
 # Site Admin Provenance
 
-Status: Phase 6H partial parity.
+Status: Phase 6I partial parity.
 
 ## Legacy Anchors
 
@@ -12,7 +12,7 @@ Status: Phase 6H partial parity.
 - `yona-original/app/views/site/postList.scala.html`: `.post-list-wrap`, `.post-info-wrap`, `.post-meta-wrap`, `.post-project`, `.post-title`, and comment-count anchors.
 - `yona-original/app/views/site/issueList.scala.html`: `.nav.nav-tabs`, `.post-list-wrap`, `.post-info-wrap`, `.post-meta-wrap`, `.post-project`, `.post-title`, and issue comment anchors.
 
-## Phase 6A/6B/6C/6D/6E/6F/6G/6H Mapping
+## Phase 6A/6B/6C/6D/6E/6F/6G/6H/6I Mapping
 
 - `GET /api/v1/sites/users?state=&query=&pageNum=&pageSize=` lists users for site-admin sessions only.
 - `DELETE /api/v1/sites/users/:userId` restores the legacy user-list delete action for site-admin sessions with CSRF checks and the only-project-manager guard.
@@ -20,18 +20,20 @@ Status: Phase 6H partial parity.
 - `DELETE /api/v1/sites/projects/:projectId` restores the legacy project-list delete action for site-admin sessions with CSRF checks.
 - `GET /api/v1/sites/posts?pageNum=&pageSize=` lists recent postings for site-admin sessions only, preserving legacy created-date descending order.
 - `GET /api/v1/sites/issues?state=&pageNum=&pageSize=` lists issues for site-admin sessions only, preserving legacy `OPEN` default state, open/closed tab routing, and created-date descending order.
+- `GET /api/v1/sites/diagnostics` returns the site-admin-only diagnostics result shape used by legacy `Diagnostic.checkAll()`.
 - `POST /api/v1/sites/users/:loginId/toggle-site-admin`, `/toggle-account-lock`, `/toggle-guest-mode`, and `/reset-password` restore the legacy user-row mutations for site-admin sessions with CSRF checks.
 - `frontend/src/routes/sites/$pageName/route.tsx` restores `/sites/userList` with the legacy site settings sidebar, tabs, search form, dense list rows, and pagination summary.
 - The same route restores `/sites/projectList` with the legacy site settings sidebar, project search form, dense project rows, and the project-delete confirmation modal.
 - The same route restores `/sites/postList` with the legacy site settings sidebar, dense post rows, project links, post links, author metadata, and comment anchors.
 - The same route restores `/sites/issueList` with the legacy site settings sidebar, open/closed tabs, dense issue rows, project links, issue links, author metadata, and comment anchors.
+- The same route restores `/sites/diagnostic` with the legacy site settings sidebar, `.title_area`, diagnostics heading, no-error branch, and error-list `<pre>` rows.
 - `frontend/src/api/site-admin.ts` normalizes omitted REST fields and exposes TanStack Query options.
 - User-list role, account-lock, guest-mode, and reset-password controls now post through typed REST mutations. Reset password directly replaces the target password hash and shows the returned temporary password inline, matching `UserApp.resetUserPasswordBySiteManager`.
 - User delete now uses the legacy `account-delete` confirmation modal, marks the user `deleted` instead of hard-deleting the row, scrubs password/email state, clears project memberships and assignee links, and refreshes the deleted-user tab after success.
 
 ## Remaining Gaps
 
-- SMTP test mail, mass mail, diagnostics, update check, and unwatchUpdate.
+- SMTP test mail, mass mail, update check, and unwatchUpdate.
 - Data import/export remains deferred outside current app parity scope.
 
 ## Evidence

@@ -950,7 +950,7 @@ GET   /sites/export            → 데이터 익스포트
 | 프로젝트 목록/관리     | 목록, 검색, 삭제                   | ✅ Phase 6B/6G 프로젝트 목록 read surface와 삭제 구현 | 6     |
 | 게시글/이슈 목록       | 전체 게시글/이슈 관리              | 🔶 Phase 6C/6D 게시글/이슈 목록 read surface 구현 | 6     |
 | 메일 설정/테스트       | SMTP 테스트, 대량 메일             | gap       | 6     |
-| 시스템 진단            | DB 상태, 메모리 등                 | gap       | 6     |
+| 시스템 진단            | DB 상태, 메모리 등                 | 🔶 Phase 6I diagnostics read surface 구현 | 6     |
 | 데이터 임포트/익스포트 | 전체 데이터 백업/복원              | deferred  | 2차   |
 | 업데이트 확인          | 새 버전 확인                       | deferred  | 2차   |
 
@@ -960,8 +960,9 @@ GET   /sites/export            → 데이터 익스포트
 - [~] 사용자 목록: 검색, 페이지네이션, active/locked/deleted/guest/site-admin 탭 read surface와 관리자 역할/계정 잠금/게스트 토글/reset password/delete 구현
 - [x] 프로젝트 목록: 검색, 페이지네이션 read surface와 site-admin project delete 구현
 - [~] 게시글/이슈 목록: 전체 게시글 페이지네이션, 이슈 open/closed 탭과 페이지네이션 read surface 구현
+- [~] 시스템 진단: site_admin 전용 `/sites/diagnostic` shell과 `Diagnostic.checkAll()` 호환 response shape 구현
 
-**Phase 6A/6B/6C/6D/6E/6F/6G/6H 구현 메모**: app runtime REST는 `GET /api/v1/sites/users?state=&query=&pageNum=&pageSize=`와
+**Phase 6A/6B/6C/6D/6E/6F/6G/6H/6I 구현 메모**: app runtime REST는 `GET /api/v1/sites/users?state=&query=&pageNum=&pageSize=`와
 `GET /api/v1/sites/projects?filter=&pageNum=&pageSize=`, `GET /api/v1/sites/posts?pageNum=&pageSize=`,
 `GET /api/v1/sites/issues?state=&pageNum=&pageSize=`를 제공한다. `/sites/userList`는 legacy
 `siteMngLayout.scala.html`/`userList.scala.html`의 사이드바, 탭, 검색, dense row class anchor를 복원하고, `/sites/projectList`는
@@ -973,6 +974,7 @@ GET   /sites/export            → 데이터 익스포트
 `UserApp.resetUserPasswordBySiteManager`처럼 6자리 임시 비밀번호를 생성해 target password hash를 직접 교체하고 inline alert로 반환한다.
 `DELETE /api/v1/sites/users/:userId`는 `/sites/userList`의 legacy `account-delete` modal에서 호출하며 only-project-manager guard 이후 user state를 `deleted`로 바꾸고 password/email/member/assignee 연결을 정리한다.
 `DELETE /api/v1/sites/projects/:projectId`는 `/sites/projectList`의 legacy delete modal에서 호출하며 project dependency cleanup과 bare Git repository removal을 수행한다.
+`GET /api/v1/sites/diagnostics`는 `/sites/diagnostic`에서 사용하는 legacy `Diagnostic.checkAll()` 형태의 error list를 반환하며, 현재 Rust slice는 no-error branch와 error-list rendering을 복원한다.
 `data/import/export`, update check, mail/massmail은
 별도 Phase 6 follow-up 또는 deferred scope다.
 

@@ -503,3 +503,29 @@ test("renders legacy site-admin issue list shell and state tabs without placehol
   await expect(page.locator(".post-comments")).toContainText("3");
   await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
 });
+
+test("renders legacy site-admin diagnostics shell without placeholders", async ({ page }) => {
+  await page.route(apiV1Route("/sites/diagnostics"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        errors: [
+          "application.port may be ignored because application.hostname is not configured.",
+          "The Email Receiver is not initialized",
+        ],
+        hasErrors: true,
+        total: 2,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/sites/diagnostic");
+
+  await expect(page.locator(".site-setting-nav li.active")).toContainText("Diagnostics");
+  await expect(page.locator(".title_area h2")).toHaveText("Diagnostics");
+  await expect(page.getByText("site.diagnostic.errorFound")).toBeVisible();
+  await expect(page.locator("pre").first()).toContainText("application.port may be ignored");
+  await expect(page.locator("pre").nth(1)).toContainText("The Email Receiver is not initialized");
+  await expect(page.getByText("PlaceholderPage")).toHaveCount(0);
+});

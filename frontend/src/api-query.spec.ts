@@ -21,6 +21,7 @@ import {
 import {
   deleteSiteProjectRest,
   deleteSiteUserRest,
+  readSiteDiagnosticsQueryOptions,
   listSiteIssuesQueryOptions,
   listSitePostsQueryOptions,
   listSiteProjectsQueryOptions,
@@ -310,6 +311,14 @@ describe("api query keys", () => {
         state: "CLOSED",
       }),
     );
+    expect(options.queryFn).toEqual(expect.any(Function));
+  });
+
+  it("builds site-admin diagnostics query options from canonical query keys", () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const options = readSiteDiagnosticsQueryOptions(runtimeConfig);
+
+    expect(options.queryKey).toEqual(apiQueryKeys.siteAdmin.diagnostics());
     expect(options.queryFn).toEqual(expect.any(Function));
   });
 

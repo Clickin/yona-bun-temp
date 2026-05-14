@@ -16,12 +16,14 @@ import {
   normalizeSitePostsQuery,
   normalizeSiteProjectsQuery,
   normalizeSiteUsersQuery,
+  readSiteDiagnosticsQueryOptions,
   resetSiteUserPasswordRest,
   SITE_ISSUE_STATES,
   SITE_USER_STATES,
   toggleSiteUserAccountLockRest,
   toggleSiteUserGuestModeRest,
   toggleSiteUserRoleRest,
+  type SiteDiagnosticsResponse,
   type SiteIssueListItem,
   type SiteIssuesQueryInput,
   type SiteIssuesResponse,
@@ -238,6 +240,10 @@ function SiteAdminRouteComponent() {
     ...listSiteIssuesQueryOptions(runtimeConfig, issueQuery),
     enabled: canRender && pageName === "issueList",
   });
+  const diagnosticsQuery = useQuery({
+    ...readSiteDiagnosticsQueryOptions(runtimeConfig),
+    enabled: canRender && pageName === "diagnostic",
+  });
   const userActionError = React.useCallback(
     (error: Error, fallback: string) => {
       setErrorMessage(error instanceof Error ? error.message : fallback);
@@ -300,7 +306,9 @@ function SiteAdminRouteComponent() {
           ? "Site Posts"
           : pageName === "issueList"
             ? "Site Issues"
-            : "Site Admin",
+            : pageName === "diagnostic"
+              ? "Site Diagnostics"
+              : "Site Admin",
   );
 
   React.useEffect(() => {
@@ -329,7 +337,9 @@ function SiteAdminRouteComponent() {
           ? postListQuery.error
           : pageName === "issueList"
             ? issueListQuery.error
-            : userListQuery.error;
+            : pageName === "diagnostic"
+              ? diagnosticsQuery.error
+              : userListQuery.error;
     if (!error) {
       return;
     }
@@ -347,9 +357,12 @@ function SiteAdminRouteComponent() {
             ? "Read site posts failed."
             : pageName === "issueList"
               ? "Read site issues failed."
-              : "Read site users failed.",
+              : pageName === "diagnostic"
+                ? "Read site diagnostics failed."
+                : "Read site users failed.",
     );
   }, [
+    diagnosticsQuery.error,
     issueListQuery.error,
     pageName,
     postListQuery.error,
@@ -405,6 +418,16 @@ function SiteAdminRouteComponent() {
         isLoading={issueListQuery.isLoading}
         query={issueQuery}
         response={issueListQuery.data}
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
+
+  if (pageName === "diagnostic") {
+    return (
+      <SiteAdminDiagnosticsPage
+        isLoading={diagnosticsQuery.isLoading}
+        response={diagnosticsQuery.data}
         runtimeConfig={runtimeConfig}
       />
     );
@@ -679,6 +702,39 @@ function SiteAdminIssueRow(props: { item: SiteIssueListItem; runtimeConfig: Runt
         </span>
       </div>
     </li>
+  );
+}
+
+function SiteAdminDiagnosticsPage(props: {
+  isLoading: boolean;
+  response: SiteDiagnosticsResponse | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const response = props.response;
+  const errors = response?.errors ?? [];
+
+  return (
+    <SiteAdminLayout activePageName="diagnostic" runtimeConfig={props.runtimeConfig}>
+      <div className="title_area">
+        <h2 className="pull-left">Diagnostics</h2>
+      </div>
+      {props.isLoading ? (
+        <p>Loading…</p>
+      ) : errors.length === 0 ? (
+        <p>site.diagnostic.errorNotFound</p>
+      ) : (
+        <>
+          <p>{`site.diagnostic.errorFound (${response?.total ?? errors.length})`}</p>
+          <ul>
+            {errors.map((error) => (
+              <li key={error}>
+                <pre>{error}</pre>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </SiteAdminLayout>
   );
 }
 

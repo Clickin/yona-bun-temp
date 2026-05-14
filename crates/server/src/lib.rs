@@ -2248,6 +2248,14 @@ struct RestSiteIssuesResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RestSiteDiagnosticsResponse {
+    errors: Vec<String>,
+    has_errors: bool,
+    total: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RestNotificationActor {
     avatar_url: String,
     display_name: String,
@@ -3643,6 +3651,18 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     async move { rest_list_site_issues(headers, query, session_manager, backend).await }
+                }
+            }),
+        )
+        .route(
+            "/sites/diagnostics",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                move |headers: HeaderMap| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    async move { rest_read_site_diagnostics(headers, session_manager, backend).await }
                 }
             }),
         )
@@ -7124,6 +7144,45 @@ async fn rest_list_site_issues(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(rest_site_issues_response(record)))
+}
+
+async fn rest_read_site_diagnostics(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Result<Json<RestSiteDiagnosticsResponse>, RestRouteError> {
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    let Some(user_id) = session.user_id else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unauthenticated("missing pilot user"),
+        ));
+    };
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "site admin diagnostics require repository backend",
+        ));
+    };
+    let actor = repository
+        .find_user_by_id(user_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::unauthenticated("missing pilot user"))
+        })?;
+    if !actor.is_site_admin {
+        return Err(RestRouteError::permission_denied(
+            "site admin diagnostics are not allowed",
+        ));
+    }
+
+    let errors = Vec::new();
+    Ok(Json(RestSiteDiagnosticsResponse {
+        has_errors: !errors.is_empty(),
+        total: errors.len() as u32,
+        errors,
+    }))
 }
 
 async fn rest_record_recent_project_visit(

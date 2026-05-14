@@ -91,7 +91,8 @@
 - Phase 6F complete: Site-admin reset-password row action over `/api/v1/sites/users/:loginId/reset-password`, including site_admin-only access, CSRF checks, direct temporary password hash replacement, and the legacy inline new-password alert.
 - Phase 6G complete: Site-admin project delete over `DELETE /api/v1/sites/projects/:projectId`, including site_admin-only access, CSRF checks, legacy project-list delete modal wiring, DB dependency cleanup, and bare Git repository removal.
 - Phase 6H complete: Site-admin user delete over `DELETE /api/v1/sites/users/:userId`, including site_admin-only access, CSRF checks, legacy only-manager guard, soft-delete state scrub, membership/assignee cleanup, and the legacy `account-delete` confirmation modal.
-- Remaining admin surface follow-ups: mail/massmail, diagnostics, update, and non-current data import/export scope.
+- Phase 6I complete: Site-admin diagnostics read surface over `GET /api/v1/sites/diagnostics` and `/sites/diagnostic`, including site_admin-only access, legacy site settings sidebar, `.title_area`, no-error branch, and error-list `<pre>` rows.
+- Remaining admin surface follow-ups: mail/massmail, update, and non-current data import/export scope.
 - migration tooling
 - deployment hardening
 - remaining deferred scope review

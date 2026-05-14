@@ -157,6 +157,12 @@ export type SiteIssuesResponse = {
   total: number;
 };
 
+export type SiteDiagnosticsResponse = {
+  errors: string[];
+  hasErrors: boolean;
+  total: number;
+};
+
 export const SITE_USER_STATES: SiteUserState[] = [
   "ACTIVE",
   "LOCKED",
@@ -396,6 +402,17 @@ function normalizeSiteIssuesResponse(response: Partial<SiteIssuesResponse>): Sit
   };
 }
 
+function normalizeSiteDiagnosticsResponse(
+  response: Partial<SiteDiagnosticsResponse>,
+): SiteDiagnosticsResponse {
+  const errors = (response.errors ?? []).map(String);
+  return {
+    errors,
+    hasErrors: response.hasErrors ?? errors.length > 0,
+    total: response.total ?? errors.length,
+  };
+}
+
 export function listSiteUsersRest(
   runtimeConfig: RuntimeConfig,
   input: Partial<SiteUsersQueryInput> = {},
@@ -558,6 +575,15 @@ export function listSiteIssuesRest(
   }).then(normalizeSiteIssuesResponse);
 }
 
+export function readSiteDiagnosticsRest(
+  runtimeConfig: RuntimeConfig,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteDiagnosticsResponse> {
+  return restFetch<Partial<SiteDiagnosticsResponse>>(runtimeConfig, "/sites/diagnostics", {
+    fetchImpl,
+  }).then(normalizeSiteDiagnosticsResponse);
+}
+
 export function listSiteUsersQueryOptions(
   runtimeConfig: RuntimeConfig,
   input: Partial<SiteUsersQueryInput> = {},
@@ -599,5 +625,12 @@ export function listSiteIssuesQueryOptions(
   return queryOptions({
     queryFn: () => listSiteIssuesRest(runtimeConfig, query),
     queryKey: apiQueryKeys.siteAdmin.issues(query),
+  });
+}
+
+export function readSiteDiagnosticsQueryOptions(runtimeConfig: RuntimeConfig) {
+  return queryOptions({
+    queryFn: () => readSiteDiagnosticsRest(runtimeConfig),
+    queryKey: apiQueryKeys.siteAdmin.diagnostics(),
   });
 }

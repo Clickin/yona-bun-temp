@@ -143,6 +143,7 @@ export const apiQueryKeys = {
       [...apiQueryKeys.v1(), "notifications", { from: input.from, size: input.size }] as const,
   },
   siteAdmin: {
+    diagnostics: () => [...apiQueryKeys.v1(), "sites", "diagnostics"] as const,
     issues: (input: { pageNum: number; pageSize: number; state: string }) =>
       [
         ...apiQueryKeys.v1(),

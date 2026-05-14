@@ -722,3 +722,26 @@ async fn site_admin_issue_list_requires_site_admin_and_filters_legacy_state_tabs
     );
     assert_eq!(closed["items"][0]["title"], "Closed issue");
 }
+
+#[tokio::test]
+async fn site_admin_diagnostics_requires_site_admin_and_reports_empty_legacy_result() {
+    let (app, db) = build_app_with_repository().await;
+    let (_, admin_cookie, admin_id) = register_user(app.clone(), "admin").await;
+    let (_, member_cookie, _) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let forbidden = rest_get(
+        app.clone(),
+        "/yona/api/v1/sites/diagnostics",
+        Some(&member_cookie),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let diagnostics =
+        response_json(rest_get(app, "/yona/api/v1/sites/diagnostics", Some(&admin_cookie)).await)
+            .await;
+    assert_eq!(diagnostics["errors"], json!([]));
+    assert_eq!(diagnostics["hasErrors"], false);
+    assert_eq!(diagnostics["total"], 0);
+}
