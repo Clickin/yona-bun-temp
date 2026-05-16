@@ -324,7 +324,7 @@ Interpretation:
 - [~] Milestone attachment binding
 - [x] File delete authorization
 - [ ] Full container type parity across issue/board/PR/project
-- [ ] Global file size policy parity
+- [x] Global file size policy parity
 - [ ] MIME validation parity for all containers
 
 ## Site Admin

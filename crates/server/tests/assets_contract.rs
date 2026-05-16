@@ -280,7 +280,7 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
 }
 
 #[tokio::test]
-async fn avatar_file_upload_requires_auth_and_rejects_non_image_or_oversized_payloads() {
+async fn file_upload_requires_auth_and_preserves_general_attachments_under_legacy_default_limit() {
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -317,7 +317,8 @@ async fn avatar_file_upload_requires_auth_and_rejects_non_image_or_oversized_pay
         .unwrap();
     assert_eq!(register.status(), StatusCode::OK);
 
-    let (text_boundary, text_body) = multipart_body("avatar.txt", "text/plain", b"nope");
+    let text_bytes = b"plain attachment";
+    let (text_boundary, text_body) = multipart_body("notes.txt", "text/plain", text_bytes);
     let text_upload = app
         .clone()
         .oneshot(
@@ -335,28 +336,66 @@ async fn avatar_file_upload_requires_auth_and_rejects_non_image_or_oversized_pay
         )
         .await
         .unwrap();
-    assert_eq!(text_upload.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(text_upload.status(), StatusCode::CREATED);
+    let text_upload_body = text_upload.into_body().collect().await.unwrap().to_bytes();
+    let text_upload_json: serde_json::Value = serde_json::from_slice(&text_upload_body).unwrap();
+    let text_file_id = text_upload_json["id"].as_i64().expect("text file id");
+    assert_eq!(text_upload_json["mimeType"].as_str(), Some("text/plain"),);
+    assert_eq!(text_upload_json["name"].as_str(), Some("notes.txt"));
 
-    let oversized_bytes = vec![0_u8; 1024 * 1000 + 1];
-    let (oversized_boundary, oversized_body) =
-        multipart_body("avatar.png", "image/png", &oversized_bytes);
-    let oversized_upload = app
+    let get_text_file = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/yona/files/{text_file_id}"))
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(get_text_file.status(), StatusCode::OK);
+    let get_text_body = get_text_file
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    assert_eq!(get_text_body.as_ref(), text_bytes);
+
+    let legacy_default_size_bytes = vec![0_u8; 1024 * 1000 + 1];
+    let (legacy_default_boundary, legacy_default_body) =
+        multipart_body("diagram.png", "image/png", &legacy_default_size_bytes);
+    let legacy_default_upload = app
         .oneshot(
             Request::builder()
                 .method(Method::POST)
                 .uri("/yona/files")
                 .header(
                     http::header::CONTENT_TYPE,
-                    format!("multipart/form-data; boundary={oversized_boundary}"),
+                    format!("multipart/form-data; boundary={legacy_default_boundary}"),
                 )
                 .header(http::header::COOKIE, &cookie_header)
                 .header("x-csrf-token", &csrf)
-                .body(Body::from(oversized_body))
+                .body(Body::from(legacy_default_body))
                 .unwrap(),
         )
         .await
         .unwrap();
-    assert_eq!(oversized_upload.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(legacy_default_upload.status(), StatusCode::CREATED);
+    let legacy_default_upload_body = legacy_default_upload
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    let legacy_default_json: serde_json::Value =
+        serde_json::from_slice(&legacy_default_upload_body).unwrap();
+    assert_eq!(
+        legacy_default_json["size"].as_i64(),
+        Some(legacy_default_size_bytes.len() as i64)
+    );
 }
 
 #[tokio::test]

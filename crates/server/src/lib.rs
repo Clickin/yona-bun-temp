@@ -1004,6 +1004,19 @@ fn uploaded_file_path(hash: &str) -> PathBuf {
     uploaded_files_root().join(hash)
 }
 
+const LEGACY_DEFAULT_MAX_FILE_SIZE: usize = 2_147_483_454;
+
+fn max_uploaded_file_size_from_env_value(value: Option<&str>) -> usize {
+    value
+        .and_then(|value| value.trim().parse::<usize>().ok())
+        .unwrap_or(LEGACY_DEFAULT_MAX_FILE_SIZE)
+}
+
+fn max_uploaded_file_size() -> usize {
+    let env_value = std::env::var("YONA_MAX_FILE_SIZE").ok();
+    max_uploaded_file_size_from_env_value(env_value.as_deref())
+}
+
 fn random_storage_token() -> String {
     use base64::Engine;
     use rand::RngCore;
@@ -13364,13 +13377,10 @@ async fn upload_file(
             .content_type()
             .map(ToString::to_string)
             .unwrap_or_else(|| "application/octet-stream".to_string());
-        if !mime_type.starts_with("image/") {
-            return StatusCode::BAD_REQUEST.into_response();
-        }
         let Ok(bytes) = field.bytes().await else {
             return StatusCode::BAD_REQUEST.into_response();
         };
-        if bytes.len() > 1024 * 1000 {
+        if bytes.len() > max_uploaded_file_size() {
             return StatusCode::BAD_REQUEST.into_response();
         }
         let hash = random_storage_token();
@@ -19990,4 +20000,26 @@ fn sanitize_relative_path(requested_path: &str) -> Option<PathBuf> {
     }
 
     Some(path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn max_uploaded_file_size_uses_legacy_default_and_env_override() {
+        assert_eq!(
+            max_uploaded_file_size_from_env_value(None),
+            LEGACY_DEFAULT_MAX_FILE_SIZE
+        );
+        assert_eq!(
+            max_uploaded_file_size_from_env_value(Some("")),
+            LEGACY_DEFAULT_MAX_FILE_SIZE
+        );
+        assert_eq!(max_uploaded_file_size_from_env_value(Some("4096")), 4096);
+        assert_eq!(
+            max_uploaded_file_size_from_env_value(Some("not-a-number")),
+            LEGACY_DEFAULT_MAX_FILE_SIZE
+        );
+    }
 }
