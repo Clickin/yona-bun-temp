@@ -684,6 +684,8 @@ pub struct ProjectRecord {
     pub organization_name: Option<String>,
     pub owner_name: String,
     pub overview: Option<String>,
+    pub previous_owner_name: Option<String>,
+    pub previous_project_name: Option<String>,
     pub project_name: String,
     pub project_scope: String,
 }
@@ -753,6 +755,26 @@ pub struct ProjectWebhookRecord {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectWebhookListRecord {
     pub webhooks: Vec<ProjectWebhookRecord>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectTransferRecord {
+    pub accepted: bool,
+    pub confirm_key: String,
+    pub destination: String,
+    pub id: i64,
+    pub new_project_name: String,
+    pub project_id: i64,
+    pub requested: Option<DateTime>,
+    pub sender_id: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectTransferRequestInput {
+    pub destination: String,
+    pub new_project_name: String,
+    pub project_id: i64,
+    pub sender_id: i64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

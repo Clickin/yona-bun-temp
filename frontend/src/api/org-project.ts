@@ -124,6 +124,22 @@ export type ProjectWebhookInput = {
   webhookType: ProjectWebhookType;
 };
 
+export type ProjectTransferResponse = {
+  acceptPath?: string;
+  confirmKey?: string;
+  destination?: string;
+  newProjectName?: string;
+  ownerName: string;
+  projectName: string;
+  redirectPath?: string;
+  transferId?: number;
+  viewerCanTransfer: boolean;
+};
+
+export type ProjectTransferInput = {
+  destination: string;
+};
+
 function toInt64Number(value: bigint | number): number {
   return Number(value);
 }
@@ -448,6 +464,52 @@ export function deleteProjectRest(
       csrfToken,
       fetchImpl,
       method: "DELETE",
+    },
+  );
+}
+
+export function readProjectTransferRest(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectTransferResponse> {
+  return restFetch<ProjectTransferResponse>(
+    runtimeConfig,
+    projectPath(ownerName, projectName, "/transfer"),
+    {
+      fetchImpl,
+      method: "GET",
+    },
+  );
+}
+
+export function readProjectTransferQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectPathInput,
+) {
+  return queryOptions({
+    queryFn: () => readProjectTransferRest(runtimeConfig, input.ownerName, input.projectName),
+    queryKey: apiQueryKeys.project.transfer(input.ownerName, input.projectName),
+  });
+}
+
+export function requestProjectTransferRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectPathInput & ProjectTransferInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectTransferResponse> {
+  return restFetch<ProjectTransferResponse>(
+    runtimeConfig,
+    projectPath(input.ownerName, input.projectName, "/transfer"),
+    {
+      body: {
+        destination: input.destination,
+      },
+      csrfToken,
+      fetchImpl,
+      method: "POST",
     },
   );
 }

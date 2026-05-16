@@ -3,6 +3,7 @@ import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { BoardPostDetail } from "../api/boards";
 import type {
   ProjectMembersResponse,
+  ProjectTransferResponse,
   ProjectWebhookInput,
   ProjectWebhooksResponse,
   ProjectWebhookType,
@@ -822,6 +823,129 @@ export function ProjectWebhooksPage(props: {
               )}
             </div>
           </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export function ProjectTransferPage(props: {
+  detail: ProjectDetailViewModel | null | undefined;
+  onRequestTransfer?: (destination: string) => Promise<void>;
+  pending?: boolean;
+  runtimeConfig: RuntimeConfig;
+  transfer: ProjectTransferResponse | null | undefined;
+}) {
+  const detail = props.detail ?? {
+    enrollmentRequested: false,
+    isFavorited: false,
+    organizationName: "",
+    overview: "",
+    ownerName: "",
+    projectName: "",
+    projectScope: "public",
+    showCode: true,
+    viewerCanEnroll: false,
+    viewerCanUpdate: false,
+  };
+  const [accepted, setAccepted] = React.useState(false);
+  const [destination, setDestination] = React.useState("");
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const canSubmit =
+    accepted &&
+    destination.trim().length > 0 &&
+    !props.pending &&
+    props.transfer?.viewerCanTransfer;
+
+  return (
+    <main className="app-shell">
+      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <ProjectSettingsSubMenu
+            active="transfer"
+            detail={detail}
+            runtimeConfig={props.runtimeConfig}
+          />
+          <div className="content-wrap frm-wrap">
+            <section className="bubble-wrap gray wp">
+              <h1>project.transfer</h1>
+              <div className="row-fluid">
+                <label className="cu-label" htmlFor="owner">
+                  project.transfer.owner
+                </label>
+                <div className="cu-desc">
+                  <input
+                    autoComplete="off"
+                    id="owner"
+                    name="owner"
+                    onChange={(event) => setDestination(event.currentTarget.value)}
+                    type="text"
+                    value={destination}
+                  />
+                </div>
+              </div>
+              <div className="row-fluid">
+                <div className="cu-desc">
+                  <input
+                    checked={accepted}
+                    className="checkbox"
+                    id="accept"
+                    name="accept"
+                    onChange={(event) => setAccepted(event.currentTarget.checked)}
+                    type="checkbox"
+                  />
+                  <label className="bg-checkbox label-agreement" htmlFor="accept">
+                    project.transfer.accept
+                  </label>
+                </div>
+              </div>
+              <div className="box-wrap bottom">
+                <button
+                  className="ybtn ybtn-danger"
+                  disabled={!canSubmit}
+                  id="btnTransfer"
+                  onClick={() => setModalOpen(true)}
+                  type="button"
+                >
+                  project.transfer
+                </button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+      <div className={modalOpen ? "modal" : "modal hide"} id="alertTransfer">
+        <div className="modal-header">
+          <button
+            aria-label="Close"
+            className="close"
+            onClick={() => setModalOpen(false)}
+            type="button"
+          >
+            x
+          </button>
+          <h3>project.transfer</h3>
+        </div>
+        <div className="modal-body">
+          <p>{`${detail.ownerName}/${detail.projectName} -> ${destination.trim()}`}</p>
+          {props.transfer?.acceptPath ? <p>{props.transfer.acceptPath}</p> : null}
+        </div>
+        <div className="modal-footer">
+          <button
+            className="ybtn ybtn-danger"
+            disabled={props.pending}
+            id="btnTransferExec"
+            onClick={() => {
+              void props.onRequestTransfer?.(destination.trim());
+            }}
+            type="button"
+          >
+            button.confirm
+          </button>
+          <button className="ybtn" onClick={() => setModalOpen(false)} type="button">
+            button.cancel
+          </button>
         </div>
       </div>
     </main>

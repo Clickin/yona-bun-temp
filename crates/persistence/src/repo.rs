@@ -20,19 +20,20 @@ use crate::repo_types::{
     ProjectIssueListRecord, ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord,
     ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
     ProjectMilestoneSummaryRecord, ProjectPostingListItemRecord, ProjectPostingListRecord,
-    ProjectRecord, ProjectViewerRecord, ProjectWatcherListRecord, ProjectWatcherRecord,
-    ProjectWebhookListRecord, ProjectWebhookRecord, PullRequestCommitRecord,
-    PullRequestDetailRecord, PullRequestEventRecord, PullRequestListFilter,
-    PullRequestListItemRecord, PullRequestListRecord, PullRequestReviewInput,
-    PullRequestStateInput, PullRequestThreadStateInput, PullRequestUserRecord, ReviewCommentRecord,
-    ReviewThreadListFilter, ReviewThreadListRecord, ReviewThreadRecord, SearchContextRecord,
-    SearchCountsRecord, SearchItemRecord, SearchRepositoryInput, SearchResultRecord, SearchScope,
-    ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateIssueCommentInput,
-    UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput,
-    UpdatePostingInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
-    UpdateProjectLabelInput, UpdatePullRequestInput, UserIssueCandidateRecord, UserIssueListFilter,
-    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
-    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    ProjectRecord, ProjectTransferRecord, ProjectTransferRequestInput, ProjectViewerRecord,
+    ProjectWatcherListRecord, ProjectWatcherRecord, ProjectWebhookListRecord, ProjectWebhookRecord,
+    PullRequestCommitRecord, PullRequestDetailRecord, PullRequestEventRecord,
+    PullRequestListFilter, PullRequestListItemRecord, PullRequestListRecord,
+    PullRequestReviewInput, PullRequestStateInput, PullRequestThreadStateInput,
+    PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
+    ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
+    SearchRepositoryInput, SearchResultRecord, SearchScope, ToggleFavoriteIssueResult,
+    ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
+    UpdateOrganizationInput, UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
+    UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestInput,
+    UserIssueCandidateRecord, UserIssueListFilter, WatchedProjectNotificationsRecord,
+    WorkspaceEmailRecord, WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
+    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
@@ -334,6 +335,14 @@ fn random_workspace_token() -> String {
         .collect()
 }
 
+fn random_transfer_confirm_key() -> String {
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(50)
+        .map(char::from)
+        .collect()
+}
+
 fn prefixed_verification_code(prefix: &str) -> String {
     format!("{prefix}{}", random_workspace_token())
 }
@@ -529,6 +538,9 @@ struct ProjectRow {
     overview: Option<String>,
     owner: Option<String>,
     organization_id: Option<i64>,
+    previous_name: Option<String>,
+    previous_name_changed_time: Option<i64>,
+    previous_owner_login_id: Option<String>,
     project_scope: Option<String>,
 }
 
@@ -540,6 +552,21 @@ fn project_webhook_record_from_model(row: webhook::Model) -> ProjectWebhookRecor
         secret: row.secret.unwrap_or_default(),
         webhook_type: row.webhook_type.unwrap_or_default(),
     }
+}
+
+fn project_transfer_record_from_model(
+    row: project_transfer::Model,
+) -> Option<ProjectTransferRecord> {
+    Some(ProjectTransferRecord {
+        accepted: row.accepted.unwrap_or_default() != 0,
+        confirm_key: row.confirm_key?,
+        destination: row.destination?,
+        id: row.id,
+        new_project_name: row.new_project_name?,
+        project_id: row.project_id?,
+        requested: row.requested,
+        sender_id: row.sender_id?,
+    })
 }
 
 #[derive(Clone)]
@@ -4076,10 +4103,14 @@ impl AppRepository {
             .column(project::Column::Overview)
             .column(project::Column::Owner)
             .column(project::Column::OrganizationId)
+            .column(project::Column::PreviousName)
+            .column(project::Column::PreviousNameChangedTime)
+            .column(project::Column::PreviousOwnerLoginId)
             .column(project::Column::ProjectScope)
             .into_model::<ProjectRow>()
             .all(&self.db)
             .await?;
+        let mut previous_match: Option<ProjectRow> = None;
         for row in rows {
             let owner_matches =
                 normalize_optional(row.owner.as_deref()).as_deref() == Some(owner_name.as_str());
@@ -4088,9 +4119,28 @@ impl AppRepository {
             if owner_matches && project_matches {
                 return self.project_record_from_row(row).await;
             }
+            let previous_owner_matches = normalize_optional(row.previous_owner_login_id.as_deref())
+                .as_deref()
+                == Some(owner_name.as_str());
+            let previous_project_matches = normalize_optional(row.previous_name.as_deref())
+                .as_deref()
+                == Some(project_name.as_str());
+            if previous_owner_matches && previous_project_matches {
+                let should_replace = previous_match
+                    .as_ref()
+                    .and_then(|current| current.previous_name_changed_time)
+                    .unwrap_or_default()
+                    <= row.previous_name_changed_time.unwrap_or_default();
+                if should_replace {
+                    previous_match = Some(row);
+                }
+            }
         }
 
-        Ok(None)
+        match previous_match {
+            Some(row) => self.project_record_from_row(row).await,
+            None => Ok(None),
+        }
     }
 
     pub async fn project_identifier_exists(
@@ -4494,6 +4544,7 @@ impl AppRepository {
         active.project_scope = Set(Some(normalize_identity(&input.project_scope)));
         active.previous_name = Set(current.name.clone());
         active.previous_owner_login_id = Set(current.owner.clone());
+        active.previous_name_changed_time = Set(Some(current_timestamp_millis()));
         let updated = active.update(&self.db).await?;
         self.sync_project_label_cache(&updated).await?;
 
@@ -5175,6 +5226,176 @@ impl AppRepository {
             .await?;
         webhook::Entity::delete_by_id(row.id).exec(&self.db).await?;
         Ok(Some(self.list_project_webhooks(project_id).await?))
+    }
+
+    pub async fn next_project_transfer_name(
+        &self,
+        destination: &str,
+        project_name: &str,
+    ) -> Result<String, DbErr> {
+        let base = project_name.trim();
+        if base.is_empty() {
+            return Ok(String::new());
+        }
+        if self
+            .read_project_by_owner_and_name(destination, base)
+            .await?
+            .is_none()
+        {
+            return Ok(base.to_string());
+        }
+        for suffix in 1..1000 {
+            let candidate = format!("{base}-{suffix}");
+            if self
+                .read_project_by_owner_and_name(destination, &candidate)
+                .await?
+                .is_none()
+            {
+                return Ok(candidate);
+            }
+        }
+        Ok(format!("{base}-{}", current_timestamp_millis()))
+    }
+
+    pub async fn request_project_transfer(
+        &self,
+        input: ProjectTransferRequestInput,
+    ) -> Result<ProjectTransferRecord, DbErr> {
+        let destination = input.destination.trim().to_string();
+        let confirm_key = random_transfer_confirm_key();
+        let now = current_datetime();
+
+        let row = if let Some(existing) = project_transfer::Entity::find()
+            .filter(project_transfer::Column::ProjectId.eq(Some(input.project_id)))
+            .filter(project_transfer::Column::SenderId.eq(Some(input.sender_id)))
+            .filter(project_transfer::Column::Destination.eq(Some(destination.clone())))
+            .one(&self.db)
+            .await?
+        {
+            let mut active = project_transfer::ActiveModel::from(existing);
+            active.requested = Set(Some(now));
+            active.confirm_key = Set(Some(confirm_key));
+            active.accepted = Set(Some(0));
+            active.new_project_name = Set(Some(input.new_project_name));
+            active.update(&self.db).await?
+        } else {
+            project_transfer::ActiveModel {
+                id: NotSet,
+                sender_id: Set(Some(input.sender_id)),
+                destination: Set(Some(destination)),
+                project_id: Set(Some(input.project_id)),
+                requested: Set(Some(now)),
+                confirm_key: Set(Some(confirm_key)),
+                accepted: Set(Some(0)),
+                new_project_name: Set(Some(input.new_project_name)),
+            }
+            .insert(&self.db)
+            .await?
+        };
+
+        project_transfer_record_from_model(row).ok_or_else(|| {
+            DbErr::Custom("project transfer row missing required fields".to_string())
+        })
+    }
+
+    pub async fn read_valid_project_transfer(
+        &self,
+        transfer_id: i64,
+    ) -> Result<Option<ProjectTransferRecord>, DbErr> {
+        let Some(row) = project_transfer::Entity::find_by_id(transfer_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(record) = project_transfer_record_from_model(row) else {
+            return Ok(None);
+        };
+        if record.accepted {
+            return Ok(None);
+        }
+        if let Some(requested) = record.requested {
+            if current_datetime()
+                .signed_duration_since(requested)
+                .num_seconds()
+                > 24 * 60 * 60
+            {
+                return Ok(None);
+            }
+        }
+        Ok(Some(record))
+    }
+
+    pub async fn accept_project_transfer(
+        &self,
+        transfer_id: i64,
+    ) -> Result<Option<ProjectRecord>, DbErr> {
+        let Some(transfer) = self.read_valid_project_transfer(transfer_id).await? else {
+            return Ok(None);
+        };
+        let Some(project) = project::Entity::find_by_id(transfer.project_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+
+        let destination_user = self.find_user_by_login_id(&transfer.destination).await?;
+        let destination_organization = if destination_user.is_none() {
+            self.read_organization_by_name(&transfer.destination)
+                .await?
+        } else {
+            None
+        };
+        let organization_id = destination_organization
+            .as_ref()
+            .map(|organization| organization.id);
+
+        let previous_owner = project.owner.clone();
+        let previous_name = project.name.clone();
+        let new_project_name = self
+            .next_project_transfer_name(
+                &transfer.destination,
+                previous_name.as_deref().unwrap_or_default(),
+            )
+            .await?;
+        let mut active_project = project::ActiveModel::from(project);
+        active_project.owner = Set(Some(transfer.destination.clone()));
+        active_project.name = Set(Some(new_project_name.clone()));
+        active_project.organization_id = Set(organization_id);
+        active_project.previous_owner_login_id = Set(previous_owner);
+        active_project.previous_name = Set(previous_name);
+        active_project.previous_name_changed_time = Set(Some(current_timestamp_millis()));
+        let updated_project = active_project.update(&self.db).await?;
+
+        if let Some(sender_membership) = project_user::Entity::find()
+            .filter(project_user::Column::ProjectId.eq(Some(updated_project.id)))
+            .filter(project_user::Column::UserId.eq(Some(transfer.sender_id)))
+            .one(&self.db)
+            .await?
+        {
+            if self.role_name_for_id(sender_membership.role_id).await? == "manager" {
+                self.add_project_membership(updated_project.id, transfer.sender_id, "member")
+                    .await?;
+            }
+        }
+        if let Some(destination_user) = destination_user {
+            self.add_project_membership(updated_project.id, destination_user.id, "manager")
+                .await?;
+        }
+
+        if let Some(row) = project_transfer::Entity::find_by_id(transfer.id)
+            .one(&self.db)
+            .await?
+        {
+            let mut active_transfer = project_transfer::ActiveModel::from(row);
+            active_transfer.accepted = Set(Some(1));
+            active_transfer.new_project_name = Set(Some(new_project_name));
+            active_transfer.update(&self.db).await?;
+        }
+        self.sync_project_label_cache(&updated_project).await?;
+
+        self.project_record_from_model(updated_project).await
     }
 
     pub async fn read_project_menu_settings(
@@ -7816,6 +8037,8 @@ impl AppRepository {
             organization_name,
             owner_name,
             overview: row.overview,
+            previous_owner_name: row.previous_owner_login_id,
+            previous_project_name: row.previous_name,
             project_name,
             project_scope: row.project_scope.unwrap_or_else(|| "public".to_string()),
         }))
@@ -7852,6 +8075,8 @@ impl AppRepository {
             organization_name,
             owner_name,
             overview: model.overview,
+            previous_owner_name: model.previous_owner_login_id,
+            previous_project_name: model.previous_name,
             project_name,
             project_scope: model.project_scope.unwrap_or_else(|| "public".to_string()),
         }))

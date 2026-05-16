@@ -507,6 +507,30 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain('data-request-method="delete"');
   });
 
+  it("requires project transfer route to preserve legacy anchors and mutation wiring", () => {
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/transfer'");
+
+    const routePath = path.resolve(__dirname, "routes/$owner/$projectName/transfer/route.tsx");
+    expect(fs.existsSync(routePath)).toBe(true);
+    const routeSource = fs.readFileSync(routePath, "utf8");
+    expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).toContain("readProjectTransferQueryOptions");
+    expect(routeSource).toContain("requestProjectTransferRest");
+
+    const viewSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-project-views.tsx"),
+      "utf8",
+    );
+    expect(viewSource).toContain("ProjectTransferPage");
+    expect(viewSource).toContain('id="subMenuProjectTransfer"');
+    expect(viewSource).toContain('id="owner"');
+    expect(viewSource).toContain('id="accept"');
+    expect(viewSource).toContain('id="btnTransfer"');
+    expect(viewSource).toContain('id="alertTransfer"');
+    expect(viewSource).toContain('id="btnTransferExec"');
+  });
+
   it("keeps the public home title and entry CTA/navigation order stable", () => {
     const html = renderHome();
 
