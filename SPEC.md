@@ -187,9 +187,9 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 | Phase 0  | Rust workspace promotion, 문서 정리, provenance 갱신                         | ✅ **완료**                                   |
 | Phase 1  | 인증, Workspace, 조직, 프로젝트                                                | ✅ **완료**                                   |
 | Phase 2  | 이슈, 댓글, 첨부, 라벨, 마일스톤                                               | 🔶 부분 구현                                  |
-| Phase 3  | 저장소 브라우저, Smart HTTP, 커밋 토론, VCS                                    | 🔶 Phase 3I 구현                              |
-| Phase 4 | Pull Request, 코드 리뷰                              | 후속                                          |
-| Phase 5 | 검색, 게시판, 알림, 연동(Webhook)                    | 후속                                          |
+| Phase 3  | 저장소 브라우저, Smart HTTP, 커밋 토론, VCS                                    | 🔶 Phase 3J 구현                              |
+| Phase 4 | Pull Request, 코드 리뷰                              | 🔶 Phase 4B 구현                              |
+| Phase 5 | 검색, 게시판, 알림, 연동(Webhook)                    | 🔶 Phase 5F 구현                              |
 | Phase 6 | 관리자, 마이그레이션 도구, 배포 하드닝               | 후속                                          |
 
 ### 3.2 1차 PoC 완료 기준
@@ -374,9 +374,9 @@ GET   /organizations/:name/search                 → 조직 내 검색
 | 멤버 목록/추가/삭제/역할변경 | admin/member 역할 관리           | ✅ 구현                 | 1     |
 | 가입 요청/승인/취소/탈퇴     | 인증된 비멤버만 요청 가능        | ✅ 구현                 | 1     |
 | 조직 이슈 목록               | 조직 전체 프로젝트의 이슈 집계   | ✅ Phase 2F 구현        | 2     |
-| 조직 게시판 목록             | 조직 전체 프로젝트의 게시글 집계 | gap (placeholder route) | 5     |
-| 조직 PR 목록                 | 조직 전체 프로젝트의 PR 집계     | gap (placeholder route) | 4     |
-| 조직 내 검색                 | 조직 범위 검색                   | gap (placeholder route) | 5     |
+| 조직 게시판 목록             | 조직 전체 프로젝트의 게시글 집계 | ✅ Phase 5B 구현        | 5     |
+| 조직 PR 목록                 | 조직 전체 프로젝트의 PR 집계     | ✅ Phase 4A 구현        | 4     |
+| 조직 내 검색                 | 조직 범위 검색                   | ✅ Phase 5C 구현        | 5     |
 
 #### 검수 기준
 
@@ -675,7 +675,7 @@ GET   /:owner/:project/compare/:revA..:revB → 커밋 비교
 | 이미지 미리보기              | 이미지 파일 인라인 표시             | ✅ Phase 3B 구현      | 3     |
 | Archive 다운로드             | 브랜치 zip 다운로드                 | ✅ Phase 3C 구현      | 3     |
 | 커밋 이력                    | 커밋 목록, 페이지네이션             | ✅ Phase 3E 구현      | 3     |
-| 커밋 상세 (diff)             | 변경 파일 목록, unified diff        | 🔶 Phase 3I 구현      | 3     |
+| 커밋 상세 (diff)             | 변경 파일 목록, unified diff        | ✅ Phase 3F 구현      | 3     |
 | 커밋 댓글                    | 커밋에 댓글 작성/삭제, thread open/close | ✅ Phase 3I 구현      | 3     |
 | 브랜치 관리                  | 브랜치 목록, 삭제, 기본 브랜치 설정 | ✅ Phase 3H 구현      | 3     |
 | 커밋 비교                    | 두 revision 간 diff                 | ✅ Phase 3G 구현      | 3     |
@@ -1364,7 +1364,12 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/:owner/:project/postform`        | GET      | SPA                                   | `$owner/$projectName/postform`                | implemented (core) |
 | `/:owner/:project/post/:number`    | GET      | `GET /api/v1/projects/:owner/:project/posts/:number` | `$owner/$projectName/post/$postNumber`        | implemented (core) |
 | `/:owner/:project/post/:number/editform` | GET | SPA                                   | `$owner/$projectName/post/$postNumber/editform` | implemented (core) |
-| `/:owner/:project/pullRequests`    | GET      | —                                     | `$owner/$projectName/pullRequests`            | gap                |
+| `/:owner/:project/pullRequests`    | GET      | `GET /api/v1/owners/:owner/projects/:project/pull-requests?category=open` | `$owner/$projectName/pullRequests`            | implemented        |
+| `/:owner/:project/closedPullRequests` | GET   | `GET /api/v1/owners/:owner/projects/:project/pull-requests?category=closed` | `$owner/$projectName/closedPullRequests`      | implemented        |
+| `/:owner/:project/sentPullRequests` | GET     | `GET /api/v1/owners/:owner/projects/:project/pull-requests?category=sent` | `$owner/$projectName/sentPullRequests`        | implemented        |
+| `/:owner/:project/newPullRequestForm` | GET   | `GET /api/v1/owners/:owner/projects/:project/pull-requests/form-options` | `$owner/$projectName/newPullRequestForm`      | implemented        |
+| `/:owner/:project/pullRequest/:id` | GET      | `GET /api/v1/owners/:owner/projects/:project/pull-requests/:number` | `$owner/$projectName/pullRequest/$pullRequestNumber` | implemented        |
+| `/:owner/:project/pullRequest/:id/changes` | GET | `GET /api/v1/owners/:owner/projects/:project/pull-requests/:number/changes` | `$owner/$projectName/pullRequest/$pullRequestNumber/changes` | implemented        |
 | `/:owner/:project/code`            | GET      | `GET /api/v1/projects/:owner/:project/code` | `$owner/$projectName/code`                    | implemented (기본) |
 | `/:owner/:project/code/:branch/*`  | GET      | `GET /api/v1/projects/:owner/:project/code?branch=&path=` | `$owner/$projectName/code/$branch/$`          | implemented (기본) |
 | `/:owner/:project/code/:branch/download` | GET | direct Git archive zip                       | —                                             | implemented        |
