@@ -283,10 +283,34 @@ const PASSWORD_RESET_VERIFICATION_PREFIX: &str = "password-reset:";
 const SIGNUP_VERIFICATION_PREFIX: &str = "signup:";
 const USER_ATTACHMENT_CONTAINER: &str = "USER";
 const USER_AVATAR_ATTACHMENT_CONTAINER: &str = "USER_AVATAR";
+const ISSUE_ATTACHMENT_CONTAINER: &str = "ISSUE_POST";
+const RUST_ISSUE_ATTACHMENT_CONTAINER: &str = "ISSUE";
+const ISSUE_COMMENT_ATTACHMENT_CONTAINER: &str = "ISSUE_COMMENT";
+const BOARD_POST_ATTACHMENT_CONTAINER: &str = "BOARD_POST";
+const BOARD_COMMENT_ATTACHMENT_CONTAINER: &str = "NONISSUE_COMMENT";
+const RUST_BOARD_COMMENT_ATTACHMENT_CONTAINER: &str = "BOARD_POST_COMMENT";
+const MILESTONE_ATTACHMENT_CONTAINER: &str = "MILESTONE";
+const PULL_REQUEST_ATTACHMENT_CONTAINER: &str = "PULL_REQUEST";
+const REVIEW_COMMENT_ATTACHMENT_CONTAINER: &str = "REVIEW_COMMENT";
 
 enum PostingMentionNotificationMode {
     All,
     NewOnly,
+}
+
+fn attachment_container_aliases(container_type: &str) -> Vec<&str> {
+    match container_type {
+        ISSUE_ATTACHMENT_CONTAINER => {
+            vec![ISSUE_ATTACHMENT_CONTAINER, RUST_ISSUE_ATTACHMENT_CONTAINER]
+        }
+        BOARD_COMMENT_ATTACHMENT_CONTAINER => {
+            vec![
+                BOARD_COMMENT_ATTACHMENT_CONTAINER,
+                RUST_BOARD_COMMENT_ATTACHMENT_CONTAINER,
+            ]
+        }
+        _ => vec![container_type],
+    }
 }
 
 fn workspace_notification_enabled_by_default(event_type: &str) -> bool {
@@ -2405,8 +2429,12 @@ impl AppRepository {
 
         self.replace_issue_labels(created.id, project_record.id, &input.values.label_ids)
             .await?;
-        self.bind_attachments("ISSUE", created.id, &input.values.attachment_ids)
-            .await?;
+        self.bind_attachments(
+            ISSUE_ATTACHMENT_CONTAINER,
+            created.id,
+            &input.values.attachment_ids,
+        )
+        .await?;
         self.watch_issue(created.id, input.actor_id).await?;
         self.issue_record_from_model(created, &project_record, Some(input.actor_id))
             .await
@@ -2456,8 +2484,12 @@ impl AppRepository {
 
         self.replace_issue_labels(updated.id, project_record.id, &input.values.label_ids)
             .await?;
-        self.bind_attachments("ISSUE", updated.id, &input.values.attachment_ids)
-            .await?;
+        self.bind_attachments(
+            ISSUE_ATTACHMENT_CONTAINER,
+            updated.id,
+            &input.values.attachment_ids,
+        )
+        .await?;
         if old_assignee != updated.assignee_id {
             self.create_issue_event(
                 updated.id,
@@ -2539,7 +2571,13 @@ impl AppRepository {
             .exec(&self.db)
             .await?;
         attachment::Entity::delete_many()
-            .filter(attachment::Column::ContainerType.eq(Some("ISSUE".to_string())))
+            .filter(
+                attachment::Column::ContainerType.is_in(
+                    attachment_container_aliases(ISSUE_ATTACHMENT_CONTAINER)
+                        .into_iter()
+                        .map(Some),
+                ),
+            )
             .filter(attachment::Column::ContainerId.eq(model.id))
             .exec(&self.db)
             .await?;
@@ -2586,8 +2624,12 @@ impl AppRepository {
             &input.contents_markdown,
         )
         .await?;
-        self.bind_attachments("ISSUE_COMMENT", created.id, &input.attachment_ids)
-            .await?;
+        self.bind_attachments(
+            ISSUE_COMMENT_ATTACHMENT_CONTAINER,
+            created.id,
+            &input.attachment_ids,
+        )
+        .await?;
         self.recount_issue_comments(issue_model.id).await?;
         self.read_issue_detail(&input.owner_name, &input.project_name, input.issue_number)
             .await
@@ -2634,8 +2676,12 @@ impl AppRepository {
             &input.contents_markdown,
         )
         .await?;
-        self.bind_attachments("ISSUE_COMMENT", updated.id, &input.attachment_ids)
-            .await?;
+        self.bind_attachments(
+            ISSUE_COMMENT_ATTACHMENT_CONTAINER,
+            updated.id,
+            &input.attachment_ids,
+        )
+        .await?;
         self.read_issue_detail(&input.owner_name, &input.project_name, input.issue_number)
             .await
     }
@@ -2663,7 +2709,10 @@ impl AppRepository {
             return Ok(None);
         }
         attachment::Entity::delete_many()
-            .filter(attachment::Column::ContainerType.eq(Some("ISSUE_COMMENT".to_string())))
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(ISSUE_COMMENT_ATTACHMENT_CONTAINER.to_string())),
+            )
             .filter(attachment::Column::ContainerId.eq(comment_id))
             .exec(&self.db)
             .await?;
@@ -2999,8 +3048,12 @@ impl AppRepository {
 
             self.replace_posting_labels(created.id, project_record.id, &input.values.label_ids)
                 .await?;
-            self.bind_attachments("BOARD_POST", created.id, &input.values.attachment_ids)
-                .await?;
+            self.bind_attachments(
+                BOARD_POST_ATTACHMENT_CONTAINER,
+                created.id,
+                &input.values.attachment_ids,
+            )
+            .await?;
             self.watch_posting(created.id, input.actor_id).await?;
             return self
                 .posting_record_from_model(created, &project_record, Some(input.actor_id))
@@ -3053,8 +3106,12 @@ impl AppRepository {
         .await?;
         self.replace_posting_labels(updated.id, project_record.id, &input.values.label_ids)
             .await?;
-        self.bind_attachments("BOARD_POST", updated.id, &input.values.attachment_ids)
-            .await?;
+        self.bind_attachments(
+            BOARD_POST_ATTACHMENT_CONTAINER,
+            updated.id,
+            &input.values.attachment_ids,
+        )
+        .await?;
         self.posting_record_from_model(updated, &project_record, Some(input.actor_id))
             .await
             .map(Some)
@@ -3105,7 +3162,11 @@ impl AppRepository {
         {
             attachment::Entity::delete_many()
                 .filter(
-                    attachment::Column::ContainerType.eq(Some("BOARD_POST_COMMENT".to_string())),
+                    attachment::Column::ContainerType.is_in(
+                        attachment_container_aliases(BOARD_COMMENT_ATTACHMENT_CONTAINER)
+                            .into_iter()
+                            .map(Some),
+                    ),
                 )
                 .filter(attachment::Column::ContainerId.eq(comment.id))
                 .exec(&self.db)
@@ -3126,7 +3187,10 @@ impl AppRepository {
             .exec(&self.db)
             .await?;
         attachment::Entity::delete_many()
-            .filter(attachment::Column::ContainerType.eq(Some("BOARD_POST".to_string())))
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(BOARD_POST_ATTACHMENT_CONTAINER.to_string())),
+            )
             .filter(attachment::Column::ContainerId.eq(model.id))
             .exec(&self.db)
             .await?;
@@ -3185,8 +3249,12 @@ impl AppRepository {
             PostingMentionNotificationMode::All,
         )
         .await?;
-        self.bind_attachments("BOARD_POST_COMMENT", created.id, &input.attachment_ids)
-            .await?;
+        self.bind_attachments(
+            BOARD_COMMENT_ATTACHMENT_CONTAINER,
+            created.id,
+            &input.attachment_ids,
+        )
+        .await?;
         self.recount_posting_comments(posting_model.id).await?;
         self.read_posting_detail_for_viewer(
             &input.owner_name,
@@ -3242,8 +3310,12 @@ impl AppRepository {
             PostingMentionNotificationMode::All,
         )
         .await?;
-        self.bind_attachments("BOARD_POST_COMMENT", updated.id, &input.attachment_ids)
-            .await?;
+        self.bind_attachments(
+            BOARD_COMMENT_ATTACHMENT_CONTAINER,
+            updated.id,
+            &input.attachment_ids,
+        )
+        .await?;
         self.read_posting_detail_for_viewer(
             &input.owner_name,
             &input.project_name,
@@ -3277,7 +3349,13 @@ impl AppRepository {
             return Ok(None);
         }
         attachment::Entity::delete_many()
-            .filter(attachment::Column::ContainerType.eq(Some("BOARD_POST_COMMENT".to_string())))
+            .filter(
+                attachment::Column::ContainerType.is_in(
+                    attachment_container_aliases(BOARD_COMMENT_ATTACHMENT_CONTAINER)
+                        .into_iter()
+                        .map(Some),
+                ),
+            )
             .filter(attachment::Column::ContainerId.eq(comment_id))
             .exec(&self.db)
             .await?;
@@ -3991,8 +4069,12 @@ impl AppRepository {
             &input.contents_markdown,
         )
         .await?;
-        self.sync_attachments("MILESTONE", created.id, &input.attachment_ids)
-            .await?;
+        self.sync_attachments(
+            MILESTONE_ATTACHMENT_CONTAINER,
+            created.id,
+            &input.attachment_ids,
+        )
+        .await?;
         self.issue_milestone_record(created, &project)
             .await
             .map(Some)
@@ -4024,8 +4106,12 @@ impl AppRepository {
             &input.values.contents_markdown,
         )
         .await?;
-        self.sync_attachments("MILESTONE", updated.id, &input.values.attachment_ids)
-            .await?;
+        self.sync_attachments(
+            MILESTONE_ATTACHMENT_CONTAINER,
+            updated.id,
+            &input.values.attachment_ids,
+        )
+        .await?;
         self.issue_milestone_record(updated, &project)
             .await
             .map(Some)
@@ -4072,7 +4158,10 @@ impl AppRepository {
             .exec(&txn)
             .await?;
         attachment::Entity::delete_many()
-            .filter(attachment::Column::ContainerType.eq(Some("MILESTONE".to_string())))
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(MILESTONE_ATTACHMENT_CONTAINER.to_string())),
+            )
             .filter(attachment::Column::ContainerId.eq(row.id))
             .exec(&txn)
             .await?;
@@ -6336,8 +6425,12 @@ impl AppRepository {
             &input.values.body_markdown,
         )
         .await?;
-        self.bind_attachments("PULL_REQUEST", created.id, &input.values.attachment_ids)
-            .await?;
+        self.bind_attachments(
+            PULL_REQUEST_ATTACHMENT_CONTAINER,
+            created.id,
+            &input.values.attachment_ids,
+        )
+        .await?;
         self.watch_pull_request(created.id, input.actor_id).await?;
         self.create_pull_request_event(
             created.id,
@@ -6398,8 +6491,12 @@ impl AppRepository {
             &input.values.body_markdown,
         )
         .await?;
-        self.bind_attachments("PULL_REQUEST", updated.id, &input.values.attachment_ids)
-            .await?;
+        self.bind_attachments(
+            PULL_REQUEST_ATTACHMENT_CONTAINER,
+            updated.id,
+            &input.values.attachment_ids,
+        )
+        .await?;
 
         self.pull_request_detail_from_model(updated, &project, Some(input.actor_id))
             .await
@@ -6608,8 +6705,12 @@ impl AppRepository {
             &input.contents_markdown,
         )
         .await?;
-        self.bind_attachments("REVIEW_COMMENT", created.id, &input.attachment_ids)
-            .await?;
+        self.bind_attachments(
+            REVIEW_COMMENT_ATTACHMENT_CONTAINER,
+            created.id,
+            &input.attachment_ids,
+        )
+        .await?;
         self.create_pull_request_event(
             model.id,
             &input.actor_login_id,
@@ -6835,8 +6936,12 @@ impl AppRepository {
             &input.contents_markdown,
         )
         .await?;
-        self.bind_attachments("REVIEW_COMMENT", created.id, &input.attachment_ids)
-            .await?;
+        self.bind_attachments(
+            REVIEW_COMMENT_ATTACHMENT_CONTAINER,
+            created.id,
+            &input.attachment_ids,
+        )
+        .await?;
         let receiver_ids = self
             .commit_notification_receiver_ids(project.id, input.actor_id, "NEW_REVIEW_COMMENT")
             .await?;
@@ -8191,7 +8296,9 @@ impl AppRepository {
         let sharers = self.list_issue_sharers(model.id).await?;
         let comments = self.list_issue_comments(model.id, viewer_id).await?;
         let timeline = self.list_issue_timeline_items(model.id, viewer_id).await?;
-        let attachments = self.list_issue_attachments("ISSUE", model.id).await?;
+        let attachments = self
+            .list_issue_attachments(ISSUE_ATTACHMENT_CONTAINER, model.id)
+            .await?;
         let voter_count = self.count_issue_voters(model.id).await?;
         let watcher_count = self.count_issue_watchers(model.id).await?;
         let has_voted = match viewer_id {
@@ -9114,7 +9221,9 @@ impl AppRepository {
             None => false,
         };
         Ok(PostingRecord {
-            attachments: self.list_issue_attachments("BOARD_POST", model.id).await?,
+            attachments: self
+                .list_issue_attachments(BOARD_POST_ATTACHMENT_CONTAINER, model.id)
+                .await?,
             author_id: model.author_id,
             author_label: model.author_name.unwrap_or_default(),
             author_login_id: model.author_login_id.unwrap_or_default(),
@@ -9276,7 +9385,9 @@ impl AppRepository {
             .list_milestone_issues(project, row.id, "closed")
             .await?;
         Ok(IssueMilestoneRecord {
-            attachments: self.list_issue_attachments("MILESTONE", row.id).await?,
+            attachments: self
+                .list_issue_attachments(MILESTONE_ATTACHMENT_CONTAINER, row.id)
+                .await?,
             closed_issue_count,
             closed_issues,
             completion_percent,
@@ -9396,7 +9507,7 @@ impl AppRepository {
     ) -> Result<PostingCommentRecord, DbErr> {
         Ok(PostingCommentRecord {
             attachments: self
-                .list_issue_attachments("BOARD_POST_COMMENT", row.id)
+                .list_issue_attachments(BOARD_COMMENT_ATTACHMENT_CONTAINER, row.id)
                 .await?,
             author_id: row.author_id,
             author_label: row.author_name.unwrap_or_default(),
@@ -9419,7 +9530,9 @@ impl AppRepository {
         let viewer_has_voted = viewer_id
             .is_some_and(|viewer_id| voters.iter().any(|voter| voter.user_id == viewer_id));
         Ok(IssueCommentRecord {
-            attachments: self.list_issue_attachments("ISSUE_COMMENT", row.id).await?,
+            attachments: self
+                .list_issue_attachments(ISSUE_COMMENT_ATTACHMENT_CONTAINER, row.id)
+                .await?,
             author_id: row.author_id,
             author_label: row.author_name.unwrap_or_default(),
             author_login_id: row.author_login_id.unwrap_or_default(),
@@ -9516,7 +9629,13 @@ impl AppRepository {
         container_id: i64,
     ) -> Result<Vec<IssueAttachmentRecord>, DbErr> {
         Ok(attachment::Entity::find()
-            .filter(attachment::Column::ContainerType.eq(Some(container_type.to_string())))
+            .filter(
+                attachment::Column::ContainerType.is_in(
+                    attachment_container_aliases(container_type)
+                        .into_iter()
+                        .map(Some),
+                ),
+            )
             .filter(attachment::Column::ContainerId.eq(container_id))
             .order_by_asc(attachment::Column::Id)
             .all(&self.db)
@@ -9559,7 +9678,13 @@ impl AppRepository {
     ) -> Result<(), DbErr> {
         let keep: HashSet<i64> = attachment_ids.iter().copied().collect();
         let existing = attachment::Entity::find()
-            .filter(attachment::Column::ContainerType.eq(Some(container_type.to_string())))
+            .filter(
+                attachment::Column::ContainerType.is_in(
+                    attachment_container_aliases(container_type)
+                        .into_iter()
+                        .map(Some),
+                ),
+            )
             .filter(attachment::Column::ContainerId.eq(container_id))
             .all(&self.db)
             .await?;

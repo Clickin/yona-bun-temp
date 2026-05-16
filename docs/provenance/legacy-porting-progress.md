@@ -323,7 +323,7 @@ Interpretation:
 - [~] Issue comment attachment binding
 - [~] Milestone attachment binding
 - [x] File delete authorization
-- [ ] Full container type parity across issue/board/PR/project
+- [~] Full container type parity across issue/board/PR/project (legacy enum names for issue/board/PR/milestone; project logo/deferred containers remain)
 - [x] Global file size policy parity
 - [ ] MIME validation parity for all containers
 

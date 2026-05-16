@@ -916,7 +916,7 @@ POST  /files/:id              → legacy `_method=delete` 파일 삭제
 | 파일 업로드    | multipart form-data               | ✅ 구현   | 1     |
 | 파일 다운로드  | content-disposition               | ✅ 구현   | 1     |
 | 파일 삭제      | 작성자 또는 관리자                | ✅ 구현(업로드 작성자/site admin) | 2     |
-| Container type | 이슈/게시판/PR/프로젝트 등에 연결 | gap       | 2     |
+| Container type | 이슈/게시판/PR/프로젝트 등에 연결 | 🔶 부분 구현(legacy enum명: issue/board/PR/milestone) | 2     |
 | 파일 크기 제한 | `application.maxFileSize`         | ✅ 구현(`YONA_MAX_FILE_SIZE`) | 2     |
 | MIME type 검사 | 업로드 시 MIME 검사               | gap       | 2     |
 | 아바타 업로드  | 프로필 아바타 전용                | ✅ 구현   | 1     |

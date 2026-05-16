@@ -6,7 +6,11 @@ use http_body_util::BodyExt;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, NotSet, Set};
 use tempfile::tempdir;
 use tower::ServiceExt;
-use yona_rust_persistence::{site_admin, AppRepository};
+use yona_rust_persistence::{
+    site_admin, AppRepository, CreateIssueCommentInput, CreateIssueInput,
+    CreatePostingCommentInput, CreatePostingInput, CreateProjectInput, IssueMutationInput,
+    PostingMutationInput,
+};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
     create_router_with_app_repository, create_router_with_embedded_assets,
@@ -396,6 +400,151 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
         legacy_default_json["size"].as_i64(),
         Some(legacy_default_size_bytes.len() as i64)
     );
+}
+
+#[tokio::test]
+async fn attachment_binding_uses_legacy_container_type_names() {
+    let (app, repository, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+    let owner_id = register_user(app.clone(), &cookie_header, &csrf, "owner").await;
+    repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "owner".to_string(),
+            overview: Some("attachment container parity".to_string()),
+            project_name: "projectYobi".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+
+    let issue_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "issue-body-attachment.png",
+    )
+    .await;
+    let issue = repository
+        .create_issue(CreateIssueInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: "projectYobi".to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: None,
+                attachment_ids: vec![issue_file_id],
+                body_markdown: "issue body".to_string(),
+                label_ids: Vec::new(),
+                milestone_id: None,
+                title: "Issue with attachment".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("issue");
+    let issue_file = repository
+        .read_attachment_by_id(issue_file_id)
+        .await
+        .unwrap()
+        .expect("issue file");
+    assert_eq!(issue_file.container_type, "ISSUE_POST");
+    assert_eq!(issue_file.container_id, issue.id);
+
+    let issue_comment_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "issue-comment-attachment.png",
+    )
+    .await;
+    let issue_with_comment = repository
+        .create_issue_comment(CreateIssueCommentInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            attachment_ids: vec![issue_comment_file_id],
+            contents_markdown: "issue comment body".to_string(),
+            issue_number: issue.issue_number,
+            owner_name: "owner".to_string(),
+            project_name: "projectYobi".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("issue comment");
+    let issue_comment_id = issue_with_comment.comments[0].id;
+    let issue_comment_file = repository
+        .read_attachment_by_id(issue_comment_file_id)
+        .await
+        .unwrap()
+        .expect("issue comment file");
+    assert_eq!(issue_comment_file.container_type, "ISSUE_COMMENT");
+    assert_eq!(issue_comment_file.container_id, issue_comment_id);
+
+    let board_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "board-post-attachment.png",
+    )
+    .await;
+    let posting = repository
+        .create_posting(CreatePostingInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: "projectYobi".to_string(),
+            values: PostingMutationInput {
+                attachment_ids: vec![board_file_id],
+                body_markdown: "board body".to_string(),
+                label_ids: Vec::new(),
+                notice: false,
+                readme: false,
+                title: "Board post with attachment".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("posting");
+    let board_file = repository
+        .read_attachment_by_id(board_file_id)
+        .await
+        .unwrap()
+        .expect("board file");
+    assert_eq!(board_file.container_type, "BOARD_POST");
+    assert_eq!(board_file.container_id, posting.id);
+
+    let board_comment_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "board-comment-attachment.png",
+    )
+    .await;
+    let posting_with_comment = repository
+        .create_posting_comment(CreatePostingCommentInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            attachment_ids: vec![board_comment_file_id],
+            contents_markdown: "board comment body".to_string(),
+            owner_name: "owner".to_string(),
+            post_number: posting.post_number,
+            project_name: "projectYobi".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("posting comment");
+    let board_comment_id = posting_with_comment.comments[0].id;
+    let board_comment_file = repository
+        .read_attachment_by_id(board_comment_file_id)
+        .await
+        .unwrap()
+        .expect("board comment file");
+    assert_eq!(board_comment_file.container_type, "NONISSUE_COMMENT");
+    assert_eq!(board_comment_file.container_id, board_comment_id);
 }
 
 #[tokio::test]
