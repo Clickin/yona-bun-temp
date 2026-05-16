@@ -14,6 +14,7 @@
 - [`../core-parity-audit.md`](/G:/programming/yona/docs/provenance/core-parity-audit.md): current gap/deviation audit
 - [`legacy-test-inventory.md`](/G:/programming/yona/docs/provenance/phase-0b/legacy-test-inventory.md): capability별 legacy source와 Rust target layer inventory
 - [`organization.md`](/G:/programming/yona/docs/provenance/phase-0b/organization.md): organization create/read/update provenance
+- [`user-workspace.md`](/G:/programming/yona/docs/provenance/phase-0b/user-workspace.md): user workspace and public profile provenance
 - [`project.md`](/G:/programming/yona/docs/provenance/phase-0b/project.md): project, enrollment, workspace provenance
 - [`issue.md`](/G:/programming/yona/docs/provenance/phase-0b/issue.md): bounded issue authorization exemplar
 - [`code-browser.md`](/G:/programming/yona/docs/provenance/phase-0b/code-browser.md): read-only Git code browser provenance

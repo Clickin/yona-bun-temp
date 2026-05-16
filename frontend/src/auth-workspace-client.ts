@@ -152,6 +152,11 @@ import {
   type NotificationsListInput,
   type NotificationsListResponse,
 } from "./api/notifications";
+import {
+  readPublicUserProfile as readPublicUserProfileRest,
+  type PublicUserProfileInput,
+  type PublicUserProfileResponse,
+} from "./api/users";
 import { restFetch } from "./api/rest-client";
 import { readCurrentSessionRest } from "./api/session";
 import {
@@ -372,6 +377,14 @@ export async function readWorkspaceOverview(
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadWorkspaceOverviewResponse> {
   return readWorkspaceOverviewRest(runtimeConfig, fetchImpl);
+}
+
+export async function readPublicUserProfile(
+  runtimeConfig: RuntimeConfig,
+  input: PublicUserProfileInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PublicUserProfileResponse> {
+  return readPublicUserProfileRest(runtimeConfig, input, fetchImpl);
 }
 
 export async function listProjects(

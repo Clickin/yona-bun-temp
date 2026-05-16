@@ -7,6 +7,7 @@ import {
   renderHome,
   renderOrganizationDirectory,
   renderProjectDirectory,
+  renderPublicUserProfile,
   renderWorkspaceSettings,
 } from "./auth-workspace-shell.test-helpers";
 import {
@@ -550,6 +551,68 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain("Under Construction");
     expect(viewSource).toContain('className="page-wrap-outer"');
     expect(viewSource).toContain('className="project-page-wrap"');
+  });
+
+  it("requires the public user profile route to preserve the legacy single-segment shell", () => {
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/$user'");
+
+    const routePath = path.resolve(__dirname, "routes/$user/route.tsx");
+    expect(fs.existsSync(routePath)).toBe(true);
+    const routeSource = fs.readFileSync(routePath, "utf8");
+    expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).toContain("readPublicUserProfile");
+    expect(routeSource).toContain("PublicUserProfilePage");
+
+    const html = renderPublicUserProfile({
+      defaultLandingPath: "/me",
+      favoriteProjects: [],
+      issueItems: [],
+      memberProjects: [
+        {
+          createdLabel: "May 16, 2026",
+          lastPushedLabel: "May 16, 2026",
+          memberCount: 2,
+          ownerName: "owner",
+          overview: "Visible member project",
+          projectName: "publicYobi",
+          projectScope: "public",
+          watchCount: 3,
+        },
+      ],
+      profile: {
+        avatarUrl: "",
+        connectedSocialProviders: [],
+        displayName: "Door",
+        englishName: "Door English",
+        isBlocked: false,
+        isSiteAdmin: false,
+        loginId: "door",
+        primaryEmailAddress: "",
+        sinceLabel: "May 16, 2026",
+      },
+      pullRequestItems: [],
+      recentProjects: [],
+      session: {
+        defaultLandingPath: "/me",
+        emailAddress: "",
+        isAnonymous: true,
+        isConfirmed: false,
+        isSiteAdmin: false,
+        loginId: "anonymous",
+        userLabel: "Anonymous",
+      },
+    });
+
+    expect(html).toContain('class="site-breadcrumb-outer"');
+    expect(html).toContain('class="page-wrap-outer"');
+    expect(html).toContain('class="user-box"');
+    expect(html).toContain('id="daysAgoBtn"');
+    expect(html).toContain('href="/yona/owner/publicYobi"');
+    expect(html).toContain("Visible member project");
+    expect(html).not.toContain("Default landing");
+    expect(html).not.toContain("Sign out");
+    expect(html).not.toContain("Edit Profile");
   });
 
   it("keeps the public home title and entry CTA/navigation order stable", () => {

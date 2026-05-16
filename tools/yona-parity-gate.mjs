@@ -61,7 +61,7 @@ const NON_IMPLEMENTATION_FILES = new Set([
   "frontend/vite.config.ts",
 ]);
 
-const TEST_FILE_PATTERN = /(^tests\/)|(\/tests\/)|(\.spec\.)|(\.test\.)/i;
+const TEST_FILE_PATTERN = /(^tests\/)|(\/tests\/)|(\.spec\.)|(\.test\.)|(\.test-helpers\.)/i;
 const LEGACY_REFERENCE_PATTERN = /yona-original\//;
 
 const PARITY_SLICES = [
@@ -101,7 +101,6 @@ const PARITY_SLICES = [
     status: "gap",
     implementationPatterns: [
       /^frontend\/src\/app-view-models\.ts$/i,
-      /^frontend\/src\/auth-workspace-client\.ts$/i,
       /^frontend\/src\/api\/project-labels\.ts$/i,
       /^frontend\/src\/routes\/-view-models\.ts$/i,
       /^frontend\/src\/routes\/-milestone-views\.tsx$/i,
@@ -118,7 +117,10 @@ const DOMAIN_BUCKETS = [
     id: "frontend-api-query-boundary",
     label: "Frontend API query boundary",
     status: "partial",
-    implementationPatterns: [/^frontend\/src\/api\/query-keys\.ts$/i],
+    implementationPatterns: [
+      /^frontend\/src\/api\/query-keys\.ts$/i,
+      /^frontend\/src\/auth-workspace-client\.ts$/i,
+    ],
     testKeywords: [
       "api-query",
       "query",
@@ -128,9 +130,11 @@ const DOMAIN_BUCKETS = [
       "review",
       "project",
       "organization",
+      "user-profile",
     ],
     provenanceDocs: [
       "docs/provenance/core-parity-audit.md",
+      "docs/provenance/phase-0b/user-workspace.md",
       "docs/provenance/phase-0b/issue.md",
       "docs/provenance/phase-0b/pull-request-review.md",
     ],
@@ -191,6 +195,21 @@ const DOMAIN_BUCKETS = [
     provenanceDocs: [
       "docs/provenance/core-parity-audit.md",
       "docs/provenance/phase-0b/legacy-test-inventory.md",
+    ],
+  },
+  {
+    id: "public-user-profile",
+    label: "Public user profile",
+    status: "partial",
+    implementationPatterns: [
+      /^frontend\/src\/api\/users\.ts$/i,
+      /^frontend\/src\/routes\/\$user\/route\.tsx$/i,
+      /^frontend\/src\/routes\/-workspace-views\.tsx$/i,
+    ],
+    testKeywords: ["user-profile", "profile", "workspace", "route-parity"],
+    provenanceDocs: [
+      "docs/provenance/phase-0b/user-workspace.md",
+      "docs/provenance/core-parity-audit.md",
     ],
   },
   {
@@ -284,7 +303,6 @@ const DOMAIN_BUCKETS = [
     status: "gap",
     implementationPatterns: [
       /^frontend\/src\/app-view-models\.ts$/i,
-      /^frontend\/src\/auth-workspace-client\.ts$/i,
       /^frontend\/src\/api\/project-labels\.ts$/i,
       /^frontend\/src\/routes\/-view-models\.ts$/i,
       /^frontend\/src\/routes\/-milestone-views\.tsx$/i,

@@ -324,12 +324,13 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
 | 기본 랜딩 페이지 설정                       | 로그인 후 이동할 기본 경로                 | ✅ 구현      | 1     |
 | 방문 기록 초기화                            | 최근 방문 프로젝트 목록 리셋               | ✅ 구현      | 1     |
 | 프로젝트별 알림 설정                        | 프로젝트별 NEW_ISSUE, NEW_POSTING 등 토글  | ✅ 기본 구현 | 1     |
-| 사용자 프로필 공개 보기                     | `/:user` 경로로 다른 사용자 프로필 조회    | gap          | 2     |
+| 사용자 프로필 공개 보기                     | `/:user` 경로로 다른 사용자 프로필 조회    | ✅ 구현      | 2     |
 | 사용자 활동 통계                            | `?daysAgo=N`으로 활동 내역                 | gap          | 5     |
 
 #### 검수 기준
 
 - [ ] `/me` 화면에서 Issues / Pull Requests / Projects 탭이 legacy와 동일 구조로 표시된다
+- [x] `/:user` 공개 프로필은 legacy `user/view.scala.html`의 사용자 카드, Issues / Pull Requests / Projects 탭, 프로젝트 리스트 class anchor를 유지하고 공개 READ 가능한 프로젝트만 노출한다
 - [ ] 프로필 편집에서 아바타 업로드 시 `/files` 엔드포인트로 멀티파트 업로드 후 크롭이 동작한다
 - [ ] 복수 이메일 추가/삭제/인증/주 이메일 설정이 모두 동작한다
 - [ ] 프로젝트별 알림 토글이 legacy의 `NEW_COMMENT` 기본 off 동작을 따른다
@@ -1127,7 +1128,7 @@ legacy Yona 사용자가 기존 DB를 그대로 사용할 수 있어야 한다.
 
 **deviation 허용 사항**:
 
-- `/me` 경로: legacy에는 현재 사용자 workspace도 `/:username` 경로였으나, Rust 구현은 현재 사용자 workspace shortcut으로 `/me`를 유지한다. public profile `/:user` parity는 별도 Feature gap으로 추적한다. Provenance: `docs/provenance/core-parity-audit.md`.
+- `/me` 경로: legacy에는 현재 사용자 workspace도 `/:username` 경로였으나, Rust 구현은 현재 사용자 workspace shortcut으로 `/me`를 유지한다. public profile `/:user`는 별도 legacy route로 복원했으며 `/me` shortcut을 대체하지 않는다. Provenance: `docs/provenance/core-parity-audit.md`.
 - 설정 경로: legacy `/user/editform`은 canonical user-facing route로 유지한다. `/me/settings/*`가 존재하는 경우 내부 alias 또는 redirect로만 취급하며 legacy route를 대체하지 않는다.
 
 ### 6.3 UI 텍스트 규칙
@@ -1238,7 +1239,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | Repository 메서드 | ✅ 구현           | 100+ 쿼리 메서드                                                 |
 | Migration         | ✅ 구현           | adopt/up/validate 모드, multi-DB                                 |
 | 인증 플로우       | ✅ 구현           | 로그인/가입/비밀번호 찾기/이메일 인증                            |
-| Workspace         | ✅ 구현           | 대시보드, 설정, 이메일, 토큰, 아바타                             |
+| Workspace         | ✅ 구현           | 대시보드, 공개 프로필, 설정, 이메일, 토큰, 아바타                |
 | 조직 CRUD         | ✅ 구현           | 생성/수정/삭제/멤버/가입                                         |
 | 프로젝트 CRUD     | ✅ 구현           | 생성/수정/설정/감시/즐겨찾기/transfer request+accept/mail        |
 | 이슈              | ✅ Phase 2A 구현  | CRUD, 댓글, 타임라인, watch/vote/assignee, mass update, Markdown |
@@ -1353,6 +1354,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/verify/:loginId/:code`           | GET      | `POST /api/v1/auth/verify`            | `verify/$loginId/$code`                       | implemented        |
 | `/logout`                          | GET      | `POST /api/v1/auth/sign-out`          | —                                             | implemented        |
 | `/me`                              | GET      | SPA                                   | `me/`                                         | implemented        |
+| `/:user`                           | GET      | `GET /api/v1/users/:loginId/profile` | `$user/`                                      | implemented        |
 | `/user/editform`                   | GET      | SPA                                   | `user/editform/`                              | implemented        |
 | `/projects`                        | GET      | `GET /api/v1/projects`                | `projects/`                                   | implemented        |
 | `/projectform`                     | GET      | SPA                                   | `projects/new`                                | implemented        |
@@ -1409,7 +1411,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 | Snapshot category | REST replacement status |
 | ----------------- | ----------------------- |
 | Auth/session      | `/api/v1/session`, `/api/v1/auth/*` implemented |
-| Workspace         | `/api/v1/workspace/**` implemented |
+| Workspace         | `/api/v1/workspace/**`, `/api/v1/users/:loginId/profile` implemented |
 | Organization/project | `/api/v1/organizations/**`, `/api/v1/owners/:owner/projects/**`, `/api/v1/projects` implemented |
 | Issue core/meta   | `/api/v1/projects/:owner/:project/issues/**`, `/api/v1/organizations/:org/issues`, `/api/v1/user/issues`, `/api/v1/owners/:owner/projects/:project/assignable-users`, `/api/v1/owners/:owner/projects/:project/issue-references`, `/api/v1/owners/:owner/projects/:project/issues/:number/**` implemented |
 | Label/milestone   | `/api/v1/owners/:owner/projects/:project/labels/**`, `/api/v1/owners/:owner/projects/:project/milestones/**` implemented |

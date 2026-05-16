@@ -1452,6 +1452,111 @@ async fn rest_workspace_routes_manage_overview_settings_and_recent_projects() {
 }
 
 #[tokio::test]
+async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
+    let (app, repository) = build_app_with_repository().await;
+    let (_owner_csrf, _owner_cookie) = register_user(app.clone(), "owner").await;
+    let owner = repository
+        .find_user_by_identifier("owner")
+        .await
+        .unwrap()
+        .expect("registered owner");
+    let public_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "owner".to_string(),
+            overview: Some("Visible member project".to_string()),
+            project_name: "publicYobi".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+    let private_project = repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "owner".to_string(),
+            overview: Some("Hidden member project".to_string()),
+            project_name: "secretYobi".to_string(),
+            project_scope: "private".to_string(),
+        })
+        .await
+        .unwrap();
+    repository
+        .add_project_membership(public_project.id, owner.id, "member")
+        .await
+        .unwrap();
+    repository
+        .add_project_membership(private_project.id, owner.id, "member")
+        .await
+        .unwrap();
+
+    let profile = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/users/owner/profile?daysAgo=7&selected=projects",
+            None,
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(profile["daysAgo"], 7);
+    assert_eq!(profile["selected"], "projects");
+    assert_eq!(profile["profile"]["loginId"], "owner");
+    assert_eq!(profile["profile"]["displayName"], "owner");
+    assert_eq!(
+        profile["profile"]["primaryEmailAddress"]
+            .as_str()
+            .unwrap_or_default(),
+        ""
+    );
+    assert_eq!(profile["viewerCanEditProfile"], false);
+    assert_eq!(profile["issueItems"].as_array().unwrap().len(), 0);
+    assert_eq!(profile["pullRequestItems"].as_array().unwrap().len(), 0);
+    let projects = profile["memberProjects"].as_array().unwrap();
+    assert_eq!(projects.len(), 1);
+    assert_eq!(projects[0]["projectName"], "publicYobi");
+
+    let missing = rest(
+        app.clone(),
+        Method::GET,
+        "/yona/api/v1/users/missing/profile",
+        None,
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(missing.status(), StatusCode::NOT_FOUND);
+
+    let (admin_csrf, admin_cookie) = register_user(app.clone(), "admin").await;
+    let organization = create_organization_rest(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "weblabs",
+        "web labs",
+    )
+    .await;
+    assert_eq!(organization["organizationName"], "weblabs");
+
+    let redirect = ok_json(
+        rest(
+            app,
+            Method::GET,
+            "/yona/api/v1/users/weblabs/profile",
+            None,
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(redirect["redirectPath"], "/organizations/weblabs");
+}
+
+#[tokio::test]
 async fn rest_workspace_routes_preserve_error_status_and_envelope() {
     let (app, repository, _) = build_app_with_repository_and_db().await;
     let (csrf, cookie_header) = register_user(app.clone(), "door").await;

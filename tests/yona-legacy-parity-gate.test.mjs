@@ -67,6 +67,14 @@ test("ignores repo tooling and bootstrap files that do not define parity semanti
   assert.match(result.summary, /No implementation files/);
 });
 
+test("ignores frontend test helper files that support route parity tests", () => {
+  const result = runGate(["frontend/src/auth-workspace-shell.test-helpers.tsx"]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(result.implementationFiles.length, 0);
+  assert.match(result.summary, /No implementation files/);
+});
+
 test("blocks parity-complete canonical route changes without accompanying parity evidence", () => {
   const result = runGate(["frontend/src/routes/projects/route.tsx"]);
 
@@ -158,6 +166,25 @@ test("maps shared frontend query keys to the API query boundary", () => {
   assert.deepEqual(
     result.capabilities.map((entry) => entry.id),
     ["frontend-api-query-boundary"],
+  );
+});
+
+test("maps public user profile files to the user workspace provenance slice", () => {
+  const result = runGate([
+    "frontend/src/api/query-keys.ts",
+    "frontend/src/auth-workspace-client.ts",
+    "frontend/src/api/users.ts",
+    "frontend/src/routes/$user/route.tsx",
+    "frontend/src/routes/-workspace-views.tsx",
+    "frontend/tests/user-profile-parity.e2e.ts",
+    "docs/provenance/phase-0b/user-workspace.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["frontend-api-query-boundary", "public-user-profile"],
   );
 });
 
