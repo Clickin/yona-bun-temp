@@ -417,7 +417,7 @@ POST  /:owner/:project/transfer       → 프로젝트 이관
 GET   /project/transfer/:id/:key      → 프로젝트 이관 수락
 POST  /:owner/:project/enroll         → 프로젝트 가입 요청
 POST  /:owner/:project/cancel/enroll  → 프로젝트 가입 취소
-GET   /:owner/:project/statistics     → 프로젝트 통계
+GET   /:owner/:project/statistics     → 프로젝트 통계(legacy Under Construction shell)
 GET   /:owner/:project/changeVCS      → VCS 변경 폼
 POST  /:owner/:project/changeVCS      → VCS 변경
 ```
@@ -438,7 +438,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 | 웹훅 관리            | CRUD, event type, secret                           | ✅ CRUD 구현      | 5     |
 | 프로젝트 이관        | 다른 owner로 이관                                  | ✅ request/accept 구현 | 6     |
 | VCS 변경             | Git ↔ SVN                                          | deferred          | 2차   |
-| 프로젝트 통계        | 활동 통계                                          | gap               | 5     |
+| 프로젝트 통계        | Under Construction shell                          | ✅ legacy shell 구현 | 5     |
 | 프로젝트 메뉴 설정   | code/issue/milestone/board/pullRequest 토글        | ✅ 구현           | 1     |
 | 프로젝트 공개범위    | public/protected/private + ACL 체크                | ✅ 구현           | 1     |
 | Overview/README      | 마크다운 편집 가능한 프로젝트 소개                 | ✅ 구현           | 1     |

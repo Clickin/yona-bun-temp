@@ -8,6 +8,7 @@
 - Project enrollment request/cancel
 - Project watcher directory
 - Project delete confirmation flow
+- Project statistics under-construction shell
 - Workspace recent/favorite/default landing semantics
 
 ## Legacy Sources
@@ -18,12 +19,14 @@
 - `yona-original/test/models/RecentlyVisitedProjectsTest.java`
 - `yona-original/test/controllers/WatchProjectAppTest.java`
 - `yona-original/app/controllers/ProjectApp.java`
+- `yona-original/app/controllers/StatisticsApp.java`
 - `yona-original/app/views/project/members.scala.html`
 - `yona-original/app/views/project/watchers.scala.html`
 - `yona-original/app/views/project/webhooks.scala.html`
 - `yona-original/app/views/project/partial_webhooks_list.scala.html`
 - `yona-original/app/views/project/transfer.scala.html`
 - `yona-original/app/views/project/delete.scala.html`
+- `yona-original/app/views/project/statistics.scala.html`
 - `yona-original/app/views/project/partial_settingmenu.scala.html`
 - `yona-original/app/models/Webhook.java`
 - `yona-original/app/models/ProjectTransfer.java`
@@ -55,6 +58,7 @@
 | `ProjectApp.webhooks`, `newWebhook`, `deleteWebhook`, `project/webhooks.scala.html`, and `partial_webhooks_list.scala.html` | webhook administration is UPDATE-gated, stores payload URL, secret, webhook type, and gitPush, and preserves legacy form/list anchors | `GET/POST/DELETE /api/v1/owners/:owner/projects/:project/webhooks` + `/:owner/:project/webhooks` route + contract/route/Playwright assertions |
 | `ProjectApp.transferForm`, `transferProject`, `acceptTransfer`, `sendTransferRequestMail`, `ProjectTransfer.requestNewTransfer`, and `project/transfer.scala.html` | transfer is UPDATE-gated, stores a one-day confirm-key request, sends a destination accept-link mail, accepts only the destination user/org admin/site admin, moves owner/name, preserves previous owner/name aliasing, and updates sender/destination membership | `GET/POST /api/v1/owners/:owner/projects/:project/transfer` + `GET /project/transfer/:id/:key` + `/:owner/:project/transfer` route + contract/route/Playwright assertions |
 | `ProjectApp.deleteForm`, `deleteProject`, `Project.delete`, and `project/delete.scala.html` | delete is UPDATE-gated, uses the legacy checkbox/modal confirmation shell, removes dependent project state and the repository, then redirects to `/` | `DELETE /api/v1/owners/:owner/projects/:project` + `/:owner/:project/deleteform` route + contract/Playwright assertions |
+| `StatisticsApp.statistics` and `project/statistics.scala.html` | project statistics route is READ-gated by the default project check and renders only the legacy `Under Construction` shell inside `projectLayout` | `/:owner/:project/statistics` route + project container read + route/Playwright assertions for `.page-wrap-outer`, `.project-page-wrap`, and `Under Construction` |
 | `ProjectAppTest` visibility cases | public/protected/private visibility gates readable discovery | `crates/domain` read matrix + `crates/server` query contract test |
 | `EnrollProjectAppTest` | enrollment request and cancel stay guest-only, not-found for missing projects, idempotent | `crates/domain` enrollment service + `crates/server` mutation contract test |
 | `RecentlyVisitedProjectsTest` and `WatchProjectAppTest` | recent visits dedupe/reorder and favorites remain workspace-local behavior | `crates/domain` workspace service + `crates/persistence` workspace repo + `frontend` route/UI test |
@@ -64,7 +68,6 @@
 - org enrollment management
 - full workspace settings and default landing UX parity
 - change VCS
-- statistics
 - webhook delivery, event payload/HMAC compatibility, and delivery history/retry behavior
 
 이 항목들은 후속 follow-up과 provenance gap으로 계속 남는다.
@@ -83,3 +86,4 @@
 - The project delete closeout adds the UPDATE-gated legacy deep-link route for `/:owner/:project/deleteform`, app REST project deletion, dependent project-row cleanup, bare Git repository removal, and legacy `project/delete.scala.html` / setting-menu anchors.
 - The project webhook CRUD closeout adds the UPDATE-gated legacy deep-link route for `/:owner/:project/webhooks`, app REST list/create/delete, payload URL/secret/type/gitPush persistence, and legacy `project/webhooks.scala.html` / `partial_webhooks_list.scala.html` anchors. Webhook delivery, HMAC/signature compatibility, event fan-out, and delivery history remain explicit follow-up gaps.
 - The project transfer closeout adds the UPDATE-gated legacy deep-link route for `/:owner/:project/transfer`, app REST transfer request, legacy direct accept link `/project/transfer/:id/:key`, transfer request mail delivery through the outbound mail integration, `project_transfer` persistence, previous owner/name route aliasing, and sender/destination membership updates. Owner/name repository path move is intentionally not applicable to the Rust ID-based Git repository layout.
+- The project statistics closeout adds the legacy deep-link route for `/:owner/:project/statistics`, reads the normal project container, and preserves the `project/statistics.scala.html` under-construction shell instead of inventing computed statistics that legacy Yona did not expose.
