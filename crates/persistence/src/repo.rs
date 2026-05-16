@@ -313,6 +313,22 @@ fn attachment_container_aliases(container_type: &str) -> Vec<&str> {
     }
 }
 
+fn can_bind_attachment(
+    current_container_type: &str,
+    current_container_id: i64,
+    target_container_type: &str,
+    target_container_id: i64,
+    actor_id: Option<i64>,
+) -> bool {
+    let target_aliases = attachment_container_aliases(target_container_type);
+    let already_bound_to_target = current_container_id == target_container_id
+        && target_aliases.contains(&current_container_type);
+    let actor_owns_temporary_upload = actor_id.is_some_and(|actor_id| {
+        current_container_type == USER_ATTACHMENT_CONTAINER && current_container_id == actor_id
+    });
+    actor_id.is_none() || already_bound_to_target || actor_owns_temporary_upload
+}
+
 fn workspace_notification_enabled_by_default(event_type: &str) -> bool {
     !matches!(event_type, "NEW_COMMENT")
 }
@@ -2433,6 +2449,7 @@ impl AppRepository {
             ISSUE_ATTACHMENT_CONTAINER,
             created.id,
             &input.values.attachment_ids,
+            Some(input.actor_id),
         )
         .await?;
         self.watch_issue(created.id, input.actor_id).await?;
@@ -2488,6 +2505,7 @@ impl AppRepository {
             ISSUE_ATTACHMENT_CONTAINER,
             updated.id,
             &input.values.attachment_ids,
+            Some(actor_id),
         )
         .await?;
         if old_assignee != updated.assignee_id {
@@ -2628,6 +2646,7 @@ impl AppRepository {
             ISSUE_COMMENT_ATTACHMENT_CONTAINER,
             created.id,
             &input.attachment_ids,
+            Some(input.actor_id),
         )
         .await?;
         self.recount_issue_comments(issue_model.id).await?;
@@ -2680,6 +2699,7 @@ impl AppRepository {
             ISSUE_COMMENT_ATTACHMENT_CONTAINER,
             updated.id,
             &input.attachment_ids,
+            Some(input.actor_id),
         )
         .await?;
         self.read_issue_detail(&input.owner_name, &input.project_name, input.issue_number)
@@ -3052,6 +3072,7 @@ impl AppRepository {
                 BOARD_POST_ATTACHMENT_CONTAINER,
                 created.id,
                 &input.values.attachment_ids,
+                Some(input.actor_id),
             )
             .await?;
             self.watch_posting(created.id, input.actor_id).await?;
@@ -3110,6 +3131,7 @@ impl AppRepository {
             BOARD_POST_ATTACHMENT_CONTAINER,
             updated.id,
             &input.values.attachment_ids,
+            Some(input.actor_id),
         )
         .await?;
         self.posting_record_from_model(updated, &project_record, Some(input.actor_id))
@@ -3253,6 +3275,7 @@ impl AppRepository {
             BOARD_COMMENT_ATTACHMENT_CONTAINER,
             created.id,
             &input.attachment_ids,
+            Some(input.actor_id),
         )
         .await?;
         self.recount_posting_comments(posting_model.id).await?;
@@ -3314,6 +3337,7 @@ impl AppRepository {
             BOARD_COMMENT_ATTACHMENT_CONTAINER,
             updated.id,
             &input.attachment_ids,
+            Some(input.actor_id),
         )
         .await?;
         self.read_posting_detail_for_viewer(
@@ -4073,6 +4097,7 @@ impl AppRepository {
             MILESTONE_ATTACHMENT_CONTAINER,
             created.id,
             &input.attachment_ids,
+            None,
         )
         .await?;
         self.issue_milestone_record(created, &project)
@@ -4110,6 +4135,7 @@ impl AppRepository {
             MILESTONE_ATTACHMENT_CONTAINER,
             updated.id,
             &input.values.attachment_ids,
+            None,
         )
         .await?;
         self.issue_milestone_record(updated, &project)
@@ -6429,6 +6455,7 @@ impl AppRepository {
             PULL_REQUEST_ATTACHMENT_CONTAINER,
             created.id,
             &input.values.attachment_ids,
+            Some(input.actor_id),
         )
         .await?;
         self.watch_pull_request(created.id, input.actor_id).await?;
@@ -6495,6 +6522,7 @@ impl AppRepository {
             PULL_REQUEST_ATTACHMENT_CONTAINER,
             updated.id,
             &input.values.attachment_ids,
+            Some(input.actor_id),
         )
         .await?;
 
@@ -6709,6 +6737,7 @@ impl AppRepository {
             REVIEW_COMMENT_ATTACHMENT_CONTAINER,
             created.id,
             &input.attachment_ids,
+            Some(input.actor_id),
         )
         .await?;
         self.create_pull_request_event(
@@ -6940,6 +6969,7 @@ impl AppRepository {
             REVIEW_COMMENT_ATTACHMENT_CONTAINER,
             created.id,
             &input.attachment_ids,
+            Some(input.actor_id),
         )
         .await?;
         let receiver_ids = self
@@ -9655,12 +9685,22 @@ impl AppRepository {
         container_type: &str,
         container_id: i64,
         attachment_ids: &[i64],
+        actor_id: Option<i64>,
     ) -> Result<(), DbErr> {
         for attachment_id in attachment_ids {
             if let Some(row) = attachment::Entity::find_by_id(*attachment_id)
                 .one(&self.db)
                 .await?
             {
+                if !can_bind_attachment(
+                    row.container_type.as_deref().unwrap_or_default(),
+                    row.container_id,
+                    container_type,
+                    container_id,
+                    actor_id,
+                ) {
+                    continue;
+                }
                 let mut active = attachment::ActiveModel::from(row);
                 active.container_type = Set(Some(container_type.to_string()));
                 active.container_id = Set(container_id);
@@ -9675,6 +9715,7 @@ impl AppRepository {
         container_type: &str,
         container_id: i64,
         attachment_ids: &[i64],
+        actor_id: Option<i64>,
     ) -> Result<(), DbErr> {
         let keep: HashSet<i64> = attachment_ids.iter().copied().collect();
         let existing = attachment::Entity::find()
@@ -9695,7 +9736,7 @@ impl AppRepository {
                     .await?;
             }
         }
-        self.bind_attachments(container_type, container_id, attachment_ids)
+        self.bind_attachments(container_type, container_id, attachment_ids, actor_id)
             .await
     }
 

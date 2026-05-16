@@ -407,6 +407,8 @@ async fn attachment_binding_uses_legacy_container_type_names() {
     let (app, repository, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let owner_id = register_user(app.clone(), &cookie_header, &csrf, "owner").await;
+    let (other_csrf, other_cookie_header) = bootstrap(app.clone()).await;
+    let other_id = register_user(app.clone(), &other_cookie_header, &other_csrf, "other").await;
     repository
         .create_project(CreateProjectInput {
             organization_id: None,
@@ -418,6 +420,13 @@ async fn attachment_binding_uses_legacy_container_type_names() {
         .await
         .unwrap();
 
+    let other_issue_file_id = upload_image_file(
+        app.clone(),
+        &other_cookie_header,
+        &other_csrf,
+        "other-user-attachment.png",
+    )
+    .await;
     let issue_file_id = upload_image_file(
         app.clone(),
         &cookie_header,
@@ -434,7 +443,7 @@ async fn attachment_binding_uses_legacy_container_type_names() {
             project_name: "projectYobi".to_string(),
             values: IssueMutationInput {
                 assignee_login_id: None,
-                attachment_ids: vec![issue_file_id],
+                attachment_ids: vec![other_issue_file_id, issue_file_id],
                 body_markdown: "issue body".to_string(),
                 label_ids: Vec::new(),
                 milestone_id: None,
@@ -444,6 +453,15 @@ async fn attachment_binding_uses_legacy_container_type_names() {
         .await
         .unwrap()
         .expect("issue");
+    assert_eq!(issue.attachments.len(), 1);
+    assert_eq!(issue.attachments[0].id, issue_file_id);
+    let other_issue_file = repository
+        .read_attachment_by_id(other_issue_file_id)
+        .await
+        .unwrap()
+        .expect("other issue file");
+    assert_eq!(other_issue_file.container_type, "USER");
+    assert_eq!(other_issue_file.container_id, other_id);
     let issue_file = repository
         .read_attachment_by_id(issue_file_id)
         .await
