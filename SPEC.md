@@ -434,7 +434,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 | 감시자 (Watchers)    | 프로젝트 감시/해제, 감시자 목록                    | ✅ 구현           | 1     |
 | 즐겨찾기             | 프로젝트 즐겨찾기 토글                             | ✅ 구현           | 1     |
 | 가입 요청            | 비멤버가 가입 요청/취소                            | ✅ 구현           | 1     |
-| 웹훅 관리            | CRUD, event type, secret                           | gap               | 5     |
+| 웹훅 관리            | CRUD, event type, secret                           | ✅ CRUD 구현      | 5     |
 | 프로젝트 이관        | 다른 owner로 이관                                  | gap               | 6     |
 | VCS 변경             | Git ↔ SVN                                          | deferred          | 2차   |
 | 프로젝트 통계        | 활동 통계                                          | gap               | 5     |
@@ -452,6 +452,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 - [x] `/:owner/:project/watchers`는 READ 가능한 프로젝트의 실제 watcher 목록을 legacy `project/watchers.scala.html` class anchor로 표시한다
 - [x] `/:owner/:project/members`는 UPDATE 가능한 프로젝트의 멤버 추가/역할 변경/삭제/가입 요청 수락을 legacy `project/members.scala.html` class anchor와 `/api/v1/owners/:owner/projects/:project/members` REST mutation으로 제공한다
 - [x] `/:owner/:project/deleteform`은 UPDATE 가능한 프로젝트의 legacy `project/delete.scala.html` 확인 셸을 보존하고 `/api/v1/owners/:owner/projects/:project` DELETE로 프로젝트 DB 상태와 bare Git repository를 삭제한 뒤 `/`로 이동한다
+- [x] `/:owner/:project/webhooks`는 UPDATE 가능한 프로젝트의 legacy `project/webhooks.scala.html` form/list anchors를 보존하고 `/api/v1/owners/:owner/projects/:project/webhooks` REST CRUD로 payload URL, secret, webhook type, gitPush 값을 저장/삭제한다
 
 ---
 
@@ -874,7 +875,7 @@ DELETE /:owner/:project/webhooks/:id  → 웹훅 삭제
 
 | 기능        | Legacy 동작                              | 현재 상태 | Phase |
 | ----------- | ---------------------------------------- | --------- | ----- |
-| 웹훅 CRUD   | payload URL, secret, active, 이벤트 타입 | gap       | 5     |
+| 웹훅 CRUD   | payload URL, secret, active, 이벤트 타입 | ✅ 구현   | 5     |
 | 이벤트 발송 | JSON payload를 설정된 URL로 POST         | gap       | 5     |
 | Secret 검증 | HMAC-SHA256 서명                         | gap       | 5     |
 | 이벤트 타입 | issue, pull_request, comment, review 등  | gap       | 5     |
@@ -882,7 +883,7 @@ DELETE /:owner/:project/webhooks/:id  → 웹훅 삭제
 
 #### 검수 기준
 
-- [ ] 웹훅 생성: payload URL, secret, 이벤트 타입 선택 — legacy 동일
+- [x] 웹훅 생성/삭제: payload URL, secret, webhook type, gitPush 선택을 legacy `/webhooks` form/list shell과 app runtime REST CRUD로 제공한다
 - [ ] JSON payload: legacy `Webhook.sendPayload()` 포맷과 호환
 - [ ] Secret: `X-Yona-Signature` 헤더에 HMAC-SHA256 서명 포함
 - [ ] 실행 실패 시 재시도 로직 (legacy는 비동기 재시도)
@@ -1244,7 +1245,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | PR/리뷰           | 🔶 Phase 4B 구현  | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, 일반 PR comment, thread open/close. merge/fork/ranged inline review CRUD/branch cleanup은 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, mail queue staging |
-| 웹훅              | ❌ 미구현         | DB 엔티티만 존재                                                 |
+| 웹훅              | 🔶 CRUD 구현      | UPDATE-gated project webhook form/list CRUD; delivery/HMAC/history gap |
 | 관리자            | ❌ 미구현         |                                                                  |
 | 마크다운          | 🔶 이슈 범위 구현 | Issue body/comment sanitized HTML projection                     |
 | REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1` legacy external API는 app scope에서 미지원이며 별도 migrator/export/import deliverable로 분리 |
@@ -1416,7 +1417,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: read state, SMTP scheduler/delivery, draft-time merge, recipient limit, and full mail notification parity
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope
-- Webhook: project webhook CRUD
+- Webhook follow-up: event payload delivery, HMAC/signature compatibility, event-type fan-out, delivery history/retry behavior
 - Admin: users/projects/site-admin/account-lock/test-mail surfaces
 - Markdown: app-level markdown preview API if legacy evidence requires it
 

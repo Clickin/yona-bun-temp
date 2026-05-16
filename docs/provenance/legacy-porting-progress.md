@@ -9,14 +9,14 @@ Last updated: 2026-05-10
 
 | Scope                                   | Estimate | Basis                                                                                                                         |
 | --------------------------------------- | -------: | ----------------------------------------------------------------------------------------------------------------------------- |
-| Full legacy Yona parity                 |     ~44% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and separate migrator/external API compatibility. |
+| Full legacy Yona parity                 |     ~45% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and separate migrator/external API compatibility. |
 | Current first-priority conversion scope |     ~51% | Same as above, but excluding explicitly deferred second-priority items such as SVN, LDAP, import/export tooling, and legacy external API compatibility. |
-| Mechanical SPEC row count               |     ~35% | Phase -1 moved implemented application flows to `/api/v1` REST and removed runtime RPC; Phase 5B closes board/posting core rows and Phase 5C closes app search rows while many product rows remain gaps. |
+| Mechanical SPEC row count               |     ~36% | Phase -1 moved implemented application flows to `/api/v1` REST and removed runtime RPC; Phase 5B closes board/posting core rows, Phase 5C closes app search rows, and project webhook CRUD is now implemented while many product rows remain gaps. |
 
 Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace, organization/project ownership, issue-tracker core behavior, PR/review read surfaces, and board/posting core app behavior.
-- The largest remaining gaps are still code hosting/VCS write/serve flows, PR/review mutations and merge/fork lifecycle, board/posting follow-ups, notification fan-out/read state, webhooks, site admin, full-text/indexed search hardening, and separate migrator/external API compatibility.
+- The largest remaining gaps are still code hosting/VCS write/serve flows, PR/review merge/fork lifecycle, board/posting follow-ups, notification fan-out/read state, webhook delivery/HMAC/history, site admin, full-text/indexed search hardening, and separate migrator/external API compatibility.
 - Percentages are approximate. Update them only when a slice lands with tests and provenance updates.
 
 ## Update Protocol
@@ -42,7 +42,7 @@ Interpretation:
 | Pull Request / Review                   | [~] Started               | Phase 4A restores read-only project/org PR lists, PR detail, changes, and review lists; PR/review mutations remain deferred. |
 | Board / Posting                         | [~] Strong partial        | Project board CRUD/comment/watch/notice/README/label flows and organization board list exist over `/api/v1`; Git README sync, issue template/file edit, and legacy external API compatibility remain. |
 | Search                                  | [~] Strong partial        | Global/project/organization app search exists over `/api/v1` with all legacy result tabs, counts, snippets, pagination, and ACL filtering; full-text/indexed search and external API compatibility remain deferred. |
-| Notifications / Webhooks / Admin / External REST | [ ] Mostly missing | Notification inbox/list and mail queue staging exist; webhooks/admin remain missing, and `/-_-api/v1` compatibility is separate migrator scope. |
+| Notifications / Webhooks / Admin / External REST | [~] Partially implemented | Notification inbox/list and mail queue staging exist; webhook CRUD exists while delivery/HMAC/history and admin remain gaps; `/-_-api/v1` compatibility is separate migrator scope. |
 
 ## Foundation / Deployment / DB
 
@@ -132,7 +132,7 @@ Interpretation:
 - [x] Full project member management
 - [x] Project delete confirmation flow
 - [x] Project watchers page
-- [ ] Webhooks
+- [x] Webhook CRUD
 - [ ] Project transfer
 - [ ] Git/SVN type change
 - [ ] Project statistics
@@ -305,7 +305,7 @@ Interpretation:
 
 ## Webhooks
 
-- [ ] Webhook CRUD
+- [x] Webhook CRUD
 - [ ] Event payload generation
 - [ ] Secret/HMAC verification
 - [ ] Issue event type

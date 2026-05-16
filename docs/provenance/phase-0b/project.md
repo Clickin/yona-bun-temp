@@ -20,8 +20,11 @@
 - `yona-original/app/controllers/ProjectApp.java`
 - `yona-original/app/views/project/members.scala.html`
 - `yona-original/app/views/project/watchers.scala.html`
+- `yona-original/app/views/project/webhooks.scala.html`
+- `yona-original/app/views/project/partial_webhooks_list.scala.html`
 - `yona-original/app/views/project/delete.scala.html`
 - `yona-original/app/views/project/partial_settingmenu.scala.html`
+- `yona-original/app/models/Webhook.java`
 - `yona-original/app/models/Project.java`
 
 ## Current Baseline And Canonical Target
@@ -47,6 +50,7 @@
 | `ProjectApp.projectOverviewUpdate` | manager-level actor can update overview content | `crates/domain` update service + `crates/server` mutation contract test |
 | `ProjectApp.members`, `newMember`, `editMember`, `deleteMember` and `project/members.scala.html` | member administration is UPDATE-gated except self-leave, preserves owner guards, accepts enrollment requests through add-member, and uses legacy member row/action anchors | `GET/POST/PATCH/DELETE /api/v1/owners/:owner/projects/:project/members` + `/:owner/:project/members` route + contract/unit/Playwright assertions |
 | `ProjectApp.watchers` and `project/watchers.scala.html` | watcher directory is READ-gated, resolves actual project watchers, and preserves `page-wrap-outer` / `members project row-fluid` member list anchors | `GET /api/v1/owners/:owner/projects/:project/watchers` + `/:owner/:project/watchers` route + contract/unit/Playwright assertions |
+| `ProjectApp.webhooks`, `newWebhook`, `deleteWebhook`, `project/webhooks.scala.html`, and `partial_webhooks_list.scala.html` | webhook administration is UPDATE-gated, stores payload URL, secret, webhook type, and gitPush, and preserves legacy form/list anchors | `GET/POST/DELETE /api/v1/owners/:owner/projects/:project/webhooks` + `/:owner/:project/webhooks` route + contract/route/Playwright assertions |
 | `ProjectApp.deleteForm`, `deleteProject`, `Project.delete`, and `project/delete.scala.html` | delete is UPDATE-gated, uses the legacy checkbox/modal confirmation shell, removes dependent project state and the repository, then redirects to `/` | `DELETE /api/v1/owners/:owner/projects/:project` + `/:owner/:project/deleteform` route + contract/Playwright assertions |
 | `ProjectAppTest` visibility cases | public/protected/private visibility gates readable discovery | `crates/domain` read matrix + `crates/server` query contract test |
 | `EnrollProjectAppTest` | enrollment request and cancel stay guest-only, not-found for missing projects, idempotent | `crates/domain` enrollment service + `crates/server` mutation contract test |
@@ -57,7 +61,9 @@
 - project transfer
 - org enrollment management
 - full workspace settings and default landing UX parity
-- webhooks, change VCS, statistics
+- change VCS
+- statistics
+- webhook delivery, event payload/HMAC compatibility, and delivery history/retry behavior
 
 이 항목들은 후속 follow-up과 provenance gap으로 계속 남는다.
 
@@ -69,3 +75,4 @@
 - The project watcher closeout adds an app REST watcher directory and legacy deep-link route for `/:owner/:project/watchers`; unreadable projects keep the project READ denial while readable projects list actual watcher users with legacy member-row class anchors.
 - The project member management closeout adds the UPDATE-gated legacy deep-link route for `/:owner/:project/members`, app REST add/role/delete mutations, enrollment cleanup, member-accept notification/mail staging, owner/self-leave guards, and legacy `project/members.scala.html` class anchors.
 - The project delete closeout adds the UPDATE-gated legacy deep-link route for `/:owner/:project/deleteform`, app REST project deletion, dependent project-row cleanup, bare Git repository removal, and legacy `project/delete.scala.html` / setting-menu anchors.
+- The project webhook CRUD closeout adds the UPDATE-gated legacy deep-link route for `/:owner/:project/webhooks`, app REST list/create/delete, payload URL/secret/type/gitPush persistence, and legacy `project/webhooks.scala.html` / `partial_webhooks_list.scala.html` anchors. Webhook delivery, HMAC/signature compatibility, event fan-out, and delivery history remain explicit follow-up gaps.

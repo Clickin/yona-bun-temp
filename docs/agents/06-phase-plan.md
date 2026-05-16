@@ -77,10 +77,11 @@
 
 - Phase 5B complete: Board/Posting core parity over `/api/v1/**`, including project post list/detail/create/edit/delete, comments, labels, notice pinning, DB-backed README rendering, watch toggle, notification target resolution for posting resources, organization board aggregation, and dedicated `board-posting-parity.e2e.ts`.
 - Phase 5C complete: Search app surface parity over `/api/v1/**`, including global, project, and organization search; legacy search tabs/classes; fixed page size 20; `auto` search type resolution; counts, snippets, highlighting metadata, pagination, project-scope project-type rejection, and ACL-aware result filtering for issue/user/project/post/milestone/issue-comment/post-comment/review result types.
+- Phase 5D partial: Project webhook CRUD parity over `/api/v1/**`, including UPDATE-gated `/:owner/:project/webhooks`, legacy `webhook-editor-wrap` / form/list anchors, payload URL/secret/type/gitPush persistence, and create/delete mutations. Delivery, HMAC/signature compatibility, event fan-out, and delivery history are not implemented in this slice.
 - Remaining board follow-ups: Git-backed README commit/sync, issue template edit, online code file edit, and legacy external `/-_-api/v1/**` compatibility for migrator scope.
 - Remaining search follow-ups: full-text/index-backed search, ranking beyond legacy sort, async indexing, and legacy external `/-_-api/v1/**` search compatibility only if the separate migrator/export scope requires it.
 - notifications
-- integrations
+- integrations follow-ups: webhook delivery, HMAC/signature compatibility, event-type fan-out, delivery history/retry behavior
 
 ## Phase 6: 관리자 기능과 하드닝
 

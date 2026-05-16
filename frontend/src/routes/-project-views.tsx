@@ -1,7 +1,13 @@
 import * as React from "react";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { BoardPostDetail } from "../api/boards";
-import type { ProjectMembersResponse, ProjectWatchersResponse } from "../api/org-project";
+import type {
+  ProjectMembersResponse,
+  ProjectWebhookInput,
+  ProjectWebhooksResponse,
+  ProjectWebhookType,
+  ProjectWatchersResponse,
+} from "../api/org-project";
 import type { ProjectDetailViewModel } from "./-view-models";
 
 export function buildProjectHref(
@@ -599,6 +605,223 @@ export function ProjectMembersPage(props: {
               </div>
             </>
           ) : null}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export function ProjectWebhooksPage(props: {
+  detail: ProjectWebhooksResponse | null | undefined;
+  pending?: boolean;
+  projectDetail?: ProjectDetailViewModel | null | undefined;
+  runtimeConfig: RuntimeConfig;
+  onCreateWebhook?: (input: ProjectWebhookInput) => void;
+  onDeleteWebhook?: (webhookId: number) => void;
+}) {
+  const detail = props.detail ?? {
+    ownerName: props.projectDetail?.ownerName ?? "",
+    projectName: props.projectDetail?.projectName ?? "",
+    viewerCanUpdate: props.projectDetail?.viewerCanUpdate ?? false,
+    webhookTypes: ["SIMPLE", "DETAIL_SLACK", "DETAIL_HANGOUT_CHAT", "JSON"] as ProjectWebhookType[],
+    webhooks: [],
+  };
+  const menuDetail: ProjectDetailViewModel = props.projectDetail
+    ? {
+        ...props.projectDetail,
+        ownerName: detail.ownerName,
+        projectName: detail.projectName,
+        showCode: props.projectDetail.showCode ?? true,
+        viewerCanUpdate: detail.viewerCanUpdate,
+      }
+    : {
+        enrollmentRequested: false,
+        isFavorited: false,
+        organizationName: "",
+        overview: "",
+        ownerName: detail.ownerName,
+        projectName: detail.projectName,
+        projectScope: "public",
+        showCode: true,
+        viewerCanEnroll: false,
+        viewerCanUpdate: detail.viewerCanUpdate,
+      };
+  const [formState, setFormState] = React.useState<ProjectWebhookInput>({
+    gitPush: false,
+    payloadUrl: "",
+    secret: "",
+    webhookType: "SIMPLE",
+  });
+  const webhooksPath = `/${detail.ownerName}/${detail.projectName}/webhooks`;
+
+  const updateWebhookType = (webhookType: ProjectWebhookType) => {
+    setFormState((current) => ({
+      ...current,
+      gitPush: webhookType === "JSON" ? true : false,
+      webhookType,
+    }));
+  };
+
+  return (
+    <main className="app-shell">
+      <ProjectMenu detail={menuDetail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap webhook-editor-wrap">
+          <ProjectSettingsSubMenu
+            active="webhooks"
+            detail={menuDetail}
+            runtimeConfig={props.runtimeConfig}
+          />
+          <div className="content-wrap frm-wrap">
+            <form
+              action={prefixBasePath(props.runtimeConfig.basePath, webhooksPath)}
+              className="new-webhook-wrap"
+              id="formNewWebhook"
+              method="post"
+              onSubmit={(event) => {
+                event.preventDefault();
+                props.onCreateWebhook?.(formState);
+                setFormState({
+                  gitPush: false,
+                  payloadUrl: "",
+                  secret: "",
+                  webhookType: "SIMPLE",
+                });
+              }}
+            >
+              <fieldset>
+                <legend className="form-legend">project.webhook.add</legend>
+                <div className="form-wrap">
+                  <label htmlFor="payloadUrl">project.webhook.payloadUrl</label>
+                  <input
+                    className="input-webhook-payload"
+                    id="payloadUrl"
+                    maxLength={2000}
+                    name="payloadUrl"
+                    onChange={(event) =>
+                      setFormState((current) => ({
+                        ...current,
+                        payloadUrl: event.target.value,
+                      }))
+                    }
+                    required
+                    type="url"
+                    value={formState.payloadUrl}
+                  />
+                </div>
+                <div className="form-wrap">
+                  <label htmlFor="secret">project.webhook.secret</label>
+                  <input
+                    className="input-webhook-secret"
+                    id="secret"
+                    maxLength={250}
+                    name="secret"
+                    onChange={(event) =>
+                      setFormState((current) => ({
+                        ...current,
+                        secret: event.target.value,
+                      }))
+                    }
+                    type="text"
+                    value={formState.secret}
+                  />
+                </div>
+                <div className="form-wrap">
+                  {detail.webhookTypes.map((webhookType) => (
+                    <label className="radio inline" key={webhookType}>
+                      <input
+                        checked={formState.webhookType === webhookType}
+                        name="webhookType"
+                        onChange={() => updateWebhookType(webhookType)}
+                        type="radio"
+                        value={webhookType}
+                      />
+                      {` project.webhook.type.${webhookType}`}
+                    </label>
+                  ))}
+                </div>
+                <div className="form-wrap">
+                  <label className="checkbox" htmlFor="gitPush">
+                    <input
+                      checked={formState.gitPush}
+                      className="form-check-input"
+                      disabled={formState.webhookType === "JSON"}
+                      id="gitPush"
+                      name="gitPush"
+                      onChange={(event) =>
+                        setFormState((current) => ({
+                          ...current,
+                          gitPush: event.target.checked,
+                        }))
+                      }
+                      type="checkbox"
+                    />
+                    project.webhook.gitPush
+                  </label>
+                </div>
+                <div className="form-wrap form-actions">
+                  <button
+                    className="ybtn ybtn-primary btn-submit"
+                    disabled={props.pending}
+                    type="submit"
+                  >
+                    button.add
+                  </button>
+                </div>
+              </fieldset>
+            </form>
+
+            <div className="webhook-list-wrap" id="webhooksList">
+              {detail.webhooks.length === 0 ? (
+                <div className="error-wrap">
+                  <i className="ico ico-err1" />
+                  <p>project.webhook.list.empty</p>
+                </div>
+              ) : (
+                <>
+                  <div className="row-fluid list-head">
+                    <div className="span5 payload-url">project.webhook.payloadUrl</div>
+                    <div className="span2 secret text-center">project.webhook.secret</div>
+                    <div className="span2 text-center">project.webhook.type</div>
+                    <div className="span1 text-center">project.webhook.gitPush</div>
+                    <div className="span2 text-right">button.delete</div>
+                  </div>
+                  {detail.webhooks.map((webhook) => (
+                    <div
+                      className="row-fluid list-item vertical-align"
+                      data-webhook-id={webhook.id}
+                      key={webhook.id}
+                    >
+                      <div className="span5 payload-url">{webhook.payloadUrl}</div>
+                      <div className="span2 secret text-center">{webhook.secret || "NONE"}</div>
+                      <div className="span2 text-center">{webhook.webhookType}</div>
+                      <div className="span1 text-center">
+                        <input checked={webhook.gitPush} readOnly type="checkbox" />
+                      </div>
+                      <div className="span2 text-right">
+                        <button
+                          className="ybtn ybtn-danger ybtn-small"
+                          data-request-method="delete"
+                          data-request-uri={prefixBasePath(
+                            props.runtimeConfig.basePath,
+                            `${webhooksPath}/${webhook.id}`,
+                          )}
+                          disabled={props.pending}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            props.onDeleteWebhook?.(webhook.id);
+                          }}
+                          type="button"
+                        >
+                          button.delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </main>

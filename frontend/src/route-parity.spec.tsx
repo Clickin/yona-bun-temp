@@ -480,6 +480,33 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain('id="btnDeleteExec"');
   });
 
+  it("requires project webhooks route to preserve legacy anchors and mutation wiring", () => {
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/webhooks'");
+
+    const routePath = path.resolve(__dirname, "routes/$owner/$projectName/webhooks/route.tsx");
+    expect(fs.existsSync(routePath)).toBe(true);
+    const routeSource = fs.readFileSync(routePath, "utf8");
+    expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).toContain("readProjectWebhooksQueryOptions");
+    expect(routeSource).toContain("createProjectWebhookRest");
+    expect(routeSource).toContain("deleteProjectWebhookRest");
+
+    const viewSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-project-views.tsx"),
+      "utf8",
+    );
+    expect(viewSource).toContain("ProjectWebhooksPage");
+    expect(viewSource).toContain("webhook-editor-wrap");
+    expect(viewSource).toContain('id="formNewWebhook"');
+    expect(viewSource).toContain("input-webhook-payload");
+    expect(viewSource).toContain("input-webhook-secret");
+    expect(viewSource).toContain('id="gitPush"');
+    expect(viewSource).toContain('id="webhooksList"');
+    expect(viewSource).toContain("data-webhook-id");
+    expect(viewSource).toContain('data-request-method="delete"');
+  });
+
   it("keeps the public home title and entry CTA/navigation order stable", () => {
     const html = renderHome();
 
