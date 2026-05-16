@@ -31,9 +31,9 @@ use crate::repo_types::{
     ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
     UpdateOrganizationInput, UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
     UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestInput,
-    UserIssueCandidateRecord, UserIssueListFilter, WatchedProjectNotificationsRecord,
-    WorkspaceEmailRecord, WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
-    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    UserIssueCandidateRecord, UserIssueListFilter, UserStatisticsRecord,
+    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
+    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
@@ -5927,6 +5927,59 @@ impl AppRepository {
         }
 
         Ok(pull_requests)
+    }
+
+    pub async fn read_user_statistics(&self, user_id: i64) -> Result<UserStatisticsRecord, DbErr> {
+        let issue = issue::Entity::find()
+            .filter(issue::Column::AuthorId.eq(Some(user_id)))
+            .count(&self.db)
+            .await? as u32;
+        let posting = posting::Entity::find()
+            .filter(posting::Column::AuthorId.eq(Some(user_id)))
+            .count(&self.db)
+            .await? as u32;
+        let issue_comment = issue_comment::Entity::find()
+            .filter(issue_comment::Column::AuthorId.eq(Some(user_id)))
+            .count(&self.db)
+            .await? as u32;
+        let posting_comment = posting_comment::Entity::find()
+            .filter(posting_comment::Column::AuthorId.eq(Some(user_id)))
+            .count(&self.db)
+            .await? as u32;
+        let issue_voter = issue_voter::Entity::find()
+            .filter(issue_voter::Column::UserId.eq(Some(user_id)))
+            .count(&self.db)
+            .await? as u32;
+        let issue_comment_voter = issue_comment_voter::Entity::find()
+            .filter(issue_comment_voter::Column::UserId.eq(Some(user_id)))
+            .count(&self.db)
+            .await? as u32;
+
+        let assignee_ids = assignee::Entity::find()
+            .filter(assignee::Column::UserId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect::<Vec<_>>();
+        let assigned_issue = if assignee_ids.is_empty() {
+            0
+        } else {
+            issue::Entity::find()
+                .filter(issue::Column::AssigneeId.is_in(assignee_ids.into_iter().map(Some)))
+                .count(&self.db)
+                .await? as u32
+        };
+
+        Ok(UserStatisticsRecord {
+            assigned_issue,
+            issue,
+            issue_comment,
+            issue_comment_voter,
+            issue_voter,
+            posting,
+            posting_comment,
+        })
     }
 
     pub async fn list_project_pull_requests(

@@ -162,5 +162,7 @@ export const apiQueryKeys = {
   user: {
     profile: (loginId: string, input: { daysAgo: number | null; selected: string | null }) =>
       [...apiQueryKeys.v1(), "users", loginId, "profile", input] as const,
+    statistics: (loginId: string) =>
+      [...apiQueryKeys.v1(), "users", loginId, "statistics"] as const,
   },
 };

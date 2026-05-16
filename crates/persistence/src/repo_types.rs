@@ -1247,6 +1247,17 @@ pub struct WorkspaceMemberProjectRecord {
     pub watch_count: u32,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct UserStatisticsRecord {
+    pub assigned_issue: u32,
+    pub issue: u32,
+    pub issue_comment: u32,
+    pub issue_comment_voter: u32,
+    pub issue_voter: u32,
+    pub posting: u32,
+    pub posting_comment: u32,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ToggleFavoriteProjectResult {
     pub favorited: bool,

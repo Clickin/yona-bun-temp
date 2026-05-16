@@ -325,12 +325,13 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
 | 방문 기록 초기화                            | 최근 방문 프로젝트 목록 리셋               | ✅ 구현      | 1     |
 | 프로젝트별 알림 설정                        | 프로젝트별 NEW_ISSUE, NEW_POSTING 등 토글  | ✅ 기본 구현 | 1     |
 | 사용자 프로필 공개 보기                     | `/:user` 경로로 다른 사용자 프로필 조회    | ✅ 구현      | 2     |
-| 사용자 활동 통계                            | `?daysAgo=N`으로 활동 내역                 | gap          | 5     |
+| 사용자 활동 통계                            | 사용자별 이슈/게시글/댓글/투표 통계        | ✅ 기본 구현 | 5     |
 
 #### 검수 기준
 
 - [ ] `/me` 화면에서 Issues / Pull Requests / Projects 탭이 legacy와 동일 구조로 표시된다
 - [x] `/:user` 공개 프로필은 legacy `user/view.scala.html`의 사용자 카드, Issues / Pull Requests / Projects 탭, 프로젝트 리스트 class anchor를 유지하고 공개 READ 가능한 프로젝트만 노출한다
+- [x] `GET /api/v1/users/:loginId/statistics`는 legacy `UserApi.statistics`의 `issue`, `posting`, `assignedIssue`, `issueComment`, `postingComment`, `issueVoter`, `issueCommentVoter` count 필드를 app-runtime REST로 제공한다
 - [ ] 프로필 편집에서 아바타 업로드 시 `/files` 엔드포인트로 멀티파트 업로드 후 크롭이 동작한다
 - [ ] 복수 이메일 추가/삭제/인증/주 이메일 설정이 모두 동작한다
 - [ ] 프로젝트별 알림 토글이 legacy의 `NEW_COMMENT` 기본 off 동작을 따른다
@@ -1354,7 +1355,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/verify/:loginId/:code`           | GET      | `POST /api/v1/auth/verify`            | `verify/$loginId/$code`                       | implemented        |
 | `/logout`                          | GET      | `POST /api/v1/auth/sign-out`          | —                                             | implemented        |
 | `/me`                              | GET      | SPA                                   | `me/`                                         | implemented        |
-| `/:user`                           | GET      | `GET /api/v1/users/:loginId/profile` | `$user/`                                      | implemented        |
+| `/:user`                           | GET      | `GET /api/v1/users/:loginId/profile`; `GET /api/v1/users/:loginId/statistics` | `$user/`                                      | implemented        |
 | `/user/editform`                   | GET      | SPA                                   | `user/editform/`                              | implemented        |
 | `/projects`                        | GET      | `GET /api/v1/projects`                | `projects/`                                   | implemented        |
 | `/projectform`                     | GET      | SPA                                   | `projects/new`                                | implemented        |

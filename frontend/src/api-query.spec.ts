@@ -18,6 +18,7 @@ import {
   organizationSearchQueryOptions,
   projectSearchQueryOptions,
 } from "./api/search";
+import { readUserStatisticsQueryOptions } from "./api/users";
 
 describe("api query keys", () => {
   it("includes owner, project, and query in project issue-reference keys", () => {
@@ -227,6 +228,15 @@ describe("api query keys", () => {
         searchType: "post",
       }),
     );
+  });
+
+  it("builds user statistics query options from canonical user keys", () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+
+    const options = readUserStatisticsQueryOptions(runtimeConfig, "owner");
+
+    expect(options.queryKey).toEqual(apiQueryKeys.user.statistics("owner"));
+    expect(options.queryFn).toEqual(expect.any(Function));
   });
 
   it("uses PATCH for board update REST mutations", async () => {

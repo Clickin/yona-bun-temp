@@ -8,7 +8,11 @@ use sea_orm::{
 use serde_json::json;
 use serde_json::Value;
 use tower::ServiceExt;
-use yona_rust_persistence::{email, watch, AppRepository, CreateProjectInput};
+use yona_rust_persistence::{
+    email, watch, AppRepository, CreateIssueCommentInput, CreateIssueInput,
+    CreatePostingCommentInput, CreatePostingInput, CreateProjectInput, IssueMutationInput,
+    PostingMutationInput,
+};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router, create_router_with_app_repository, RuntimeConfig};
 
@@ -1554,6 +1558,178 @@ async fn rest_public_user_profile_reads_legacy_single_segment_profile() {
     )
     .await;
     assert_eq!(redirect["redirectPath"], "/organizations/weblabs");
+}
+
+#[tokio::test]
+async fn rest_user_statistics_counts_legacy_activity_rows() {
+    let (app, repository) = build_app_with_repository().await;
+    let (_owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    let (_other_csrf, _other_cookie) = register_user(app.clone(), "other").await;
+    let owner = repository
+        .find_user_by_identifier("owner")
+        .await
+        .unwrap()
+        .expect("owner");
+    let other = repository
+        .find_user_by_identifier("other")
+        .await
+        .unwrap()
+        .expect("other");
+    repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "owner".to_string(),
+            overview: Some("statistics parity".to_string()),
+            project_name: "statsYobi".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+    let authored_issue = repository
+        .create_issue(CreateIssueInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner.id,
+            actor_login_id: "owner".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: "statsYobi".to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: None,
+                attachment_ids: Vec::new(),
+                body_markdown: "owner issue body".to_string(),
+                label_ids: Vec::new(),
+                milestone_id: None,
+                title: "owner issue".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("authored issue");
+    repository
+        .create_issue(CreateIssueInput {
+            actor_display_name: "other".to_string(),
+            actor_id: other.id,
+            actor_login_id: "other".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: "statsYobi".to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: Some("owner".to_string()),
+                attachment_ids: Vec::new(),
+                body_markdown: "assigned issue body".to_string(),
+                label_ids: Vec::new(),
+                milestone_id: None,
+                title: "assigned issue".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("assigned issue");
+    let commented_issue = repository
+        .create_issue_comment(CreateIssueCommentInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner.id,
+            actor_login_id: "owner".to_string(),
+            attachment_ids: Vec::new(),
+            contents_markdown: "owner issue comment".to_string(),
+            issue_number: authored_issue.issue_number,
+            owner_name: "owner".to_string(),
+            project_name: "statsYobi".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("issue comment");
+    let issue_comment_id = commented_issue.comments[0].id;
+    let posting = repository
+        .create_posting(CreatePostingInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner.id,
+            actor_login_id: "owner".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: "statsYobi".to_string(),
+            values: PostingMutationInput {
+                attachment_ids: Vec::new(),
+                body_markdown: "owner post body".to_string(),
+                label_ids: Vec::new(),
+                notice: false,
+                readme: false,
+                title: "owner posting".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("posting");
+    repository
+        .create_posting_comment(CreatePostingCommentInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner.id,
+            actor_login_id: "owner".to_string(),
+            attachment_ids: Vec::new(),
+            contents_markdown: "owner posting comment".to_string(),
+            owner_name: "owner".to_string(),
+            post_number: posting.post_number,
+            project_name: "statsYobi".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("posting comment");
+    repository
+        .vote_issue(authored_issue.id, owner.id)
+        .await
+        .unwrap();
+    repository
+        .vote_issue_comment(issue_comment_id, owner.id)
+        .await
+        .unwrap();
+
+    let unauthenticated = rest(
+        app.clone(),
+        Method::GET,
+        "/yona/api/v1/users/owner/statistics",
+        None,
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let statistics = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/users/owner/statistics",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(statistics["issue"], 1);
+    assert_eq!(statistics["posting"], 1);
+    assert_eq!(statistics["assignedIssue"], 1);
+    assert_eq!(statistics["issueComment"], 1);
+    assert_eq!(statistics["postingComment"], 1);
+    assert_eq!(statistics["issueVoter"], 1);
+    assert_eq!(statistics["issueCommentVoter"], 1);
+
+    let missing = ok_json(
+        rest(
+            app,
+            Method::GET,
+            "/yona/api/v1/users/missing/statistics",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(missing["issue"], 0);
+    assert_eq!(missing["posting"], 0);
+    assert_eq!(missing["assignedIssue"], 0);
+    assert_eq!(missing["issueComment"], 0);
+    assert_eq!(missing["postingComment"], 0);
+    assert_eq!(missing["issueVoter"], 0);
+    assert_eq!(missing["issueCommentVoter"], 0);
 }
 
 #[tokio::test]

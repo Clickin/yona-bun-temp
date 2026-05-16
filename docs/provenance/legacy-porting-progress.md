@@ -11,7 +11,7 @@ Last updated: 2026-05-16
 | --------------------------------------- | -------: | ----------------------------------------------------------------------------------------------------------------------------- |
 | Full legacy Yona parity                 |     ~49% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and separate migrator/external API compatibility. |
 | Current first-priority conversion scope |     ~56% | Same as above, but excluding explicitly deferred second-priority items such as SVN, LDAP, import/export tooling, and legacy external API compatibility. |
-| Mechanical SPEC row count               |     ~45% | Phase -1 moved implemented application flows to `/api/v1` REST and removed runtime RPC; Phase 3J closes Git browser/history/compare/branch-admin/provisioning rows, Phase 4B closes PR interaction rows, Phase 5B closes board/posting core rows, Phase 5C closes app search rows, and project webhook CRUD, transfer request/accept/mail, legacy project statistics shell, plus the public `/:user` profile route are now implemented while many product rows remain gaps. |
+| Mechanical SPEC row count               |     ~46% | Phase -1 moved implemented application flows to `/api/v1` REST and removed runtime RPC; Phase 3J closes Git browser/history/compare/branch-admin/provisioning rows, Phase 4B closes PR interaction rows, Phase 5B closes board/posting core rows, Phase 5C closes app search rows, and project webhook CRUD, transfer request/accept/mail, legacy project statistics shell, public `/:user` profile route, plus user statistics counts are now implemented while many product rows remain gaps. |
 
 Interpretation:
 
@@ -35,7 +35,7 @@ Interpretation:
 | Area                                    | Status                    | Notes                                                                                                                    |
 | --------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | Foundation / DB / runtime               | [~] Mostly implemented    | Schema, migrations, `/api/v1` REST runtime, assets are strong; production migration/import/export is not.                |
-| Auth / Workspace                        | [~] Partially implemented | Core account and settings flows exist; remember-me/admin approval/guest/OAuth/LDAP remain.                               |
+| Auth / Workspace                        | [~] Partially implemented | Core account, settings, public profile, and user statistics count flows exist; remember-me/admin approval/guest/OAuth/LDAP remain. |
 | Organization / Project core             | [~] Partially implemented | CRUD, members, enrollment, watch/favorite, webhook CRUD, transfer request/accept/mail, and the legacy project statistics shell exist; change VCS, Smart HTTP clone URL behavior, and webhook delivery remain. |
 | Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists, favorite issue, direct/project sharer effects, and issue/comment mention row effects exist over `/api/v1`; legacy external REST parity is separate migrator scope. |
 | VCS / Code hosting                      | [~] Strong partial        | Git code browser, raw/open/image streaming, archive download, syntax/line rendering, commit history/detail/compare, commit discussion, branch admin, and project-create provisioning exist; Smart HTTP, push hooks, and SVN remain. |
@@ -93,7 +93,7 @@ Interpretation:
 - [x] Avatar upload/crop/display
 - [x] Watched project notification preference basics
 - [x] Public profile route `/:user`
-- [ ] User activity statistics
+- [x] User activity statistics
 - [x] Favorite issue management
 - [x] User aggregate issue list
 

@@ -188,6 +188,22 @@ test("maps public user profile files to the user workspace provenance slice", ()
   );
 });
 
+test("maps user statistics API client changes to user workspace provenance", () => {
+  const result = runGate([
+    "frontend/src/api/query-keys.ts",
+    "frontend/src/api/users.ts",
+    "frontend/src/api-query.spec.ts",
+    "docs/provenance/phase-0b/user-workspace.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["frontend-api-query-boundary", "public-user-profile"],
+  );
+});
+
 test("maps board posting frontend files before generic project routes", () => {
   const result = runGate([
     "frontend/src/api/boards.ts",

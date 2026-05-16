@@ -206,7 +206,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/routes\/\$user\/route\.tsx$/i,
       /^frontend\/src\/routes\/-workspace-views\.tsx$/i,
     ],
-    testKeywords: ["user-profile", "profile", "workspace", "route-parity"],
+    testKeywords: ["user-profile", "profile", "workspace", "route-parity", "api-query"],
     provenanceDocs: [
       "docs/provenance/phase-0b/user-workspace.md",
       "docs/provenance/core-parity-audit.md",

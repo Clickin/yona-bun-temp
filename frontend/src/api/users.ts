@@ -26,6 +26,16 @@ export type PublicUserProfileInput = {
   selected?: string | null;
 };
 
+export type UserStatisticsResponse = {
+  assignedIssue: number;
+  issue: number;
+  issueComment: number;
+  issueCommentVoter: number;
+  issueVoter: number;
+  posting: number;
+  postingComment: number;
+};
+
 function normalizePublicUserProfileResponse(
   response: PublicUserProfileResponse,
 ): PublicUserProfileResponse {
@@ -64,6 +74,18 @@ function publicUserProfilePath(input: PublicUserProfileInput): string {
   return `/users/${encodeURIComponent(input.loginId)}/profile${suffix ? `?${suffix}` : ""}`;
 }
 
+function normalizeUserStatisticsResponse(response: UserStatisticsResponse): UserStatisticsResponse {
+  return {
+    assignedIssue: response.assignedIssue ?? 0,
+    issue: response.issue ?? 0,
+    issueComment: response.issueComment ?? 0,
+    issueCommentVoter: response.issueCommentVoter ?? 0,
+    issueVoter: response.issueVoter ?? 0,
+    posting: response.posting ?? 0,
+    postingComment: response.postingComment ?? 0,
+  };
+}
+
 export async function readPublicUserProfile(
   runtimeConfig: RuntimeConfig,
   input: PublicUserProfileInput,
@@ -87,5 +109,25 @@ export function readPublicUserProfileQueryOptions(
       daysAgo: input.daysAgo ?? null,
       selected: input.selected ?? null,
     }),
+  });
+}
+
+export async function readUserStatistics(
+  runtimeConfig: RuntimeConfig,
+  loginId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<UserStatisticsResponse> {
+  const response = await restFetch<UserStatisticsResponse>(
+    runtimeConfig,
+    `/users/${encodeURIComponent(loginId)}/statistics`,
+    { fetchImpl },
+  );
+  return normalizeUserStatisticsResponse(response);
+}
+
+export function readUserStatisticsQueryOptions(runtimeConfig: RuntimeConfig, loginId: string) {
+  return queryOptions({
+    queryFn: () => readUserStatistics(runtimeConfig, loginId),
+    queryKey: apiQueryKeys.user.statistics(loginId),
   });
 }
