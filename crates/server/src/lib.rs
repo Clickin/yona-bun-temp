@@ -233,6 +233,10 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let file_base_path = base_path.clone();
     let file_read_session_manager = session_manager.clone();
     let file_read_backend = route_backend.clone();
+    let file_delete_post_session_manager = session_manager.clone();
+    let file_delete_post_backend = route_backend.clone();
+    let file_delete_session_manager = session_manager.clone();
+    let file_delete_backend = route_backend.clone();
     let label_list_backend = route_backend.clone();
     let label_list_session_manager = session_manager.clone();
     let label_create_backend = route_backend.clone();
@@ -391,6 +395,28 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         id,
                         file_read_session_manager.clone(),
                         file_read_backend.clone(),
+                    )
+                    .await
+                }
+            })
+            .post(move |headers: HeaderMap, Path(id): Path<i64>| {
+                async move {
+                    delete_uploaded_file(
+                        headers,
+                        id,
+                        file_delete_post_session_manager.clone(),
+                        file_delete_post_backend.clone(),
+                    )
+                    .await
+                }
+            })
+            .delete(move |headers: HeaderMap, Path(id): Path<i64>| {
+                async move {
+                    delete_uploaded_file(
+                        headers,
+                        id,
+                        file_delete_session_manager.clone(),
+                        file_delete_backend.clone(),
                     )
                     .await
                 }
@@ -13412,6 +13438,53 @@ async fn get_uploaded_file(
         return StatusCode::NOT_FOUND.into_response();
     };
     ([(http::header::CONTENT_TYPE, attachment.mime_type)], bytes).into_response()
+}
+
+async fn delete_uploaded_file(
+    headers: HeaderMap,
+    attachment_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
+    if !session_manager.validate_csrf(&headers, &session) {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    let Some(actor_id) = session.user_id else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
+    let PilotBackend::Repository(repository) = &backend else {
+        return StatusCode::NOT_IMPLEMENTED.into_response();
+    };
+    let Ok(Some(actor)) = repository.find_user_by_id(actor_id).await else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
+
+    match repository
+        .delete_attachment_for_actor(
+            attachment_id,
+            actor.id,
+            &actor.login_id,
+            actor.is_site_admin,
+        )
+        .await
+    {
+        Ok(persistence::DeleteAttachmentResult::Deleted(attachment)) => {
+            if !attachment.hash.is_empty() {
+                let _ = std::fs::remove_file(uploaded_file_path(&attachment.hash));
+            }
+            (
+                StatusCode::OK,
+                "Both the attachment and its origin file are removed successfully.",
+            )
+                .into_response()
+        }
+        Ok(persistence::DeleteAttachmentResult::Forbidden) => StatusCode::FORBIDDEN.into_response(),
+        Ok(persistence::DeleteAttachmentResult::NotFound) => StatusCode::NOT_FOUND.into_response(),
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+    }
 }
 
 async fn workspace_avatar_url(

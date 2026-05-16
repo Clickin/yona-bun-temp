@@ -906,6 +906,7 @@ DELETE /:owner/:project/webhooks/:id  → 웹훅 삭제
 POST  /files                  → 파일 업로드
 GET   /files/:id              → 파일 다운로드
 DELETE /files/:id             → 파일 삭제
+POST  /files/:id              → legacy `_method=delete` 파일 삭제
 ```
 
 #### 기능 목록과 상태
@@ -914,7 +915,7 @@ DELETE /files/:id             → 파일 삭제
 | -------------- | --------------------------------- | --------- | ----- |
 | 파일 업로드    | multipart form-data               | ✅ 구현   | 1     |
 | 파일 다운로드  | content-disposition               | ✅ 구현   | 1     |
-| 파일 삭제      | 작성자 또는 관리자                | gap       | 2     |
+| 파일 삭제      | 작성자 또는 관리자                | ✅ 구현(업로드 작성자/site admin) | 2     |
 | Container type | 이슈/게시판/PR/프로젝트 등에 연결 | gap       | 2     |
 | 파일 크기 제한 | `application.maxFileSize`         | gap       | 2     |
 | MIME type 검사 | 업로드 시 MIME 검사               | gap       | 2     |
@@ -924,6 +925,7 @@ DELETE /files/:id             → 파일 삭제
 
 - [ ] 업로드: multipart POST → 파일 저장 → ID 반환
 - [ ] 다운로드: `GET /files/:id` → 원본 파일명 + MIME type + content
+- [x] 삭제: `DELETE /files/:id` 또는 legacy `POST /files/:id` → 업로드 작성자 또는 site admin만 삭제 가능
 - [ ] 마크다운 에디터에서 drag-and-drop 또는 클립보드 붙여넣기로 이미지 첨부 가능
 - [ ] `YONA_MAX_FILE_SIZE` 설정값 초과 시 업로드 거부
 
@@ -1393,6 +1395,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/search`                          | GET      | `GET /api/v1/search`                 | `search/`                                     | implemented        |
 | `/files`                           | POST     | `POST /files` direct                  | —                                             | implemented        |
 | `/files/:id`                       | GET      | `GET /files/:id` direct               | —                                             | implemented        |
+| `/files/:id`                       | POST/DELETE | `POST/DELETE /files/:id` direct    | —                                             | implemented        |
 | `/notification`                    | GET      | `GET /api/v1/notifications`           | `notification/`                               | implemented (기본) |
 | `/sites/*`                         | GET      | —                                     | —                                             | gap                |
 | `/-_-api/v1/*`                     | Various  | —                                     | —                                             | unsupported in app; migrator/deferred |

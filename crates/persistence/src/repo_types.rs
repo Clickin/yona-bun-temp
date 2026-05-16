@@ -942,6 +942,13 @@ pub struct AttachmentRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DeleteAttachmentResult {
+    Deleted(AttachmentRecord),
+    Forbidden,
+    NotFound,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WorkspaceIssueListItemRecord {
     pub assignee_label: String,
     pub author_label: String,

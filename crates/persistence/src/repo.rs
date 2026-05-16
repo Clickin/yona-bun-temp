@@ -4,7 +4,7 @@ use crate::repo_types::{
     CreateIssueCommentInput, CreateIssueInput, CreateOrganizationInput, CreatePostingCommentInput,
     CreatePostingInput, CreateProjectInput, CreateProjectLabelCategoryInput,
     CreateProjectLabelInput, CreateProjectWebhookInput, CreatePullRequestCommentInput,
-    CreatePullRequestInput, CreatePullRequestResult, CreateUserInput,
+    CreatePullRequestInput, CreatePullRequestResult, CreateUserInput, DeleteAttachmentResult,
     DeleteCommitDiscussionCommentInput, IssueAssignableUserRecord, IssueAssignableUserSearchRecord,
     IssueAttachmentRecord, IssueCommentRecord, IssueCommentVoterRecord, IssueLabelCategoryRecord,
     IssueLabelRecord, IssueListFilter, IssueMentionUserRecord, IssueMentionUserSearchRecord,
@@ -7473,6 +7473,48 @@ impl AppRepository {
             owner_login_id: model.owner_login_id.unwrap_or_default(),
             size: model.size.unwrap_or_default(),
         }))
+    }
+
+    pub async fn delete_attachment_for_actor(
+        &self,
+        attachment_id: i64,
+        actor_id: i64,
+        actor_login_id: &str,
+        actor_is_site_admin: bool,
+    ) -> Result<DeleteAttachmentResult, DbErr> {
+        let Some(model) = attachment::Entity::find_by_id(attachment_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(DeleteAttachmentResult::NotFound);
+        };
+
+        let record = AttachmentRecord {
+            container_id: model.container_id,
+            container_type: model.container_type.clone().unwrap_or_default(),
+            hash: model.hash.clone().unwrap_or_default(),
+            id: model.id,
+            mime_type: model.mime_type.clone().unwrap_or_default(),
+            name: model.name.clone().unwrap_or_default(),
+            owner_login_id: model.owner_login_id.clone().unwrap_or_default(),
+            size: model.size.unwrap_or_default(),
+        };
+        let actor_login_id = normalize_identity(actor_login_id);
+        let owner_login_id = normalize_identity(&record.owner_login_id);
+        let owns_temporary_upload = matches!(
+            record.container_type.as_str(),
+            USER_ATTACHMENT_CONTAINER | USER_AVATAR_ATTACHMENT_CONTAINER
+        ) && record.container_id == actor_id;
+        let owns_uploaded_file = !owner_login_id.is_empty() && owner_login_id == actor_login_id;
+        if !actor_is_site_admin && !owns_temporary_upload && !owns_uploaded_file {
+            return Ok(DeleteAttachmentResult::Forbidden);
+        }
+
+        attachment::Entity::delete_by_id(model.id)
+            .exec(&self.db)
+            .await?;
+
+        Ok(DeleteAttachmentResult::Deleted(record))
     }
 
     pub async fn promote_avatar_attachment_for_user(

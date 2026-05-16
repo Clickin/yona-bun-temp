@@ -3,10 +3,10 @@ use std::fs;
 use axum::body::Body;
 use http::{Method, Request, StatusCode};
 use http_body_util::BodyExt;
-use sea_orm::{Database, DatabaseConnection};
+use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, NotSet, Set};
 use tempfile::tempdir;
 use tower::ServiceExt;
-use yona_rust_persistence::AppRepository;
+use yona_rust_persistence::{site_admin, AppRepository};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
     create_router_with_app_repository, create_router_with_embedded_assets,
@@ -82,6 +82,67 @@ fn multipart_body(file_name: &str, mime_type: &str, bytes: &[u8]) -> (String, Ve
     body.extend_from_slice(bytes);
     body.extend_from_slice(format!("\r\n--{boundary}--\r\n").as_bytes());
     (boundary.to_string(), body)
+}
+
+async fn register_user(app: axum::Router, cookie_header: &str, csrf: &str, login_id: &str) -> i64 {
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, cookie_header)
+                .header("x-csrf-token", csrf)
+                .body(Body::from(format!(
+                    "{{\"loginId\":\"{login_id}\",\"name\":\"{login_id}\",\"emailAddress\":\"{login_id}@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}}"
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    payload["actorId"]
+        .as_i64()
+        .or_else(|| {
+            payload["actorId"]
+                .as_str()
+                .and_then(|value| value.parse().ok())
+        })
+        .expect("registered actor id")
+}
+
+async fn upload_image_file(
+    app: axum::Router,
+    cookie_header: &str,
+    csrf: &str,
+    file_name: &str,
+) -> i64 {
+    let (boundary, body) = multipart_body(file_name, "image/png", b"\x89PNG\r\n\x1a\nfake-png");
+    let upload = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/files")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    format!("multipart/form-data; boundary={boundary}"),
+                )
+                .header(http::header::COOKIE, cookie_header)
+                .header("x-csrf-token", csrf)
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(upload.status(), StatusCode::CREATED);
+    let upload_body = upload.into_body().collect().await.unwrap().to_bytes();
+    let upload_json: serde_json::Value = serde_json::from_slice(&upload_body).unwrap();
+    upload_json
+        .get("id")
+        .and_then(|value| value.as_i64())
+        .expect("uploaded file id")
 }
 
 #[tokio::test]
@@ -386,4 +447,127 @@ async fn avatar_file_upload_returns_metadata_and_serves_bytes_for_owner() {
         .await
         .unwrap();
     assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn uploaded_file_delete_requires_author_or_site_admin_and_removes_attachment() {
+    let (app, repo, db) = build_auth_router().await;
+    let (owner_csrf, owner_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &owner_cookie, &owner_csrf, "owner").await;
+
+    let file_id = upload_image_file(app.clone(), &owner_cookie, &owner_csrf, "avatar.png").await;
+    assert!(repo.read_attachment_by_id(file_id).await.unwrap().is_some());
+
+    let unauthenticated = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!("/yona/files/{file_id}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let missing_csrf = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!("/yona/files/{file_id}"))
+                .header(http::header::COOKIE, &owner_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(missing_csrf.status(), StatusCode::FORBIDDEN);
+
+    let (other_csrf, other_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &other_cookie, &other_csrf, "other").await;
+    let other_delete = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!("/yona/files/{file_id}"))
+                .header(http::header::COOKIE, &other_cookie)
+                .header("x-csrf-token", &other_csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(other_delete.status(), StatusCode::FORBIDDEN);
+    assert!(repo.read_attachment_by_id(file_id).await.unwrap().is_some());
+
+    let owner_delete = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(format!("/yona/files/{file_id}"))
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "multipart/form-data; boundary=yona-boundary",
+                )
+                .header(http::header::COOKIE, &owner_cookie)
+                .header("x-csrf-token", &owner_csrf)
+                .body(Body::from(
+                    "--yona-boundary\r\nContent-Disposition: form-data; name=\"_method\"\r\n\r\ndelete\r\n--yona-boundary--\r\n",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(owner_delete.status(), StatusCode::OK);
+    assert!(repo.read_attachment_by_id(file_id).await.unwrap().is_none());
+
+    let deleted_get = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/yona/files/{file_id}"))
+                .header(http::header::COOKIE, &owner_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(deleted_get.status(), StatusCode::NOT_FOUND);
+
+    let admin_deleted_file_id =
+        upload_image_file(app.clone(), &owner_cookie, &owner_csrf, "avatar-admin.png").await;
+    let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
+    let admin_id = register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
+    site_admin::ActiveModel {
+        id: NotSet,
+        admin_id: Set(Some(admin_id)),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+
+    let admin_delete = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!("/yona/files/{admin_deleted_file_id}"))
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(admin_delete.status(), StatusCode::OK);
+    assert!(repo
+        .read_attachment_by_id(admin_deleted_file_id)
+        .await
+        .unwrap()
+        .is_none());
 }

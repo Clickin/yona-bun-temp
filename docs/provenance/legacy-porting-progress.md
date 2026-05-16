@@ -322,7 +322,7 @@ Interpretation:
 - [~] Issue attachment binding
 - [~] Issue comment attachment binding
 - [~] Milestone attachment binding
-- [ ] File delete authorization
+- [x] File delete authorization
 - [ ] Full container type parity across issue/board/PR/project
 - [ ] Global file size policy parity
 - [ ] MIME validation parity for all containers
