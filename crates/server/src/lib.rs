@@ -1051,6 +1051,68 @@ fn send_workspace_email_validation_mail(
     .map_err(internal_error)
 }
 
+async fn send_project_transfer_request_mail(
+    repository: &PilotRepository,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    transfer: &persistence::ProjectTransferRecord,
+    sender: &persistence::AppUserRecord,
+    public_origin: &str,
+    base_path: &str,
+) -> Result<(), String> {
+    let mut recipients = Vec::new();
+    if let Some(user) = repository
+        .find_user_by_login_id(&transfer.destination)
+        .await
+        .map_err(|error| error.to_string())?
+    {
+        recipients.push(user.email_address);
+    } else {
+        let members = repository
+            .read_organization_members(&transfer.destination)
+            .await
+            .map_err(|error| error.to_string())?;
+        recipients.extend(
+            members
+                .members
+                .into_iter()
+                .filter(|member| member.role == "org_admin")
+                .map(|member| member.email_address),
+        );
+    }
+    recipients.sort();
+    recipients.dedup();
+
+    let accept_url = absolute_app_url(
+        public_origin,
+        base_path,
+        &format!("/project/transfer/{}/{}", transfer.id, transfer.confirm_key),
+    );
+    let body = format!(
+        "Hello {},\n\n@{} wants to transfer the {}/{} project to {}/{}.\n{}\n\n{}\n\nIf you do not accept the transfer it will expire in a day.\n\nThanks",
+        transfer.destination,
+        authorization.project.owner_name,
+        authorization.project.owner_name,
+        authorization.project.project_name,
+        transfer.destination,
+        transfer.new_project_name,
+        "To accept the request, visit this link:",
+        accept_url,
+    );
+    let subject = format!(
+        "[{}] @{} wants to transfer project",
+        authorization.project.project_name, sender.login_id
+    );
+    for to in recipients.into_iter().filter(|to| !to.trim().is_empty()) {
+        let _ = deliver(OutboundMail {
+            body: body.clone(),
+            from: default_smtp_from(),
+            subject: subject.clone(),
+            to,
+        });
+    }
+    Ok(())
+}
+
 async fn direct_request_reset_password_email(
     headers: HeaderMap,
     form: HashMap<String, String>,
@@ -7495,6 +7557,27 @@ async fn rest_request_project_transfer(
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
+    let sender = repository
+        .find_user_by_id(actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::unauthenticated(
+                "missing transfer sender",
+            ))
+        })?;
+    send_project_transfer_request_mail(
+        repository,
+        &authorization,
+        &transfer,
+        &sender,
+        &service.public_origin,
+        &service.base_path,
+    )
+    .await
+    .map_err(internal_error)
+    .map_err(RestRouteError::from_connect_error)?;
 
     Ok(Json(rest_project_transfer_response(
         &authorization,

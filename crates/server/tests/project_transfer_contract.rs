@@ -6,9 +6,11 @@ use serde_json::{json, Value};
 use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tower::ServiceExt;
+use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{project_transfer, AppRepository};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yona_rust_vcs::repository_path;
 
 mod rest_test_support;
 
@@ -175,6 +177,7 @@ async fn project_transfer_requests_and_accept_link_follow_legacy_permissions() {
     let _guard = yona_data_env_lock()
         .lock()
         .expect("serialize YONA_DATA mutation");
+    clear_test_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
     std::env::set_var("YONA_DATA", data_dir.path());
     let (app, db) = build_app_with_repository().await;
@@ -182,6 +185,14 @@ async fn project_transfer_requests_and_accept_link_follow_legacy_permissions() {
     let (recipient_csrf, recipient_cookie) = register_user(app.clone(), "recipient").await;
     let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
+    let repository = AppRepository::new(db.clone());
+    let original_project = repository
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .expect("original project lookup")
+        .expect("original project");
+    let original_repo_path = repository_path(data_dir.path(), original_project.id);
+    assert!(original_repo_path.is_dir());
 
     let forbidden = rest(
         app.clone(),
@@ -266,6 +277,20 @@ async fn project_transfer_requests_and_accept_link_follow_legacy_permissions() {
     assert_eq!(row.new_project_name.as_deref(), Some("projectYobi"));
     let confirm_key = row.confirm_key.clone().expect("confirm key");
     assert_eq!(confirm_key.len(), 50);
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].to, "recipient@example.com");
+    assert_eq!(
+        outbox[0].subject,
+        "[projectYobi] @owner wants to transfer project"
+    );
+    assert!(outbox[0].body.contains("Hello recipient,"));
+    assert!(outbox[0].body.contains("owner/projectYobi"));
+    assert!(outbox[0].body.contains("recipient/projectYobi"));
+    assert!(outbox[0]
+        .body
+        .contains(&format!("/project/transfer/{transfer_id}/{confirm_key}")));
+    assert!(outbox[0].body.contains("If you do not accept"));
 
     create_project_named(
         app.clone(),
@@ -314,7 +339,6 @@ async fn project_transfer_requests_and_accept_link_follow_legacy_permissions() {
         "/yona/recipient/projectYobi-1"
     );
 
-    let repository = AppRepository::new(db.clone());
     let moved = repository
         .read_project_by_owner_and_name("recipient", "projectYobi-1")
         .await
@@ -322,6 +346,8 @@ async fn project_transfer_requests_and_accept_link_follow_legacy_permissions() {
         .expect("moved project");
     assert_eq!(moved.owner_name, "recipient");
     assert_eq!(moved.project_name, "projectYobi-1");
+    assert_eq!(moved.id, original_project.id);
+    assert!(original_repo_path.is_dir());
     assert_eq!(moved.previous_owner_name.as_deref(), Some("owner"));
     assert_eq!(moved.previous_project_name.as_deref(), Some("projectYobi"));
     assert!(

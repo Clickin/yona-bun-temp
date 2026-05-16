@@ -53,7 +53,7 @@
 | `ProjectApp.members`, `newMember`, `editMember`, `deleteMember` and `project/members.scala.html` | member administration is UPDATE-gated except self-leave, preserves owner guards, accepts enrollment requests through add-member, and uses legacy member row/action anchors | `GET/POST/PATCH/DELETE /api/v1/owners/:owner/projects/:project/members` + `/:owner/:project/members` route + contract/unit/Playwright assertions |
 | `ProjectApp.watchers` and `project/watchers.scala.html` | watcher directory is READ-gated, resolves actual project watchers, and preserves `page-wrap-outer` / `members project row-fluid` member list anchors | `GET /api/v1/owners/:owner/projects/:project/watchers` + `/:owner/:project/watchers` route + contract/unit/Playwright assertions |
 | `ProjectApp.webhooks`, `newWebhook`, `deleteWebhook`, `project/webhooks.scala.html`, and `partial_webhooks_list.scala.html` | webhook administration is UPDATE-gated, stores payload URL, secret, webhook type, and gitPush, and preserves legacy form/list anchors | `GET/POST/DELETE /api/v1/owners/:owner/projects/:project/webhooks` + `/:owner/:project/webhooks` route + contract/route/Playwright assertions |
-| `ProjectApp.transferForm`, `transferProject`, `acceptTransfer`, `ProjectTransfer.requestNewTransfer`, and `project/transfer.scala.html` | transfer is UPDATE-gated, stores a one-day confirm-key request, accepts only the destination user/org admin/site admin, moves owner/name, preserves previous owner/name aliasing, and updates sender/destination membership | `GET/POST /api/v1/owners/:owner/projects/:project/transfer` + `GET /project/transfer/:id/:key` + `/:owner/:project/transfer` route + contract/route/Playwright assertions |
+| `ProjectApp.transferForm`, `transferProject`, `acceptTransfer`, `sendTransferRequestMail`, `ProjectTransfer.requestNewTransfer`, and `project/transfer.scala.html` | transfer is UPDATE-gated, stores a one-day confirm-key request, sends a destination accept-link mail, accepts only the destination user/org admin/site admin, moves owner/name, preserves previous owner/name aliasing, and updates sender/destination membership | `GET/POST /api/v1/owners/:owner/projects/:project/transfer` + `GET /project/transfer/:id/:key` + `/:owner/:project/transfer` route + contract/route/Playwright assertions |
 | `ProjectApp.deleteForm`, `deleteProject`, `Project.delete`, and `project/delete.scala.html` | delete is UPDATE-gated, uses the legacy checkbox/modal confirmation shell, removes dependent project state and the repository, then redirects to `/` | `DELETE /api/v1/owners/:owner/projects/:project` + `/:owner/:project/deleteform` route + contract/Playwright assertions |
 | `ProjectAppTest` visibility cases | public/protected/private visibility gates readable discovery | `crates/domain` read matrix + `crates/server` query contract test |
 | `EnrollProjectAppTest` | enrollment request and cancel stay guest-only, not-found for missing projects, idempotent | `crates/domain` enrollment service + `crates/server` mutation contract test |
@@ -61,8 +61,6 @@
 
 ## Explicit Gaps
 
-- project transfer notification mail formatting/delivery
-- project transfer repository path move/rename parity
 - org enrollment management
 - full workspace settings and default landing UX parity
 - change VCS
@@ -70,6 +68,10 @@
 - webhook delivery, event payload/HMAC compatibility, and delivery history/retry behavior
 
 이 항목들은 후속 follow-up과 provenance gap으로 계속 남는다.
+
+## Internal Translation Notes
+
+- Legacy physically moves owner/project repository paths during transfer. Rust stores Git repositories at `YONA_DATA/repo/<project_id>.git`, as recorded in `docs/provenance/phase-0b/code-browser.md`, so owner/name filesystem path move is not a required parity action. Smart HTTP clone URL/update behavior is still part of the VCS lifecycle follow-up.
 
 ## R0-3 Delivery Note
 
@@ -80,4 +82,4 @@
 - The project member management closeout adds the UPDATE-gated legacy deep-link route for `/:owner/:project/members`, app REST add/role/delete mutations, enrollment cleanup, member-accept notification/mail staging, owner/self-leave guards, and legacy `project/members.scala.html` class anchors.
 - The project delete closeout adds the UPDATE-gated legacy deep-link route for `/:owner/:project/deleteform`, app REST project deletion, dependent project-row cleanup, bare Git repository removal, and legacy `project/delete.scala.html` / setting-menu anchors.
 - The project webhook CRUD closeout adds the UPDATE-gated legacy deep-link route for `/:owner/:project/webhooks`, app REST list/create/delete, payload URL/secret/type/gitPush persistence, and legacy `project/webhooks.scala.html` / `partial_webhooks_list.scala.html` anchors. Webhook delivery, HMAC/signature compatibility, event fan-out, and delivery history remain explicit follow-up gaps.
-- The project transfer closeout adds the UPDATE-gated legacy deep-link route for `/:owner/:project/transfer`, app REST transfer request, legacy direct accept link `/project/transfer/:id/:key`, `project_transfer` persistence, previous owner/name route aliasing, and sender/destination membership updates. Transfer request mail formatting/delivery and repository path move/rename remain explicit follow-up gaps.
+- The project transfer closeout adds the UPDATE-gated legacy deep-link route for `/:owner/:project/transfer`, app REST transfer request, legacy direct accept link `/project/transfer/:id/:key`, transfer request mail delivery through the outbound mail integration, `project_transfer` persistence, previous owner/name route aliasing, and sender/destination membership updates. Owner/name repository path move is intentionally not applicable to the Rust ID-based Git repository layout.
