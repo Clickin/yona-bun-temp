@@ -139,6 +139,21 @@ test("maps notification inbox frontend files to the issue notification slice", (
   );
 });
 
+test("accepts notification route parity tests as notification frontend evidence", () => {
+  const result = runGate([
+    "frontend/src/routes/notification/route.tsx",
+    "frontend/src/route-parity.spec.tsx",
+    "docs/provenance/core-parity-audit.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["notification-inbox-and-mail-staging"],
+  );
+});
+
 test("maps project label API files to the issue lifecycle slice", () => {
   const result = runGate([
     "frontend/src/api/project-labels.ts",

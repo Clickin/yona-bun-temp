@@ -857,7 +857,7 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 타입 토글
 
 #### 검수 기준
 
-- [x] 알림 목록: legacy `/notification` 화면의 기본 이벤트 목록/empty/More 표시
+- [x] 알림 목록: legacy `/notification` 화면의 `page-wrap-outer`, `page-wrap`, `content-container`, `main-stream`, `activity-streams notification-wrap`, `notification-stream`, `data-toggle="learnmore"`, empty, and More anchors 표시
 - [ ] 이메일 알림: 이슈/PR 댓글 작성 시 관련 감시자에게 이메일 발송
 - [x] 이메일 알림 준비: notification event 생성 시 `notification_mail` queue row를 만들고 due row drain helper가 created ASC로 event id를 반환한 뒤 queue row를 삭제한다
 - [ ] 알림 토글: 프로젝트별 이벤트 타입(NEW_ISSUE, NEW_POSTING, NEW_COMMENT 등) on/off

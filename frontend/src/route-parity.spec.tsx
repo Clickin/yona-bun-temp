@@ -195,8 +195,19 @@ describe("file-route parity harness", () => {
     expect(fs.existsSync(notificationRoutePath)).toBe(true);
     const notificationRouteSource = fs.readFileSync(notificationRoutePath, "utf8");
     expect(notificationRouteSource).not.toContain("PlaceholderPage");
+    expect(notificationRouteSource).not.toContain("Yona Rust Notifications");
     expect(notificationRouteSource).toContain("useQuery");
     expect(notificationRouteSource).toContain("listNotificationsQueryOptions");
+    expect(notificationRouteSource).toContain("page-wrap-outer");
+    expect(notificationRouteSource).toContain("page-wrap");
+    expect(notificationRouteSource).toContain("content-container");
+    expect(notificationRouteSource).toContain("main-stream");
+    expect(notificationRouteSource).toContain("notification-wrap");
+    expect(notificationRouteSource).toContain('data-toggle="learnmore"');
+    expect(notificationRouteSource).not.toContain("`/users/${encodeURIComponent(loginId)}`");
+    expect(notificationRouteSource).toContain("`/${encodeURIComponent(loginId)}`");
+    const appCssSource = fs.readFileSync(path.resolve(__dirname, "app.css"), "utf8");
+    expect(appCssSource).toContain(".notification-stream .message-wrap.nowrap");
   });
 
   it("requires real board routes and board API wiring instead of placeholders", () => {

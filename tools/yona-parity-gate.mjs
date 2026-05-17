@@ -293,7 +293,7 @@ const DOMAIN_BUCKETS = [
       /^frontend\/src\/routes\/notifications?\/route\.tsx$/i,
       /^crates\/(?:server|persistence|integrations)\/.*notification/i,
     ],
-    testKeywords: ["notification", "mail", "watch"],
+    testKeywords: ["notification", "mail", "watch", "route-parity"],
     provenanceDocs: [
       "docs/provenance/phase-0b/issue.md",
       "docs/provenance/phase-0b/legacy-test-inventory.md",

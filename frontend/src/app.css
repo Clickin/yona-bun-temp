@@ -172,6 +172,7 @@ h1 {
   gap: 10px;
   padding: 12px 0;
   border-bottom: 1px solid #e5e5e5;
+  cursor: pointer;
 }
 
 .notification-stream .stream-type {
@@ -191,8 +192,47 @@ h1 {
   font-weight: 600;
 }
 
+.notification-stream .stream-desc {
+  min-width: 0;
+}
+
 .notification-stream .message-wrap {
+  display: block;
+  width: 100%;
+  padding: 0;
   color: #555;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  line-height: 20px;
+  min-height: 20px;
+  overflow: hidden;
+}
+
+.notification-stream .message-wrap:hover,
+.notification-stream .message-wrap:focus {
+  color: #555;
+  text-decoration: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.notification-stream .message-wrap:focus {
+  outline: 1px dotted #999;
+  outline-offset: 2px;
+}
+
+.notification-stream .message-wrap.nowrap {
+  max-height: 200px;
+}
+
+.notification-stream .message {
+  line-height: 20px;
+  word-break: break-all;
 }
 
 .notification-stream .meta {
