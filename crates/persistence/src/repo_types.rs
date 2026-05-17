@@ -14,6 +14,37 @@ pub struct AppUserRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SiteUserListFilter {
+    pub page: u32,
+    pub query: String,
+    pub state: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SiteUserRecord {
+    pub created_at: Option<DateTime>,
+    pub display_name: String,
+    pub email_address: String,
+    pub id: i64,
+    pub is_guest: bool,
+    pub is_site_admin: bool,
+    pub login_id: String,
+    pub state: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SiteUserListRecord {
+    pub page: u32,
+    pub page_size: u32,
+    pub query: String,
+    pub site_admin_count: u32,
+    pub state: String,
+    pub total: u32,
+    pub total_pages: u32,
+    pub users: Vec<SiteUserRecord>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IssueRecord {
     pub author_id: Option<i64>,
     pub author_label: String,

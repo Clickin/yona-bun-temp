@@ -2285,6 +2285,46 @@ struct RestUserStatisticsResponse {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+struct RestSiteUsersQuery {
+    page: Option<u32>,
+    query: Option<String>,
+    state: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteUserItem {
+    created_at: String,
+    display_name: String,
+    email_address: String,
+    id: i64,
+    is_guest: bool,
+    is_site_admin: bool,
+    login_id: String,
+    state: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteUserListResponse {
+    page: u32,
+    page_size: u32,
+    query: String,
+    site_admin_count: u32,
+    state: String,
+    total: u32,
+    total_pages: u32,
+    users: Vec<RestSiteUserItem>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteUserMutationResponse {
+    user: RestSiteUserItem,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 struct RestNotificationsQuery {
     from: u32,
     size: u32,
@@ -3512,6 +3552,36 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Path(login_id): Path<String>| {
                     let service = service.clone();
                     async move { rest_read_user_statistics(headers, login_id, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/users",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Query(query): Query<RestSiteUsersQuery>| {
+                    let service = service.clone();
+                    async move { rest_read_site_users(headers, query, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/users/{login_id}/site-admin/toggle",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_toggle_site_user_admin(headers, login_id, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/users/{login_id}/account-lock/toggle",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_toggle_site_user_account_lock(headers, login_id, service).await }
                 }
             }),
         )
@@ -6502,6 +6572,59 @@ async fn rest_read_user_statistics(
     ))
 }
 
+async fn rest_read_site_users(
+    headers: HeaderMap,
+    query: RestSiteUsersQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteUserListResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
+    let state = rest_site_user_state(query.state)?;
+    let record = repository
+        .list_site_users(persistence::SiteUserListFilter {
+            page: query.page.unwrap_or(1).max(1),
+            query: query.query.unwrap_or_default(),
+            state,
+        })
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+
+    Ok(Json(rest_site_user_list_from_record(record)))
+}
+
+async fn rest_toggle_site_user_admin(
+    headers: HeaderMap,
+    login_id: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteUserMutationResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let user = repository
+        .toggle_site_admin_role(&login_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .ok_or_else(|| RestRouteError::not_found("user not found"))?;
+
+    Ok(Json(RestSiteUserMutationResponse {
+        user: rest_site_user_from_record(user),
+    }))
+}
+
+async fn rest_toggle_site_user_account_lock(
+    headers: HeaderMap,
+    login_id: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteUserMutationResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let user = repository
+        .toggle_site_user_account_lock(&login_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .ok_or_else(|| RestRouteError::not_found("user not found"))?;
+
+    Ok(Json(RestSiteUserMutationResponse {
+        user: rest_site_user_from_record(user),
+    }))
+}
+
 async fn rest_set_default_landing_path(
     headers: HeaderMap,
     body: RestDefaultLandingPathBody,
@@ -9251,6 +9374,81 @@ fn rest_repository(service: &PilotServiceImpl) -> Result<&PilotRepository, RestR
         PilotBackend::Static => Err(RestRouteError::not_implemented(
             "pull request reads require repository backend",
         )),
+    }
+}
+
+async fn rest_require_site_admin_repository<'a>(
+    service: &'a PilotServiceImpl,
+    headers: &HeaderMap,
+    validate_csrf: bool,
+) -> Result<&'a PilotRepository, RestRouteError> {
+    let session = require_session(&service.session_manager, headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    if validate_csrf {
+        require_valid_csrf(&service.session_manager, headers, &session)
+            .map_err(RestRouteError::from_connect_error)?;
+    }
+    let repository = rest_repository(service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    if !actor.is_site_admin {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("site admin is required"),
+        ));
+    }
+    Ok(repository)
+}
+
+fn rest_site_user_state(state: Option<String>) -> Result<String, RestRouteError> {
+    let normalized = state
+        .as_deref()
+        .map(normalize_identifier)
+        .unwrap_or_default()
+        .to_ascii_uppercase();
+    let normalized = if normalized.is_empty() {
+        "ACTIVE".to_string()
+    } else {
+        normalized
+    };
+    match normalized.as_str() {
+        "ACTIVE" | "LOCKED" | "DELETED" | "GUEST" | "SITE_ADMIN" => Ok(normalized),
+        _ => Err(RestRouteError::bad_request("invalid site user state")),
+    }
+}
+
+fn rest_site_user_from_record(record: persistence::SiteUserRecord) -> RestSiteUserItem {
+    RestSiteUserItem {
+        created_at: record
+            .created_at
+            .map(|value| value.to_string())
+            .unwrap_or_default(),
+        display_name: record.display_name,
+        email_address: record.email_address,
+        id: record.id,
+        is_guest: record.is_guest,
+        is_site_admin: record.is_site_admin,
+        login_id: record.login_id,
+        state: record.state,
+    }
+}
+
+fn rest_site_user_list_from_record(
+    record: persistence::SiteUserListRecord,
+) -> RestSiteUserListResponse {
+    RestSiteUserListResponse {
+        page: record.page,
+        page_size: record.page_size,
+        query: record.query,
+        site_admin_count: record.site_admin_count,
+        state: record.state,
+        total: record.total,
+        total_pages: record.total_pages,
+        users: record
+            .users
+            .into_iter()
+            .map(rest_site_user_from_record)
+            .collect(),
     }
 }
 

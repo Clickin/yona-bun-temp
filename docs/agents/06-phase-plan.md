@@ -89,7 +89,7 @@
 
 ## Phase 6: 관리자 기능과 하드닝
 
-- admin surface
+- Phase 6A partial: Site-admin user-management REST parity over `/api/v1/site/users`, including site-admin-only access, legacy user state buckets, query search, 30-item pagination, site-admin role toggle, and account lock/unlock. The legacy `/sites/userList` UI, project/posting/issue moderation, mail, diagnostics, update check, and data import/export remain follow-up scope.
 - migration tooling
 - deployment hardening
 - remaining deferred scope review

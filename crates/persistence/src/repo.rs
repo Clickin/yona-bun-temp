@@ -27,9 +27,10 @@ use crate::repo_types::{
     PullRequestReviewInput, PullRequestStateInput, PullRequestThreadStateInput,
     PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
     ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
-    SearchRepositoryInput, SearchResultRecord, SearchScope, ToggleFavoriteIssueResult,
-    ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
-    UpdateOrganizationInput, UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
+    SearchRepositoryInput, SearchResultRecord, SearchScope, SiteUserListFilter, SiteUserListRecord,
+    SiteUserRecord, ToggleFavoriteIssueResult, ToggleFavoriteProjectResult,
+    UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput,
+    UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
     UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestInput,
     UserIssueCandidateRecord, UserIssueListFilter, UserStatisticsRecord,
     WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
@@ -138,6 +139,72 @@ fn issue_sharable_project_record(project: ProjectRecord) -> IssueAssignableUserR
 
 fn n4user_is_active(user: &n4user::Model) -> bool {
     normalize_optional(user.state.as_deref()).as_deref() == Some("active")
+}
+
+const SITE_USER_PAGE_SIZE: usize = 30;
+const LEGACY_ANONYMOUS_LOGIN_ID: &str = "anonymous";
+
+fn usize_to_u32_saturating(value: usize) -> u32 {
+    u32::try_from(value).unwrap_or(u32::MAX)
+}
+
+fn site_user_state_label(user: &n4user::Model) -> String {
+    normalize_optional(user.state.as_deref())
+        .unwrap_or_else(|| "pending".to_string())
+        .to_ascii_uppercase()
+}
+
+fn site_user_query_matches(user: &n4user::Model, query: &str) -> bool {
+    let normalized_query = normalize_identity(query);
+    if normalized_query.is_empty() {
+        return true;
+    }
+    let contains_query = |value: Option<&str>| {
+        normalize_optional(value).is_some_and(|value| value.contains(&normalized_query))
+    };
+    contains_query(user.login_id.as_deref())
+        || contains_query(user.name.as_deref())
+        || contains_query(user.english_name.as_deref())
+        || contains_query(user.email.as_deref())
+}
+
+fn site_user_state_matches(
+    user: &n4user::Model,
+    state: &str,
+    site_admin_ids: &HashSet<i64>,
+) -> bool {
+    match state {
+        "GUEST" => user.is_guest.unwrap_or_default() != 0,
+        "SITE_ADMIN" => site_admin_ids.contains(&user.id),
+        _ => site_user_state_label(user) == state,
+    }
+}
+
+fn site_user_filter_state(state: &str) -> Result<String, DbErr> {
+    let normalized = normalize_identity(state).to_ascii_uppercase();
+    let normalized = if normalized.is_empty() {
+        "ACTIVE".to_string()
+    } else {
+        normalized
+    };
+    match normalized.as_str() {
+        "ACTIVE" | "LOCKED" | "DELETED" | "GUEST" | "SITE_ADMIN" => Ok(normalized),
+        _ => Err(DbErr::Custom("invalid site user state".to_string())),
+    }
+}
+
+fn site_user_record_from_model(user: n4user::Model, is_site_admin: bool) -> SiteUserRecord {
+    let state = site_user_state_label(&user);
+    SiteUserRecord {
+        created_at: user.created_date,
+        display_name: user.name.unwrap_or_default(),
+        email_address: user.email.unwrap_or_default(),
+        id: user.id,
+        is_guest: user.is_guest.unwrap_or_default() != 0,
+        is_site_admin,
+        login_id: user.login_id.unwrap_or_default(),
+        state,
+    }
 }
 
 fn issue_mention_user_record(user: n4user::Model) -> IssueMentionUserRecord {
@@ -720,6 +787,123 @@ impl AppRepository {
         Ok(users.into_iter().any(|user| {
             normalize_optional(user.login_id.as_deref()).as_deref() == Some(normalized.as_str())
         }))
+    }
+
+    /// Lists users for the legacy site-admin user-management surface.
+    ///
+    /// # Errors
+    ///
+    /// Returns a database error when user or site-admin rows cannot be read.
+    pub async fn list_site_users(
+        &self,
+        filter: SiteUserListFilter,
+    ) -> Result<SiteUserListRecord, DbErr> {
+        let state = site_user_filter_state(&filter.state)?;
+        let query = filter.query.trim().to_string();
+        let page = filter.page.max(1);
+        let site_admin_ids = self.site_admin_user_ids().await?;
+        let mut users: Vec<n4user::Model> = n4user::Entity::find()
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter(|user| {
+                normalize_optional(user.login_id.as_deref()).as_deref()
+                    != Some(LEGACY_ANONYMOUS_LOGIN_ID)
+            })
+            .filter(|user| site_user_state_matches(user, &state, &site_admin_ids))
+            .filter(|user| site_user_query_matches(user, &query))
+            .collect();
+        users.sort_by(|left, right| {
+            right
+                .created_date
+                .cmp(&left.created_date)
+                .then_with(|| left.login_id.cmp(&right.login_id))
+        });
+
+        let total = users.len();
+        let offset = ((page - 1) as usize).saturating_mul(SITE_USER_PAGE_SIZE);
+        let users = users
+            .into_iter()
+            .skip(offset)
+            .take(SITE_USER_PAGE_SIZE)
+            .map(|user| {
+                let is_site_admin = site_admin_ids.contains(&user.id);
+                site_user_record_from_model(user, is_site_admin)
+            })
+            .collect();
+        let site_admin_count = self.site_admin_count(&site_admin_ids).await?;
+        let total_pages = if total == 0 {
+            0
+        } else {
+            total.div_ceil(SITE_USER_PAGE_SIZE)
+        };
+
+        Ok(SiteUserListRecord {
+            page,
+            page_size: usize_to_u32_saturating(SITE_USER_PAGE_SIZE),
+            query,
+            site_admin_count: usize_to_u32_saturating(site_admin_count),
+            state,
+            total: usize_to_u32_saturating(total),
+            total_pages: usize_to_u32_saturating(total_pages),
+            users,
+        })
+    }
+
+    /// Toggles whether a user has the legacy site-admin role.
+    ///
+    /// # Errors
+    ///
+    /// Returns a database error when the user or site-admin rows cannot be read
+    /// or updated.
+    pub async fn toggle_site_admin_role(
+        &self,
+        login_id: &str,
+    ) -> Result<Option<SiteUserRecord>, DbErr> {
+        let Some(user) = self.find_user_model_by_login_id(login_id).await? else {
+            return Ok(None);
+        };
+        let existing = site_admin::Entity::find()
+            .filter(site_admin::Column::AdminId.eq(Some(user.id)))
+            .all(&self.db)
+            .await?;
+        let is_site_admin = if existing.is_empty() {
+            self.ensure_site_admin(user.id).await?;
+            true
+        } else {
+            for row in existing {
+                site_admin::Entity::delete_by_id(row.id)
+                    .exec(&self.db)
+                    .await?;
+            }
+            false
+        };
+
+        Ok(Some(site_user_record_from_model(user, is_site_admin)))
+    }
+
+    /// Toggles a user's account between `ACTIVE` and `LOCKED`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a database error when the user row cannot be read or updated.
+    pub async fn toggle_site_user_account_lock(
+        &self,
+        login_id: &str,
+    ) -> Result<Option<SiteUserRecord>, DbErr> {
+        let Some(user) = self.find_user_model_by_login_id(login_id).await? else {
+            return Ok(None);
+        };
+        let is_active = normalize_optional(user.state.as_deref()).as_deref() == Some("active");
+        let mut active = n4user::ActiveModel::from(user);
+        active.state = Set(Some(
+            if is_active { "locked" } else { "active" }.to_string(),
+        ));
+        active.last_state_modified_date = Set(Some(current_datetime()));
+        let updated = active.update(&self.db).await?;
+        let is_site_admin = self.user_is_site_admin(updated.id).await?;
+
+        Ok(Some(site_user_record_from_model(updated, is_site_admin)))
     }
 
     pub async fn list_projects(&self) -> Result<Vec<ProjectRecord>, DbErr> {
@@ -8183,11 +8367,7 @@ impl AppRepository {
         &self,
         model: n4user::Model,
     ) -> Result<AppUserRecord, DbErr> {
-        let is_site_admin = site_admin::Entity::find()
-            .filter(site_admin::Column::AdminId.eq(Some(model.id)))
-            .one(&self.db)
-            .await?
-            .is_some();
+        let is_site_admin = self.user_is_site_admin(model.id).await?;
 
         Ok(AppUserRecord {
             id: model.id,
@@ -8198,6 +8378,50 @@ impl AppRepository {
             login_id: model.login_id.unwrap_or_default(),
             password_hash: model.password.unwrap_or_default(),
         })
+    }
+
+    async fn find_user_model_by_login_id(
+        &self,
+        login_id: &str,
+    ) -> Result<Option<n4user::Model>, DbErr> {
+        let normalized = normalize_identity(login_id);
+        if normalized.is_empty() || normalized == LEGACY_ANONYMOUS_LOGIN_ID {
+            return Ok(None);
+        }
+
+        let users = n4user::Entity::find().all(&self.db).await?;
+        Ok(users.into_iter().find(|user| {
+            normalize_optional(user.login_id.as_deref()).as_deref() == Some(normalized.as_str())
+        }))
+    }
+
+    async fn site_admin_user_ids(&self) -> Result<HashSet<i64>, DbErr> {
+        Ok(site_admin::Entity::find()
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| row.admin_id)
+            .collect())
+    }
+
+    async fn site_admin_count(&self, site_admin_ids: &HashSet<i64>) -> Result<usize, DbErr> {
+        let users = n4user::Entity::find().all(&self.db).await?;
+        Ok(users
+            .into_iter()
+            .filter(|user| site_admin_ids.contains(&user.id))
+            .filter(|user| {
+                normalize_optional(user.login_id.as_deref()).as_deref()
+                    != Some(LEGACY_ANONYMOUS_LOGIN_ID)
+            })
+            .count())
+    }
+
+    async fn user_is_site_admin(&self, user_id: i64) -> Result<bool, DbErr> {
+        Ok(site_admin::Entity::find()
+            .filter(site_admin::Column::AdminId.eq(Some(user_id)))
+            .one(&self.db)
+            .await?
+            .is_some())
     }
 
     async fn list_connected_social_providers_for_user(
