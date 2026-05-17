@@ -117,6 +117,7 @@ test("site admin user list preserves legacy shell and toggles user state", async
   let promoted = false;
   let locked = false;
   let guest = false;
+  let deleted = false;
   let resetPassword = "";
   const requests: string[] = [];
 
@@ -182,19 +183,56 @@ test("site admin user list preserves legacy shell and toggles user state", async
       return;
     }
 
+    if (request.method() === "DELETE" && url.pathname.endsWith("/site/users/deletee")) {
+      deleted = true;
+      await route.fulfill({
+        body: JSON.stringify({
+          user: siteUsersPayload({
+            users: [
+              {
+                emailAddress: "deleted-deletee@noreply.yona.io",
+                id: 3,
+                loginId: "deletee",
+                name: "[DELETED]Deletee",
+                state: "DELETED",
+              },
+            ],
+          }).users[0],
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+      return;
+    }
+
     const state = url.searchParams.get("state") ?? "ACTIVE";
     const query = url.searchParams.get("query") ?? "";
+    const deleteSearch = query.toLowerCase().includes("del");
     const users =
-      state === "SITE_ADMIN"
-        ? [
-            { id: 1, isSiteAdmin: true, loginId: "siteboss", name: "Site Boss" },
-            ...(promoted ? [{ id: 2, isSiteAdmin: true, loginId: "member" }] : []),
-          ]
-        : state === "GUEST" && guest
-          ? [{ id: 2, isGuest: true, loginId: "member" }]
-          : state === "LOCKED" && locked
-            ? [{ id: 2, loginId: "member", state: "LOCKED" }]
-            : [{ id: 2, isGuest: guest, isSiteAdmin: promoted, loginId: "member" }];
+      state === "ACTIVE" && deleteSearch
+        ? deleted
+          ? []
+          : [{ id: 3, loginId: "deletee", name: "Deletee" }]
+        : state === "DELETED" && deleteSearch && deleted
+          ? [
+              {
+                emailAddress: "deleted-deletee@noreply.yona.io",
+                id: 3,
+                loginId: "deletee",
+                name: "[DELETED]Deletee",
+                state: "DELETED",
+              },
+            ]
+          : state === "SITE_ADMIN"
+            ? [
+                { id: 1, isSiteAdmin: true, loginId: "siteboss", name: "Site Boss" },
+                ...(promoted ? [{ id: 2, isSiteAdmin: true, loginId: "member" }] : []),
+              ]
+            : state === "GUEST" && guest
+              ? [{ id: 2, isGuest: true, loginId: "member" }]
+              : state === "LOCKED" && locked
+                ? [{ id: 2, loginId: "member", state: "LOCKED" }]
+                : [{ id: 2, isGuest: guest, isSiteAdmin: promoted, loginId: "member" }];
 
     await route.fulfill({
       body: JSON.stringify(
@@ -242,6 +280,27 @@ test("site admin user list preserves legacy shell and toggles user state", async
     .toBe(true);
   await expect(page.locator(".user-list-wrap .alert-success")).toContainText(
     `New Password: ${resetPassword}`,
+  );
+
+  await page.goto("/yona/sites/userList?state=ACTIVE&query=del");
+  await expect(page.locator(".user-list-wrap .user-id")).toHaveText("@deletee");
+  const deleteButton = page.locator("[data-toggle='account-delete']");
+  await expect(deleteButton).toHaveAttribute("data-href", "/yona/sites/user/delete3");
+  await expect(deleteButton).toHaveAttribute("data-request-uri", "/yona/api/v1/site/users/deletee");
+  await deleteButton.click();
+  await expect(page.locator("#alertDeletionWrap")).toBeVisible();
+  await expect(page.locator("#userInfo")).toContainText("Deletee(deletee)");
+  await page.locator("#accountToggleBtn").click();
+  await expect
+    .poll(() => requests.some((request) => request === "DELETE /yona/api/v1/site/users/deletee"))
+    .toBe(true);
+  await expect(page.locator(".warning-none")).toHaveText("No users found.");
+
+  await page.goto("/yona/sites/userList?state=DELETED&query=del");
+  await expect(page.locator(".nav-tabs li.active a")).toContainText("Deleted");
+  await expect(page.locator(".user-list-wrap .user-id")).toHaveText("@deletee");
+  await expect(page.locator(".user-list-wrap .email")).toHaveText(
+    "deleted-deletee@noreply.yona.io",
   );
 
   await page.goto("/yona/sites/userList?state=GUEST");

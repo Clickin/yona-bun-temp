@@ -89,7 +89,7 @@
 
 ## Phase 6: 관리자 기능과 하드닝
 
-- Phase 6A partial: Site-admin user-management parity over `/sites/userList` and `/api/v1/site/users`, including site-admin-only access, legacy user state buckets, query search, 30-item pagination, site-admin role toggle, account lock/unlock, guest-mode toggle, site-manager password reset, and legacy shell/sidebar/list class anchors. Delete user, project/posting/issue moderation, mail, diagnostics, update check, and data import/export remain follow-up scope.
+- Phase 6A partial: Site-admin user-management parity over `/sites/userList` and `/api/v1/site/users`, including site-admin-only access, legacy user state buckets, query search, 30-item pagination, site-admin role toggle, account lock/unlock, guest-mode toggle, site-manager password reset, user deletion with the only-manager guard, and legacy shell/sidebar/list/modal class anchors. Project/posting/issue moderation, mail, diagnostics, update check, and data import/export remain follow-up scope.
 - migration tooling
 - deployment hardening
 - remaining deferred scope review

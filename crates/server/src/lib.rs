@@ -3579,6 +3579,16 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/site/users/{login_id}",
+            delete({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_delete_site_user(headers, login_id, service).await }
+                }
+            }),
+        )
+        .route(
             "/site/users/{login_id}/site-admin/toggle",
             post({
                 let service = service.clone();
@@ -6669,6 +6679,33 @@ async fn rest_toggle_site_user_guest(
         .await
         .map_err(|error| RestRouteError::internal(error.to_string()))?
         .ok_or_else(|| RestRouteError::not_found("user not found"))?;
+
+    Ok(Json(RestSiteUserMutationResponse {
+        user: rest_site_user_from_record(user),
+    }))
+}
+
+async fn rest_delete_site_user(
+    headers: HeaderMap,
+    login_id: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteUserMutationResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let user = match repository
+        .delete_site_user(&login_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+    {
+        persistence::SiteUserDeleteResult::Deleted(user) => user,
+        persistence::SiteUserDeleteResult::NotFound => {
+            return Err(RestRouteError::not_found("user not found"));
+        }
+        persistence::SiteUserDeleteResult::OnlyManager => {
+            return Err(RestRouteError::from_connect_error(
+                ConnectError::permission_denied("site.userList.deleteAlert"),
+            ));
+        }
+    };
 
     Ok(Json(RestSiteUserMutationResponse {
         user: rest_site_user_from_record(user),

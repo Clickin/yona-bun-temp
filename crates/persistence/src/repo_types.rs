@@ -45,6 +45,13 @@ pub struct SiteUserListRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SiteUserDeleteResult {
+    Deleted(SiteUserRecord),
+    NotFound,
+    OnlyManager,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IssueRecord {
     pub author_id: Option<i64>,
     pub author_label: String,

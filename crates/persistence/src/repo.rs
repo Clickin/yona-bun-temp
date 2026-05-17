@@ -27,10 +27,10 @@ use crate::repo_types::{
     PullRequestReviewInput, PullRequestStateInput, PullRequestThreadStateInput,
     PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
     ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
-    SearchRepositoryInput, SearchResultRecord, SearchScope, SiteUserListFilter, SiteUserListRecord,
-    SiteUserRecord, ToggleFavoriteIssueResult, ToggleFavoriteProjectResult,
-    UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput,
-    UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
+    SearchRepositoryInput, SearchResultRecord, SearchScope, SiteUserDeleteResult,
+    SiteUserListFilter, SiteUserListRecord, SiteUserRecord, ToggleFavoriteIssueResult,
+    ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
+    UpdateOrganizationInput, UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
     UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestInput,
     UserIssueCandidateRecord, UserIssueListFilter, UserStatisticsRecord,
     WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
@@ -925,6 +925,74 @@ impl AppRepository {
         let is_site_admin = self.user_is_site_admin(updated.id).await?;
 
         Ok(Some(site_user_record_from_model(updated, is_site_admin)))
+    }
+
+    /// Marks a user as deleted through the legacy site-admin user-management flow.
+    ///
+    /// # Errors
+    ///
+    /// Returns a database error when the user, membership, or association rows
+    /// cannot be read or updated.
+    pub async fn delete_site_user(&self, login_id: &str) -> Result<SiteUserDeleteResult, DbErr> {
+        let Some(user) = self.find_user_model_by_login_id(login_id).await? else {
+            return Ok(SiteUserDeleteResult::NotFound);
+        };
+        if self.site_user_is_only_project_manager(user.id).await? {
+            return Ok(SiteUserDeleteResult::OnlyManager);
+        }
+
+        let is_site_admin = self.user_is_site_admin(user.id).await?;
+        let user_id = user.id;
+        let login_id = user.login_id.clone().unwrap_or_default();
+        let display_name = user.name.clone().unwrap_or_default();
+        let assignee_ids: Vec<i64> = assignee::Entity::find()
+            .filter(assignee::Column::UserId.eq(Some(user_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect();
+
+        let txn = self.db.begin().await?;
+        if !assignee_ids.is_empty() {
+            issue::Entity::update_many()
+                .filter(issue::Column::AssigneeId.is_in(assignee_ids.iter().copied().map(Some)))
+                .col_expr(issue::Column::AssigneeId, Expr::value(Option::<i64>::None))
+                .exec(&txn)
+                .await?;
+            assignee::Entity::delete_many()
+                .filter(assignee::Column::Id.is_in(assignee_ids))
+                .exec(&txn)
+                .await?;
+        }
+        project_user::Entity::delete_many()
+            .filter(project_user::Column::UserId.eq(Some(user_id)))
+            .exec(&txn)
+            .await?;
+        user_enrolled_project::Entity::delete_many()
+            .filter(user_enrolled_project::Column::UserId.eq(user_id))
+            .exec(&txn)
+            .await?;
+        notification_event_n4user::Entity::delete_many()
+            .filter(notification_event_n4user::Column::N4userId.eq(user_id))
+            .exec(&txn)
+            .await?;
+
+        let mut active = n4user::ActiveModel::from(user);
+        active.state = Set(Some("deleted".to_string()));
+        active.last_state_modified_date = Set(Some(current_datetime()));
+        active.name = Set(Some(format!("[DELETED]{display_name}")));
+        active.password = Set(Some(String::new()));
+        active.password_salt = Set(Some(String::new()));
+        active.email = Set(Some(format!("deleted-{login_id}@noreply.yona.io")));
+        active.remember_me = Set(Some(0));
+        let updated = active.update(&txn).await?;
+        txn.commit().await?;
+
+        Ok(SiteUserDeleteResult::Deleted(site_user_record_from_model(
+            updated,
+            is_site_admin,
+        )))
     }
 
     pub async fn list_projects(&self) -> Result<Vec<ProjectRecord>, DbErr> {
@@ -8414,6 +8482,39 @@ impl AppRepository {
         Ok(users.into_iter().find(|user| {
             normalize_optional(user.login_id.as_deref()).as_deref() == Some(normalized.as_str())
         }))
+    }
+
+    async fn site_user_is_only_project_manager(&self, user_id: i64) -> Result<bool, DbErr> {
+        let manager_role_id = role::Entity::find()
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .find(|row| normalize_optional(row.name.as_deref()).as_deref() == Some("manager"))
+            .map(|row| row.id);
+        let Some(manager_role_id) = manager_role_id else {
+            return Ok(false);
+        };
+        let memberships = project_user::Entity::find()
+            .filter(project_user::Column::UserId.eq(Some(user_id)))
+            .filter(project_user::Column::RoleId.eq(Some(manager_role_id)))
+            .all(&self.db)
+            .await?;
+
+        for membership in memberships {
+            let Some(project_id) = membership.project_id else {
+                continue;
+            };
+            let manager_count = project_user::Entity::find()
+                .filter(project_user::Column::ProjectId.eq(Some(project_id)))
+                .filter(project_user::Column::RoleId.eq(Some(manager_role_id)))
+                .count(&self.db)
+                .await?;
+            if manager_count <= 1 {
+                return Ok(true);
+            }
+        }
+
+        Ok(false)
     }
 
     async fn site_admin_user_ids(&self) -> Result<HashSet<i64>, DbErr> {

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { apiQueryKeys } from "../../../api/query-keys";
 import {
+  deleteSiteUserRest,
   resetSiteUserPasswordRest,
   siteUsersQueryOptions,
   toggleSiteUserAccountLockRest,
@@ -97,6 +98,10 @@ function apiPasswordResetUri(runtimeConfig: RuntimeConfig, loginId: string): str
   return appHref(runtimeConfig, `/api/v1/site/users/${encodeURIComponent(loginId)}/password/reset`);
 }
 
+function apiDeleteSiteUserUri(runtimeConfig: RuntimeConfig, loginId: string): string {
+  return appHref(runtimeConfig, `/api/v1/site/users/${encodeURIComponent(loginId)}`);
+}
+
 function SiteAdminRouteComponent() {
   const { pageName } = Route.useParams();
   const href = useCurrentHref();
@@ -139,6 +144,7 @@ function SiteUserListRoute({
   const canRender = useRequireAuthenticatedRoute(href);
   const input = React.useMemo(() => siteUserListInputFromHref(href), [href]);
   const queryClient = useQueryClient();
+  const [deleteTarget, setDeleteTarget] = React.useState<SiteUser | null>(null);
   const [resetPasswords, setResetPasswords] = React.useState<Record<string, string>>({});
   const query = useQuery({
     ...siteUsersQueryOptions(runtimeConfig, input),
@@ -169,6 +175,14 @@ function SiteUserListRoute({
     mutationFn: (loginId: string) => toggleSiteUserGuestRest(runtimeConfig, csrfToken, loginId),
     onError: mutationError("Guest mode update failed."),
     onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
+    },
+  });
+  const deleteMutation = useMutation({
+    mutationFn: (loginId: string) => deleteSiteUserRest(runtimeConfig, csrfToken, loginId),
+    onError: mutationError("User delete failed."),
+    onSuccess: async () => {
+      setDeleteTarget(null);
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
     },
   });
@@ -207,8 +221,10 @@ function SiteUserListRoute({
 
   return (
     <SiteAdminUserListPage
+      deleteTarget={deleteTarget}
       input={input}
       pendingAccountLockLoginId={lockMutation.isPending ? lockMutation.variables : ""}
+      pendingDeleteLoginId={deleteMutation.isPending ? deleteMutation.variables : ""}
       pendingGuestLoginId={guestMutation.isPending ? guestMutation.variables : ""}
       pendingResetPasswordLoginId={
         resetPasswordMutation.isPending ? resetPasswordMutation.variables : ""
@@ -217,6 +233,9 @@ function SiteUserListRoute({
       response={query.data}
       resetPasswords={resetPasswords}
       runtimeConfig={runtimeConfig}
+      onCancelDelete={() => setDeleteTarget(null)}
+      onConfirmDelete={(loginId) => deleteMutation.mutate(loginId)}
+      onRequestDelete={setDeleteTarget}
       onToggleAccountLock={(loginId) => lockMutation.mutate(loginId)}
       onToggleGuest={(loginId) => guestMutation.mutate(loginId)}
       onResetPassword={(loginId) => resetPasswordMutation.mutate(loginId)}
@@ -226,27 +245,37 @@ function SiteUserListRoute({
 }
 
 function SiteAdminUserListPage({
+  deleteTarget,
   input,
   pendingAccountLockLoginId,
+  pendingDeleteLoginId,
   pendingGuestLoginId,
   pendingResetPasswordLoginId,
   pendingSiteAdminLoginId,
   response,
   resetPasswords,
   runtimeConfig,
+  onCancelDelete,
+  onConfirmDelete,
+  onRequestDelete,
   onResetPassword,
   onToggleAccountLock,
   onToggleGuest,
   onToggleSiteAdmin,
 }: {
+  deleteTarget: SiteUser | null;
   input: SiteUserListInput;
   pendingAccountLockLoginId: string | undefined;
+  pendingDeleteLoginId: string | undefined;
   pendingGuestLoginId: string | undefined;
   pendingResetPasswordLoginId: string | undefined;
   pendingSiteAdminLoginId: string | undefined;
   response: SiteUserListResponse | undefined;
   resetPasswords: Record<string, string>;
   runtimeConfig: RuntimeConfig;
+  onCancelDelete: () => void;
+  onConfirmDelete: (loginId: string) => void;
+  onRequestDelete: (user: SiteUser) => void;
   onResetPassword: (loginId: string) => void;
   onToggleAccountLock: (loginId: string) => void;
   onToggleGuest: (loginId: string) => void;
@@ -312,6 +341,7 @@ function SiteAdminUserListPage({
                     <SiteUserRow
                       key={user.id}
                       pendingAccountLock={pendingAccountLockLoginId === user.loginId}
+                      pendingDelete={pendingDeleteLoginId === user.loginId}
                       pendingGuest={pendingGuestLoginId === user.loginId}
                       pendingResetPassword={pendingResetPasswordLoginId === user.loginId}
                       pendingSiteAdmin={pendingSiteAdminLoginId === user.loginId}
@@ -319,6 +349,7 @@ function SiteAdminUserListPage({
                       runtimeConfig={runtimeConfig}
                       selectedState={input.state}
                       user={user}
+                      onRequestDelete={onRequestDelete}
                       onResetPassword={onResetPassword}
                       onToggleAccountLock={onToggleAccountLock}
                       onToggleGuest={onToggleGuest}
@@ -337,6 +368,13 @@ function SiteAdminUserListPage({
           </div>
         </div>
       </div>
+      <SiteDeleteUserModal
+        pending={deleteTarget !== null && pendingDeleteLoginId === deleteTarget.loginId}
+        runtimeConfig={runtimeConfig}
+        user={deleteTarget}
+        onCancel={onCancelDelete}
+        onConfirm={onConfirmDelete}
+      />
     </main>
   );
 }
@@ -392,6 +430,7 @@ function SiteUserListHeader({ state }: { state: SiteUserState }) {
 
 function SiteUserRow({
   pendingAccountLock,
+  pendingDelete,
   pendingGuest,
   pendingResetPassword,
   pendingSiteAdmin,
@@ -401,10 +440,12 @@ function SiteUserRow({
   user,
   onToggleAccountLock,
   onToggleGuest,
+  onRequestDelete,
   onResetPassword,
   onToggleSiteAdmin,
 }: {
   pendingAccountLock: boolean;
+  pendingDelete: boolean;
   pendingGuest: boolean;
   pendingResetPassword: boolean;
   pendingSiteAdmin: boolean;
@@ -414,6 +455,7 @@ function SiteUserRow({
   user: SiteUser;
   onToggleAccountLock: (loginId: string) => void;
   onToggleGuest: (loginId: string) => void;
+  onRequestDelete: (user: SiteUser) => void;
   onResetPassword: (loginId: string) => void;
   onToggleSiteAdmin: (loginId: string) => void;
 }) {
@@ -502,16 +544,82 @@ function SiteUserRow({
           </button>
           <button
             className="ybtn ybtn-small ybtn-danger"
+            data-href={appHref(runtimeConfig, `/sites/user/delete${user.id}`)}
+            data-request-method="delete"
+            data-request-uri={apiDeleteSiteUserUri(runtimeConfig, user.loginId)}
             data-toggle="account-delete"
             data-user-id={user.loginId}
             data-user-name={user.displayName}
+            disabled={pendingDelete}
             type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              onRequestDelete(user);
+            }}
           >
-            Delete
+            {pendingDelete ? "Deleting..." : "Delete"}
           </button>
         </div>
       )}
     </li>
+  );
+}
+
+function SiteDeleteUserModal({
+  pending,
+  runtimeConfig,
+  user,
+  onCancel,
+  onConfirm,
+}: {
+  pending: boolean;
+  runtimeConfig: RuntimeConfig;
+  user: SiteUser | null;
+  onCancel: () => void;
+  onConfirm: (loginId: string) => void;
+}) {
+  const visible = user !== null;
+  return (
+    <div
+      aria-hidden={!visible}
+      className={`modal fade${visible ? " in" : " hide"}`}
+      hidden={!visible}
+      id="alertDeletionWrap"
+      role="dialog"
+    >
+      <div className="modal-header">
+        <button aria-label="Close" className="close" type="button" onClick={onCancel}>
+          x
+        </button>
+        <h3>Delete User</h3>
+      </div>
+      <div className="modal-body">
+        <p>
+          <span id="userInfo">{user === null ? "" : `${user.displayName}(${user.loginId})`}</span>
+        </p>
+      </div>
+      <div className="modal-footer">
+        <button className="ybtn" disabled={pending} type="button" onClick={onCancel}>
+          Cancel
+        </button>
+        <button
+          className="ybtn ybtn-danger"
+          data-request-method="delete"
+          data-request-uri={user === null ? "" : apiDeleteSiteUserUri(runtimeConfig, user.loginId)}
+          disabled={pending || user === null}
+          id="accountToggleBtn"
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            if (user !== null) {
+              onConfirm(user.loginId);
+            }
+          }}
+        >
+          {pending ? "Deleting..." : "Delete"}
+        </button>
+      </div>
+    </div>
   );
 }
 

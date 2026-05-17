@@ -129,6 +129,23 @@ export function resetSiteUserPasswordRest(
   );
 }
 
+export function deleteSiteUserRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  loginId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteUserMutationResponse> {
+  return restFetch<SiteUserMutationResponse>(
+    runtimeConfig,
+    `/site/users/${encodeURIComponent(loginId)}`,
+    {
+      csrfToken,
+      fetchImpl,
+      method: "DELETE",
+    },
+  );
+}
+
 export function siteUsersQueryOptions(runtimeConfig: RuntimeConfig, input: SiteUserListInput) {
   return queryOptions({
     queryFn: () => readSiteUsersRest(runtimeConfig, input),

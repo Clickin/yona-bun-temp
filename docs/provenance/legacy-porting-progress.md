@@ -3,7 +3,7 @@
 > Status dashboard. This document is a progress mirror for humans and agents.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, and the narrower provenance docs under `docs/provenance/**`.
 
-Last updated: 2026-05-16
+Last updated: 2026-05-17
 
 ## Progress Estimate
 
@@ -16,7 +16,7 @@ Last updated: 2026-05-16
 Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace/public profile, organization/project ownership, issue-tracker core behavior, Git read/admin surfaces, PR/review interaction surfaces, and board/posting core app behavior.
-- The largest remaining gaps are still Smart HTTP Git serve/write flows, PR/review merge/fork/reviewer lifecycle and ranged inline review CRUD, board/posting follow-ups, notification fan-out/read state, webhook delivery/HMAC/history, remaining site admin actions/project/mail/diagnostics, full-text/indexed search hardening, and separate migrator/external API compatibility.
+- The largest remaining gaps are still Smart HTTP Git serve/write flows, PR/review merge/fork/reviewer lifecycle and ranged inline review CRUD, board/posting follow-ups, notification fan-out/read state, webhook delivery/HMAC/history, remaining site admin project/posting/issue moderation/mail/diagnostics, full-text/indexed search hardening, and separate migrator/external API compatibility.
 - Percentages are approximate. Update them only when a slice lands with tests and provenance updates.
 
 ## Update Protocol
@@ -329,8 +329,8 @@ Interpretation:
 
 ## Site Admin
 
-- [~] User list/manage/search (`/sites/userList` core UI + `/api/v1/site/users`; delete user remains)
-- [x] Admin/guest/account-lock/password-reset actions (`/sites/userList` action controls + `/api/v1/site/users/:loginId/*`)
+- [x] User list/manage/search (`/sites/userList` core UI + `/api/v1/site/users`)
+- [x] Admin/guest/account-lock/password-reset/delete actions (`/sites/userList` action controls + `/api/v1/site/users/:loginId*`)
 - [ ] Project list/manage/delete
 - [ ] Site-wide posting/issue management
 - [ ] Mail settings/test/mass mail

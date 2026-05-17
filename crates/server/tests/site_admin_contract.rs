@@ -1,10 +1,13 @@
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
-use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, NotSet, Set};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
+    Set,
+};
 use serde_json::{json, Value};
 use tower::ServiceExt;
-use yona_rust_persistence::{site_admin, AppRepository};
+use yona_rust_persistence::{project_user, site_admin, AppRepository};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
@@ -123,6 +126,31 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i6
     (csrf, cookie_header, actor_id)
 }
 
+async fn create_project(
+    app: axum::Router,
+    cookie: &str,
+    csrf: &str,
+    owner_name: &str,
+    project_name: &str,
+) {
+    response_json(
+        rpc(
+            app,
+            "CreateProject",
+            Some(cookie),
+            Some(csrf),
+            json!({
+                "ownerName": owner_name,
+                "projectName": project_name,
+                "overview": "site admin delete guard",
+                "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+}
+
 async fn rest_get(app: axum::Router, uri: &str, cookie_header: Option<&str>) -> Response<Body> {
     let mut builder = Request::builder().method(Method::GET).uri(uri);
     if let Some(cookie_header) = cookie_header {
@@ -150,6 +178,27 @@ async fn rest_post(
         builder = builder.header("x-csrf-token", csrf);
     }
     app.oneshot(builder.body(Body::from("{}")).unwrap())
+        .await
+        .unwrap()
+}
+
+async fn rest_delete(
+    app: axum::Router,
+    uri: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(Method::DELETE)
+        .uri(uri)
+        .header(http::header::CONTENT_TYPE, "application/json");
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+    app.oneshot(builder.body(Body::empty()).unwrap())
         .await
         .unwrap()
 }
@@ -188,6 +237,9 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
     let (guest_csrf, guest_cookie, _guest_id) = register_user(app.clone(), "guest").await;
+    let (_deletee_csrf, _deletee_cookie, deletee_id) = register_user(app.clone(), "deletee").await;
+    let (manager_csrf, manager_cookie, manager_id) =
+        register_user(app.clone(), "solemanager").await;
     mark_site_admin(&db, admin_id).await;
 
     let unauthenticated = rest_get(app.clone(), "/yona/api/v1/site/users", None).await;
@@ -341,7 +393,7 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
 
     let reset = response_json(
         rest_post(
-            app,
+            app.clone(),
             "/yona/api/v1/site/users/member/password/reset",
             Some(&admin_cookie),
             Some(&admin_csrf),
@@ -361,4 +413,87 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
         .expect("read member after reset")
         .expect("member exists");
     assert!(bcrypt::verify(new_password, &member.password_hash).expect("bcrypt verify"));
+
+    let delete_forbidden = rest_delete(
+        app.clone(),
+        "/yona/api/v1/site/users/deletee",
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+    )
+    .await;
+    assert_eq!(delete_forbidden.status(), StatusCode::FORBIDDEN);
+
+    create_project(
+        app.clone(),
+        &manager_cookie,
+        &manager_csrf,
+        "solemanager",
+        "only-manager-project",
+    )
+    .await;
+    let only_manager_delete = rest_delete(
+        app.clone(),
+        "/yona/api/v1/site/users/solemanager",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+    )
+    .await;
+    assert_eq!(only_manager_delete.status(), StatusCode::FORBIDDEN);
+
+    let manager_project = repo
+        .read_project_by_owner_and_name("solemanager", "only-manager-project")
+        .await
+        .expect("read manager project")
+        .expect("manager project");
+    repo.add_project_membership(manager_project.id, admin_id, "manager")
+        .await
+        .expect("add second manager");
+    let deleted = response_json(
+        rest_delete(
+            app.clone(),
+            "/yona/api/v1/site/users/solemanager",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(deleted["user"]["loginId"], "solemanager");
+    assert_eq!(deleted["user"]["state"], "DELETED");
+    assert_eq!(deleted["user"]["displayName"], "[DELETED]solemanager");
+    assert_eq!(
+        deleted["user"]["emailAddress"],
+        "deleted-solemanager@noreply.yona.io"
+    );
+
+    let remaining_manager_memberships = project_user::Entity::find()
+        .filter(project_user::Column::UserId.eq(Some(manager_id)))
+        .all(&db)
+        .await
+        .expect("read manager memberships");
+    assert!(remaining_manager_memberships.is_empty());
+
+    let deleted_bucket = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/site/users?state=DELETED&query=sole",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(login_ids(&deleted_bucket), vec!["solemanager".to_string()]);
+
+    let deletee_deleted = response_json(
+        rest_delete(
+            app,
+            "/yona/api/v1/site/users/deletee",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(deletee_deleted["user"]["id"].as_i64(), Some(deletee_id));
+    assert_eq!(deletee_deleted["user"]["state"], "DELETED");
 }

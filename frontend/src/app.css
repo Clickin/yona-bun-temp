@@ -740,6 +740,64 @@ h1 {
   border-color: #d98c82;
 }
 
+.site-admin-page .modal.hide {
+  display: none;
+}
+
+.site-admin-page .modal {
+  position: fixed;
+  top: 18%;
+  left: 50%;
+  z-index: 1000;
+  width: min(480px, calc(100vw - 32px));
+  color: #333;
+  background: #fff;
+  border: 1px solid #999;
+  border-radius: 4px;
+  box-shadow: 0 3px 12px rgb(0 0 0 / 24%);
+  transform: translateX(-50%);
+}
+
+.site-admin-page .modal-header,
+.site-admin-page .modal-body,
+.site-admin-page .modal-footer {
+  padding: 12px 16px;
+}
+
+.site-admin-page .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #ddd;
+}
+
+.site-admin-page .modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.site-admin-page .modal-header .close {
+  padding: 0;
+  font-size: 20px;
+  line-height: 20px;
+  color: #777;
+  background: transparent;
+  border: 0;
+}
+
+.site-admin-page .modal-body p {
+  margin: 0;
+}
+
+.site-admin-page .modal-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  background: #f7f7f7;
+  border-top: 1px solid #ddd;
+}
+
 .site-admin-page #pagination {
   display: flex;
   gap: 4px;
