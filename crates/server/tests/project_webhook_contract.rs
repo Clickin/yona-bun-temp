@@ -6,6 +6,7 @@ use serde_json::{json, Value};
 use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tower::ServiceExt;
+use yona_rust_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
 use yona_rust_persistence::{webhook, AppRepository};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -157,6 +158,115 @@ async fn create_project(app: axum::Router, cookie: &str, csrf: &str) {
         .await,
     )
     .await;
+}
+
+#[tokio::test]
+async fn project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    clear_test_webhook_outbox();
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, _db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf).await;
+
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/simple",
+                "secret": "s3",
+                "webhookType": "SIMPLE",
+                "gitPush": false,
+            })),
+        )
+        .await,
+    )
+    .await;
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/json",
+                "secret": "json-secret",
+                "webhookType": "JSON",
+                "gitPush": true,
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    let issue = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "title": "First webhook issue",
+                "bodyMarkdown": "Issue body for the webhook payload",
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(issue["issueNumber"], "1");
+
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 1);
+    let created = &deliveries[0];
+    assert_eq!(created.payload_url, "https://hooks.example/simple");
+    assert_eq!(created.event_type, "NEW_ISSUE");
+    assert_eq!(created.webhook_type, "SIMPLE");
+    assert!(created
+        .headers
+        .iter()
+        .any(|header| header.name == "Authorization" && header.value == "token s3 "));
+    let created_payload: Value =
+        serde_json::from_str(&created.body).expect("created issue webhook payload");
+    let created_text = created_payload["text"].as_str().unwrap_or_default();
+    assert!(created_text.contains("[projectYobi] owner"));
+    assert!(created_text.contains("notification.type.new.issue"));
+    assert!(created_text.contains("/yona/owner/projectYobi/issue/1|#1: First webhook issue"));
+
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/comments",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "contentsMarkdown": "Webhook comment body",
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 2);
+    let commented = &deliveries[1];
+    assert_eq!(commented.payload_url, "https://hooks.example/simple");
+    assert_eq!(commented.event_type, "NEW_COMMENT");
+    let commented_payload: Value =
+        serde_json::from_str(&commented.body).expect("comment webhook payload");
+    let commented_text = commented_payload["text"].as_str().unwrap_or_default();
+    assert!(commented_text.contains("notification.type.new.comment"));
+    assert!(commented_text.contains("/yona/owner/projectYobi/issue/1#comment-"));
+    assert!(commented_text.contains("|#1: First webhook issue"));
 }
 
 #[tokio::test]

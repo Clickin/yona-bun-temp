@@ -33,7 +33,7 @@ use yona_rust_domain::{
     is_valid_project_name, normalize_default_landing_path, ProjectAccessFacts, ProjectOperation,
     ProjectScope, DEFAULT_LANDING_FALLBACK_PATH,
 };
-use yona_rust_integrations::{deliver, OutboundMail};
+use yona_rust_integrations::{deliver, deliver_webhook, OutboundMail, OutboundWebhook};
 use yona_rust_search::SearchType;
 use yona_rust_vcs::{
     CodeBranchListSnapshot, CodeBrowserSnapshot, CodeCommitDetailSnapshot,
@@ -3545,6 +3545,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
     let session_manager = service.session_manager.clone();
     let backend = service.backend.clone();
     let base_path = service.base_path.clone();
+    let public_origin = service.public_origin.clone();
     let issue_meta_service = service.clone();
     let org_project_service = service.clone();
     let pull_request_service = service.clone();
@@ -4000,12 +4001,14 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
+                let public_origin = public_origin.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Json(body): Json<RestIssueMutationBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
+                    let public_origin = public_origin.clone();
                     async move {
                         rest_create_issue(
                             headers,
@@ -4015,6 +4018,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             session_manager,
                             backend,
                             base_path,
+                            public_origin,
                         )
                         .await
                     }
@@ -4153,12 +4157,14 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 let base_path = base_path.clone();
+                let public_origin = public_origin.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, issue_number)): Path<(String, String, i64)>,
                       Json(body): Json<RestIssueCommentBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     let base_path = base_path.clone();
+                    let public_origin = public_origin.clone();
                     async move {
                         rest_create_issue_comment(
                             headers,
@@ -4169,6 +4175,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             session_manager,
                             backend,
                             base_path,
+                            public_origin,
                         )
                         .await
                     }
@@ -8271,6 +8278,127 @@ fn build_project_webhooks_response(
             .map(rest_project_webhook_from_record)
             .collect(),
     })
+}
+
+fn legacy_webhook_event_key<'a>(event_type: &'a str) -> &'a str {
+    match event_type {
+        "NEW_COMMENT" => "notification.type.new.comment",
+        "NEW_ISSUE" => "notification.type.new.issue",
+        _ => event_type,
+    }
+}
+
+fn legacy_webhook_link(url: &str, label: &str, escape_label: bool) -> String {
+    let label = if escape_label {
+        label.replace('>', "&gt;")
+    } else {
+        label.to_string()
+    };
+    format!(" <{url}|{label}>")
+}
+
+fn issue_webhook_payload(
+    webhook: &persistence::ProjectWebhookRecord,
+    issue: &persistence::IssueRecord,
+    request_message: &str,
+    detail_markdown: &str,
+) -> String {
+    match webhook.webhook_type {
+        1 => {
+            let mut fields = Vec::new();
+            if !issue.milestone_title.trim().is_empty() {
+                fields.push(serde_json::json!({
+                    "title": "notification.type.milestone.changed",
+                    "value": issue.milestone_title,
+                    "short": true,
+                }));
+            }
+            fields.push(serde_json::json!({
+                "title": "",
+                "value": issue.assignee_label,
+                "short": true,
+            }));
+            fields.push(serde_json::json!({
+                "title": "issue.state",
+                "value": issue.state,
+                "short": true,
+            }));
+            serde_json::json!({
+                "text": request_message,
+                "attachments": [{
+                    "text": detail_markdown,
+                    "fields": fields,
+                    "color": "",
+                }],
+            })
+            .to_string()
+        }
+        2 => serde_json::json!({
+            "text": request_message,
+            "thread": {},
+        })
+        .to_string(),
+        _ => serde_json::json!({
+            "text": request_message,
+        })
+        .to_string(),
+    }
+}
+
+async fn dispatch_issue_webhooks(
+    repository: &PilotRepository,
+    issue: &persistence::IssueRecord,
+    actor: &persistence::AppUserRecord,
+    event_type: &str,
+    detail_markdown: &str,
+    target_fragment: Option<&str>,
+    public_origin: &str,
+    base_path: &str,
+) {
+    let Ok(Some(project)) = repository
+        .read_project_by_owner_and_name(&issue.owner_name, &issue.project_name)
+        .await
+    else {
+        return;
+    };
+    let Ok(webhooks) = repository.list_project_webhooks(project.id).await else {
+        return;
+    };
+    if webhooks.webhooks.is_empty() {
+        return;
+    }
+
+    let mut path = format!(
+        "/{}/{}/issue/{}",
+        issue.owner_name, issue.project_name, issue.issue_number
+    );
+    if let Some(fragment) = target_fragment {
+        path.push_str(fragment);
+    }
+    let url = absolute_app_url(public_origin, base_path, &path);
+    let target_label = format!("#{}: {}", issue.issue_number, issue.title);
+
+    for webhook in webhooks.webhooks {
+        if webhook.webhook_type == 3 {
+            continue;
+        }
+        let webhook_type = project_webhook_type_label(webhook.webhook_type);
+        let request_message = format!(
+            "[{}] {} {}{}",
+            project.project_name,
+            actor.display_name,
+            legacy_webhook_event_key(event_type),
+            legacy_webhook_link(&url, &target_label, webhook.webhook_type == 1)
+        );
+        let body = issue_webhook_payload(&webhook, issue, &request_message, detail_markdown);
+        let _ = deliver_webhook(OutboundWebhook {
+            body,
+            event_type: event_type.to_string(),
+            payload_url: webhook.payload_url,
+            secret: webhook.secret,
+            webhook_type,
+        });
+    }
 }
 
 async fn rest_require_project_update(
@@ -12780,6 +12908,7 @@ async fn rest_create_issue(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    public_origin: String,
 ) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -12812,6 +12941,17 @@ async fn rest_create_issue(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    dispatch_issue_webhooks(
+        repository,
+        &issue,
+        &actor,
+        "NEW_ISSUE",
+        &issue.body_markdown,
+        None,
+        &public_origin,
+        &base_path,
+    )
+    .await;
     Ok(Json(issue_detail_response_from_record(
         &issue,
         true,
@@ -12942,6 +13082,7 @@ async fn rest_create_issue_comment(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    public_origin: String,
 ) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -12978,7 +13119,7 @@ async fn rest_create_issue_comment(
             actor_id: actor.id,
             actor_login_id: actor.login_id.clone(),
             attachment_ids: body.attachment_ids,
-            contents_markdown: body.contents_markdown,
+            contents_markdown: body.contents_markdown.clone(),
             issue_number,
             owner_name,
             project_name,
@@ -12987,6 +13128,24 @@ async fn rest_create_issue_comment(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
+    let created_comment = issue.comments.iter().max_by_key(|comment| comment.id);
+    let target_fragment = created_comment
+        .map(|comment| format!("#comment-{}", comment.id))
+        .unwrap_or_default();
+    let detail_markdown = created_comment
+        .map(|comment| comment.contents_markdown.as_str())
+        .unwrap_or_else(|| body.contents_markdown.as_str());
+    dispatch_issue_webhooks(
+        repository,
+        &issue,
+        &actor,
+        "NEW_COMMENT",
+        detail_markdown,
+        (!target_fragment.is_empty()).then_some(target_fragment.as_str()),
+        &public_origin,
+        &base_path,
+    )
+    .await;
     Ok(Json(issue_detail_response_from_record(
         &issue,
         true,
