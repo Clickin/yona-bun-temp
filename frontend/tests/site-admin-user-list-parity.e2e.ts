@@ -116,6 +116,7 @@ test.beforeEach(async ({ page }) => {
 test("site admin user list preserves legacy shell and toggles user state", async ({ page }) => {
   let promoted = false;
   let locked = false;
+  let guest = false;
   const requests: string[] = [];
 
   await page.route(apiV1Route("/site/users**"), async (route) => {
@@ -151,6 +152,20 @@ test("site admin user list preserves legacy shell and toggles user state", async
       return;
     }
 
+    if (url.pathname.endsWith("/guest/toggle")) {
+      guest = !guest;
+      await route.fulfill({
+        body: JSON.stringify({
+          user: siteUsersPayload({
+            users: [{ id: 2, isGuest: guest, loginId: "member" }],
+          }).users[0],
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+      return;
+    }
+
     const state = url.searchParams.get("state") ?? "ACTIVE";
     const query = url.searchParams.get("query") ?? "";
     const users =
@@ -159,9 +174,11 @@ test("site admin user list preserves legacy shell and toggles user state", async
             { id: 1, isSiteAdmin: true, loginId: "siteboss", name: "Site Boss" },
             ...(promoted ? [{ id: 2, isSiteAdmin: true, loginId: "member" }] : []),
           ]
-        : state === "LOCKED" && locked
-          ? [{ id: 2, loginId: "member", state: "LOCKED" }]
-          : [{ id: 2, isSiteAdmin: promoted, loginId: "member" }];
+        : state === "GUEST" && guest
+          ? [{ id: 2, isGuest: true, loginId: "member" }]
+          : state === "LOCKED" && locked
+            ? [{ id: 2, loginId: "member", state: "LOCKED" }]
+            : [{ id: 2, isGuest: guest, isSiteAdmin: promoted, loginId: "member" }];
 
     await route.fulfill({
       body: JSON.stringify(
@@ -199,6 +216,14 @@ test("site admin user list preserves legacy shell and toggles user state", async
   await expect
     .poll(() => requests.some((request) => request.includes("account-lock/toggle")))
     .toBe(true);
+
+  await page.locator("[data-request-uri$='/guest/toggle']").click();
+  await expect.poll(() => requests.some((request) => request.includes("guest/toggle"))).toBe(true);
+
+  await page.goto("/yona/sites/userList?state=GUEST");
+  await expect(page.locator(".nav-tabs li.active a")).toContainText("Guest");
+  await expect(page.locator(".user-list-wrap .user-id")).toHaveText("@member");
+  await expect(page.locator("[data-request-uri$='/guest/toggle']")).toContainText("Normal User");
 
   await page.goto("/yona/sites/userList?state=SITE_ADMIN");
   await expect(page.locator(".nav-tabs li.active a")).toContainText("Site Admin");

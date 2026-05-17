@@ -3586,6 +3586,16 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/site/users/{login_id}/guest/toggle",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_toggle_site_user_guest(headers, login_id, service).await }
+                }
+            }),
+        )
+        .route(
             "/workspace/emails",
             post({
                 let service = service.clone();
@@ -6616,6 +6626,23 @@ async fn rest_toggle_site_user_account_lock(
     let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
     let user = repository
         .toggle_site_user_account_lock(&login_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .ok_or_else(|| RestRouteError::not_found("user not found"))?;
+
+    Ok(Json(RestSiteUserMutationResponse {
+        user: rest_site_user_from_record(user),
+    }))
+}
+
+async fn rest_toggle_site_user_guest(
+    headers: HeaderMap,
+    login_id: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteUserMutationResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let user = repository
+        .toggle_site_user_guest_mode(&login_id)
         .await
         .map_err(|error| RestRouteError::internal(error.to_string()))?
         .ok_or_else(|| RestRouteError::not_found("user not found"))?;

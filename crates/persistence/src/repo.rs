@@ -906,6 +906,27 @@ impl AppRepository {
         Ok(Some(site_user_record_from_model(updated, is_site_admin)))
     }
 
+    /// Toggles whether a user is treated as a legacy guest-mode account.
+    ///
+    /// # Errors
+    ///
+    /// Returns a database error when the user row cannot be read or updated.
+    pub async fn toggle_site_user_guest_mode(
+        &self,
+        login_id: &str,
+    ) -> Result<Option<SiteUserRecord>, DbErr> {
+        let Some(user) = self.find_user_model_by_login_id(login_id).await? else {
+            return Ok(None);
+        };
+        let is_guest = user.is_guest.unwrap_or_default() != 0;
+        let mut active = n4user::ActiveModel::from(user);
+        active.is_guest = Set(Some(if is_guest { 0 } else { 1 }));
+        let updated = active.update(&self.db).await?;
+        let is_site_admin = self.user_is_site_admin(updated.id).await?;
+
+        Ok(Some(site_user_record_from_model(updated, is_site_admin)))
+    }
+
     pub async fn list_projects(&self) -> Result<Vec<ProjectRecord>, DbErr> {
         let rows = project::Entity::find()
             .select_only()

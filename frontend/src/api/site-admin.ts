@@ -47,7 +47,7 @@ function siteUsersPath(input: SiteUserListInput): string {
   return `/site/users?${params.toString()}`;
 }
 
-function siteUserPath(loginId: string, action: "account-lock" | "site-admin"): string {
+function siteUserPath(loginId: string, action: "account-lock" | "guest" | "site-admin"): string {
   return `/site/users/${encodeURIComponent(loginId)}/${action}/toggle`;
 }
 
@@ -83,6 +83,20 @@ export function toggleSiteUserAccountLockRest(
   fetchImpl: typeof fetch = fetch,
 ): Promise<SiteUserMutationResponse> {
   return restFetch<SiteUserMutationResponse>(runtimeConfig, siteUserPath(loginId, "account-lock"), {
+    body: {},
+    csrfToken,
+    fetchImpl,
+    method: "POST",
+  });
+}
+
+export function toggleSiteUserGuestRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  loginId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteUserMutationResponse> {
+  return restFetch<SiteUserMutationResponse>(runtimeConfig, siteUserPath(loginId, "guest"), {
     body: {},
     csrfToken,
     fetchImpl,

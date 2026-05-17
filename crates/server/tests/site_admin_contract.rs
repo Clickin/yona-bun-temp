@@ -187,7 +187,7 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     let (app, _repo, db) = build_app_with_repository().await;
     let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
-    let (_guest_csrf, _guest_cookie, _guest_id) = register_user(app.clone(), "guest").await;
+    let (guest_csrf, guest_cookie, _guest_id) = register_user(app.clone(), "guest").await;
     mark_site_admin(&db, admin_id).await;
 
     let unauthenticated = rest_get(app.clone(), "/yona/api/v1/site/users", None).await;
@@ -274,7 +274,7 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
 
     let unlocked = response_json(
         rest_post(
-            app,
+            app.clone(),
             "/yona/api/v1/site/users/member/account-lock/toggle",
             Some(&admin_cookie),
             Some(&admin_csrf),
@@ -284,4 +284,49 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     .await;
     assert_eq!(unlocked["user"]["state"], "ACTIVE");
     assert_eq!(unlocked["user"]["id"].as_i64(), Some(member_id));
+
+    let guest_forbidden = rest_post(
+        app.clone(),
+        "/yona/api/v1/site/users/member/guest/toggle",
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+    )
+    .await;
+    assert_eq!(guest_forbidden.status(), StatusCode::FORBIDDEN);
+
+    let guest_mode = response_json(
+        rest_post(
+            app.clone(),
+            "/yona/api/v1/site/users/member/guest/toggle",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(guest_mode["user"]["loginId"], "member");
+    assert_eq!(guest_mode["user"]["isGuest"], true);
+
+    let guest_bucket = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/site/users?state=GUEST",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(login_ids(&guest_bucket), vec!["member".to_string()]);
+
+    let normal_mode = response_json(
+        rest_post(
+            app,
+            "/yona/api/v1/site/users/member/guest/toggle",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(normal_mode["user"]["isGuest"], false);
 }

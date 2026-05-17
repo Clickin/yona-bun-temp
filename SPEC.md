@@ -944,6 +944,7 @@ GET   /sites/postList          → 게시글 목록
 GET   /sites/issueList         → 이슈 목록
 POST  /sites/toggleSiteAdminRole → 관리자 역할 토글
 POST  /sites/toggleAccountLock → 계정 잠금/해제
+POST  /sites/toggleGuestMode   → 게스트 모드 토글
 DELETE /sites/user/delete       → 사용자 삭제
 DELETE /sites/project/delete/:id → 프로젝트 삭제
 GET   /sites/mail              → 메일 설정
@@ -960,7 +961,7 @@ GET   /sites/export            → 데이터 익스포트
 
 | 기능                   | Legacy 동작                        | 현재 상태 | Phase |
 | ---------------------- | ---------------------------------- | --------- | ----- |
-| 사용자 목록/관리       | 목록, 검색, 관리자 토글, 계정 잠금 | 🔶 부분 구현(`/sites/userList`, `/api/v1/site/users`; guest/reset/delete follow-up) | 6     |
+| 사용자 목록/관리       | 목록, 검색, 관리자/잠금/게스트 토글 | 🔶 부분 구현(`/sites/userList`, `/api/v1/site/users`; reset/delete follow-up) | 6     |
 | 프로젝트 목록/관리     | 목록, 검색, 삭제                   | gap       | 6     |
 | 게시글/이슈 목록       | 전체 게시글/이슈 관리              | gap       | 6     |
 | 메일 설정/테스트       | SMTP 테스트, 대량 메일             | gap       | 6     |
@@ -971,9 +972,9 @@ GET   /sites/export            → 데이터 익스포트
 #### 검수 기준
 
 - [ ] 관리자 화면: `/sites/*` 경로, site_admin 역할만 접근 가능
-- [x] 사용자 목록 REST: site admin 전용 `/api/v1/site/users`, 검색, 페이지네이션, 관리자 역할 토글, 계정 잠금/해제
-- [x] 사용자 목록 UI core: legacy `/sites/userList` shell, state tabs, 검색, 페이지네이션, 관리자 역할 토글, 계정 잠금/해제
-- [ ] 사용자 목록 잔여 액션: guest mode, reset password, delete user
+- [x] 사용자 목록 REST: site admin 전용 `/api/v1/site/users`, 검색, 페이지네이션, 관리자 역할 토글, 계정 잠금/해제, 게스트 모드 토글
+- [x] 사용자 목록 UI core: legacy `/sites/userList` shell, state tabs, 검색, 페이지네이션, 관리자 역할 토글, 계정 잠금/해제, 게스트 모드 토글
+- [ ] 사용자 목록 잔여 액션: reset password, delete user
 - [ ] 프로젝트 목록: 검색, 페이지네이션, 프로젝트 삭제
 
 ---

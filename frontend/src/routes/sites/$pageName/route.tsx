@@ -6,6 +6,7 @@ import {
   siteUsersQueryOptions,
   toggleSiteUserAccountLockRest,
   toggleSiteUserAdminRest,
+  toggleSiteUserGuestRest,
   type SiteUser,
   type SiteUserListInput,
   type SiteUserListResponse,
@@ -158,6 +159,13 @@ function SiteUserListRoute({
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
     },
   });
+  const guestMutation = useMutation({
+    mutationFn: (loginId: string) => toggleSiteUserGuestRest(runtimeConfig, csrfToken, loginId),
+    onError: mutationError("Guest mode update failed."),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
+    },
+  });
   const failureKind = classifyConnectFailure(query.error);
 
   React.useEffect(() => {
@@ -184,10 +192,12 @@ function SiteUserListRoute({
     <SiteAdminUserListPage
       input={input}
       pendingAccountLockLoginId={lockMutation.isPending ? lockMutation.variables : ""}
+      pendingGuestLoginId={guestMutation.isPending ? guestMutation.variables : ""}
       pendingSiteAdminLoginId={adminMutation.isPending ? adminMutation.variables : ""}
       response={query.data}
       runtimeConfig={runtimeConfig}
       onToggleAccountLock={(loginId) => lockMutation.mutate(loginId)}
+      onToggleGuest={(loginId) => guestMutation.mutate(loginId)}
       onToggleSiteAdmin={(loginId) => adminMutation.mutate(loginId)}
     />
   );
@@ -196,18 +206,22 @@ function SiteUserListRoute({
 function SiteAdminUserListPage({
   input,
   pendingAccountLockLoginId,
+  pendingGuestLoginId,
   pendingSiteAdminLoginId,
   response,
   runtimeConfig,
   onToggleAccountLock,
+  onToggleGuest,
   onToggleSiteAdmin,
 }: {
   input: SiteUserListInput;
   pendingAccountLockLoginId: string | undefined;
+  pendingGuestLoginId: string | undefined;
   pendingSiteAdminLoginId: string | undefined;
   response: SiteUserListResponse | undefined;
   runtimeConfig: RuntimeConfig;
   onToggleAccountLock: (loginId: string) => void;
+  onToggleGuest: (loginId: string) => void;
   onToggleSiteAdmin: (loginId: string) => void;
 }) {
   const users = response?.users ?? [];
@@ -270,11 +284,13 @@ function SiteAdminUserListPage({
                     <SiteUserRow
                       key={user.id}
                       pendingAccountLock={pendingAccountLockLoginId === user.loginId}
+                      pendingGuest={pendingGuestLoginId === user.loginId}
                       pendingSiteAdmin={pendingSiteAdminLoginId === user.loginId}
                       runtimeConfig={runtimeConfig}
                       selectedState={input.state}
                       user={user}
                       onToggleAccountLock={onToggleAccountLock}
+                      onToggleGuest={onToggleGuest}
                       onToggleSiteAdmin={onToggleSiteAdmin}
                     />
                   ))}
@@ -345,19 +361,23 @@ function SiteUserListHeader({ state }: { state: SiteUserState }) {
 
 function SiteUserRow({
   pendingAccountLock,
+  pendingGuest,
   pendingSiteAdmin,
   runtimeConfig,
   selectedState,
   user,
   onToggleAccountLock,
+  onToggleGuest,
   onToggleSiteAdmin,
 }: {
   pendingAccountLock: boolean;
+  pendingGuest: boolean;
   pendingSiteAdmin: boolean;
   runtimeConfig: RuntimeConfig;
   selectedState: SiteUserState;
   user: SiteUser;
   onToggleAccountLock: (loginId: string) => void;
+  onToggleGuest: (loginId: string) => void;
   onToggleSiteAdmin: (loginId: string) => void;
 }) {
   return (
@@ -384,11 +404,16 @@ function SiteUserRow({
       ) : (
         <div className="span5 listitem-col action-buttons">
           <button
-            aria-disabled="true"
             className={`ybtn ybtn-small${user.isGuest ? " ybtn-success" : ""}`}
+            data-request-method="post"
+            data-request-uri={apiDataUri(runtimeConfig, user.loginId, "guest")}
             type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              onToggleGuest(user.loginId);
+            }}
           >
-            {user.isGuest ? "Normal User" : "Guest User"}
+            {pendingGuest ? "Saving..." : user.isGuest ? "Normal User" : "Guest User"}
           </button>
           <button
             className="ybtn ybtn-small"
