@@ -7,7 +7,9 @@ use sea_orm::{
 };
 use serde_json::{json, Value};
 use tower::ServiceExt;
-use yona_rust_persistence::{project_user, site_admin, AppRepository};
+use yona_rust_persistence::{
+    project_user, site_admin, AppRepository, CreatePostingInput, PostingMutationInput,
+};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
@@ -610,4 +612,70 @@ async fn site_admin_project_list_and_delete_follow_legacy_surface() {
     .await;
     assert_eq!(empty["projects"].as_array().expect("projects").len(), 0);
     assert_eq!(empty["total"], 0);
+}
+
+#[tokio::test]
+async fn site_admin_post_list_follows_legacy_read_only_surface() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &member_csrf,
+        "member",
+        "boardproj",
+    )
+    .await;
+    let posting = repo
+        .create_posting(CreatePostingInput {
+            actor_display_name: "Member Name".to_string(),
+            actor_id: member_id,
+            actor_login_id: "member".to_string(),
+            owner_name: "member".to_string(),
+            project_name: "boardproj".to_string(),
+            values: PostingMutationInput {
+                attachment_ids: vec![],
+                body_markdown: "legacy site post list body".to_string(),
+                label_ids: vec![],
+                notice: false,
+                readme: false,
+                title: "Legacy site post".to_string(),
+            },
+        })
+        .await
+        .expect("create posting")
+        .expect("posting created");
+
+    let unauthenticated = rest_get(app.clone(), "/yona/api/v1/site/posts", None).await;
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let forbidden = rest_get(app.clone(), "/yona/api/v1/site/posts", Some(&member_cookie)).await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let payload = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/site/posts?pageNum=1",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(payload["page"], 1);
+    assert_eq!(payload["pageSize"], 30);
+    assert_eq!(payload["total"], 1);
+    assert_eq!(payload["totalPages"], 1);
+    assert_eq!(payload["posts"][0]["ownerName"], "member");
+    assert_eq!(payload["posts"][0]["projectName"], "boardproj");
+    assert_eq!(
+        payload["posts"][0]["postNumber"],
+        posting.post_number.to_string()
+    );
+    assert_eq!(payload["posts"][0]["title"], "Legacy site post");
+    assert_eq!(payload["posts"][0]["authorLoginId"], "member");
+    assert_eq!(payload["posts"][0]["authorLabel"], "Member Name");
+    assert_eq!(payload["posts"][0]["commentCount"], 0);
 }

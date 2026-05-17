@@ -647,6 +647,7 @@ h1 {
   min-width: 0;
 }
 
+.site-admin-page .post-list-wrap,
 .site-admin-page .project-list-wrap,
 .site-admin-page .user-list-wrap {
   padding: 0;
@@ -656,6 +657,7 @@ h1 {
   border-top: 0;
 }
 
+.site-admin-page .post-list-wrap .listitem,
 .site-admin-page .project-list-wrap .listitem,
 .site-admin-page .user-list-wrap .listitem {
   align-items: center;
@@ -664,6 +666,7 @@ h1 {
   border-bottom: 1px solid #eee;
 }
 
+.site-admin-page .post-list-wrap .listitem:last-child,
 .site-admin-page .project-list-wrap .listitem:last-child,
 .site-admin-page .user-list-wrap .listitem:last-child {
   border-bottom: 0;
@@ -709,6 +712,47 @@ h1 {
   flex-wrap: wrap;
   gap: 6px;
   justify-content: flex-end;
+}
+
+.site-admin-page .post-info-wrap {
+  flex: 1 1 360px;
+  min-width: 0;
+}
+
+.site-admin-page .post-project,
+.site-admin-page .post-title {
+  overflow-wrap: anywhere;
+}
+
+.site-admin-page .post-info-separator {
+  margin: 0 6px;
+  color: #aaa;
+}
+
+.site-admin-page .post-meta-wrap {
+  display: flex;
+  flex: 0 1 320px;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  color: #666;
+}
+
+.site-admin-page .post-meta-item {
+  color: #666;
+}
+
+.site-admin-page .post-comments a {
+  color: #666;
+}
+
+.site-admin-page .avatar-initial-small {
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+  line-height: 18px;
 }
 
 .site-admin-page .action-buttons .alert {

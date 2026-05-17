@@ -2367,6 +2367,23 @@ struct RestSiteProjectListResponse {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+struct RestSitePostsQuery {
+    page: Option<u32>,
+    page_num: Option<u32>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSitePostListResponse {
+    page: u32,
+    page_size: u32,
+    posts: Vec<RestPostListItem>,
+    total: u32,
+    total_pages: u32,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 struct RestNotificationsQuery {
     from: u32,
     size: u32,
@@ -3664,6 +3681,16 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Query(query): Query<RestSiteProjectsQuery>| {
                     let service = service.clone();
                     async move { rest_read_site_projects(headers, query, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/posts",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Query(query): Query<RestSitePostsQuery>| {
+                    let service = service.clone();
+                    async move { rest_read_site_posts(headers, query, service).await }
                 }
             }),
         )
@@ -6839,6 +6866,30 @@ async fn rest_read_site_projects(
         projects,
         total: total as u32,
         total_pages: total_pages as u32,
+    }))
+}
+
+async fn rest_read_site_posts(
+    headers: HeaderMap,
+    query: RestSitePostsQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSitePostListResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
+    let record = repository
+        .list_site_postings(query.page.or(query.page_num).unwrap_or(1))
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+
+    Ok(Json(RestSitePostListResponse {
+        page: record.page,
+        page_size: record.page_size,
+        posts: record
+            .posts
+            .iter()
+            .map(rest_post_list_item_from_record)
+            .collect(),
+        total: record.total,
+        total_pages: record.total_pages,
     }))
 }
 

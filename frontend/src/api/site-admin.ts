@@ -71,6 +71,33 @@ export interface SiteProjectDeleteResponse {
   redirectPath: string;
 }
 
+export interface SitePostListInput {
+  page: number;
+}
+
+export interface SitePost {
+  authorLabel: string;
+  authorLoginId: string;
+  commentCount: number;
+  createdLabel: string;
+  labels: Array<{ id: string; name: string }>;
+  notice: boolean;
+  ownerName: string;
+  postNumber: string;
+  projectName: string;
+  readme: boolean;
+  title: string;
+  updatedLabel: string;
+}
+
+export interface SitePostListResponse {
+  page: number;
+  pageSize: number;
+  posts: SitePost[];
+  total: number;
+  totalPages: number;
+}
+
 function siteUsersPath(input: SiteUserListInput): string {
   const params = new URLSearchParams();
   params.set("state", input.state);
@@ -88,6 +115,12 @@ function siteProjectsPath(input: SiteProjectListInput): string {
   }
   params.set("page", String(input.page));
   return `/site/projects?${params.toString()}`;
+}
+
+function sitePostsPath(input: SitePostListInput): string {
+  const params = new URLSearchParams();
+  params.set("page", String(input.page));
+  return `/site/posts?${params.toString()}`;
 }
 
 function siteUserPath(loginId: string, action: "account-lock" | "guest" | "site-admin"): string {
@@ -111,6 +144,17 @@ export function readSiteProjectsRest(
   fetchImpl: typeof fetch = fetch,
 ): Promise<SiteProjectListResponse> {
   return restFetch<SiteProjectListResponse>(runtimeConfig, siteProjectsPath(input), {
+    fetchImpl,
+    method: "GET",
+  });
+}
+
+export function readSitePostsRest(
+  runtimeConfig: RuntimeConfig,
+  input: SitePostListInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SitePostListResponse> {
+  return restFetch<SitePostListResponse>(runtimeConfig, sitePostsPath(input), {
     fetchImpl,
     method: "GET",
   });
@@ -220,5 +264,12 @@ export function siteProjectsQueryOptions(
   return queryOptions({
     queryFn: () => readSiteProjectsRest(runtimeConfig, input),
     queryKey: apiQueryKeys.siteAdmin.projects(input),
+  });
+}
+
+export function sitePostsQueryOptions(runtimeConfig: RuntimeConfig, input: SitePostListInput) {
+  return queryOptions({
+    queryFn: () => readSitePostsRest(runtimeConfig, input),
+    queryKey: apiQueryKeys.siteAdmin.posts(input),
   });
 }

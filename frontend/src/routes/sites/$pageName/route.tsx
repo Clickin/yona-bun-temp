@@ -5,9 +5,13 @@ import { apiQueryKeys } from "../../../api/query-keys";
 import {
   deleteSiteProjectRest,
   deleteSiteUserRest,
+  sitePostsQueryOptions,
   siteProjectsQueryOptions,
   resetSiteUserPasswordRest,
   siteUsersQueryOptions,
+  type SitePost,
+  type SitePostListInput,
+  type SitePostListResponse,
   toggleSiteUserAccountLockRest,
   toggleSiteUserAdminRest,
   toggleSiteUserGuestRest,
@@ -112,6 +116,22 @@ function siteProjectListHref(input: SiteProjectListInput, page: number = input.p
   return query ? `/sites/projectList?${query}` : "/sites/projectList";
 }
 
+function sitePostListInputFromHref(href: string): SitePostListInput {
+  const params = new URL(href, "http://yona.local").searchParams;
+  return {
+    page: parsePositiveInt(params.get("pageNum") ?? params.get("page"), 1),
+  };
+}
+
+function sitePostListHref(input: SitePostListInput, page: number = input.page): string {
+  const params = new URLSearchParams();
+  if (page > 1) {
+    params.set("pageNum", String(page));
+  }
+  const query = params.toString();
+  return query ? `/sites/postList?${query}` : "/sites/postList";
+}
+
 function apiToggleUri(runtimeConfig: RuntimeConfig, loginId: string, action: string): string {
   return appHref(
     runtimeConfig,
@@ -159,6 +179,18 @@ function SiteAdminRouteComponent() {
       <SiteProjectListRoute
         bootstrapping={bootstrapping}
         csrfToken={csrfToken}
+        currentIsSiteAdmin={currentIsSiteAdmin}
+        href={href}
+        runtimeConfig={runtimeConfig}
+        setErrorMessage={setErrorMessage}
+      />
+    );
+  }
+
+  if (pageName === "postList") {
+    return (
+      <SitePostListRoute
+        bootstrapping={bootstrapping}
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
         runtimeConfig={runtimeConfig}
@@ -354,6 +386,52 @@ function SiteProjectListRoute({
       onConfirmDelete={(projectId) => deleteMutation.mutate(projectId)}
       onRequestDelete={setDeleteTarget}
     />
+  );
+}
+
+function SitePostListRoute({
+  bootstrapping,
+  currentIsSiteAdmin,
+  href,
+  runtimeConfig,
+  setErrorMessage,
+}: {
+  bootstrapping: boolean;
+  currentIsSiteAdmin: boolean;
+  href: string;
+  runtimeConfig: RuntimeConfig;
+  setErrorMessage: (message: string | null) => void;
+}) {
+  const canRender = useRequireAuthenticatedRoute(href);
+  const input = React.useMemo(() => sitePostListInputFromHref(href), [href]);
+  const query = useQuery({
+    ...sitePostsQueryOptions(runtimeConfig, input),
+    enabled: canRender && currentIsSiteAdmin,
+  });
+  const failureKind = classifyConnectFailure(query.error);
+
+  React.useEffect(() => {
+    if (query.error && !classifyConnectFailure(query.error)) {
+      setErrorMessage(query.error instanceof Error ? query.error.message : "Read posts failed.");
+    }
+  }, [query.error, setErrorMessage]);
+
+  if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
+    return (
+      <main className="app-shell site-admin-page">
+        <h1>Loading&hellip;</h1>
+      </main>
+    );
+  }
+  if (!currentIsSiteAdmin || failureKind === "forbidden") {
+    return <ForbiddenPage href="/sites/postList" />;
+  }
+  if (failureKind === "not-found") {
+    return <NotFoundPage href="/sites/postList" />;
+  }
+
+  return (
+    <SiteAdminPostListPage input={input} response={query.data} runtimeConfig={runtimeConfig} />
   );
 }
 
@@ -596,6 +674,106 @@ function SiteAdminProjectListPage({
         onConfirm={onConfirmDelete}
       />
     </main>
+  );
+}
+
+function SiteAdminPostListPage({
+  input,
+  response,
+  runtimeConfig,
+}: {
+  input: SitePostListInput;
+  response: SitePostListResponse | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const posts = response?.posts ?? [];
+  const page = response?.page ?? input.page;
+  const totalPages = response?.totalPages ?? 0;
+
+  return (
+    <main className="app-shell site-admin-page">
+      <div className="site-breadcrumb-outer">
+        <div className="site-breadcrumb-inner">
+          <h3>Site Admin</h3>
+        </div>
+      </div>
+      <div className="page-wrap-outer">
+        <div className="site-setting-wrap">
+          <div className="row-fluid site-setting-layout">
+            <div className="span2">
+              <SiteAdminSidebar activePageName="postList" runtimeConfig={runtimeConfig} />
+            </div>
+            <div className="span10">
+              <div className="title_area">
+                <h2 className="pull-left">Post List</h2>
+              </div>
+              {posts.length === 0 ? (
+                <div className="warning-none">No posts found.</div>
+              ) : (
+                <ul className="post-list-wrap">
+                  {posts.map((post) => (
+                    <SitePostRow
+                      key={`${post.ownerName}/${post.projectName}/${post.postNumber}`}
+                      post={post}
+                      runtimeConfig={runtimeConfig}
+                    />
+                  ))}
+                </ul>
+              )}
+              <SitePostPagination
+                input={input}
+                page={page}
+                runtimeConfig={runtimeConfig}
+                totalPages={totalPages}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function SitePostRow({ post, runtimeConfig }: { post: SitePost; runtimeConfig: RuntimeConfig }) {
+  const projectPath = `/${post.ownerName}/${post.projectName}`;
+  const postPath = `${projectPath}/post/${post.postNumber}`;
+  const projectLabel = `${post.ownerName}/${post.projectName}`;
+  const authorLabel = post.authorLabel || post.authorLoginId;
+
+  return (
+    <li className="row-fluid listitem">
+      <a className="avatar-wrap list-avatar" href={appHref(runtimeConfig, projectPath)}>
+        <span className="avatar-initial">{post.projectName.slice(0, 1).toUpperCase()}</span>
+      </a>
+      <div className="post-info-wrap">
+        <a className="post-project" href={appHref(runtimeConfig, projectPath)}>
+          {projectLabel}
+        </a>
+        <span className="post-info-separator">{"\u00b7"}</span>
+        <a className="post-title" href={appHref(runtimeConfig, postPath)}>
+          {post.title}
+        </a>
+      </div>
+      <div className="post-meta-wrap">
+        <a className="avatar-wrap" href={appHref(runtimeConfig, `/${post.authorLoginId}`)}>
+          <span className="avatar-initial avatar-initial-small">
+            {authorLabel.slice(0, 1).toUpperCase()}
+          </span>
+        </a>
+        <a className="post-meta-item" href={appHref(runtimeConfig, `/${post.authorLoginId}`)}>
+          {authorLabel}
+        </a>
+        <span className="post-meta-item" title={post.createdLabel}>
+          {post.createdLabel}
+        </span>
+        <span className="post-comments post-meta-item">
+          <a href={appHref(runtimeConfig, `${postPath}#comments`)}>
+            <span aria-hidden="true" className="yobicon-comments" />
+            {post.commentCount}
+          </a>
+        </span>
+      </div>
+    </li>
   );
 }
 
@@ -1022,6 +1200,36 @@ function SiteProjectPagination({
           className={pageNumber === page ? "active" : ""}
           data-page-num={pageNumber}
           href={appHref(runtimeConfig, siteProjectListHref(input, pageNumber))}
+          key={pageNumber}
+        >
+          {pageNumber}
+        </a>
+      ))}
+    </div>
+  );
+}
+
+function SitePostPagination({
+  input,
+  page,
+  runtimeConfig,
+  totalPages,
+}: {
+  input: SitePostListInput;
+  page: number;
+  runtimeConfig: RuntimeConfig;
+  totalPages: number;
+}) {
+  if (totalPages <= 1) {
+    return <div id="pagination" />;
+  }
+  return (
+    <div id="pagination">
+      {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+        <a
+          className={pageNumber === page ? "active" : ""}
+          data-page-num={pageNumber}
+          href={appHref(runtimeConfig, sitePostListHref(input, pageNumber))}
           key={pageNumber}
         >
           {pageNumber}

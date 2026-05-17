@@ -27,14 +27,15 @@ use crate::repo_types::{
     PullRequestReviewInput, PullRequestStateInput, PullRequestThreadStateInput,
     PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
     ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
-    SearchRepositoryInput, SearchResultRecord, SearchScope, SiteUserDeleteResult,
-    SiteUserListFilter, SiteUserListRecord, SiteUserRecord, ToggleFavoriteIssueResult,
-    ToggleFavoriteProjectResult, UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput,
-    UpdateOrganizationInput, UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
-    UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestInput,
-    UserIssueCandidateRecord, UserIssueListFilter, UserStatisticsRecord,
-    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
-    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    SearchRepositoryInput, SearchResultRecord, SearchScope, SitePostingListRecord,
+    SiteUserDeleteResult, SiteUserListFilter, SiteUserListRecord, SiteUserRecord,
+    ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateIssueCommentInput,
+    UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput,
+    UpdatePostingInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
+    UpdateProjectLabelInput, UpdatePullRequestInput, UserIssueCandidateRecord, UserIssueListFilter,
+    UserStatisticsRecord, WatchedProjectNotificationsRecord, WorkspaceEmailRecord,
+    WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
+    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
@@ -1022,6 +1023,58 @@ impl AppRepository {
         }
 
         Ok(projects)
+    }
+
+    pub async fn list_site_postings(&self, page: u32) -> Result<SitePostingListRecord, DbErr> {
+        const PAGE_SIZE: u32 = 30;
+
+        let page = page.max(1);
+        let project_by_id = self
+            .list_projects()
+            .await?
+            .into_iter()
+            .map(|project| (project.id, project))
+            .collect::<HashMap<_, _>>();
+        let rows = posting::Entity::find()
+            .order_by_desc(posting::Column::CreatedDate)
+            .order_by_desc(posting::Column::Id)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| {
+                let project_id = row.project_id?;
+                let project = project_by_id.get(&project_id)?.clone();
+                Some((row, project))
+            })
+            .collect::<Vec<_>>();
+
+        let total = rows.len() as u32;
+        let offset = ((page - 1) * PAGE_SIZE) as usize;
+        let page_rows = rows
+            .into_iter()
+            .skip(offset)
+            .take(PAGE_SIZE as usize)
+            .collect::<Vec<_>>();
+        let mut posts = Vec::new();
+        for (row, project) in page_rows {
+            posts.push(
+                self.project_posting_list_item_from_model(row, &project)
+                    .await?,
+            );
+        }
+        let total_pages = if total == 0 {
+            0
+        } else {
+            total.div_ceil(PAGE_SIZE)
+        };
+
+        Ok(SitePostingListRecord {
+            page,
+            page_size: PAGE_SIZE,
+            posts,
+            total,
+            total_pages,
+        })
     }
 
     pub async fn list_organizations(&self) -> Result<Vec<OrganizationRecord>, DbErr> {

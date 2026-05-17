@@ -963,7 +963,8 @@ GET   /sites/export            → 데이터 익스포트
 | ---------------------- | ---------------------------------- | --------- | ----- |
 | 사용자 목록/관리       | 목록, 검색, 관리자/잠금/게스트 토글, 비밀번호 재설정, 사용자 삭제 | 🔶 부분 구현(`/sites/userList`, `/api/v1/site/users`; other `/sites/*` follow-up) | 6     |
 | 프로젝트 목록/관리     | 목록, 검색, 삭제                   | ✅ 구현(`/sites/projectList`, `/api/v1/site/projects`) | 6     |
-| 게시글/이슈 목록       | 전체 게시글/이슈 관리              | gap       | 6     |
+| 게시글 목록            | 전체 게시글 읽기 목록              | ✅ 구현(`/sites/postList`, `/api/v1/site/posts`) | 6     |
+| 이슈 목록              | 전체 이슈 읽기/관리 목록           | gap       | 6     |
 | 메일 설정/테스트       | SMTP 테스트, 대량 메일             | gap       | 6     |
 | 시스템 진단            | DB 상태, 메모리 등                 | gap       | 6     |
 | 데이터 임포트/익스포트 | 전체 데이터 백업/복원              | deferred  | 2차   |
@@ -976,6 +977,7 @@ GET   /sites/export            → 데이터 익스포트
 - [x] 사용자 목록 UI core: legacy `/sites/userList` shell, state tabs, 검색, 페이지네이션, 관리자 역할 토글, 계정 잠금/해제, 게스트 모드 토글, 비밀번호 재설정, 사용자 삭제 modal/action
 - [x] 사용자 삭제: legacy only-manager guard, project membership cleanup, deleted-state projection
 - [x] 프로젝트 목록: 검색, 페이지네이션, 프로젝트 삭제
+- [x] 게시글 목록: site admin 전용 `/api/v1/site/posts`, 30-item pagination, legacy `/sites/postList` shell/sidebar/list/link anchors
 
 ---
 
@@ -1404,7 +1406,8 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/sites/user/delete`               | DELETE   | `DELETE /api/v1/site/users/:loginId`  | `sites/$pageName` action modal                | implemented        |
 | `/sites/projectList`               | GET      | `GET /api/v1/site/projects`           | `sites/$pageName`                             | implemented        |
 | `/sites/project/delete/:id`         | DELETE   | `DELETE /api/v1/site/projects/:id`    | `sites/$pageName` action modal                | implemented        |
-| `/sites/*`                         | GET      | —                                     | `sites/$pageName` placeholders                | gap                |
+| `/sites/postList`                   | GET      | `GET /api/v1/site/posts`              | `sites/$pageName`                             | implemented        |
+| `/sites/*`                         | GET      | —                                     | `sites/$pageName` placeholders                | remaining gap      |
 | `/-_-api/v1/*`                     | Various  | —                                     | —                                             | unsupported in app; migrator/deferred |
 | `/svn/*`                           | Various  | —                                     | —                                             | deferred           |
 | `/authenticate/:provider`          | GET      | —                                     | —                                             | deferred           |

@@ -260,6 +260,15 @@ pub struct ProjectPostingListRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SitePostingListRecord {
+    pub page: u32,
+    pub page_size: u32,
+    pub posts: Vec<ProjectPostingListItemRecord>,
+    pub total: u32,
+    pub total_pages: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OrganizationIssueProjectOptionRecord {
     pub owner_name: String,
     pub project_name: String,

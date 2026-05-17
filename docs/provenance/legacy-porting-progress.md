@@ -332,7 +332,8 @@ Interpretation:
 - [x] User list/manage/search (`/sites/userList` core UI + `/api/v1/site/users`)
 - [x] Admin/guest/account-lock/password-reset/delete actions (`/sites/userList` action controls + `/api/v1/site/users/:loginId*`)
 - [x] Project list/manage/delete (`/sites/projectList` + `/api/v1/site/projects`)
-- [ ] Site-wide posting/issue management
+- [x] Site-wide posting list (`/sites/postList` + `/api/v1/site/posts`)
+- [ ] Site-wide issue management
 - [ ] Mail settings/test/mass mail
 - [ ] System diagnostics
 - [ ] Data import/export (deferred)
