@@ -801,3 +801,28 @@ async fn site_admin_issue_list_follows_legacy_state_tabs() {
     assert_eq!(closed["issues"][0]["title"], "Closed site issue");
     assert_eq!(closed["issues"][0]["state"], "closed");
 }
+
+#[tokio::test]
+async fn site_admin_diagnostics_are_site_admin_only_and_report_legacy_error_list() {
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (_member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let unauthenticated = rest_get(app.clone(), "/yona/api/v1/site/diagnostics", None).await;
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let forbidden = rest_get(
+        app.clone(),
+        "/yona/api/v1/site/diagnostics",
+        Some(&member_cookie),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let payload =
+        response_json(rest_get(app, "/yona/api/v1/site/diagnostics", Some(&admin_cookie)).await)
+            .await;
+    assert_eq!(payload["errorCount"], 0);
+    assert_eq!(payload["errors"].as_array().expect("errors").len(), 0);
+}

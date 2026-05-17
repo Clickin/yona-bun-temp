@@ -5,11 +5,13 @@ import { apiQueryKeys } from "../../../api/query-keys";
 import {
   deleteSiteProjectRest,
   deleteSiteUserRest,
+  siteDiagnosticsQueryOptions,
   siteIssuesQueryOptions,
   sitePostsQueryOptions,
   siteProjectsQueryOptions,
   resetSiteUserPasswordRest,
   siteUsersQueryOptions,
+  type SiteDiagnosticsResponse,
   type SiteIssue,
   type SiteIssueListInput,
   type SiteIssueListResponse,
@@ -236,6 +238,18 @@ function SiteAdminRouteComponent() {
   if (pageName === "issueList") {
     return (
       <SiteIssueListRoute
+        bootstrapping={bootstrapping}
+        currentIsSiteAdmin={currentIsSiteAdmin}
+        href={href}
+        runtimeConfig={runtimeConfig}
+        setErrorMessage={setErrorMessage}
+      />
+    );
+  }
+
+  if (pageName === "diagnostic") {
+    return (
+      <SiteDiagnosticRoute
         bootstrapping={bootstrapping}
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
@@ -525,6 +539,51 @@ function SiteIssueListRoute({
   return (
     <SiteAdminIssueListPage input={input} response={query.data} runtimeConfig={runtimeConfig} />
   );
+}
+
+function SiteDiagnosticRoute({
+  bootstrapping,
+  currentIsSiteAdmin,
+  href,
+  runtimeConfig,
+  setErrorMessage,
+}: {
+  bootstrapping: boolean;
+  currentIsSiteAdmin: boolean;
+  href: string;
+  runtimeConfig: RuntimeConfig;
+  setErrorMessage: (message: string | null) => void;
+}) {
+  const canRender = useRequireAuthenticatedRoute(href);
+  const query = useQuery({
+    ...siteDiagnosticsQueryOptions(runtimeConfig),
+    enabled: canRender && currentIsSiteAdmin,
+  });
+  const failureKind = classifyConnectFailure(query.error);
+
+  React.useEffect(() => {
+    if (query.error && !classifyConnectFailure(query.error)) {
+      setErrorMessage(
+        query.error instanceof Error ? query.error.message : "Read diagnostics failed.",
+      );
+    }
+  }, [query.error, setErrorMessage]);
+
+  if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
+    return (
+      <main className="app-shell site-admin-page">
+        <h1>Loading&hellip;</h1>
+      </main>
+    );
+  }
+  if (!currentIsSiteAdmin || failureKind === "forbidden") {
+    return <ForbiddenPage href="/sites/diagnostic" />;
+  }
+  if (failureKind === "not-found") {
+    return <NotFoundPage href="/sites/diagnostic" />;
+  }
+
+  return <SiteAdminDiagnosticPage response={query.data} runtimeConfig={runtimeConfig} />;
 }
 
 function SiteAdminSidebar({
@@ -876,6 +935,53 @@ function SiteAdminIssueListPage({
                 runtimeConfig={runtimeConfig}
                 totalPages={totalPages}
               />
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function SiteAdminDiagnosticPage({
+  response,
+  runtimeConfig,
+}: {
+  response: SiteDiagnosticsResponse | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const errors = response?.errors ?? [];
+  return (
+    <main className="app-shell site-admin-page">
+      <div className="site-breadcrumb-outer">
+        <div className="site-breadcrumb-inner">
+          <h3>Site Admin</h3>
+        </div>
+      </div>
+      <div className="page-wrap-outer">
+        <div className="site-setting-wrap">
+          <div className="row-fluid site-setting-layout">
+            <div className="span2">
+              <SiteAdminSidebar activePageName="diagnostic" runtimeConfig={runtimeConfig} />
+            </div>
+            <div className="span10">
+              <div className="title_area">
+                <h2 className="pull-left">Diagnostics</h2>
+              </div>
+              {errors.length === 0 ? (
+                <p>No errors were found</p>
+              ) : (
+                <>
+                  <p>{`${response?.errorCount ?? errors.length} errors were found`}</p>
+                  <ul className="site-diagnostic-errors">
+                    {errors.map((error) => (
+                      <li key={error}>
+                        <pre>{error}</pre>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
           </div>
         </div>

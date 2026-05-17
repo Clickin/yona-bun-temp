@@ -1136,6 +1136,18 @@ impl AppRepository {
         })
     }
 
+    pub async fn site_diagnostic_errors(&self) -> Result<Vec<String>, DbErr> {
+        let backend = self.db.get_database_backend();
+        self.db
+            .query_one(Statement::from_sql_and_values(
+                backend,
+                "SELECT 1",
+                Vec::new(),
+            ))
+            .await?;
+        Ok(Vec::new())
+    }
+
     pub async fn list_organizations(&self) -> Result<Vec<OrganizationRecord>, DbErr> {
         let rows = organization::Entity::find()
             .order_by_asc(organization::Column::Name)

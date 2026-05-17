@@ -131,6 +131,11 @@ export interface SiteIssueListResponse {
   totalPages: number;
 }
 
+export interface SiteDiagnosticsResponse {
+  errorCount: number;
+  errors: string[];
+}
+
 function siteUsersPath(input: SiteUserListInput): string {
   const params = new URLSearchParams();
   params.set("state", input.state);
@@ -206,6 +211,16 @@ export function readSiteIssuesRest(
   fetchImpl: typeof fetch = fetch,
 ): Promise<SiteIssueListResponse> {
   return restFetch<SiteIssueListResponse>(runtimeConfig, siteIssuesPath(input), {
+    fetchImpl,
+    method: "GET",
+  });
+}
+
+export function readSiteDiagnosticsRest(
+  runtimeConfig: RuntimeConfig,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteDiagnosticsResponse> {
+  return restFetch<SiteDiagnosticsResponse>(runtimeConfig, "/site/diagnostics", {
     fetchImpl,
     method: "GET",
   });
@@ -329,5 +344,12 @@ export function siteIssuesQueryOptions(runtimeConfig: RuntimeConfig, input: Site
   return queryOptions({
     queryFn: () => readSiteIssuesRest(runtimeConfig, input),
     queryKey: apiQueryKeys.siteAdmin.issues(input),
+  });
+}
+
+export function siteDiagnosticsQueryOptions(runtimeConfig: RuntimeConfig) {
+  return queryOptions({
+    queryFn: () => readSiteDiagnosticsRest(runtimeConfig),
+    queryKey: apiQueryKeys.siteAdmin.diagnostics(),
   });
 }

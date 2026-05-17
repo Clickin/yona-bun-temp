@@ -2421,6 +2421,13 @@ struct RestSiteIssueListResponse {
     total_pages: u32,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteDiagnosticsResponse {
+    error_count: u32,
+    errors: Vec<String>,
+}
+
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestNotificationsQuery {
@@ -3740,6 +3747,16 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Query(query): Query<RestSiteIssuesQuery>| {
                     let service = service.clone();
                     async move { rest_read_site_issues(headers, query, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/diagnostics",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_read_site_diagnostics(headers, service).await }
                 }
             }),
         )
@@ -6965,6 +6982,22 @@ async fn rest_read_site_issues(
         state: record.state,
         total: record.total,
         total_pages: record.total_pages,
+    }))
+}
+
+async fn rest_read_site_diagnostics(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteDiagnosticsResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
+    let errors = repository
+        .site_diagnostic_errors()
+        .await
+        .map_err(|error| RestRouteError::internal(format!("Failed to diagnose: {error}")))?;
+
+    Ok(Json(RestSiteDiagnosticsResponse {
+        error_count: errors.len() as u32,
+        errors,
     }))
 }
 

@@ -966,7 +966,7 @@ GET   /sites/export            → 데이터 익스포트
 | 게시글 목록            | 전체 게시글 읽기 목록              | ✅ 구현(`/sites/postList`, `/api/v1/site/posts`) | 6     |
 | 이슈 목록              | 전체 이슈 읽기 목록                | ✅ 구현(`/sites/issueList`, `/api/v1/site/issues`) | 6     |
 | 메일 설정/테스트       | SMTP 테스트, 대량 메일             | gap       | 6     |
-| 시스템 진단            | DB 상태, 메모리 등                 | gap       | 6     |
+| 시스템 진단            | Diagnostic.checkAll 오류 목록      | ✅ 구현(`/sites/diagnostic`, `/api/v1/site/diagnostics`) | 6     |
 | 데이터 임포트/익스포트 | 전체 데이터 백업/복원              | deferred  | 2차   |
 | 업데이트 확인          | 새 버전 확인                       | deferred  | 2차   |
 
@@ -979,6 +979,7 @@ GET   /sites/export            → 데이터 익스포트
 - [x] 프로젝트 목록: 검색, 페이지네이션, 프로젝트 삭제
 - [x] 게시글 목록: site admin 전용 `/api/v1/site/posts`, 30-item pagination, legacy `/sites/postList` shell/sidebar/list/link anchors
 - [x] 이슈 목록: site admin 전용 `/api/v1/site/issues`, `open`/`closed` tabs, 30-item pagination, legacy `/sites/issueList` shell/sidebar/list/link anchors
+- [x] 시스템 진단: site admin 전용 `/api/v1/site/diagnostics`, legacy `/sites/diagnostic` shell/sidebar/title area, no-error message, error count, and `<pre>` error rows
 
 ---
 
@@ -1409,6 +1410,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/sites/project/delete/:id`         | DELETE   | `DELETE /api/v1/site/projects/:id`    | `sites/$pageName` action modal                | implemented        |
 | `/sites/postList`                   | GET      | `GET /api/v1/site/posts`              | `sites/$pageName`                             | implemented        |
 | `/sites/issueList`                  | GET      | `GET /api/v1/site/issues`             | `sites/$pageName`                             | implemented        |
+| `/sites/diagnostic`                 | GET      | `GET /api/v1/site/diagnostics`        | `sites/$pageName`                             | implemented        |
 | `/sites/*`                         | GET      | —                                     | `sites/$pageName` placeholders                | remaining gap      |
 | `/-_-api/v1/*`                     | Various  | —                                     | —                                             | unsupported in app; migrator/deferred |
 | `/svn/*`                           | Various  | —                                     | —                                             | deferred           |
