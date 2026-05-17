@@ -16,7 +16,7 @@ Last updated: 2026-05-17
 Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace/public profile, organization/project ownership, issue-tracker core behavior, Git read/admin surfaces, PR/review interaction surfaces, and board/posting core app behavior.
-- The largest remaining gaps are still Smart HTTP Git serve/write flows, PR/review merge/fork/reviewer lifecycle and ranged inline review CRUD, board/posting follow-ups, notification fan-out/read state, webhook delivery/HMAC/history, remaining site admin project/posting/issue moderation/mail/diagnostics, full-text/indexed search hardening, and separate migrator/external API compatibility.
+- The largest remaining gaps are still Smart HTTP Git serve/write flows, PR/review merge/fork/reviewer lifecycle and ranged inline review CRUD, board/posting follow-ups, notification fan-out/read state, webhook delivery/HMAC/history, remaining site admin posting/issue moderation/mail/diagnostics, full-text/indexed search hardening, and separate migrator/external API compatibility.
 - Percentages are approximate. Update them only when a slice lands with tests and provenance updates.
 
 ## Update Protocol
@@ -331,7 +331,7 @@ Interpretation:
 
 - [x] User list/manage/search (`/sites/userList` core UI + `/api/v1/site/users`)
 - [x] Admin/guest/account-lock/password-reset/delete actions (`/sites/userList` action controls + `/api/v1/site/users/:loginId*`)
-- [ ] Project list/manage/delete
+- [x] Project list/manage/delete (`/sites/projectList` + `/api/v1/site/projects`)
 - [ ] Site-wide posting/issue management
 - [ ] Mail settings/test/mass mail
 - [ ] System diagnostics

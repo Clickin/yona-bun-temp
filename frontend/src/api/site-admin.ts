@@ -44,6 +44,33 @@ export interface SiteUserPasswordResetResponse {
   newPassword: string;
 }
 
+export interface SiteProjectListInput {
+  filter: string;
+  page: number;
+}
+
+export interface SiteProject {
+  createdAt: string;
+  id: number;
+  ownerName: string;
+  overview: string;
+  projectName: string;
+}
+
+export interface SiteProjectListResponse {
+  filter: string;
+  page: number;
+  pageSize: number;
+  projects: SiteProject[];
+  total: number;
+  totalPages: number;
+}
+
+export interface SiteProjectDeleteResponse {
+  ok: boolean;
+  redirectPath: string;
+}
+
 function siteUsersPath(input: SiteUserListInput): string {
   const params = new URLSearchParams();
   params.set("state", input.state);
@@ -52,6 +79,15 @@ function siteUsersPath(input: SiteUserListInput): string {
   }
   params.set("page", String(input.page));
   return `/site/users?${params.toString()}`;
+}
+
+function siteProjectsPath(input: SiteProjectListInput): string {
+  const params = new URLSearchParams();
+  if (input.filter.trim() !== "") {
+    params.set("filter", input.filter.trim());
+  }
+  params.set("page", String(input.page));
+  return `/site/projects?${params.toString()}`;
 }
 
 function siteUserPath(loginId: string, action: "account-lock" | "guest" | "site-admin"): string {
@@ -64,6 +100,17 @@ export function readSiteUsersRest(
   fetchImpl: typeof fetch = fetch,
 ): Promise<SiteUserListResponse> {
   return restFetch<SiteUserListResponse>(runtimeConfig, siteUsersPath(input), {
+    fetchImpl,
+    method: "GET",
+  });
+}
+
+export function readSiteProjectsRest(
+  runtimeConfig: RuntimeConfig,
+  input: SiteProjectListInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteProjectListResponse> {
+  return restFetch<SiteProjectListResponse>(runtimeConfig, siteProjectsPath(input), {
     fetchImpl,
     method: "GET",
   });
@@ -146,9 +193,32 @@ export function deleteSiteUserRest(
   );
 }
 
+export function deleteSiteProjectRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  projectId: number,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteProjectDeleteResponse> {
+  return restFetch<SiteProjectDeleteResponse>(runtimeConfig, `/site/projects/${projectId}`, {
+    csrfToken,
+    fetchImpl,
+    method: "DELETE",
+  });
+}
+
 export function siteUsersQueryOptions(runtimeConfig: RuntimeConfig, input: SiteUserListInput) {
   return queryOptions({
     queryFn: () => readSiteUsersRest(runtimeConfig, input),
     queryKey: apiQueryKeys.siteAdmin.users(input),
+  });
+}
+
+export function siteProjectsQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: SiteProjectListInput,
+) {
+  return queryOptions({
+    queryFn: () => readSiteProjectsRest(runtimeConfig, input),
+    queryKey: apiQueryKeys.siteAdmin.projects(input),
   });
 }

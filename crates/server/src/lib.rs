@@ -2338,6 +2338,35 @@ struct RestSiteUserPasswordResetResponse {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+struct RestSiteProjectsQuery {
+    filter: Option<String>,
+    page: Option<u32>,
+    page_num: Option<u32>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteProjectItem {
+    created_at: String,
+    id: i64,
+    owner_name: String,
+    overview: String,
+    project_name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteProjectListResponse {
+    filter: String,
+    page: u32,
+    page_size: u32,
+    projects: Vec<RestSiteProjectItem>,
+    total: u32,
+    total_pages: u32,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 struct RestNotificationsQuery {
     from: u32,
     size: u32,
@@ -3625,6 +3654,26 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Path(login_id): Path<String>| {
                     let service = service.clone();
                     async move { rest_reset_site_user_password(headers, login_id, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/projects",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Query(query): Query<RestSiteProjectsQuery>| {
+                    let service = service.clone();
+                    async move { rest_read_site_projects(headers, query, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/projects/{project_id}",
+            delete({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(project_id): Path<i64>| {
+                    let service = service.clone();
+                    async move { rest_delete_site_project(headers, project_id, service).await }
                 }
             }),
         )
@@ -6740,6 +6789,92 @@ async fn rest_reset_site_user_password(
     }))
 }
 
+async fn rest_read_site_projects(
+    headers: HeaderMap,
+    query: RestSiteProjectsQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteProjectListResponse>, RestRouteError> {
+    const SITE_PROJECT_PAGE_SIZE: usize = 30;
+
+    let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
+    let filter = query.filter.unwrap_or_default().trim().to_string();
+    let normalized_filter = normalize_identifier(&filter);
+    let page = query.page.or(query.page_num).unwrap_or(1).max(1);
+    let mut projects = repository
+        .list_projects()
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .into_iter()
+        .filter(|project| {
+            normalized_filter.is_empty()
+                || normalize_identifier(&project.project_name).contains(&normalized_filter)
+        })
+        .collect::<Vec<_>>();
+    projects.sort_by(|left, right| {
+        right
+            .created_date
+            .cmp(&left.created_date)
+            .then_with(|| left.owner_name.cmp(&right.owner_name))
+            .then_with(|| left.project_name.cmp(&right.project_name))
+    });
+
+    let total = projects.len();
+    let offset = ((page - 1) as usize).saturating_mul(SITE_PROJECT_PAGE_SIZE);
+    let projects = projects
+        .into_iter()
+        .skip(offset)
+        .take(SITE_PROJECT_PAGE_SIZE)
+        .map(rest_site_project_from_record)
+        .collect();
+    let total_pages = if total == 0 {
+        0
+    } else {
+        total.div_ceil(SITE_PROJECT_PAGE_SIZE)
+    };
+
+    Ok(Json(RestSiteProjectListResponse {
+        filter,
+        page,
+        page_size: SITE_PROJECT_PAGE_SIZE as u32,
+        projects,
+        total: total as u32,
+        total_pages: total_pages as u32,
+    }))
+}
+
+async fn rest_delete_site_project(
+    headers: HeaderMap,
+    project_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Json<RestProjectDeleteResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let project = repository
+        .read_project_by_id(project_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    repository
+        .delete_project_by_owner_and_name(&project.owner_name, &project.project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    {
+        let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), project.id);
+        let _guard = repository_provisioning_lock()
+            .lock()
+            .map_err(|_| internal_error("repository provisioning lock poisoned"))
+            .map_err(RestRouteError::from_connect_error)?;
+        yona_rust_vcs::delete_repository(&repo_path)
+            .map_err(code_browser_error)
+            .map_err(RestRouteError::from_connect_error)?;
+    }
+
+    Ok(Json(RestProjectDeleteResponse {
+        ok: true,
+        redirect_path: "/sites/projectList".to_string(),
+    }))
+}
+
 async fn rest_set_default_landing_path(
     headers: HeaderMap,
     body: RestDefaultLandingPathBody,
@@ -9564,6 +9699,19 @@ fn rest_site_user_list_from_record(
             .into_iter()
             .map(rest_site_user_from_record)
             .collect(),
+    }
+}
+
+fn rest_site_project_from_record(record: persistence::ProjectRecord) -> RestSiteProjectItem {
+    RestSiteProjectItem {
+        created_at: record
+            .created_date
+            .map(|value| value.to_string())
+            .unwrap_or_default(),
+        id: record.id,
+        owner_name: record.owner_name,
+        overview: record.overview.unwrap_or_default(),
+        project_name: record.project_name,
     }
 }
 

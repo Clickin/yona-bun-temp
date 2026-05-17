@@ -497,3 +497,117 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     assert_eq!(deletee_deleted["user"]["id"].as_i64(), Some(deletee_id));
     assert_eq!(deletee_deleted["user"]["state"], "DELETED");
 }
+
+#[tokio::test]
+async fn site_admin_project_list_and_delete_follow_legacy_surface() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    create_project(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "siteboss",
+        "alpha-project",
+    )
+    .await;
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &member_csrf,
+        "member",
+        "beta-project",
+    )
+    .await;
+
+    let unauthenticated = rest_get(app.clone(), "/yona/api/v1/site/projects", None).await;
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let forbidden = rest_get(
+        app.clone(),
+        "/yona/api/v1/site/projects",
+        Some(&member_cookie),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let beta_project = repo
+        .read_project_by_owner_and_name("member", "beta-project")
+        .await
+        .expect("read beta project")
+        .expect("beta project");
+    let filtered = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/site/projects?filter=beta&page=1",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(filtered["filter"], "beta");
+    assert_eq!(filtered["page"], 1);
+    assert_eq!(filtered["pageSize"], 30);
+    assert_eq!(filtered["total"], 1);
+    assert_eq!(filtered["totalPages"], 1);
+    assert_eq!(
+        filtered["projects"][0]["id"].as_i64(),
+        Some(beta_project.id)
+    );
+    assert_eq!(filtered["projects"][0]["ownerName"], "member");
+    assert_eq!(filtered["projects"][0]["projectName"], "beta-project");
+    assert_eq!(
+        filtered["projects"][0]["overview"],
+        "site admin delete guard"
+    );
+
+    let delete_forbidden = rest_delete(
+        app.clone(),
+        &format!("/yona/api/v1/site/projects/{}", beta_project.id),
+        Some(&member_cookie),
+        Some(&member_csrf),
+    )
+    .await;
+    assert_eq!(delete_forbidden.status(), StatusCode::FORBIDDEN);
+
+    let delete_missing = rest_delete(
+        app.clone(),
+        "/yona/api/v1/site/projects/999999",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+    )
+    .await;
+    assert_eq!(delete_missing.status(), StatusCode::NOT_FOUND);
+
+    let deleted = response_json(
+        rest_delete(
+            app.clone(),
+            &format!("/yona/api/v1/site/projects/{}", beta_project.id),
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(deleted["ok"], true);
+    assert_eq!(deleted["redirectPath"], "/sites/projectList");
+    assert!(repo
+        .read_project_by_id(beta_project.id)
+        .await
+        .expect("read deleted project")
+        .is_none());
+
+    let empty = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/site/projects?filter=beta&page=1",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(empty["projects"].as_array().expect("projects").len(), 0);
+    assert_eq!(empty["total"], 0);
+}

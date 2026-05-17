@@ -552,6 +552,10 @@ h1 {
   flex: 0 0 180px;
 }
 
+.site-admin-page .span1 {
+  flex: 0 0 90px;
+}
+
 .site-admin-page .span3 {
   flex: 1 1 180px;
 }
@@ -643,6 +647,7 @@ h1 {
   min-width: 0;
 }
 
+.site-admin-page .project-list-wrap,
 .site-admin-page .user-list-wrap {
   padding: 0;
   margin: 0;
@@ -651,6 +656,7 @@ h1 {
   border-top: 0;
 }
 
+.site-admin-page .project-list-wrap .listitem,
 .site-admin-page .user-list-wrap .listitem {
   align-items: center;
   gap: 0;
@@ -658,6 +664,7 @@ h1 {
   border-bottom: 1px solid #eee;
 }
 
+.site-admin-page .project-list-wrap .listitem:last-child,
 .site-admin-page .user-list-wrap .listitem:last-child {
   border-bottom: 0;
 }
@@ -683,12 +690,14 @@ h1 {
   border-radius: 3px;
 }
 
+.site-admin-page .project-name,
 .site-admin-page .user-name,
 .site-admin-page .user-id {
   display: inline-block;
   margin-right: 8px;
 }
 
+.site-admin-page .project-overview,
 .site-admin-page .user-id,
 .site-admin-page .created-date,
 .site-admin-page .email {

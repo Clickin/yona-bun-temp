@@ -160,6 +160,9 @@ export const apiQueryKeys = {
   },
   session: () => [...apiQueryKeys.v1(), "session"] as const,
   siteAdmin: {
+    projectsBase: () => [...apiQueryKeys.v1(), "site", "projects"] as const,
+    projects: (input: { filter: string; page: number }) =>
+      [...apiQueryKeys.siteAdmin.projectsBase(), input] as const,
     usersBase: () => [...apiQueryKeys.v1(), "site", "users"] as const,
     users: (input: { page: number; query: string; state: string }) =>
       [...apiQueryKeys.siteAdmin.usersBase(), input] as const,

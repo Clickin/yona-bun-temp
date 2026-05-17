@@ -3,12 +3,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { apiQueryKeys } from "../../../api/query-keys";
 import {
+  deleteSiteProjectRest,
   deleteSiteUserRest,
+  siteProjectsQueryOptions,
   resetSiteUserPasswordRest,
   siteUsersQueryOptions,
   toggleSiteUserAccountLockRest,
   toggleSiteUserAdminRest,
   toggleSiteUserGuestRest,
+  type SiteProject,
+  type SiteProjectListInput,
+  type SiteProjectListResponse,
   type SiteUser,
   type SiteUserListInput,
   type SiteUserListResponse,
@@ -87,6 +92,26 @@ function siteUserListHref(input: SiteUserListInput, page: number = input.page): 
   return query ? `/sites/userList?${query}` : "/sites/userList";
 }
 
+function siteProjectListInputFromHref(href: string): SiteProjectListInput {
+  const params = new URL(href, "http://yona.local").searchParams;
+  return {
+    filter: (params.get("filter") ?? "").trim(),
+    page: parsePositiveInt(params.get("pageNum") ?? params.get("page"), 1),
+  };
+}
+
+function siteProjectListHref(input: SiteProjectListInput, page: number = input.page): string {
+  const params = new URLSearchParams();
+  if (input.filter !== "") {
+    params.set("filter", input.filter);
+  }
+  if (page > 1) {
+    params.set("pageNum", String(page));
+  }
+  const query = params.toString();
+  return query ? `/sites/projectList?${query}` : "/sites/projectList";
+}
+
 function apiToggleUri(runtimeConfig: RuntimeConfig, loginId: string, action: string): string {
   return appHref(
     runtimeConfig,
@@ -102,6 +127,10 @@ function apiDeleteSiteUserUri(runtimeConfig: RuntimeConfig, loginId: string): st
   return appHref(runtimeConfig, `/api/v1/site/users/${encodeURIComponent(loginId)}`);
 }
 
+function apiDeleteSiteProjectUri(runtimeConfig: RuntimeConfig, projectId: number): string {
+  return appHref(runtimeConfig, `/api/v1/site/projects/${projectId}`);
+}
+
 function SiteAdminRouteComponent() {
   const { pageName } = Route.useParams();
   const href = useCurrentHref();
@@ -110,20 +139,35 @@ function SiteAdminRouteComponent() {
 
   useDocumentTitle("Site Admin");
 
-  if (pageName !== "userList") {
-    return <PlaceholderPage href={`/sites/${pageName}`} title="Site Admin" />;
+  const currentIsSiteAdmin = currentSession?.isSiteAdmin ?? false;
+
+  if (pageName === "userList") {
+    return (
+      <SiteUserListRoute
+        bootstrapping={bootstrapping}
+        csrfToken={csrfToken}
+        currentIsSiteAdmin={currentIsSiteAdmin}
+        href={href}
+        runtimeConfig={runtimeConfig}
+        setErrorMessage={setErrorMessage}
+      />
+    );
   }
 
-  return (
-    <SiteUserListRoute
-      bootstrapping={bootstrapping}
-      csrfToken={csrfToken}
-      currentIsSiteAdmin={currentSession?.isSiteAdmin ?? false}
-      href={href}
-      runtimeConfig={runtimeConfig}
-      setErrorMessage={setErrorMessage}
-    />
-  );
+  if (pageName === "projectList") {
+    return (
+      <SiteProjectListRoute
+        bootstrapping={bootstrapping}
+        csrfToken={csrfToken}
+        currentIsSiteAdmin={currentIsSiteAdmin}
+        href={href}
+        runtimeConfig={runtimeConfig}
+        setErrorMessage={setErrorMessage}
+      />
+    );
+  }
+
+  return <PlaceholderPage href={`/sites/${pageName}`} title="Site Admin" />;
 }
 
 function SiteUserListRoute({
@@ -244,6 +288,93 @@ function SiteUserListRoute({
   );
 }
 
+function SiteProjectListRoute({
+  bootstrapping,
+  csrfToken,
+  currentIsSiteAdmin,
+  href,
+  runtimeConfig,
+  setErrorMessage,
+}: {
+  bootstrapping: boolean;
+  csrfToken: string;
+  currentIsSiteAdmin: boolean;
+  href: string;
+  runtimeConfig: RuntimeConfig;
+  setErrorMessage: (message: string | null) => void;
+}) {
+  const canRender = useRequireAuthenticatedRoute(href);
+  const input = React.useMemo(() => siteProjectListInputFromHref(href), [href]);
+  const queryClient = useQueryClient();
+  const [deleteTarget, setDeleteTarget] = React.useState<SiteProject | null>(null);
+  const query = useQuery({
+    ...siteProjectsQueryOptions(runtimeConfig, input),
+    enabled: canRender && currentIsSiteAdmin,
+  });
+  const deleteMutation = useMutation({
+    mutationFn: (projectId: number) => deleteSiteProjectRest(runtimeConfig, csrfToken, projectId),
+    onError: (error) => {
+      setErrorMessage(error instanceof Error ? error.message : "Project delete failed.");
+    },
+    onSuccess: async () => {
+      setDeleteTarget(null);
+      await queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.projectsBase() });
+    },
+  });
+  const failureKind = classifyConnectFailure(query.error);
+
+  React.useEffect(() => {
+    if (query.error && !classifyConnectFailure(query.error)) {
+      setErrorMessage(query.error instanceof Error ? query.error.message : "Read projects failed.");
+    }
+  }, [query.error, setErrorMessage]);
+
+  if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
+    return (
+      <main className="app-shell site-admin-page">
+        <h1>Loading&hellip;</h1>
+      </main>
+    );
+  }
+  if (!currentIsSiteAdmin || failureKind === "forbidden") {
+    return <ForbiddenPage href="/sites/projectList" />;
+  }
+  if (failureKind === "not-found") {
+    return <NotFoundPage href="/sites/projectList" />;
+  }
+
+  return (
+    <SiteAdminProjectListPage
+      deleteTarget={deleteTarget}
+      input={input}
+      pendingDeleteProjectId={deleteMutation.isPending ? deleteMutation.variables : undefined}
+      response={query.data}
+      runtimeConfig={runtimeConfig}
+      onCancelDelete={() => setDeleteTarget(null)}
+      onConfirmDelete={(projectId) => deleteMutation.mutate(projectId)}
+      onRequestDelete={setDeleteTarget}
+    />
+  );
+}
+
+function SiteAdminSidebar({
+  activePageName,
+  runtimeConfig,
+}: {
+  activePageName: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  return (
+    <ul className="site-setting-nav">
+      {SITE_ADMIN_NAV.map((item) => (
+        <li className={item.pageName === activePageName ? "active" : ""} key={item.pageName}>
+          <a href={appHref(runtimeConfig, item.href)}>{item.label}</a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function SiteAdminUserListPage({
   deleteTarget,
   input,
@@ -296,13 +427,7 @@ function SiteAdminUserListPage({
         <div className="site-setting-wrap">
           <div className="row-fluid site-setting-layout">
             <div className="span2">
-              <ul className="site-setting-nav">
-                {SITE_ADMIN_NAV.map((item) => (
-                  <li className={item.pageName === "userList" ? "active" : ""} key={item.pageName}>
-                    <a href={appHref(runtimeConfig, item.href)}>{item.label}</a>
-                  </li>
-                ))}
-              </ul>
+              <SiteAdminSidebar activePageName="userList" runtimeConfig={runtimeConfig} />
             </div>
             <div className="span10">
               <div className="title_area">
@@ -376,6 +501,229 @@ function SiteAdminUserListPage({
         onConfirm={onConfirmDelete}
       />
     </main>
+  );
+}
+
+function SiteAdminProjectListPage({
+  deleteTarget,
+  input,
+  pendingDeleteProjectId,
+  response,
+  runtimeConfig,
+  onCancelDelete,
+  onConfirmDelete,
+  onRequestDelete,
+}: {
+  deleteTarget: SiteProject | null;
+  input: SiteProjectListInput;
+  pendingDeleteProjectId: number | undefined;
+  response: SiteProjectListResponse | undefined;
+  runtimeConfig: RuntimeConfig;
+  onCancelDelete: () => void;
+  onConfirmDelete: (projectId: number) => void;
+  onRequestDelete: (project: SiteProject) => void;
+}) {
+  const projects = response?.projects ?? [];
+  const page = response?.page ?? input.page;
+  const totalPages = response?.totalPages ?? 0;
+
+  return (
+    <main className="app-shell site-admin-page">
+      <div className="site-breadcrumb-outer">
+        <div className="site-breadcrumb-inner">
+          <h3>Site Admin</h3>
+        </div>
+      </div>
+      <div className="page-wrap-outer">
+        <div className="site-setting-wrap">
+          <div className="row-fluid site-setting-layout">
+            <div className="span2">
+              <SiteAdminSidebar activePageName="projectList" runtimeConfig={runtimeConfig} />
+            </div>
+            <div className="span10">
+              <div className="title_area">
+                <h2 className="pull-left">Project List</h2>
+                <form
+                  action={appHref(runtimeConfig, "/sites/projectList")}
+                  className="form-search pull-right"
+                  method="get"
+                >
+                  <div className="search-bar">
+                    <input
+                      className="textbox"
+                      defaultValue={input.filter}
+                      name="filter"
+                      placeholder="Search projects"
+                      type="text"
+                    />
+                    <button className="search-btn" type="submit">
+                      Search
+                    </button>
+                  </div>
+                </form>
+              </div>
+              <SiteProjectListHeader />
+              {projects.length === 0 ? (
+                <div className="warning-none">No projects found.</div>
+              ) : (
+                <ul className="project-list-wrap">
+                  {projects.map((project) => (
+                    <SiteProjectRow
+                      key={project.id}
+                      pendingDelete={pendingDeleteProjectId === project.id}
+                      project={project}
+                      runtimeConfig={runtimeConfig}
+                      onRequestDelete={onRequestDelete}
+                    />
+                  ))}
+                </ul>
+              )}
+              <SiteProjectPagination
+                input={input}
+                page={page}
+                runtimeConfig={runtimeConfig}
+                totalPages={totalPages}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      <SiteDeleteProjectModal
+        pending={deleteTarget !== null && pendingDeleteProjectId === deleteTarget.id}
+        project={deleteTarget}
+        runtimeConfig={runtimeConfig}
+        onCancel={onCancelDelete}
+        onConfirm={onConfirmDelete}
+      />
+    </main>
+  );
+}
+
+function SiteProjectListHeader() {
+  return (
+    <div className="row-fluid listhead">
+      <div className="span5 listhead-title">
+        <strong>Project</strong>
+      </div>
+      <div className="span4 listhead-title">
+        <strong>Description</strong>
+      </div>
+      <div className="span2 listhead-title">
+        <strong>Created</strong>
+      </div>
+      <div className="span1 listhead-title">
+        <strong>{"\u00a0"}</strong>
+      </div>
+    </div>
+  );
+}
+
+function SiteProjectRow({
+  pendingDelete,
+  project,
+  runtimeConfig,
+  onRequestDelete,
+}: {
+  pendingDelete: boolean;
+  project: SiteProject;
+  runtimeConfig: RuntimeConfig;
+  onRequestDelete: (project: SiteProject) => void;
+}) {
+  const projectPath = `/${project.ownerName}/${project.projectName}`;
+  const projectLabel = `${project.ownerName}/${project.projectName}`;
+  return (
+    <li className="row-fluid listitem">
+      <div className="span5 listitem-col">
+        <a className="avatar-wrap list-avatar" href={appHref(runtimeConfig, projectPath)}>
+          <span className="avatar-initial">{project.projectName.slice(0, 1).toUpperCase()}</span>
+          {projectLabel}
+        </a>
+        <a className="project-name" href={appHref(runtimeConfig, projectPath)}>
+          {projectLabel}
+        </a>
+      </div>
+      <div className="span4 listitem-col project-overview">{project.overview}</div>
+      <div className="span2 listitem-col created-date">{project.createdAt}</div>
+      <div className="span1 listitem-col action-buttons">
+        <button
+          className="ybtn ybtn-danger"
+          data-href={appHref(runtimeConfig, `/sites/project/delete/${project.id}`)}
+          data-project-name={projectLabel}
+          data-request-method="delete"
+          data-request-uri={apiDeleteSiteProjectUri(runtimeConfig, project.id)}
+          data-toggle="delete-project"
+          disabled={pendingDelete}
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            onRequestDelete(project);
+          }}
+        >
+          {pendingDelete ? "Deleting..." : "Delete"}
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function SiteDeleteProjectModal({
+  pending,
+  project,
+  runtimeConfig,
+  onCancel,
+  onConfirm,
+}: {
+  pending: boolean;
+  project: SiteProject | null;
+  runtimeConfig: RuntimeConfig;
+  onCancel: () => void;
+  onConfirm: (projectId: number) => void;
+}) {
+  const visible = project !== null;
+  return (
+    <div
+      aria-hidden={!visible}
+      className={`modal fade${visible ? " in" : " hide"}`}
+      hidden={!visible}
+      id="alertDeletionWrap"
+      role="dialog"
+    >
+      <div className="modal-header">
+        <button aria-label="Close" className="close" type="button" onClick={onCancel}>
+          x
+        </button>
+        <span id="project-name">
+          {project === null ? "" : `${project.ownerName}/${project.projectName}`}
+        </span>
+        Delete Project
+      </div>
+      <div className="modal-body">
+        <p>Are you sure?</p>
+      </div>
+      <div className="modal-footer">
+        <button
+          className="ybtn ybtn-danger"
+          data-request-method="delete"
+          data-request-uri={
+            project === null ? "" : apiDeleteSiteProjectUri(runtimeConfig, project.id)
+          }
+          disabled={pending || project === null}
+          id="projectDeleteBtn"
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            if (project !== null) {
+              onConfirm(project.id);
+            }
+          }}
+        >
+          {pending ? "Deleting..." : "Delete Project"}
+        </button>
+        <button className="ybtn" disabled={pending} type="button" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -644,6 +992,36 @@ function SiteUserPagination({
           className={pageNumber === page ? "active" : ""}
           data-page-num={pageNumber}
           href={appHref(runtimeConfig, siteUserListHref(input, pageNumber))}
+          key={pageNumber}
+        >
+          {pageNumber}
+        </a>
+      ))}
+    </div>
+  );
+}
+
+function SiteProjectPagination({
+  input,
+  page,
+  runtimeConfig,
+  totalPages,
+}: {
+  input: SiteProjectListInput;
+  page: number;
+  runtimeConfig: RuntimeConfig;
+  totalPages: number;
+}) {
+  if (totalPages <= 1) {
+    return <div id="pagination" />;
+  }
+  return (
+    <div id="pagination">
+      {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+        <a
+          className={pageNumber === page ? "active" : ""}
+          data-page-num={pageNumber}
+          href={appHref(runtimeConfig, siteProjectListHref(input, pageNumber))}
           key={pageNumber}
         >
           {pageNumber}
