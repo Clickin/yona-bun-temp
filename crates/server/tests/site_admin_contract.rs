@@ -8,7 +8,8 @@ use sea_orm::{
 use serde_json::{json, Value};
 use tower::ServiceExt;
 use yona_rust_persistence::{
-    project_user, site_admin, AppRepository, CreatePostingInput, PostingMutationInput,
+    project_user, site_admin, AppRepository, CreateIssueInput, CreatePostingInput,
+    IssueMutationInput, PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -678,4 +679,125 @@ async fn site_admin_post_list_follows_legacy_read_only_surface() {
     assert_eq!(payload["posts"][0]["authorLoginId"], "member");
     assert_eq!(payload["posts"][0]["authorLabel"], "Member Name");
     assert_eq!(payload["posts"][0]["commentCount"], 0);
+}
+
+#[tokio::test]
+async fn site_admin_issue_list_follows_legacy_state_tabs() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &member_csrf,
+        "member",
+        "issueproj",
+    )
+    .await;
+    let open_issue = repo
+        .create_issue(CreateIssueInput {
+            actor_display_name: "Member Name".to_string(),
+            actor_id: member_id,
+            actor_login_id: "member".to_string(),
+            owner_name: "member".to_string(),
+            project_name: "issueproj".to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: None,
+                attachment_ids: vec![],
+                body_markdown: "legacy site issue list body".to_string(),
+                label_ids: vec![],
+                milestone_id: None,
+                title: "Open site issue".to_string(),
+            },
+        })
+        .await
+        .expect("create open issue")
+        .expect("open issue created");
+    let closed_issue = repo
+        .create_issue(CreateIssueInput {
+            actor_display_name: "Member Name".to_string(),
+            actor_id: member_id,
+            actor_login_id: "member".to_string(),
+            owner_name: "member".to_string(),
+            project_name: "issueproj".to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: None,
+                attachment_ids: vec![],
+                body_markdown: "legacy closed issue body".to_string(),
+                label_ids: vec![],
+                milestone_id: None,
+                title: "Closed site issue".to_string(),
+            },
+        })
+        .await
+        .expect("create closed issue")
+        .expect("closed issue created");
+    repo.update_issue_state("member", "issueproj", closed_issue.issue_number, "closed")
+        .await
+        .expect("close issue")
+        .expect("closed issue updated");
+
+    let unauthenticated = rest_get(app.clone(), "/yona/api/v1/site/issues", None).await;
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let forbidden = rest_get(
+        app.clone(),
+        "/yona/api/v1/site/issues",
+        Some(&member_cookie),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let invalid_state = rest_get(
+        app.clone(),
+        "/yona/api/v1/site/issues?state=waiting",
+        Some(&admin_cookie),
+    )
+    .await;
+    assert_eq!(invalid_state.status(), StatusCode::BAD_REQUEST);
+
+    let open = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/site/issues?state=open&pageNum=1",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(open["state"], "open");
+    assert_eq!(open["page"], 1);
+    assert_eq!(open["pageSize"], 30);
+    assert_eq!(open["total"], 1);
+    assert_eq!(open["totalPages"], 1);
+    assert_eq!(open["issues"][0]["ownerName"], "member");
+    assert_eq!(open["issues"][0]["projectName"], "issueproj");
+    assert_eq!(
+        open["issues"][0]["issueNumber"],
+        open_issue.issue_number.to_string()
+    );
+    assert_eq!(open["issues"][0]["title"], "Open site issue");
+    assert_eq!(open["issues"][0]["authorLoginId"], "member");
+    assert_eq!(open["issues"][0]["authorLabel"], "Member Name");
+    assert_eq!(open["issues"][0]["state"], "open");
+    assert_eq!(open["issues"][0]["commentCount"], 0);
+
+    let closed = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/site/issues?state=closed&page=1",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(closed["state"], "closed");
+    assert_eq!(
+        closed["issues"][0]["issueNumber"],
+        closed_issue.issue_number.to_string()
+    );
+    assert_eq!(closed["issues"][0]["title"], "Closed site issue");
+    assert_eq!(closed["issues"][0]["state"], "closed");
 }

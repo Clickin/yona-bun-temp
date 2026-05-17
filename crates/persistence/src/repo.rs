@@ -27,15 +27,15 @@ use crate::repo_types::{
     PullRequestReviewInput, PullRequestStateInput, PullRequestThreadStateInput,
     PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
     ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
-    SearchRepositoryInput, SearchResultRecord, SearchScope, SitePostingListRecord,
-    SiteUserDeleteResult, SiteUserListFilter, SiteUserListRecord, SiteUserRecord,
-    ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateIssueCommentInput,
-    UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput,
-    UpdatePostingInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
-    UpdateProjectLabelInput, UpdatePullRequestInput, UserIssueCandidateRecord, UserIssueListFilter,
-    UserStatisticsRecord, WatchedProjectNotificationsRecord, WorkspaceEmailRecord,
-    WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
-    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    SearchRepositoryInput, SearchResultRecord, SearchScope, SiteIssueListRecord,
+    SitePostingListRecord, SiteUserDeleteResult, SiteUserListFilter, SiteUserListRecord,
+    SiteUserRecord, ToggleFavoriteIssueResult, ToggleFavoriteProjectResult,
+    UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput,
+    UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
+    UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestInput,
+    UserIssueCandidateRecord, UserIssueListFilter, UserStatisticsRecord,
+    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
+    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
@@ -1072,6 +1072,65 @@ impl AppRepository {
             page,
             page_size: PAGE_SIZE,
             posts,
+            total,
+            total_pages,
+        })
+    }
+
+    pub async fn list_site_issues(
+        &self,
+        state: &str,
+        page: u32,
+    ) -> Result<SiteIssueListRecord, DbErr> {
+        const PAGE_SIZE: u32 = 30;
+
+        let state = normalize_identity(state);
+        let page = page.max(1);
+        let project_by_id = self
+            .list_projects()
+            .await?
+            .into_iter()
+            .map(|project| (project.id, project))
+            .collect::<HashMap<_, _>>();
+        let rows = issue::Entity::find()
+            .filter(issue::Column::State.eq(Some(issue_state_to_raw(&state))))
+            .order_by_desc(issue::Column::CreatedDate)
+            .order_by_desc(issue::Column::Id)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| {
+                let project_id = row.project_id?;
+                let project = project_by_id.get(&project_id)?.clone();
+                Some((row, project))
+            })
+            .collect::<Vec<_>>();
+
+        let total = rows.len() as u32;
+        let offset = ((page - 1) * PAGE_SIZE) as usize;
+        let page_rows = rows
+            .into_iter()
+            .skip(offset)
+            .take(PAGE_SIZE as usize)
+            .collect::<Vec<_>>();
+        let mut issues = Vec::new();
+        for (row, project) in page_rows {
+            issues.push(
+                self.project_issue_list_item_from_model(row, &project)
+                    .await?,
+            );
+        }
+        let total_pages = if total == 0 {
+            0
+        } else {
+            total.div_ceil(PAGE_SIZE)
+        };
+
+        Ok(SiteIssueListRecord {
+            issues,
+            page,
+            page_size: PAGE_SIZE,
+            state,
             total,
             total_pages,
         })
@@ -2499,7 +2558,9 @@ impl AppRepository {
             filtered.push(ProjectIssueListItemRecord {
                 assignee_label,
                 author_label: model.author_name.unwrap_or_default(),
+                author_login_id: model.author_login_id.unwrap_or_default(),
                 comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
+                created_label: format_workspace_date_label(model.created_date),
                 issue_number: model.number.unwrap_or_default(),
                 labels,
                 milestone_id,
@@ -9078,7 +9139,9 @@ impl AppRepository {
         Ok(ProjectIssueListItemRecord {
             assignee_label,
             author_label: model.author_name.unwrap_or_default(),
+            author_login_id: model.author_login_id.unwrap_or_default(),
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
+            created_label: format_workspace_date_label(model.created_date),
             issue_number: model.number.unwrap_or_default(),
             labels,
             milestone_id,
@@ -9751,7 +9814,9 @@ impl AppRepository {
         let item = ProjectIssueListItemRecord {
             assignee_label,
             author_label: model.author_name.unwrap_or_default(),
+            author_login_id: model.author_login_id.unwrap_or_default(),
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
+            created_label: format_workspace_date_label(model.created_date),
             issue_number: model.number.unwrap_or_default(),
             labels: self.list_issue_labels(model.id).await?,
             milestone_id,

@@ -210,7 +210,9 @@ pub struct IssueShareStatus {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectIssueListItemRecord {
     pub author_label: String,
+    pub author_login_id: String,
     pub comment_count: u32,
+    pub created_label: String,
     pub issue_number: i64,
     pub owner_name: String,
     pub project_name: String,
@@ -264,6 +266,16 @@ pub struct SitePostingListRecord {
     pub page: u32,
     pub page_size: u32,
     pub posts: Vec<ProjectPostingListItemRecord>,
+    pub total: u32,
+    pub total_pages: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SiteIssueListRecord {
+    pub issues: Vec<ProjectIssueListItemRecord>,
+    pub page: u32,
+    pub page_size: u32,
+    pub state: String,
     pub total: u32,
     pub total_pages: u32,
 }

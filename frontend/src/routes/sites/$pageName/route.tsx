@@ -5,10 +5,15 @@ import { apiQueryKeys } from "../../../api/query-keys";
 import {
   deleteSiteProjectRest,
   deleteSiteUserRest,
+  siteIssuesQueryOptions,
   sitePostsQueryOptions,
   siteProjectsQueryOptions,
   resetSiteUserPasswordRest,
   siteUsersQueryOptions,
+  type SiteIssue,
+  type SiteIssueListInput,
+  type SiteIssueListResponse,
+  type SiteIssueState,
   type SitePost,
   type SitePostListInput,
   type SitePostListResponse,
@@ -47,6 +52,11 @@ const SITE_USER_STATES: Array<{ label: string; state: SiteUserState }> = [
   { label: "Site Admin", state: "SITE_ADMIN" },
 ];
 
+const SITE_ISSUE_STATES: Array<{ label: string; state: SiteIssueState }> = [
+  { label: "Open", state: "open" },
+  { label: "Closed", state: "closed" },
+];
+
 const SITE_ADMIN_NAV = [
   { href: "/sites/userList", label: "User List", pageName: "userList" },
   { href: "/sites/postList", label: "Post List", pageName: "postList" },
@@ -72,6 +82,13 @@ function normalizeSiteUserState(value: string | null): SiteUserState {
   return SITE_USER_STATES.some((state) => state.state === normalized)
     ? (normalized as SiteUserState)
     : "ACTIVE";
+}
+
+function normalizeSiteIssueState(value: string | null): SiteIssueState {
+  const normalized = (value ?? "open").trim().toLowerCase();
+  return SITE_ISSUE_STATES.some((state) => state.state === normalized)
+    ? (normalized as SiteIssueState)
+    : "open";
 }
 
 function siteUserListInputFromHref(href: string): SiteUserListInput {
@@ -132,6 +149,23 @@ function sitePostListHref(input: SitePostListInput, page: number = input.page): 
   return query ? `/sites/postList?${query}` : "/sites/postList";
 }
 
+function siteIssueListInputFromHref(href: string): SiteIssueListInput {
+  const params = new URL(href, "http://yona.local").searchParams;
+  return {
+    page: parsePositiveInt(params.get("pageNum") ?? params.get("page"), 1),
+    state: normalizeSiteIssueState(params.get("state")),
+  };
+}
+
+function siteIssueListHref(input: SiteIssueListInput, page: number = input.page): string {
+  const params = new URLSearchParams();
+  params.set("state", input.state);
+  if (page > 1) {
+    params.set("pageNum", String(page));
+  }
+  return `/sites/issueList?${params.toString()}`;
+}
+
 function apiToggleUri(runtimeConfig: RuntimeConfig, loginId: string, action: string): string {
   return appHref(
     runtimeConfig,
@@ -190,6 +224,18 @@ function SiteAdminRouteComponent() {
   if (pageName === "postList") {
     return (
       <SitePostListRoute
+        bootstrapping={bootstrapping}
+        currentIsSiteAdmin={currentIsSiteAdmin}
+        href={href}
+        runtimeConfig={runtimeConfig}
+        setErrorMessage={setErrorMessage}
+      />
+    );
+  }
+
+  if (pageName === "issueList") {
+    return (
+      <SiteIssueListRoute
         bootstrapping={bootstrapping}
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
@@ -432,6 +478,52 @@ function SitePostListRoute({
 
   return (
     <SiteAdminPostListPage input={input} response={query.data} runtimeConfig={runtimeConfig} />
+  );
+}
+
+function SiteIssueListRoute({
+  bootstrapping,
+  currentIsSiteAdmin,
+  href,
+  runtimeConfig,
+  setErrorMessage,
+}: {
+  bootstrapping: boolean;
+  currentIsSiteAdmin: boolean;
+  href: string;
+  runtimeConfig: RuntimeConfig;
+  setErrorMessage: (message: string | null) => void;
+}) {
+  const canRender = useRequireAuthenticatedRoute(href);
+  const input = React.useMemo(() => siteIssueListInputFromHref(href), [href]);
+  const query = useQuery({
+    ...siteIssuesQueryOptions(runtimeConfig, input),
+    enabled: canRender && currentIsSiteAdmin,
+  });
+  const failureKind = classifyConnectFailure(query.error);
+
+  React.useEffect(() => {
+    if (query.error && !classifyConnectFailure(query.error)) {
+      setErrorMessage(query.error instanceof Error ? query.error.message : "Read issues failed.");
+    }
+  }, [query.error, setErrorMessage]);
+
+  if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
+    return (
+      <main className="app-shell site-admin-page">
+        <h1>Loading&hellip;</h1>
+      </main>
+    );
+  }
+  if (!currentIsSiteAdmin || failureKind === "forbidden") {
+    return <ForbiddenPage href="/sites/issueList" />;
+  }
+  if (failureKind === "not-found") {
+    return <NotFoundPage href="/sites/issueList" />;
+  }
+
+  return (
+    <SiteAdminIssueListPage input={input} response={query.data} runtimeConfig={runtimeConfig} />
   );
 }
 
@@ -731,6 +823,133 @@ function SiteAdminPostListPage({
         </div>
       </div>
     </main>
+  );
+}
+
+function SiteAdminIssueListPage({
+  input,
+  response,
+  runtimeConfig,
+}: {
+  input: SiteIssueListInput;
+  response: SiteIssueListResponse | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const issues = response?.issues ?? [];
+  const page = response?.page ?? input.page;
+  const totalPages = response?.totalPages ?? 0;
+
+  return (
+    <main className="app-shell site-admin-page">
+      <div className="site-breadcrumb-outer">
+        <div className="site-breadcrumb-inner">
+          <h3>Site Admin</h3>
+        </div>
+      </div>
+      <div className="page-wrap-outer">
+        <div className="site-setting-wrap">
+          <div className="row-fluid site-setting-layout">
+            <div className="span2">
+              <SiteAdminSidebar activePageName="issueList" runtimeConfig={runtimeConfig} />
+            </div>
+            <div className="span10">
+              <div className="title_area">
+                <h2 className="pull-left">Issue List</h2>
+              </div>
+              <SiteIssueTabs input={input} runtimeConfig={runtimeConfig} />
+              {issues.length === 0 ? (
+                <div className="warning-none">No issues found.</div>
+              ) : (
+                <ul className="post-list-wrap">
+                  {issues.map((issue) => (
+                    <SiteIssueRow
+                      issue={issue}
+                      key={`${issue.ownerName}/${issue.projectName}/${issue.issueNumber}`}
+                      runtimeConfig={runtimeConfig}
+                    />
+                  ))}
+                </ul>
+              )}
+              <SiteIssuePagination
+                input={input}
+                page={page}
+                runtimeConfig={runtimeConfig}
+                totalPages={totalPages}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function SiteIssueTabs({
+  input,
+  runtimeConfig,
+}: {
+  input: SiteIssueListInput;
+  runtimeConfig: RuntimeConfig;
+}) {
+  return (
+    <ul className="nav nav-tabs">
+      {SITE_ISSUE_STATES.map((item) => (
+        <li className={item.state === input.state ? "active" : ""} key={item.state}>
+          <a href={appHref(runtimeConfig, siteIssueListHref({ page: 1, state: item.state }, 1))}>
+            {item.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function SiteIssueRow({
+  issue,
+  runtimeConfig,
+}: {
+  issue: SiteIssue;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const projectPath = `/${issue.ownerName}/${issue.projectName}`;
+  const issuePath = `${projectPath}/issue/${issue.issueNumber}`;
+  const projectLabel = `${issue.ownerName}/${issue.projectName}`;
+  const authorLabel = issue.authorLabel || issue.authorLoginId;
+
+  return (
+    <li className="row-fluid listitem">
+      <a className="avatar-wrap list-avatar" href={appHref(runtimeConfig, projectPath)}>
+        <span className="avatar-initial">{issue.projectName.slice(0, 1).toUpperCase()}</span>
+      </a>
+      <div className="post-info-wrap">
+        <a className="post-project" href={appHref(runtimeConfig, projectPath)}>
+          {projectLabel}
+        </a>
+        <span className="post-info-separator">{"\u00b7"}</span>
+        <a className="post-title" href={appHref(runtimeConfig, issuePath)}>
+          {issue.title}
+        </a>
+      </div>
+      <div className="post-meta-wrap">
+        <a className="avatar-wrap" href={appHref(runtimeConfig, `/${issue.authorLoginId}`)}>
+          <span className="avatar-initial avatar-initial-small">
+            {authorLabel.slice(0, 1).toUpperCase()}
+          </span>
+        </a>
+        <a className="post-meta-item" href={appHref(runtimeConfig, `/${issue.authorLoginId}`)}>
+          {authorLabel}
+        </a>
+        <span className="post-meta-item" title={issue.createdLabel}>
+          {issue.createdLabel}
+        </span>
+        <span className="post-comments post-meta-item">
+          <a href={appHref(runtimeConfig, `${issuePath}#comments`)}>
+            <span aria-hidden="true" className="yobicon-comments" />
+            {issue.commentCount}
+          </a>
+        </span>
+      </div>
+    </li>
   );
 }
 
@@ -1230,6 +1449,36 @@ function SitePostPagination({
           className={pageNumber === page ? "active" : ""}
           data-page-num={pageNumber}
           href={appHref(runtimeConfig, sitePostListHref(input, pageNumber))}
+          key={pageNumber}
+        >
+          {pageNumber}
+        </a>
+      ))}
+    </div>
+  );
+}
+
+function SiteIssuePagination({
+  input,
+  page,
+  runtimeConfig,
+  totalPages,
+}: {
+  input: SiteIssueListInput;
+  page: number;
+  runtimeConfig: RuntimeConfig;
+  totalPages: number;
+}) {
+  if (totalPages <= 1) {
+    return <div id="pagination" />;
+  }
+  return (
+    <div id="pagination">
+      {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+        <a
+          className={pageNumber === page ? "active" : ""}
+          data-page-num={pageNumber}
+          href={appHref(runtimeConfig, siteIssueListHref(input, pageNumber))}
           key={pageNumber}
         >
           {pageNumber}

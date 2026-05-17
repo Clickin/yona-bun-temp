@@ -4,6 +4,7 @@ import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
 
 export type SiteUserState = "ACTIVE" | "LOCKED" | "DELETED" | "GUEST" | "SITE_ADMIN";
+export type SiteIssueState = "closed" | "open";
 
 export interface SiteUserListInput {
   page: number;
@@ -98,6 +99,38 @@ export interface SitePostListResponse {
   totalPages: number;
 }
 
+export interface SiteIssueListInput {
+  page: number;
+  state: SiteIssueState;
+}
+
+export interface SiteIssue {
+  assigneeLabel: string;
+  authorLabel: string;
+  authorLoginId: string;
+  commentCount: number;
+  createdLabel: string;
+  issueNumber: string;
+  labels: Array<{ id: string; name: string }>;
+  milestoneTitle: string;
+  ownerName: string;
+  projectName: string;
+  state: SiteIssueState;
+  title: string;
+  updatedLabel: string;
+  voterCount: number;
+  watcherCount: number;
+}
+
+export interface SiteIssueListResponse {
+  issues: SiteIssue[];
+  page: number;
+  pageSize: number;
+  state: SiteIssueState;
+  total: number;
+  totalPages: number;
+}
+
 function siteUsersPath(input: SiteUserListInput): string {
   const params = new URLSearchParams();
   params.set("state", input.state);
@@ -121,6 +154,13 @@ function sitePostsPath(input: SitePostListInput): string {
   const params = new URLSearchParams();
   params.set("page", String(input.page));
   return `/site/posts?${params.toString()}`;
+}
+
+function siteIssuesPath(input: SiteIssueListInput): string {
+  const params = new URLSearchParams();
+  params.set("state", input.state);
+  params.set("page", String(input.page));
+  return `/site/issues?${params.toString()}`;
 }
 
 function siteUserPath(loginId: string, action: "account-lock" | "guest" | "site-admin"): string {
@@ -155,6 +195,17 @@ export function readSitePostsRest(
   fetchImpl: typeof fetch = fetch,
 ): Promise<SitePostListResponse> {
   return restFetch<SitePostListResponse>(runtimeConfig, sitePostsPath(input), {
+    fetchImpl,
+    method: "GET",
+  });
+}
+
+export function readSiteIssuesRest(
+  runtimeConfig: RuntimeConfig,
+  input: SiteIssueListInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteIssueListResponse> {
+  return restFetch<SiteIssueListResponse>(runtimeConfig, siteIssuesPath(input), {
     fetchImpl,
     method: "GET",
   });
@@ -271,5 +322,12 @@ export function sitePostsQueryOptions(runtimeConfig: RuntimeConfig, input: SiteP
   return queryOptions({
     queryFn: () => readSitePostsRest(runtimeConfig, input),
     queryKey: apiQueryKeys.siteAdmin.posts(input),
+  });
+}
+
+export function siteIssuesQueryOptions(runtimeConfig: RuntimeConfig, input: SiteIssueListInput) {
+  return queryOptions({
+    queryFn: () => readSiteIssuesRest(runtimeConfig, input),
+    queryKey: apiQueryKeys.siteAdmin.issues(input),
   });
 }

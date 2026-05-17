@@ -2384,6 +2384,45 @@ struct RestSitePostListResponse {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+struct RestSiteIssuesQuery {
+    page: Option<u32>,
+    page_num: Option<u32>,
+    state: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteIssueItem {
+    assignee_label: String,
+    author_label: String,
+    author_login_id: String,
+    comment_count: u32,
+    created_label: String,
+    issue_number: String,
+    labels: Vec<RestBoardLabel>,
+    milestone_title: String,
+    owner_name: String,
+    project_name: String,
+    state: String,
+    title: String,
+    updated_label: String,
+    voter_count: u32,
+    watcher_count: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteIssueListResponse {
+    issues: Vec<RestSiteIssueItem>,
+    page: u32,
+    page_size: u32,
+    state: String,
+    total: u32,
+    total_pages: u32,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 struct RestNotificationsQuery {
     from: u32,
     size: u32,
@@ -3691,6 +3730,16 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Query(query): Query<RestSitePostsQuery>| {
                     let service = service.clone();
                     async move { rest_read_site_posts(headers, query, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/issues",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Query(query): Query<RestSiteIssuesQuery>| {
+                    let service = service.clone();
+                    async move { rest_read_site_issues(headers, query, service).await }
                 }
             }),
         )
@@ -6893,6 +6942,32 @@ async fn rest_read_site_posts(
     }))
 }
 
+async fn rest_read_site_issues(
+    headers: HeaderMap,
+    query: RestSiteIssuesQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteIssueListResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
+    let state = rest_site_issue_state(query.state)?;
+    let record = repository
+        .list_site_issues(&state, query.page.or(query.page_num).unwrap_or(1))
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+
+    Ok(Json(RestSiteIssueListResponse {
+        issues: record
+            .issues
+            .iter()
+            .map(rest_site_issue_from_record)
+            .collect(),
+        page: record.page,
+        page_size: record.page_size,
+        state: record.state,
+        total: record.total,
+        total_pages: record.total_pages,
+    }))
+}
+
 async fn rest_delete_site_project(
     headers: HeaderMap,
     project_id: i64,
@@ -9718,6 +9793,22 @@ fn rest_site_user_state(state: Option<String>) -> Result<String, RestRouteError>
     }
 }
 
+fn rest_site_issue_state(state: Option<String>) -> Result<String, RestRouteError> {
+    let normalized = state
+        .as_deref()
+        .map(normalize_identifier)
+        .unwrap_or_default();
+    let normalized = if normalized.is_empty() {
+        "open".to_string()
+    } else {
+        normalized
+    };
+    match normalized.as_str() {
+        "open" | "closed" => Ok(normalized),
+        _ => Err(RestRouteError::bad_request("invalid site issue state")),
+    }
+}
+
 fn rest_site_user_from_record(record: persistence::SiteUserRecord) -> RestSiteUserItem {
     RestSiteUserItem {
         created_at: record
@@ -9763,6 +9854,32 @@ fn rest_site_project_from_record(record: persistence::ProjectRecord) -> RestSite
         owner_name: record.owner_name,
         overview: record.overview.unwrap_or_default(),
         project_name: record.project_name,
+    }
+}
+
+fn rest_site_issue_from_record(
+    record: &persistence::ProjectIssueListItemRecord,
+) -> RestSiteIssueItem {
+    RestSiteIssueItem {
+        assignee_label: record.assignee_label.clone(),
+        author_label: record.author_label.clone(),
+        author_login_id: record.author_login_id.clone(),
+        comment_count: record.comment_count,
+        created_label: record.created_label.clone(),
+        issue_number: record.issue_number.to_string(),
+        labels: record
+            .labels
+            .iter()
+            .map(rest_board_label_from_record)
+            .collect(),
+        milestone_title: record.milestone_title.clone(),
+        owner_name: record.owner_name.clone(),
+        project_name: record.project_name.clone(),
+        state: record.state.clone(),
+        title: record.title.clone(),
+        updated_label: record.updated_label.clone(),
+        voter_count: record.voter_count,
+        watcher_count: record.watcher_count,
     }
 }
 
