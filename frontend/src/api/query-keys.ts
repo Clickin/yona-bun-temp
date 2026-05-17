@@ -159,6 +159,11 @@ export const apiQueryKeys = {
     ) => [...apiQueryKeys.project.base(ownerName, projectName), "search", input] as const,
   },
   session: () => [...apiQueryKeys.v1(), "session"] as const,
+  siteAdmin: {
+    usersBase: () => [...apiQueryKeys.v1(), "site", "users"] as const,
+    users: (input: { page: number; query: string; state: string }) =>
+      [...apiQueryKeys.siteAdmin.usersBase(), input] as const,
+  },
   user: {
     profile: (loginId: string, input: { daysAgo: number | null; selected: string | null }) =>
       [...apiQueryKeys.v1(), "users", loginId, "profile", input] as const,

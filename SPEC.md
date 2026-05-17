@@ -960,7 +960,7 @@ GET   /sites/export            → 데이터 익스포트
 
 | 기능                   | Legacy 동작                        | 현재 상태 | Phase |
 | ---------------------- | ---------------------------------- | --------- | ----- |
-| 사용자 목록/관리       | 목록, 검색, 관리자 토글, 계정 잠금 | 🔶 부분 구현(`/api/v1/site/users`, role/lock toggles) | 6     |
+| 사용자 목록/관리       | 목록, 검색, 관리자 토글, 계정 잠금 | 🔶 부분 구현(`/sites/userList`, `/api/v1/site/users`; guest/reset/delete follow-up) | 6     |
 | 프로젝트 목록/관리     | 목록, 검색, 삭제                   | gap       | 6     |
 | 게시글/이슈 목록       | 전체 게시글/이슈 관리              | gap       | 6     |
 | 메일 설정/테스트       | SMTP 테스트, 대량 메일             | gap       | 6     |
@@ -972,7 +972,8 @@ GET   /sites/export            → 데이터 익스포트
 
 - [ ] 관리자 화면: `/sites/*` 경로, site_admin 역할만 접근 가능
 - [x] 사용자 목록 REST: site admin 전용 `/api/v1/site/users`, 검색, 페이지네이션, 관리자 역할 토글, 계정 잠금/해제
-- [ ] 사용자 목록 UI: legacy `/sites/userList` 화면과 `site/userList.scala.html` class/action parity
+- [x] 사용자 목록 UI core: legacy `/sites/userList` shell, state tabs, 검색, 페이지네이션, 관리자 역할 토글, 계정 잠금/해제
+- [ ] 사용자 목록 잔여 액션: guest mode, reset password, delete user
 - [ ] 프로젝트 목록: 검색, 페이지네이션, 프로젝트 삭제
 
 ---
@@ -1398,7 +1399,8 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/files/:id`                       | GET      | `GET /files/:id` direct               | —                                             | implemented        |
 | `/files/:id`                       | POST/DELETE | `POST/DELETE /files/:id` direct    | —                                             | implemented        |
 | `/notification`                    | GET      | `GET /api/v1/notifications`           | `notification/`                               | implemented (기본) |
-| `/sites/*`                         | GET      | —                                     | —                                             | gap                |
+| `/sites/userList`                  | GET      | `GET /api/v1/site/users`              | `sites/$pageName`                             | implemented (core) |
+| `/sites/*`                         | GET      | —                                     | `sites/$pageName` placeholders                | gap                |
 | `/-_-api/v1/*`                     | Various  | —                                     | —                                             | unsupported in app; migrator/deferred |
 | `/svn/*`                           | Various  | —                                     | —                                             | deferred           |
 | `/authenticate/:provider`          | GET      | —                                     | —                                             | deferred           |

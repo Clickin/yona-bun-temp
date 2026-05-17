@@ -131,6 +131,9 @@ const DOMAIN_BUCKETS = [
       "project",
       "organization",
       "user-profile",
+      "site-admin",
+      "site_admin",
+      "user-list",
     ],
     provenanceDocs: [
       "docs/provenance/core-parity-audit.md",
@@ -322,6 +325,18 @@ const DOMAIN_BUCKETS = [
     ],
     testKeywords: ["search", "snippet"],
     provenanceDocs: ["docs/provenance/phase-0b/search.md", "docs/provenance/core-parity-audit.md"],
+  },
+  {
+    id: "site-admin-core",
+    label: "Site admin core surface",
+    status: "partial",
+    implementationPatterns: [
+      /^frontend\/src\/api\/site-admin\.ts$/i,
+      /^frontend\/src\/routes\/sites\/\$pageName\/route\.tsx$/i,
+      /^crates\/(?:persistence|server)\/.*(?:site|admin|user)/i,
+    ],
+    testKeywords: ["site-admin", "site_admin", "site/users", "user-list"],
+    provenanceDocs: ["docs/provenance/core-parity-audit.md"],
   },
   {
     id: "repository-and-smart-http",
