@@ -8284,7 +8284,17 @@ fn legacy_webhook_event_key<'a>(event_type: &'a str) -> &'a str {
     match event_type {
         "NEW_COMMENT" => "notification.type.new.comment",
         "NEW_ISSUE" => "notification.type.new.issue",
+        "NEW_PULL_REQUEST" => "notification.type.new.pullrequest",
+        "NEW_REVIEW_COMMENT" => "notification.type.new.simple.comment",
         _ => event_type,
+    }
+}
+
+fn legacy_pull_request_review_key(reviewed: bool) -> &'static str {
+    if reviewed {
+        "notification.pullrequest.reviewed"
+    } else {
+        "notification.pullrequest.unreviewed"
     }
 }
 
@@ -8391,6 +8401,122 @@ async fn dispatch_issue_webhooks(
             legacy_webhook_link(&url, &target_label, webhook.webhook_type == 1)
         );
         let body = issue_webhook_payload(&webhook, issue, &request_message, detail_markdown);
+        let _ = deliver_webhook(OutboundWebhook {
+            body,
+            event_type: event_type.to_string(),
+            payload_url: webhook.payload_url,
+            secret: webhook.secret,
+            webhook_type,
+        });
+    }
+}
+
+fn pull_request_webhook_payload(
+    webhook: &persistence::ProjectWebhookRecord,
+    pull_request: &persistence::PullRequestDetailRecord,
+    request_message: &str,
+    detail_markdown: &str,
+) -> String {
+    match webhook.webhook_type {
+        1 => serde_json::json!({
+            "text": request_message,
+            "attachments": [{
+                "text": detail_markdown,
+                "fields": [
+                    {
+                        "title": "pullRequest.sender",
+                        "value": pull_request.contributor.user_label,
+                        "short": false,
+                    },
+                    {
+                        "title": "pullRequest.from",
+                        "value": pull_request.from_branch,
+                        "short": true,
+                    },
+                    {
+                        "title": "pullRequest.to",
+                        "value": pull_request.to_branch,
+                        "short": true,
+                    },
+                ],
+                "color": "",
+            }],
+        })
+        .to_string(),
+        2 => serde_json::json!({
+            "text": request_message,
+            "thread": {},
+        })
+        .to_string(),
+        _ => serde_json::json!({
+            "text": request_message,
+        })
+        .to_string(),
+    }
+}
+
+async fn dispatch_pull_request_webhooks(
+    repository: &PilotRepository,
+    pull_request: &persistence::PullRequestDetailRecord,
+    actor: &persistence::AppUserRecord,
+    event_type: &str,
+    detail_markdown: &str,
+    target_fragment: Option<&str>,
+    reviewed: Option<bool>,
+    public_origin: &str,
+    base_path: &str,
+) {
+    let Ok(Some(project)) = repository
+        .read_project_by_owner_and_name(&pull_request.owner_name, &pull_request.project_name)
+        .await
+    else {
+        return;
+    };
+    let Ok(webhooks) = repository.list_project_webhooks(project.id).await else {
+        return;
+    };
+    if webhooks.webhooks.is_empty() {
+        return;
+    }
+
+    let mut path = format!(
+        "/{}/{}/pullRequest/{}",
+        pull_request.owner_name, pull_request.project_name, pull_request.pull_request_number
+    );
+    if let Some(fragment) = target_fragment {
+        path.push_str(fragment);
+    }
+    let url = absolute_app_url(public_origin, base_path, &path);
+    let target_label = format!(
+        "#{}: {}",
+        pull_request.pull_request_number, pull_request.title
+    );
+
+    for webhook in webhooks.webhooks {
+        if webhook.webhook_type == 3 {
+            continue;
+        }
+        let webhook_type = project_webhook_type_label(webhook.webhook_type);
+        let link = legacy_webhook_link(&url, &target_label, webhook.webhook_type == 1);
+        let request_message = if event_type == "PULL_REQUEST_REVIEW_STATE_CHANGED" {
+            format!(
+                "[{}] {} {}{}",
+                project.project_name,
+                legacy_pull_request_review_key(reviewed.unwrap_or(true)),
+                actor.display_name,
+                link
+            )
+        } else {
+            format!(
+                "[{}] {} {}{}",
+                project.project_name,
+                actor.display_name,
+                legacy_webhook_event_key(event_type),
+                link
+            )
+        };
+        let body =
+            pull_request_webhook_payload(&webhook, pull_request, &request_message, detail_markdown);
         let _ = deliver_webhook(OutboundWebhook {
             body,
             event_type: event_type.to_string(),
@@ -10652,8 +10778,22 @@ async fn rest_create_pull_request(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("project not found"))?;
     let record = match detail {
-        persistence::CreatePullRequestResult::Created(record)
-        | persistence::CreatePullRequestResult::Duplicate(record) => record,
+        persistence::CreatePullRequestResult::Created(record) => {
+            dispatch_pull_request_webhooks(
+                repository,
+                &record,
+                &actor,
+                "NEW_PULL_REQUEST",
+                &record.body_markdown,
+                None,
+                None,
+                &service.public_origin,
+                &service.base_path,
+            )
+            .await;
+            record
+        }
+        persistence::CreatePullRequestResult::Duplicate(record) => record,
     };
     Ok(Json(
         rest_pull_request_detail_from_record(record, &to_authorization, Some(actor.id))
@@ -10821,6 +10961,18 @@ async fn rest_set_pull_request_review(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
+    dispatch_pull_request_webhooks(
+        repository,
+        &record,
+        &actor,
+        "PULL_REQUEST_REVIEW_STATE_CHANGED",
+        &record.body_markdown,
+        None,
+        Some(reviewed),
+        &service.public_origin,
+        &service.base_path,
+    )
+    .await;
     Ok(Json(
         rest_pull_request_detail_from_record(record, &authorization, Some(actor.id))
             .map_err(RestRouteError::from_connect_error)?,
@@ -10861,6 +11013,7 @@ async fn rest_create_pull_request_comment(
             ConnectError::permission_denied("pull request comment is not allowed"),
         ));
     }
+    let comment_markdown = body.contents_markdown.clone();
     let authorization =
         rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
             .await?;
@@ -10881,6 +11034,27 @@ async fn rest_create_pull_request_comment(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
+    let created_comment = record
+        .threads
+        .iter()
+        .flat_map(|thread| thread.comments.iter())
+        .max_by_key(|comment| comment.id);
+    let target_fragment = created_comment.map(|comment| format!("#comment-{}", comment.id));
+    let detail_markdown = created_comment
+        .map(|comment| comment.contents_markdown.clone())
+        .unwrap_or(comment_markdown);
+    dispatch_pull_request_webhooks(
+        repository,
+        &record,
+        &actor,
+        "NEW_REVIEW_COMMENT",
+        &detail_markdown,
+        target_fragment.as_deref(),
+        None,
+        &service.public_origin,
+        &service.base_path,
+    )
+    .await;
     Ok(Json(
         rest_pull_request_detail_from_record(record, &authorization, Some(actor.id))
             .map_err(RestRouteError::from_connect_error)?,

@@ -56,6 +56,11 @@
   `NEW_PULL_REQUEST`, `PULL_REQUEST_STATE_CHANGED`,
   `PULL_REQUEST_REVIEW_STATE_CHANGED`, `NEW_REVIEW_COMMENT`, and
   `REVIEW_THREAD_STATE_CHANGED`.
+- Project webhooks now follow the observed legacy model for DB-backed PR
+  interactions: `NEW_PULL_REQUEST`, `PULL_REQUEST_REVIEW_STATE_CHANGED`, and
+  `NEW_REVIEW_COMMENT` fan out to non-JSON webhooks with the legacy PR link/text
+  shape. Plain close/reopen records PR state events but did not call project
+  webhooks in the observed legacy code.
 
 ## Extracted Intent
 
@@ -79,6 +84,7 @@
 - ranged inline review comment create/edit/delete
 - diff composition and PR event timeline
 - fork/clone workflow and branch cleanup
-- Smart HTTP, webhook delivery, and legacy external `/-_-api/v1/**` compatibility
+- Smart HTTP, merge/commit-changed/push webhook delivery, and legacy external
+  `/-_-api/v1/**` compatibility
 
 이 항목들은 bounded exemplar 밖의 `deferred` scope다.

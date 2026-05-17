@@ -763,7 +763,7 @@ review thread open/close mutation을 추가했다. `/api/v1/owners/:owner/projec
 `/:number`, `/:number/changes`, `/reviews`, `/api/v1/organizations/:organization/pull-requests`
 가 project READ + code-accessible-member-only 정책을 통과한 viewer에게만 열리며, mutation은
 CSRF + authenticated session + detail permission projection을 요구한다. Merge accept/conflict 처리,
-fork/clone, from branch delete/restore, Smart HTTP, webhook delivery, legacy external `/-_-api/v1/**`
+fork/clone, from branch delete/restore, Smart HTTP, remaining merge/commit-changed/push webhook delivery, legacy external `/-_-api/v1/**`
 compatibility는 이번 app runtime batch에서 제외한다.
 
 | 기능                       | Legacy 동작                          | 현재 상태 | Phase |
@@ -891,8 +891,9 @@ DELETE /:owner/:project/webhooks/:id  → 웹훅 삭제
 
 - [x] 웹훅 생성/삭제: payload URL, secret, webhook type, gitPush 선택을 legacy `/webhooks` form/list shell과 app runtime REST CRUD로 제공한다
 - [x] Issue/comment non-JSON payload fan-out: `NEW_ISSUE`와 `NEW_COMMENT`가 legacy `Webhook.sendRequestToPayloadUrl`의 text payload shape, `Content-Type: application/json`, `User-Agent: Yobi-Hookshot`, and `Authorization: token <secret> ` header를 유지하고 `JSON` webhooks를 push-only로 제외한다.
+- [x] Pull request/review/comment non-JSON payload fan-out: `NEW_PULL_REQUEST`, `PULL_REQUEST_REVIEW_STATE_CHANGED`, and `NEW_REVIEW_COMMENT` use the legacy PR link/text shape, token secret header, and JSON-webhook exclusion.
 - [ ] Push JSON payload: legacy `Webhook.sendRequestToPayloadUrl(commits, refNames, sender)` 포맷과 호환
-- [ ] Pull request/review event payload fan-out: `NEW_PULL_REQUEST`, PR state/review/comment/thread events
+- [~] Remaining pull request webhook events: merge (`PULL_REQUEST_MERGED`), commit-changed, and push-triggered delivery remain VCS lifecycle follow-up scope; plain close/reopen did not call project webhooks in observed legacy code.
 - [ ] HTTPS production delivery hardening and delivery history/retry behavior
 - [ ] HMAC-style signature compatibility is not present in observed legacy `Webhook.java`; only add if external integration evidence requires it.
 
@@ -1263,7 +1264,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | PR/리뷰           | 🔶 Phase 4B 구현  | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, 일반 PR comment, thread open/close. merge/fork/ranged inline review CRUD/branch cleanup은 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, mail queue staging |
-| 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD and issue/comment non-JSON fan-out; PR/review/push payload delivery plus history/hardening remain gaps |
+| 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment non-JSON fan-out; push JSON, PR merge/commit-changed delivery, history, and hardening remain gaps |
 | 관리자            | ❌ 미구현         |                                                                  |
 | 마크다운          | 🔶 이슈 범위 구현 | Issue body/comment sanitized HTML projection                     |
 | REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1` legacy external API는 app scope에서 미지원이며 별도 migrator/export/import deliverable로 분리 |
@@ -1449,7 +1450,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: read state, SMTP scheduler/delivery, draft-time merge, recipient limit, and full mail notification parity
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope
-- Webhook follow-up: PR/review/push event payload delivery, HTTPS production delivery hardening, optional signature compatibility if external evidence requires it, and delivery history/retry behavior
+- Webhook follow-up: push JSON payload delivery, PR merge/commit-changed delivery, HTTPS production delivery hardening, optional signature compatibility if external evidence requires it, and delivery history/retry behavior
 - Admin: users/projects/site-admin/account-lock/test-mail surfaces
 - Markdown: app-level markdown preview API if legacy evidence requires it
 

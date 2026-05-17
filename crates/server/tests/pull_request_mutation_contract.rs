@@ -2,12 +2,13 @@ use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::{ConnectionTrait, Database, DatabaseConnection, Statement};
-use serde_json::json;
+use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tower::ServiceExt;
+use yona_rust_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
 use yona_rust_persistence::AppRepository;
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -265,6 +266,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     let data_root = temp_path("data");
     fs::create_dir_all(&data_root).unwrap();
     std::env::set_var("YONA_DATA", &data_root);
+    clear_test_webhook_outbox();
 
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
@@ -289,6 +291,40 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         .await
         .unwrap();
     seed_bare_repo_with_branches(&data_root, project.id);
+    response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "payloadUrl": "https://hooks.example/pr",
+                "secret": "pr-secret",
+                "webhookType": "SIMPLE",
+                "gitPush": false,
+            }),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "payloadUrl": "https://hooks.example/json",
+                "secret": "json-secret",
+                "webhookType": "JSON",
+                "gitPush": true,
+            }),
+        )
+        .await,
+    )
+    .await;
 
     let form_options = response_json(
         rest_get(
@@ -329,6 +365,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     )
     .await;
     assert_eq!(invalid_create.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(snapshot_test_webhook_outbox().len(), 0);
 
     let created = response_json(
         rest_json(
@@ -364,6 +401,22 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         count_rows(&db, "notification_event", "NEW_PULL_REQUEST").await,
         0
     );
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 1);
+    let created_delivery = &deliveries[0];
+    assert_eq!(created_delivery.payload_url, "https://hooks.example/pr");
+    assert_eq!(created_delivery.event_type, "NEW_PULL_REQUEST");
+    assert_eq!(created_delivery.webhook_type, "SIMPLE");
+    assert!(created_delivery
+        .headers
+        .iter()
+        .any(|header| header.name == "Authorization" && header.value == "token pr-secret "));
+    let created_payload: Value =
+        serde_json::from_str(&created_delivery.body).expect("created PR webhook payload");
+    let created_text = created_payload["text"].as_str().unwrap_or_default();
+    assert!(created_text.contains("[projectYobi] owner"));
+    assert!(created_text.contains("notification.type.new.pullrequest"));
+    assert!(created_text.contains("/yona/owner/projectYobi/pullRequest/1|#1: Interaction parity"));
 
     let duplicate = response_json(
         rest_json(
@@ -389,6 +442,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         count_rows(&db, "pull_request_event", "NEW_PULL_REQUEST").await,
         1
     );
+    assert_eq!(snapshot_test_webhook_outbox().len(), 1);
 
     let edit_options = response_json(
         rest_get(
@@ -445,6 +499,20 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         reviewed["events"].as_array().unwrap().last().unwrap()["eventType"],
         "PULL_REQUEST_REVIEW_STATE_CHANGED"
     );
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 2);
+    let reviewed_payload: Value =
+        serde_json::from_str(&deliveries[1].body).expect("reviewed webhook payload");
+    let reviewed_text = reviewed_payload["text"].as_str().unwrap_or_default();
+    assert_eq!(
+        deliveries[1].event_type,
+        "PULL_REQUEST_REVIEW_STATE_CHANGED"
+    );
+    assert!(reviewed_text.contains("[projectYobi]"));
+    assert!(reviewed_text.contains("notification.pullrequest.reviewed"));
+    assert!(reviewed_text.contains("reviewer"));
+    assert!(reviewed_text
+        .contains("/yona/owner/projectYobi/pullRequest/1|#1: Updated interaction parity"));
 
     let unreviewed = response_json(
         rest_json(
@@ -463,6 +531,17 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         .unwrap()
         .iter()
         .any(|reviewer| reviewer["loginId"] == "reviewer"));
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 3);
+    let unreviewed_payload: Value =
+        serde_json::from_str(&deliveries[2].body).expect("unreviewed webhook payload");
+    let unreviewed_text = unreviewed_payload["text"].as_str().unwrap_or_default();
+    assert_eq!(
+        deliveries[2].event_type,
+        "PULL_REQUEST_REVIEW_STATE_CHANGED"
+    );
+    assert!(unreviewed_text.contains("notification.pullrequest.unreviewed"));
+    assert!(unreviewed_text.contains("reviewer"));
 
     let commented = response_json(
         rest_json(
@@ -488,6 +567,16 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         commented["events"].as_array().unwrap().last().unwrap()["eventType"],
         "NEW_REVIEW_COMMENT"
     );
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 4);
+    let commented_payload: Value =
+        serde_json::from_str(&deliveries[3].body).expect("review comment webhook payload");
+    let commented_text = commented_payload["text"].as_str().unwrap_or_default();
+    assert_eq!(deliveries[3].event_type, "NEW_REVIEW_COMMENT");
+    assert!(commented_text.contains("[projectYobi] reviewer"));
+    assert!(commented_text.contains("notification.type.new.simple.comment"));
+    assert!(commented_text.contains("/yona/owner/projectYobi/pullRequest/1#comment-"));
+    assert!(commented_text.contains("|#1: Updated interaction parity"));
 
     let closed_thread = response_json(
         rest_json(
@@ -570,6 +659,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         count_rows(&db, "pull_request_event", "REVIEW_THREAD_STATE_CHANGED").await,
         2
     );
+    assert_eq!(snapshot_test_webhook_outbox().len(), 4);
 
     create_project(
         app.clone(),
