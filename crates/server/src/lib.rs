@@ -1026,6 +1026,10 @@ fn random_storage_token() -> String {
     base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes)
 }
 
+fn random_site_admin_password() -> String {
+    random_storage_token().chars().take(6).collect()
+}
+
 fn send_signup_verification_mail(
     to: &str,
     login_id: &str,
@@ -2323,6 +2327,15 @@ struct RestSiteUserMutationResponse {
     user: RestSiteUserItem,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteUserPasswordResetResponse {
+    is_success: bool,
+    login_id: String,
+    name: String,
+    new_password: String,
+}
+
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestNotificationsQuery {
@@ -3592,6 +3605,16 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Path(login_id): Path<String>| {
                     let service = service.clone();
                     async move { rest_toggle_site_user_guest(headers, login_id, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/users/{login_id}/password/reset",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Path(login_id): Path<String>| {
+                    let service = service.clone();
+                    async move { rest_reset_site_user_password(headers, login_id, service).await }
                 }
             }),
         )
@@ -6649,6 +6672,34 @@ async fn rest_toggle_site_user_guest(
 
     Ok(Json(RestSiteUserMutationResponse {
         user: rest_site_user_from_record(user),
+    }))
+}
+
+async fn rest_reset_site_user_password(
+    headers: HeaderMap,
+    login_id: String,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteUserPasswordResetResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let user = repository
+        .find_user_by_login_id(&login_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .filter(|user| normalize_identifier(&user.login_id) != "anonymous")
+        .ok_or_else(|| RestRouteError::not_found("user not found"))?;
+    let new_password = random_site_admin_password();
+    let password_hash = hash(&new_password, DEFAULT_COST)
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    repository
+        .update_password_hash_for_user(user.id, &password_hash)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+
+    Ok(Json(RestSiteUserPasswordResetResponse {
+        is_success: true,
+        login_id: user.login_id,
+        name: user.display_name,
+        new_password,
     }))
 }
 

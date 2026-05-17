@@ -329,8 +329,8 @@ Interpretation:
 
 ## Site Admin
 
-- [~] User list/manage/search (`/sites/userList` core UI + `/api/v1/site/users`; reset/delete remain)
-- [x] Admin/guest/account-lock toggles (`/sites/userList` action controls + `/api/v1/site/users/:loginId/*/toggle`)
+- [~] User list/manage/search (`/sites/userList` core UI + `/api/v1/site/users`; delete user remains)
+- [x] Admin/guest/account-lock/password-reset actions (`/sites/userList` action controls + `/api/v1/site/users/:loginId/*`)
 - [ ] Project list/manage/delete
 - [ ] Site-wide posting/issue management
 - [ ] Mail settings/test/mass mail

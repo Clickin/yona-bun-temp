@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { apiQueryKeys } from "../../../api/query-keys";
 import {
+  resetSiteUserPasswordRest,
   siteUsersQueryOptions,
   toggleSiteUserAccountLockRest,
   toggleSiteUserAdminRest,
@@ -85,11 +86,15 @@ function siteUserListHref(input: SiteUserListInput, page: number = input.page): 
   return query ? `/sites/userList?${query}` : "/sites/userList";
 }
 
-function apiDataUri(runtimeConfig: RuntimeConfig, loginId: string, action: string): string {
+function apiToggleUri(runtimeConfig: RuntimeConfig, loginId: string, action: string): string {
   return appHref(
     runtimeConfig,
     `/api/v1/site/users/${encodeURIComponent(loginId)}/${action}/toggle`,
   );
+}
+
+function apiPasswordResetUri(runtimeConfig: RuntimeConfig, loginId: string): string {
+  return appHref(runtimeConfig, `/api/v1/site/users/${encodeURIComponent(loginId)}/password/reset`);
 }
 
 function SiteAdminRouteComponent() {
@@ -134,6 +139,7 @@ function SiteUserListRoute({
   const canRender = useRequireAuthenticatedRoute(href);
   const input = React.useMemo(() => siteUserListInputFromHref(href), [href]);
   const queryClient = useQueryClient();
+  const [resetPasswords, setResetPasswords] = React.useState<Record<string, string>>({});
   const query = useQuery({
     ...siteUsersQueryOptions(runtimeConfig, input),
     enabled: canRender && currentIsSiteAdmin,
@@ -166,6 +172,17 @@ function SiteUserListRoute({
       await queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
     },
   });
+  const resetPasswordMutation = useMutation({
+    mutationFn: (loginId: string) => resetSiteUserPasswordRest(runtimeConfig, csrfToken, loginId),
+    onError: mutationError("Password reset failed."),
+    onSuccess: async (response) => {
+      setResetPasswords((current) => ({
+        ...current,
+        [response.loginId]: response.newPassword,
+      }));
+      await queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.usersBase() });
+    },
+  });
   const failureKind = classifyConnectFailure(query.error);
 
   React.useEffect(() => {
@@ -193,11 +210,16 @@ function SiteUserListRoute({
       input={input}
       pendingAccountLockLoginId={lockMutation.isPending ? lockMutation.variables : ""}
       pendingGuestLoginId={guestMutation.isPending ? guestMutation.variables : ""}
+      pendingResetPasswordLoginId={
+        resetPasswordMutation.isPending ? resetPasswordMutation.variables : ""
+      }
       pendingSiteAdminLoginId={adminMutation.isPending ? adminMutation.variables : ""}
       response={query.data}
+      resetPasswords={resetPasswords}
       runtimeConfig={runtimeConfig}
       onToggleAccountLock={(loginId) => lockMutation.mutate(loginId)}
       onToggleGuest={(loginId) => guestMutation.mutate(loginId)}
+      onResetPassword={(loginId) => resetPasswordMutation.mutate(loginId)}
       onToggleSiteAdmin={(loginId) => adminMutation.mutate(loginId)}
     />
   );
@@ -207,9 +229,12 @@ function SiteAdminUserListPage({
   input,
   pendingAccountLockLoginId,
   pendingGuestLoginId,
+  pendingResetPasswordLoginId,
   pendingSiteAdminLoginId,
   response,
+  resetPasswords,
   runtimeConfig,
+  onResetPassword,
   onToggleAccountLock,
   onToggleGuest,
   onToggleSiteAdmin,
@@ -217,9 +242,12 @@ function SiteAdminUserListPage({
   input: SiteUserListInput;
   pendingAccountLockLoginId: string | undefined;
   pendingGuestLoginId: string | undefined;
+  pendingResetPasswordLoginId: string | undefined;
   pendingSiteAdminLoginId: string | undefined;
   response: SiteUserListResponse | undefined;
+  resetPasswords: Record<string, string>;
   runtimeConfig: RuntimeConfig;
+  onResetPassword: (loginId: string) => void;
   onToggleAccountLock: (loginId: string) => void;
   onToggleGuest: (loginId: string) => void;
   onToggleSiteAdmin: (loginId: string) => void;
@@ -285,10 +313,13 @@ function SiteAdminUserListPage({
                       key={user.id}
                       pendingAccountLock={pendingAccountLockLoginId === user.loginId}
                       pendingGuest={pendingGuestLoginId === user.loginId}
+                      pendingResetPassword={pendingResetPasswordLoginId === user.loginId}
                       pendingSiteAdmin={pendingSiteAdminLoginId === user.loginId}
+                      resetPassword={resetPasswords[user.loginId] ?? ""}
                       runtimeConfig={runtimeConfig}
                       selectedState={input.state}
                       user={user}
+                      onResetPassword={onResetPassword}
                       onToggleAccountLock={onToggleAccountLock}
                       onToggleGuest={onToggleGuest}
                       onToggleSiteAdmin={onToggleSiteAdmin}
@@ -362,22 +393,28 @@ function SiteUserListHeader({ state }: { state: SiteUserState }) {
 function SiteUserRow({
   pendingAccountLock,
   pendingGuest,
+  pendingResetPassword,
   pendingSiteAdmin,
+  resetPassword,
   runtimeConfig,
   selectedState,
   user,
   onToggleAccountLock,
   onToggleGuest,
+  onResetPassword,
   onToggleSiteAdmin,
 }: {
   pendingAccountLock: boolean;
   pendingGuest: boolean;
+  pendingResetPassword: boolean;
   pendingSiteAdmin: boolean;
+  resetPassword: string;
   runtimeConfig: RuntimeConfig;
   selectedState: SiteUserState;
   user: SiteUser;
   onToggleAccountLock: (loginId: string) => void;
   onToggleGuest: (loginId: string) => void;
+  onResetPassword: (loginId: string) => void;
   onToggleSiteAdmin: (loginId: string) => void;
 }) {
   return (
@@ -406,7 +443,7 @@ function SiteUserRow({
           <button
             className={`ybtn ybtn-small${user.isGuest ? " ybtn-success" : ""}`}
             data-request-method="post"
-            data-request-uri={apiDataUri(runtimeConfig, user.loginId, "guest")}
+            data-request-uri={apiToggleUri(runtimeConfig, user.loginId, "guest")}
             type="button"
             onClick={(event) => {
               event.preventDefault();
@@ -418,7 +455,7 @@ function SiteUserRow({
           <button
             className="ybtn ybtn-small"
             data-request-method="post"
-            data-request-uri={apiDataUri(runtimeConfig, user.loginId, "account-lock")}
+            data-request-uri={apiToggleUri(runtimeConfig, user.loginId, "account-lock")}
             type="button"
             onClick={(event) => {
               event.preventDefault();
@@ -430,16 +467,27 @@ function SiteUserRow({
           <button
             className="ybtn ybtn-small"
             data-href={appHref(runtimeConfig, `/${user.loginId}?action=resetPassword`)}
+            data-request-method="post"
+            data-request-uri={apiPasswordResetUri(runtimeConfig, user.loginId)}
             data-toggle="reset-password"
             id={user.loginId}
             type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              onResetPassword(user.loginId);
+            }}
           >
-            Reset Password
+            {pendingResetPassword ? "Sending..." : "Reset Password"}
           </button>
+          {resetPassword === "" ? null : (
+            <div className="alert alert-success">
+              <h4>New Password: {resetPassword}</h4>
+            </div>
+          )}
           <button
             className={`ybtn ybtn-small ${user.isSiteAdmin ? "ybtn-info" : "label-info"}`}
             data-request-method="post"
-            data-request-uri={apiDataUri(runtimeConfig, user.loginId, "site-admin")}
+            data-request-uri={apiToggleUri(runtimeConfig, user.loginId, "site-admin")}
             type="button"
             onClick={(event) => {
               event.preventDefault();

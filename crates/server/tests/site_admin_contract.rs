@@ -184,7 +184,7 @@ fn login_ids(payload: &Value) -> Vec<String> {
 
 #[tokio::test]
 async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
-    let (app, _repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_repository().await;
     let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
     let (guest_csrf, guest_cookie, _guest_id) = register_user(app.clone(), "guest").await;
@@ -320,7 +320,7 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
 
     let normal_mode = response_json(
         rest_post(
-            app,
+            app.clone(),
             "/yona/api/v1/site/users/member/guest/toggle",
             Some(&admin_cookie),
             Some(&admin_csrf),
@@ -329,4 +329,36 @@ async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     )
     .await;
     assert_eq!(normal_mode["user"]["isGuest"], false);
+
+    let reset_forbidden = rest_post(
+        app.clone(),
+        "/yona/api/v1/site/users/member/password/reset",
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+    )
+    .await;
+    assert_eq!(reset_forbidden.status(), StatusCode::FORBIDDEN);
+
+    let reset = response_json(
+        rest_post(
+            app,
+            "/yona/api/v1/site/users/member/password/reset",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+        )
+        .await,
+    )
+    .await;
+    let new_password = reset["newPassword"].as_str().expect("new password");
+    assert_eq!(reset["loginId"], "member");
+    assert_eq!(reset["name"], "member");
+    assert_eq!(reset["isSuccess"], true);
+    assert_eq!(new_password.len(), 6);
+
+    let member = repo
+        .find_user_by_login_id("member")
+        .await
+        .expect("read member after reset")
+        .expect("member exists");
+    assert!(bcrypt::verify(new_password, &member.password_hash).expect("bcrypt verify"));
 }

@@ -37,6 +37,13 @@ export interface SiteUserMutationResponse {
   user: SiteUser;
 }
 
+export interface SiteUserPasswordResetResponse {
+  isSuccess: boolean;
+  loginId: string;
+  name: string;
+  newPassword: string;
+}
+
 function siteUsersPath(input: SiteUserListInput): string {
   const params = new URLSearchParams();
   params.set("state", input.state);
@@ -102,6 +109,24 @@ export function toggleSiteUserGuestRest(
     fetchImpl,
     method: "POST",
   });
+}
+
+export function resetSiteUserPasswordRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  loginId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteUserPasswordResetResponse> {
+  return restFetch<SiteUserPasswordResetResponse>(
+    runtimeConfig,
+    `/site/users/${encodeURIComponent(loginId)}/password/reset`,
+    {
+      body: {},
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
+  );
 }
 
 export function siteUsersQueryOptions(runtimeConfig: RuntimeConfig, input: SiteUserListInput) {

@@ -702,6 +702,26 @@ h1 {
   justify-content: flex-end;
 }
 
+.site-admin-page .action-buttons .alert {
+  flex-basis: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.site-admin-page .action-buttons .alert h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.site-admin-page .alert-success {
+  color: #2f6f36;
+  background: #eef8ef;
+  border: 1px solid #b7d9bd;
+  border-radius: 3px;
+}
+
 .site-admin-page .ybtn-small {
   padding: 2px 8px;
   font-size: 12px;

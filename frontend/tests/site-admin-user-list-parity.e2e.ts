@@ -117,6 +117,7 @@ test("site admin user list preserves legacy shell and toggles user state", async
   let promoted = false;
   let locked = false;
   let guest = false;
+  let resetPassword = "";
   const requests: string[] = [];
 
   await page.route(apiV1Route("/site/users**"), async (route) => {
@@ -159,6 +160,21 @@ test("site admin user list preserves legacy shell and toggles user state", async
           user: siteUsersPayload({
             users: [{ id: 2, isGuest: guest, loginId: "member" }],
           }).users[0],
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+      return;
+    }
+
+    if (url.pathname.endsWith("/password/reset")) {
+      resetPassword = "new123";
+      await route.fulfill({
+        body: JSON.stringify({
+          isSuccess: true,
+          loginId: "member",
+          name: "member",
+          newPassword: resetPassword,
         }),
         headers: restJsonHeaders,
         status: 200,
@@ -219,6 +235,14 @@ test("site admin user list preserves legacy shell and toggles user state", async
 
   await page.locator("[data-request-uri$='/guest/toggle']").click();
   await expect.poll(() => requests.some((request) => request.includes("guest/toggle"))).toBe(true);
+
+  await page.locator("[data-toggle='reset-password']").click();
+  await expect
+    .poll(() => requests.some((request) => request.includes("password/reset")))
+    .toBe(true);
+  await expect(page.locator(".user-list-wrap .alert-success")).toContainText(
+    `New Password: ${resetPassword}`,
+  );
 
   await page.goto("/yona/sites/userList?state=GUEST");
   await expect(page.locator(".nav-tabs li.active a")).toContainText("Guest");
