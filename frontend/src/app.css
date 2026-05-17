@@ -775,6 +775,104 @@ h1 {
   border-radius: 3px;
 }
 
+.site-admin-page .alert-error {
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  color: #8f2d22;
+  background: #fff1ef;
+  border: 1px solid #e0aaa3;
+  border-radius: 3px;
+}
+
+.site-admin-page .alert-error p {
+  margin: 0 0 6px;
+}
+
+.site-admin-page .alert-error ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.site-admin-page .form-horizontal {
+  max-width: 760px;
+}
+
+.site-admin-page .form-horizontal .control-group {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 10px 14px;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.site-admin-page .form-horizontal .control-label {
+  padding-top: 7px;
+  color: #555;
+  text-align: right;
+}
+
+.site-admin-page .form-horizontal input,
+.site-admin-page .form-horizontal textarea,
+.site-admin-page .mess-mail-wrap .textbox {
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 8px;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.site-admin-page .form-horizontal textarea {
+  min-height: 180px;
+  resize: vertical;
+}
+
+.site-admin-page .mail-btn-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.site-admin-page .mess-mail-wrap {
+  max-width: 720px;
+}
+
+.site-admin-page .mess-mail-wrap .radio {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.site-admin-page #project-list-wrap {
+  padding: 12px;
+  margin-top: 10px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+}
+
+.site-admin-page .project-select-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.site-admin-page #selected-projects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 24px;
+  margin-top: 10px;
+}
+
+.site-admin-page .label {
+  display: inline-block;
+  padding: 3px 7px;
+  border-radius: 3px;
+}
+
 .site-admin-page .ybtn-small {
   padding: 2px 8px;
   font-size: 12px;

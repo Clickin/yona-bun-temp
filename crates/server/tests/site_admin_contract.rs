@@ -7,6 +7,7 @@ use sea_orm::{
 };
 use serde_json::{json, Value};
 use tower::ServiceExt;
+use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
     project_user, site_admin, AppRepository, CreateIssueInput, CreatePostingInput,
     IssueMutationInput, PostingMutationInput,
@@ -181,6 +182,29 @@ async fn rest_post(
         builder = builder.header("x-csrf-token", csrf);
     }
     app.oneshot(builder.body(Body::from("{}")).unwrap())
+        .await
+        .unwrap()
+}
+
+async fn rest_json(
+    app: axum::Router,
+    method: Method,
+    uri: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    payload: Value,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(method)
+        .uri(uri)
+        .header(http::header::CONTENT_TYPE, "application/json");
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+    app.oneshot(builder.body(Body::from(payload.to_string())).unwrap())
         .await
         .unwrap()
 }
@@ -825,4 +849,132 @@ async fn site_admin_diagnostics_are_site_admin_only_and_report_legacy_error_list
             .await;
     assert_eq!(payload["errorCount"], 0);
     assert_eq!(payload["errors"].as_array().expect("errors").len(), 0);
+}
+
+#[tokio::test]
+async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
+    std::env::remove_var("SMTP_ENABLED");
+    std::env::remove_var("SMTP_HOST");
+    std::env::remove_var("SMTP_USER");
+    std::env::remove_var("SMTP_PASS");
+    std::env::set_var("SMTP_FROM", "site-admin@yona.local");
+    clear_test_outbox();
+
+    let (app, repo, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
+    let (_observer_csrf, _observer_cookie, observer_id) =
+        register_user(app.clone(), "observer").await;
+    mark_site_admin(&db, admin_id).await;
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &member_csrf,
+        "member",
+        "mailproj",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("member", "mailproj")
+        .await
+        .expect("read project")
+        .expect("project");
+    repo.add_project_membership(project.id, observer_id, "member")
+        .await
+        .expect("add observer membership");
+
+    let unauthenticated = rest_get(app.clone(), "/yona/api/v1/site/mail", None).await;
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let forbidden = rest_get(app.clone(), "/yona/api/v1/site/mail", Some(&member_cookie)).await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let options =
+        response_json(rest_get(app.clone(), "/yona/api/v1/site/mail", Some(&admin_cookie)).await)
+            .await;
+    assert_eq!(options["sender"], "site-admin@yona.local");
+    assert_eq!(options["sent"], false);
+    assert_eq!(
+        options["notConfiguredItems"],
+        json!(["SMTP_HOST", "SMTP_USER", "SMTP_PASS"])
+    );
+
+    let send_forbidden = rest_json(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/site/mail/test",
+        Some(&member_cookie),
+        Some(&member_csrf),
+        json!({
+            "from": "site-admin@yona.local",
+            "to": "receiver@example.com",
+            "subject": "Test subject",
+            "body": "Test body"
+        }),
+    )
+    .await;
+    assert_eq!(send_forbidden.status(), StatusCode::FORBIDDEN);
+
+    let sent = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/site/mail/test",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            json!({
+                "from": "site-admin@yona.local",
+                "to": "receiver@example.com",
+                "subject": "Test subject",
+                "body": "Test body"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(sent["sent"], true);
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].from, "site-admin@yona.local");
+    assert_eq!(outbox[0].to, "receiver@example.com");
+    assert_eq!(outbox[0].subject, "Test subject");
+    assert_eq!(outbox[0].body, "Test body");
+
+    let all_recipients = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/site/mail-list",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            json!({ "all": true }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        all_recipients["recipients"],
+        json!([
+            "member@example.com",
+            "observer@example.com",
+            "siteboss@example.com"
+        ])
+    );
+
+    let project_recipients = response_json(
+        rest_json(
+            app,
+            Method::POST,
+            "/yona/api/v1/site/mail-list",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            json!({ "projects": ["member/mailproj"] }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        project_recipients["recipients"],
+        json!(["member@example.com", "observer@example.com"])
+    );
 }

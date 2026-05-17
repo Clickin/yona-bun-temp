@@ -5,17 +5,23 @@ import { apiQueryKeys } from "../../../api/query-keys";
 import {
   deleteSiteProjectRest,
   deleteSiteUserRest,
+  readSiteMailListRest,
   siteDiagnosticsQueryOptions,
   siteIssuesQueryOptions,
+  siteMailOptionsQueryOptions,
   sitePostsQueryOptions,
   siteProjectsQueryOptions,
   resetSiteUserPasswordRest,
+  sendSiteMailRest,
   siteUsersQueryOptions,
   type SiteDiagnosticsResponse,
   type SiteIssue,
   type SiteIssueListInput,
   type SiteIssueListResponse,
   type SiteIssueState,
+  type SiteMailListInput,
+  type SiteMailOptionsResponse,
+  type SiteMailSendInput,
   type SitePost,
   type SitePostListInput,
   type SitePostListResponse,
@@ -65,7 +71,7 @@ const SITE_ADMIN_NAV = [
   { href: "/sites/issueList", label: "Issue List", pageName: "issueList" },
   { href: "/sites/projectList", label: "Project List", pageName: "projectList" },
   { href: "/sites/mail", label: "Mail Send", pageName: "mail" },
-  { href: "/sites/massMail", label: "Mass Mail", pageName: "massMail" },
+  { href: "/sites/massmail", label: "Mass Mail", pageName: "massmail" },
   { href: "/sites/update", label: "Update", pageName: "update" },
   { href: "/sites/diagnostic", label: "Diagnostics", pageName: "diagnostic" },
 ];
@@ -187,6 +193,14 @@ function apiDeleteSiteProjectUri(runtimeConfig: RuntimeConfig, projectId: number
   return appHref(runtimeConfig, `/api/v1/site/projects/${projectId}`);
 }
 
+function apiSiteMailUri(runtimeConfig: RuntimeConfig): string {
+  return appHref(runtimeConfig, "/api/v1/site/mail/test");
+}
+
+function apiSiteMailListUri(runtimeConfig: RuntimeConfig): string {
+  return appHref(runtimeConfig, "/api/v1/site/mail-list");
+}
+
 function SiteAdminRouteComponent() {
   const { pageName } = Route.useParams();
   const href = useCurrentHref();
@@ -239,6 +253,32 @@ function SiteAdminRouteComponent() {
     return (
       <SiteIssueListRoute
         bootstrapping={bootstrapping}
+        currentIsSiteAdmin={currentIsSiteAdmin}
+        href={href}
+        runtimeConfig={runtimeConfig}
+        setErrorMessage={setErrorMessage}
+      />
+    );
+  }
+
+  if (pageName === "mail") {
+    return (
+      <SiteMailRoute
+        bootstrapping={bootstrapping}
+        csrfToken={csrfToken}
+        currentIsSiteAdmin={currentIsSiteAdmin}
+        href={href}
+        runtimeConfig={runtimeConfig}
+        setErrorMessage={setErrorMessage}
+      />
+    );
+  }
+
+  if (pageName === "massmail" || pageName === "massMail") {
+    return (
+      <SiteMassMailRoute
+        bootstrapping={bootstrapping}
+        csrfToken={csrfToken}
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
         runtimeConfig={runtimeConfig}
@@ -538,6 +578,121 @@ function SiteIssueListRoute({
 
   return (
     <SiteAdminIssueListPage input={input} response={query.data} runtimeConfig={runtimeConfig} />
+  );
+}
+
+function SiteMailRoute({
+  bootstrapping,
+  csrfToken,
+  currentIsSiteAdmin,
+  href,
+  runtimeConfig,
+  setErrorMessage,
+}: {
+  bootstrapping: boolean;
+  csrfToken: string;
+  currentIsSiteAdmin: boolean;
+  href: string;
+  runtimeConfig: RuntimeConfig;
+  setErrorMessage: (message: string | null) => void;
+}) {
+  const canRender = useRequireAuthenticatedRoute(href);
+  const queryClient = useQueryClient();
+  const [sent, setSent] = React.useState(false);
+  const query = useQuery({
+    ...siteMailOptionsQueryOptions(runtimeConfig),
+    enabled: canRender && currentIsSiteAdmin,
+  });
+  const sendMutation = useMutation({
+    mutationFn: (input: SiteMailSendInput) => sendSiteMailRest(runtimeConfig, csrfToken, input),
+    onError: (error) => {
+      setErrorMessage(error instanceof Error ? error.message : "Mail send failed.");
+    },
+    onSuccess: (response) => {
+      setSent(response.sent);
+      queryClient.setQueryData(apiQueryKeys.siteAdmin.mail(), response);
+    },
+  });
+  const failureKind = classifyConnectFailure(query.error);
+
+  React.useEffect(() => {
+    if (query.error && !classifyConnectFailure(query.error)) {
+      setErrorMessage(query.error instanceof Error ? query.error.message : "Read mail failed.");
+    }
+  }, [query.error, setErrorMessage]);
+
+  if (bootstrapping || !canRender || (currentIsSiteAdmin && query.isLoading)) {
+    return (
+      <main className="app-shell site-admin-page">
+        <h1>Loading&hellip;</h1>
+      </main>
+    );
+  }
+  if (!currentIsSiteAdmin || failureKind === "forbidden") {
+    return <ForbiddenPage href="/sites/mail" />;
+  }
+  if (failureKind === "not-found") {
+    return <NotFoundPage href="/sites/mail" />;
+  }
+
+  return (
+    <SiteAdminMailPage
+      pending={sendMutation.isPending}
+      response={query.data}
+      runtimeConfig={runtimeConfig}
+      sent={sent || sendMutation.data?.sent === true}
+      onSend={(input) => sendMutation.mutate(input)}
+    />
+  );
+}
+
+function SiteMassMailRoute({
+  bootstrapping,
+  csrfToken,
+  currentIsSiteAdmin,
+  href,
+  runtimeConfig,
+  setErrorMessage,
+}: {
+  bootstrapping: boolean;
+  csrfToken: string;
+  currentIsSiteAdmin: boolean;
+  href: string;
+  runtimeConfig: RuntimeConfig;
+  setErrorMessage: (message: string | null) => void;
+}) {
+  const canRender = useRequireAuthenticatedRoute(href);
+  const queryClient = useQueryClient();
+  const [mailtoHref, setMailtoHref] = React.useState("");
+  const mailListMutation = useMutation({
+    mutationFn: (input: SiteMailListInput) => readSiteMailListRest(runtimeConfig, csrfToken, input),
+    onError: (error) => {
+      setErrorMessage(error instanceof Error ? error.message : "Mail recipient lookup failed.");
+    },
+    onSuccess: async (response) => {
+      setMailtoHref(`mailto:${response.recipients.join(",")}`);
+      await queryClient.invalidateQueries({ queryKey: apiQueryKeys.siteAdmin.mail() });
+    },
+  });
+
+  if (bootstrapping || !canRender) {
+    return (
+      <main className="app-shell site-admin-page">
+        <h1>Loading&hellip;</h1>
+      </main>
+    );
+  }
+  if (!currentIsSiteAdmin) {
+    return <ForbiddenPage href="/sites/massmail" />;
+  }
+
+  return (
+    <SiteAdminMassMailPage
+      mailtoHref={mailtoHref}
+      pending={mailListMutation.isPending}
+      runtimeConfig={runtimeConfig}
+      onResolveRecipients={(input) => mailListMutation.mutate(input)}
+    />
   );
 }
 
@@ -935,6 +1090,238 @@ function SiteAdminIssueListPage({
                 runtimeConfig={runtimeConfig}
                 totalPages={totalPages}
               />
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function SiteAdminMailPage({
+  pending,
+  response,
+  runtimeConfig,
+  sent,
+  onSend,
+}: {
+  pending: boolean;
+  response: SiteMailOptionsResponse | undefined;
+  runtimeConfig: RuntimeConfig;
+  sent: boolean;
+  onSend: (input: SiteMailSendInput) => void;
+}) {
+  const notConfiguredItems = response?.notConfiguredItems ?? [];
+  const sender = response?.sender ?? "";
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    onSend({
+      body: String(formData.get("body") ?? ""),
+      from: String(formData.get("from") ?? ""),
+      subject: String(formData.get("subject") ?? ""),
+      to: String(formData.get("to") ?? ""),
+    });
+  };
+
+  return (
+    <main className="app-shell site-admin-page">
+      <div className="site-breadcrumb-outer">
+        <div className="site-breadcrumb-inner">
+          <h3>Site Admin</h3>
+        </div>
+      </div>
+      <div className="page-wrap-outer">
+        <div className="site-setting-wrap">
+          <div className="row-fluid site-setting-layout">
+            <div className="span2">
+              <SiteAdminSidebar activePageName="mail" runtimeConfig={runtimeConfig} />
+            </div>
+            <div className="span10">
+              <div className="title_area">
+                <h2 className="pull-left">Send Mail</h2>
+              </div>
+              {notConfiguredItems.length === 0 ? null : (
+                <div className="alert alert-error">
+                  <p>Mail configuration is incomplete.</p>
+                  <ul>
+                    {notConfiguredItems.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {sent ? <div className="alert alert-success">Mail was sent.</div> : null}
+              <form
+                action={apiSiteMailUri(runtimeConfig)}
+                className="form-horizontal"
+                id="mailForm"
+                method="post"
+                onSubmit={handleSubmit}
+              >
+                <div className="control-group">
+                  <label className="control-label" htmlFor="mail-from">
+                    From
+                  </label>
+                  <div className="controls">
+                    <input
+                      className="input-xlarge"
+                      defaultValue={sender}
+                      id="mail-from"
+                      name="from"
+                      type="text"
+                    />
+                  </div>
+                </div>
+                <div className="control-group">
+                  <label className="control-label" htmlFor="mail-to">
+                    To
+                  </label>
+                  <div className="controls">
+                    <input className="input-xlarge" id="mail-to" name="to" type="email" />
+                  </div>
+                </div>
+                <div className="control-group">
+                  <label className="control-label" htmlFor="mail-subject">
+                    Subject
+                  </label>
+                  <div className="controls">
+                    <input className="input-xlarge" id="mail-subject" name="subject" type="text" />
+                  </div>
+                </div>
+                <div className="control-group">
+                  <label className="control-label" htmlFor="body">
+                    Body
+                  </label>
+                  <div className="controls">
+                    <textarea className="input-xxlarge" id="body" name="body" rows={10} />
+                  </div>
+                </div>
+                <div className="mail-btn-wrap">
+                  <button className="ybtn ybtn-primary" disabled={pending} type="submit">
+                    {pending ? "Sending..." : "Send"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function SiteAdminMassMailPage({
+  mailtoHref,
+  pending,
+  runtimeConfig,
+  onResolveRecipients,
+}: {
+  mailtoHref: string;
+  pending: boolean;
+  runtimeConfig: RuntimeConfig;
+  onResolveRecipients: (input: SiteMailListInput) => void;
+}) {
+  const [mode, setMode] = React.useState<"all" | "projects">("all");
+  const [projectInput, setProjectInput] = React.useState("");
+  const [selectedProjects, setSelectedProjects] = React.useState<string[]>([]);
+  const addProject = () => {
+    const project = projectInput.trim();
+    if (project === "") {
+      return;
+    }
+    setSelectedProjects((current) => (current.includes(project) ? current : [...current, project]));
+    setProjectInput("");
+  };
+  const resolveRecipients = () => {
+    onResolveRecipients({
+      all: mode === "all",
+      projects: mode === "all" ? [] : selectedProjects,
+    });
+  };
+
+  return (
+    <main className="app-shell site-admin-page">
+      <div className="site-breadcrumb-outer">
+        <div className="site-breadcrumb-inner">
+          <h3>Site Admin</h3>
+        </div>
+      </div>
+      <div className="page-wrap-outer">
+        <div className="site-setting-wrap">
+          <div className="row-fluid site-setting-layout">
+            <div className="span2">
+              <SiteAdminSidebar activePageName="massmail" runtimeConfig={runtimeConfig} />
+            </div>
+            <div className="span10">
+              <div className="title_area">
+                <h2 className="pull-left">Mass Mail</h2>
+              </div>
+              <div className="mess-mail-wrap">
+                <div className="control-group">
+                  <label className="radio" htmlFor="mailtoAll">
+                    <input
+                      checked={mode === "all"}
+                      id="mailtoAll"
+                      name="mailto"
+                      type="radio"
+                      value="all"
+                      onChange={() => setMode("all")}
+                    />
+                    All users
+                  </label>
+                  <label className="radio" htmlFor="mailtoPrj">
+                    <input
+                      checked={mode === "projects"}
+                      id="mailtoPrj"
+                      name="mailto"
+                      type="radio"
+                      value="projects"
+                      onChange={() => setMode("projects")}
+                    />
+                    Project members
+                  </label>
+                </div>
+                <div hidden={mode !== "projects"} id="project-list-wrap">
+                  <div className="project-select-row">
+                    <input
+                      className="textbox"
+                      id="input-project"
+                      type="text"
+                      value={projectInput}
+                      onChange={(event) => setProjectInput(event.target.value)}
+                    />
+                    <button className="ybtn" id="select-project" type="button" onClick={addProject}>
+                      Select
+                    </button>
+                  </div>
+                  <div id="selected-projects">
+                    {selectedProjects.map((project) => (
+                      <span className="label label-info" key={project}>
+                        {project}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="mail-btn-wrap">
+                  <button
+                    className="ybtn ybtn-primary"
+                    data-request-method="post"
+                    data-request-uri={apiSiteMailListUri(runtimeConfig)}
+                    disabled={pending}
+                    id="write-email"
+                    type="button"
+                    onClick={resolveRecipients}
+                  >
+                    {pending ? "Resolving..." : "Write email"}
+                  </button>
+                  {mailtoHref === "" ? null : (
+                    <a href={mailtoHref} id="mailto-link">
+                      {mailtoHref}
+                    </a>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

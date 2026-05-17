@@ -136,6 +136,28 @@ export interface SiteDiagnosticsResponse {
   errors: string[];
 }
 
+export interface SiteMailOptionsResponse {
+  notConfiguredItems: string[];
+  sender: string;
+  sent: boolean;
+}
+
+export interface SiteMailSendInput {
+  body: string;
+  from: string;
+  subject: string;
+  to: string;
+}
+
+export interface SiteMailListInput {
+  all: boolean;
+  projects: string[];
+}
+
+export interface SiteMailListResponse {
+  recipients: string[];
+}
+
 function siteUsersPath(input: SiteUserListInput): string {
   const params = new URLSearchParams();
   params.set("state", input.state);
@@ -223,6 +245,44 @@ export function readSiteDiagnosticsRest(
   return restFetch<SiteDiagnosticsResponse>(runtimeConfig, "/site/diagnostics", {
     fetchImpl,
     method: "GET",
+  });
+}
+
+export function readSiteMailRest(
+  runtimeConfig: RuntimeConfig,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteMailOptionsResponse> {
+  return restFetch<SiteMailOptionsResponse>(runtimeConfig, "/site/mail", {
+    fetchImpl,
+    method: "GET",
+  });
+}
+
+export function sendSiteMailRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: SiteMailSendInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteMailOptionsResponse> {
+  return restFetch<SiteMailOptionsResponse>(runtimeConfig, "/site/mail/test", {
+    body: input,
+    csrfToken,
+    fetchImpl,
+    method: "POST",
+  });
+}
+
+export function readSiteMailListRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: SiteMailListInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteMailListResponse> {
+  return restFetch<SiteMailListResponse>(runtimeConfig, "/site/mail-list", {
+    body: input,
+    csrfToken,
+    fetchImpl,
+    method: "POST",
   });
 }
 
@@ -351,5 +411,12 @@ export function siteDiagnosticsQueryOptions(runtimeConfig: RuntimeConfig) {
   return queryOptions({
     queryFn: () => readSiteDiagnosticsRest(runtimeConfig),
     queryKey: apiQueryKeys.siteAdmin.diagnostics(),
+  });
+}
+
+export function siteMailOptionsQueryOptions(runtimeConfig: RuntimeConfig) {
+  return queryOptions({
+    queryFn: () => readSiteMailRest(runtimeConfig),
+    queryKey: apiQueryKeys.siteAdmin.mail(),
   });
 }

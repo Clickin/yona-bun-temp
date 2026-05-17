@@ -2428,6 +2428,36 @@ struct RestSiteDiagnosticsResponse {
     errors: Vec<String>,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteMailOptionsResponse {
+    not_configured_items: Vec<String>,
+    sender: String,
+    sent: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteMailSendBody {
+    from: String,
+    to: String,
+    subject: String,
+    body: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteMailListBody {
+    all: bool,
+    projects: Vec<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteMailListResponse {
+    recipients: Vec<String>,
+}
+
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestNotificationsQuery {
@@ -3757,6 +3787,36 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap| {
                     let service = service.clone();
                     async move { rest_read_site_diagnostics(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/mail",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_read_site_mail(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/mail/test",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestSiteMailSendBody>| {
+                    let service = service.clone();
+                    async move { rest_send_site_test_mail(headers, body, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/mail-list",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestSiteMailListBody>| {
+                    let service = service.clone();
+                    async move { rest_read_site_mail_list(headers, body, service).await }
                 }
             }),
         )
@@ -6999,6 +7059,129 @@ async fn rest_read_site_diagnostics(
         error_count: errors.len() as u32,
         errors,
     }))
+}
+
+async fn rest_read_site_mail(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteMailOptionsResponse>, RestRouteError> {
+    rest_require_site_admin_repository(&service, &headers, false).await?;
+    Ok(Json(rest_site_mail_options(false)))
+}
+
+async fn rest_send_site_test_mail(
+    headers: HeaderMap,
+    body: RestSiteMailSendBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteMailOptionsResponse>, RestRouteError> {
+    rest_require_site_admin_repository(&service, &headers, true).await?;
+    let from = required_site_mail_field(body.from, "from")?;
+    let to = required_site_mail_field(body.to, "to")?;
+    let subject = required_site_mail_field(body.subject, "subject")?;
+    let body = required_site_mail_field(body.body, "body")?;
+    deliver(OutboundMail {
+        body,
+        from,
+        subject,
+        to,
+    })
+    .map_err(RestRouteError::internal)?;
+
+    Ok(Json(rest_site_mail_options(true)))
+}
+
+async fn rest_read_site_mail_list(
+    headers: HeaderMap,
+    body: RestSiteMailListBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteMailListResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let recipients = if body.all {
+        repository
+            .list_site_mail_recipients()
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+    } else {
+        rest_site_mail_recipients_for_projects(repository, &body.projects).await?
+    };
+
+    Ok(Json(RestSiteMailListResponse { recipients }))
+}
+
+fn rest_site_mail_options(sent: bool) -> RestSiteMailOptionsResponse {
+    RestSiteMailOptionsResponse {
+        not_configured_items: site_mail_not_configured_items(),
+        sender: default_smtp_from(),
+        sent,
+    }
+}
+
+fn site_mail_not_configured_items() -> Vec<String> {
+    ["SMTP_HOST", "SMTP_USER", "SMTP_PASS"]
+        .into_iter()
+        .filter(|name| {
+            std::env::var(name)
+                .ok()
+                .is_none_or(|value| value.trim().is_empty())
+        })
+        .map(|name| name.to_string())
+        .collect()
+}
+
+fn required_site_mail_field(value: String, name: &str) -> Result<String, RestRouteError> {
+    let trimmed = value.trim().to_string();
+    if trimmed.is_empty() {
+        return Err(RestRouteError::bad_request(format!("{name} is required")));
+    }
+    Ok(trimmed)
+}
+
+async fn rest_site_mail_recipients_for_projects(
+    repository: &PilotRepository,
+    projects: &[String],
+) -> Result<Vec<String>, RestRouteError> {
+    let mut recipients = Vec::new();
+    for project_label in projects {
+        let project_label = project_label.trim();
+        if project_label.is_empty() {
+            continue;
+        }
+        let Some(project) = rest_find_site_mail_project(repository, project_label).await? else {
+            continue;
+        };
+        recipients.extend(
+            repository
+                .list_project_member_users(project.id)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .into_iter()
+                .map(|user| user.email_address.trim().to_string())
+                .filter(|email| !email.is_empty()),
+        );
+    }
+    recipients.sort();
+    recipients.dedup();
+    Ok(recipients)
+}
+
+async fn rest_find_site_mail_project(
+    repository: &PilotRepository,
+    project_label: &str,
+) -> Result<Option<persistence::ProjectRecord>, RestRouteError> {
+    if let Some((owner_name, project_name)) = project_label.split_once('/') {
+        return repository
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()));
+    }
+    let normalized = normalize_identifier(project_label);
+    let project = repository
+        .list_projects()
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .into_iter()
+        .find(|project| normalize_identifier(&project.project_name) == normalized);
+    Ok(project)
 }
 
 async fn rest_delete_site_project(

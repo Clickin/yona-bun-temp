@@ -851,6 +851,32 @@ impl AppRepository {
         })
     }
 
+    /// Lists active user email addresses for the legacy site-admin mass-mail surface.
+    ///
+    /// # Errors
+    ///
+    /// Returns a database error when user rows cannot be read.
+    pub async fn list_site_mail_recipients(&self) -> Result<Vec<String>, DbErr> {
+        let mut recipients = n4user::Entity::find()
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter(n4user_is_active)
+            .filter(|user| {
+                normalize_optional(user.login_id.as_deref()).as_deref()
+                    != Some(LEGACY_ANONYMOUS_LOGIN_ID)
+            })
+            .filter_map(|user| {
+                user.email
+                    .map(|email| email.trim().to_string())
+                    .filter(|email| !email.is_empty())
+            })
+            .collect::<Vec<_>>();
+        recipients.sort();
+        recipients.dedup();
+        Ok(recipients)
+    }
+
     /// Toggles whether a user has the legacy site-admin role.
     ///
     /// # Errors
