@@ -4769,6 +4769,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             get({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let base_path = base_path.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, commit_id)): Path<(
                     String,
@@ -4778,6 +4779,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                       Query(query): Query<RestCodeCommitDetailQuery>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let base_path = base_path.clone();
                     async move {
                         rest_read_code_commit_detail(
                             headers,
@@ -4787,6 +4789,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             query,
                             session_manager,
                             backend,
+                            base_path,
                         )
                         .await
                     }
@@ -9921,6 +9924,7 @@ async fn rest_read_code_commit_detail(
     query: RestCodeCommitDetailQuery,
     session_manager: SessionManager,
     backend: PilotBackend,
+    base_path: String,
 ) -> Result<Json<RestCodeCommitDetailResponse>, RestRouteError> {
     let actor_id = session_manager
         .read_session_from_headers(&headers)
@@ -9954,8 +9958,15 @@ async fn rest_read_code_commit_detail(
     }
 
     Ok(Json(
-        rest_code_commit_detail_response(repository, &authorization, actor_id, &commit_id, &query)
-            .await?,
+        rest_code_commit_detail_response(
+            repository,
+            &authorization,
+            actor_id,
+            &commit_id,
+            &query,
+            &base_path,
+        )
+        .await?,
     ))
 }
 
@@ -9965,6 +9976,7 @@ async fn rest_code_commit_detail_response(
     actor_id: Option<i64>,
     commit_id: &str,
     query: &RestCodeCommitDetailQuery,
+    base_path: &str,
 ) -> Result<RestCodeCommitDetailResponse, RestRouteError> {
     let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
     let mut snapshot = yona_rust_vcs::read_commit_detail(
@@ -9989,6 +10001,7 @@ async fn rest_code_commit_detail_response(
         actor_id,
         snapshot,
         threads,
+        base_path,
     ))
 }
 
@@ -10021,6 +10034,7 @@ async fn rest_create_commit_discussion_comment(
         Some(actor.id),
         &commit_id,
         &query,
+        &service.base_path,
     )
     .await?;
     if !current.permissions.can_comment {
@@ -10054,6 +10068,7 @@ async fn rest_create_commit_discussion_comment(
             Some(actor.id),
             &commit_id,
             &query,
+            &service.base_path,
         )
         .await?,
     ))
@@ -10086,6 +10101,7 @@ async fn rest_update_commit_discussion_thread_state(
         Some(actor.id),
         &commit_id,
         &query,
+        &service.base_path,
     )
     .await?;
     let thread = current
@@ -10110,8 +10126,8 @@ async fn rest_update_commit_discussion_thread_state(
             actor_id: actor.id,
             actor_login_id: actor.login_id.clone(),
             commit_id,
-            owner_name,
-            project_name,
+            owner_name: owner_name.clone(),
+            project_name: project_name.clone(),
             state: next_state,
             thread_id,
         })
@@ -10123,6 +10139,11 @@ async fn rest_update_commit_discussion_thread_state(
         record,
         Some(actor.id),
         can_moderate,
+        MarkdownLinkContext {
+            base_path: &service.base_path,
+            owner_name: &owner_name,
+            project_name: &project_name,
+        },
     )))
 }
 
@@ -10152,6 +10173,7 @@ async fn rest_delete_commit_discussion_comment(
         Some(actor.id),
         &commit_id,
         &query,
+        &service.base_path,
     )
     .await?;
     let can_moderate = project_update_allowed(&authorization).unwrap_or(false);
@@ -10185,6 +10207,7 @@ async fn rest_delete_commit_discussion_comment(
             Some(actor.id),
             &commit_id,
             &query,
+            &service.base_path,
         )
         .await?,
     ))
@@ -10705,6 +10728,7 @@ async fn rest_pull_request_detail_response(
     project_name: &str,
     pull_request_number: i64,
     actor_id: Option<i64>,
+    base_path: &str,
 ) -> Result<RestPullRequestDetailResponse, RestRouteError> {
     let authorization =
         rest_require_project_code_read(repository, owner_name, project_name, actor_id).await?;
@@ -10714,7 +10738,7 @@ async fn rest_pull_request_detail_response(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
-    rest_pull_request_detail_from_record(record, &authorization, actor_id)
+    rest_pull_request_detail_from_record(record, &authorization, actor_id, base_path)
         .map_err(RestRouteError::from_connect_error)
 }
 
@@ -10809,6 +10833,7 @@ async fn rest_read_pull_request_edit_form_options(
         &project_name,
         pull_request_number,
         Some(actor.id),
+        &service.base_path,
     )
     .await?;
     let from_project = repository
@@ -10943,8 +10968,13 @@ async fn rest_create_pull_request(
         persistence::CreatePullRequestResult::Duplicate(record) => record,
     };
     Ok(Json(
-        rest_pull_request_detail_from_record(record, &to_authorization, Some(actor.id))
-            .map_err(RestRouteError::from_connect_error)?,
+        rest_pull_request_detail_from_record(
+            record,
+            &to_authorization,
+            Some(actor.id),
+            &service.base_path,
+        )
+        .map_err(RestRouteError::from_connect_error)?,
     ))
 }
 
@@ -10972,6 +11002,7 @@ async fn rest_update_pull_request(
         &project_name,
         pull_request_number,
         Some(actor.id),
+        &service.base_path,
     )
     .await?;
     if !current.permissions.can_update {
@@ -10996,8 +11027,13 @@ async fn rest_update_pull_request(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
     Ok(Json(
-        rest_pull_request_detail_from_record(record, &authorization, Some(actor.id))
-            .map_err(RestRouteError::from_connect_error)?,
+        rest_pull_request_detail_from_record(
+            record,
+            &authorization,
+            Some(actor.id),
+            &service.base_path,
+        )
+        .map_err(RestRouteError::from_connect_error)?,
     ))
 }
 
@@ -11023,6 +11059,7 @@ async fn rest_update_pull_request_state(
         &project_name,
         pull_request_number,
         Some(actor.id),
+        &service.base_path,
     )
     .await?;
     if !current.permissions.can_update_state {
@@ -11058,8 +11095,13 @@ async fn rest_update_pull_request_state(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
     Ok(Json(
-        rest_pull_request_detail_from_record(record, &authorization, Some(actor.id))
-            .map_err(RestRouteError::from_connect_error)?,
+        rest_pull_request_detail_from_record(
+            record,
+            &authorization,
+            Some(actor.id),
+            &service.base_path,
+        )
+        .map_err(RestRouteError::from_connect_error)?,
     ))
 }
 
@@ -11085,6 +11127,7 @@ async fn rest_set_pull_request_review(
         &project_name,
         pull_request_number,
         Some(actor.id),
+        &service.base_path,
     )
     .await?;
     if !current.permissions.can_review {
@@ -11121,8 +11164,13 @@ async fn rest_set_pull_request_review(
     )
     .await;
     Ok(Json(
-        rest_pull_request_detail_from_record(record, &authorization, Some(actor.id))
-            .map_err(RestRouteError::from_connect_error)?,
+        rest_pull_request_detail_from_record(
+            record,
+            &authorization,
+            Some(actor.id),
+            &service.base_path,
+        )
+        .map_err(RestRouteError::from_connect_error)?,
     ))
 }
 
@@ -11153,6 +11201,7 @@ async fn rest_create_pull_request_comment(
         &project_name,
         pull_request_number,
         Some(actor.id),
+        &service.base_path,
     )
     .await?;
     if !current.permissions.can_comment {
@@ -11203,8 +11252,13 @@ async fn rest_create_pull_request_comment(
     )
     .await;
     Ok(Json(
-        rest_pull_request_detail_from_record(record, &authorization, Some(actor.id))
-            .map_err(RestRouteError::from_connect_error)?,
+        rest_pull_request_detail_from_record(
+            record,
+            &authorization,
+            Some(actor.id),
+            &service.base_path,
+        )
+        .map_err(RestRouteError::from_connect_error)?,
     ))
 }
 
@@ -11231,6 +11285,7 @@ async fn rest_update_pull_request_thread_state(
         &project_name,
         pull_request_number,
         Some(actor.id),
+        &service.base_path,
     )
     .await?;
     let thread = current
@@ -11254,8 +11309,8 @@ async fn rest_update_pull_request_thread_state(
         .update_pull_request_thread_state(persistence::PullRequestThreadStateInput {
             actor_id: actor.id,
             actor_login_id: actor.login_id.clone(),
-            owner_name,
-            project_name,
+            owner_name: owner_name.clone(),
+            project_name: project_name.clone(),
             pull_request_number,
             state: next_state,
             thread_id,
@@ -11264,7 +11319,14 @@ async fn rest_update_pull_request_thread_state(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("review thread not found"))?;
-    Ok(Json(rest_review_thread_from_record(record)))
+    Ok(Json(rest_review_thread_from_record(
+        record,
+        MarkdownLinkContext {
+            base_path: &service.base_path,
+            owner_name: &owner_name,
+            project_name: &project_name,
+        },
+    )))
 }
 
 async fn rest_list_project_pull_requests(
@@ -11307,7 +11369,7 @@ async fn rest_read_pull_request_detail(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
     Ok(Json(
-        rest_pull_request_detail_from_record(record, &authorization, actor_id)
+        rest_pull_request_detail_from_record(record, &authorization, actor_id, &service.base_path)
             .map_err(RestRouteError::from_connect_error)?,
     ))
 }
@@ -11331,8 +11393,9 @@ async fn rest_read_pull_request_changes(
         .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
     let merged_commit_id_from = record.merged_commit_id_from.clone();
     let merged_commit_id_to = record.merged_commit_id_to.clone();
-    let detail = rest_pull_request_detail_from_record(record, &authorization, actor_id)
-        .map_err(RestRouteError::from_connect_error)?;
+    let detail =
+        rest_pull_request_detail_from_record(record, &authorization, actor_id, &service.base_path)
+            .map_err(RestRouteError::from_connect_error)?;
     let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
     let diff = if merged_commit_id_from.trim().is_empty() || merged_commit_id_to.trim().is_empty() {
         yona_rust_vcs::PullRequestDiffSnapshot {
@@ -11392,7 +11455,16 @@ async fn rest_list_project_reviews(
         items: record
             .items
             .into_iter()
-            .map(rest_review_thread_from_record)
+            .map(|thread| {
+                rest_review_thread_from_record(
+                    thread,
+                    MarkdownLinkContext {
+                        base_path: &service.base_path,
+                        owner_name: &owner_name,
+                        project_name: &project_name,
+                    },
+                )
+            })
             .collect(),
         open_count: record.open_count,
         page_num: record.page_num,
@@ -15271,10 +15343,6 @@ struct MarkdownLinkContext<'a> {
     base_path: &'a str,
     owner_name: &'a str,
     project_name: &'a str,
-}
-
-fn render_markdown_html(markdown: &str) -> String {
-    render_markdown_html_with_context(markdown, None)
 }
 
 fn render_project_markdown_html(
@@ -21136,20 +21204,29 @@ fn rest_pull_request_list_from_record(
     }
 }
 
-fn rest_review_comment_from_record(record: persistence::ReviewCommentRecord) -> RestReviewComment {
-    rest_review_comment_from_record_with_permissions(record, false)
+fn rest_review_comment_from_record(
+    record: persistence::ReviewCommentRecord,
+    context: MarkdownLinkContext<'_>,
+) -> RestReviewComment {
+    rest_review_comment_from_record_with_permissions(record, false, context)
 }
 
 fn rest_review_comment_from_record_with_permissions(
     record: persistence::ReviewCommentRecord,
     can_delete: bool,
+    context: MarkdownLinkContext<'_>,
 ) -> RestReviewComment {
     RestReviewComment {
         author_id: record.author_id.unwrap_or_default(),
         author_label: record.author_label,
         author_login_id: record.author_login_id,
         can_delete,
-        contents_html: render_markdown_html(&record.contents_markdown),
+        contents_html: render_project_markdown_html(
+            &record.contents_markdown,
+            context.base_path,
+            context.owner_name,
+            context.project_name,
+        ),
         contents_markdown: record.contents_markdown,
         created_label: record.created_label,
         id: record.id,
@@ -21157,7 +21234,10 @@ fn rest_review_comment_from_record_with_permissions(
     }
 }
 
-fn rest_review_thread_from_record(record: persistence::ReviewThreadRecord) -> RestReviewThread {
+fn rest_review_thread_from_record(
+    record: persistence::ReviewThreadRecord,
+    context: MarkdownLinkContext<'_>,
+) -> RestReviewThread {
     RestReviewThread {
         author_id: record.author_id.unwrap_or_default(),
         author_label: record.author_label,
@@ -21165,7 +21245,7 @@ fn rest_review_thread_from_record(record: persistence::ReviewThreadRecord) -> Re
         comments: record
             .comments
             .into_iter()
-            .map(rest_review_comment_from_record)
+            .map(|comment| rest_review_comment_from_record(comment, context))
             .collect(),
         commit_id: record.commit_id,
         created_label: record.created_label,
@@ -21182,6 +21262,7 @@ fn rest_commit_thread_from_record(
     record: persistence::ReviewThreadRecord,
     actor_id: Option<i64>,
     can_moderate: bool,
+    context: MarkdownLinkContext<'_>,
 ) -> RestReviewThread {
     RestReviewThread {
         author_id: record.author_id.unwrap_or_default(),
@@ -21192,7 +21273,7 @@ fn rest_commit_thread_from_record(
             .into_iter()
             .map(|comment| {
                 let can_delete = can_moderate || comment.author_id == actor_id;
-                rest_review_comment_from_record_with_permissions(comment, can_delete)
+                rest_review_comment_from_record_with_permissions(comment, can_delete, context)
             })
             .collect(),
         commit_id: record.commit_id,
@@ -21245,6 +21326,7 @@ fn rest_pull_request_detail_from_record(
     record: persistence::PullRequestDetailRecord,
     authorization: &persistence::ProjectAuthorizationRecord,
     actor_id: Option<i64>,
+    base_path: &str,
 ) -> Result<RestPullRequestDetailResponse, ConnectError> {
     let viewer_can_project_update = actor_id.is_some() && project_update_allowed(authorization)?;
     let viewer_is_contributor =
@@ -21264,9 +21346,21 @@ fn rest_pull_request_detail_from_record(
             || authorization.viewer.is_site_admin
             || viewer_is_receiver
             || viewer_is_reviewer);
+    let owner_name = record.owner_name.clone();
+    let project_name = record.project_name.clone();
+    let markdown_context = MarkdownLinkContext {
+        base_path,
+        owner_name: &owner_name,
+        project_name: &project_name,
+    };
 
     Ok(RestPullRequestDetailResponse {
-        body_html: render_markdown_html(&record.body_markdown),
+        body_html: render_project_markdown_html(
+            &record.body_markdown,
+            base_path,
+            &owner_name,
+            &project_name,
+        ),
         body_markdown: record.body_markdown,
         commits: record
             .commits
@@ -21293,7 +21387,7 @@ fn rest_pull_request_detail_from_record(
         from_project_name: record.from_project_name,
         id: record.id,
         is_watching: record.is_watching,
-        owner_name: record.owner_name,
+        owner_name: owner_name.clone(),
         permissions: RestPullRequestPermissions {
             can_comment: actor_id.is_some(),
             can_read: true,
@@ -21302,7 +21396,7 @@ fn rest_pull_request_detail_from_record(
             can_update,
             can_update_state: can_update,
         },
-        project_name: record.project_name,
+        project_name: project_name.clone(),
         pull_request_number: record.pull_request_number,
         receiver: rest_pull_request_user_from_record(record.receiver),
         reviewers: record
@@ -21314,7 +21408,7 @@ fn rest_pull_request_detail_from_record(
         threads: record
             .threads
             .into_iter()
-            .map(rest_review_thread_from_record)
+            .map(|thread| rest_review_thread_from_record(thread, markdown_context))
             .collect(),
         title: record.title,
         to_branch: record.to_branch,
@@ -21453,8 +21547,14 @@ fn code_commit_detail_response_from_snapshot(
     actor_id: Option<i64>,
     snapshot: CodeCommitDetailSnapshot,
     threads: Vec<persistence::ReviewThreadRecord>,
+    base_path: &str,
 ) -> RestCodeCommitDetailResponse {
     let can_moderate = actor_id.is_some() && project_update_allowed(authorization).unwrap_or(false);
+    let markdown_context = MarkdownLinkContext {
+        base_path,
+        owner_name: &authorization.project.owner_name,
+        project_name: &authorization.project.project_name,
+    };
     RestCodeCommitDetailResponse {
         branches: snapshot
             .branches
@@ -21487,7 +21587,9 @@ fn code_commit_detail_response_from_snapshot(
         selected_branch: snapshot.selected_branch,
         threads: threads
             .into_iter()
-            .map(|thread| rest_commit_thread_from_record(thread, actor_id, can_moderate))
+            .map(|thread| {
+                rest_commit_thread_from_record(thread, actor_id, can_moderate, markdown_context)
+            })
             .collect(),
     }
 }

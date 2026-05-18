@@ -61,6 +61,10 @@
   `NEW_REVIEW_COMMENT` fan out to non-JSON webhooks with the legacy PR link/text
   shape. Plain close/reopen records PR state events but did not call project
   webhooks in the observed legacy code.
+- PR bodies and general review comments now use the project Markdown projection
+  for sanitized `@username`, same-project `#123`, and `owner/project#123`
+  autolinks. Legacy issue-link title/state enrichment remains a Markdown
+  renderer follow-up.
 
 ## Extracted Intent
 

@@ -216,6 +216,25 @@ test("maps monolithic server Markdown renderer changes with focused evidence", (
   );
 });
 
+test("maps PR and code Markdown renderer changes with focused evidence", () => {
+  const result = runGate([
+    "crates/server/src/lib.rs",
+    "crates/server/tests/pull_request_read_contract.rs",
+    "crates/server/tests/pull_request_mutation_contract.rs",
+    "crates/server/tests/code_browser_contract.rs",
+    "docs/provenance/phase-0b/pull-request-review.md",
+    "docs/provenance/phase-0b/code-browser.md",
+    "docs/provenance/legacy-porting-progress.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["project-markdown-rendering"],
+  );
+});
+
 test("maps shared frontend query keys to the API query boundary", () => {
   const result = runGate([
     "frontend/src/api/query-keys.ts",

@@ -291,14 +291,14 @@ async fn seed_pull_request_between(
     .insert(db)
     .await
     .unwrap();
-    write_text_column(
-        db,
-        "pull_request",
-        "body",
-        created.id,
-        &format!("{title} markdown body"),
-    )
-    .await;
+    let body = if number == 1 {
+        format!(
+            "{title} markdown body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
+        )
+    } else {
+        format!("{title} markdown body")
+    };
+    write_text_column(db, "pull_request", "body", created.id, &body).await;
     created
 }
 
@@ -397,7 +397,7 @@ async fn seed_pull_request_detail_rows(
         "review_comment",
         "contents",
         comment.id,
-        "Review comment body",
+        "Review comment body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`",
     )
     .await;
 
@@ -627,11 +627,24 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     )
     .await;
     assert_eq!(detail["pullRequestNumber"], 1);
-    assert_eq!(detail["bodyMarkdown"], "Open read surface markdown body");
+    assert_eq!(
+        detail["bodyMarkdown"],
+        "Open read surface markdown body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
+    );
     assert!(detail["bodyHtml"]
         .as_str()
         .unwrap()
         .contains("Open read surface markdown body"));
+    let body_html = detail["bodyHtml"].as_str().unwrap();
+    assert!(body_html.contains("href=\"/yona/reviewer\""), "{body_html}");
+    assert!(
+        body_html.contains("href=\"/yona/owner/projectYobi/issue/1\""),
+        "{body_html}"
+    );
+    assert!(
+        body_html.contains("<code>&lt;script&gt;alert(1)&lt;/script&gt; @reviewer #1</code>"),
+        "{body_html}"
+    );
     assert_eq!(detail["contributor"]["loginId"], "owner");
     assert_eq!(detail["receiver"]["loginId"], "reviewer");
     assert_eq!(detail["reviewers"][0]["loginId"], "reviewer");
@@ -639,7 +652,22 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     assert_eq!(detail["events"][0]["eventType"], "NEW_PULL_REQUEST");
     assert_eq!(
         detail["threads"][0]["comments"][0]["contentsMarkdown"],
-        "Review comment body"
+        "Review comment body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
+    );
+    let comment_html = detail["threads"][0]["comments"][0]["contentsHtml"]
+        .as_str()
+        .unwrap();
+    assert!(
+        comment_html.contains("href=\"/yona/reviewer\""),
+        "{comment_html}"
+    );
+    assert!(
+        comment_html.contains("href=\"/yona/owner/projectYobi/issue/1\""),
+        "{comment_html}"
+    );
+    assert!(
+        comment_html.contains("<code>&lt;script&gt;alert(1)&lt;/script&gt; @reviewer #1</code>"),
+        "{comment_html}"
     );
     assert_eq!(detail["watcherCount"], 1);
     assert_eq!(detail["isWatching"], false);

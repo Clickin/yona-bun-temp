@@ -466,7 +466,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
             Some(&owner_csrf),
             json!({
                 "title": "Updated interaction parity",
-                "bodyMarkdown": "Updated body",
+                "bodyMarkdown": "Updated body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`",
                 "attachmentIds": []
             }),
         )
@@ -474,7 +474,24 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     )
     .await;
     assert_eq!(updated["title"], "Updated interaction parity");
-    assert_eq!(updated["bodyMarkdown"], "Updated body");
+    assert_eq!(
+        updated["bodyMarkdown"],
+        "Updated body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
+    );
+    let updated_body_html = updated["bodyHtml"].as_str().unwrap();
+    assert!(
+        updated_body_html.contains("href=\"/yona/reviewer\""),
+        "{updated_body_html}"
+    );
+    assert!(
+        updated_body_html.contains("href=\"/yona/owner/projectYobi/issue/1\""),
+        "{updated_body_html}"
+    );
+    assert!(
+        updated_body_html
+            .contains("<code>&lt;script&gt;alert(1)&lt;/script&gt; @reviewer #1</code>"),
+        "{updated_body_html}"
+    );
     assert_eq!(updated["fromBranch"], "topic/pr");
     assert_eq!(updated["toBranch"], "main");
 
@@ -551,7 +568,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
             Some(&reviewer_cookie),
             Some(&reviewer_csrf),
             json!({
-                "contentsMarkdown": "Review comment body",
+                "contentsMarkdown": "Review comment body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`",
                 "commitId": "topic-head"
             }),
         )
@@ -561,7 +578,22 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     let thread_id = commented["threads"][0]["id"].as_i64().unwrap();
     assert_eq!(
         commented["threads"][0]["comments"][0]["contentsMarkdown"],
-        "Review comment body"
+        "Review comment body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
+    );
+    let commented_html = commented["threads"][0]["comments"][0]["contentsHtml"]
+        .as_str()
+        .unwrap();
+    assert!(
+        commented_html.contains("href=\"/yona/reviewer\""),
+        "{commented_html}"
+    );
+    assert!(
+        commented_html.contains("href=\"/yona/owner/projectYobi/issue/1\""),
+        "{commented_html}"
+    );
+    assert!(
+        commented_html.contains("<code>&lt;script&gt;alert(1)&lt;/script&gt; @reviewer #1</code>"),
+        "{commented_html}"
     );
     assert_eq!(
         commented["events"].as_array().unwrap().last().unwrap()["eventType"],

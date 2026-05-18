@@ -780,7 +780,7 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
             Some(&cookie),
             Some(&csrf),
             json!({
-                "contentsMarkdown": "First **commit** note"
+                "contentsMarkdown": "First **commit** note @owner #1 owner/projectYobi#1 `<script>alert(1)</script> @owner #1`"
             }),
         )
         .await,
@@ -793,12 +793,28 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
     assert_eq!(created["threads"][0]["authorLoginId"], "owner");
     assert_eq!(
         created["threads"][0]["comments"][0]["contentsMarkdown"],
-        "First **commit** note"
+        "First **commit** note @owner #1 owner/projectYobi#1 `<script>alert(1)</script> @owner #1`"
     );
-    assert!(created["threads"][0]["comments"][0]["contentsHtml"]
+    let commit_comment_html = created["threads"][0]["comments"][0]["contentsHtml"]
         .as_str()
-        .unwrap()
-        .contains("<strong>commit</strong>"));
+        .unwrap();
+    assert!(
+        commit_comment_html.contains("<strong>commit</strong>"),
+        "{commit_comment_html}"
+    );
+    assert!(
+        commit_comment_html.contains("href=\"/yona/owner\""),
+        "{commit_comment_html}"
+    );
+    assert!(
+        commit_comment_html.contains("href=\"/yona/owner/projectYobi/issue/1\""),
+        "{commit_comment_html}"
+    );
+    assert!(
+        commit_comment_html
+            .contains("<code>&lt;script&gt;alert(1)&lt;/script&gt; @owner #1</code>"),
+        "{commit_comment_html}"
+    );
     assert_eq!(created["threads"][0]["comments"][0]["canDelete"], true);
     let thread_id = created["threads"][0]["id"].as_i64().unwrap();
 
