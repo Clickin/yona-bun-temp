@@ -140,6 +140,7 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i6
 async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+    let _ = register_user(app.clone(), "reviewer").await;
 
     let project = rpc(
         app.clone(),
@@ -165,7 +166,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
             Some(&csrf),
             Some(json!({
                 "title": "Markdown issue",
-                "bodyMarkdown": "Hello **Yona** <script>alert(1)</script>"
+                "bodyMarkdown": "Hello **Yona** @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
             })),
         )
         .await,
@@ -179,6 +180,21 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         .unwrap()
         .contains("<strong>Yona</strong>"));
     assert!(!created["bodyHtml"].as_str().unwrap().contains("<script>"));
+    let body_html = created["bodyHtml"].as_str().unwrap();
+    assert!(body_html.contains("href=\"/yona/reviewer\""), "{body_html}");
+    assert!(
+        body_html.contains("class=\"no-text-decoration user-link\""),
+        "{body_html}"
+    );
+    assert!(
+        body_html.contains("href=\"/yona/owner/projectYobi/issue/1\""),
+        "{body_html}"
+    );
+    assert!(body_html.contains("class=\"issueLink\""), "{body_html}");
+    assert!(
+        body_html.contains("<code>&lt;script&gt;alert(1)&lt;/script&gt; @reviewer #1</code>"),
+        "{body_html}"
+    );
 
     let detail = response_json(
         rest(

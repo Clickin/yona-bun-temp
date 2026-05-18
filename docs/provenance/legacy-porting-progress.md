@@ -346,9 +346,9 @@ Interpretation:
 - [x] Basic Markdown rendering on issue surfaces
 - [x] Basic Markdown rendering on milestone surfaces
 - [x] HTML sanitization on implemented render path
+- [x] Basic project Markdown autolinks for `@username`, same-project `#123`, and `owner/project#123`
 - [ ] Full legacy/GFM extension parity
-- [ ] `@username` links
-- [ ] `#123` issue links
+- [~] Legacy issue-link title/state enrichment
 - [ ] Autolink parity
 - [ ] Syntax-highlighted code blocks
 - [ ] Inline image behavior

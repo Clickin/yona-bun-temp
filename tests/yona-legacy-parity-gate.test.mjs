@@ -200,6 +200,22 @@ test("maps project label API files to the issue lifecycle slice", () => {
   );
 });
 
+test("maps monolithic server Markdown renderer changes with focused evidence", () => {
+  const result = runGate([
+    "crates/server/src/lib.rs",
+    "crates/server/tests/issue_core_contract.rs",
+    "docs/provenance/phase-0b/issue.md",
+    "docs/provenance/legacy-porting-progress.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["project-markdown-rendering"],
+  );
+});
+
 test("maps shared frontend query keys to the API query boundary", () => {
   const result = runGate([
     "frontend/src/api/query-keys.ts",

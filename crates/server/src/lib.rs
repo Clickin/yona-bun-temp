@@ -4394,11 +4394,13 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             get({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let base_path = base_path.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       RawQuery(raw_query): RawQuery| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let base_path = base_path.clone();
                     async move {
                         let query =
                             RestProjectPostsQuery::from_raw_query(raw_query.as_deref())?;
@@ -4409,6 +4411,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             query,
                             session_manager,
                             backend,
+                            base_path,
                         )
                         .await
                     }
@@ -4417,11 +4420,13 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             .post({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let base_path = base_path.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Json(body): Json<RestPostMutationBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let base_path = base_path.clone();
                     async move {
                         rest_create_posting(
                             headers,
@@ -4430,6 +4435,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             body,
                             session_manager,
                             backend,
+                            base_path,
                         )
                         .await
                     }
@@ -4463,10 +4469,12 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             get({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let base_path = base_path.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number)): Path<(String, String, i64)>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let base_path = base_path.clone();
                     async move {
                         rest_read_posting_detail(
                             headers,
@@ -4475,6 +4483,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             post_number,
                             session_manager,
                             backend,
+                            base_path,
                         )
                         .await
                     }
@@ -4483,11 +4492,13 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             .patch({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let base_path = base_path.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number)): Path<(String, String, i64)>,
                       Json(body): Json<RestPostMutationBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let base_path = base_path.clone();
                     async move {
                         rest_update_posting(
                             headers,
@@ -4497,6 +4508,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             body,
                             session_manager,
                             backend,
+                            base_path,
                         )
                         .await
                     }
@@ -4528,11 +4540,13 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             post({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let base_path = base_path.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number)): Path<(String, String, i64)>,
                       Json(body): Json<RestPostCommentBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let base_path = base_path.clone();
                     async move {
                         rest_create_posting_comment(
                             headers,
@@ -4542,6 +4556,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             body,
                             session_manager,
                             backend,
+                            base_path,
                         )
                         .await
                     }
@@ -4553,6 +4568,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             patch({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let base_path = base_path.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number, comment_id)): Path<(
                     String,
@@ -4563,6 +4579,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                       Json(body): Json<RestPostCommentBody>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let base_path = base_path.clone();
                     async move {
                         rest_update_posting_comment(
                             headers,
@@ -4573,6 +4590,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             body,
                             session_manager,
                             backend,
+                            base_path,
                         )
                         .await
                     }
@@ -4581,6 +4599,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             .delete({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let base_path = base_path.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number, comment_id)): Path<(
                     String,
@@ -4590,6 +4609,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 )>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let base_path = base_path.clone();
                     async move {
                         rest_delete_posting_comment(
                             headers,
@@ -4599,6 +4619,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             comment_id,
                             session_manager,
                             backend,
+                            base_path,
                         )
                         .await
                     }
@@ -4610,10 +4631,12 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             post({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let base_path = base_path.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number)): Path<(String, String, i64)>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let base_path = base_path.clone();
                     async move {
                         rest_watch_posting(
                             headers,
@@ -4622,6 +4645,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             post_number,
                             session_manager,
                             backend,
+                            base_path,
                             true,
                         )
                         .await
@@ -4631,10 +4655,12 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             .delete({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let base_path = base_path.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name, post_number)): Path<(String, String, i64)>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let base_path = base_path.clone();
                     async move {
                         rest_watch_posting(
                             headers,
@@ -4643,6 +4669,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             post_number,
                             session_manager,
                             backend,
+                            base_path,
                             false,
                         )
                         .await
@@ -12015,6 +12042,7 @@ async fn rest_list_project_posts(
     query: RestProjectPostsQuery,
     session_manager: SessionManager,
     backend: PilotBackend,
+    base_path: String,
 ) -> Result<Json<RestProjectPostsResponse>, RestRouteError> {
     if owner_name.trim().is_empty() || project_name.trim().is_empty() {
         return Err(RestRouteError::bad_request(
@@ -12064,6 +12092,7 @@ async fn rest_list_project_posts(
         readme: record.readme.as_ref().map(|readme| {
             rest_post_detail_response_from_record(
                 readme,
+                &base_path,
                 viewer_can_create,
                 false,
                 false,
@@ -12204,6 +12233,7 @@ async fn rest_read_posting_detail(
     post_number: i64,
     session_manager: SessionManager,
     backend: PilotBackend,
+    base_path: String,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
     if post_number <= 0 {
         return Err(RestRouteError::bad_request(
@@ -12227,7 +12257,9 @@ async fn rest_read_posting_detail(
     )
     .await
     .map_err(RestRouteError::from_connect_error)?;
-    Ok(Json(rest_post_detail_response_from_access(&access)))
+    Ok(Json(rest_post_detail_response_from_access(
+        &access, &base_path,
+    )))
 }
 
 async fn rest_create_posting(
@@ -12237,6 +12269,7 @@ async fn rest_create_posting(
     body: RestPostMutationBody,
     session_manager: SessionManager,
     backend: PilotBackend,
+    base_path: String,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -12282,6 +12315,7 @@ async fn rest_create_posting(
         .ok_or_else(|| RestRouteError::not_found("project not found"))?;
     Ok(Json(rest_post_detail_response_from_record(
         &posting,
+        &base_path,
         posting_can_create(&authorization),
         posting_can_update(&authorization, &posting, &actor),
         posting_can_delete(&authorization, &posting, &actor),
@@ -12299,6 +12333,7 @@ async fn rest_update_posting(
     body: RestPostMutationBody,
     session_manager: SessionManager,
     backend: PilotBackend,
+    base_path: String,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -12353,6 +12388,7 @@ async fn rest_update_posting(
         .ok_or_else(|| RestRouteError::not_found("pilot posting not found"))?;
     Ok(Json(rest_post_detail_response_from_record(
         &posting,
+        &base_path,
         posting_can_create(&access.authorization),
         posting_can_update(&access.authorization, &posting, &actor),
         posting_can_delete(&access.authorization, &posting, &actor),
@@ -12421,6 +12457,7 @@ async fn rest_create_posting_comment(
     body: RestPostCommentBody,
     session_manager: SessionManager,
     backend: PilotBackend,
+    base_path: String,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -12470,6 +12507,7 @@ async fn rest_create_posting_comment(
         .ok_or_else(|| RestRouteError::not_found("pilot posting not found"))?;
     Ok(Json(rest_post_detail_response_from_record(
         &posting,
+        &base_path,
         posting_can_create(&access.authorization),
         posting_can_update(&access.authorization, &posting, &actor),
         posting_can_delete(&access.authorization, &posting, &actor),
@@ -12488,6 +12526,7 @@ async fn rest_update_posting_comment(
     body: RestPostCommentBody,
     session_manager: SessionManager,
     backend: PilotBackend,
+    base_path: String,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -12542,6 +12581,7 @@ async fn rest_update_posting_comment(
         .ok_or_else(|| RestRouteError::not_found("posting comment not found"))?;
     Ok(Json(rest_post_detail_response_from_record(
         &posting,
+        &base_path,
         posting_can_create(&access.authorization),
         posting_can_update(&access.authorization, &posting, &actor),
         posting_can_delete(&access.authorization, &posting, &actor),
@@ -12559,6 +12599,7 @@ async fn rest_delete_posting_comment(
     comment_id: i64,
     session_manager: SessionManager,
     backend: PilotBackend,
+    base_path: String,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
@@ -12611,6 +12652,7 @@ async fn rest_delete_posting_comment(
         .ok_or_else(|| RestRouteError::not_found("posting comment not found"))?;
     Ok(Json(rest_post_detail_response_from_record(
         &posting,
+        &base_path,
         posting_can_create(&access.authorization),
         posting_can_update(&access.authorization, &posting, &actor),
         posting_can_delete(&access.authorization, &posting, &actor),
@@ -12627,6 +12669,7 @@ async fn rest_watch_posting(
     post_number: i64,
     session_manager: SessionManager,
     backend: PilotBackend,
+    base_path: String,
     watch: bool,
 ) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
     let session =
@@ -12676,6 +12719,7 @@ async fn rest_watch_posting(
         .ok_or_else(|| RestRouteError::not_found("pilot posting not found"))?;
     Ok(Json(rest_post_detail_response_from_record(
         &updated,
+        &base_path,
         posting_can_create(&access.authorization),
         posting_can_update(&access.authorization, &updated, &actor),
         posting_can_delete(&access.authorization, &updated, &actor),
@@ -13999,7 +14043,12 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
-        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
+        let mut milestone = issue_milestone_from_record(
+            &milestone,
+            &self.base_path,
+            request.owner_name,
+            request.project_name,
+        );
         milestone.viewer_can_update = true;
         milestone.viewer_can_delete = true;
         Ok((
@@ -15217,7 +15266,37 @@ fn project_update_allowed(
     .allowed)
 }
 
+#[derive(Clone, Copy)]
+struct MarkdownLinkContext<'a> {
+    base_path: &'a str,
+    owner_name: &'a str,
+    project_name: &'a str,
+}
+
 fn render_markdown_html(markdown: &str) -> String {
+    render_markdown_html_with_context(markdown, None)
+}
+
+fn render_project_markdown_html(
+    markdown: &str,
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+) -> String {
+    render_markdown_html_with_context(
+        markdown,
+        Some(MarkdownLinkContext {
+            base_path,
+            owner_name,
+            project_name,
+        }),
+    )
+}
+
+fn render_markdown_html_with_context(
+    markdown: &str,
+    context: Option<MarkdownLinkContext<'_>>,
+) -> String {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_TABLES);
     options.insert(Options::ENABLE_STRIKETHROUGH);
@@ -15225,7 +15304,282 @@ fn render_markdown_html(markdown: &str) -> String {
     let parser = Parser::new_ext(markdown, options);
     let mut rendered = String::new();
     html::push_html(&mut rendered, parser);
-    ammonia::clean(&rendered)
+    let sanitized = ammonia::clean(&rendered);
+    context.map_or(sanitized.clone(), |context| {
+        apply_markdown_autolinks(&sanitized, context)
+    })
+}
+
+fn apply_markdown_autolinks(html: &str, context: MarkdownLinkContext<'_>) -> String {
+    let mut rendered = String::with_capacity(html.len());
+    let mut text = String::new();
+    let mut ignored_tags = Vec::<String>::new();
+    let mut index = 0;
+
+    while index < html.len() {
+        if html[index..].starts_with('<') {
+            append_markdown_text_segment(
+                &mut rendered,
+                &mut text,
+                context,
+                ignored_tags.is_empty(),
+            );
+            let Some(relative_end) = html[index..].find('>') else {
+                text.push_str(&html[index..]);
+                break;
+            };
+            let end = index + relative_end + 1;
+            let tag = &html[index..end];
+            rendered.push_str(tag);
+            if let Some((name, closing, self_closing)) =
+                parse_markdown_html_tag(&html[index + 1..end - 1])
+            {
+                if matches!(name.as_str(), "a" | "code" | "pre") {
+                    if closing {
+                        if let Some(position) = ignored_tags.iter().rposition(|item| item == &name)
+                        {
+                            ignored_tags.remove(position);
+                        }
+                    } else if !self_closing {
+                        ignored_tags.push(name);
+                    }
+                }
+            }
+            index = end;
+        } else {
+            let ch = html[index..].chars().next().expect("valid char boundary");
+            text.push(ch);
+            index += ch.len_utf8();
+        }
+    }
+
+    append_markdown_text_segment(&mut rendered, &mut text, context, ignored_tags.is_empty());
+    rendered
+}
+
+fn append_markdown_text_segment(
+    rendered: &mut String,
+    text: &mut String,
+    context: MarkdownLinkContext<'_>,
+    linkable: bool,
+) {
+    if text.is_empty() {
+        return;
+    }
+    if linkable {
+        rendered.push_str(&autolink_markdown_text(text, context));
+    } else {
+        rendered.push_str(text);
+    }
+    text.clear();
+}
+
+fn parse_markdown_html_tag(tag: &str) -> Option<(String, bool, bool)> {
+    let tag = tag.trim_start();
+    if tag.starts_with('!') || tag.starts_with('?') {
+        return None;
+    }
+    let closing = tag.starts_with('/');
+    let tag = if closing { tag[1..].trim_start() } else { tag };
+    let name: String = tag
+        .chars()
+        .take_while(|ch| ch.is_ascii_alphanumeric())
+        .map(|ch| ch.to_ascii_lowercase())
+        .collect();
+    if name.is_empty() {
+        None
+    } else {
+        Some((name, closing, tag.trim_end().ends_with('/')))
+    }
+}
+
+fn autolink_markdown_text(text: &str, context: MarkdownLinkContext<'_>) -> String {
+    let mut rendered = String::with_capacity(text.len());
+    let mut index = 0;
+
+    while index < text.len() {
+        if let Some((length, link)) = markdown_path_issue_link(text, index, context) {
+            rendered.push_str(&link);
+            index += length;
+            continue;
+        }
+        if let Some((length, link)) = markdown_same_project_issue_link(text, index, context) {
+            rendered.push_str(&link);
+            index += length;
+            continue;
+        }
+        if let Some((length, link)) = markdown_user_link(text, index, context) {
+            rendered.push_str(&link);
+            index += length;
+            continue;
+        }
+
+        let ch = text[index..].chars().next().expect("valid char boundary");
+        rendered.push(ch);
+        index += ch.len_utf8();
+    }
+
+    rendered
+}
+
+fn markdown_path_issue_link(
+    text: &str,
+    index: usize,
+    context: MarkdownLinkContext<'_>,
+) -> Option<(usize, String)> {
+    if !markdown_ref_left_boundary(text, index) {
+        return None;
+    }
+    let rest = &text[index..];
+    let hash_index = rest.find('#')?;
+    if hash_index == 0 {
+        return None;
+    }
+    let path = &rest[..hash_index];
+    if !path.contains('/') || !path.chars().all(is_markdown_path_char) {
+        return None;
+    }
+    let (owner_name, project_name) = path.split_once('/')?;
+    if owner_name.is_empty() || project_name.is_empty() || project_name.contains('/') {
+        return None;
+    }
+    let digits = markdown_digits_prefix(&rest[hash_index + 1..])?;
+    let length = hash_index + 1 + digits.len();
+    if !markdown_ref_right_boundary(text, index + length) {
+        return None;
+    }
+    Some((
+        length,
+        markdown_issue_anchor(
+            context.base_path,
+            owner_name,
+            project_name,
+            digits,
+            &text[index..index + length],
+        ),
+    ))
+}
+
+fn markdown_same_project_issue_link(
+    text: &str,
+    index: usize,
+    context: MarkdownLinkContext<'_>,
+) -> Option<(usize, String)> {
+    if !text[index..].starts_with('#') || !markdown_ref_left_boundary(text, index) {
+        return None;
+    }
+    let digits = markdown_digits_prefix(&text[index + 1..])?;
+    let length = 1 + digits.len();
+    if !markdown_ref_right_boundary(text, index + length) {
+        return None;
+    }
+    Some((
+        length,
+        markdown_issue_anchor(
+            context.base_path,
+            context.owner_name,
+            context.project_name,
+            digits,
+            &text[index..index + length],
+        ),
+    ))
+}
+
+fn markdown_user_link(
+    text: &str,
+    index: usize,
+    context: MarkdownLinkContext<'_>,
+) -> Option<(usize, String)> {
+    if !text[index..].starts_with('@') || !markdown_ref_left_boundary(text, index) {
+        return None;
+    }
+    let login_id = markdown_login_prefix(&text[index + 1..])?;
+    let length = 1 + login_id.len();
+    if !markdown_ref_right_boundary(text, index + length) {
+        return None;
+    }
+    let href = base_path_href(context.base_path, &format!("/{}", login_id));
+    Some((
+        length,
+        format!(
+            "<a href=\"{}\" class=\"no-text-decoration user-link\">@{}</a>",
+            escape_html_attr(&href),
+            escape_html_text(login_id)
+        ),
+    ))
+}
+
+fn markdown_issue_anchor(
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    issue_number: &str,
+    label: &str,
+) -> String {
+    let href = base_path_href(
+        base_path,
+        &format!("/{owner_name}/{project_name}/issue/{issue_number}"),
+    );
+    format!(
+        "<a href=\"{}\" class=\"issueLink\">{}</a>",
+        escape_html_attr(&href),
+        escape_html_text(label)
+    )
+}
+
+fn markdown_digits_prefix(text: &str) -> Option<&str> {
+    let length = text
+        .chars()
+        .take_while(|ch| ch.is_ascii_digit())
+        .map(char::len_utf8)
+        .sum();
+    (length > 0).then_some(&text[..length])
+}
+
+fn markdown_login_prefix(text: &str) -> Option<&str> {
+    let length: usize = text
+        .chars()
+        .take_while(|ch| ch.is_alphanumeric() || matches!(ch, '_' | '-' | '.'))
+        .map(char::len_utf8)
+        .sum();
+    (length > 0).then_some(&text[..length])
+}
+
+fn is_markdown_path_char(ch: char) -> bool {
+    ch.is_alphanumeric() || matches!(ch, '_' | '-' | '.' | '/')
+}
+
+fn markdown_ref_left_boundary(text: &str, index: usize) -> bool {
+    index == 0
+        || text[..index]
+            .chars()
+            .next_back()
+            .is_none_or(|ch| !markdown_ref_boundary_char(ch))
+}
+
+fn markdown_ref_right_boundary(text: &str, index: usize) -> bool {
+    index >= text.len()
+        || text[index..]
+            .chars()
+            .next()
+            .is_none_or(|ch| !markdown_ref_boundary_char(ch))
+}
+
+fn markdown_ref_boundary_char(ch: char) -> bool {
+    ch.is_alphanumeric() || ch == '_'
+}
+
+fn escape_html_text(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}
+
+fn escape_html_attr(value: &str) -> String {
+    escape_html_text(value)
+        .replace('"', "&quot;")
+        .replace('\'', "&#x27;")
 }
 
 fn issue_label_from_record(record: &persistence::IssueLabelRecord) -> IssueLabel {
@@ -15313,6 +15667,8 @@ fn issue_comment_from_record(
     viewer_can_manage: bool,
     viewer_id: Option<i64>,
     base_path: &str,
+    owner_name: &str,
+    project_name: &str,
 ) -> IssueComment {
     let viewer_is_author = viewer_id.is_some() && viewer_id == record.author_id;
     IssueComment {
@@ -15323,7 +15679,12 @@ fn issue_comment_from_record(
             .collect(),
         author_label: record.author_label.clone(),
         author_login_id: record.author_login_id.clone(),
-        contents_html: render_markdown_html(&record.contents_markdown),
+        contents_html: render_project_markdown_html(
+            &record.contents_markdown,
+            base_path,
+            owner_name,
+            project_name,
+        ),
         contents_markdown: record.contents_markdown.clone(),
         created_label: record.created_label.clone(),
         id: record.id,
@@ -15357,6 +15718,8 @@ fn issue_timeline_item_from_record(
     viewer_can_manage: bool,
     viewer_id: Option<i64>,
     base_path: &str,
+    owner_name: &str,
+    project_name: &str,
 ) -> IssueTimelineItem {
     match record {
         persistence::IssueTimelineItemRecord::Comment(comment) => IssueTimelineItem {
@@ -15365,6 +15728,8 @@ fn issue_timeline_item_from_record(
                 viewer_can_manage,
                 viewer_id,
                 base_path,
+                owner_name,
+                project_name,
             ))
             .into(),
             created_label: comment.created_label.clone(),
@@ -15395,6 +15760,8 @@ fn issue_timeline_item_from_record(
 fn issue_milestone_from_record(
     record: &persistence::IssueMilestoneRecord,
     base_path: &str,
+    owner_name: &str,
+    project_name: &str,
 ) -> IssueMilestone {
     IssueMilestone {
         attachments: record
@@ -15410,7 +15777,12 @@ fn issue_milestone_from_record(
             .map(project_issue_list_item_to_proto)
             .collect(),
         completion_percent: record.completion_percent,
-        contents_html: render_markdown_html(&record.contents_markdown),
+        contents_html: render_project_markdown_html(
+            &record.contents_markdown,
+            base_path,
+            owner_name,
+            project_name,
+        ),
         contents_markdown: record.contents_markdown.clone(),
         due_date_label: record.due_date_label.clone(),
         id: record.id,
@@ -15949,7 +16321,12 @@ fn rest_board_attachment_from_record(
     }
 }
 
-fn rest_post_comment_from_record(comment: &persistence::PostingCommentRecord) -> RestPostComment {
+fn rest_post_comment_from_record(
+    comment: &persistence::PostingCommentRecord,
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+) -> RestPostComment {
     RestPostComment {
         attachments: comment
             .attachments
@@ -15959,7 +16336,12 @@ fn rest_post_comment_from_record(comment: &persistence::PostingCommentRecord) ->
         author_id: optional_i64_string(comment.author_id),
         author_label: comment.author_label.clone(),
         author_login_id: comment.author_login_id.clone(),
-        contents_html: render_markdown_html(&comment.contents_markdown),
+        contents_html: render_project_markdown_html(
+            &comment.contents_markdown,
+            base_path,
+            owner_name,
+            project_name,
+        ),
         contents_markdown: comment.contents_markdown.clone(),
         created_label: comment.created_label.clone(),
         id: comment.id.to_string(),
@@ -15992,6 +16374,7 @@ fn rest_post_list_item_from_record(
 
 fn rest_post_detail_response_from_record(
     posting: &persistence::PostingRecord,
+    base_path: &str,
     viewer_can_create: bool,
     viewer_can_update: bool,
     viewer_can_delete: bool,
@@ -16008,13 +16391,25 @@ fn rest_post_detail_response_from_record(
         author_id: optional_i64_string(posting.author_id),
         author_label: posting.author_label.clone(),
         author_login_id: posting.author_login_id.clone(),
-        body_html: render_markdown_html(&posting.body_markdown),
+        body_html: render_project_markdown_html(
+            &posting.body_markdown,
+            base_path,
+            &posting.owner_name,
+            &posting.project_name,
+        ),
         body_markdown: posting.body_markdown.clone(),
         comment_count: posting.comment_count,
         comments: posting
             .comments
             .iter()
-            .map(rest_post_comment_from_record)
+            .map(|comment| {
+                rest_post_comment_from_record(
+                    comment,
+                    base_path,
+                    &posting.owner_name,
+                    &posting.project_name,
+                )
+            })
             .collect(),
         created_label: posting.created_label.clone(),
         id: posting.id.to_string(),
@@ -16044,9 +16439,13 @@ fn rest_post_detail_response_from_record(
     }
 }
 
-fn rest_post_detail_response_from_access(access: &PostingAccessContext) -> RestPostDetailResponse {
+fn rest_post_detail_response_from_access(
+    access: &PostingAccessContext,
+    base_path: &str,
+) -> RestPostDetailResponse {
     rest_post_detail_response_from_record(
         &access.posting,
+        base_path,
         access.viewer_can_create(),
         access.viewer_can_update(),
         access.viewer_can_delete(),
@@ -16109,14 +16508,26 @@ fn issue_detail_response_from_record_with_sharer_flags(
             .collect(),
         author_label: issue.author_label.clone(),
         author_login_id: issue.author_login_id.clone(),
-        body_html: render_markdown_html(&issue.body_markdown),
+        body_html: render_project_markdown_html(
+            &issue.body_markdown,
+            base_path,
+            &issue.owner_name,
+            &issue.project_name,
+        ),
         body_markdown: issue.body_markdown.clone(),
         comment_count: issue.comment_count,
         comments: issue
             .comments
             .iter()
             .map(|comment| {
-                issue_comment_from_record(comment, viewer_can_manage, viewer_id, base_path)
+                issue_comment_from_record(
+                    comment,
+                    viewer_can_manage,
+                    viewer_id,
+                    base_path,
+                    &issue.owner_name,
+                    &issue.project_name,
+                )
             })
             .collect(),
         has_voted: issue.has_voted,
@@ -16134,7 +16545,14 @@ fn issue_detail_response_from_record_with_sharer_flags(
             .timeline
             .iter()
             .map(|item| {
-                issue_timeline_item_from_record(item, viewer_can_manage, viewer_id, base_path)
+                issue_timeline_item_from_record(
+                    item,
+                    viewer_can_manage,
+                    viewer_id,
+                    base_path,
+                    &issue.owner_name,
+                    &issue.project_name,
+                )
             })
             .collect(),
         title: issue.title.clone(),
@@ -19663,7 +20081,14 @@ impl PilotServiceImpl {
                     .timeline
                     .iter()
                     .map(|item| {
-                        issue_timeline_item_from_record(item, can_manage, actor_id, &self.base_path)
+                        issue_timeline_item_from_record(
+                            item,
+                            can_manage,
+                            actor_id,
+                            &self.base_path,
+                            &access.issue.owner_name,
+                            &access.issue.project_name,
+                        )
                     })
                     .collect(),
                 ..Default::default()
@@ -20328,7 +20753,14 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .iter()
-            .map(|record| issue_milestone_from_record(record, &self.base_path))
+            .map(|record| {
+                issue_milestone_from_record(
+                    record,
+                    &self.base_path,
+                    request.owner_name,
+                    request.project_name,
+                )
+            })
             .collect();
         Ok((
             ListProjectMilestonesResponse {
@@ -20367,7 +20799,12 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
-        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
+        let mut milestone = issue_milestone_from_record(
+            &milestone,
+            &self.base_path,
+            request.owner_name,
+            request.project_name,
+        );
         milestone.viewer_can_update = viewer_can_update;
         milestone.viewer_can_delete = viewer_can_update;
         Ok((
@@ -20432,7 +20869,12 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
+        let mut milestone = issue_milestone_from_record(
+            &milestone,
+            &self.base_path,
+            request.owner_name,
+            request.project_name,
+        );
         milestone.viewer_can_update = true;
         milestone.viewer_can_delete = true;
         Ok((
@@ -20500,7 +20942,12 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
-        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
+        let mut milestone = issue_milestone_from_record(
+            &milestone,
+            &self.base_path,
+            request.owner_name,
+            request.project_name,
+        );
         milestone.viewer_can_update = true;
         milestone.viewer_can_delete = true;
         Ok((
@@ -20591,7 +21038,12 @@ impl PilotServiceImpl {
         }
         Ok((
             RenderMarkdownResponse {
-                html: render_markdown_html(request.markdown),
+                html: render_project_markdown_html(
+                    request.markdown,
+                    &self.base_path,
+                    request.owner_name,
+                    request.project_name,
+                ),
                 ..Default::default()
             },
             ctx,

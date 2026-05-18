@@ -112,6 +112,18 @@ const PARITY_SLICES = [
 
 const DOMAIN_BUCKETS = [
   {
+    id: "project-markdown-rendering",
+    label: "Project Markdown rendering",
+    status: "partial",
+    implementationPatterns: [/^crates\/server\/src\/lib\.rs$/i],
+    testKeywords: ["markdown", "issue_core_contract"],
+    provenanceDocs: [
+      "docs/provenance/phase-0b/issue.md",
+      "docs/provenance/legacy-porting-progress.md",
+      "docs/provenance/core-parity-audit.md",
+    ],
+  },
+  {
     id: "shared-frontend-view-models",
     label: "Shared frontend view models",
     status: "partial",
@@ -493,7 +505,7 @@ function matchesKeyword(filePath, keywords) {
   return keywords.some((keyword) => lowered.includes(keyword.toLowerCase()));
 }
 
-function classifyCapability(filePath) {
+function classifyCapability(filePath, changedFiles = []) {
   for (const slice of PARITY_SLICES) {
     if (matchesAnyPattern(filePath, slice.implementationPatterns)) {
       return slice;
@@ -501,6 +513,20 @@ function classifyCapability(filePath) {
   }
 
   for (const bucket of DOMAIN_BUCKETS) {
+    if (
+      bucket.id === "project-markdown-rendering" &&
+      matchesAnyPattern(filePath, bucket.implementationPatterns) &&
+      capabilityHasTestEvidence(bucket, changedFiles) &&
+      capabilityHasProvenanceEvidence(bucket, changedFiles)
+    ) {
+      return bucket;
+    }
+  }
+
+  for (const bucket of DOMAIN_BUCKETS) {
+    if (bucket.id === "project-markdown-rendering") {
+      continue;
+    }
     if (matchesAnyPattern(filePath, bucket.implementationPatterns)) {
       return bucket;
     }
@@ -616,7 +642,7 @@ export function evaluateParityGate({ changedFiles = [], repoRoot = DEFAULT_REPO_
   const unmappedImplementationFiles = [];
 
   for (const filePath of implementationFiles) {
-    const capability = classifyCapability(filePath);
+    const capability = classifyCapability(filePath, normalizedFiles);
     if (!capability) {
       unmappedImplementationFiles.push(filePath);
       continue;
