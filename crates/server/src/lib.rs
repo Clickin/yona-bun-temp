@@ -15255,6 +15255,24 @@ async fn get_uploaded_file(
     } else {
         "inline"
     };
+    let etag = format!("\"{}-{disposition_type}\"", attachment.hash);
+    if headers
+        .get(http::header::IF_NONE_MATCH)
+        .and_then(|value| value.to_str().ok())
+        == Some(etag.as_str())
+    {
+        let mut response = StatusCode::NOT_MODIFIED.into_response();
+        response.headers_mut().insert(
+            http::header::CACHE_CONTROL,
+            HeaderValue::from_static("private, max-age=3600"),
+        );
+        if let Ok(header_value) = HeaderValue::from_str(&etag) {
+            response
+                .headers_mut()
+                .insert(http::header::ETAG, header_value);
+        }
+        return response;
+    }
     let disposition = format!(
         "{disposition_type}; {}",
         legacy_content_disposition_filename(&attachment.name)
@@ -15264,6 +15282,15 @@ async fn get_uploaded_file(
         response
             .headers_mut()
             .insert(http::header::CONTENT_TYPE, header_value);
+    }
+    response.headers_mut().insert(
+        http::header::CACHE_CONTROL,
+        HeaderValue::from_static("private, max-age=3600"),
+    );
+    if let Ok(header_value) = HeaderValue::from_str(&etag) {
+        response
+            .headers_mut()
+            .insert(http::header::ETAG, header_value);
     }
     if let Ok(header_value) = HeaderValue::from_str(&disposition) {
         response

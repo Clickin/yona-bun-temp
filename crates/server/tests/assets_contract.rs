@@ -377,6 +377,21 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
             .and_then(|value| value.to_str().ok()),
         Some("inline; filename*=UTF-8''notes.txt")
     );
+    assert_eq!(
+        get_text_file
+            .headers()
+            .get(http::header::CACHE_CONTROL)
+            .and_then(|value| value.to_str().ok()),
+        Some("private, max-age=3600")
+    );
+    let inline_etag = get_text_file
+        .headers()
+        .get(http::header::ETAG)
+        .and_then(|value| value.to_str().ok())
+        .expect("inline attachment etag")
+        .to_string();
+    assert!(inline_etag.starts_with('"'));
+    assert!(inline_etag.ends_with("-inline\""));
     let get_text_body = get_text_file
         .into_body()
         .collect()
@@ -405,6 +420,22 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
             .and_then(|value| value.to_str().ok()),
         Some("attachment; filename*=UTF-8''notes.txt")
     );
+    assert_eq!(
+        download_text_file
+            .headers()
+            .get(http::header::CACHE_CONTROL)
+            .and_then(|value| value.to_str().ok()),
+        Some("private, max-age=3600")
+    );
+    let download_etag = download_text_file
+        .headers()
+        .get(http::header::ETAG)
+        .and_then(|value| value.to_str().ok())
+        .expect("download attachment etag")
+        .to_string();
+    assert!(download_etag.starts_with('"'));
+    assert!(download_etag.ends_with("-attachment\""));
+    assert_ne!(inline_etag, download_etag);
     let download_text_body = download_text_file
         .into_body()
         .collect()
@@ -412,6 +443,42 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
         .unwrap()
         .to_bytes();
     assert_eq!(download_text_body.as_ref(), text_bytes);
+
+    let not_modified_text_file = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/yona/files/{text_file_id}"))
+                .header(http::header::COOKIE, &cookie_header)
+                .header(http::header::IF_NONE_MATCH, &inline_etag)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(not_modified_text_file.status(), StatusCode::NOT_MODIFIED);
+    assert_eq!(
+        not_modified_text_file
+            .headers()
+            .get(http::header::CACHE_CONTROL)
+            .and_then(|value| value.to_str().ok()),
+        Some("private, max-age=3600")
+    );
+    assert_eq!(
+        not_modified_text_file
+            .headers()
+            .get(http::header::ETAG)
+            .and_then(|value| value.to_str().ok()),
+        Some(inline_etag.as_str())
+    );
+    let not_modified_body = not_modified_text_file
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    assert!(not_modified_body.is_empty());
 
     let spoofed_text_bytes = b"plain attachment with spoofed content type";
     let (spoofed_boundary, spoofed_body) =
