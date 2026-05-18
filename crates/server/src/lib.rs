@@ -16181,6 +16181,11 @@ fn autolink_markdown_text(text: &str, context: MarkdownLinkContext<'_>) -> Strin
             index += length;
             continue;
         }
+        if let Some((length, link)) = markdown_email_link(text, index) {
+            rendered.push_str(&link);
+            index += length;
+            continue;
+        }
         if let Some((length, link)) = markdown_path_issue_link(text, index, context) {
             rendered.push_str(&link);
             index += length;
@@ -16210,10 +16215,14 @@ fn markdown_url_link(text: &str, index: usize) -> Option<(usize, String)> {
         return None;
     }
     let rest = &text[index..];
-    let scheme_len = if rest.starts_with("https://") {
-        "https://".len()
-    } else if rest.starts_with("http://") {
-        "http://".len()
+    let (scheme_len, href_prefix) = if starts_with_ignore_ascii_case(rest, "https://") {
+        ("https://".len(), "")
+    } else if starts_with_ignore_ascii_case(rest, "http://") {
+        ("http://".len(), "")
+    } else if starts_with_ignore_ascii_case(rest, "ftp://") {
+        ("ftp://".len(), "")
+    } else if starts_with_ignore_ascii_case(rest, "www.") {
+        (0, "http://")
     } else {
         return None;
     };
@@ -16233,10 +16242,42 @@ fn markdown_url_link(text: &str, index: usize) -> Option<(usize, String)> {
     if host.is_empty() || host.starts_with('/') {
         return None;
     }
-    let href = markdown_url_href_attr(url);
+    let href = format!("{href_prefix}{}", markdown_url_href_attr(url));
     Some((
         length,
         format!("<a href=\"{}\">{}</a>", escape_html_attr(&href), url),
+    ))
+}
+
+fn markdown_email_link(text: &str, index: usize) -> Option<(usize, String)> {
+    if !markdown_email_left_boundary(text, index) {
+        return None;
+    }
+    let rest = &text[index..];
+    let mut length = 0;
+    for (offset, ch) in rest.char_indices() {
+        if !markdown_email_char(ch) {
+            break;
+        }
+        length = offset + ch.len_utf8();
+    }
+    length = markdown_email_trimmed_length(&rest[..length]);
+    if length == 0 {
+        return None;
+    }
+    let email = &rest[..length];
+    let (local, domain) = email.split_once('@')?;
+    if local.is_empty() || !domain.contains('.') || !markdown_email_domain_valid(domain) {
+        return None;
+    }
+    let href = format!("mailto:{}", markdown_url_href_attr(email));
+    Some((
+        length,
+        format!(
+            "<a href=\"{}\">{}</a>",
+            escape_html_attr(&href),
+            escape_html_text(email)
+        ),
     ))
 }
 
@@ -16246,6 +16287,14 @@ fn markdown_url_left_boundary(text: &str, index: usize) -> bool {
             .chars()
             .next_back()
             .is_none_or(|ch| ch.is_whitespace() || matches!(ch, '(' | '[' | '{'))
+}
+
+fn markdown_email_left_boundary(text: &str, index: usize) -> bool {
+    index == 0
+        || text[..index]
+            .chars()
+            .next_back()
+            .is_none_or(|ch| !markdown_email_char(ch))
 }
 
 fn markdown_url_trimmed_length(url: &str) -> usize {
@@ -16263,10 +16312,66 @@ fn markdown_url_trimmed_length(url: &str) -> usize {
     length
 }
 
+fn markdown_email_trimmed_length(email: &str) -> usize {
+    let mut length = email.len();
+    while length > 0 {
+        let ch = email[..length]
+            .chars()
+            .next_back()
+            .expect("non-empty email prefix");
+        if !matches!(ch, '.' | ',' | ';' | ':' | '!' | '?') {
+            break;
+        }
+        length -= ch.len_utf8();
+    }
+    length
+}
+
 fn markdown_url_href_attr(url: &str) -> String {
     url.replace("&amp;", "&")
         .replace("&quot;", "\"")
         .replace("&#x27;", "'")
+}
+
+fn markdown_email_char(ch: char) -> bool {
+    ch.is_ascii_alphanumeric()
+        || matches!(
+            ch,
+            '.' | '!'
+                | '#'
+                | '$'
+                | '%'
+                | '&'
+                | '\''
+                | '*'
+                | '+'
+                | '/'
+                | '='
+                | '?'
+                | '^'
+                | '_'
+                | '`'
+                | '{'
+                | '|'
+                | '}'
+                | '~'
+                | '-'
+                | '@'
+        )
+}
+
+fn markdown_email_domain_valid(domain: &str) -> bool {
+    domain
+        .chars()
+        .next_back()
+        .is_some_and(|ch| ch.is_ascii_alphanumeric())
+        && domain
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | '.'))
+}
+
+fn starts_with_ignore_ascii_case(value: &str, prefix: &str) -> bool {
+    value.len() >= prefix.len() && value[..prefix.len()].eq_ignore_ascii_case(prefix)
 }
 
 fn markdown_path_issue_link(

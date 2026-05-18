@@ -347,7 +347,7 @@ Interpretation:
 - [x] Basic Markdown rendering on milestone surfaces
 - [x] HTML sanitization on implemented render path
 - [x] Basic project Markdown autolinks for `@username`, same-project `#123`, and `owner/project#123` on issue/post/milestone bodies and comments, PR bodies/general review comments, Git non-ranged commit comments, and preview output
-- [x] Basic bare `http://`/`https://` URL autolinks on the project Markdown render path
+- [x] Basic bare `http://`/`https://`, `ftp://`, `www.`, and email autolinks on the project Markdown render path
 - [x] Legacy marked-style soft line breaks render as `<br>` on the project Markdown render path
 - [x] Basic task checklist rendering with sanitized disabled checkboxes
 - [x] Basic safe inline image rendering on the project Markdown render path
@@ -357,7 +357,7 @@ Interpretation:
 - [x] Legacy `POST /markdown/:owner/:project` preview renderer returns raw sanitized project-context HTML
 - [ ] Full legacy/GFM extension parity
 - [~] Legacy issue-link title/state enrichment
-- [~] Full legacy autolink parity, including non-HTTP cases if legacy evidence requires them
+- [~] Remaining legacy autolink edge-case parity if evidence requires it
 - [~] Full Highlight.js-equivalent language coverage for Markdown code blocks
 - [~] Task checklist progress-bar integration polish
 

@@ -212,3 +212,44 @@ async fn legacy_markdown_renderer_preserves_marked_soft_breaks() {
     assert!(html.contains("first line<br"), "{html}");
     assert!(html.contains("second line"), "{html}");
 }
+
+#[tokio::test]
+async fn legacy_markdown_renderer_autolinks_gfm_ftp_www_and_email() {
+    let app = build_app_with_repository().await;
+    let (csrf, cookie_header) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie_header, &csrf).await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/markdown/owner/projectYobi")
+                .header(http::header::COOKIE, &cookie_header)
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(Body::from(
+                    json!({
+                        "body": "ftp://files.example.com www.example.com help@example.com",
+                        "breaks": true
+                    })
+                    .to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let html = response_text(response).await;
+    assert!(
+        html.contains(r#"<a href="ftp://files.example.com">ftp://files.example.com</a>"#),
+        "{html}"
+    );
+    assert!(
+        html.contains(r#"<a href="http://www.example.com">www.example.com</a>"#),
+        "{html}"
+    );
+    assert!(
+        html.contains(r#"<a href="mailto:help@example.com">help@example.com</a>"#),
+        "{html}"
+    );
+}
