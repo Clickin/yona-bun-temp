@@ -38,7 +38,7 @@ Interpretation:
 | Auth / Workspace                        | [~] Partially implemented | Core account, password-reset mail format, admin signup approval state, guest-prefix account classification, global anonymous-access gate, remember-me session persistence, login placeholder config, settings, public profile, and user statistics count flows exist; full guest permission matrix/OAuth/LDAP remain. |
 | Organization / Project core             | [~] Partially implemented | CRUD, members, enrollment, watch/favorite, webhook CRUD plus issue/comment and PR create/review/comment fan-out, transfer request/accept/mail, and the legacy project statistics shell exist; change VCS, Smart HTTP clone URL behavior, and remaining webhook delivery hardening remain. |
 | Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists, favorite issue, direct/project sharer effects, and issue/comment mention row effects exist over `/api/v1`; legacy external REST parity is separate migrator scope. |
-| VCS / Code hosting                      | [~] Strong partial        | Git code browser, raw/open/image streaming, archive download, syntax/line rendering, commit history/detail/compare, commit discussion, branch admin, and project-create provisioning exist; Smart HTTP, push hooks, and SVN remain. |
+| VCS / Code hosting                      | [~] Strong partial        | Git code browser, Markdown file rendering with local image path rewrite, raw/open/image streaming, archive download, syntax/line rendering, commit history/detail/compare, commit discussion, branch admin, and project-create provisioning exist; Smart HTTP, push hooks, and SVN remain. |
 | Pull Request / Review                   | [~] Strong partial        | Phase 4A restores read surfaces and Phase 4B restores create/edit, close/reopen, review/unreview, general PR comments, and thread open/close; merge/fork/reviewer lifecycle/ranged inline CRUD remain. |
 | Board / Posting                         | [~] Strong partial        | Project board CRUD/comment/watch/notice/README/label flows and organization board list exist over `/api/v1`; Git README sync, issue template/file edit, and legacy external API compatibility remain. |
 | Search                                  | [~] Strong partial        | Global/project/organization app search exists over `/api/v1` with all legacy result tabs, counts, snippets, pagination, and ACL filtering; full-text/indexed search and external API compatibility remain deferred. |
@@ -351,11 +351,12 @@ Interpretation:
 - [x] Basic task checklist rendering with sanitized disabled checkboxes
 - [x] Basic safe inline image rendering on the project Markdown render path
 - [x] Basic fenced-code token highlighting on the project Markdown render path
+- [x] Code-browser Markdown files render with legacy `.codebrowser-markdown` and rewrite local `./...` image paths to the project file route
 - [ ] Full legacy/GFM extension parity
 - [~] Legacy issue-link title/state enrichment
 - [~] Full legacy autolink parity, including non-HTTP cases if legacy evidence requires them
 - [~] Full Highlight.js-equivalent language coverage for Markdown code blocks
-- [~] Local README/code-browser image path rewriting
+- [~] Project-home README normal-link/image path rewriting
 - [~] Task checklist progress-bar integration polish
 
 ## REST API Compatibility

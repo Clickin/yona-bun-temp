@@ -611,6 +611,55 @@ async fn rest_code_browser_reads_root_folder_and_text_file_from_git_repo() {
 }
 
 #[tokio::test]
+async fn rest_code_browser_renders_markdown_file_with_legacy_local_image_links() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+    append_bare_repository_commit(
+        data_dir.path(),
+        project.id,
+        "README.md",
+        "# Hello Yona\n\n![logo](./assets/logo.png)\n\n[Guide](./docs/guide.md)\n",
+        "Render markdown README links",
+    );
+
+    let file = response_json(
+        rest_get(
+            app,
+            "/projects/owner/projectYobi/code?branch=main&path=README.md",
+            None,
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(file["file"]["name"], "README.md");
+    let html = file["file"]["html"]
+        .as_str()
+        .expect("rendered markdown html");
+    assert!(html.contains("<h1>Hello Yona</h1>"), "{html}");
+    assert!(
+        html.contains(r#"src="/yona/owner/projectYobi/files/main/assets/logo.png""#),
+        "{html}"
+    );
+    assert!(
+        html.contains(r#"href="./docs/guide.md""#),
+        "code-browser markdown should only rewrite local images like legacy renderFileInCodeBrowser: {html}"
+    );
+}
+
+#[tokio::test]
 async fn rest_commit_history_lists_branch_and_path_commits_from_git_repo() {
     let _guard = yona_data_env_lock()
         .lock()

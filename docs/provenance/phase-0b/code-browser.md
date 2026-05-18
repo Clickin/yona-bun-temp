@@ -3,7 +3,7 @@
 ## Scope
 
 - Phase 3A/3B/3C/3D/3E/3F/3G read-only Git code browser parity, Phase 3H branch administration parity, Phase 3I Git commit discussion parity, and Phase 3J repository provisioning.
-- Covers Git repository paths: project creation provisioning, no-head state, branch selector, breadcrumbs, folder listing, text file view, raw file streaming, browser-open file streaming, image preview streaming, branch archive download, numbered syntax-highlighted text rendering, commit history listing, commit detail/diff rendering, commit non-ranged comments/replies/delete/thread open-close, commit comment counts, commit compare rendering, branch list rendering, branch-row latest PR links, default branch mutation, and non-default branch delete.
+- Covers Git repository paths: project creation provisioning, no-head state, branch selector, breadcrumbs, folder listing, text file view, Markdown file rendering with local image path rewrite, raw file streaming, browser-open file streaming, image preview streaming, branch archive download, numbered syntax-highlighted text rendering, commit history listing, commit detail/diff rendering, commit non-ranged comments/replies/delete/thread open-close, commit comment counts, commit compare rendering, branch list rendering, branch-row latest PR links, default branch mutation, and non-default branch delete.
 - Does not cover Smart HTTP, inline ranged code-comment UX, inline edit, or SVN.
 
 ## Legacy Sources
@@ -36,6 +36,7 @@
 - Legacy `rawcode`, `files`, and `image` direct routes stream Git blobs through the same project read/code-menu authorization used by the REST code browser endpoint.
 - Legacy `code/:branch/download` streams a Git archive zip through the same project read/code-menu authorization and rejects missing Git revisions.
 - Legacy text file rendering used `#showCode` plus Ace; Rust keeps the same `#showCode`/`.code-wrap` anchors and renders line-numbered syntax token spans without adding a frontend dependency.
+- Legacy Markdown file rendering uses `#codeVal.markdown-wrap.codebrowser-markdown` and `Markdown.renderFileInCodeBrowser`, which rewrites only local image paths to the project file route. Rust maps renderable Markdown code files to a sanitized REST `file.html` projection, preserves the legacy wrapper, and rewrites `![...](./...)` image paths to `/:owner/:project/files/:branch/...` without rewriting normal local links.
 - Legacy `CodeHistoryApp.historyUntilHead` and `CodeHistoryApp.history` map to `GET /api/v1/projects/:owner/:project/commits` plus SPA file routes. Rust uses the system `git log` wrapper with explicit argv, keeps the legacy 25-item page size, supports branch and path-scoped history, and exposes `hasOlder`/`hasNewer` instead of fabricating commits.
 - Legacy `CodeHistoryApp.show` and `code/diff.scala.html` map to `GET /api/v1/projects/:owner/:project/commit/:id` plus SPA route `/:owner/:project/commit/:id`. Rust reads real Git commit metadata, first-parent metadata, unified diff patches, and non-ranged Git commit discussion threads through explicit git argv plus `comment_thread`/`review_comment` persistence. It keeps the legacy diff shell anchors such as `#code-browse-wrap`, `.codediff-wrap`, `.commitInfo`, `.diff-body`, `.board-comment-wrap`, `.comment-thread-wrap`, `.review-form`, and review card containers.
 - Legacy `CodeHistoryApp.newComment`, `CommentApp.delete`, and `CommentThreadApp.open/close` map to `POST /api/v1/projects/:owner/:project/commit/:id/comments`, `DELETE /api/v1/projects/:owner/:project/commit/:id/comments/:commentId`, and `POST /api/v1/projects/:owner/:project/commit/:id/threads/:threadId/open|close`. Rust implements Git non-ranged commit comments and replies as `NonRangedCodeCommentThread` plus `ReviewComment`, preserves author/project-update delete and thread-state authorization, records `NEW_REVIEW_COMMENT` and `REVIEW_THREAD_STATE_CHANGED` notification rows, and stages notification mail. SVN `CommitComment` remains deferred.
@@ -64,5 +65,6 @@
 
 - Smart HTTP clone/pull/push and post-receive hooks.
 - Inline ranged code-comment UX remains deferred; Phase 3I covers non-ranged Git commit discussion.
+- Project-home README normal-link/image path rewriting remains a Markdown/project-home follow-up.
 - SVN remains deferred.
 

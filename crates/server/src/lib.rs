@@ -3259,6 +3259,33 @@ struct RestCodeHistoryResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RestCodeBrowserResponse {
+    branches: Vec<RestCodeBranch>,
+    breadcrumbs: Vec<RestCodeBreadcrumb>,
+    entries: Vec<CodeEntry>,
+    file: Option<RestCodeFile>,
+    no_head: bool,
+    owner_name: String,
+    path: String,
+    project_name: String,
+    selected_branch: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestCodeFile {
+    html: String,
+    is_binary: bool,
+    is_too_large: bool,
+    mime_type: String,
+    name: String,
+    path: String,
+    size: i64,
+    text: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RestCodeCommitDetailResponse {
     branches: Vec<RestCodeBranch>,
     breadcrumbs: Vec<RestCodeBreadcrumb>,
@@ -4721,11 +4748,13 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             get({
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
+                let base_path = base_path.clone();
                 move |headers: HeaderMap,
                       Path((owner_name, project_name)): Path<(String, String)>,
                       Query(query): Query<RestCodeBrowserQuery>| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
+                    let base_path = base_path.clone();
                     async move {
                         rest_read_code_browser(
                             headers,
@@ -4734,6 +4763,7 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                             query,
                             session_manager,
                             backend,
+                            base_path,
                         )
                         .await
                     }
@@ -9795,7 +9825,8 @@ async fn rest_read_code_browser(
     query: RestCodeBrowserQuery,
     session_manager: SessionManager,
     backend: PilotBackend,
-) -> Result<Json<ReadCodeBrowserResponse>, RestRouteError> {
+    base_path: String,
+) -> Result<Json<RestCodeBrowserResponse>, RestRouteError> {
     let actor_id = session_manager
         .read_session_from_headers(&headers)
         .and_then(|session| session.user_id);
@@ -9836,10 +9867,11 @@ async fn rest_read_code_browser(
     .map_err(code_browser_error)
     .map_err(RestRouteError::from_connect_error)?;
 
-    Ok(Json(code_browser_response_from_snapshot(
+    Ok(Json(code_browser_rest_response_from_snapshot(
         &authorization.project.owner_name,
         &authorization.project.project_name,
         snapshot,
+        &base_path,
     )))
 }
 
@@ -15359,6 +15391,83 @@ fn render_project_markdown_html(
             project_name,
         }),
     )
+}
+
+fn render_code_browser_markdown_file_html(
+    markdown: &str,
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    branch: &str,
+) -> String {
+    let rewritten = rewrite_code_browser_markdown_image_links(
+        markdown,
+        base_path,
+        owner_name,
+        project_name,
+        branch,
+    );
+    render_project_markdown_html(&rewritten, base_path, owner_name, project_name)
+}
+
+fn rewrite_code_browser_markdown_image_links(
+    markdown: &str,
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    branch: &str,
+) -> String {
+    let mut rendered = String::with_capacity(markdown.len());
+    let mut index = 0;
+
+    while let Some(relative_start) = markdown[index..].find("![") {
+        let start = index + relative_start;
+        rendered.push_str(&markdown[index..start]);
+        let Some(relative_label_end) = markdown[start + 2..].find("](") else {
+            rendered.push_str(&markdown[start..]);
+            return rendered;
+        };
+        let label_end = start + 2 + relative_label_end;
+        let target_start = label_end + 2;
+        let Some(relative_target_end) = markdown[target_start..].find(')') else {
+            rendered.push_str(&markdown[start..]);
+            return rendered;
+        };
+        let target_end = target_start + relative_target_end;
+        let target = &markdown[target_start..target_end];
+        rendered.push_str(&markdown[start..target_start]);
+        if let Some(local_path) = markdown_local_dot_path(target) {
+            let href = base_path_href(
+                base_path,
+                &format!("/{owner_name}/{project_name}/files/{branch}/{local_path}"),
+            );
+            rendered.push_str(&href);
+        } else {
+            rendered.push_str(target);
+        }
+        rendered.push(')');
+        index = target_end + 1;
+    }
+
+    rendered.push_str(&markdown[index..]);
+    rendered
+}
+
+fn markdown_local_dot_path(target: &str) -> Option<&str> {
+    let trimmed = target.trim();
+    let local_path = trimmed
+        .strip_prefix("./")
+        .or_else(|| trimmed.strip_prefix("/./"))?;
+    let scheme_prefix = local_path
+        .split_once(':')
+        .map(|(scheme, _)| scheme.to_ascii_lowercase());
+    if matches!(
+        scheme_prefix.as_deref(),
+        Some("http" | "https" | "ftp" | "file")
+    ) {
+        return None;
+    }
+    (!local_path.is_empty()).then_some(local_path)
 }
 
 fn render_markdown_html_with_context(
@@ -21938,6 +22047,40 @@ fn code_browser_response_from_snapshot(
     }
 }
 
+fn code_browser_rest_response_from_snapshot(
+    owner_name: &str,
+    project_name: &str,
+    snapshot: CodeBrowserSnapshot,
+    base_path: &str,
+) -> RestCodeBrowserResponse {
+    let proto = code_browser_response_from_snapshot(owner_name, project_name, snapshot);
+    let selected_branch = proto.selected_branch.clone();
+    RestCodeBrowserResponse {
+        branches: proto
+            .branches
+            .into_iter()
+            .map(|branch| RestCodeBranch { name: branch.name })
+            .collect(),
+        breadcrumbs: proto
+            .breadcrumbs
+            .into_iter()
+            .map(|breadcrumb| RestCodeBreadcrumb {
+                name: breadcrumb.name,
+                path: breadcrumb.path,
+            })
+            .collect(),
+        entries: proto.entries,
+        file: proto.file.into_option().map(|file| {
+            code_file_to_rest(file, base_path, owner_name, project_name, &selected_branch)
+        }),
+        no_head: proto.no_head,
+        owner_name: proto.owner_name,
+        path: proto.path,
+        project_name: proto.project_name,
+        selected_branch,
+    }
+}
+
 fn code_entry_to_proto(entry: CodeEntryRecord) -> CodeEntry {
     CodeEntry {
         commit_date: entry.commit_date,
@@ -21949,6 +22092,51 @@ fn code_entry_to_proto(entry: CodeEntryRecord) -> CodeEntry {
         size: entry.size,
         ..Default::default()
     }
+}
+
+fn code_file_to_rest(
+    file: CodeFile,
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    branch: &str,
+) -> RestCodeFile {
+    let html = if code_file_is_renderable_markdown(&file) {
+        render_code_browser_markdown_file_html(
+            &file.text,
+            base_path,
+            owner_name,
+            project_name,
+            branch,
+        )
+    } else {
+        String::new()
+    };
+    RestCodeFile {
+        html,
+        is_binary: file.is_binary,
+        is_too_large: file.is_too_large,
+        mime_type: file.mime_type,
+        name: file.name,
+        path: file.path,
+        size: file.size,
+        text: file.text,
+    }
+}
+
+fn code_file_is_renderable_markdown(file: &CodeFile) -> bool {
+    !file.is_binary && !file.is_too_large && code_path_is_markdown(&file.path)
+}
+
+fn code_path_is_markdown(path: &str) -> bool {
+    let extension = path
+        .rsplit_once('.')
+        .map(|(_, extension)| extension.to_ascii_lowercase())
+        .unwrap_or_default();
+    matches!(
+        extension.as_str(),
+        "markdown" | "mdown" | "mkdn" | "mkd" | "md" | "mdwn"
+    )
 }
 
 fn code_file_to_proto(file: CodeFileRecord) -> CodeFile {

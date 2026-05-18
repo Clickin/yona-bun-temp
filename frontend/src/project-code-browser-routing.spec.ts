@@ -202,6 +202,25 @@ describe("project code browser routing", () => {
     expect(binaryHtml).toContain(">Download</a>");
   });
 
+  it("renders markdown files with the legacy codebrowser markdown wrapper", () => {
+    const markdownHtml = renderCodeFile({
+      html: '<h1>Hello Yona</h1><p><img src="/yona/owner/projectYobi/files/main/assets/logo.png"></p>',
+      isBinary: false,
+      isTooLarge: false,
+      mimeType: "text/markdown",
+      name: "README.md",
+      path: "README.md",
+      size: 67,
+      text: "# Hello Yona\n\n![logo](./assets/logo.png)\n",
+    } as NonNullable<CodeBrowserViewModel["file"]>);
+
+    expect(markdownHtml).toContain('id="codeVal"');
+    expect(markdownHtml).toContain('class="markdown-wrap codebrowser-markdown"');
+    expect(markdownHtml).toContain("<h1>Hello Yona</h1>");
+    expect(markdownHtml).toContain('src="/yona/owner/projectYobi/files/main/assets/logo.png"');
+    expect(markdownHtml).not.toContain('id="showCode"');
+  });
+
   it("renders legacy commit history table, branch tabs, and path-scoped actions", () => {
     const rootHtml = renderCodeHistory({
       branches: [{ name: "main" }, { name: "topic" }],

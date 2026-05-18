@@ -205,6 +205,7 @@ export interface CodeBrowserViewModel {
     size: number;
   }>;
   file?: {
+    html?: string;
     isBinary: boolean;
     isTooLarge: boolean;
     mimeType: string;

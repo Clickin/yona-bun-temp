@@ -333,6 +333,9 @@ export function toProjectMembersView(
 export function toCodeBrowserView(
   response: Awaited<ReturnType<typeof readCodeBrowser>>,
 ): CodeBrowserViewModel {
+  const responseFile = response.file as
+    | (NonNullable<typeof response.file> & { html?: string })
+    | undefined;
   return {
     branches: response.branches.map((branch) => ({ name: branch.name })),
     breadcrumbs: response.breadcrumbs.map((breadcrumb) => ({
@@ -348,15 +351,16 @@ export function toCodeBrowserView(
       path: entry.path,
       size: Number(entry.size),
     })),
-    file: response.file
+    file: responseFile
       ? {
-          isBinary: response.file.isBinary,
-          isTooLarge: response.file.isTooLarge,
-          mimeType: response.file.mimeType,
-          name: response.file.name,
-          path: response.file.path,
-          size: Number(response.file.size),
-          text: response.file.text,
+          html: responseFile.html ?? "",
+          isBinary: responseFile.isBinary,
+          isTooLarge: responseFile.isTooLarge,
+          mimeType: responseFile.mimeType,
+          name: responseFile.name,
+          path: responseFile.path,
+          size: Number(responseFile.size),
+          text: responseFile.text,
         }
       : undefined,
     noHead: response.noHead,

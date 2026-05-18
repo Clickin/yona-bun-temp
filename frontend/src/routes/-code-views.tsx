@@ -1488,6 +1488,18 @@ function CodeFileView(props: {
       </div>
     );
   }
+  if (props.file.html) {
+    return (
+      <div className="file-wrap" data-type="file">
+        <CodeFileHeader file={props.file} openHref={openHref} rawHref={rawHref} showRaw={true} />
+        <div
+          className="markdown-wrap codebrowser-markdown"
+          dangerouslySetInnerHTML={{ __html: props.file.html }}
+          id="codeVal"
+        />
+      </div>
+    );
+  }
   return (
     <div className="file-wrap" data-type="file">
       <CodeFileHeader file={props.file} openHref={openHref} rawHref={rawHref} showRaw={true} />
