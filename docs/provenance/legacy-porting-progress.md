@@ -353,6 +353,7 @@ Interpretation:
 - [x] Basic fenced-code token highlighting on the project Markdown render path
 - [x] Code-browser Markdown files render with legacy `.codebrowser-markdown` and rewrite local `./...` image paths to the project file route
 - [x] Project-home Git README fallback renders with the legacy readme body wrapper and rewrites local images/normal links to project file/code routes
+- [x] Legacy `POST /markdown/:owner/:project` preview renderer returns raw sanitized project-context HTML
 - [ ] Full legacy/GFM extension parity
 - [~] Legacy issue-link title/state enrichment
 - [~] Full legacy autolink parity, including non-HTTP cases if legacy evidence requires them

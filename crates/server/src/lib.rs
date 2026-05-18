@@ -296,6 +296,9 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let transfer_accept_backend = route_backend.clone();
     let transfer_accept_session_manager = session_manager.clone();
     let transfer_accept_base_path = base_path.clone();
+    let markdown_render_backend = route_backend.clone();
+    let markdown_render_session_manager = session_manager.clone();
+    let markdown_render_base_path = base_path.clone();
     let rest_router = build_rest_router(pilot_service.clone());
 
     let mut base_router = Router::new()
@@ -536,6 +539,23 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         transfer_accept_session_manager.clone(),
                         transfer_accept_backend.clone(),
                         transfer_accept_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/markdown/{owner}/{project}",
+            post(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>, Json(body): Json<DirectMarkdownRenderBody>| {
+                async move {
+                    direct_render_markdown(
+                        headers,
+                        owner,
+                        project,
+                        body,
+                        markdown_render_session_manager.clone(),
+                        markdown_render_backend.clone(),
+                        markdown_render_base_path.clone(),
                     )
                     .await
                 }
@@ -2228,6 +2248,41 @@ fn direct_code_raw_missing_redirect(
     Redirect::to(&base_path_href(base_path, &redirect_path)).into_response()
 }
 
+async fn direct_render_markdown(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: DirectMarkdownRenderBody,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    if let PilotBackend::Repository(repository) = &backend {
+        let actor_id = session_manager
+            .read_session_from_headers(&headers)
+            .and_then(|session| session.user_id);
+        if let Err(error) =
+            require_project_read(repository, &owner_name, &project_name, actor_id).await
+        {
+            return direct_status_from_connect_error(error).into_response();
+        }
+    }
+
+    let _legacy_breaks = body.breaks.unwrap_or(true);
+    let html = render_project_markdown_html(
+        body.body.as_deref().unwrap_or_default(),
+        &base_path,
+        &owner_name,
+        &project_name,
+    );
+    let mut response = html.into_response();
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("text/html; charset=utf-8"),
+    );
+    response
+}
+
 #[derive(Serialize)]
 struct RestErrorEnvelope {
     error: RestErrorPayload,
@@ -3081,6 +3136,13 @@ struct RestProjectReadmeFile {
     body_html: String,
     body_markdown: String,
     name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DirectMarkdownRenderBody {
+    body: Option<String>,
+    breaks: Option<bool>,
 }
 
 #[derive(Serialize)]
