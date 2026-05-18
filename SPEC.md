@@ -282,7 +282,7 @@ GET   /authenticate/:provider   → OAuth 시작
 #### 검수 기준
 
 - [x] `/users/loginform` GET 시 로그인 폼이 legacy와 동일한 레이아웃으로 표시되고 legacy placeholder 설정을 반영한다
-- [ ] 로그인 성공 후 `redirectUrl` 파라미터가 있으면 해당 URL로 이동한다 (legacy 동작 동일)
+- [x] 로그인 성공 후 `redirectUrl` 파라미터가 있으면 해당 URL로 이동한다 (legacy 동작 동일)
 - [x] 로그인 실패 시 REST/Connect error payload가 legacy Ajax 메시지 키(`user.login.invalid`, `user.login.required`)를 반환한다
 - [x] `rememberMe=true` 로그인은 legacy 30일 유지 세션을 만들고, `rememberMe=false` 로그인은 브라우저 세션으로 남는다
 - [x] 회원가입 시 login ID, email 중복 검사가 동작한다
