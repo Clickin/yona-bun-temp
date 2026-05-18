@@ -67,6 +67,7 @@ Interpretation:
 - [x] Password login
 - [x] Legacy login failure message keys
 - [x] Signup
+- [x] Signup duplicate login/email rejection
 - [x] Password reset
 - [x] Email verification
 - [x] Profile update basics

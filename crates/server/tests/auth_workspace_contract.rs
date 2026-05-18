@@ -743,6 +743,66 @@ async fn register_validation_is_detailed_while_sign_in_failure_uses_legacy_messa
 }
 
 #[tokio::test]
+async fn register_rejects_duplicate_login_id_and_email() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+    let (app, _, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let duplicate_login = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Other\",\"emailAddress\":\"other@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(duplicate_login.status(), StatusCode::CONFLICT);
+    let duplicate_login_json = response_text(duplicate_login).await;
+    assert!(duplicate_login_json.contains("Login ID or email is already in use."));
+
+    let duplicate_email = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"other\",\"name\":\"Other\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(duplicate_email.status(), StatusCode::CONFLICT);
+    let duplicate_email_json = response_text(duplicate_email).await;
+    assert!(duplicate_email_json.contains("Login ID or email is already in use."));
+}
+
+#[tokio::test]
 async fn direct_lost_password_and_reset_password_routes_round_trip() {
     let _guard = auth_env_lock().lock().unwrap();
     clear_test_outbox();

@@ -285,7 +285,7 @@ GET   /authenticate/:provider   → OAuth 시작
 - [ ] 로그인 성공 후 `redirectUrl` 파라미터가 있으면 해당 URL로 이동한다 (legacy 동작 동일)
 - [x] 로그인 실패 시 REST/Connect error payload가 legacy Ajax 메시지 키(`user.login.invalid`, `user.login.required`)를 반환한다
 - [x] `rememberMe=true` 로그인은 legacy 30일 유지 세션을 만들고, `rememberMe=false` 로그인은 브라우저 세션으로 남는다
-- [ ] 회원가입 시 login ID, email 중복 검사가 동작한다
+- [x] 회원가입 시 login ID, email 중복 검사가 동작한다
 - [x] `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM=true` 시 신규 사용자는 legacy `LOCKED` 상태로 생성되고 site admin 활성화 대상이 된다
 - [ ] `YONA_AUTH_EMAIL_VERIFICATION_ENABLED=true` 시 가입 후 이메일 인증 플로우가 작동한다
 - [ ] 비밀번호 찾기 이메일이 legacy 포맷과 동일하게 발송된다
