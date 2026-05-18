@@ -370,6 +370,13 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
             .and_then(|value| value.to_str().ok()),
         Some("text/plain; charset=UTF-8")
     );
+    assert_eq!(
+        get_text_file
+            .headers()
+            .get(http::header::CONTENT_DISPOSITION)
+            .and_then(|value| value.to_str().ok()),
+        Some("inline; filename*=UTF-8''notes.txt")
+    );
     let get_text_body = get_text_file
         .into_body()
         .collect()
@@ -377,6 +384,34 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
         .unwrap()
         .to_bytes();
     assert_eq!(get_text_body.as_ref(), text_bytes);
+
+    let download_text_file = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/yona/files/{text_file_id}?action=download"))
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(download_text_file.status(), StatusCode::OK);
+    assert_eq!(
+        download_text_file
+            .headers()
+            .get(http::header::CONTENT_DISPOSITION)
+            .and_then(|value| value.to_str().ok()),
+        Some("attachment; filename*=UTF-8''notes.txt")
+    );
+    let download_text_body = download_text_file
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    assert_eq!(download_text_body.as_ref(), text_bytes);
 
     let spoofed_text_bytes = b"plain attachment with spoofed content type";
     let (spoofed_boundary, spoofed_body) =

@@ -394,11 +394,14 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
         )
         .route(
             "/files/{id}",
-            get(move |headers: HeaderMap, Path(id): Path<i64>| {
+            get(move |headers: HeaderMap,
+                      Path(id): Path<i64>,
+                      RawQuery(raw_query): RawQuery| {
                 async move {
                     get_uploaded_file(
                         headers,
                         id,
+                        raw_query,
                         file_read_session_manager.clone(),
                         file_read_backend.clone(),
                     )
@@ -1222,6 +1225,34 @@ fn detect_upload_mime_type(
         .filter(|value| !value.is_empty())
         .unwrap_or("application/octet-stream")
         .to_string()
+}
+
+fn attachment_query_action(raw_query: Option<&str>) -> Option<&str> {
+    raw_query
+        .unwrap_or_default()
+        .split('&')
+        .filter_map(|pair| pair.split_once('='))
+        .find_map(|(key, value)| (key == "action").then_some(value))
+}
+
+fn legacy_content_disposition_filename(file_name: &str) -> String {
+    let normalized = file_name
+        .chars()
+        .map(|character| match character {
+            ':' | '\\' | '/' | '{' | '?' => '_',
+            _ => character,
+        })
+        .collect::<String>();
+    let mut encoded = String::new();
+    for byte in normalized.as_bytes() {
+        match *byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'.' | b'-' | b'_' | b'*' => {
+                encoded.push(char::from(*byte));
+            }
+            _ => encoded.push_str(&format!("%{byte:02X}")),
+        }
+    }
+    format!("filename*=UTF-8''{encoded}")
 }
 
 fn random_storage_token() -> String {
@@ -15194,6 +15225,7 @@ async fn upload_file(
 async fn get_uploaded_file(
     headers: HeaderMap,
     attachment_id: i64,
+    raw_query: Option<String>,
     session_manager: SessionManager,
     backend: PilotBackend,
 ) -> Response {
@@ -15218,7 +15250,27 @@ async fn get_uploaded_file(
     let Ok(bytes) = std::fs::read(uploaded_file_path(&attachment.hash)) else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    ([(http::header::CONTENT_TYPE, attachment.mime_type)], bytes).into_response()
+    let disposition_type = if attachment_query_action(raw_query.as_deref()) == Some("download") {
+        "attachment"
+    } else {
+        "inline"
+    };
+    let disposition = format!(
+        "{disposition_type}; {}",
+        legacy_content_disposition_filename(&attachment.name)
+    );
+    let mut response = bytes.into_response();
+    if let Ok(header_value) = HeaderValue::from_str(&attachment.mime_type) {
+        response
+            .headers_mut()
+            .insert(http::header::CONTENT_TYPE, header_value);
+    }
+    if let Ok(header_value) = HeaderValue::from_str(&disposition) {
+        response
+            .headers_mut()
+            .insert(http::header::CONTENT_DISPOSITION, header_value);
+    }
+    response
 }
 
 async fn delete_uploaded_file(
