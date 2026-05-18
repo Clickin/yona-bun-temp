@@ -666,6 +666,15 @@ struct ProjectRow {
     previous_name_changed_time: Option<i64>,
     previous_owner_login_id: Option<String>,
     project_scope: Option<String>,
+    vcs: Option<String>,
+}
+
+fn next_project_vcs(current: &str) -> String {
+    if current == "GIT" {
+        "Subversion".to_string()
+    } else {
+        "GIT".to_string()
+    }
 }
 
 fn project_webhook_record_from_model(row: webhook::Model) -> ProjectWebhookRecord {
@@ -1058,6 +1067,7 @@ impl AppRepository {
             .column(project::Column::Owner)
             .column(project::Column::OrganizationId)
             .column(project::Column::ProjectScope)
+            .column(project::Column::Vcs)
             .order_by_asc(project::Column::Owner)
             .order_by_asc(project::Column::Name)
             .into_model::<ProjectRow>()
@@ -4670,6 +4680,7 @@ impl AppRepository {
             .column(project::Column::PreviousNameChangedTime)
             .column(project::Column::PreviousOwnerLoginId)
             .column(project::Column::ProjectScope)
+            .column(project::Column::Vcs)
             .into_model::<ProjectRow>()
             .all(&self.db)
             .await?;
@@ -4952,6 +4963,36 @@ impl AppRepository {
         self.project_record_from_model(created)
             .await?
             .ok_or_else(|| DbErr::Custom("project owner/name missing".to_string()))
+    }
+
+    pub async fn change_project_vcs(
+        &self,
+        project_id: i64,
+    ) -> Result<Option<ProjectRecord>, DbErr> {
+        let Some(row) = project::Entity::find_by_id(project_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let next_vcs = next_project_vcs(row.vcs.as_deref().unwrap_or("GIT"));
+        let txn = self.db.begin().await?;
+        for posting in posting::Entity::find()
+            .filter(posting::Column::ProjectId.eq(Some(project_id)))
+            .filter(posting::Column::Readme.eq(Some(1)))
+            .all(&txn)
+            .await?
+        {
+            let mut active = posting::ActiveModel::from(posting);
+            active.readme = Set(Some(0));
+            active.update(&txn).await?;
+        }
+        let mut active = project::ActiveModel::from(row);
+        active.vcs = Set(Some(next_vcs));
+        let updated = active.update(&txn).await?;
+        txn.commit().await?;
+
+        self.project_record_from_model(updated).await
     }
 
     pub async fn add_project_membership(
@@ -8792,6 +8833,7 @@ impl AppRepository {
             previous_project_name: row.previous_name,
             project_name,
             project_scope: row.project_scope.unwrap_or_else(|| "public".to_string()),
+            vcs: row.vcs.unwrap_or_else(|| "GIT".to_string()),
         }))
     }
 
@@ -8830,6 +8872,7 @@ impl AppRepository {
             previous_project_name: model.previous_name,
             project_name,
             project_scope: model.project_scope.unwrap_or_else(|| "public".to_string()),
+            vcs: model.vcs.unwrap_or_else(|| "GIT".to_string()),
         }))
     }
 

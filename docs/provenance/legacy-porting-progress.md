@@ -36,7 +36,7 @@ Interpretation:
 | --------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | Foundation / DB / runtime               | [~] Mostly implemented    | Schema, migrations, `/api/v1` REST runtime, assets are strong; production migration/import/export is not.                |
 | Auth / Workspace                        | [~] Partially implemented | Core account, password-reset mail format, admin signup approval state, guest-prefix account classification, global anonymous-access gate, remember-me session persistence, login placeholder config, settings, public profile, and user statistics count flows exist; full guest permission matrix/OAuth/LDAP remain. |
-| Organization / Project core             | [~] Partially implemented | CRUD, members, enrollment, watch/favorite, webhook CRUD plus issue/comment and PR create/review/comment fan-out, transfer request/accept/mail, and the legacy project statistics shell exist; change VCS, Smart HTTP clone URL behavior, and remaining webhook delivery hardening remain. |
+| Organization / Project core             | [~] Partially implemented | CRUD, members, enrollment, watch/favorite, webhook CRUD plus issue/comment and PR create/review/comment fan-out, transfer request/accept/mail, change VCS shell/metadata reset, and the legacy project statistics shell exist; Smart HTTP clone URL behavior, SVN executable-backed serve, and remaining webhook delivery hardening remain. |
 | Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists, favorite issue, direct/project sharer effects, and issue/comment mention row effects exist over `/api/v1`; legacy external REST parity is separate migrator scope. |
 | VCS / Code hosting                      | [~] Strong partial        | Git code browser, Markdown file rendering with local image path rewrite, raw/open/image streaming, archive download, syntax/line rendering, commit history/detail/compare, commit discussion, branch admin, and project-create provisioning exist; Smart HTTP, push hooks, and SVN remain. |
 | Pull Request / Review                   | [~] Strong partial        | Phase 4A restores read surfaces and Phase 4B restores create/edit, close/reopen, review/unreview, general PR comments, and thread open/close; merge/fork/reviewer lifecycle/ranged inline CRUD remain. |
@@ -136,7 +136,7 @@ Interpretation:
 - [x] Project watchers page
 - [x] Webhook CRUD
 - [x] Project transfer request/accept/mail
-- [ ] Git/SVN type change
+- [~] Git/SVN type change shell, metadata toggle, README flag clear, and repository reset
 - [x] Project statistics under-construction shell
 - [ ] Full legacy project home/dashboard/history composition
 

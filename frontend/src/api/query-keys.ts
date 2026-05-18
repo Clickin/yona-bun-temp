@@ -78,6 +78,8 @@ export const apiQueryKeys = {
       [...apiQueryKeys.project.base(ownerName, projectName), "labels"] as const,
     members: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.project.base(ownerName, projectName), "members"] as const,
+    changeVcs: (ownerName: string, projectName: string) =>
+      [...apiQueryKeys.project.base(ownerName, projectName), "change-vcs"] as const,
     transfer: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.project.base(ownerName, projectName), "transfer"] as const,
     webhooks: (ownerName: string, projectName: string) =>

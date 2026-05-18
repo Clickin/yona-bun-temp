@@ -2,6 +2,7 @@ import * as React from "react";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type { BoardPostDetail } from "../api/boards";
 import type {
+  ProjectChangeVcsResponse,
   ProjectMembersResponse,
   ProjectTransferResponse,
   ProjectWebhookInput,
@@ -956,6 +957,132 @@ export function ProjectTransferPage(props: {
           <button className="ybtn" onClick={() => setModalOpen(false)} type="button">
             button.cancel
           </button>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export function ProjectChangeVcsPage(props: {
+  changeVcs: ProjectChangeVcsResponse | null | undefined;
+  detail: ProjectDetailViewModel | null | undefined;
+  onChangeVcs?: () => Promise<void>;
+  pending?: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const detail = props.detail ?? {
+    enrollmentRequested: false,
+    isFavorited: false,
+    organizationName: "",
+    overview: "",
+    ownerName: "",
+    projectName: "",
+    projectScope: "public",
+    showCode: true,
+    viewerCanEnroll: false,
+    viewerCanUpdate: false,
+  };
+  const changeVcs = props.changeVcs ?? {
+    currentVcs: "GIT",
+    nextVcs: "Subversion",
+    ownerName: detail.ownerName,
+    projectName: detail.projectName,
+    viewerCanChange: false,
+  };
+  const [accepted, setAccepted] = React.useState(false);
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const canSubmit = accepted && changeVcs.viewerCanChange && !props.pending;
+
+  return (
+    <main className="app-shell">
+      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <ProjectSettingsSubMenu
+            active="vcs"
+            detail={detail}
+            runtimeConfig={props.runtimeConfig}
+          />
+          <div className="bubble-wrap gray wp">
+            <div className="row-fluid">
+              <h3>
+                {changeVcs.currentVcs} <i className="yobicon-right-2 vmiddle" /> {changeVcs.nextVcs}
+              </h3>
+              <div className="cu-desc">
+                <ul>
+                  <li className="notice">
+                    <strong>{`project.changeVCS.description1 ${changeVcs.nextVcs}`}</strong>
+                  </li>
+                  <li className="notice">
+                    <strong>project.changeVCS.description2</strong>
+                  </li>
+                </ul>
+                <p>
+                  <input
+                    autoComplete="off"
+                    checked={accepted}
+                    className="checkbox"
+                    id="acceptChangeVCS"
+                    onChange={(event) => setAccepted(event.currentTarget.checked)}
+                    type="checkbox"
+                  />
+                  <label className="bg-checkbox label-agreement" htmlFor="acceptChangeVCS">
+                    project.changeVCS.accept
+                  </label>
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="box-wrap bottom">
+            <button
+              className="ybtn ybtn-danger"
+              data-toggle="modal"
+              disabled={!canSubmit}
+              id="btnChangeVCS"
+              onClick={() => setModalOpen(true)}
+              type="button"
+            >
+              <i className="yobicon-database" /> project.changeVCS.this
+            </button>
+          </div>
+          <div className={modalOpen ? "modal" : "modal hide"} id="alertChangeVCS">
+            <div className="modal-header">
+              <button
+                className="close"
+                data-dismiss="modal"
+                onClick={() => setModalOpen(false)}
+                type="button"
+              >
+                x
+              </button>
+              <h3>{`project.changeVCS.requestion ${changeVcs.nextVcs}`}</h3>
+            </div>
+            <div className="modal-body">
+              <p>project.changeVCS.description2</p>
+              <p>project.changeVCS.reaccept</p>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="ybtn ybtn-danger"
+                disabled={props.pending}
+                id="btnChangeVCSExec"
+                onClick={() => {
+                  void props.onChangeVcs?.();
+                }}
+                type="button"
+              >
+                button.yes
+              </button>
+              <button
+                className="ybtn"
+                data-dismiss="modal"
+                onClick={() => setModalOpen(false)}
+                type="button"
+              >
+                button.no
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </main>

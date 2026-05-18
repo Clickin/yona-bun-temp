@@ -140,6 +140,15 @@ export type ProjectTransferInput = {
   destination: string;
 };
 
+export type ProjectChangeVcsResponse = {
+  currentVcs: string;
+  nextVcs: string;
+  ownerName: string;
+  projectName: string;
+  redirectPath?: string;
+  viewerCanChange: boolean;
+};
+
 function toInt64Number(value: bigint | number): number {
   return Number(value);
 }
@@ -507,6 +516,49 @@ export function requestProjectTransferRest(
       body: {
         destination: input.destination,
       },
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
+  );
+}
+
+export function readProjectChangeVcsRest(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectChangeVcsResponse> {
+  return restFetch<ProjectChangeVcsResponse>(
+    runtimeConfig,
+    projectPath(ownerName, projectName, "/change-vcs"),
+    {
+      fetchImpl,
+      method: "GET",
+    },
+  );
+}
+
+export function readProjectChangeVcsQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectPathInput,
+) {
+  return queryOptions({
+    queryFn: () => readProjectChangeVcsRest(runtimeConfig, input.ownerName, input.projectName),
+    queryKey: apiQueryKeys.project.changeVcs(input.ownerName, input.projectName),
+  });
+}
+
+export function changeProjectVcsRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectPathInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectChangeVcsResponse> {
+  return restFetch<ProjectChangeVcsResponse>(
+    runtimeConfig,
+    projectPath(input.ownerName, input.projectName, "/change-vcs"),
+    {
       csrfToken,
       fetchImpl,
       method: "POST",

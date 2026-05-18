@@ -464,6 +464,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 - [x] `/:owner/:project/webhooks`는 UPDATE 가능한 프로젝트의 legacy `project/webhooks.scala.html` form/list anchors를 보존하고 `/api/v1/owners/:owner/projects/:project/webhooks` REST CRUD로 payload URL, secret, webhook type, gitPush 값을 저장/삭제한다
 - [x] `/:owner/:project/transfer`는 UPDATE 가능한 프로젝트의 legacy `project/transfer.scala.html` checkbox/modal shell을 보존하고 `/api/v1/owners/:owner/projects/:project/transfer` request와 `/project/transfer/:id/:key` accept link로 owner/name, previous owner/name alias, sender/destination membership을 갱신하며 transfer request mail을 발송한다
 - [x] Project transfer keeps the Git repository at `YONA_DATA/repo/<project_id>.git`; owner/name filesystem path move is intentionally not required under the Rust ID-based repository layout
+- [x] `/:owner/:project/changeVCS`는 UPDATE 가능한 프로젝트의 legacy `project/change_vcs.scala.html` checkbox/modal shell을 보존하고 `/api/v1/owners/:owner/projects/:project/change-vcs`로 `vcs` metadata toggle, README posting flag clear, ID-based repository storage reset을 수행한다
 - [ ] Smart HTTP clone URL/update behavior after transfer remains a VCS lifecycle follow-up
 
 ---
@@ -1268,7 +1269,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 인증 플로우       | ✅ 구현           | 로그인/가입/비밀번호 찾기/이메일 인증                            |
 | Workspace         | ✅ 구현           | 대시보드, 공개 프로필, 설정, 이메일, 토큰, 아바타                |
 | 조직 CRUD         | ✅ 구현           | 생성/수정/삭제/멤버/가입                                         |
-| 프로젝트 CRUD     | ✅ 구현           | 생성/수정/설정/감시/즐겨찾기/transfer request+accept/mail        |
+| 프로젝트 CRUD     | ✅ 구현           | 생성/수정/설정/감시/즐겨찾기/transfer request+accept/mail/changeVCS shell |
 | 이슈              | ✅ Phase 2A 구현  | CRUD, 댓글, 타임라인, watch/vote/assignee, mass update, Markdown |
 | 게시판            | 🔶 Phase 5B 구현  | project/organization board app surface                           |
 | 라벨/마일스톤     | ✅ 구현           | 라벨/카테고리 관리, 마일스톤 CRUD/state 구현                     |
@@ -1458,7 +1459,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Board: posting list/detail/create/update/delete/comment flows
 - Label follow-up: legacy external label/project API parity for the separate migrator/export/import scope
 - Milestone follow-up: migration export and search milestone result type
-- Code follow-up: Smart HTTP, inline ranged code-comment UX, SVN wrapper integration
+- Code follow-up: Smart HTTP, inline ranged code-comment UX, SVN executable repository/serve integration
 - PullRequest follow-up: merge/conflict acceptance, ranged inline review comment edit/delete, reviewer assignment/threshold lifecycle, fork/clone, branch cleanup/restore
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: read state, SMTP scheduler/delivery, draft-time merge, recipient limit, and full mail notification parity

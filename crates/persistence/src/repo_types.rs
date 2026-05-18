@@ -747,6 +747,7 @@ pub struct ProjectRecord {
     pub previous_project_name: Option<String>,
     pub project_name: String,
     pub project_scope: String,
+    pub vcs: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
