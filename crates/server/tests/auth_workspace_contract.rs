@@ -639,7 +639,7 @@ async fn remember_me_controls_session_cookie_persistence() {
 }
 
 #[tokio::test]
-async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
+async fn register_validation_is_detailed_while_sign_in_failure_uses_legacy_message_keys() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
     std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
@@ -701,6 +701,7 @@ async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
     assert_eq!(register.status(), StatusCode::OK);
 
     let sign_in = app
+        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::POST)
@@ -718,7 +719,27 @@ async fn register_validation_is_detailed_while_sign_in_failure_stays_generic() {
     assert_eq!(sign_in.status(), StatusCode::UNAUTHORIZED);
     let sign_in_json = response_text(sign_in).await;
     assert!(sign_in_json.contains("\"code\":\"unauthorized\""));
-    assert!(sign_in_json.contains("Invalid login ID, email, or password."));
+    assert!(sign_in_json.contains("user.login.invalid"));
+
+    let missing_password = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/SignInWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"admin\",\"password\":\"\",\"rememberMe\":true}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(missing_password.status(), StatusCode::BAD_REQUEST);
+    let missing_password_json = response_text(missing_password).await;
+    assert!(missing_password_json.contains("\"code\":\"bad_request\""));
+    assert!(missing_password_json.contains("user.login.required"));
 }
 
 #[tokio::test]

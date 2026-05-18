@@ -14264,6 +14264,9 @@ fn confirmation_session_required() -> bool {
     capabilities.signup_require_confirm || capabilities.email_verification_enabled
 }
 
+const LEGACY_LOGIN_INVALID_MESSAGE: &str = "user.login.invalid";
+const LEGACY_LOGIN_REQUIRED_MESSAGE: &str = "user.login.required";
+
 fn normalize_identifier(value: &str) -> String {
     value.trim().to_ascii_lowercase()
 }
@@ -16634,8 +16637,10 @@ impl PilotServiceImpl {
         };
 
         let identifier = normalize_identifier(request.identifier);
-        if identifier.is_empty() || request.password.len() < 8 {
-            return Err(ConnectError::invalid_argument("invalid sign-in request"));
+        if identifier.is_empty() || request.password.is_empty() {
+            return Err(ConnectError::invalid_argument(
+                LEGACY_LOGIN_REQUIRED_MESSAGE,
+            ));
         }
 
         let Some(user) = repository
@@ -16643,21 +16648,15 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
         else {
-            return Err(ConnectError::unauthenticated(
-                "Invalid login ID, email, or password.",
-            ));
+            return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
         };
 
         let verified = verify(&request.password, &user.password_hash).map_err(internal_error)?;
         if !verified {
-            return Err(ConnectError::unauthenticated(
-                "Invalid login ID, email, or password.",
-            ));
+            return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
         }
         if confirmation_session_required() && !user.is_confirmed {
-            return Err(ConnectError::unauthenticated(
-                "Invalid login ID, email, or password.",
-            ));
+            return Err(ConnectError::unauthenticated(LEGACY_LOGIN_INVALID_MESSAGE));
         }
 
         let authenticated_session = self.session_manager.create_authenticated_session(

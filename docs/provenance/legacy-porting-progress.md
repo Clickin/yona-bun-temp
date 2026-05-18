@@ -65,6 +65,7 @@ Interpretation:
 - [x] Current session projection
 - [x] CSRF-protected cookie session
 - [x] Password login
+- [x] Legacy login failure message keys
 - [x] Signup
 - [x] Password reset
 - [x] Email verification
