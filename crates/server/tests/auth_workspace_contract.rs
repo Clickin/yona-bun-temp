@@ -429,6 +429,13 @@ async fn register_requires_confirmation_session_when_signup_confirm_or_email_ver
     assert_eq!(register.status(), StatusCode::OK);
     let register_json = response_text(register).await;
     assert!(register_json.contains("\"isAnonymous\":true"));
+    let registered_user = n4user::Entity::find()
+        .filter(n4user::Column::LoginId.eq(Some("door".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("registered user");
+    assert_eq!(registered_user.state.as_deref(), Some("locked"));
     assert!(user_verification::Entity::find()
         .all(&db)
         .await

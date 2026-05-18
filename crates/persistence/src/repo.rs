@@ -83,7 +83,7 @@ fn empty_to_none(value: Option<String>) -> Option<String> {
 }
 
 fn user_state_from_confirmed(is_confirmed: bool) -> Option<String> {
-    Some(if is_confirmed { "active" } else { "pending" }.to_string())
+    Some(if is_confirmed { "active" } else { "locked" }.to_string())
 }
 
 fn issue_assignable_user_matches(user: &n4user::Model, query: &str, search_type: &str) -> bool {

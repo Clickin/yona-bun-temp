@@ -270,7 +270,7 @@ GET   /authenticate/:provider   → OAuth 시작
 | 비밀번호 찾기 (이메일 발송)  | verification code 생성 → 이메일 발송 → 토큰 링크                    | ✅ 구현   | 1     |
 | 비밀번호 재설정              | 토큰 검증 → 새 비밀번호 설정                                        | ✅ 구현   | 1     |
 | 이메일 인증                  | verification code 확인 → 사용자 활성화                              | ✅ 구현   | 1     |
-| 관리자 가입 승인             | `signup.require.admin.confirm=true` 시 관리자가 승인                | gap       | 6     |
+| 관리자 가입 승인             | `signup.require.admin.confirm=true` 시 LOCKED 생성 후 site admin이 활성화 | ✅ 구현   | 6     |
 | Social Login (OAuth)         | GitHub, Google 등                                                   | deferred  | 2차   |
 | LDAP 연동                    | LDAP 서버 인증                                                      | deferred  | 2차   |
 | "Remember Me"                | 체크 시 30일 persistent session cookie, 미체크 시 browser-scoped session | ✅ 구현   | 1     |
@@ -286,6 +286,7 @@ GET   /authenticate/:provider   → OAuth 시작
 - [ ] 로그인 실패 시 에러 메시지가 legacy와 동일하게 표시된다
 - [x] `rememberMe=true` 로그인은 legacy 30일 유지 세션을 만들고, `rememberMe=false` 로그인은 브라우저 세션으로 남는다
 - [ ] 회원가입 시 login ID, email 중복 검사가 동작한다
+- [x] `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM=true` 시 신규 사용자는 legacy `LOCKED` 상태로 생성되고 site admin 활성화 대상이 된다
 - [ ] `YONA_AUTH_EMAIL_VERIFICATION_ENABLED=true` 시 가입 후 이메일 인증 플로우가 작동한다
 - [ ] 비밀번호 찾기 이메일이 legacy 포맷과 동일하게 발송된다
 - [ ] `/verify/:loginId/:code` 경로가 인증 확인 후 성공/실패 화면을 보여준다
