@@ -69,6 +69,22 @@ fn normalize_identity(value: &str) -> String {
     value.trim().to_ascii_lowercase()
 }
 
+fn login_id_matches_configured_guest_prefix(login_id: &str) -> bool {
+    let normalized_login_id = normalize_identity(login_id);
+    if normalized_login_id.is_empty() {
+        return false;
+    }
+    let Ok(prefixes) = std::env::var("YONA_GUEST_LOGIN_PREFIX") else {
+        return false;
+    };
+    prefixes
+        .replace(' ', "")
+        .split(',')
+        .map(normalize_identity)
+        .filter(|prefix| !prefix.is_empty())
+        .any(|prefix| normalized_login_id.starts_with(&prefix))
+}
+
 fn normalize_optional(value: Option<&str>) -> Option<String> {
     value
         .map(normalize_identity)
@@ -698,10 +714,11 @@ impl AppRepository {
     }
 
     pub async fn create_user(&self, input: CreateUserInput) -> Result<AppUserRecord, DbErr> {
+        let login_id = normalize_identity(&input.login_id);
         let created = n4user::ActiveModel {
             id: NotSet,
             name: Set(Some(input.display_name.clone())),
-            login_id: Set(Some(normalize_identity(&input.login_id))),
+            login_id: Set(Some(login_id.clone())),
             password: Set(Some(input.password_hash.clone())),
             password_salt: Set(None),
             email: Set(Some(normalize_identity(&input.email_address))),
@@ -711,7 +728,13 @@ impl AppRepository {
             created_date: Set(Some(current_datetime())),
             lang: Set(None),
             token: Set(None),
-            is_guest: Set(Some(0)),
+            is_guest: Set(Some(
+                if login_id_matches_configured_guest_prefix(&login_id) {
+                    1
+                } else {
+                    0
+                },
+            )),
             english_name: Set(None),
         }
         .insert(&self.db)

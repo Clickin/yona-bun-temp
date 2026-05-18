@@ -803,6 +803,41 @@ async fn register_rejects_duplicate_login_id_and_email() {
 }
 
 #[tokio::test]
+async fn register_marks_matching_guest_prefix_accounts_as_legacy_guests() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+    std::env::set_var("YONA_GUEST_LOGIN_PREFIX", "guest_, pt-");
+
+    let (app, _, db) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+    let register = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"PT-door\",\"name\":\"Guest Door\",\"emailAddress\":\"pt-door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    std::env::remove_var("YONA_GUEST_LOGIN_PREFIX");
+
+    assert_eq!(register.status(), StatusCode::OK);
+    let registered_user = n4user::Entity::find()
+        .filter(n4user::Column::LoginId.eq(Some("pt-door".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("registered guest-prefix user");
+    assert_eq!(registered_user.is_guest, Some(1));
+}
+
+#[tokio::test]
 async fn direct_lost_password_and_reset_password_routes_round_trip() {
     let _guard = auth_env_lock().lock().unwrap();
     clear_test_outbox();
