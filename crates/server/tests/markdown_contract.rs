@@ -181,3 +181,34 @@ async fn legacy_markdown_renderer_route_returns_project_context_html() {
     );
     assert!(!html.contains("<script>"), "{html}");
 }
+
+#[tokio::test]
+async fn legacy_markdown_renderer_preserves_marked_soft_breaks() {
+    let app = build_app_with_repository().await;
+    let (csrf, cookie_header) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie_header, &csrf).await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/markdown/owner/projectYobi")
+                .header(http::header::COOKIE, &cookie_header)
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(Body::from(
+                    json!({
+                        "body": "first line\nsecond line",
+                        "breaks": true
+                    })
+                    .to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let html = response_text(response).await;
+    assert!(html.contains("first line<br"), "{html}");
+    assert!(html.contains("second line"), "{html}");
+}

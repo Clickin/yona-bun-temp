@@ -14,7 +14,7 @@ use buffa::view::{MessageView, OwnedView};
 use http::header::SET_COOKIE;
 use http::{HeaderValue, StatusCode};
 use md5::{Digest, Md5};
-use pulldown_cmark::{html, Options, Parser};
+use pulldown_cmark::{html, CowStr, Event, Options, Parser};
 use runtime_config::normalize_base_path;
 use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Deserializer, Serialize};
@@ -15688,7 +15688,10 @@ fn render_markdown_html_with_context(
     options.insert(Options::ENABLE_TABLES);
     options.insert(Options::ENABLE_STRIKETHROUGH);
     options.insert(Options::ENABLE_TASKLISTS);
-    let parser = Parser::new_ext(markdown, options);
+    let parser = Parser::new_ext(markdown, options).map(|event| match event {
+        Event::SoftBreak => Event::Html(CowStr::Borrowed("<br />\n")),
+        event => event,
+    });
     let mut rendered = String::new();
     html::push_html(&mut rendered, parser);
     let sanitized = sanitize_markdown_html(&rendered);

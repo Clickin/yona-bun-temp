@@ -1007,7 +1007,7 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 → H
 
 | 기능            | Legacy 동작                      | 현재 상태 | Phase |
 | --------------- | -------------------------------- | --------- | ----- |
-| 마크다운 렌더링 | GFM + 확장 문법                  | basic implemented, including legacy project preview renderer route; full legacy extension parity gap | 2     |
+| 마크다운 렌더링 | GFM + 확장 문법                  | basic implemented, including legacy project preview renderer route and marked-compatible soft line breaks; full legacy extension parity gap | 2     |
 | @멘션 링크      | `@username` → 사용자 프로필 링크 | basic implemented on project Markdown projection, including issue/post/milestone/PR/code comment render paths | 2     |
 | 이슈 참조       | `#123`, `owner/project#123` → 이슈 링크 | basic implemented on project Markdown projection, including issue/post/milestone/PR/code comment render paths; legacy title/state enrichment gap | 2     |
 | 자동 링크       | URL 자동 링크 변환               | basic `http://`/`https://` implemented; full legacy autolink parity gap | 2     |
@@ -1028,6 +1028,7 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 → H
 - [x] code-browser Markdown file rendering preserves legacy `.codebrowser-markdown` and rewrites local `./...` image paths to `/:owner/:project/files/:branch/...`
 - [x] project-home Git README fallback preserves legacy readme body and rewrites local images to `/:owner/:project/files/:branch/...` plus normal local links to `/:owner/:project/code/:branch/...`
 - [x] legacy `POST /markdown/:owner/:project` preview renderer returns raw project-context sanitized HTML
+- [x] soft line breaks render as `<br>` like legacy marked `breaks: true`
 - [x] 코드 블록: 기본 token span syntax highlighting
 - [x] XSS: `<script>` 등 위험 태그 제거
 
@@ -1278,7 +1279,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, mail queue staging |
 | 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment non-JSON fan-out; push JSON, PR merge/commit-changed delivery, history, and hardening remain gaps |
 | 관리자            | ❌ 미구현         |                                                                  |
-| 마크다운          | 🔶 기본 구현      | Issue/post/milestone/PR/code comment sanitized HTML projection plus basic `@user`, `#123`, `owner/project#123`, bare `http(s)` autolinks, safe inline images, disabled task-list checkboxes, fenced-code token highlighting, code-browser Markdown local image path rewrite, project-home Git README local image/normal-link rewrite, and legacy `POST /markdown/:owner/:project` preview rendering |
+| 마크다운          | 🔶 기본 구현      | Issue/post/milestone/PR/code comment sanitized HTML projection plus basic `@user`, `#123`, `owner/project#123`, bare `http(s)` autolinks, soft line breaks, safe inline images, disabled task-list checkboxes, fenced-code token highlighting, code-browser Markdown local image path rewrite, project-home Git README local image/normal-link rewrite, and legacy `POST /markdown/:owner/:project` preview rendering |
 | REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1` legacy external API는 app scope에서 미지원이며 별도 migrator/export/import deliverable로 분리 |
 | Frontend 라우트   | ✅ 구현           | legacy issueform/editform 포함                                   |
 | Frontend 테스트   | 🔶 부분           | API client, route parity, E2E smoke                              |
