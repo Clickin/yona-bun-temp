@@ -288,9 +288,9 @@ GET   /authenticate/:provider   → OAuth 시작
 - [x] 회원가입 시 login ID, email 중복 검사가 동작한다
 - [x] `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM=true` 시 신규 사용자는 legacy `LOCKED` 상태로 생성되고 site admin 활성화 대상이 된다
 - [x] `YONA_GUEST_LOGIN_PREFIX`와 매칭되는 신규 login ID는 legacy `is_guest` 계정으로 생성된다
-- [ ] `YONA_AUTH_EMAIL_VERIFICATION_ENABLED=true` 시 가입 후 이메일 인증 플로우가 작동한다
+- [x] `YONA_AUTH_EMAIL_VERIFICATION_ENABLED=true` 시 가입 후 이메일 인증 플로우가 작동한다
 - [ ] 비밀번호 찾기 이메일이 legacy 포맷과 동일하게 발송된다
-- [ ] `/verify/:loginId/:code` 경로가 인증 확인 후 성공/실패 화면을 보여준다
+- [x] `/verify/:loginId/:code` 경로가 인증 확인 후 성공/실패 화면을 보여준다
 - [ ] CSRF 토큰이 모든 POST 요청에 포함된다
 
 ---
