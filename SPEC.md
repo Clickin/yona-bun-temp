@@ -276,7 +276,7 @@ GET   /authenticate/:provider   → OAuth 시작
 | "Remember Me"                | 체크 시 30일 persistent session cookie, 미체크 시 browser-scoped session | ✅ 구현   | 1     |
 | 세션 만료                    | 설정 가능한 세션 타임아웃                                           | gap       | 6     |
 | 게스트 사용자                | `application.guest.user.login.id.prefix`로 guest 계정 분류, 제한 권한 | 부분 구현 | 2     |
-| 익명 접근 제어               | `application.allowsAnonymousAccess` 설정                            | gap       | 2     |
+| 익명 접근 제어               | `application.allowsAnonymousAccess` 설정                            | 부분 구현 | 2     |
 | 로그인 폼 커스텀 placeholder | `application.login.page.loginId.placeholder`, `application.login.page.password.placeholder` | ✅ 구현   | 1     |
 
 #### 검수 기준
@@ -289,6 +289,7 @@ GET   /authenticate/:provider   → OAuth 시작
 - [x] `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM=true` 시 신규 사용자는 legacy `LOCKED` 상태로 생성되고 site admin 활성화 대상이 된다
 - [x] `YONA_GUEST_LOGIN_PREFIX`와 매칭되는 신규 login ID는 legacy `is_guest` 계정으로 생성된다
 - [x] `YONA_AUTH_EMAIL_VERIFICATION_ENABLED=true` 시 가입 후 이메일 인증 플로우가 작동한다
+- [x] `YONA_ALLOW_ANONYMOUS_ACCESS=false` 시 인증/가입/비밀번호 재설정/verify/static 경로를 제외한 anonymous page GET은 `/users/loginform?redirectUrl=...`로 이동하고, non-auth `/api/v1` 요청은 legacy `unauthorized` REST envelope를 반환한다
 - [ ] 비밀번호 찾기 이메일이 legacy 포맷과 동일하게 발송된다
 - [x] `/verify/:loginId/:code` 경로가 인증 확인 후 성공/실패 화면을 보여준다
 - [ ] CSRF 토큰이 모든 POST 요청에 포함된다

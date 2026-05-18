@@ -107,6 +107,86 @@ fn days_ago_datetime(days: u64) -> DateTime {
 }
 
 #[tokio::test]
+async fn anonymous_access_disabled_redirects_pages_and_rejects_non_auth_rest() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::set_var("YONA_ALLOW_ANONYMOUS_ACCESS", "false");
+    let (app, repository, _) = build_auth_router().await;
+
+    repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "admin".to_string(),
+            overview: Some("Public project".to_string()),
+            project_name: "projectYobi".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+
+    let session = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/auth/session")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(session.status(), StatusCode::OK);
+
+    let capabilities = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/auth/capabilities")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(capabilities.status(), StatusCode::OK);
+
+    let page = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/admin/projectYobi?tab=readme")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(page.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        page.headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/users/loginform?redirectUrl=%2Fadmin%2FprojectYobi")
+    );
+
+    let project_container = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/owners/admin/projects/projectYobi/container")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(project_container.status(), StatusCode::UNAUTHORIZED);
+    let json: serde_json::Value =
+        serde_json::from_str(&response_text(project_container).await).expect("error json");
+    assert_eq!(json["error"]["code"], "unauthorized");
+
+    std::env::remove_var("YONA_ALLOW_ANONYMOUS_ACCESS");
+}
+
+#[tokio::test]
 async fn read_auth_ui_capabilities_returns_local_password_flags() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");

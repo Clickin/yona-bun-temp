@@ -35,7 +35,7 @@ Interpretation:
 | Area                                    | Status                    | Notes                                                                                                                    |
 | --------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | Foundation / DB / runtime               | [~] Mostly implemented    | Schema, migrations, `/api/v1` REST runtime, assets are strong; production migration/import/export is not.                |
-| Auth / Workspace                        | [~] Partially implemented | Core account, admin signup approval state, guest-prefix account classification, remember-me session persistence, login placeholder config, settings, public profile, and user statistics count flows exist; full guest permission matrix/OAuth/LDAP remain. |
+| Auth / Workspace                        | [~] Partially implemented | Core account, admin signup approval state, guest-prefix account classification, global anonymous-access gate, remember-me session persistence, login placeholder config, settings, public profile, and user statistics count flows exist; full guest permission matrix/OAuth/LDAP remain. |
 | Organization / Project core             | [~] Partially implemented | CRUD, members, enrollment, watch/favorite, webhook CRUD plus issue/comment and PR create/review/comment fan-out, transfer request/accept/mail, and the legacy project statistics shell exist; change VCS, Smart HTTP clone URL behavior, and remaining webhook delivery hardening remain. |
 | Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists, favorite issue, direct/project sharer effects, and issue/comment mention row effects exist over `/api/v1`; legacy external REST parity is separate migrator scope. |
 | VCS / Code hosting                      | [~] Strong partial        | Git code browser, raw/open/image streaming, archive download, syntax/line rendering, commit history/detail/compare, commit discussion, branch admin, and project-create provisioning exist; Smart HTTP, push hooks, and SVN remain. |
@@ -77,7 +77,7 @@ Interpretation:
 - [x] Remember-me long session parity
 - [ ] Configurable session timeout parity
 - [~] Guest user prefix classification
-- [ ] Global anonymous-access configuration parity
+- [~] Global anonymous-access configuration parity
 - [x] Custom login placeholder configuration
 - [ ] OAuth social login
 - [ ] LDAP

@@ -2,8 +2,9 @@ pub mod persistence;
 pub mod runtime_config;
 pub mod session;
 
-use axum::extract::{Form, Multipart, Query, RawQuery};
+use axum::extract::{Form, Multipart, Query, RawQuery, Request};
 use axum::http::HeaderMap;
+use axum::middleware::{from_fn, Next};
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::routing::{any, delete, get, patch, post, put};
 use axum::{extract::Path, http::Method};
@@ -279,6 +280,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let comment_unvote_backend = route_backend.clone();
     let comment_unvote_session_manager = session_manager.clone();
     let comment_unvote_base_path = base_path.clone();
+    let anonymous_gate_session_manager = session_manager.clone();
+    let anonymous_gate_base_path = base_path.clone();
     let raw_code_backend = route_backend.clone();
     let raw_code_session_manager = session_manager.clone();
     let raw_code_base_path = base_path.clone();
@@ -885,8 +888,16 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     async move { serve_embedded_fallback(method, browser_runtime).await }
                 });
         }
-        AssetMode::None => {}
+        AssetMode::None => {
+            base_router = base_router.fallback(|| async { StatusCode::NOT_FOUND });
+        }
     }
+
+    base_router = base_router.layer(from_fn(move |request: Request, next: Next| {
+        let session_manager = anonymous_gate_session_manager.clone();
+        let base_path = anonymous_gate_base_path.clone();
+        async move { anonymous_access_gate(request, next, session_manager, base_path).await }
+    }));
 
     if base_path == "/" {
         base_router
@@ -948,6 +959,106 @@ fn base_path_href(base_path: &str, path: &str) -> String {
     } else {
         format!("{base_path}{path}")
     }
+}
+
+async fn anonymous_access_gate(
+    request: Request,
+    next: Next,
+    session_manager: SessionManager,
+    base_path: String,
+) -> Response {
+    if allows_anonymous_access() || anonymous_access_path_is_public(request.uri().path()) {
+        return next.run(request).await;
+    }
+
+    if session_manager
+        .read_session_from_headers(request.headers())
+        .and_then(|session| session.user_id)
+        .is_some()
+    {
+        return next.run(request).await;
+    }
+
+    let method = request.method().clone();
+    let path = request.uri().path().to_string();
+    if path.starts_with("/api/") {
+        return anonymous_access_rest_response();
+    }
+    if method == Method::GET || method == Method::HEAD {
+        return anonymous_access_login_redirect(&base_path, &path);
+    }
+
+    anonymous_access_rest_response()
+}
+
+fn allows_anonymous_access() -> bool {
+    std::env::var("YONA_ALLOW_ANONYMOUS_ACCESS")
+        .map(|value| {
+            matches!(
+                value.trim().to_ascii_lowercase().as_str(),
+                "1" | "true" | "yes" | "on"
+            )
+        })
+        .unwrap_or(true)
+}
+
+fn anonymous_access_path_is_public(path: &str) -> bool {
+    path == "/api/auth/session"
+        || path == "/api/v1/session"
+        || path.starts_with("/api/v1/auth/")
+        || path.starts_with("/assets/")
+        || path == "/favicon.ico"
+        || path == "/login"
+        || path == "/users/loginform"
+        || path == "/users/signupform"
+        || path == "/forgot-password"
+        || path == "/lostPassword"
+        || path == "/reset-password"
+        || path == "/resetPassword"
+        || path.starts_with("/verify/")
+}
+
+fn anonymous_access_login_redirect(base_path: &str, path: &str) -> Response {
+    let redirect_path = format!(
+        "/users/loginform?redirectUrl={}",
+        percent_encode_uri_component(path)
+    );
+    Redirect::to(&base_path_href(base_path, &redirect_path)).into_response()
+}
+
+fn anonymous_access_rest_response() -> Response {
+    RestRouteError::from_connect_error(ConnectError::unauthenticated(LEGACY_LOGIN_REQUIRED_MESSAGE))
+        .into_response()
+}
+
+fn percent_encode_uri_component(value: &str) -> String {
+    let mut encoded = String::with_capacity(value.len());
+    for byte in value.bytes() {
+        if uri_component_unescaped(byte) {
+            encoded.push(byte as char);
+        } else {
+            encoded.push_str(&format!("%{byte:02X}"));
+        }
+    }
+    encoded
+}
+
+fn uri_component_unescaped(byte: u8) -> bool {
+    matches!(
+        byte,
+        b'A'..=b'Z'
+            | b'a'..=b'z'
+            | b'0'..=b'9'
+            | b'-'
+            | b'_'
+            | b'.'
+            | b'!'
+            | b'~'
+            | b'*'
+            | b'\''
+            | b'('
+            | b')'
+    )
 }
 
 fn default_public_origin(configured: &str) -> String {
