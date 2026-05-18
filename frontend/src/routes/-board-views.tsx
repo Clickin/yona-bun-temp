@@ -6,6 +6,7 @@ import type {
   OrganizationBoardsResponse,
   ProjectPostsResponse,
 } from "../api/boards";
+import { uploadTemporaryAttachment, type UploadedAttachment } from "../api/attachments";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
 import type { ProjectDetailViewModel } from "./-view-models";
@@ -166,6 +167,112 @@ function postBadges(post: Pick<BoardPostListItem, "notice" | "readme">) {
   );
 }
 
+function boardImageFilesFromDataTransfer(dataTransfer: DataTransfer | null): File[] {
+  const itemFiles: File[] = [];
+  for (const item of Array.from(dataTransfer?.items ?? [])) {
+    if (item.kind !== "file" || !item.type.toLowerCase().startsWith("image/")) {
+      continue;
+    }
+    const file = item.getAsFile();
+    if (file) {
+      itemFiles.push(file);
+    }
+  }
+  if (itemFiles.length > 0) {
+    return itemFiles;
+  }
+  return Array.from(dataTransfer?.files ?? []).filter((file) =>
+    file.type.toLowerCase().startsWith("image/"),
+  );
+}
+
+function boardMarkdownTextForAttachment(attachment: UploadedAttachment): string {
+  const name = attachment.name || "image.png";
+  const link = `[${name}](${attachment.url}) `;
+  return attachment.mimeType.toLowerCase().startsWith("image/") ? `!${link}` : link;
+}
+
+function insertBoardMarkdownText(value: string, cursorIndex: number, markdownText: string) {
+  const cursor = Math.max(0, Math.min(cursorIndex, value.length));
+  return {
+    cursorIndex: cursor + markdownText.length,
+    value: `${value.slice(0, cursor)}${markdownText}${value.slice(cursor)}`,
+  };
+}
+
+function BoardMarkdownTextarea(props: {
+  ariaLabel?: string;
+  csrfToken?: string;
+  id?: string;
+  name?: string;
+  onAttachmentUpload: (attachment: UploadedAttachment) => void;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  runtimeConfig: RuntimeConfig;
+  value: string;
+}) {
+  const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
+
+  const handleImageFiles = async (textarea: HTMLTextAreaElement, files: File[]) => {
+    if (!props.csrfToken || files.length === 0) {
+      return;
+    }
+    const attachments = await Promise.all(
+      files.map((file) => uploadTemporaryAttachment(props.runtimeConfig, props.csrfToken!, file)),
+    );
+    let nextValue = textarea.value;
+    let nextCursor = textarea.selectionStart ?? nextValue.length;
+    for (const attachment of attachments) {
+      const inserted = insertBoardMarkdownText(
+        nextValue,
+        nextCursor,
+        boardMarkdownTextForAttachment(attachment),
+      );
+      nextValue = inserted.value;
+      nextCursor = inserted.cursorIndex;
+      props.onAttachmentUpload(attachment);
+    }
+    props.onChange(nextValue);
+    window.requestAnimationFrame(() => {
+      textareaRef.current?.setSelectionRange(nextCursor, nextCursor);
+      textareaRef.current?.focus();
+    });
+  };
+
+  return (
+    <textarea
+      aria-label={props.ariaLabel}
+      id={props.id}
+      name={props.name}
+      onChange={(event) => props.onChange(event.target.value)}
+      onDragOver={(event) => {
+        if (props.csrfToken && boardImageFilesFromDataTransfer(event.dataTransfer).length > 0) {
+          event.preventDefault();
+        }
+      }}
+      onDrop={(event) => {
+        const files = boardImageFilesFromDataTransfer(event.dataTransfer);
+        if (files.length === 0) {
+          return;
+        }
+        event.preventDefault();
+        void handleImageFiles(event.currentTarget, files);
+      }}
+      onPaste={(event) => {
+        const files = boardImageFilesFromDataTransfer(event.clipboardData);
+        if (files.length === 0) {
+          return;
+        }
+        event.preventDefault();
+        void handleImageFiles(event.currentTarget, files);
+      }}
+      placeholder={props.placeholder}
+      ref={textareaRef}
+      value={props.value}
+    />
+  );
+}
+
 function PostRows(props: {
   items: BoardPostListItem[];
   runtimeConfig: RuntimeConfig;
@@ -315,18 +422,27 @@ export function ProjectBoardListPage(props: {
 }
 
 export function ProjectBoardDetailPage(props: {
+  csrfToken?: string;
   post: BoardPostDetail | null | undefined;
   runtimeConfig: RuntimeConfig;
   viewerId?: string;
   onCommentDelete?: (commentId: string) => Promise<void>;
-  onCommentSubmit?: (contentsMarkdown: string) => Promise<void>;
-  onCommentUpdate?: (commentId: string, contentsMarkdown: string) => Promise<void>;
+  onCommentSubmit?: (contentsMarkdown: string, attachmentIds?: number[]) => Promise<void>;
+  onCommentUpdate?: (
+    commentId: string,
+    contentsMarkdown: string,
+    attachmentIds?: number[],
+  ) => Promise<void>;
   onDeletePost?: () => Promise<void>;
   onWatchToggle?: () => Promise<void>;
 }) {
   const [commentDraft, setCommentDraft] = React.useState("");
+  const [commentAttachmentIds, setCommentAttachmentIds] = React.useState<number[]>([]);
   const [editingCommentId, setEditingCommentId] = React.useState<string | null>(null);
   const [editingCommentDraft, setEditingCommentDraft] = React.useState("");
+  const [editingCommentAttachmentIds, setEditingCommentAttachmentIds] = React.useState<number[]>(
+    [],
+  );
   const post = props.post;
 
   if (!post) {
@@ -410,13 +526,21 @@ export function ProjectBoardDetailPage(props: {
                         return;
                       }
                       void props
-                        .onCommentUpdate?.(comment.id, contents)
-                        .then(() => setEditingCommentId(null));
+                        .onCommentUpdate?.(comment.id, contents, editingCommentAttachmentIds)
+                        .then(() => {
+                          setEditingCommentAttachmentIds([]);
+                          setEditingCommentId(null);
+                        });
                     }}
                   >
-                    <textarea
-                      aria-label="Edit comment"
-                      onChange={(event) => setEditingCommentDraft(event.target.value)}
+                    <BoardMarkdownTextarea
+                      ariaLabel="Edit comment"
+                      csrfToken={props.csrfToken}
+                      onAttachmentUpload={(attachment) =>
+                        setEditingCommentAttachmentIds((current) => [...current, attachment.id])
+                      }
+                      onChange={setEditingCommentDraft}
+                      runtimeConfig={props.runtimeConfig}
                       value={editingCommentDraft}
                     />
                     <button className="ybtn primary" type="submit">
@@ -439,6 +563,7 @@ export function ProjectBoardDetailPage(props: {
                     onClick={() => {
                       setEditingCommentId(comment.id);
                       setEditingCommentDraft(comment.contentsMarkdown);
+                      setEditingCommentAttachmentIds([]);
                     }}
                     type="button"
                   >
@@ -467,13 +592,21 @@ export function ProjectBoardDetailPage(props: {
               if (!contents) {
                 return;
               }
-              void props.onCommentSubmit?.(contents).then(() => setCommentDraft(""));
+              void props.onCommentSubmit?.(contents, commentAttachmentIds).then(() => {
+                setCommentAttachmentIds([]);
+                setCommentDraft("");
+              });
             }}
           >
-            <textarea
+            <BoardMarkdownTextarea
+              csrfToken={props.csrfToken}
               name="contentsMarkdown"
-              onChange={(event) => setCommentDraft(event.target.value)}
+              onAttachmentUpload={(attachment) =>
+                setCommentAttachmentIds((current) => [...current, attachment.id])
+              }
+              onChange={setCommentDraft}
               placeholder="Leave a comment"
+              runtimeConfig={props.runtimeConfig}
               value={commentDraft}
             />
             <button className="ybtn primary" type="submit">
@@ -489,6 +622,7 @@ export function ProjectBoardDetailPage(props: {
 export function ProjectPostFormPage(props: {
   canMarkNotice: boolean;
   canMarkReadme: boolean;
+  csrfToken?: string;
   initialPost?: BoardPostDetail | null;
   labels: BoardLabel[];
   mode: "create" | "edit";
@@ -497,6 +631,7 @@ export function ProjectPostFormPage(props: {
   runtimeConfig: RuntimeConfig;
   onSubmit: (input: {
     bodyMarkdown: string;
+    attachmentIds: number[];
     labelIds: string[];
     notice: boolean;
     readme: boolean;
@@ -505,6 +640,7 @@ export function ProjectPostFormPage(props: {
 }) {
   const [title, setTitle] = React.useState(props.initialPost?.title ?? "");
   const [bodyMarkdown, setBodyMarkdown] = React.useState(props.initialPost?.bodyMarkdown ?? "");
+  const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
   const [notice, setNotice] = React.useState(props.initialPost?.notice ?? false);
   const [readme, setReadme] = React.useState(props.initialPost?.readme ?? false);
   const [selectedLabelIds, setSelectedLabelIds] = React.useState(
@@ -514,6 +650,7 @@ export function ProjectPostFormPage(props: {
   React.useEffect(() => {
     setTitle(props.initialPost?.title ?? "");
     setBodyMarkdown(props.initialPost?.bodyMarkdown ?? "");
+    setAttachmentIds([]);
     setNotice(props.initialPost?.notice ?? false);
     setReadme(props.initialPost?.readme ?? false);
     setSelectedLabelIds(new Set((props.initialPost?.labels ?? []).map((label) => label.id)));
@@ -527,6 +664,7 @@ export function ProjectPostFormPage(props: {
         onSubmit={(event) => {
           event.preventDefault();
           void props.onSubmit({
+            attachmentIds,
             bodyMarkdown,
             labelIds: [...selectedLabelIds],
             notice,
@@ -545,11 +683,17 @@ export function ProjectPostFormPage(props: {
             value={title}
           />
         </label>
-        <label>
+        <label htmlFor="board-post-body-markdown">
           <span>Body</span>
-          <textarea
+          <BoardMarkdownTextarea
+            csrfToken={props.csrfToken}
+            id="board-post-body-markdown"
             name="bodyMarkdown"
-            onChange={(event) => setBodyMarkdown(event.target.value)}
+            onAttachmentUpload={(attachment) =>
+              setAttachmentIds((current) => [...current, attachment.id])
+            }
+            onChange={setBodyMarkdown}
+            runtimeConfig={props.runtimeConfig}
             value={bodyMarkdown}
           />
         </label>

@@ -91,6 +91,7 @@ function PostEditRouteComponent() {
       canMarkReadme={
         formOptionsQuery.data?.canMarkReadme ?? postQuery.data?.permissions.canSetNotice ?? false
       }
+      csrfToken={csrfToken}
       initialPost={postQuery.data}
       labels={formOptionsQuery.data?.labels ?? []}
       mode="edit"
@@ -100,6 +101,7 @@ function PostEditRouteComponent() {
       onSubmit={async (input) => {
         try {
           const updated = await updateProjectPostRest(runtimeConfig, csrfToken, {
+            attachmentIds: input.attachmentIds,
             bodyMarkdown: input.bodyMarkdown,
             labelIds: input.labelIds,
             notice: input.notice,

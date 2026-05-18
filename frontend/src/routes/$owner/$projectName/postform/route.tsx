@@ -54,6 +54,7 @@ function PostCreateRouteComponent() {
     <ProjectPostFormPage
       canMarkNotice={formOptionsQuery.data?.canMarkNotice ?? false}
       canMarkReadme={formOptionsQuery.data?.canMarkReadme ?? false}
+      csrfToken={csrfToken}
       labels={formOptionsQuery.data?.labels ?? []}
       mode="create"
       ownerName={owner}
@@ -62,6 +63,7 @@ function PostCreateRouteComponent() {
       onSubmit={async (input) => {
         try {
           const created = await createProjectPostRest(runtimeConfig, csrfToken, {
+            attachmentIds: input.attachmentIds,
             bodyMarkdown: input.bodyMarkdown,
             labelIds: input.labelIds,
             notice: input.notice,

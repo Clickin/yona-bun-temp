@@ -483,6 +483,121 @@ test("project board detail supports watch and comment create update delete", asy
   await expect(page.getByText("No comments yet.")).toBeVisible();
 });
 
+test("project board post editor inserts pasted and dropped image uploads", async ({ page }) => {
+  const uploadedHeaders: string[] = [];
+  const uploadedNames: string[] = [];
+
+  await page.route("**/files", async (route) => {
+    const uploadIndex = uploadedNames.length + 1;
+    uploadedHeaders.push(route.request().headers()["x-csrf-token"] ?? "");
+    uploadedNames.push(uploadIndex === 1 ? "post-paste.png" : "post-drop.png");
+    await route.fulfill({
+      body: JSON.stringify({
+        id: 800 + uploadIndex,
+        mimeType: "image/png",
+        name: uploadIndex === 1 ? "post-paste.png" : "post-drop.png",
+        size: 8,
+        url: `/yona/files/${800 + uploadIndex}`,
+      }),
+      headers: restJsonHeaders,
+      status: 201,
+    });
+  });
+
+  await page.goto("/yona/admin/projectYobi/postform");
+  const bodyEditor = page.getByLabel("Body");
+
+  await bodyEditor.evaluate((element) => {
+    const data = new DataTransfer();
+    data.items.add(new File(["pasted"], "post-paste.png", { type: "image/png" }));
+    element.dispatchEvent(
+      new ClipboardEvent("paste", {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: data,
+      }),
+    );
+  });
+  await expect(bodyEditor).toHaveValue("![post-paste.png](/yona/files/801) ");
+
+  await bodyEditor.evaluate((element) => {
+    const data = new DataTransfer();
+    data.items.add(new File(["dropped"], "post-drop.png", { type: "image/png" }));
+    element.dispatchEvent(
+      new DragEvent("drop", {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: data,
+      }),
+    );
+  });
+  await expect(bodyEditor).toHaveValue(
+    "![post-paste.png](/yona/files/801) ![post-drop.png](/yona/files/802) ",
+  );
+
+  const createRequest = page.waitForRequest(
+    (request) => request.url().endsWith("/posts") && request.method() === "POST",
+  );
+  await page.getByLabel("Title").fill("Created upload post");
+  await page.getByRole("button", { name: "Create" }).click();
+  const submittedPost = (await createRequest).postDataJSON() as {
+    attachmentIds?: number[];
+    bodyMarkdown?: string;
+  };
+
+  expect(uploadedHeaders).toEqual(["csrf-123", "csrf-123"]);
+  expect(submittedPost).toMatchObject({
+    attachmentIds: [801, 802],
+    bodyMarkdown: "![post-paste.png](/yona/files/801) ![post-drop.png](/yona/files/802) ",
+  });
+});
+
+test("project board comment editor inserts pasted image uploads", async ({ page }) => {
+  await page.route("**/files", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        id: 811,
+        mimeType: "image/png",
+        name: "comment-paste.png",
+        size: 8,
+        url: "/yona/files/811",
+      }),
+      headers: restJsonHeaders,
+      status: 201,
+    });
+  });
+
+  await page.goto("/yona/admin/projectYobi/post/1");
+  const commentEditor = page.getByPlaceholder("Leave a comment");
+
+  await commentEditor.evaluate((element) => {
+    const data = new DataTransfer();
+    data.items.add(new File(["pasted"], "comment-paste.png", { type: "image/png" }));
+    element.dispatchEvent(
+      new ClipboardEvent("paste", {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: data,
+      }),
+    );
+  });
+  await expect(commentEditor).toHaveValue("![comment-paste.png](/yona/files/811) ");
+
+  const commentRequest = page.waitForRequest(
+    (request) => request.url().endsWith("/posts/1/comments") && request.method() === "POST",
+  );
+  await page.getByRole("button", { name: "Comment" }).click();
+  const submittedComment = (await commentRequest).postDataJSON() as {
+    attachmentIds?: number[];
+    contentsMarkdown?: string;
+  };
+
+  expect(submittedComment).toEqual({
+    attachmentIds: [811],
+    contentsMarkdown: "![comment-paste.png](/yona/files/811)",
+  });
+});
+
 test("project board create edit and delete flows send CSRF REST mutations", async ({ page }) => {
   await page.goto("/yona/admin/projectYobi/postform");
   await expect(page.getByRole("heading", { name: "New post" })).toBeVisible();

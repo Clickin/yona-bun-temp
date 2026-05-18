@@ -81,6 +81,7 @@ function BoardDetailRouteComponent() {
 
   return (
     <ProjectBoardDetailPage
+      csrfToken={csrfToken}
       post={postQuery.data}
       runtimeConfig={runtimeConfig}
       viewerId={currentSession?.actorId.toString()}
@@ -98,9 +99,10 @@ function BoardDetailRouteComponent() {
           reportMutationError(error, "Delete board comment failed.");
         }
       }}
-      onCommentSubmit={async (contentsMarkdown) => {
+      onCommentSubmit={async (contentsMarkdown, attachmentIds) => {
         try {
           const nextPost = await createPostCommentRest(runtimeConfig, csrfToken, {
+            attachmentIds,
             contentsMarkdown,
             ownerName: owner,
             postNumber,
@@ -112,9 +114,10 @@ function BoardDetailRouteComponent() {
           reportMutationError(error, "Create board comment failed.");
         }
       }}
-      onCommentUpdate={async (commentId, contentsMarkdown) => {
+      onCommentUpdate={async (commentId, contentsMarkdown, attachmentIds) => {
         try {
           const nextPost = await updatePostCommentRest(runtimeConfig, csrfToken, {
+            attachmentIds,
             commentId,
             contentsMarkdown,
             ownerName: owner,
