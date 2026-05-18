@@ -15466,6 +15466,11 @@ fn autolink_markdown_text(text: &str, context: MarkdownLinkContext<'_>) -> Strin
     let mut index = 0;
 
     while index < text.len() {
+        if let Some((length, link)) = markdown_url_link(text, index) {
+            rendered.push_str(&link);
+            index += length;
+            continue;
+        }
         if let Some((length, link)) = markdown_path_issue_link(text, index, context) {
             rendered.push_str(&link);
             index += length;
@@ -15488,6 +15493,70 @@ fn autolink_markdown_text(text: &str, context: MarkdownLinkContext<'_>) -> Strin
     }
 
     rendered
+}
+
+fn markdown_url_link(text: &str, index: usize) -> Option<(usize, String)> {
+    if !markdown_url_left_boundary(text, index) {
+        return None;
+    }
+    let rest = &text[index..];
+    let scheme_len = if rest.starts_with("https://") {
+        "https://".len()
+    } else if rest.starts_with("http://") {
+        "http://".len()
+    } else {
+        return None;
+    };
+    let mut length = 0;
+    for (offset, ch) in rest.char_indices() {
+        if ch.is_whitespace() || matches!(ch, '<' | '"' | '\'') {
+            break;
+        }
+        length = offset + ch.len_utf8();
+    }
+    length = markdown_url_trimmed_length(&rest[..length]);
+    if length <= scheme_len {
+        return None;
+    }
+    let url = &rest[..length];
+    let host = &url[scheme_len..];
+    if host.is_empty() || host.starts_with('/') {
+        return None;
+    }
+    let href = markdown_url_href_attr(url);
+    Some((
+        length,
+        format!("<a href=\"{}\">{}</a>", escape_html_attr(&href), url),
+    ))
+}
+
+fn markdown_url_left_boundary(text: &str, index: usize) -> bool {
+    index == 0
+        || text[..index]
+            .chars()
+            .next_back()
+            .is_none_or(|ch| ch.is_whitespace() || matches!(ch, '(' | '[' | '{'))
+}
+
+fn markdown_url_trimmed_length(url: &str) -> usize {
+    let mut length = url.len();
+    while length > 0 {
+        let ch = url[..length]
+            .chars()
+            .next_back()
+            .expect("non-empty url prefix");
+        if !matches!(ch, '.' | ',' | ';' | ':' | '!' | '?') {
+            break;
+        }
+        length -= ch.len_utf8();
+    }
+    length
+}
+
+fn markdown_url_href_attr(url: &str) -> String {
+    url.replace("&amp;", "&")
+        .replace("&quot;", "\"")
+        .replace("&#x27;", "'")
 }
 
 fn markdown_path_issue_link(

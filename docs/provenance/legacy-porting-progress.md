@@ -347,9 +347,10 @@ Interpretation:
 - [x] Basic Markdown rendering on milestone surfaces
 - [x] HTML sanitization on implemented render path
 - [x] Basic project Markdown autolinks for `@username`, same-project `#123`, and `owner/project#123` on issue/post/milestone bodies and comments, PR bodies/general review comments, Git non-ranged commit comments, and preview output
+- [x] Basic bare `http://`/`https://` URL autolinks on the project Markdown render path
 - [ ] Full legacy/GFM extension parity
 - [~] Legacy issue-link title/state enrichment
-- [ ] Autolink parity
+- [~] Full legacy autolink parity, including non-HTTP cases if legacy evidence requires them
 - [ ] Syntax-highlighted code blocks
 - [ ] Inline image behavior
 - [ ] Task checklist rendering

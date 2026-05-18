@@ -62,9 +62,9 @@
   shape. Plain close/reopen records PR state events but did not call project
   webhooks in the observed legacy code.
 - PR bodies and general review comments now use the project Markdown projection
-  for sanitized `@username`, same-project `#123`, and `owner/project#123`
-  autolinks. Legacy issue-link title/state enrichment remains a Markdown
-  renderer follow-up.
+  for sanitized `@username`, same-project `#123`, `owner/project#123`, and
+  bare `http://`/`https://` URL autolinks. Legacy issue-link title/state
+  enrichment remains a Markdown renderer follow-up.
 
 ## Extracted Intent
 
