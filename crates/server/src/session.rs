@@ -8,6 +8,7 @@ use rand::RngCore;
 #[derive(Clone, Debug, Default)]
 pub struct Session {
     pub csrf_token: String,
+    pub remember_me: bool,
     pub token: String,
     pub user_id: Option<i64>,
 }
@@ -43,6 +44,7 @@ impl SessionManager {
 
         let session = Session {
             csrf_token: random_token(),
+            remember_me: false,
             token: random_token(),
             user_id: None,
         };
@@ -74,12 +76,13 @@ impl SessionManager {
         &self,
         previous_token: Option<&str>,
         user_id: i64,
+        remember_me: bool,
     ) -> Session {
-        self.replace_session(previous_token, Some(user_id))
+        self.replace_session(previous_token, Some(user_id), remember_me)
     }
 
     pub fn create_anonymous_session(&self, previous_token: Option<&str>) -> Session {
-        self.replace_session(previous_token, None)
+        self.replace_session(previous_token, None, false)
     }
 
     pub fn build_set_cookie_headers(&self, session: &Session) -> Vec<String> {
@@ -92,17 +95,20 @@ impl SessionManager {
         let path = normalize_cookie_path(&self.config.cookie_path);
         let secure_suffix = if secure { "; Secure" } else { "" };
 
+        let max_age_suffix = if session.remember_me {
+            "; Max-Age=2592000"
+        } else {
+            ""
+        };
+
         vec![
             format!(
                 "yona_csrf_token={}; Path={}; SameSite=Lax{}",
                 session.csrf_token, path, secure_suffix
             ),
             format!(
-                "yona_session={}; Path={}; Max-Age={}; HttpOnly; SameSite=Lax{}",
-                session.token,
-                path,
-                30 * 24 * 60 * 60,
-                secure_suffix
+                "yona_session={}; Path={}{}; HttpOnly; SameSite=Lax{}",
+                session.token, path, max_age_suffix, secure_suffix
             ),
         ]
     }
@@ -114,7 +120,12 @@ impl SessionManager {
         self.sessions.lock().unwrap().get(&token).cloned()
     }
 
-    fn replace_session(&self, previous_token: Option<&str>, user_id: Option<i64>) -> Session {
+    fn replace_session(
+        &self,
+        previous_token: Option<&str>,
+        user_id: Option<i64>,
+        remember_me: bool,
+    ) -> Session {
         let mut sessions = self.sessions.lock().unwrap();
         let existing = previous_token.and_then(|token| sessions.remove(token));
         let session = Session {
@@ -122,6 +133,7 @@ impl SessionManager {
                 .as_ref()
                 .map(|session| session.csrf_token.clone())
                 .unwrap_or_else(random_token),
+            remember_me,
             token: existing
                 .as_ref()
                 .map(|session| session.token.clone())

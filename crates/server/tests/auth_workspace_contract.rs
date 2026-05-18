@@ -85,6 +85,23 @@ async fn response_text(response: axum::response::Response) -> String {
     String::from_utf8(body.to_vec()).unwrap()
 }
 
+fn set_cookie_headers(response: &axum::response::Response) -> Vec<String> {
+    response
+        .headers()
+        .get_all(http::header::SET_COOKIE)
+        .iter()
+        .map(|value| value.to_str().unwrap().to_string())
+        .collect()
+}
+
+fn named_cookie<'a>(cookies: &'a [String], name: &str) -> &'a str {
+    cookies
+        .iter()
+        .find(|cookie| cookie.starts_with(name))
+        .map(String::as_str)
+        .unwrap_or_else(|| panic!("missing {name} cookie in {cookies:?}"))
+}
+
 fn days_ago_datetime(days: u64) -> DateTime {
     DateTimeUtc::from(SystemTime::now() - Duration::from_secs(days * 24 * 60 * 60)).naive_utc()
 }
@@ -540,6 +557,78 @@ async fn register_sign_in_sign_out_and_current_session_round_trip() {
         .await
         .unwrap();
     assert_eq!(sign_in.status(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn remember_me_controls_session_cookie_persistence() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+    let (app, _, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/register")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let sign_in_without_remember = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/sign-in")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"door\",\"password\":\"doorpass1\",\"rememberMe\":false}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(sign_in_without_remember.status(), StatusCode::OK);
+    let non_persistent_cookies = set_cookie_headers(&sign_in_without_remember);
+    assert!(
+        !named_cookie(&non_persistent_cookies, "yona_session=").contains("Max-Age="),
+        "non-remember sign-in must leave the session cookie browser-scoped"
+    );
+
+    let sign_in_with_remember = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/sign-in")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"door\",\"password\":\"doorpass1\",\"rememberMe\":true}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(sign_in_with_remember.status(), StatusCode::OK);
+    let persistent_cookies = set_cookie_headers(&sign_in_with_remember);
+    assert!(
+        named_cookie(&persistent_cookies, "yona_session=").contains("Max-Age=2592000"),
+        "remember sign-in must persist the session cookie for the legacy 30-day window"
+    );
 }
 
 #[tokio::test]

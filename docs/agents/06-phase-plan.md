@@ -54,6 +54,7 @@
 - Project watchers page complete: `GET /api/v1/owners/:owner/projects/:project/watchers` and `/:owner/:project/watchers` list actual project watchers behind project READ ACL with legacy `project/watchers.scala.html` class anchors.
 - Project delete confirmation complete: `DELETE /api/v1/owners/:owner/projects/:project` and `/:owner/:project/deleteform` restore the legacy UPDATE-gated delete confirmation shell, dependent project-row cleanup, bare Git repository removal, and `/` redirect semantics from `ProjectApp.deleteProject` / `project/delete.scala.html`.
 - Auth login placeholder configuration complete: `YONA_AUTH_LOGIN_ID_PLACEHOLDER` and `YONA_AUTH_PASSWORD_PLACEHOLDER` map the legacy `application.login.page.loginId.placeholder` / `application.login.page.password.placeholder` settings into auth UI capabilities, and `/users/loginform` renders the configured legacy placeholders with default fallbacks.
+- Auth remember-me complete: `rememberMe=true` sign-in marks the Rust session cookie persistent for the legacy 30-day window, while `rememberMe=false` keeps the normal browser-scoped session cookie.
 
 ## Phase 3: 저장소와 VCS
 

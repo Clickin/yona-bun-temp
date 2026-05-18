@@ -1355,8 +1355,11 @@ async fn direct_confirm_workspace_email(
                 .await
             {
                 Ok(Some(user_id)) => {
-                    let authenticated_session =
-                        session_manager.create_authenticated_session(previous_token, user_id);
+                    let authenticated_session = session_manager.create_authenticated_session(
+                        previous_token,
+                        user_id,
+                        false,
+                    );
                     let mut response = Redirect::to(&base_path_href(
                         &base_path,
                         "/user/editform/emails?confirmed=1",
@@ -16657,9 +16660,11 @@ impl PilotServiceImpl {
             ));
         }
 
-        let authenticated_session = self
-            .session_manager
-            .create_authenticated_session(Some(&session.token), user.id);
+        let authenticated_session = self.session_manager.create_authenticated_session(
+            Some(&session.token),
+            user.id,
+            request.remember_me,
+        );
         attach_session_headers(&mut ctx, &self.session_manager, &authenticated_session);
 
         let default_landing_path = repository
@@ -16753,9 +16758,9 @@ impl PilotServiceImpl {
             return Ok((anonymous_current_session_response(), ctx));
         }
 
-        let authenticated_session = self
-            .session_manager
-            .create_authenticated_session(Some(&session.token), user.id);
+        let authenticated_session =
+            self.session_manager
+                .create_authenticated_session(Some(&session.token), user.id, false);
         attach_session_headers(&mut ctx, &self.session_manager, &authenticated_session);
 
         Ok((current_session_response_from_user(&user, None), ctx))

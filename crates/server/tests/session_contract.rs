@@ -9,6 +9,7 @@ fn csrf_validation_accepts_matching_token() {
     });
     let session = Session {
         csrf_token: "csrf-token".to_string(),
+        remember_me: false,
         token: "session-token".to_string(),
         user_id: None,
     };

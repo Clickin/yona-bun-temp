@@ -273,7 +273,7 @@ GET   /authenticate/:provider   → OAuth 시작
 | 관리자 가입 승인             | `signup.require.admin.confirm=true` 시 관리자가 승인                | gap       | 6     |
 | Social Login (OAuth)         | GitHub, Google 등                                                   | deferred  | 2차   |
 | LDAP 연동                    | LDAP 서버 인증                                                      | deferred  | 2차   |
-| "Remember Me"                | 장기 세션 유지                                                      | gap       | 6     |
+| "Remember Me"                | 체크 시 30일 persistent session cookie, 미체크 시 browser-scoped session | ✅ 구현   | 1     |
 | 세션 만료                    | 설정 가능한 세션 타임아웃                                           | gap       | 6     |
 | 게스트 사용자                | `application.guest.user.login.id.prefix`로 제한된 권한              | gap       | 2     |
 | 익명 접근 제어               | `application.allowsAnonymousAccess` 설정                            | gap       | 2     |
@@ -284,6 +284,7 @@ GET   /authenticate/:provider   → OAuth 시작
 - [x] `/users/loginform` GET 시 로그인 폼이 legacy와 동일한 레이아웃으로 표시되고 legacy placeholder 설정을 반영한다
 - [ ] 로그인 성공 후 `redirectUrl` 파라미터가 있으면 해당 URL로 이동한다 (legacy 동작 동일)
 - [ ] 로그인 실패 시 에러 메시지가 legacy와 동일하게 표시된다
+- [x] `rememberMe=true` 로그인은 legacy 30일 유지 세션을 만들고, `rememberMe=false` 로그인은 브라우저 세션으로 남는다
 - [ ] 회원가입 시 login ID, email 중복 검사가 동작한다
 - [ ] `YONA_AUTH_EMAIL_VERIFICATION_ENABLED=true` 시 가입 후 이메일 인증 플로우가 작동한다
 - [ ] 비밀번호 찾기 이메일이 legacy 포맷과 동일하게 발송된다
