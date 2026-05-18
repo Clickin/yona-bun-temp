@@ -262,6 +262,9 @@ export function toProjectDetailView(
 export function toProjectContainerView(
   detail: Awaited<ReturnType<typeof readProjectContainer>>,
 ): ProjectDetailViewModel {
+  const detailWithReadme = detail as typeof detail & {
+    readmeFile?: { bodyHtml?: string; bodyMarkdown?: string; name?: string } | null;
+  };
   return {
     backgroundUrl: detail.backgroundUrl,
     boardCount: detail.boardCount,
@@ -299,6 +302,13 @@ export function toProjectContainerView(
     ownerName: detail.ownerName,
     projectName: detail.projectName,
     projectScope: detail.projectScope,
+    readmeFile: detailWithReadme.readmeFile
+      ? {
+          bodyHtml: detailWithReadme.readmeFile.bodyHtml ?? "",
+          bodyMarkdown: detailWithReadme.readmeFile.bodyMarkdown ?? "",
+          name: detailWithReadme.readmeFile.name ?? "README.md",
+        }
+      : undefined,
     reviewCount: detail.reviewCount,
     showAdmin: detail.showAdmin,
     showBoard: detail.showBoard,

@@ -10,11 +10,21 @@ describe("wave 2A container parity", () => {
   it("renders the organization home hero, project filter, gated CTA, roster bubbles, and settings entry", () => {
     const html = renderOrganizationDetail({
       adminMembers: [
-        { avatarUrl: "/avatars/admin.png", loginId: "admin", role: "org_admin", userLabel: "Admin" },
+        {
+          avatarUrl: "/avatars/admin.png",
+          loginId: "admin",
+          role: "org_admin",
+          userLabel: "Admin",
+        },
       ],
       description: "Web labs",
       memberMembers: [
-        { avatarUrl: "/avatars/member.png", loginId: "member", role: "org_member", userLabel: "Member" },
+        {
+          avatarUrl: "/avatars/member.png",
+          loginId: "member",
+          role: "org_member",
+          userLabel: "Member",
+        },
       ],
       organizationName: "weblabs",
       viewerCanCreateProject: true,
@@ -132,6 +142,33 @@ describe("wave 2A container parity", () => {
     expect(html).toContain("Wave 2A");
     expect(html).toContain("Members");
     expect(html).toContain('href="/yona/weblabs/projectYobi/settingform"');
+  });
+
+  it("renders a Git README fallback with the legacy readme body wrapper", () => {
+    const html = renderProjectDetail({
+      defaultTab: "readme",
+      enrollmentRequested: false,
+      isFavorited: false,
+      ownerName: "weblabs",
+      overview: "",
+      projectName: "projectYobi",
+      projectScope: "public",
+      readmeFile: {
+        bodyHtml:
+          '<h1>Git README</h1><p><img src="/yona/weblabs/projectYobi/files/main/assets/logo.png"></p><p><a href="/yona/weblabs/projectYobi/code/main/docs/guide.md">Guide</a></p>',
+        bodyMarkdown: "# Git README",
+        name: "README.md",
+      },
+      viewerCanEnroll: false,
+      viewerCanUpdate: false,
+    } as never);
+
+    expect(html).toContain("README.md");
+    expect(html).toContain('class="readme-body markdown-wrap"');
+    expect(html).toContain("<h1>Git README</h1>");
+    expect(html).toContain('src="/yona/weblabs/projectYobi/files/main/assets/logo.png"');
+    expect(html).toContain('href="/yona/weblabs/projectYobi/code/main/docs/guide.md"');
+    expect(html).not.toContain("No README post yet.");
   });
 
   it("renders the organization and project settings shells from the container state", () => {

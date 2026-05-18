@@ -2,10 +2,20 @@ use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::Database;
+use std::fs;
+use std::path::Path;
+use std::process::Command;
+use std::sync::{Mutex, OnceLock};
+use tempfile::tempdir;
 use tower::ServiceExt;
 use yona_rust_persistence::AppRepository;
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+
+fn yona_data_env_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository) {
     let db = Database::connect("sqlite::memory:")
@@ -160,6 +170,78 @@ async fn create_project(
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::OK);
+}
+
+fn run_git(args: &[&str], cwd: Option<&Path>) {
+    let mut command = Command::new("git");
+    command.args(args);
+    if let Some(cwd) = cwd {
+        command.current_dir(cwd);
+    }
+    let output = command.output().expect("run git");
+    assert!(
+        output.status.success(),
+        "git {:?} failed\nstdout: {}\nstderr: {}",
+        args,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+fn seed_bare_repository_readme(yona_data: &Path, project_id: i64, readme: &str) {
+    let repo_root = yona_data.join("repo");
+    fs::create_dir_all(&repo_root).expect("repo root");
+    let bare_repo = repo_root.join(format!("{project_id}.git"));
+    if !bare_repo.exists() {
+        run_git(&["init", "--bare", bare_repo.to_str().unwrap()], None);
+    }
+    let work = tempdir().expect("work repo");
+    fs::write(work.path().join("README.md"), readme).expect("readme");
+    fs::create_dir_all(work.path().join("assets")).expect("assets dir");
+    fs::write(
+        work.path().join("assets").join("logo.png"),
+        b"\x89PNG\r\n\x1a\n\0\0\0\rIHDR",
+    )
+    .expect("png");
+    fs::create_dir_all(work.path().join("docs")).expect("docs dir");
+    fs::write(work.path().join("docs").join("guide.md"), "# Guide\n").expect("guide");
+    run_git(
+        &[
+            "--git-dir",
+            bare_repo.to_str().unwrap(),
+            "--work-tree",
+            work.path().to_str().unwrap(),
+            "add",
+            ".",
+        ],
+        None,
+    );
+    run_git(
+        &[
+            "--git-dir",
+            bare_repo.to_str().unwrap(),
+            "--work-tree",
+            work.path().to_str().unwrap(),
+            "-c",
+            "user.email=author@example.com",
+            "-c",
+            "user.name=Author",
+            "commit",
+            "-m",
+            "Initial README",
+        ],
+        None,
+    );
+    run_git(
+        &[
+            "--git-dir",
+            bare_repo.to_str().unwrap(),
+            "branch",
+            "-M",
+            "main",
+        ],
+        None,
+    );
 }
 
 #[tokio::test]
@@ -526,6 +608,67 @@ async fn project_container_contract_returns_header_menu_and_summary_shells() {
     assert!(json.contains("\"defaultTab\":\"readme\""));
     assert!(json.contains("\"showIssue\":"));
     assert!(json.contains("\"members\":["));
+}
+
+#[tokio::test]
+async fn rest_project_container_includes_git_readme_with_legacy_readme_link_rewrites() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+
+    let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
+
+    create_project(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "admin",
+        "projectYobi",
+        "Project README fallback",
+        "public",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("admin", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository_readme(
+        data_dir.path(),
+        project.id,
+        "# Git README\n\n![logo](./assets/logo.png)\n\n[Guide](./docs/guide.md)\n",
+    );
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/owners/admin/projects/projectYobi/container")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let json = response_json(response).await;
+    let payload: serde_json::Value = serde_json::from_str(&json).expect("container json");
+    let readme = &payload["readmeFile"];
+    assert_eq!(readme["name"], "README.md");
+    let body_html = readme["bodyHtml"].as_str().expect("readme body html");
+    assert!(body_html.contains("<h1>Git README</h1>"), "{body_html}");
+    assert!(
+        body_html.contains(r#"src="/yona/admin/projectYobi/files/main/assets/logo.png""#),
+        "{body_html}"
+    );
+    assert!(
+        body_html.contains(r#"href="/yona/admin/projectYobi/code/main/docs/guide.md""#),
+        "{body_html}"
+    );
 }
 
 #[tokio::test]

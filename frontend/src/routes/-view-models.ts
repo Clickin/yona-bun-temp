@@ -173,6 +173,11 @@ export interface ProjectDetailViewModel {
   ownerName: string;
   projectName: string;
   projectScope: string;
+  readmeFile?: {
+    bodyHtml: string;
+    bodyMarkdown: string;
+    name: string;
+  };
   reviewCount?: number;
   showAdmin?: boolean;
   showBoard?: boolean;

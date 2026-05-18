@@ -340,6 +340,16 @@ export function ProjectDetailPage(props: {
                 <h3>{props.readmePost.title || "README"}</h3>
                 <div dangerouslySetInnerHTML={{ __html: props.readmePost.bodyHtml }} />
               </article>
+            ) : detail.readmeFile ? (
+              <article className="readme-wrap project-git-readme">
+                <header>
+                  <strong>{detail.readmeFile.name || "README.md"}</strong>
+                </header>
+                <div
+                  className="readme-body markdown-wrap"
+                  dangerouslySetInnerHTML={{ __html: detail.readmeFile.bodyHtml }}
+                />
+              </article>
             ) : (
               <>
                 <h3>README</h3>

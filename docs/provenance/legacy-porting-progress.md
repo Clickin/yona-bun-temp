@@ -40,7 +40,7 @@ Interpretation:
 | Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists, favorite issue, direct/project sharer effects, and issue/comment mention row effects exist over `/api/v1`; legacy external REST parity is separate migrator scope. |
 | VCS / Code hosting                      | [~] Strong partial        | Git code browser, Markdown file rendering with local image path rewrite, raw/open/image streaming, archive download, syntax/line rendering, commit history/detail/compare, commit discussion, branch admin, and project-create provisioning exist; Smart HTTP, push hooks, and SVN remain. |
 | Pull Request / Review                   | [~] Strong partial        | Phase 4A restores read surfaces and Phase 4B restores create/edit, close/reopen, review/unreview, general PR comments, and thread open/close; merge/fork/reviewer lifecycle/ranged inline CRUD remain. |
-| Board / Posting                         | [~] Strong partial        | Project board CRUD/comment/watch/notice/README/label flows and organization board list exist over `/api/v1`; Git README sync, issue template/file edit, and legacy external API compatibility remain. |
+| Board / Posting                         | [~] Strong partial        | Project board CRUD/comment/watch/notice/README/label flows, read-only Git README fallback rendering, and organization board list exist over `/api/v1`; Git README write-back/sync, issue template/file edit, and legacy external API compatibility remain. |
 | Search                                  | [~] Strong partial        | Global/project/organization app search exists over `/api/v1` with all legacy result tabs, counts, snippets, pagination, and ACL filtering; full-text/indexed search and external API compatibility remain deferred. |
 | Notifications / Webhooks / Admin / External REST | [~] Partially implemented | Notification inbox/list with legacy route wrapper anchors, mail queue staging, site-admin mail test/mass-mail recipient lookup, webhook CRUD, and issue/comment plus PR create/review/comment webhook fan-out exist while full SMTP batching, push JSON, PR merge/commit-changed delivery, delivery history/hardening, and admin update/data management remain gaps; `/-_-api/v1` compatibility is separate migrator scope. |
 
@@ -352,11 +352,11 @@ Interpretation:
 - [x] Basic safe inline image rendering on the project Markdown render path
 - [x] Basic fenced-code token highlighting on the project Markdown render path
 - [x] Code-browser Markdown files render with legacy `.codebrowser-markdown` and rewrite local `./...` image paths to the project file route
+- [x] Project-home Git README fallback renders with the legacy readme body wrapper and rewrites local images/normal links to project file/code routes
 - [ ] Full legacy/GFM extension parity
 - [~] Legacy issue-link title/state enrichment
 - [~] Full legacy autolink parity, including non-HTTP cases if legacy evidence requires them
 - [~] Full Highlight.js-equivalent language coverage for Markdown code blocks
-- [~] Project-home README normal-link/image path rewriting
 - [~] Task checklist progress-bar integration polish
 
 ## REST API Compatibility

@@ -21,7 +21,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use session::{SessionConfig, SessionManager};
 use std::{
     collections::HashMap,
-    path::PathBuf,
+    path::{Path as StdPath, PathBuf},
     sync::{Mutex, OnceLock},
     vec,
 };
@@ -3065,6 +3065,22 @@ struct RestProjectUpdateBody {
 #[serde(rename_all = "camelCase")]
 struct RestProjectOverviewBody {
     overview: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectContainerResponse {
+    #[serde(flatten)]
+    container: ProjectContainer,
+    readme_file: Option<RestProjectReadmeFile>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectReadmeFile {
+    body_html: String,
+    body_markdown: String,
+    name: String,
 }
 
 #[derive(Serialize)]
@@ -8000,11 +8016,50 @@ async fn rest_read_project_container(
         ..Default::default()
     };
     let request = rest_owned_view::<ReadProjectContainerRequestView<'static>>(&request)?;
+    let context = Context::new(headers.clone());
     let (payload, ctx) = service
-        .read_project_container(Context::new(headers), request)
+        .read_project_container(context, request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
-    Ok(rest_json_response(payload, ctx))
+    let readme_file = rest_project_readme_file(&service, &headers, &payload)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(rest_json_response(
+        RestProjectContainerResponse {
+            container: payload,
+            readme_file,
+        },
+        ctx,
+    ))
+}
+
+async fn rest_project_readme_file(
+    service: &PilotServiceImpl,
+    headers: &HeaderMap,
+    container: &ProjectContainer,
+) -> Result<Option<RestProjectReadmeFile>, ConnectError> {
+    if !container.show_code {
+        return Ok(None);
+    }
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Ok(None);
+    };
+    let authorization = repository
+        .read_project_authorization(&container.owner_name, &container.project_name, actor_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    project_readme_file_from_git(
+        &repo_path,
+        &service.base_path,
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    )
 }
 
 async fn rest_read_project_settings(
@@ -15410,6 +15465,23 @@ fn render_code_browser_markdown_file_html(
     render_project_markdown_html(&rewritten, base_path, owner_name, project_name)
 }
 
+fn render_project_readme_file_html(
+    markdown: &str,
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    branch: &str,
+) -> String {
+    let rewritten = rewrite_project_readme_markdown_links(
+        markdown,
+        base_path,
+        owner_name,
+        project_name,
+        branch,
+    );
+    render_project_markdown_html(&rewritten, base_path, owner_name, project_name)
+}
+
 fn rewrite_code_browser_markdown_image_links(
     markdown: &str,
     base_path: &str,
@@ -15442,6 +15514,82 @@ fn rewrite_code_browser_markdown_image_links(
                 &format!("/{owner_name}/{project_name}/files/{branch}/{local_path}"),
             );
             rendered.push_str(&href);
+        } else {
+            rendered.push_str(target);
+        }
+        rendered.push(')');
+        index = target_end + 1;
+    }
+
+    rendered.push_str(&markdown[index..]);
+    rendered
+}
+
+fn rewrite_project_readme_markdown_links(
+    markdown: &str,
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    branch: &str,
+) -> String {
+    let image_filtered = rewrite_code_browser_markdown_image_links(
+        markdown,
+        base_path,
+        owner_name,
+        project_name,
+        branch,
+    );
+    rewrite_project_readme_markdown_normal_links(
+        &image_filtered,
+        base_path,
+        owner_name,
+        project_name,
+        branch,
+    )
+}
+
+fn rewrite_project_readme_markdown_normal_links(
+    markdown: &str,
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    branch: &str,
+) -> String {
+    let mut rendered = String::with_capacity(markdown.len());
+    let mut index = 0;
+
+    while let Some(relative_start) = markdown[index..].find('[') {
+        let start = index + relative_start;
+        rendered.push_str(&markdown[index..start]);
+        let previous = markdown[..start].chars().next_back();
+        if previous == Some('!') {
+            rendered.push('[');
+            index = start + 1;
+            continue;
+        }
+        let Some(relative_label_end) = markdown[start + 1..].find("](") else {
+            rendered.push_str(&markdown[start..]);
+            return rendered;
+        };
+        let label_end = start + 1 + relative_label_end;
+        let target_start = label_end + 2;
+        let Some(relative_target_end) = markdown[target_start..].find(')') else {
+            rendered.push_str(&markdown[start..]);
+            return rendered;
+        };
+        let target_end = target_start + relative_target_end;
+        let target = &markdown[target_start..target_end];
+        rendered.push_str(&markdown[start..target_start]);
+        if previous.is_some() {
+            if let Some(local_path) = markdown_local_dot_path(target) {
+                let href = base_path_href(
+                    base_path,
+                    &format!("/{owner_name}/{project_name}/code/{branch}/{local_path}"),
+                );
+                rendered.push_str(&href);
+            } else {
+                rendered.push_str(target);
+            }
         } else {
             rendered.push_str(target);
         }
@@ -22124,7 +22272,51 @@ fn code_file_to_rest(
     }
 }
 
+fn project_readme_file_from_git(
+    repo_path: &StdPath,
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+) -> Result<Option<RestProjectReadmeFile>, ConnectError> {
+    for candidate in [
+        "README.md",
+        "readme.md",
+        "README.markdown",
+        "readme.markdown",
+    ] {
+        match yona_rust_vcs::read_code_browser(repo_path, None, candidate) {
+            Ok(snapshot) => {
+                let Some(file) = snapshot.file else {
+                    continue;
+                };
+                if !code_file_record_is_renderable_markdown(&file) {
+                    continue;
+                }
+                return Ok(Some(RestProjectReadmeFile {
+                    body_html: render_project_readme_file_html(
+                        &file.text,
+                        base_path,
+                        owner_name,
+                        project_name,
+                        &snapshot.selected_branch,
+                    ),
+                    body_markdown: file.text,
+                    name: file.name,
+                }));
+            }
+            Err(VcsError::NotFound) => continue,
+            Err(error) => return Err(code_browser_error(error)),
+        }
+    }
+
+    Ok(None)
+}
+
 fn code_file_is_renderable_markdown(file: &CodeFile) -> bool {
+    !file.is_binary && !file.is_too_large && code_path_is_markdown(&file.path)
+}
+
+fn code_file_record_is_renderable_markdown(file: &CodeFileRecord) -> bool {
     !file.is_binary && !file.is_too_large && code_path_is_markdown(&file.path)
 }
 
