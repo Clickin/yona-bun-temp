@@ -3,7 +3,7 @@
 ## Scope
 
 - Phase 2A issue core parity slice
-- Issue list/detail/create/edit/delete, comments, comment vote, state mutation, watch/vote/favorite/assignee, issue detail assignee autocomplete/search, mass update, Markdown rendering, issue/comment attachment binding, core Issue Sharer read/comment authorization, sharable-user search, project-target issue sharer mutation, direct sharer row-level timeline/notification/mail queue side effects, issue/comment `@user`/`@org`/`@owner/project` mention indexing/search/notification semantics, issue reference `#issue` autocomplete, and `/user/issues` personal issue aggregation now have Rust canonical coverage.
+- Issue list/detail/create/edit/delete, comments, comment vote, state mutation, watch/vote/favorite/assignee, issue detail assignee autocomplete/search, mass update, Markdown rendering, issue/comment attachment binding, issue body/comment image paste/drop upload, core Issue Sharer read/comment authorization, sharable-user search, project-target issue sharer mutation, direct sharer row-level timeline/notification/mail queue side effects, issue/comment `@user`/`@org`/`@owner/project` mention indexing/search/notification semantics, issue reference `#issue` autocomplete, and `/user/issues` personal issue aggregation now have Rust canonical coverage.
 - Label/category and milestone management screens are now covered by Phase 2B/2C provenance. Phase 2A issue core only owns issue CRUD and issue-linked label/milestone consumption.
 
 ## Legacy Sources
@@ -25,7 +25,10 @@
 - `yona-original/app/views/issue/partial_comment.scala.html`
 - `yona-original/app/views/issue/my_partial_search.scala.html`
 - `yona-original/app/views/issue/my_partial_list_quicksearch.scala.html`
+- `yona-original/public/javascripts/common/yobi.Attachments.js`
+- `yona-original/public/javascripts/common/yobi.Files.js`
 - `yona-original/public/javascripts/common/yobi.Mention.js`
+- `yona-original/public/javascripts/service/yobi.issue.Write.js`
 - `yona-original/public/javascripts/service/yobi.issue.View.js`
 
 ## Current Baseline And Canonical Target
@@ -105,6 +108,12 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 - The REST response stays frontend-local (`issueNumber`, `title`, `state`, `total`, `truncated`) rather than adding proto/ConnectRPC codegen. Nonblank results sort exact issue number first, then number-prefix matches, then title matches, with latest issue recency as the tie-breaker.
 - Create/edit/detail/comment textareas now support insertion-only `#${issueNumber}` autocomplete using the same 300ms debounce boundary as `@` mention suggestions. The Rust Markdown projection now auto-links `@username`, same-project `#123`, `owner/project#123`, and bare `http://`/`https://` URLs, renders safe inline images after sanitization, renders task-list checkboxes as sanitized disabled inputs, and emits basic syntax-token spans for fenced code blocks; legacy issue-link title/state enrichment remains a renderer follow-up.
 - Phase 2N adds notification inbox/list, notification mail queue staging/drain, and public project-target sharer mutation. Legacy external `/-_-api/v1` issue API compatibility is not an app follow-up; it is deferred to a separate migrator/export/import deliverable.
+
+## Issue Markdown Attachment Upload Translation Rule
+
+- Legacy `yobi.Files` attaches `paste` and `drop` handlers to issue markdown textareas and uploads image files to the attachment endpoint, while `yobi.Attachments` inserts `![name](url)` for image MIME types and tracks temporary upload ids for form submission.
+- Rust implements the same issue body/comment editor behavior with `frontend/src/api/attachments.ts` and `IssueMentionTextarea`: pasted or dropped image files post to `/files` with the active CSRF token, insert the legacy image Markdown token at the cursor, and carry the uploaded ids into issue create/update and comment create/update `attachmentIds`.
+- This is intentionally scoped to issue editors. Board, pull-request, milestone, and code-comment editor paste/drop upload wiring remains follow-up scope even though the shared upload client can be reused there.
 
 ## Phase 2A Evidence
 

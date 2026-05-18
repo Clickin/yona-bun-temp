@@ -99,6 +99,7 @@ function IssueDetailRouteComponent() {
 
   return (
     <ProjectIssueDetailPage
+      csrfToken={csrfToken}
       detail={detail}
       getIssueReferencesQueryOptions={(query) =>
         projectIssueReferencesQueryOptions(runtimeConfig, {
@@ -151,8 +152,9 @@ function IssueDetailRouteComponent() {
         });
         setIssue(toProjectIssueDetailView(nextIssue));
       }}
-      onCommentSubmit={async (contentsMarkdown) => {
+      onCommentSubmit={async (contentsMarkdown, attachmentIds) => {
         const nextIssue = await createIssueComment(runtimeConfig, csrfToken, {
+          attachmentIds: attachmentIds?.map(BigInt),
           contentsMarkdown,
           issueNumber: BigInt(Number(issueNumber)),
           ownerName: owner,
@@ -160,8 +162,9 @@ function IssueDetailRouteComponent() {
         });
         setIssue(toProjectIssueDetailView(nextIssue));
       }}
-      onCommentUpdate={async (commentId, contentsMarkdown) => {
+      onCommentUpdate={async (commentId, contentsMarkdown, attachmentIds) => {
         const nextIssue = await updateIssueComment(runtimeConfig, csrfToken, {
+          attachmentIds: attachmentIds?.map(BigInt),
           commentId: BigInt(commentId),
           contentsMarkdown,
           issueNumber: BigInt(Number(issueNumber)),

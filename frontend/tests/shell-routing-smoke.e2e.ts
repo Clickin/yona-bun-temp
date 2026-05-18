@@ -883,6 +883,127 @@ test("project issue routes render data-backed issue list and detail screens", as
   await expect(page.getByText("open")).toBeVisible();
 });
 
+test("project issue comment editor inserts pasted and dropped image uploads", async ({ page }) => {
+  const uploadedHeaders: string[] = [];
+  const uploadedNames: string[] = [];
+  let submittedComment: null | { attachmentIds?: string[]; contentsMarkdown?: string } = null;
+
+  await page.route("**/files", async (route) => {
+    const uploadIndex = uploadedNames.length + 1;
+    uploadedHeaders.push(route.request().headers()["x-csrf-token"] ?? "");
+    uploadedNames.push(`image-${uploadIndex}.png`);
+    await route.fulfill({
+      body: JSON.stringify({
+        id: 900 + uploadIndex,
+        mimeType: "image/png",
+        name: uploadIndex === 1 ? "paste.png" : "drop.png",
+        size: 8,
+        url: `/yona/files/${900 + uploadIndex}`,
+      }),
+      headers: restJsonHeaders,
+      status: 201,
+    });
+  });
+
+  await page.route(apiV1Route("/projects/admin/projectYobi/issues/1/comments"), async (route) => {
+    submittedComment = route.request().postDataJSON() as {
+      attachmentIds?: string[];
+      contentsMarkdown?: string;
+    };
+    await route.fulfill({
+      body: JSON.stringify({
+        assigneeLabel: "",
+        assigneeLoginId: "",
+        attachments: [],
+        authorLabel: "Nori",
+        bodyHtml: "<p>Issue body</p>",
+        bodyMarkdown: "Issue body",
+        commentCount: 1,
+        comments: [],
+        hasVoted: false,
+        isFavorited: false,
+        isWatching: false,
+        issueNumber: "1",
+        labels: [],
+        milestoneTitle: "",
+        ownerName: "admin",
+        projectName: "projectYobi",
+        sharers: [],
+        state: "open",
+        timeline: [
+          {
+            comment: {
+              attachments: [],
+              authorLabel: "Nori",
+              contentsHtml: "<p>uploaded images</p>",
+              contentsMarkdown: submittedComment?.contentsMarkdown ?? "",
+              createdLabel: "now",
+              id: 99,
+              viewerCanDelete: false,
+              viewerCanUpdate: false,
+              viewerHasVoted: false,
+              voterCount: 0,
+              voters: [],
+            },
+            createdLabel: "now",
+            eventType: "",
+            id: 99,
+            kind: "comment",
+          },
+        ],
+        title: "Pilot issue",
+        viewerCanComment: true,
+        viewerCanDelete: false,
+        viewerCanManageSharers: false,
+        viewerCanUpdate: false,
+        viewerHasInheritedShare: false,
+        viewerIsDirectSharer: false,
+        voterCount: 0,
+        watcherCount: 0,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/admin/projectYobi/issue/1");
+  const editor = page.getByPlaceholder("Leave a comment");
+
+  await editor.evaluate((element) => {
+    const data = new DataTransfer();
+    data.items.add(new File(["pasted"], "paste.png", { type: "image/png" }));
+    element.dispatchEvent(
+      new ClipboardEvent("paste", {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: data,
+      }),
+    );
+  });
+  await expect(editor).toHaveValue("![paste.png](/yona/files/901) ");
+
+  await editor.evaluate((element) => {
+    const data = new DataTransfer();
+    data.items.add(new File(["dropped"], "drop.png", { type: "image/png" }));
+    element.dispatchEvent(
+      new DragEvent("drop", {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: data,
+      }),
+    );
+  });
+  await expect(editor).toHaveValue("![paste.png](/yona/files/901) ![drop.png](/yona/files/902) ");
+
+  await page.getByRole("button", { name: "Comment" }).click();
+
+  expect(uploadedHeaders).toEqual(["csrf-123", "csrf-123"]);
+  expect(submittedComment).toEqual({
+    attachmentIds: ["901", "902"],
+    contentsMarkdown: "![paste.png](/yona/files/901) ![drop.png](/yona/files/902)",
+  });
+});
+
 test("project code routes render branch folder and text file views", async ({ page }) => {
   await page.goto("/yona/admin/projectYobi/code");
   await expect(page.getByRole("heading", { name: "Code" })).toBeVisible();

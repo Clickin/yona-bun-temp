@@ -637,11 +637,13 @@ describe("auth and workspace views", () => {
     expect(
       buildProjectIssueFormSubmitInput({
         assigneeLoginId: "guest",
+        attachmentIds: [5],
         bodyMarkdown: "Body",
         title: "  New issue  ",
       }),
     ).toEqual({
       assigneeLoginId: "guest",
+      attachmentIds: [5],
       bodyMarkdown: "Body",
       title: "New issue",
     });
@@ -654,6 +656,7 @@ describe("auth and workspace views", () => {
       }),
     ).toEqual({
       assigneeLoginId: "member",
+      attachmentIds: [],
       bodyMarkdown: "Updated",
       title: "Edit issue",
     });
@@ -666,6 +669,7 @@ describe("auth and workspace views", () => {
       }),
     ).toEqual({
       assigneeLoginId: "",
+      attachmentIds: [],
       bodyMarkdown: "Updated",
       title: "Edit issue",
     });

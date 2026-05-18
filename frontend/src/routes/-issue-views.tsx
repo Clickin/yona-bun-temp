@@ -8,6 +8,7 @@ import type {
   ProjectIssueReferenceItem,
   ProjectIssueReferencesResponse,
 } from "../api/issue-meta";
+import { uploadTemporaryAttachment, type UploadedAttachment } from "../api/attachments";
 import type { RuntimeConfig } from "../runtime-config";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
 import type {
@@ -128,8 +129,12 @@ export function ProjectIssueDetailPage(props: {
   ) => Promise<IssueMentionUsersResponse>;
   onSearchSharableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
   onCommentDelete?: (commentId: number) => Promise<void>;
-  onCommentSubmit?: (contentsMarkdown: string) => Promise<void>;
-  onCommentUpdate?: (commentId: number, contentsMarkdown: string) => Promise<void>;
+  onCommentSubmit?: (contentsMarkdown: string, attachmentIds?: number[]) => Promise<void>;
+  onCommentUpdate?: (
+    commentId: number,
+    contentsMarkdown: string,
+    attachmentIds?: number[],
+  ) => Promise<void>;
   onCommentVoteToggle?: (commentId: number, viewerHasVoted: boolean) => Promise<void>;
   onDeleteIssue?: () => Promise<void>;
   onFavoriteToggle?: () => Promise<void>;
@@ -138,6 +143,7 @@ export function ProjectIssueDetailPage(props: {
   onUnshareIssue?: (loginId: string) => Promise<void>;
   onVoteToggle?: () => Promise<void>;
   onWatchToggle?: () => Promise<void>;
+  csrfToken?: string;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
@@ -295,10 +301,12 @@ export function ProjectIssueDetailPage(props: {
                 {item.comment.viewerCanUpdate && props.onCommentUpdate ? (
                   <IssueCommentEditForm
                     commentId={item.comment.id}
+                    csrfToken={props.csrfToken}
                     getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
                     initialContents={item.comment.contentsMarkdown}
                     onSearchMentionUsers={props.onSearchMentionUsers}
                     onSubmit={props.onCommentUpdate}
+                    runtimeConfig={props.runtimeConfig}
                   />
                 ) : null}
                 {item.comment.viewerCanDelete && props.onCommentDelete ? (
@@ -317,9 +325,11 @@ export function ProjectIssueDetailPage(props: {
         ))}
         {issue?.viewerCanComment && props.onCommentSubmit ? (
           <IssueCommentForm
+            csrfToken={props.csrfToken}
             getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
             onSearchMentionUsers={props.onSearchMentionUsers}
             onSubmit={props.onCommentSubmit}
+            runtimeConfig={props.runtimeConfig}
           />
         ) : null}
       </section>
@@ -841,6 +851,51 @@ export function insertIssueReferenceText(
   };
 }
 
+function isImageFile(file: File): boolean {
+  return file.type.toLowerCase().startsWith("image/");
+}
+
+function imageFilesFromList(files: FileList | null | undefined): File[] {
+  return Array.from(files ?? []).filter(isImageFile);
+}
+
+function imageFilesFromItems(items: DataTransferItemList | null | undefined): File[] {
+  const files: File[] = [];
+  for (const item of Array.from(items ?? [])) {
+    if (item.kind !== "file" || !item.type.toLowerCase().startsWith("image/")) {
+      continue;
+    }
+    const file = item.getAsFile();
+    if (file) {
+      files.push(file);
+    }
+  }
+  return files;
+}
+
+function imageFilesFromDataTransfer(dataTransfer: DataTransfer | null): File[] {
+  const itemFiles = imageFilesFromItems(dataTransfer?.items);
+  return itemFiles.length > 0 ? itemFiles : imageFilesFromList(dataTransfer?.files);
+}
+
+function markdownTextForAttachment(attachment: UploadedAttachment): string {
+  const name = attachment.name || "image.png";
+  const link = `[${name}](${attachment.url}) `;
+  return attachment.mimeType.toLowerCase().startsWith("image/") ? `!${link}` : link;
+}
+
+function insertMarkdownText(
+  value: string,
+  cursorIndex: number,
+  markdownText: string,
+): { cursorIndex: number; value: string } {
+  const cursor = Math.max(0, Math.min(cursorIndex, value.length));
+  return {
+    cursorIndex: cursor + markdownText.length,
+    value: `${value.slice(0, cursor)}${markdownText}${value.slice(cursor)}`,
+  };
+}
+
 function IssueMentionUserSuggestions(props: {
   onSelect: (suggestion: IssueMentionUserItem) => void;
   state: IssueMentionSearchState;
@@ -920,14 +975,17 @@ function IssueReferenceSuggestions(props: {
 function IssueMentionTextarea(props: {
   className?: string;
   context: IssueMentionUserSearchContext;
+  csrfToken?: string;
   getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
   name?: string;
   onChange: (value: string) => void;
+  onAttachmentUpload?: (attachment: UploadedAttachment) => void;
   onSearchMentionUsers?: (
     query: string,
     context: IssueMentionUserSearchContext,
   ) => Promise<IssueMentionUsersResponse>;
   placeholder: string;
+  runtimeConfig?: RuntimeConfig;
   value: string;
 }) {
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
@@ -1020,6 +1078,38 @@ function IssueMentionTextarea(props: {
     setCursorIndex(textarea.selectionStart ?? textarea.value.length);
   };
 
+  const handleMarkdownImageFiles = async (textarea: HTMLTextAreaElement, files: File[]) => {
+    const runtimeConfig = props.runtimeConfig;
+    const csrfToken = props.csrfToken;
+    if (files.length === 0 || !runtimeConfig || !csrfToken) {
+      return false;
+    }
+
+    const attachments = await Promise.all(
+      files.map((file) => uploadTemporaryAttachment(runtimeConfig, csrfToken, file)),
+    );
+    let nextValue = textarea.value;
+    let nextCursor = textarea.selectionStart ?? nextValue.length;
+    for (const attachment of attachments) {
+      const inserted = insertMarkdownText(
+        nextValue,
+        nextCursor,
+        markdownTextForAttachment(attachment),
+      );
+      nextValue = inserted.value;
+      nextCursor = inserted.cursorIndex;
+      props.onAttachmentUpload?.(attachment);
+    }
+
+    props.onChange(nextValue);
+    setCursorIndex(nextCursor);
+    window.requestAnimationFrame(() => {
+      textareaRef.current?.setSelectionRange(nextCursor, nextCursor);
+      textareaRef.current?.focus();
+    });
+    return true;
+  };
+
   const selectIssueReference = (suggestion: ProjectIssueReferenceItem) => {
     const cursor = textareaRef.current?.selectionStart ?? cursorIndex;
     const inserted = insertIssueReferenceText(props.value, cursor, suggestion);
@@ -1056,7 +1146,32 @@ function IssueMentionTextarea(props: {
           updateCursorIndex(event.currentTarget);
         }}
         onClick={(event) => updateCursorIndex(event.currentTarget)}
+        onDragOver={(event) => {
+          if (
+            props.runtimeConfig &&
+            props.csrfToken &&
+            imageFilesFromDataTransfer(event.dataTransfer).length > 0
+          ) {
+            event.preventDefault();
+          }
+        }}
+        onDrop={(event) => {
+          const files = imageFilesFromDataTransfer(event.dataTransfer);
+          if (files.length === 0) {
+            return;
+          }
+          event.preventDefault();
+          void handleMarkdownImageFiles(event.currentTarget, files);
+        }}
         onKeyUp={(event) => updateCursorIndex(event.currentTarget)}
+        onPaste={(event) => {
+          const files = imageFilesFromDataTransfer(event.clipboardData);
+          if (files.length === 0) {
+            return;
+          }
+          event.preventDefault();
+          void handleMarkdownImageFiles(event.currentTarget, files);
+        }}
         placeholder={props.placeholder}
         ref={textareaRef}
         value={props.value}
@@ -1071,14 +1186,17 @@ function IssueMentionTextarea(props: {
 }
 
 function IssueCommentForm(props: {
+  csrfToken?: string;
   getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
   onSearchMentionUsers?: (
     query: string,
     context: IssueMentionUserSearchContext,
   ) => Promise<IssueMentionUsersResponse>;
-  onSubmit: (contentsMarkdown: string) => Promise<void>;
+  onSubmit: (contentsMarkdown: string, attachmentIds?: number[]) => Promise<void>;
+  runtimeConfig: RuntimeConfig;
 }) {
   const [contentsMarkdown, setContentsMarkdown] = React.useState("");
+  const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
   const [submitting, setSubmitting] = React.useState(false);
   return (
     <form
@@ -1089,7 +1207,8 @@ function IssueCommentForm(props: {
           return;
         }
         setSubmitting(true);
-        void props.onSubmit(nextContents).finally(() => {
+        void props.onSubmit(nextContents, attachmentIds).finally(() => {
+          setAttachmentIds([]);
           setContentsMarkdown("");
           setSubmitting(false);
         });
@@ -1097,11 +1216,16 @@ function IssueCommentForm(props: {
     >
       <IssueMentionTextarea
         context="issue-comment"
+        csrfToken={props.csrfToken}
         getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
         name="contents"
+        onAttachmentUpload={(attachment) =>
+          setAttachmentIds((current) => [...current, attachment.id])
+        }
         onChange={setContentsMarkdown}
         onSearchMentionUsers={props.onSearchMentionUsers}
         placeholder="Leave a comment"
+        runtimeConfig={props.runtimeConfig}
         value={contentsMarkdown}
       />
       <button disabled={submitting} type="submit">
@@ -1113,16 +1237,23 @@ function IssueCommentForm(props: {
 
 function IssueCommentEditForm(props: {
   commentId: number;
+  csrfToken?: string;
   getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
   initialContents: string;
   onSearchMentionUsers?: (
     query: string,
     context: IssueMentionUserSearchContext,
   ) => Promise<IssueMentionUsersResponse>;
-  onSubmit: (commentId: number, contentsMarkdown: string) => Promise<void>;
+  onSubmit: (
+    commentId: number,
+    contentsMarkdown: string,
+    attachmentIds?: number[],
+  ) => Promise<void>;
+  runtimeConfig: RuntimeConfig;
 }) {
   const [editing, setEditing] = React.useState(false);
   const [contentsMarkdown, setContentsMarkdown] = React.useState(props.initialContents);
+  const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
   if (!editing) {
     return (
       <button onClick={() => setEditing(true)} type="button">
@@ -1138,15 +1269,23 @@ function IssueCommentEditForm(props: {
         if (!nextContents) {
           return;
         }
-        void props.onSubmit(props.commentId, nextContents).then(() => setEditing(false));
+        void props.onSubmit(props.commentId, nextContents, attachmentIds).then(() => {
+          setAttachmentIds([]);
+          setEditing(false);
+        });
       }}
     >
       <IssueMentionTextarea
         context="issue-comment"
+        csrfToken={props.csrfToken}
         getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
+        onAttachmentUpload={(attachment) =>
+          setAttachmentIds((current) => [...current, attachment.id])
+        }
         onChange={setContentsMarkdown}
         onSearchMentionUsers={props.onSearchMentionUsers}
         placeholder="Leave a comment"
+        runtimeConfig={props.runtimeConfig}
         value={contentsMarkdown}
       />
       <button type="submit">Save comment</button>
@@ -1158,6 +1297,7 @@ function IssueCommentEditForm(props: {
 }
 
 export function ProjectIssueFormPage(props: {
+  csrfToken?: string;
   detail: ProjectDetailViewModel | null;
   getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
   initialIssue?: ProjectIssueDetailViewModel | null;
@@ -1173,6 +1313,7 @@ export function ProjectIssueFormPage(props: {
   const detail = props.detail ?? fallbackProjectDetail();
   const [title, setTitle] = React.useState(props.initialIssue?.title ?? "");
   const [bodyMarkdown, setBodyMarkdown] = React.useState(props.initialIssue?.bodyMarkdown ?? "");
+  const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
   const [assigneeLoginId, setAssigneeLoginId] = React.useState(
     props.initialIssue?.assigneeLoginId ?? "",
   );
@@ -1181,6 +1322,7 @@ export function ProjectIssueFormPage(props: {
   React.useEffect(() => {
     setTitle(props.initialIssue?.title ?? "");
     setBodyMarkdown(props.initialIssue?.bodyMarkdown ?? "");
+    setAttachmentIds([]);
     setAssigneeLoginId(props.initialIssue?.assigneeLoginId ?? "");
   }, [
     props.initialIssue?.assigneeLoginId,
@@ -1204,6 +1346,7 @@ export function ProjectIssueFormPage(props: {
           event.preventDefault();
           const input = buildProjectIssueFormSubmitInput({
             assigneeLoginId,
+            attachmentIds,
             bodyMarkdown,
             title,
           });
@@ -1231,11 +1374,16 @@ export function ProjectIssueFormPage(props: {
         <IssueMentionTextarea
           className="editorSeries content"
           context="issue-body"
+          csrfToken={props.csrfToken}
           getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
           name="body"
+          onAttachmentUpload={(attachment) =>
+            setAttachmentIds((current) => [...current, attachment.id])
+          }
           onChange={setBodyMarkdown}
           onSearchMentionUsers={props.onSearchMentionUsers}
           placeholder="Leave a comment"
+          runtimeConfig={props.runtimeConfig}
           value={bodyMarkdown}
         />
         <button disabled={submitting} type="submit">
@@ -1248,12 +1396,14 @@ export function ProjectIssueFormPage(props: {
 
 export type ProjectIssueFormSubmitInput = {
   assigneeLoginId: string;
+  attachmentIds: number[];
   bodyMarkdown: string;
   title: string;
 };
 
 export function buildProjectIssueFormSubmitInput(input: {
   assigneeLoginId: string;
+  attachmentIds?: number[];
   bodyMarkdown: string;
   title: string;
 }): ProjectIssueFormSubmitInput | null {
@@ -1264,6 +1414,7 @@ export function buildProjectIssueFormSubmitInput(input: {
 
   return {
     assigneeLoginId: input.assigneeLoginId.trim(),
+    attachmentIds: input.attachmentIds ?? [],
     bodyMarkdown: input.bodyMarkdown,
     title,
   };

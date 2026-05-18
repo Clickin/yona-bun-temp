@@ -73,6 +73,7 @@ function IssueCreateRouteComponent() {
 
   return (
     <ProjectIssueFormPage
+      csrfToken={csrfToken}
       detail={detail}
       getIssueReferencesQueryOptions={(query) =>
         projectIssueReferencesQueryOptions(runtimeConfig, {
@@ -89,9 +90,10 @@ function IssueCreateRouteComponent() {
           query,
         })
       }
-      onSubmit={async ({ assigneeLoginId, bodyMarkdown, title }) => {
+      onSubmit={async ({ assigneeLoginId, attachmentIds, bodyMarkdown, title }) => {
         const issue = await createIssue(runtimeConfig, csrfToken, {
           assigneeLoginId,
+          attachmentIds: attachmentIds.map(BigInt),
           bodyMarkdown,
           ownerName: owner,
           projectName,

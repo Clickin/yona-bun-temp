@@ -85,6 +85,7 @@ function IssueEditRouteComponent() {
 
   return (
     <ProjectIssueFormPage
+      csrfToken={csrfToken}
       detail={detail}
       getIssueReferencesQueryOptions={(query) =>
         projectIssueReferencesQueryOptions(runtimeConfig, {
@@ -111,9 +112,10 @@ function IssueEditRouteComponent() {
           query,
         })
       }
-      onSubmit={async ({ assigneeLoginId, bodyMarkdown, title }) => {
+      onSubmit={async ({ assigneeLoginId, attachmentIds, bodyMarkdown, title }) => {
         const updated = await updateIssue(runtimeConfig, csrfToken, {
           assigneeLoginId,
+          attachmentIds: attachmentIds.map(BigInt),
           bodyMarkdown,
           issueNumber: BigInt(Number(issueNumber)),
           ownerName: owner,
