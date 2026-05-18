@@ -1084,6 +1084,14 @@ fn default_smtp_from() -> String {
         .unwrap_or_else(|| "noreply@yona.local".to_string())
 }
 
+fn configured_site_name() -> String {
+    std::env::var("YONA_SITE_NAME")
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "Yona".to_string())
+}
+
 fn gravatar_url(email_address: &str) -> String {
     let normalized = normalize_identifier(email_address);
     let mut hasher = Md5::new();
@@ -1174,11 +1182,9 @@ fn send_password_reset_mail(
         &format!("/resetPassword?s={verification_code}"),
     );
     deliver(OutboundMail {
-        body: format!(
-            "Password reset request\n\nOpen this link to reset your password:\n{reset_url}\n"
-        ),
+        body: format!("Copy the following URL and paste it to browser's URL bar\n\n{reset_url}"),
         from: default_smtp_from(),
-        subject: "Password reset request".to_string(),
+        subject: format!("[{}] Password reset request", configured_site_name()),
         to: to.to_string(),
     })
     .map_err(internal_error)

@@ -921,6 +921,7 @@ async fn register_marks_matching_guest_prefix_accounts_as_legacy_guests() {
 async fn direct_lost_password_and_reset_password_routes_round_trip() {
     let _guard = auth_env_lock().lock().unwrap();
     clear_test_outbox();
+    std::env::set_var("YONA_SITE_NAME", "Yona Test");
     let (app, repository, db) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -966,8 +967,6 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
     let outbox = snapshot_test_outbox();
     assert_eq!(outbox.len(), 1);
     assert_eq!(outbox[0].to, "door@example.com");
-    assert!(outbox[0].subject.contains("Password reset"));
-    assert!(outbox[0].body.contains("/resetPassword?s="));
 
     let verification = user_verification::Entity::find()
         .one(&db)
@@ -978,6 +977,13 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
         .verification_code
         .clone()
         .expect("verification code");
+    assert_eq!(outbox[0].subject, "[Yona Test] Password reset request");
+    assert_eq!(
+        outbox[0].body,
+        format!(
+            "Copy the following URL and paste it to browser's URL bar\n\nhttp://localhost:3001/yona/resetPassword?s={reset_code}"
+        )
+    );
 
     let reset_password = app
         .clone()
@@ -1016,6 +1022,7 @@ async fn direct_lost_password_and_reset_password_routes_round_trip() {
         .await
         .unwrap()
         .is_empty());
+    std::env::remove_var("YONA_SITE_NAME");
 }
 
 #[tokio::test]
