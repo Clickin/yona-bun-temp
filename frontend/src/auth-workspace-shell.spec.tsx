@@ -60,6 +60,22 @@ describe("auth and workspace views", () => {
     expect(html).toContain('href="/yona/lostPassword"');
   });
 
+  it("uses configured legacy login placeholders from auth capabilities", () => {
+    const html = renderLogin({
+      authUiCapabilities: {
+        emailVerificationEnabled: false,
+        loginIdPlaceholder: "Use employee number",
+        passwordPlaceholder: "Company password",
+        signupRequireConfirm: false,
+        socialLoginOnly: false,
+      },
+      routeHref: "/users/loginform",
+    });
+
+    expect(html).toContain('placeholder="Use employee number"');
+    expect(html).toContain('placeholder="Company password"');
+  });
+
   it("renders the canonical signup shell with legacy labels and login link", () => {
     const html = renderRegister({
       authUiCapabilities: {

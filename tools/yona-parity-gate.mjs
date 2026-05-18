@@ -100,9 +100,7 @@ const PARITY_SLICES = [
     label: "Issue lifecycle",
     status: "gap",
     implementationPatterns: [
-      /^frontend\/src\/app-view-models\.ts$/i,
       /^frontend\/src\/api\/project-labels\.ts$/i,
-      /^frontend\/src\/routes\/-view-models\.ts$/i,
       /^frontend\/src\/routes\/-milestone-views\.tsx$/i,
       /^frontend\/.*issues?/i,
       /^crates\/(?:domain|persistence|server)\/.*(?:issue|label|milestone)/i,
@@ -113,6 +111,38 @@ const PARITY_SLICES = [
 ];
 
 const DOMAIN_BUCKETS = [
+  {
+    id: "shared-frontend-view-models",
+    label: "Shared frontend view models",
+    status: "partial",
+    implementationPatterns: [
+      /^frontend\/src\/app-view-models\.ts$/i,
+      /^frontend\/src\/routes\/-view-models\.ts$/i,
+    ],
+    testKeywords: [
+      "api-query",
+      "auth",
+      "board",
+      "code",
+      "issue",
+      "milestone",
+      "organization",
+      "project",
+      "pull-request",
+      "review",
+      "route-parity",
+      "search",
+      "site-admin",
+      "user-profile",
+      "workspace",
+    ],
+    provenanceDocs: [
+      "docs/provenance/core-parity-audit.md",
+      "docs/provenance/phase-0b/issue.md",
+      "docs/provenance/phase-0b/pull-request-review.md",
+      "docs/provenance/phase-0b/user-workspace.md",
+    ],
+  },
   {
     id: "frontend-api-query-boundary",
     label: "Frontend API query boundary",
@@ -190,6 +220,7 @@ const DOMAIN_BUCKETS = [
     label: "Auth and account lifecycle",
     status: "gap",
     implementationPatterns: [
+      /^frontend\/src\/app-runtime-context\.tsx$/i,
       /^frontend\/.*auth/i,
       /^crates\/(?:server|domain)\/.*(auth|session|password|account)/i,
       /^crates\/persistence\/.*(auth|user|session|workspace)/i,
@@ -305,9 +336,7 @@ const DOMAIN_BUCKETS = [
     label: "Issue lifecycle",
     status: "gap",
     implementationPatterns: [
-      /^frontend\/src\/app-view-models\.ts$/i,
       /^frontend\/src\/api\/project-labels\.ts$/i,
-      /^frontend\/src\/routes\/-view-models\.ts$/i,
       /^frontend\/src\/routes\/-milestone-views\.tsx$/i,
       /^frontend\/.*issues?/i,
       /^crates\/(?:domain|persistence|server)\/.*(?:issue|label|milestone)/i,

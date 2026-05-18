@@ -1103,6 +1103,8 @@ describe("REST auth wrappers", () => {
       text: async () =>
         JSON.stringify({
           emailVerificationEnabled: true,
+          loginIdPlaceholder: "Use employee number",
+          passwordPlaceholder: "Company password",
           signupRequireConfirm: false,
           socialLoginOnly: false,
         }),
@@ -1122,6 +1124,8 @@ describe("REST auth wrappers", () => {
     expect(requestInit.credentials).toBe("same-origin");
     expect(requestInit.method).toBe("GET");
     expect(result.emailVerificationEnabled).toBe(true);
+    expect(result.loginIdPlaceholder).toBe("Use employee number");
+    expect(result.passwordPlaceholder).toBe("Company password");
   });
 
   it("posts sign-in payloads with csrf headers to the v1 REST endpoint", async () => {

@@ -114,6 +114,16 @@ export type ReadAuthUiCapabilitiesResponse =
      * @generated from field: bool social_login_only = 4;
      */
     socialLoginOnly: boolean;
+
+    /**
+     * @generated from field: string login_id_placeholder = 5;
+     */
+    loginIdPlaceholder: string;
+
+    /**
+     * @generated from field: string password_placeholder = 6;
+     */
+    passwordPlaceholder: string;
   };
 
 /**

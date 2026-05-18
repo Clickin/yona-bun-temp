@@ -119,6 +119,37 @@ test("passes partial legacy slices when tests and parity audit updates land toge
   assert.equal(shouldBlockForStrictGate(result), false);
 });
 
+test("maps auth runtime context changes to the account lifecycle slice", () => {
+  const result = runGate([
+    "frontend/src/app-runtime-context.tsx",
+    "frontend/src/auth-workspace-shell.spec.tsx",
+    "docs/provenance/core-parity-audit.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["auth-account-lifecycle"],
+  );
+});
+
+test("maps shared frontend view model changes to shared view model evidence", () => {
+  const result = runGate([
+    "frontend/src/app-view-models.ts",
+    "frontend/src/routes/-view-models.ts",
+    "frontend/src/auth-workspace-shell.spec.tsx",
+    "docs/provenance/core-parity-audit.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["shared-frontend-view-models"],
+  );
+});
+
 test("maps notification inbox frontend files to the issue notification slice", () => {
   const result = runGate([
     "frontend/src/api/notifications.ts",

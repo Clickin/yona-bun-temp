@@ -140,6 +140,8 @@ async fn read_auth_ui_capabilities_reflects_runtime_env_flags() {
     std::env::set_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM", "true");
     std::env::set_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED", "true");
     std::env::set_var("YONA_AUTH_SOCIAL_LOGIN_ONLY", "true");
+    std::env::set_var("YONA_AUTH_LOGIN_ID_PLACEHOLDER", "Use employee number");
+    std::env::set_var("YONA_AUTH_PASSWORD_PLACEHOLDER", "Company password");
 
     let (app, _, _) = build_auth_router().await;
 
@@ -158,6 +160,8 @@ async fn read_auth_ui_capabilities_reflects_runtime_env_flags() {
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
     std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
     std::env::remove_var("YONA_AUTH_SOCIAL_LOGIN_ONLY");
+    std::env::remove_var("YONA_AUTH_LOGIN_ID_PLACEHOLDER");
+    std::env::remove_var("YONA_AUTH_PASSWORD_PLACEHOLDER");
 
     assert_eq!(response.status(), StatusCode::OK);
     let body = response.into_body().collect().await.unwrap().to_bytes();
@@ -180,6 +184,18 @@ async fn read_auth_ui_capabilities_reflects_runtime_env_flags() {
             .get("socialLoginOnly")
             .and_then(|value| value.as_bool()),
         Some(true)
+    );
+    assert_eq!(
+        payload
+            .get("loginIdPlaceholder")
+            .and_then(|value| value.as_str()),
+        Some("Use employee number")
+    );
+    assert_eq!(
+        payload
+            .get("passwordPlaceholder")
+            .and_then(|value| value.as_str()),
+        Some("Company password")
     );
 }
 

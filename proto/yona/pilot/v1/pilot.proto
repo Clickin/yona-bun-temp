@@ -114,6 +114,8 @@ message ReadAuthUiCapabilitiesResponse {
   repeated string enabled_social_providers = 2;
   bool signup_require_confirm = 3;
   bool social_login_only = 4;
+  string login_id_placeholder = 5;
+  string password_placeholder = 6;
 }
 
 message SignInWithPasswordRequest {

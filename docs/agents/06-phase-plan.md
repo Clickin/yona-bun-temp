@@ -53,6 +53,7 @@
 - Project member management complete: `GET/POST/PATCH/DELETE /api/v1/owners/:owner/projects/:project/members` and `/:owner/:project/members` restore the legacy UPDATE-gated members page, add/member role/delete/self-leave flows, enrollment cleanup, member-accept notification/mail staging, owner guards, and `project/members.scala.html` class anchors.
 - Project watchers page complete: `GET /api/v1/owners/:owner/projects/:project/watchers` and `/:owner/:project/watchers` list actual project watchers behind project READ ACL with legacy `project/watchers.scala.html` class anchors.
 - Project delete confirmation complete: `DELETE /api/v1/owners/:owner/projects/:project` and `/:owner/:project/deleteform` restore the legacy UPDATE-gated delete confirmation shell, dependent project-row cleanup, bare Git repository removal, and `/` redirect semantics from `ProjectApp.deleteProject` / `project/delete.scala.html`.
+- Auth login placeholder configuration complete: `YONA_AUTH_LOGIN_ID_PLACEHOLDER` and `YONA_AUTH_PASSWORD_PLACEHOLDER` map the legacy `application.login.page.loginId.placeholder` / `application.login.page.password.placeholder` settings into auth UI capabilities, and `/users/loginform` renders the configured legacy placeholders with default fallbacks.
 
 ## Phase 3: 저장소와 VCS
 

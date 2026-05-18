@@ -14242,6 +14242,14 @@ fn fixed_auth_ui_capabilities() -> ReadAuthUiCapabilitiesResponse {
     ReadAuthUiCapabilitiesResponse {
         email_verification_enabled: parse_bool_env("YONA_AUTH_EMAIL_VERIFICATION_ENABLED"),
         enabled_social_providers: vec![],
+        login_id_placeholder: std::env::var("YONA_AUTH_LOGIN_ID_PLACEHOLDER")
+            .unwrap_or_default()
+            .trim()
+            .to_string(),
+        password_placeholder: std::env::var("YONA_AUTH_PASSWORD_PLACEHOLDER")
+            .unwrap_or_default()
+            .trim()
+            .to_string(),
         signup_require_confirm: parse_bool_env("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM"),
         social_login_only: parse_bool_env("YONA_AUTH_SOCIAL_LOGIN_ONLY"),
         ..Default::default()

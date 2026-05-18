@@ -57,6 +57,8 @@ export function LoginPage({
   const searchParams = readSearchParams(routeHref);
   const redirectUrl = resolveAuthRedirectPath(searchParams);
   const canRenderLocalForm = authUiCapabilities !== null && !authUiCapabilities?.socialLoginOnly;
+  const loginIdPlaceholder = authUiCapabilities?.loginIdPlaceholder?.trim() || "Login ID or email";
+  const passwordPlaceholder = authUiCapabilities?.passwordPlaceholder?.trim() || "Password";
   const postSubmitMessage =
     searchParams.get("signup") === "requested"
       ? "Sign up requires confirmation."
@@ -98,7 +100,7 @@ export function LoginPage({
                     identifier: event.target.value,
                   }))
                 }
-                placeholder="Login ID or email"
+                placeholder={loginIdPlaceholder}
                 type="text"
                 value={formState.identifier}
               />
@@ -114,6 +116,7 @@ export function LoginPage({
                     password: event.target.value,
                   }))
                 }
+                placeholder={passwordPlaceholder}
                 type="password"
                 value={formState.password}
               />

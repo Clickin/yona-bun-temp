@@ -135,6 +135,8 @@ legacy Yona 사용자가 기존 설정을 최소한의 변환으로 새 실행�
 | `application.use.email.verification`       | `YONA_AUTH_EMAIL_VERIFICATION_ENABLED`              |                              |
 | `signup.require.admin.confirm`             | `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM`                  |                              |
 | `application.use.social.login.only`        | `YONA_AUTH_SOCIAL_LOGIN_ONLY`                       |                              |
+| `application.login.page.loginId.placeholder` | `YONA_AUTH_LOGIN_ID_PLACEHOLDER`                   | 로그인 ID 입력 placeholder   |
+| `application.login.page.password.placeholder` | `YONA_AUTH_PASSWORD_PLACEHOLDER`                   | 비밀번호 입력 placeholder    |
 | `application.show.user.email`              | `YONA_SHOW_USER_EMAIL`                              |                              |
 | `application.allowed.sending.mail.domains` | `YONA_ALLOWED_MAIL_DOMAINS`                         |                              |
 | `db.default.url`                           | `YONA_DATABASE_URL`                                 | jdbc URL → standard URL 변환 |
@@ -275,11 +277,11 @@ GET   /authenticate/:provider   → OAuth 시작
 | 세션 만료                    | 설정 가능한 세션 타임아웃                                           | gap       | 6     |
 | 게스트 사용자                | `application.guest.user.login.id.prefix`로 제한된 권한              | gap       | 2     |
 | 익명 접근 제어               | `application.allowsAnonymousAccess` 설정                            | gap       | 2     |
-| 로그인 폼 커스텀 placeholder | `application.login.page.loginId.placeholder`                        | gap       | 6     |
+| 로그인 폼 커스텀 placeholder | `application.login.page.loginId.placeholder`, `application.login.page.password.placeholder` | ✅ 구현   | 1     |
 
 #### 검수 기준
 
-- [ ] `/users/loginform` GET 시 로그인 폼이 legacy와 동일한 레이아웃으로 표시된다
+- [x] `/users/loginform` GET 시 로그인 폼이 legacy와 동일한 레이아웃으로 표시되고 legacy placeholder 설정을 반영한다
 - [ ] 로그인 성공 후 `redirectUrl` 파라미터가 있으면 해당 URL로 이동한다 (legacy 동작 동일)
 - [ ] 로그인 실패 시 에러 메시지가 legacy와 동일하게 표시된다
 - [ ] 회원가입 시 login ID, email 중복 검사가 동작한다
