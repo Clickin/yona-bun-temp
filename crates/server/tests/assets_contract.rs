@@ -444,6 +444,27 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
         .to_bytes();
     assert_eq!(download_text_body.as_ref(), text_bytes);
 
+    let ranged_text_file = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/yona/files/{text_file_id}"))
+                .header(http::header::COOKIE, &cookie_header)
+                .header(http::header::RANGE, "bytes=0-3")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        ranged_text_file
+            .headers()
+            .get(http::header::ACCEPT_RANGES)
+            .and_then(|value| value.to_str().ok()),
+        Some("bytes")
+    );
+
     let not_modified_text_file = app
         .clone()
         .oneshot(

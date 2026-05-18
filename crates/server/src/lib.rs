@@ -15292,6 +15292,12 @@ async fn get_uploaded_file(
             .headers_mut()
             .insert(http::header::ETAG, header_value);
     }
+    if headers.contains_key(http::header::RANGE) {
+        response.headers_mut().insert(
+            http::header::ACCEPT_RANGES,
+            HeaderValue::from_static("bytes"),
+        );
+    }
     if let Ok(header_value) = HeaderValue::from_str(&disposition) {
         response
             .headers_mut()
