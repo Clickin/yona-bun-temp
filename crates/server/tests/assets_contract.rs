@@ -344,7 +344,10 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
     let text_upload_body = text_upload.into_body().collect().await.unwrap().to_bytes();
     let text_upload_json: serde_json::Value = serde_json::from_slice(&text_upload_body).unwrap();
     let text_file_id = text_upload_json["id"].as_i64().expect("text file id");
-    assert_eq!(text_upload_json["mimeType"].as_str(), Some("text/plain"),);
+    assert_eq!(
+        text_upload_json["mimeType"].as_str(),
+        Some("text/plain; charset=UTF-8"),
+    );
     assert_eq!(text_upload_json["name"].as_str(), Some("notes.txt"));
 
     let get_text_file = app
@@ -360,6 +363,13 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
         .await
         .unwrap();
     assert_eq!(get_text_file.status(), StatusCode::OK);
+    assert_eq!(
+        get_text_file
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok()),
+        Some("text/plain; charset=UTF-8")
+    );
     let get_text_body = get_text_file
         .into_body()
         .collect()
@@ -367,6 +377,69 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
         .unwrap()
         .to_bytes();
     assert_eq!(get_text_body.as_ref(), text_bytes);
+
+    let spoofed_text_bytes = b"plain attachment with spoofed content type";
+    let (spoofed_boundary, spoofed_body) =
+        multipart_body("payload", "image/png", spoofed_text_bytes);
+    let spoofed_upload = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/files")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    format!("multipart/form-data; boundary={spoofed_boundary}"),
+                )
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(spoofed_body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(spoofed_upload.status(), StatusCode::CREATED);
+    let spoofed_upload_body = spoofed_upload
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    let spoofed_upload_json: serde_json::Value =
+        serde_json::from_slice(&spoofed_upload_body).unwrap();
+    let spoofed_file_id = spoofed_upload_json["id"].as_i64().expect("spoofed file id");
+    assert_eq!(
+        spoofed_upload_json["mimeType"].as_str(),
+        Some("text/plain; charset=UTF-8")
+    );
+
+    let get_spoofed_file = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/yona/files/{spoofed_file_id}"))
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(get_spoofed_file.status(), StatusCode::OK);
+    assert_eq!(
+        get_spoofed_file
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok()),
+        Some("text/plain; charset=UTF-8")
+    );
+    let get_spoofed_body = get_spoofed_file
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    assert_eq!(get_spoofed_body.as_ref(), spoofed_text_bytes);
 
     let legacy_default_size_bytes = vec![0_u8; 1024 * 1000 + 1];
     let (legacy_default_boundary, legacy_default_body) =

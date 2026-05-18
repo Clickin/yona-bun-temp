@@ -1156,6 +1156,74 @@ fn max_uploaded_file_size() -> usize {
     max_uploaded_file_size_from_env_value(env_value.as_deref())
 }
 
+fn looks_like_utf8_text(bytes: &[u8]) -> bool {
+    !bytes.is_empty()
+        && std::str::from_utf8(bytes).is_ok()
+        && bytes
+            .iter()
+            .all(|byte| matches!(*byte, b'\t' | b'\n' | b'\r' | 0x20..=0x7e | 0x80..=0xff))
+}
+
+fn upload_mime_from_magic(bytes: &[u8]) -> Option<&'static str> {
+    if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+        return Some("image/png");
+    }
+    if bytes.starts_with(b"\xff\xd8\xff") {
+        return Some("image/jpeg");
+    }
+    if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
+        return Some("image/gif");
+    }
+    if bytes.len() >= 12 && bytes.starts_with(b"RIFF") && &bytes[8..12] == b"WEBP" {
+        return Some("image/webp");
+    }
+    if bytes.starts_with(b"%PDF-") {
+        return Some("application/pdf");
+    }
+    if bytes.starts_with(b"PK\x03\x04")
+        || bytes.starts_with(b"PK\x05\x06")
+        || bytes.starts_with(b"PK\x07\x08")
+    {
+        return Some("application/zip");
+    }
+    None
+}
+
+fn detect_upload_mime_type(
+    file_name: &str,
+    declared_mime_type: Option<&str>,
+    bytes: &[u8],
+) -> String {
+    if let Some(mime_type) = upload_mime_from_magic(bytes) {
+        return mime_type.to_string();
+    }
+
+    let guessed = mime_guess::from_path(file_name).first();
+    if looks_like_utf8_text(bytes) {
+        if let Some(mime_type) = guessed.as_ref().map(|mime| mime.as_ref()) {
+            if mime_type == "image/svg+xml" {
+                return mime_type.to_string();
+            }
+            if mime_type.starts_with("text/") {
+                return format!("{mime_type}; charset=UTF-8");
+            }
+        }
+        return "text/plain; charset=UTF-8".to_string();
+    }
+
+    if let Some(mime_type) = guessed.as_ref().map(|mime| mime.as_ref()) {
+        if mime_type != "application/octet-stream" {
+            return mime_type.to_string();
+        }
+    }
+
+    declared_mime_type
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or("application/octet-stream")
+        .to_string()
+}
+
 fn random_storage_token() -> String {
     use base64::Engine;
     use rand::RngCore;
@@ -15077,16 +15145,15 @@ async fn upload_file(
             .map(ToString::to_string)
             .filter(|value| !value.trim().is_empty())
             .unwrap_or_else(|| "upload.bin".to_string());
-        let mime_type = field
-            .content_type()
-            .map(ToString::to_string)
-            .unwrap_or_else(|| "application/octet-stream".to_string());
+        let declared_mime_type = field.content_type().map(ToString::to_string);
         let Ok(bytes) = field.bytes().await else {
             return StatusCode::BAD_REQUEST.into_response();
         };
         if bytes.len() > max_uploaded_file_size() {
             return StatusCode::BAD_REQUEST.into_response();
         }
+        let mime_type =
+            detect_upload_mime_type(&file_name, declared_mime_type.as_deref(), bytes.as_ref());
         let hash = random_storage_token();
         let path = uploaded_file_path(&hash);
         if let Some(parent) = path.parent() {

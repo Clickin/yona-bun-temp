@@ -327,7 +327,7 @@ Interpretation:
 - [x] File delete authorization
 - [~] Full container type parity across issue/board/PR/project (legacy enum names and current-user temporary binding for issue/board/PR/milestone; project logo/deferred containers remain)
 - [x] Global file size policy parity
-- [ ] MIME validation parity for all containers
+- [x] MIME validation/detection parity for uploaded attachments
 
 ## Site Admin
 

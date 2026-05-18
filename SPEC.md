@@ -928,16 +928,17 @@ POST  /files/:id              → legacy `_method=delete` 파일 삭제
 | 파일 삭제      | 작성자 또는 관리자                | ✅ 구현(업로드 작성자/site admin) | 2     |
 | Container type | 이슈/게시판/PR/프로젝트 등에 연결 | 🔶 부분 구현(legacy enum명: issue/board/PR/milestone) | 2     |
 | 파일 크기 제한 | `application.maxFileSize`         | ✅ 구현(`YONA_MAX_FILE_SIZE`) | 2     |
-| MIME type 검사 | 업로드 시 MIME 검사               | gap       | 2     |
+| MIME type 검사 | 업로드 시 MIME 검사               | ✅ 구현(Tika-compatible content/name detection) | 2     |
 | 아바타 업로드  | 프로필 아바타 전용                | ✅ 구현   | 1     |
 
 #### 검수 기준
 
-- [ ] 업로드: multipart POST → 파일 저장 → ID 반환
-- [ ] 다운로드: `GET /files/:id` → 원본 파일명 + MIME type + content
+- [x] 업로드: multipart POST → 파일 저장 → ID 반환
+- [x] 다운로드: `GET /files/:id` → 원본 파일명 + MIME type + content
 - [x] 삭제: `DELETE /files/:id` 또는 legacy `POST /files/:id` → 업로드 작성자 또는 site admin만 삭제 가능
 - [ ] 마크다운 에디터에서 drag-and-drop 또는 클립보드 붙여넣기로 이미지 첨부 가능
 - [x] `YONA_MAX_FILE_SIZE` 설정값 초과 시 업로드 거부
+- [x] MIME type은 legacy `Attachment.save` / `FileUtil.detectMediaType`처럼 multipart header만 신뢰하지 않고 업로드 바이트와 파일명으로 판별한다
 
 ---
 
