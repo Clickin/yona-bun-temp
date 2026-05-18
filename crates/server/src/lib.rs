@@ -15382,8 +15382,11 @@ fn sanitize_markdown_html(rendered: &str) -> String {
     let mut builder = ammonia::Builder::default();
     builder
         .add_tags(&["input"])
+        .add_tag_attributes("code", &["class"])
         .add_tag_attributes("input", &["checked", "disabled", "type"]);
-    normalize_markdown_checkbox_inputs(&builder.clean(rendered).to_string())
+    highlight_markdown_code_blocks(&normalize_markdown_checkbox_inputs(
+        &builder.clean(rendered).to_string(),
+    ))
 }
 
 fn normalize_markdown_checkbox_inputs(html: &str) -> String {
@@ -15433,6 +15436,334 @@ fn markdown_input_attr_value<'a>(tag: &'a str, attr_name: &str) -> Option<&'a st
         }
     }
     None
+}
+
+fn highlight_markdown_code_blocks(html: &str) -> String {
+    let mut highlighted = String::with_capacity(html.len());
+    let mut index = 0;
+
+    while let Some(relative_start) = html[index..].find("<pre><code") {
+        let start = index + relative_start;
+        highlighted.push_str(&html[index..start]);
+        let code_tag_start = start + "<pre>".len();
+        let Some(relative_code_tag_end) = html[code_tag_start..].find('>') else {
+            highlighted.push_str(&html[start..]);
+            return highlighted;
+        };
+        let tag_end = code_tag_start + relative_code_tag_end + 1;
+        let Some(relative_code_end) = html[tag_end..].find("</code></pre>") else {
+            highlighted.push_str(&html[start..]);
+            return highlighted;
+        };
+        let code_end = tag_end + relative_code_end;
+        let close_end = code_end + "</code></pre>".len();
+        let language = markdown_code_language(&html[code_tag_start..tag_end]);
+        highlighted.push_str(&html[start..tag_end]);
+        highlighted.push_str(&highlight_markdown_code_content(
+            &html[tag_end..code_end],
+            &language,
+        ));
+        highlighted.push_str("</code></pre>");
+        index = close_end;
+    }
+
+    highlighted.push_str(&html[index..]);
+    highlighted
+}
+
+fn markdown_code_language(open_tag: &str) -> String {
+    let Some(class_value) = markdown_tag_attr_value(open_tag, "class") else {
+        return String::new();
+    };
+    class_value
+        .split_ascii_whitespace()
+        .find_map(|class_name| class_name.strip_prefix("language-"))
+        .unwrap_or("")
+        .to_ascii_lowercase()
+}
+
+fn markdown_tag_attr_value<'a>(tag: &'a str, attr_name: &str) -> Option<&'a str> {
+    let body = tag
+        .trim_start_matches('<')
+        .trim_end_matches('>')
+        .trim_end_matches('/')
+        .trim();
+    for part in body.split_ascii_whitespace().skip(1) {
+        let (name, value) = part.split_once('=').unwrap_or((part, ""));
+        if name.eq_ignore_ascii_case(attr_name) {
+            return Some(value.trim_matches('"').trim_matches('\''));
+        }
+    }
+    None
+}
+
+fn highlight_markdown_code_content(content: &str, language: &str) -> String {
+    let source = decode_html_text(content);
+    let mut highlighted = String::with_capacity(content.len());
+    let mut index = 0;
+
+    while index < source.len() {
+        let rest = &source[index..];
+        if let Some(length) = markdown_line_comment_len(rest) {
+            append_markdown_code_token(&mut highlighted, &rest[..length], language);
+            index += length;
+            continue;
+        }
+        if let Some(length) = markdown_block_comment_len(rest) {
+            append_markdown_code_token(&mut highlighted, &rest[..length], language);
+            index += length;
+            continue;
+        }
+        if let Some(length) = markdown_string_literal_len(rest) {
+            append_markdown_code_token(&mut highlighted, &rest[..length], language);
+            index += length;
+            continue;
+        }
+        if let Some(length) = markdown_number_literal_len(rest) {
+            append_markdown_code_token(&mut highlighted, &rest[..length], language);
+            index += length;
+            continue;
+        }
+        if let Some(length) = markdown_identifier_len(rest) {
+            append_markdown_code_token(&mut highlighted, &rest[..length], language);
+            index += length;
+            continue;
+        }
+        if let Some(length) = markdown_punctuation_len(rest) {
+            append_markdown_code_token(&mut highlighted, &rest[..length], language);
+            index += length;
+            continue;
+        }
+
+        let ch = rest.chars().next().expect("valid char boundary");
+        highlighted.push_str(&escape_html_text(&ch.to_string()));
+        index += ch.len_utf8();
+    }
+
+    highlighted
+}
+
+fn append_markdown_code_token(rendered: &mut String, token: &str, language: &str) {
+    let class_name = markdown_syntax_token_class(token, language);
+    rendered.push_str(&format!(
+        "<span class=\"syntax-token {class_name}\">{}</span>",
+        escape_html_text(token)
+    ));
+}
+
+fn markdown_line_comment_len(text: &str) -> Option<usize> {
+    if !text.starts_with("//") {
+        return None;
+    }
+    Some(text.find('\n').unwrap_or(text.len()))
+}
+
+fn markdown_block_comment_len(text: &str) -> Option<usize> {
+    if !text.starts_with("/*") {
+        return None;
+    }
+    Some(text.find("*/").map_or(text.len(), |end| end + 2))
+}
+
+fn markdown_string_literal_len(text: &str) -> Option<usize> {
+    let quote = text.chars().next()?;
+    if quote != '"' && quote != '\'' {
+        return None;
+    }
+    let mut escaped = false;
+    for (offset, ch) in text[quote.len_utf8()..].char_indices() {
+        if escaped {
+            escaped = false;
+            continue;
+        }
+        if ch == '\\' {
+            escaped = true;
+            continue;
+        }
+        if ch == quote {
+            return Some(quote.len_utf8() + offset + ch.len_utf8());
+        }
+    }
+    Some(text.len())
+}
+
+fn markdown_number_literal_len(text: &str) -> Option<usize> {
+    let mut saw_digit = false;
+    let mut saw_dot = false;
+    let mut length = 0;
+    for ch in text.chars() {
+        if ch.is_ascii_digit() {
+            saw_digit = true;
+            length += ch.len_utf8();
+        } else if ch == '.' && saw_digit && !saw_dot {
+            saw_dot = true;
+            length += ch.len_utf8();
+        } else {
+            break;
+        }
+    }
+    (length > 0 && saw_digit).then_some(length)
+}
+
+fn markdown_identifier_len(text: &str) -> Option<usize> {
+    let mut chars = text.chars();
+    let first = chars.next()?;
+    if !(first.is_ascii_alphabetic() || first == '_') {
+        return None;
+    }
+    let mut length = first.len_utf8();
+    for ch in chars {
+        if ch.is_ascii_alphanumeric() || ch == '_' {
+            length += ch.len_utf8();
+        } else {
+            break;
+        }
+    }
+    Some(length)
+}
+
+fn markdown_punctuation_len(text: &str) -> Option<usize> {
+    let length: usize = text
+        .chars()
+        .take_while(|ch| {
+            matches!(
+                ch,
+                '{' | '}'
+                    | '('
+                    | ')'
+                    | '['
+                    | ']'
+                    | '.'
+                    | ','
+                    | ';'
+                    | ':'
+                    | '+'
+                    | '-'
+                    | '*'
+                    | '/'
+                    | '%'
+                    | '='
+                    | '<'
+                    | '>'
+                    | '!'
+                    | '&'
+                    | '|'
+                    | '?'
+            )
+        })
+        .map(char::len_utf8)
+        .sum();
+    (length > 0).then_some(length)
+}
+
+fn markdown_syntax_token_class(token: &str, language: &str) -> &'static str {
+    if token.starts_with("//") || token.starts_with("/*") {
+        return "syntax-comment";
+    }
+    if token.starts_with('"') || token.starts_with('\'') {
+        return "syntax-string";
+    }
+    if token.chars().next().is_some_and(|ch| ch.is_ascii_digit()) {
+        return "syntax-number";
+    }
+    if markdown_is_code_keyword(token, language) {
+        return "syntax-keyword";
+    }
+    if token.chars().all(|ch| {
+        matches!(
+            ch,
+            '{' | '}'
+                | '('
+                | ')'
+                | '['
+                | ']'
+                | '.'
+                | ','
+                | ';'
+                | ':'
+                | '+'
+                | '-'
+                | '*'
+                | '/'
+                | '%'
+                | '='
+                | '<'
+                | '>'
+                | '!'
+                | '&'
+                | '|'
+                | '?'
+        )
+    }) {
+        return "syntax-punctuation";
+    }
+    "syntax-identifier"
+}
+
+fn markdown_is_code_keyword(token: &str, language: &str) -> bool {
+    matches!(
+        token,
+        "break"
+            | "case"
+            | "catch"
+            | "class"
+            | "const"
+            | "continue"
+            | "default"
+            | "do"
+            | "else"
+            | "enum"
+            | "false"
+            | "for"
+            | "if"
+            | "import"
+            | "interface"
+            | "let"
+            | "new"
+            | "null"
+            | "private"
+            | "protected"
+            | "public"
+            | "return"
+            | "static"
+            | "switch"
+            | "this"
+            | "throw"
+            | "true"
+            | "try"
+            | "void"
+            | "while"
+    ) || (language == "rust"
+        && matches!(
+            token,
+            "as" | "async"
+                | "await"
+                | "crate"
+                | "dyn"
+                | "fn"
+                | "impl"
+                | "match"
+                | "mod"
+                | "mut"
+                | "pub"
+                | "self"
+                | "struct"
+                | "trait"
+                | "type"
+                | "use"
+                | "where"
+        ))
+        || (language == "css" && matches!(token, "important" | "media" | "supports"))
+}
+
+fn decode_html_text(value: &str) -> String {
+    value
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#x27;", "'")
+        .replace("&#39;", "'")
+        .replace("&amp;", "&")
 }
 
 fn apply_markdown_autolinks(html: &str, context: MarkdownLinkContext<'_>) -> String {

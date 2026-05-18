@@ -166,7 +166,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
             Some(&csrf),
             Some(json!({
                 "title": "Markdown issue",
-                "bodyMarkdown": "Hello **Yona** @reviewer #1 owner/projectYobi#1 https://example.com/docs?x=1\n\n![logo](https://example.com/logo.png \"Logo\") ![bad](javascript:alert(1))\n\n- [x] done\n- [ ] todo\n\n`<script>alert(1)</script> @reviewer #1 https://example.com/code`"
+                "bodyMarkdown": "Hello **Yona** @reviewer #1 owner/projectYobi#1 https://example.com/docs?x=1\n\n![logo](https://example.com/logo.png \"Logo\") ![bad](javascript:alert(1))\n\n- [x] done\n- [ ] todo\n\n```rust\nfn main() {\n    let count = 1;\n}\n```\n\n`<script>alert(1)</script> @reviewer #1 https://example.com/code`"
             })),
         )
         .await,
@@ -210,6 +210,13 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     );
     assert!(
         body_html.contains("disabled") && body_html.contains("todo"),
+        "{body_html}"
+    );
+    assert!(
+        body_html.contains("class=\"language-rust\"")
+            && body_html.contains("syntax-token syntax-keyword")
+            && body_html.contains(">fn</span>")
+            && body_html.contains(">let</span>"),
         "{body_html}"
     );
     assert!(

@@ -350,10 +350,11 @@ Interpretation:
 - [x] Basic bare `http://`/`https://` URL autolinks on the project Markdown render path
 - [x] Basic task checklist rendering with sanitized disabled checkboxes
 - [x] Basic safe inline image rendering on the project Markdown render path
+- [x] Basic fenced-code token highlighting on the project Markdown render path
 - [ ] Full legacy/GFM extension parity
 - [~] Legacy issue-link title/state enrichment
 - [~] Full legacy autolink parity, including non-HTTP cases if legacy evidence requires them
-- [ ] Syntax-highlighted code blocks
+- [~] Full Highlight.js-equivalent language coverage for Markdown code blocks
 - [~] Local README/code-browser image path rewriting
 - [~] Task checklist progress-bar integration polish
 
