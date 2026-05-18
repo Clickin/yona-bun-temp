@@ -15372,10 +15372,67 @@ fn render_markdown_html_with_context(
     let parser = Parser::new_ext(markdown, options);
     let mut rendered = String::new();
     html::push_html(&mut rendered, parser);
-    let sanitized = ammonia::clean(&rendered);
+    let sanitized = sanitize_markdown_html(&rendered);
     context.map_or(sanitized.clone(), |context| {
         apply_markdown_autolinks(&sanitized, context)
     })
+}
+
+fn sanitize_markdown_html(rendered: &str) -> String {
+    let mut builder = ammonia::Builder::default();
+    builder
+        .add_tags(&["input"])
+        .add_tag_attributes("input", &["checked", "disabled", "type"]);
+    normalize_markdown_checkbox_inputs(&builder.clean(rendered).to_string())
+}
+
+fn normalize_markdown_checkbox_inputs(html: &str) -> String {
+    let mut normalized = String::with_capacity(html.len());
+    let mut index = 0;
+
+    while let Some(relative_start) = html[index..].find("<input") {
+        let start = index + relative_start;
+        normalized.push_str(&html[index..start]);
+        let Some(relative_end) = html[start..].find('>') else {
+            break;
+        };
+        let end = start + relative_end + 1;
+        let tag = &html[start..end];
+        if markdown_input_attr_value(tag, "type")
+            .is_some_and(|value| value.eq_ignore_ascii_case("checkbox"))
+            && markdown_input_has_attr(tag, "disabled")
+        {
+            if markdown_input_has_attr(tag, "checked") {
+                normalized.push_str(r#"<input type="checkbox" checked="" disabled="">"#);
+            } else {
+                normalized.push_str(r#"<input type="checkbox" disabled="">"#);
+            }
+        }
+        index = end;
+    }
+
+    normalized.push_str(&html[index..]);
+    normalized
+}
+
+fn markdown_input_has_attr(tag: &str, attr_name: &str) -> bool {
+    markdown_input_attr_value(tag, attr_name).is_some()
+}
+
+fn markdown_input_attr_value<'a>(tag: &'a str, attr_name: &str) -> Option<&'a str> {
+    let body = tag
+        .strip_prefix("<input")?
+        .trim()
+        .trim_end_matches('>')
+        .trim_end_matches('/')
+        .trim();
+    for part in body.split_ascii_whitespace() {
+        let (name, value) = part.split_once('=').unwrap_or((part, ""));
+        if name.eq_ignore_ascii_case(attr_name) {
+            return Some(value.trim_matches('"').trim_matches('\''));
+        }
+    }
+    None
 }
 
 fn apply_markdown_autolinks(html: &str, context: MarkdownLinkContext<'_>) -> String {

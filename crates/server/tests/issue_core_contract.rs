@@ -166,7 +166,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
             Some(&csrf),
             Some(json!({
                 "title": "Markdown issue",
-                "bodyMarkdown": "Hello **Yona** @reviewer #1 owner/projectYobi#1 https://example.com/docs?x=1 `<script>alert(1)</script> @reviewer #1 https://example.com/code`"
+                "bodyMarkdown": "Hello **Yona** @reviewer #1 owner/projectYobi#1 https://example.com/docs?x=1\n\n- [x] done\n- [ ] todo\n\n`<script>alert(1)</script> @reviewer #1 https://example.com/code`"
             })),
         )
         .await,
@@ -193,6 +193,16 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     assert!(body_html.contains("class=\"issueLink\""), "{body_html}");
     assert!(
         body_html.contains("href=\"https://example.com/docs?x=1\""),
+        "{body_html}"
+    );
+    assert!(
+        body_html.contains("<input")
+            && body_html.contains("type=\"checkbox\"")
+            && body_html.contains("checked"),
+        "{body_html}"
+    );
+    assert!(
+        body_html.contains("disabled") && body_html.contains("todo"),
         "{body_html}"
     );
     assert!(

@@ -1013,7 +1013,7 @@ POST  /markdown                → 마크다운 → HTML 변환
 | 자동 링크       | URL 자동 링크 변환               | basic `http://`/`https://` implemented; full legacy autolink parity gap | 2     |
 | 코드 블록       | syntax highlighting              | gap       | 2     |
 | 이미지          | 인라인 이미지 표시               | gap       | 2     |
-| 체크리스트      | `- [ ]` / `- [x]`                | gap       | 2     |
+| 체크리스트      | `- [ ]` / `- [x]`                | basic disabled checkbox rendering implemented | 2     |
 | XSS 방지        | HTML sanitization                | implemented on current render path | 2     |
 
 #### 검수 기준
@@ -1023,6 +1023,7 @@ POST  /markdown                → 마크다운 → HTML 변환
 - [x] `#123` → 동일 프로젝트 이슈 링크 변환
 - [x] `owner/project#123` → 크로스 프로젝트 이슈 링크 변환
 - [x] bare `http://`/`https://` URL 자동 링크 변환
+- [x] `- [ ]` / `- [x]` 체크리스트 렌더링
 - [ ] 코드 블록: 언어별 syntax highlighting
 - [x] XSS: `<script>` 등 위험 태그 제거
 
@@ -1273,7 +1274,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, mail queue staging |
 | 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment non-JSON fan-out; push JSON, PR merge/commit-changed delivery, history, and hardening remain gaps |
 | 관리자            | ❌ 미구현         |                                                                  |
-| 마크다운          | 🔶 기본 구현      | Issue/post/milestone/PR/code comment sanitized HTML projection plus basic `@user`, `#123`, `owner/project#123`, and bare `http(s)` project Markdown autolinks |
+| 마크다운          | 🔶 기본 구현      | Issue/post/milestone/PR/code comment sanitized HTML projection plus basic `@user`, `#123`, `owner/project#123`, bare `http(s)` autolinks, and disabled task-list checkboxes |
 | REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1` legacy external API는 app scope에서 미지원이며 별도 migrator/export/import deliverable로 분리 |
 | Frontend 라우트   | ✅ 구현           | legacy issueform/editform 포함                                   |
 | Frontend 테스트   | 🔶 부분           | API client, route parity, E2E smoke                              |
@@ -1459,6 +1460,6 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope
 - Webhook follow-up: push JSON payload delivery, PR merge/commit-changed delivery, HTTPS production delivery hardening, optional signature compatibility if external evidence requires it, and delivery history/retry behavior
 - Admin: users/projects/site-admin/account-lock/test-mail surfaces
-- Markdown follow-up: full legacy/GFM extension parity, title/state issue-link enrichment, non-HTTP autolink cases if legacy evidence requires them, syntax highlighting, inline image behavior, task checklist polish, and app-level markdown preview API if legacy evidence requires it
+- Markdown follow-up: full legacy/GFM extension parity, title/state issue-link enrichment, non-HTTP autolink cases if legacy evidence requires them, syntax highlighting, inline image behavior, checklist progress-bar integration polish, and app-level markdown preview API if legacy evidence requires it
 
 ---
