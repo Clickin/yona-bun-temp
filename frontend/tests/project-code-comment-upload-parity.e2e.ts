@@ -309,3 +309,81 @@ test("commit thread reply editor submits pasted image uploads", async ({ page })
     threadId: 11,
   });
 });
+
+test("commit diff line comment creates a ranged review thread", async ({ page }) => {
+  const rangedThread = {
+    authorId: 1,
+    authorLabel: "Admin",
+    authorLoginId: "admin",
+    comments: [
+      {
+        authorId: 1,
+        authorLabel: "Admin",
+        authorLoginId: "admin",
+        canDelete: true,
+        contentsHtml: "<p>Inline line note</p>",
+        contentsMarkdown: "Inline line note",
+        createdLabel: "2026-04-21",
+        id: 32,
+        threadId: 31,
+      },
+    ],
+    commitId,
+    createdLabel: "2026-04-21",
+    endLine: 2,
+    id: 31,
+    path: "src/main.rs",
+    prevCommitId: "",
+    startLine: 2,
+    state: "open",
+  };
+  let threads: unknown[] = [];
+
+  await page.route(apiV1Route(`/projects/admin/projectYobi/commit/${commitId}`), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(commitDetailPayload(threads)),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(
+    apiV1Route(`/projects/admin/projectYobi/commit/${commitId}/comments`),
+    async (route) => {
+      threads = [rangedThread];
+      await route.fulfill({
+        body: JSON.stringify(commitDetailPayload(threads)),
+        headers: restJsonHeaders,
+        status: 201,
+      });
+    },
+  );
+
+  await page.goto(`/yona/admin/projectYobi/commit/${commitId}`);
+  await page.getByRole("button", { name: "Comment on src/main.rs:2" }).click();
+  const inlineForm = page.locator(".code-review-form");
+  await expect(inlineForm).toBeVisible();
+  await inlineForm.locator("textarea").fill("Inline line note");
+
+  const lineCommentRequest = page.waitForRequest(
+    (request) =>
+      request.url().endsWith(`/commit/${commitId}/comments`) && request.method() === "POST",
+  );
+  await inlineForm.getByRole("button", { name: "Comment" }).click();
+  const submittedLineComment = (await lineCommentRequest).postDataJSON() as {
+    contentsMarkdown?: string;
+    endLine?: number;
+    path?: string;
+    startLine?: number;
+  };
+
+  expect(submittedLineComment).toMatchObject({
+    contentsMarkdown: "Inline line note",
+    endLine: 2,
+    path: "src/main.rs",
+    startLine: 2,
+  });
+  await expect(page.locator("#thread-31")).toBeVisible();
+  await expect(page.locator("#thread-31")).toHaveAttribute("data-range-path", "src/main.rs");
+  await expect(page.locator("#thread-31")).toHaveAttribute("data-range-endline", "2");
+  await expect(page.locator("#thread-31")).toContainText("Inline line note");
+});

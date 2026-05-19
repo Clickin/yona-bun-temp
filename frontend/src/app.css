@@ -1309,6 +1309,78 @@ h1 {
   white-space: pre;
 }
 
+.diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.diff-table .linenum {
+  width: 54px;
+  padding: 0 6px;
+  color: #777;
+  text-align: right;
+  vertical-align: top;
+  background: #f7f7f7;
+  border-right: 1px solid #e4e4e4;
+  user-select: none;
+}
+
+.diff-table .code,
+.diff-table .hunk {
+  padding: 0 8px;
+  vertical-align: top;
+}
+
+.diff-table .hunk {
+  color: #666;
+  background: #f0f4f8;
+}
+
+.diff-table .add .code {
+  background: #eef8ef;
+}
+
+.diff-table .remove .code {
+  background: #fbe9e7;
+}
+
+.diff-partial-codeline {
+  margin: 0;
+  overflow: visible;
+  font: inherit;
+  line-height: inherit;
+  white-space: pre;
+}
+
+.line-comment-trigger {
+  float: left;
+  width: 18px;
+  overflow: hidden;
+  color: #777;
+  text-align: center;
+}
+
+.line-comment-trigger::before {
+  content: "+";
+}
+
+.inline-comment-form-row td {
+  padding: 12px;
+  background: #fafafa;
+  border-top: 1px solid #e4e4e4;
+  border-bottom: 1px solid #e4e4e4;
+}
+
+.code-review-form {
+  display: grid;
+  gap: 10px;
+}
+
+.code-review-form textarea {
+  min-height: 110px;
+}
+
 .review-wrap {
   min-width: 0;
 }

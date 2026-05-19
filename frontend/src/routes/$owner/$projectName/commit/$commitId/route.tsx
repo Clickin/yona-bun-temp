@@ -78,12 +78,18 @@ function CodeCommitDetailRouteComponent() {
     mutationFn: (input: {
       attachmentIds?: number[];
       contentsMarkdown: string;
+      endLine?: number;
+      path?: string;
+      startLine?: number;
       threadId?: number;
     }) =>
       createCommitDiscussionCommentRest(runtimeConfig, csrfToken, {
         ...scope,
         attachmentIds: input.attachmentIds,
         contentsMarkdown: input.contentsMarkdown,
+        endLine: input.endLine,
+        path: input.path,
+        startLine: input.startLine,
         threadId: input.threadId,
       }),
     onError: mutationError("Create commit comment failed."),

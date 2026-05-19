@@ -75,6 +75,9 @@ export interface CodeReviewThreadViewModel {
 export type CommitDiscussionCommentSubmitInput = {
   attachmentIds?: number[];
   contentsMarkdown: string;
+  endLine?: number;
+  path?: string;
+  startLine?: number;
   threadId?: number;
 };
 
@@ -274,6 +277,91 @@ function commitDetailHref(
 
 function diffAnchorId(path: string) {
   return path.replace(/[/.]/g, "-");
+}
+
+type ParsedDiffLine = {
+  commentLine?: number;
+  key: string;
+  kind: "add" | "context" | "hunk" | "meta" | "remove";
+  newLine?: number;
+  oldLine?: number;
+  text: string;
+};
+
+type InlineCommentDraft = {
+  line: number;
+  path: string;
+};
+
+function parseUnifiedDiffLines(patch: string): ParsedDiffLine[] {
+  const lines = patch.replace(/\r\n/g, "\n").split("\n");
+  if (lines.at(-1) === "") {
+    lines.pop();
+  }
+  let oldLine = 0;
+  let newLine = 0;
+  let inHunk = false;
+
+  return lines.map((text, index) => {
+    const hunkMatch = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(text);
+    if (hunkMatch) {
+      oldLine = Number.parseInt(hunkMatch[1] ?? "0", 10);
+      newLine = Number.parseInt(hunkMatch[2] ?? "0", 10);
+      inHunk = true;
+      return { key: `${index}:hunk`, kind: "hunk", text };
+    }
+
+    if (
+      !inHunk ||
+      text.startsWith("diff ") ||
+      text.startsWith("index ") ||
+      text.startsWith("---") ||
+      text.startsWith("+++")
+    ) {
+      return { key: `${index}:meta`, kind: "meta", text };
+    }
+
+    if (text.startsWith("+")) {
+      const line = newLine;
+      newLine += 1;
+      return {
+        commentLine: line,
+        key: `${index}:add:${line}`,
+        kind: "add",
+        newLine: line,
+        text,
+      };
+    }
+
+    if (text.startsWith("-")) {
+      const line = oldLine;
+      oldLine += 1;
+      return {
+        commentLine: line,
+        key: `${index}:remove:${line}`,
+        kind: "remove",
+        oldLine: line,
+        text,
+      };
+    }
+
+    const lineOld = oldLine;
+    const lineNew = newLine;
+    oldLine += 1;
+    newLine += 1;
+    return {
+      commentLine: lineNew,
+      key: `${index}:context:${lineNew}`,
+      kind: "context",
+      newLine: lineNew,
+      oldLine: lineOld,
+      text,
+    };
+  });
+}
+
+function diffLineClass(kind: ParsedDiffLine["kind"]) {
+  return kind === "hunk" ? "range" : kind;
 }
 
 function commitDiscussionApiHref(
@@ -845,6 +933,9 @@ function CodeCommitDiffView(props: {
   const closedThreads = threads.filter((thread) => thread.state.toLowerCase() === "closed");
   const [commentText, setCommentText] = React.useState("");
   const [commentAttachmentIds, setCommentAttachmentIds] = React.useState<number[]>([]);
+  const [inlineComment, setInlineComment] = React.useState<InlineCommentDraft | null>(null);
+  const [inlineCommentText, setInlineCommentText] = React.useState("");
+  const [inlineAttachmentIds, setInlineAttachmentIds] = React.useState<number[]>([]);
   const canComment = commitDetail?.permissions.canComment ?? false;
 
   async function submitComment(event: React.FormEvent<HTMLFormElement>) {
@@ -856,6 +947,36 @@ function CodeCommitDiffView(props: {
     await props.onCreateComment({ attachmentIds: commentAttachmentIds, contentsMarkdown });
     setCommentAttachmentIds([]);
     setCommentText("");
+  }
+
+  function showInlineComment(path: string, line: number) {
+    setInlineComment({ line, path });
+    setInlineCommentText("");
+    setInlineAttachmentIds([]);
+  }
+
+  async function submitInlineComment(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const contentsMarkdown = inlineCommentText.trim();
+    if (!contentsMarkdown || !inlineComment || !props.onCreateComment) {
+      return;
+    }
+    await props.onCreateComment({
+      attachmentIds: inlineAttachmentIds,
+      contentsMarkdown,
+      endLine: inlineComment.line,
+      path: inlineComment.path,
+      startLine: inlineComment.line,
+    });
+    setInlineAttachmentIds([]);
+    setInlineCommentText("");
+    setInlineComment(null);
+  }
+
+  function rangedThreadsForLine(path: string, line: number) {
+    return threads.filter(
+      (thread) => thread.path === path && (thread.endLine ?? thread.startLine) === line,
+    );
   }
 
   return (
@@ -894,14 +1015,144 @@ function CodeCommitDiffView(props: {
           {files.length === 0 ? (
             <div className="warning-none">No changed file diff is available.</div>
           ) : (
-            files.map((file) => (
-              <article className="diff-file" id={diffAnchorId(file.path)} key={file.path}>
-                <h2>{file.path}</h2>
-                <pre className="diff-code">
-                  <code>{file.patch}</code>
-                </pre>
-              </article>
-            ))
+            files.map((file) => {
+              const diffLines = parseUnifiedDiffLines(file.patch);
+              return (
+                <article
+                  className="diff-file diff-container"
+                  data-file-path={file.path}
+                  id={diffAnchorId(file.path)}
+                  key={file.path}
+                >
+                  <h2>{file.path}</h2>
+                  <table className="diff-code diff-table">
+                    <tbody>
+                      {diffLines.map((line) => {
+                        const lineThreads =
+                          line.commentLine === undefined
+                            ? []
+                            : rangedThreadsForLine(file.path, line.commentLine);
+                        const isInlineFormOpen =
+                          inlineComment?.path === file.path &&
+                          inlineComment.line === line.commentLine;
+                        return (
+                          <React.Fragment key={line.key}>
+                            <tr
+                              className={diffLineClass(line.kind)}
+                              data-line={line.commentLine}
+                              data-side={line.kind === "remove" ? "A" : "B"}
+                              data-type={diffLineClass(line.kind)}
+                            >
+                              <td className="linenum">
+                                {line.commentLine !== undefined && canComment ? (
+                                  <button
+                                    aria-label={`Comment on ${file.path}:${line.commentLine}`}
+                                    className="btn-transparent line-comment-trigger"
+                                    onClick={() =>
+                                      showInlineComment(file.path, line.commentLine ?? 0)
+                                    }
+                                    type="button"
+                                  >
+                                    Comment
+                                  </button>
+                                ) : null}
+                                <div className="line-number" data-line-num={line.oldLine ?? ""}>
+                                  {line.oldLine ?? ""}
+                                </div>
+                              </td>
+                              <td className="linenum">
+                                <div className="line-number" data-line-num={line.newLine ?? ""}>
+                                  {line.newLine ?? ""}
+                                </div>
+                              </td>
+                              <td className={line.kind === "hunk" ? "hunk" : "code"}>
+                                <pre className="diff-partial-codeline">{line.text}</pre>
+                              </td>
+                            </tr>
+                            {isInlineFormOpen && commitDetail ? (
+                              <tr className="comments board-comment-wrap inline-comment-form-row">
+                                <td colSpan={3}>
+                                  <form
+                                    action={commitDiscussionApiHref(
+                                      props.runtimeConfig,
+                                      commitDetail,
+                                      "/comments",
+                                    )}
+                                    className="review-form code-review-form"
+                                    method="post"
+                                    onSubmit={(event) => {
+                                      void submitInlineComment(event);
+                                    }}
+                                  >
+                                    <input name="path" type="hidden" value={file.path} />
+                                    <input
+                                      name="startLine"
+                                      type="hidden"
+                                      value={line.commentLine ?? ""}
+                                    />
+                                    <input
+                                      name="endLine"
+                                      type="hidden"
+                                      value={line.commentLine ?? ""}
+                                    />
+                                    <MarkdownAttachmentTextarea
+                                      ariaLabel={`Code review comment on ${file.path}:${
+                                        line.commentLine ?? ""
+                                      }`}
+                                      csrfToken={props.csrfToken}
+                                      disabled={!canComment}
+                                      name="contentsMarkdown"
+                                      onAttachmentUpload={(attachment) =>
+                                        setInlineAttachmentIds((current) => [
+                                          ...current,
+                                          attachment.id,
+                                        ])
+                                      }
+                                      onChange={setInlineCommentText}
+                                      runtimeConfig={props.runtimeConfig}
+                                      value={inlineCommentText}
+                                    />
+                                    <button
+                                      className="ybtn ybtn-success ybtn-small"
+                                      disabled={!canComment}
+                                      type="submit"
+                                    >
+                                      Comment
+                                    </button>
+                                  </form>
+                                </td>
+                              </tr>
+                            ) : null}
+                            {commitDetail && lineThreads.length > 0 ? (
+                              <tr
+                                className="comments board-comment-wrap"
+                                data-commit-id={commitDetail.commit?.commitId ?? ""}
+                              >
+                                <td colSpan={3}>
+                                  {lineThreads.map((thread) => (
+                                    <CommitDiscussionThread
+                                      commitDetail={commitDetail}
+                                      csrfToken={props.csrfToken}
+                                      key={thread.id}
+                                      runtimeConfig={props.runtimeConfig}
+                                      thread={thread}
+                                      onCloseThread={props.onCloseThread}
+                                      onCreateComment={props.onCreateComment}
+                                      onDeleteComment={props.onDeleteComment}
+                                      onOpenThread={props.onOpenThread}
+                                    />
+                                  ))}
+                                </td>
+                              </tr>
+                            ) : null}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </article>
+              );
+            })
           )}
           <div className="btnPop">
             <button className="ybtn ybtn-info ybtn-small" type="button">
@@ -1046,7 +1297,17 @@ function CommitDiscussionThread(props: {
   }
 
   return (
-    <div className={`comment-thread-wrap ${state}`} id={`thread-${props.thread.id}`}>
+    <div
+      className={`comment-thread-wrap ${state}${props.thread.path && state === "closed" ? " fold" : ""}`}
+      data-range-endline={props.thread.endLine}
+      data-range-endside={props.thread.path ? "B" : undefined}
+      data-range-path={props.thread.path || undefined}
+      data-range-startline={props.thread.startLine}
+      data-range-startside={props.thread.path ? "B" : undefined}
+      data-state={state}
+      data-toggle={props.thread.path ? "CodeCommentThread" : undefined}
+      id={`thread-${props.thread.id}`}
+    >
       <div className="btn-thread-here btn-thread-minimize">
         <button className="ybtn ybtn-default ybtn-small" type="button">
           Comments

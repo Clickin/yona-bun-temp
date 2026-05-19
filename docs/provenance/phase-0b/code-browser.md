@@ -3,8 +3,8 @@
 ## Scope
 
 - Phase 3A/3B/3C/3D/3E/3F/3G read-only Git code browser parity, Phase 3H branch administration parity, Phase 3I Git commit discussion parity, and Phase 3J repository provisioning.
-- Covers Git repository paths: project creation provisioning, no-head state, branch selector, breadcrumbs, folder listing, text file view, Markdown file rendering with local image path rewrite, raw file streaming, browser-open file streaming, image preview streaming, branch archive download, numbered syntax-highlighted text rendering, commit history listing, commit detail/diff rendering, commit non-ranged comments/replies/delete/thread open-close, commit comment image paste/drop upload, commit comment counts, commit compare rendering, branch list rendering, branch-row latest PR links, default branch mutation, and non-default branch delete.
-- Does not cover Smart HTTP, inline ranged code-comment UX, inline edit, or SVN.
+- Covers Git repository paths: project creation provisioning, no-head state, branch selector, breadcrumbs, folder listing, text file view, Markdown file rendering with local image path rewrite, raw file streaming, browser-open file streaming, image preview streaming, branch archive download, numbered syntax-highlighted text rendering, commit history listing, commit detail/diff rendering, commit non-ranged comments/replies/delete/thread open-close, single-line inline code comment creation/readback, commit comment image paste/drop upload, commit comment counts, commit compare rendering, branch list rendering, branch-row latest PR links, default branch mutation, and non-default branch delete.
+- Does not cover Smart HTTP, multi-line block comment selection polish, inline edit, or SVN.
 
 ## Legacy Sources
 
@@ -40,6 +40,7 @@
 - Legacy project home uses `Markdown.renderFileInReadme` for repository README files, rewriting local images to the project file route and normal local links to the code-browser route. Rust exposes this as a REST-only `readmeFile` projection on the project container and renders it when no README posting is present.
 - Legacy `CodeHistoryApp.historyUntilHead` and `CodeHistoryApp.history` map to `GET /api/v1/projects/:owner/:project/commits` plus SPA file routes. Rust uses the system `git log` wrapper with explicit argv, keeps the legacy 25-item page size, supports branch and path-scoped history, and exposes `hasOlder`/`hasNewer` instead of fabricating commits.
 - Legacy `CodeHistoryApp.show` and `code/diff.scala.html` map to `GET /api/v1/projects/:owner/:project/commit/:id` plus SPA route `/:owner/:project/commit/:id`. Rust reads real Git commit metadata, first-parent metadata, unified diff patches, and non-ranged Git commit discussion threads through explicit git argv plus `comment_thread`/`review_comment` persistence. It keeps the legacy diff shell anchors such as `#code-browse-wrap`, `.codediff-wrap`, `.commitInfo`, `.diff-body`, `.board-comment-wrap`, `.comment-thread-wrap`, `.review-form`, and review card containers.
+- Legacy `partial_diff.scala.html`, `partial_diff_line.scala.html`, `partial_diff_comment_on_line.scala.html`, `partial_comment_thread.scala.html`, and `common/reviewForm.scala.html` render line-numbered diff rows with `.linenum`, `.diff-partial-codeline`, `.comments.board-comment-wrap`, `.comment-thread-wrap`, and `#review-form`/`.review-form` anchors. Rust parses unified patches into equivalent table rows, lets a project code commenter open a single-line inline review form from the line number gutter, posts `path/startLine/endLine` through the existing commit-comment REST mutation, and renders returned ranged threads under the matching diff line.
 - Legacy `yobi.code.Diff.js`, `yobi.code.SvnDiff.js`, and `yobi.CodeCommentBox.js` attach `yobi.Files`/`yobi.Attachments` to code-comment markdown forms. Rust reuses the shared `/files` upload path for non-ranged Git commit comment and reply editors: pasted or dropped images insert `![name](url)` at the cursor and submit uploaded `attachmentIds` with the comment mutation.
 - Legacy `CodeHistoryApp.newComment`, `CommentApp.delete`, and `CommentThreadApp.open/close` map to `POST /api/v1/projects/:owner/:project/commit/:id/comments`, `DELETE /api/v1/projects/:owner/:project/commit/:id/comments/:commentId`, and `POST /api/v1/projects/:owner/:project/commit/:id/threads/:threadId/open|close`. Rust implements Git non-ranged commit comments and replies as `NonRangedCodeCommentThread` plus `ReviewComment`, preserves author/project-update delete and thread-state authorization, records `NEW_REVIEW_COMMENT` and `REVIEW_THREAD_STATE_CHANGED` notification rows, and stages notification mail. SVN `CommitComment` remains deferred.
 - Git non-ranged commit comments now use the project Markdown projection for
@@ -61,12 +62,12 @@
 | Commit detail route surface | `frontend/src/routes/$owner/$projectName/commit/$commitId/route.tsx`, `frontend/src/api/code-commits.ts`, `frontend/src/routes/-code-views.tsx` |
 | Compare route surface | `frontend/src/routes/$owner/$projectName/compare/$revisionRange/route.tsx`, `frontend/src/routes/-code-views.tsx` |
 | Branch administration route surface | `frontend/src/routes/$owner/$projectName/branches/route.tsx`, `frontend/src/api/code-branches.ts`, `frontend/src/routes/-code-views.tsx` |
-| Regression tests | `cargo test -p yona-rust-pilot-server --test code_browser_contract`; `pnpm --dir frontend test`; `pnpm --dir frontend test:e2e` |
+| Regression tests | `cargo test -p yona-rust-pilot-server --test code_browser_contract`; `pnpm --dir frontend test`; `pnpm --dir frontend test:e2e`; `frontend/tests/project-code-comment-upload-parity.e2e.ts` |
 
 ## Remaining Phase 3 Follow-ups
 
 - Smart HTTP clone/pull/push and post-receive hooks.
-- Inline ranged code-comment UX remains deferred; Phase 3I covers non-ranged Git commit discussion.
+- Multi-line block selection, inline ranged reply upload polish, and inline edit remain follow-ups; Phase 3I covers non-ranged Git commit discussion and single-line inline commit comment creation/readback.
 - Git README write-back/sync through board README editing remains a board/VCS lifecycle follow-up.
 - SVN remains deferred.
 
