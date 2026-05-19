@@ -137,6 +137,7 @@ legacy Yona 사용자가 기존 설정을 최소한의 변환으로 새 실행�
 | `application.use.social.login.only`        | `YONA_AUTH_SOCIAL_LOGIN_ONLY`                       |                              |
 | `application.login.page.loginId.placeholder` | `YONA_AUTH_LOGIN_ID_PLACEHOLDER`                   | 로그인 ID 입력 placeholder   |
 | `application.login.page.password.placeholder` | `YONA_AUTH_PASSWORD_PLACEHOLDER`                   | 비밀번호 입력 placeholder    |
+| `session.maxAge`                          | `YONA_SESSION_TIMEOUT_SECONDS`                     | non-remember session timeout seconds |
 | `application.show.user.email`              | `YONA_SHOW_USER_EMAIL`                              |                              |
 | `application.allowed.sending.mail.domains` | `YONA_ALLOWED_MAIL_DOMAINS`                         |                              |
 | `db.default.url`                           | `YONA_DATABASE_URL`                                 | jdbc URL → standard URL 변환 |
@@ -274,7 +275,7 @@ GET   /authenticate/:provider   → OAuth 시작
 | Social Login (OAuth)         | GitHub, Google 등                                                   | deferred  | 2차   |
 | LDAP 연동                    | LDAP 서버 인증                                                      | deferred  | 2차   |
 | "Remember Me"                | 체크 시 30일 persistent session cookie, 미체크 시 browser-scoped session | ✅ 구현   | 1     |
-| 세션 만료                    | 설정 가능한 세션 타임아웃                                           | gap       | 6     |
+| 세션 만료                    | 설정 가능한 세션 타임아웃                                           | ✅ 구현   | 6     |
 | 게스트 사용자                | `application.guest.user.login.id.prefix`로 guest 계정 분류, 제한 권한 | 부분 구현 | 2     |
 | 익명 접근 제어               | `application.allowsAnonymousAccess` 설정                            | 부분 구현 | 2     |
 | 로그인 폼 커스텀 placeholder | `application.login.page.loginId.placeholder`, `application.login.page.password.placeholder` | ✅ 구현   | 1     |
@@ -285,6 +286,7 @@ GET   /authenticate/:provider   → OAuth 시작
 - [x] 로그인 성공 후 `redirectUrl` 파라미터가 있으면 해당 URL로 이동한다 (legacy 동작 동일)
 - [x] 로그인 실패 시 REST/Connect error payload가 legacy Ajax 메시지 키(`user.login.invalid`, `user.login.required`)를 반환한다
 - [x] `rememberMe=true` 로그인은 legacy 30일 유지 세션을 만들고, `rememberMe=false` 로그인은 브라우저 세션으로 남는다
+- [x] `YONA_SESSION_TIMEOUT_SECONDS` 설정 시 non-remember 세션 쿠키와 서버 세션 저장소가 해당 초 단위 타임아웃을 적용하고, remember-me 세션은 legacy 30일 유지 정책을 보존한다
 - [x] 회원가입 시 login ID, email 중복 검사가 동작한다
 - [x] `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM=true` 시 신규 사용자는 legacy `LOCKED` 상태로 생성되고 site admin 활성화 대상이 된다
 - [x] `YONA_GUEST_LOGIN_PREFIX`와 매칭되는 신규 login ID는 legacy `is_guest` 계정으로 생성된다

@@ -75,7 +75,7 @@ Interpretation:
 - [x] Auth UI capability flags
 - [x] Admin signup approval
 - [x] Remember-me long session parity
-- [ ] Configurable session timeout parity
+- [x] Configurable session timeout parity
 - [~] Guest user prefix classification
 - [~] Global anonymous-access configuration parity
 - [x] Custom login placeholder configuration

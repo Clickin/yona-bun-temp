@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, SystemTime};
 
 use base64::Engine;
 use http::HeaderMap;
@@ -17,12 +18,26 @@ pub struct Session {
 pub struct SessionConfig {
     pub cookie_path: String,
     pub public_origin: String,
+    pub session_timeout_seconds: Option<u64>,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct SessionManager {
     config: SessionConfig,
-    sessions: Arc<Mutex<HashMap<String, Session>>>,
+    sessions: Arc<Mutex<HashMap<String, StoredSession>>>,
+}
+
+#[derive(Clone, Debug)]
+struct StoredSession {
+    expires_at: Option<SystemTime>,
+    session: Session,
+}
+
+impl StoredSession {
+    fn is_expired(&self) -> bool {
+        self.expires_at
+            .is_some_and(|expires_at| SystemTime::now() >= expires_at)
+    }
 }
 
 impl SessionManager {
@@ -48,10 +63,7 @@ impl SessionManager {
             token: random_token(),
             user_id: None,
         };
-        self.sessions
-            .lock()
-            .unwrap()
-            .insert(session.token.clone(), session.clone());
+        self.store_session(session.clone());
         session
     }
 
@@ -95,11 +107,10 @@ impl SessionManager {
         let path = normalize_cookie_path(&self.config.cookie_path);
         let secure_suffix = if secure { "; Secure" } else { "" };
 
-        let max_age_suffix = if session.remember_me {
-            "; Max-Age=2592000"
-        } else {
-            ""
-        };
+        let max_age_suffix = self
+            .session_cookie_max_age(session)
+            .map(|seconds| format!("; Max-Age={seconds}"))
+            .unwrap_or_default();
 
         vec![
             format!(
@@ -117,7 +128,16 @@ impl SessionManager {
 impl SessionManager {
     fn read_session_from_cookie_header(&self, cookie_header: &str) -> Option<Session> {
         let token = read_cookie_value(cookie_header, "yona_session")?;
-        self.sessions.lock().unwrap().get(&token).cloned()
+        let mut sessions = self.sessions.lock().unwrap();
+        if sessions
+            .get(&token)
+            .map(StoredSession::is_expired)
+            .unwrap_or(false)
+        {
+            sessions.remove(&token);
+            return None;
+        }
+        sessions.get(&token).map(|stored| stored.session.clone())
     }
 
     fn replace_session(
@@ -131,17 +151,46 @@ impl SessionManager {
         let session = Session {
             csrf_token: existing
                 .as_ref()
-                .map(|session| session.csrf_token.clone())
+                .map(|stored| stored.session.csrf_token.clone())
                 .unwrap_or_else(random_token),
             remember_me,
             token: existing
                 .as_ref()
-                .map(|session| session.token.clone())
+                .map(|stored| stored.session.token.clone())
                 .unwrap_or_else(random_token),
             user_id,
         };
-        sessions.insert(session.token.clone(), session.clone());
+        sessions.insert(
+            session.token.clone(),
+            StoredSession {
+                expires_at: self.session_expires_at(&session),
+                session: session.clone(),
+            },
+        );
         session
+    }
+
+    fn store_session(&self, session: Session) {
+        self.sessions.lock().unwrap().insert(
+            session.token.clone(),
+            StoredSession {
+                expires_at: self.session_expires_at(&session),
+                session,
+            },
+        );
+    }
+
+    fn session_cookie_max_age(&self, session: &Session) -> Option<u64> {
+        if session.remember_me {
+            Some(30 * 24 * 60 * 60)
+        } else {
+            self.config.session_timeout_seconds
+        }
+    }
+
+    fn session_expires_at(&self, session: &Session) -> Option<SystemTime> {
+        self.session_cookie_max_age(session)
+            .and_then(|seconds| SystemTime::now().checked_add(Duration::from_secs(seconds)))
     }
 }
 

@@ -651,6 +651,7 @@ async fn remember_me_controls_session_cookie_persistence() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
     std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+    std::env::remove_var("YONA_SESSION_TIMEOUT_SECONDS");
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
 
@@ -716,6 +717,81 @@ async fn remember_me_controls_session_cookie_persistence() {
         named_cookie(&persistent_cookies, "yona_session=").contains("Max-Age=2592000"),
         "remember sign-in must persist the session cookie for the legacy 30-day window"
     );
+}
+
+#[tokio::test]
+async fn session_timeout_env_controls_non_remember_cookie_persistence() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+    std::env::set_var("YONA_SESSION_TIMEOUT_SECONDS", "1800");
+    let (app, _, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/register")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"loginId\":\"timeout-user\",\"name\":\"Timeout User\",\"emailAddress\":\"timeout@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let sign_in_without_remember = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/sign-in")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"timeout-user\",\"password\":\"doorpass1\",\"rememberMe\":false}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(sign_in_without_remember.status(), StatusCode::OK);
+    let timeout_cookies = set_cookie_headers(&sign_in_without_remember);
+    assert!(
+        named_cookie(&timeout_cookies, "yona_session=").contains("Max-Age=1800"),
+        "configured timeout should persist non-remember sessions for the configured window"
+    );
+
+    let sign_in_with_remember = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/sign-in")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"timeout-user\",\"password\":\"doorpass1\",\"rememberMe\":true}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(sign_in_with_remember.status(), StatusCode::OK);
+    let remember_cookies = set_cookie_headers(&sign_in_with_remember);
+    assert!(
+        named_cookie(&remember_cookies, "yona_session=").contains("Max-Age=2592000"),
+        "remember-me should keep the legacy 30-day persistence window"
+    );
+
+    std::env::remove_var("YONA_SESSION_TIMEOUT_SECONDS");
 }
 
 #[tokio::test]

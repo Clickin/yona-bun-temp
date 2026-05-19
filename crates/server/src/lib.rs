@@ -207,6 +207,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let session_manager = SessionManager::new(SessionConfig {
         cookie_path: base_path.clone(),
         public_origin: public_origin.clone(),
+        session_timeout_seconds: configured_session_timeout_seconds(),
     });
     let pilot_service = PilotServiceImpl {
         base_path: base_path.clone(),
@@ -1023,6 +1024,12 @@ fn allows_anonymous_access() -> bool {
             )
         })
         .unwrap_or(true)
+}
+
+fn configured_session_timeout_seconds() -> Option<u64> {
+    std::env::var("YONA_SESSION_TIMEOUT_SECONDS")
+        .ok()
+        .and_then(|value| value.trim().parse::<u64>().ok())
 }
 
 fn anonymous_access_path_is_public(path: &str) -> bool {

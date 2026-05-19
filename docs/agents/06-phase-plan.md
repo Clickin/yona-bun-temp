@@ -68,6 +68,7 @@
 - Auth admin signup approval complete: `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM=true` registers users as legacy `LOCKED` accounts, returns an anonymous session until approval, and reuses the site-admin account-lock toggle to activate the user.
 - Auth login placeholder configuration complete: `YONA_AUTH_LOGIN_ID_PLACEHOLDER` and `YONA_AUTH_PASSWORD_PLACEHOLDER` map the legacy `application.login.page.loginId.placeholder` / `application.login.page.password.placeholder` settings into auth UI capabilities, and `/users/loginform` renders the configured legacy placeholders with default fallbacks.
 - Auth remember-me complete: `rememberMe=true` sign-in marks the Rust session cookie persistent for the legacy 30-day window, while `rememberMe=false` keeps the normal browser-scoped session cookie.
+- Auth configurable session timeout complete: `YONA_SESSION_TIMEOUT_SECONDS` maps the legacy Play `session.maxAge` knob to non-remember session cookie `Max-Age` plus server-side session-store expiry, while remember-me keeps the legacy 30-day window.
 - Auth anonymous-access gate partial: `YONA_ALLOW_ANONYMOUS_ACCESS=false` now preserves the legacy global login gate for anonymous app-runtime page GETs and non-auth `/api/v1` calls while leaving auth bootstrap, login/signup, reset, verify, and static assets reachable.
 
 ## Phase 3: 저장소와 VCS
