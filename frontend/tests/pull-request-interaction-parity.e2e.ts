@@ -366,3 +366,118 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   await expect(page).toHaveURL(/\/yona\/admin\/projectYobi\/pullRequest\/9$/);
   await expect(page.getByRole("heading", { name: "Updated interaction parity" })).toBeVisible();
 });
+
+test("project pull request form editor inserts pasted and dropped image uploads", async ({
+  page,
+}) => {
+  const uploadedHeaders: string[] = [];
+
+  await page.route("**/files", async (route) => {
+    const uploadIndex = uploadedHeaders.length + 1;
+    uploadedHeaders.push(route.request().headers()["x-csrf-token"] ?? "");
+    await route.fulfill({
+      body: JSON.stringify({
+        id: 820 + uploadIndex,
+        mimeType: "image/png",
+        name: uploadIndex === 1 ? "pr-paste.png" : "pr-drop.png",
+        size: 8,
+        url: `/yona/files/${820 + uploadIndex}`,
+      }),
+      headers: restJsonHeaders,
+      status: 201,
+    });
+  });
+
+  await page.goto("/yona/admin/projectYobi/newPullRequestForm");
+  const bodyEditor = page.locator("#status");
+
+  await bodyEditor.evaluate((element) => {
+    const data = new DataTransfer();
+    data.items.add(new File(["pasted"], "pr-paste.png", { type: "image/png" }));
+    element.dispatchEvent(
+      new ClipboardEvent("paste", {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: data,
+      }),
+    );
+  });
+  await expect(bodyEditor).toHaveValue("![pr-paste.png](/yona/files/821) ");
+
+  await bodyEditor.evaluate((element) => {
+    const data = new DataTransfer();
+    data.items.add(new File(["dropped"], "pr-drop.png", { type: "image/png" }));
+    element.dispatchEvent(
+      new DragEvent("drop", {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: data,
+      }),
+    );
+  });
+  await expect(bodyEditor).toHaveValue(
+    "![pr-paste.png](/yona/files/821) ![pr-drop.png](/yona/files/822) ",
+  );
+
+  const createRequest = page.waitForRequest(
+    (request) => request.url().endsWith("/pull-requests") && request.method() === "POST",
+  );
+  await page.locator("#pullRequestState").fill("Created upload PR");
+  await page.getByRole("button", { name: "Create" }).click();
+  const submittedPullRequest = (await createRequest).postDataJSON() as {
+    attachmentIds?: number[];
+    bodyMarkdown?: string;
+  };
+
+  expect(uploadedHeaders).toEqual(["csrf-123", "csrf-123"]);
+  expect(submittedPullRequest).toMatchObject({
+    attachmentIds: [821, 822],
+    bodyMarkdown: "![pr-paste.png](/yona/files/821) ![pr-drop.png](/yona/files/822) ",
+  });
+});
+
+test("project pull request comment editor inserts pasted image uploads", async ({ page }) => {
+  await page.route("**/files", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        id: 831,
+        mimeType: "image/png",
+        name: "pr-comment.png",
+        size: 8,
+        url: "/yona/files/831",
+      }),
+      headers: restJsonHeaders,
+      status: 201,
+    });
+  });
+
+  await page.goto("/yona/admin/projectYobi/pullRequest/9");
+  const commentEditor = page.locator(".review-form textarea");
+
+  await commentEditor.evaluate((element) => {
+    const data = new DataTransfer();
+    data.items.add(new File(["pasted"], "pr-comment.png", { type: "image/png" }));
+    element.dispatchEvent(
+      new ClipboardEvent("paste", {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: data,
+      }),
+    );
+  });
+  await expect(commentEditor).toHaveValue("![pr-comment.png](/yona/files/831) ");
+
+  const commentRequest = page.waitForRequest(
+    (request) => request.url().endsWith("/pull-requests/9/comments") && request.method() === "POST",
+  );
+  await page.getByRole("button", { name: "Comment" }).click();
+  const submittedComment = (await commentRequest).postDataJSON() as {
+    attachmentIds?: number[];
+    contentsMarkdown?: string;
+  };
+
+  expect(submittedComment).toEqual({
+    attachmentIds: [831],
+    contentsMarkdown: "![pr-comment.png](/yona/files/831)",
+  });
+});

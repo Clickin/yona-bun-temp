@@ -141,10 +141,11 @@ function PullRequestDetailLeafRouteComponent() {
     },
   });
   const commentMutation = useMutation({
-    mutationFn: (contentsMarkdown: string) =>
+    mutationFn: (input: { attachmentIds?: number[]; contentsMarkdown: string }) =>
       createPullRequestCommentRest(runtimeConfig, csrfToken, {
         ...scope,
-        contentsMarkdown,
+        attachmentIds: input.attachmentIds,
+        contentsMarkdown: input.contentsMarkdown,
       }),
     onError: mutationError("Create pull request comment failed."),
     onSuccess: async (updated) => {
@@ -225,6 +226,7 @@ function PullRequestDetailLeafRouteComponent() {
 
   return (
     <ProjectPullRequestDetailPage
+      csrfToken={csrfToken}
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       pullRequest={pullRequestQuery.data}
       runtimeConfig={runtimeConfig}
@@ -232,8 +234,8 @@ function PullRequestDetailLeafRouteComponent() {
       onClose={async () => {
         await closeMutation.mutateAsync();
       }}
-      onCommentSubmit={async (contentsMarkdown) => {
-        await commentMutation.mutateAsync(contentsMarkdown);
+      onCommentSubmit={async (contentsMarkdown, attachmentIds) => {
+        await commentMutation.mutateAsync({ attachmentIds, contentsMarkdown });
       }}
       onOpen={async () => {
         await openMutation.mutateAsync();

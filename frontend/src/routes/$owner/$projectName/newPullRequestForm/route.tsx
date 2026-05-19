@@ -40,6 +40,7 @@ function NewPullRequestFormRouteComponent() {
   });
   const createMutation = useMutation({
     mutationFn: (input: {
+      attachmentIds: number[];
       bodyMarkdown: string;
       fromBranch: string;
       fromProjectId: number;
@@ -99,6 +100,7 @@ function NewPullRequestFormRouteComponent() {
 
   return (
     <ProjectPullRequestFormPage
+      csrfToken={csrfToken}
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       formOptions={formOptionsQuery.data}
       mode="create"

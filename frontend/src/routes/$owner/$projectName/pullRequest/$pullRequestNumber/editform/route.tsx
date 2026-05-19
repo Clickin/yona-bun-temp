@@ -43,8 +43,9 @@ function PullRequestEditFormRouteComponent() {
     enabled: !bootstrapping,
   });
   const updateMutation = useMutation({
-    mutationFn: (input: { bodyMarkdown: string; title: string }) =>
+    mutationFn: (input: { attachmentIds: number[]; bodyMarkdown: string; title: string }) =>
       updatePullRequestRest(runtimeConfig, csrfToken, {
+        attachmentIds: input.attachmentIds,
         bodyMarkdown: input.bodyMarkdown,
         ownerName: owner,
         projectName,
@@ -110,12 +111,14 @@ function PullRequestEditFormRouteComponent() {
 
   return (
     <ProjectPullRequestFormPage
+      csrfToken={csrfToken}
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       formOptions={formOptionsQuery.data}
       mode="edit"
       runtimeConfig={runtimeConfig}
       onSubmit={async (input) => {
         await updateMutation.mutateAsync({
+          attachmentIds: input.attachmentIds,
           bodyMarkdown: input.bodyMarkdown,
           title: input.title,
         });

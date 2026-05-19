@@ -12,6 +12,7 @@ import type {
   ReviewThreadListResponse,
 } from "../api/pull-requests";
 import type { RuntimeConfig } from "../runtime-config";
+import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
 import { buildOrganizationHref, OrganizationMenu } from "./-organization-views";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
 import type { OrganizationDetailViewModel, ProjectDetailViewModel } from "./-view-models";
@@ -69,6 +70,7 @@ function projectCategoryHref(
 }
 
 type PullRequestFormSubmitInput = {
+  attachmentIds: number[];
   bodyMarkdown: string;
   fromBranch: string;
   fromProjectId: number;
@@ -323,6 +325,7 @@ export function OrganizationPullRequestListPage(props: {
 }
 
 export function ProjectPullRequestFormPage(props: {
+  csrfToken?: string;
   detail: ProjectDetailViewModel | null;
   formOptions: PullRequestFormOptionsResponse | undefined;
   mode: "create" | "edit";
@@ -338,6 +341,7 @@ export function ProjectPullRequestFormPage(props: {
   const [toBranch, setToBranch] = React.useState(options?.selected.toBranch ?? "");
   const [title, setTitle] = React.useState(initialPullRequest?.title ?? "");
   const [bodyMarkdown, setBodyMarkdown] = React.useState(initialPullRequest?.bodyMarkdown ?? "");
+  const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
   const [submitting, setSubmitting] = React.useState(false);
   const editMode = props.mode === "edit";
 
@@ -351,6 +355,7 @@ export function ProjectPullRequestFormPage(props: {
     setToBranch(options.selected.toBranch);
     setTitle(options.pullRequest?.title ?? "");
     setBodyMarkdown(options.pullRequest?.bodyMarkdown ?? "");
+    setAttachmentIds([]);
   }, [options]);
 
   const formTitle = editMode ? "Edit Pull Request" : "New Pull Request";
@@ -390,6 +395,7 @@ export function ProjectPullRequestFormPage(props: {
                 setSubmitting(true);
                 void props
                   .onSubmit({
+                    attachmentIds,
                     bodyMarkdown,
                     fromBranch,
                     fromProjectId,
@@ -478,12 +484,17 @@ export function ProjectPullRequestFormPage(props: {
               </label>
               <label htmlFor="status">
                 Description
-                <textarea
+                <MarkdownAttachmentTextarea
                   className="content-body"
+                  csrfToken={props.csrfToken}
                   id="status"
                   name="bodyMarkdown"
-                  onChange={(event) => setBodyMarkdown(event.currentTarget.value)}
+                  onAttachmentUpload={(attachment) =>
+                    setAttachmentIds((current) => [...current, attachment.id])
+                  }
+                  onChange={setBodyMarkdown}
                   required
+                  runtimeConfig={props.runtimeConfig}
                   value={bodyMarkdown}
                 />
               </label>
@@ -579,12 +590,13 @@ function PullRequestActionBar(props: {
 }
 
 export function ProjectPullRequestDetailPage(props: {
+  csrfToken?: string;
   detail: ProjectDetailViewModel | null;
   pullRequest: PullRequestDetailResponse | undefined;
   runtimeConfig: RuntimeConfig;
   viewerId?: number;
   onClose?: () => Promise<void>;
-  onCommentSubmit?: (contentsMarkdown: string) => Promise<void>;
+  onCommentSubmit?: (contentsMarkdown: string, attachmentIds?: number[]) => Promise<void>;
   onOpen?: () => Promise<void>;
   onReview?: () => Promise<void>;
   onThreadClose?: (threadId: number) => Promise<void>;
@@ -594,6 +606,7 @@ export function ProjectPullRequestDetailPage(props: {
   const detail = props.detail ?? fallbackProjectDetail();
   const pr = props.pullRequest;
   const [commentDraft, setCommentDraft] = React.useState("");
+  const [commentAttachmentIds, setCommentAttachmentIds] = React.useState<number[]>([]);
 
   return (
     <main className="app-shell pull-request-page">
@@ -662,12 +675,20 @@ export function ProjectPullRequestDetailPage(props: {
                   if (!contents) {
                     return;
                   }
-                  void props.onCommentSubmit?.(contents).then(() => setCommentDraft(""));
+                  void props.onCommentSubmit?.(contents, commentAttachmentIds).then(() => {
+                    setCommentAttachmentIds([]);
+                    setCommentDraft("");
+                  });
                 }}
               >
-                <textarea
+                <MarkdownAttachmentTextarea
+                  csrfToken={props.csrfToken}
                   name="contentsMarkdown"
-                  onChange={(event) => setCommentDraft(event.currentTarget.value)}
+                  onAttachmentUpload={(attachment) =>
+                    setCommentAttachmentIds((current) => [...current, attachment.id])
+                  }
+                  onChange={setCommentDraft}
+                  runtimeConfig={props.runtimeConfig}
                   value={commentDraft}
                 />
                 <button className="ybtn ybtn-success" type="submit">

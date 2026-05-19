@@ -61,6 +61,10 @@
   `NEW_REVIEW_COMMENT` fan out to non-JSON webhooks with the legacy PR link/text
   shape. Plain close/reopen records PR state events but did not call project
   webhooks in the observed legacy code.
+- PR create/edit body editors and general review comment editors preserve the
+  legacy `yobi.git.Write` / `yobi.git.View` image paste/drop path by posting
+  image files to `/files`, inserting `![name](url)`, and submitting uploaded
+  attachment ids with the matching `/api/v1` PR mutation.
 - PR bodies and general review comments now use the project Markdown projection
   for sanitized `@username`, same-project `#123`, `owner/project#123`, and
   bare `http://`/`https://` URL autolinks. Legacy issue-link title/state
