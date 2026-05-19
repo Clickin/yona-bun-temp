@@ -18,7 +18,7 @@ use yona_rust_pilot_server::{
     create_router_with_filesystem_assets, RuntimeConfig,
 };
 
-fn project_scope_env_lock() -> &'static Mutex<()> {
+fn runtime_config_env_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))
 }
@@ -233,13 +233,15 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
 
 #[tokio::test]
 async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
-    let _guard = project_scope_env_lock().lock().unwrap();
+    let _guard = runtime_config_env_lock().lock().unwrap();
     std::env::set_var("YONA_PROJECT_DEFAULT_SCOPE", "private");
+    std::env::set_var("YONA_LANGS", "ko-KR, en-US, ja-JP");
     let app = create_router_with_embedded_assets(RuntimeConfig {
         base_path: "/yona".to_string(),
         public_origin: String::new(),
     });
     std::env::remove_var("YONA_PROJECT_DEFAULT_SCOPE");
+    std::env::remove_var("YONA_LANGS");
 
     let index = app
         .clone()
@@ -258,6 +260,7 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"));
     assert!(html.contains("\"basePath\":\"/yona\""));
     assert!(html.contains("\"projectDefaultScope\":\"private\""));
+    assert!(html.contains("\"supportedLanguages\":[\"ko-KR\",\"en-US\",\"ja-JP\"]"));
 
     let asset = app
         .clone()

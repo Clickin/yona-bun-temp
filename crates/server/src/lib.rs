@@ -1130,6 +1130,28 @@ fn configured_project_default_scope() -> String {
         .unwrap_or_else(|| "public".to_string())
 }
 
+fn configured_supported_languages() -> Vec<String> {
+    let languages: Vec<String> = std::env::var("YONA_LANGS")
+        .ok()
+        .unwrap_or_default()
+        .split(',')
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToString::to_string)
+        .collect();
+    if languages.is_empty() {
+        vec![
+            "en-US".to_string(),
+            "ko-KR".to_string(),
+            "ja-JP".to_string(),
+            "ru-RU".to_string(),
+            "uz-UZ".to_string(),
+        ]
+    } else {
+        languages
+    }
+}
+
 fn gravatar_url(email_address: &str) -> String {
     let normalized = normalize_identifier(email_address);
     let mut hasher = Md5::new();
@@ -14812,6 +14834,8 @@ struct BrowserRuntimeConfig {
     base_path: String,
     #[serde(rename = "projectDefaultScope")]
     project_default_scope: String,
+    #[serde(rename = "supportedLanguages")]
+    supported_languages: Vec<String>,
 }
 
 #[derive(Clone, Serialize)]
@@ -14855,6 +14879,7 @@ impl BrowserRuntimeConfig {
             api_base_url,
             base_path,
             project_default_scope: configured_project_default_scope(),
+            supported_languages: configured_supported_languages(),
         }
     }
 }

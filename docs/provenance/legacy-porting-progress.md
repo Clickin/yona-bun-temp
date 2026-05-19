@@ -34,7 +34,7 @@ Interpretation:
 
 | Area                                    | Status                    | Notes                                                                                                                    |
 | --------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Foundation / DB / runtime               | [~] Mostly implemented    | Schema, migrations, `/api/v1` REST runtime, assets are strong; production migration/import/export is not.                |
+| Foundation / DB / runtime               | [~] Mostly implemented    | Schema, migrations, `/api/v1` REST runtime, assets, and config compatibility for base path/session/project default scope/languages are strong; production migration/import/export is not. |
 | Auth / Workspace                        | [~] Partially implemented | Core account, password-reset mail format, admin signup approval state, guest-prefix account classification, global anonymous-access gate, remember-me session persistence, login placeholder config, settings, public profile, and user statistics count flows exist; full guest permission matrix/OAuth/LDAP remain. |
 | Organization / Project core             | [~] Partially implemented | CRUD, members, enrollment, watch/favorite, webhook CRUD plus issue/comment and PR create/review/comment fan-out, transfer request/accept/mail, change VCS shell/metadata reset, and the legacy project statistics shell exist; Smart HTTP clone URL behavior, SVN executable-backed serve, and remaining webhook delivery hardening remain. |
 | Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists, favorite issue, direct/project sharer effects, and issue/comment mention row effects exist over `/api/v1`; legacy external REST parity is separate migrator scope. |
@@ -55,6 +55,7 @@ Interpretation:
 - [x] PostgreSQL runtime migration/adopt/validate
 - [x] Embedded/static asset serving
 - [x] Session/CSRF infrastructure
+- [x] Runtime language configuration preservation (`application.langs` / `YONA_LANGS`)
 - [~] Repository layer for implemented vertical slices
 - [ ] Production migration/import/export tooling
 - [ ] H2 compatibility

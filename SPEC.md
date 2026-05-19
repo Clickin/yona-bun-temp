@@ -155,7 +155,7 @@ legacy Yona 사용자가 기존 설정을 최소한의 변환으로 새 실행�
 Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능 동작**을 분리한다.
 
 - `YONA_AUTH_SOCIAL_LOGIN_ONLY`: 설정은 파싱하고 auth UI capability에 반영한다. Social-login-only UI gating은 수행할 수 있지만, OAuth provider 로그인 플로우는 deferred다. provider가 없거나 미지원이면 조용히 무시하지 말고 warning/unsupported state를 노출한다.
-- `YONA_LANGS`: 설정은 파싱하고 보존한다. 1차 PoC에서는 legacy copy parity를 우선하며 동적 i18n runtime 전환은 deferred다.
+- `YONA_LANGS`: 설정은 파싱하고 browser runtime config의 `supportedLanguages`로 보존한다. 1차 PoC에서는 legacy copy parity를 우선하며 동적 i18n runtime 전환은 deferred다.
 - deferred 기능과 연결된 설정은 명시된 no-op/fallback/warning 동작 없이 조용히 무시하면 안 된다.
 
 ---
