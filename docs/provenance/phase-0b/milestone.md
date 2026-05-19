@@ -3,7 +3,7 @@
 ## Scope
 
 - Phase 2C project milestone management parity.
-- Covers milestone list/detail/create/edit/delete/open/close, issue counts and progress, detail issue tabs, Markdown description rendering, attachment binding, and legacy direct mutation routes.
+- Covers milestone list/detail/create/edit/delete/open/close, issue counts and progress, detail issue tabs, Markdown description rendering, attachment binding, create/edit image paste/drop upload, and legacy direct mutation routes.
 - REST `/-_-api/v1/.../milestones`, migration export/import, and search milestone result type remain follow-up packets.
 
 ## Legacy Sources
@@ -14,9 +14,13 @@
 - `yona-original/app/views/milestone/view.scala.html`
 - `yona-original/app/views/milestone/create.scala.html`
 - `yona-original/app/views/milestone/edit.scala.html`
+- `yona-original/app/views/common/editor.scala.html`
+- `yona-original/app/views/common/fileUploader.scala.html`
 - `yona-original/app/views/milestone/partial_status.scala.html`
 - `yona-original/public/javascripts/service/yobi.milestone.Write.js`
 - `yona-original/public/javascripts/service/yobi.milestone.View.js`
+- `yona-original/public/javascripts/common/yobi.Files.js`
+- `yona-original/public/javascripts/common/yobi.Attachments.js`
 
 ## Phase 2C Evidence
 
@@ -28,12 +32,14 @@
 | `MilestoneApp.deleteMilestone` + `Milestone.delete`                | delete nulls linked issue milestone references before deleting the milestone                                                                   | `DeleteProjectMilestone` RPC, direct `DELETE /:owner/:project/milestone/:id/delete`, repository transaction |
 | `MilestoneApp.open/close`                                          | state toggle only changes milestone state and preserves linked issue states                                                                    | `OpenProjectMilestone`, `CloseProjectMilestone`, direct open/close routes                                   |
 | `milestone/view.scala.html`                                        | detail shows due date, progress, Markdown contents, attachments, list/edit/delete/open-close actions, and open/closed/all issue tabs           | `ReadProjectMilestone` RPC and `frontend/src/routes/$owner/$projectName/milestone/$milestoneId/route.tsx`   |
+| `common.editor` + `common.fileUploader` + `yobi.Files` / `yobi.Attachments` | create/edit milestone contents support image paste/drop upload, insert `![name](url)`, and submit temporary attachment ids                     | `MarkdownAttachmentTextarea` in `ProjectMilestoneFormPage` plus `attachmentIds` in milestone create/update   |
 
 ## Verification
 
 - `cargo test -p yona-rust-pilot-server --test milestone_contract`
 - `pnpm --dir frontend build`
 - `pnpm --dir frontend check`
+- `pnpm --dir frontend test:e2e -- tests/shell-routing-smoke.e2e.ts -g "project milestone .*image uploads|project milestone edit editor submits pasted image uploads"`
 
 ## Remaining Follow-ups
 

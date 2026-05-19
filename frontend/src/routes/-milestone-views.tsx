@@ -1,5 +1,6 @@
 import * as React from "react";
 import type { RuntimeConfig } from "../runtime-config";
+import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
 import type {
   ProjectDetailViewModel,
@@ -378,10 +379,12 @@ export function ProjectMilestoneDetailPage(props: {
 }
 
 export function ProjectMilestoneFormPage(props: {
+  csrfToken?: string;
   detail: ProjectDetailViewModel | null;
   initialMilestone?: ProjectMilestoneViewModel | null;
   mode: "create" | "edit";
   onSubmit?: (input: {
+    attachmentIds: number[];
     contentsMarkdown: string;
     dueDate: string;
     state: string;
@@ -395,6 +398,7 @@ export function ProjectMilestoneFormPage(props: {
   const initial = props.initialMilestone;
   const [title, setTitle] = React.useState(initial?.title ?? "");
   const [contentsMarkdown, setContentsMarkdown] = React.useState(initial?.contentsMarkdown ?? "");
+  const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
   const [dueDate, setDueDate] = React.useState(initial?.dueDateLabel ?? "");
   const [state, setState] = React.useState(initial?.state ?? "open");
   const [pending, setPending] = React.useState(false);
@@ -402,6 +406,7 @@ export function ProjectMilestoneFormPage(props: {
   React.useEffect(() => {
     setTitle(initial?.title ?? "");
     setContentsMarkdown(initial?.contentsMarkdown ?? "");
+    setAttachmentIds([]);
     setDueDate(initial?.dueDateLabel ?? "");
     setState(initial?.state ?? "open");
   }, [initial]);
@@ -418,6 +423,7 @@ export function ProjectMilestoneFormPage(props: {
           setPending(true);
           void props
             .onSubmit?.({
+              attachmentIds,
               contentsMarkdown,
               dueDate,
               state,
@@ -434,10 +440,15 @@ export function ProjectMilestoneFormPage(props: {
           placeholder="Title"
           value={title}
         />
-        <textarea
+        <MarkdownAttachmentTextarea
           className="content-body"
+          csrfToken={props.csrfToken}
           name="contents"
-          onChange={(event) => setContentsMarkdown(event.currentTarget.value)}
+          onAttachmentUpload={(attachment) =>
+            setAttachmentIds((current) => [...current, attachment.id])
+          }
+          onChange={setContentsMarkdown}
+          runtimeConfig={props.runtimeConfig}
           value={contentsMarkdown}
         />
         <dl className="issue-option">

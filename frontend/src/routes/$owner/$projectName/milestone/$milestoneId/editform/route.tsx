@@ -82,11 +82,13 @@ function ProjectMilestoneEditFormRouteComponent() {
 
   return (
     <ProjectMilestoneFormPage
+      csrfToken={csrfToken}
       detail={detail}
       initialMilestone={milestone}
       mode="edit"
       onSubmit={async (input) => {
         const response = await updateProjectMilestone(runtimeConfig, csrfToken, {
+          attachmentIds: input.attachmentIds.map(BigInt),
           contentsMarkdown: input.contentsMarkdown,
           dueDate: input.dueDate,
           milestoneId: BigInt(Number(milestoneId)),

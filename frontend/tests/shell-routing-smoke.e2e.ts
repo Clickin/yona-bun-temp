@@ -1311,6 +1311,187 @@ test("project milestone routes render list detail and form shells", async ({ pag
   await expect(page.locator('input[name="title"]')).toHaveValue("v1.0");
 });
 
+test("project milestone create editor inserts pasted and dropped image uploads", async ({
+  page,
+}) => {
+  const uploadedHeaders: string[] = [];
+
+  await page.route("**/files", async (route) => {
+    const uploadIndex = uploadedHeaders.length + 1;
+    uploadedHeaders.push(route.request().headers()["x-csrf-token"] ?? "");
+    await route.fulfill({
+      body: JSON.stringify({
+        id: 840 + uploadIndex,
+        mimeType: "image/png",
+        name: uploadIndex === 1 ? "milestone-paste.png" : "milestone-drop.png",
+        size: 8,
+        url: `/yona/files/${840 + uploadIndex}`,
+      }),
+      headers: restJsonHeaders,
+      status: 201,
+    });
+  });
+  await page.route(apiV1Route("/owners/admin/projects/projectYobi/milestones"), async (route) => {
+    const body = route.request().postDataJSON() as {
+      contentsMarkdown?: string;
+      title?: string;
+    };
+    await route.fulfill({
+      body: JSON.stringify({
+        milestone: {
+          contentsHtml: `<p>${body.contentsMarkdown ?? ""}</p>`,
+          contentsMarkdown: body.contentsMarkdown ?? "",
+          dueDateLabel: "",
+          id: "8",
+          state: "open",
+          title: body.title ?? "Created milestone",
+        },
+      }),
+      headers: restJsonHeaders,
+      status: 201,
+    });
+  });
+
+  await page.goto("/yona/admin/projectYobi/newMilestoneForm");
+  const contentsEditor = page.locator('textarea[name="contents"]');
+
+  await contentsEditor.evaluate((element) => {
+    const data = new DataTransfer();
+    data.items.add(new File(["pasted"], "milestone-paste.png", { type: "image/png" }));
+    element.dispatchEvent(
+      new ClipboardEvent("paste", {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: data,
+      }),
+    );
+  });
+  await expect(contentsEditor).toHaveValue("![milestone-paste.png](/yona/files/841) ");
+
+  await contentsEditor.evaluate((element) => {
+    const data = new DataTransfer();
+    data.items.add(new File(["dropped"], "milestone-drop.png", { type: "image/png" }));
+    element.dispatchEvent(
+      new DragEvent("drop", {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: data,
+      }),
+    );
+  });
+  await expect(contentsEditor).toHaveValue(
+    "![milestone-paste.png](/yona/files/841) ![milestone-drop.png](/yona/files/842) ",
+  );
+
+  const createRequest = page.waitForRequest(
+    (request) =>
+      request.url().endsWith("/owners/admin/projects/projectYobi/milestones") &&
+      request.method() === "POST",
+  );
+  await page.getByPlaceholder("Title").fill("Created upload milestone");
+  await page.getByRole("button", { name: "Save" }).click();
+  const submittedMilestone = (await createRequest).postDataJSON() as {
+    attachmentIds?: number[];
+    contentsMarkdown?: string;
+  };
+
+  expect(uploadedHeaders).toEqual(["csrf-123", "csrf-123"]);
+  expect(submittedMilestone).toMatchObject({
+    attachmentIds: [841, 842],
+    contentsMarkdown:
+      "![milestone-paste.png](/yona/files/841) ![milestone-drop.png](/yona/files/842) ",
+  });
+});
+
+test("project milestone edit editor submits pasted image uploads", async ({ page }) => {
+  await page.route("**/files", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        id: 843,
+        mimeType: "image/png",
+        name: "milestone-edit.png",
+        size: 8,
+        url: "/yona/files/843",
+      }),
+      headers: restJsonHeaders,
+      status: 201,
+    });
+  });
+  await page.route(apiV1Route("/owners/admin/projects/projectYobi/milestones/7"), async (route) => {
+    if (route.request().method() === "PATCH") {
+      const body = route.request().postDataJSON() as {
+        contentsMarkdown?: string;
+        title?: string;
+      };
+      await route.fulfill({
+        body: JSON.stringify({
+          milestone: {
+            contentsHtml: `<p>${body.contentsMarkdown ?? ""}</p>`,
+            contentsMarkdown: body.contentsMarkdown ?? "",
+            dueDateLabel: "2026-05-09",
+            id: "7",
+            state: "open",
+            title: body.title ?? "v1.0",
+          },
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+      return;
+    }
+
+    await route.fulfill({
+      body: JSON.stringify({
+        milestone: {
+          contentsHtml: "<p>Ship parity</p>",
+          contentsMarkdown: "Ship parity",
+          dueDateLabel: "2026-05-09",
+          id: "7",
+          state: "open",
+          title: "v1.0",
+          viewerCanDelete: true,
+          viewerCanUpdate: true,
+        },
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/admin/projectYobi/milestone/7/editform");
+  const contentsEditor = page.locator('textarea[name="contents"]');
+  await contentsEditor.evaluate((element) => {
+    const textarea = element as HTMLTextAreaElement;
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    const data = new DataTransfer();
+    data.items.add(new File(["pasted"], "milestone-edit.png", { type: "image/png" }));
+    textarea.dispatchEvent(
+      new ClipboardEvent("paste", {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: data,
+      }),
+    );
+  });
+  await expect(contentsEditor).toHaveValue("Ship parity![milestone-edit.png](/yona/files/843) ");
+
+  const updateRequest = page.waitForRequest(
+    (request) =>
+      request.url().endsWith("/owners/admin/projects/projectYobi/milestones/7") &&
+      request.method() === "PATCH",
+  );
+  await page.getByRole("button", { name: "Save" }).click();
+  const submittedMilestone = (await updateRequest).postDataJSON() as {
+    attachmentIds?: number[];
+    contentsMarkdown?: string;
+  };
+
+  expect(submittedMilestone).toMatchObject({
+    attachmentIds: [843],
+    contentsMarkdown: "Ship parity![milestone-edit.png](/yona/files/843) ",
+  });
+});
+
 test("project issue routes render forbidden and not-found shells when issue reads fail", async ({
   page,
 }) => {

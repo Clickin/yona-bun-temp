@@ -69,10 +69,12 @@ function NewMilestoneFormRouteComponent() {
 
   return (
     <ProjectMilestoneFormPage
+      csrfToken={csrfToken}
       detail={detail}
       mode="create"
       onSubmit={async (input) => {
         const response = await createProjectMilestone(runtimeConfig, csrfToken, {
+          attachmentIds: input.attachmentIds.map(BigInt),
           contentsMarkdown: input.contentsMarkdown,
           dueDate: input.dueDate,
           ownerName: owner,
