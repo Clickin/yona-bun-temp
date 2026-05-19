@@ -56,6 +56,7 @@ Interpretation:
 - [x] Embedded/static asset serving
 - [x] Session/CSRF infrastructure
 - [x] Runtime language configuration preservation (`application.langs` / `YONA_LANGS`)
+- [~] SMTP config aliases (`YONA_SMTP_HOST`, `YONA_SMTP_PORT`, `YONA_SMTP_USER`, `YONA_SMTP_PASSWORD`; `smtp.ssl` remains delivery hardening)
 - [~] Repository layer for implemented vertical slices
 - [ ] Production migration/import/export tooling
 - [ ] H2 compatibility
@@ -296,6 +297,7 @@ Interpretation:
 ## Notifications / Mail
 
 - [x] SMTP/integration infrastructure basics
+- [~] Legacy `YONA_SMTP_*` environment aliases for mail configuration and delivery
 - [x] Project notification settings basics
 - [x] Project watch toggle basics
 - [x] Notification event list

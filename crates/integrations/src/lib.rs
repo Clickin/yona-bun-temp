@@ -81,6 +81,15 @@ pub fn smtp_enabled() -> bool {
     read_bool_env("SMTP_ENABLED")
 }
 
+fn configured_env_value(names: &[&str]) -> Option<String> {
+    names.iter().find_map(|name| {
+        std::env::var(name)
+            .ok()
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty())
+    })
+}
+
 pub fn webhook_http_delivery_enabled() -> bool {
     read_bool_env("WEBHOOK_HTTP_DELIVERY_ENABLED")
 }
@@ -110,20 +119,16 @@ pub fn deliver(mail: OutboundMail) -> Result<(), String> {
         .body(mail.body)
         .map_err(|error| format!("invalid mail message: {error}"))?;
 
-    let host = std::env::var("SMTP_HOST").map_err(|_| "SMTP_HOST is required.".to_string())?;
-    let port = std::env::var("SMTP_PORT")
-        .ok()
+    let host = configured_env_value(&["SMTP_HOST", "YONA_SMTP_HOST"])
+        .ok_or_else(|| "SMTP_HOST is required.".to_string())?;
+    let port = configured_env_value(&["SMTP_PORT", "YONA_SMTP_PORT"])
         .and_then(|value| value.parse::<u16>().ok())
         .unwrap_or(587);
     let mut builder = SmtpTransport::relay(&host)
         .map_err(|error| format!("smtp relay configuration failed: {error}"))?
         .port(port);
-    let user = std::env::var("SMTP_USER")
-        .ok()
-        .filter(|value| !value.trim().is_empty());
-    let pass = std::env::var("SMTP_PASS")
-        .ok()
-        .filter(|value| !value.trim().is_empty());
+    let user = configured_env_value(&["SMTP_USER", "YONA_SMTP_USER"]);
+    let pass = configured_env_value(&["SMTP_PASS", "YONA_SMTP_PASSWORD"]);
     if let (Some(user), Some(pass)) = (user, pass) {
         builder = builder.credentials(Credentials::new(user, pass));
     }

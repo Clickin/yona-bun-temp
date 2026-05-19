@@ -6,6 +6,7 @@ use sea_orm::{
     Set,
 };
 use serde_json::{json, Value};
+use std::sync::{Mutex, OnceLock};
 use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
@@ -16,6 +17,11 @@ use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;
+
+fn smtp_env_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -853,10 +859,16 @@ async fn site_admin_diagnostics_are_site_admin_only_and_report_legacy_error_list
 
 #[tokio::test]
 async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
+    let _guard = smtp_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
     std::env::remove_var("SMTP_ENABLED");
     std::env::remove_var("SMTP_HOST");
     std::env::remove_var("SMTP_USER");
     std::env::remove_var("SMTP_PASS");
+    std::env::remove_var("YONA_SMTP_HOST");
+    std::env::remove_var("YONA_SMTP_USER");
+    std::env::remove_var("YONA_SMTP_PASSWORD");
     std::env::set_var("SMTP_FROM", "site-admin@yona.local");
     clear_test_outbox();
 
@@ -977,4 +989,30 @@ async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
         project_recipients["recipients"],
         json!(["member@example.com", "observer@example.com"])
     );
+}
+
+#[tokio::test]
+async fn site_admin_mail_options_accept_legacy_yona_smtp_env_aliases() {
+    let _guard = smtp_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    std::env::remove_var("SMTP_HOST");
+    std::env::remove_var("SMTP_USER");
+    std::env::remove_var("SMTP_PASS");
+    std::env::set_var("YONA_SMTP_HOST", "smtp.example.com");
+    std::env::set_var("YONA_SMTP_USER", "smtp-user");
+    std::env::set_var("YONA_SMTP_PASSWORD", "smtp-pass");
+
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let options =
+        response_json(rest_get(app, "/yona/api/v1/site/mail", Some(&admin_cookie)).await).await;
+
+    std::env::remove_var("YONA_SMTP_HOST");
+    std::env::remove_var("YONA_SMTP_USER");
+    std::env::remove_var("YONA_SMTP_PASSWORD");
+
+    assert_eq!(options["notConfiguredItems"], json!([]));
 }

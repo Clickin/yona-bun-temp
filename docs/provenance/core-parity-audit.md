@@ -73,6 +73,10 @@
 
 - Project creation now persists `YONA_PROJECT_DEFAULT_MENUS` (`project.creation.default.menus`) into the new `project_menu_setting` row. This closes the config-compatibility part of default project menus while leaving the legacy create/settings checkbox UX as a project surface follow-up.
 
+## Mail Configuration Note
+
+- Site-admin mail options and outbound SMTP delivery now accept `YONA_SMTP_HOST`, `YONA_SMTP_PORT`, `YONA_SMTP_USER`, and `YONA_SMTP_PASSWORD` as aliases for the existing `SMTP_*` names. `smtp.ssl` semantics and full notification mail batching remain delivery-hardening follow-up scope.
+
 ## Current Frontend Smoke Stabilization Note
 
 - The Phase 2M frontend smoke baseline keeps the workspace/settings surface in

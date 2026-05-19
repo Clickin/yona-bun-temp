@@ -7547,15 +7547,24 @@ fn rest_site_mail_options(sent: bool) -> RestSiteMailOptionsResponse {
 }
 
 fn site_mail_not_configured_items() -> Vec<String> {
-    ["SMTP_HOST", "SMTP_USER", "SMTP_PASS"]
-        .into_iter()
-        .filter(|name| {
-            std::env::var(name)
-                .ok()
-                .is_none_or(|value| value.trim().is_empty())
-        })
-        .map(|name| name.to_string())
-        .collect()
+    [
+        ("SMTP_HOST", &["SMTP_HOST", "YONA_SMTP_HOST"][..]),
+        ("SMTP_USER", &["SMTP_USER", "YONA_SMTP_USER"][..]),
+        ("SMTP_PASS", &["SMTP_PASS", "YONA_SMTP_PASSWORD"][..]),
+    ]
+    .into_iter()
+    .filter(|(_, names)| configured_env_value(names).is_none())
+    .map(|(label, _)| label.to_string())
+    .collect()
+}
+
+fn configured_env_value(names: &[&str]) -> Option<String> {
+    names.iter().find_map(|name| {
+        std::env::var(name)
+            .ok()
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty())
+    })
 }
 
 fn required_site_mail_field(value: String, name: &str) -> Result<String, RestRouteError> {
