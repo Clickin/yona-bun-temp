@@ -1122,6 +1122,14 @@ fn configured_site_name() -> String {
         .unwrap_or_else(|| "Yona".to_string())
 }
 
+fn configured_project_default_scope() -> String {
+    std::env::var("YONA_PROJECT_DEFAULT_SCOPE")
+        .ok()
+        .map(|value| normalize_identifier(&value))
+        .filter(|value| matches!(value.as_str(), "public" | "protected" | "private"))
+        .unwrap_or_else(|| "public".to_string())
+}
+
 fn gravatar_url(email_address: &str) -> String {
     let normalized = normalize_identifier(email_address);
     let mut hasher = Md5::new();
@@ -14802,6 +14810,8 @@ struct BrowserRuntimeConfig {
     api_base_url: String,
     #[serde(rename = "basePath")]
     base_path: String,
+    #[serde(rename = "projectDefaultScope")]
+    project_default_scope: String,
 }
 
 #[derive(Clone, Serialize)]
@@ -14844,6 +14854,7 @@ impl BrowserRuntimeConfig {
         Self {
             api_base_url,
             base_path,
+            project_default_scope: configured_project_default_scope(),
         }
     }
 }
@@ -19813,7 +19824,15 @@ impl PilotServiceImpl {
                 "project requires repository backend",
             ));
         };
-        let scope = map_project_scope(request.project_scope)?;
+        let request_scope = request.project_scope.trim();
+        let default_scope;
+        let scope_value = if request_scope.is_empty() {
+            default_scope = configured_project_default_scope();
+            default_scope.as_str()
+        } else {
+            request_scope
+        };
+        let scope = map_project_scope(scope_value)?;
         if !is_valid_project_name(request.project_name) || request.overview.len() > 255 {
             return Err(ConnectError::invalid_argument("invalid project request"));
         }

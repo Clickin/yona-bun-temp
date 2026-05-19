@@ -39,6 +39,7 @@ import {
   submitIssueAssigneeSuggestion,
   submitIssueAssigneeText,
 } from "./routes/-issue-views";
+import { ProjectNewPage } from "./routes/-project-views";
 import type { ProjectIssueDetailViewModel } from "./routes/-view-models";
 
 describe("auth and workspace views", () => {
@@ -74,6 +75,13 @@ describe("auth and workspace views", () => {
 
     expect(html).toContain('placeholder="Use employee number"');
     expect(html).toContain('placeholder="Company password"');
+  });
+
+  it("uses the configured project default scope on the create project form", () => {
+    const html = renderToStaticMarkup(<ProjectNewPage defaultProjectScope="private" />);
+
+    expect(html).toContain('<select name="projectScope">');
+    expect(html).toContain('<option value="private" selected="">private</option>');
   });
 
   it("renders the canonical signup shell with legacy labels and login link", () => {

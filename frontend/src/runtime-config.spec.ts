@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { readRuntimeConfig } from "./runtime-config";
+import { readRuntimeConfig, type RuntimeConfig } from "./runtime-config";
 
 const originalImportMetaEnv = { ...(import.meta as { env?: Record<string, string> }).env };
 const originalProcessEnv = { ...process.env };
@@ -17,19 +17,25 @@ describe("readRuntimeConfig", () => {
     expect(readRuntimeConfig()).toEqual({
       apiBaseUrl: "/api",
       basePath: "/",
+      projectDefaultScope: "public",
     });
   });
 
   it("normalizes a mounted base path and derived endpoints", () => {
     globalThis.window = {} as Window & typeof globalThis;
-    window.__YONA_RUNTIME_CONFIG__ = {
+    const browserWindow = window as Window & {
+      __YONA_RUNTIME_CONFIG__?: Partial<RuntimeConfig>;
+    };
+    browserWindow.__YONA_RUNTIME_CONFIG__ = {
       apiBaseUrl: "/yona/api",
       basePath: "/yona/",
+      projectDefaultScope: "private",
     };
 
     expect(readRuntimeConfig()).toEqual({
       apiBaseUrl: "/yona/api",
       basePath: "/yona",
+      projectDefaultScope: "private",
     });
   });
 
@@ -40,6 +46,7 @@ describe("readRuntimeConfig", () => {
     expect(readRuntimeConfig()).toEqual({
       apiBaseUrl: "/yona/api",
       basePath: "/yona",
+      projectDefaultScope: "public",
     });
   });
 

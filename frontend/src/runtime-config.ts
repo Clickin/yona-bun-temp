@@ -1,20 +1,18 @@
 export interface RuntimeConfig {
   apiBaseUrl: string;
   basePath: string;
+  projectDefaultScope?: string;
 }
 
 declare global {
   interface ImportMetaEnv {
     readonly VITE_YONA_API_BASE_URL?: string;
     readonly VITE_YONA_BASE_PATH?: string;
+    readonly VITE_YONA_PROJECT_DEFAULT_SCOPE?: string;
   }
 
   interface ImportMeta {
     readonly env: ImportMetaEnv;
-  }
-
-  interface Window {
-    __YONA_RUNTIME_CONFIG__?: Partial<RuntimeConfig>;
   }
 }
 
@@ -35,6 +33,7 @@ export function resolveRuntimeConfig(input: Partial<RuntimeConfig> = {}): Runtim
   return {
     apiBaseUrl: input.apiBaseUrl ?? joinBasePath(basePath, "api"),
     basePath,
+    projectDefaultScope: normalizeProjectDefaultScope(input.projectDefaultScope),
   };
 }
 
@@ -42,6 +41,7 @@ function readViteRuntimeConfig(): Partial<RuntimeConfig> {
   return {
     apiBaseUrl: import.meta.env.VITE_YONA_API_BASE_URL,
     basePath: import.meta.env.VITE_YONA_BASE_PATH,
+    projectDefaultScope: import.meta.env.VITE_YONA_PROJECT_DEFAULT_SCOPE,
   };
 }
 
@@ -50,8 +50,11 @@ export function readRuntimeConfig(): RuntimeConfig {
     return resolveRuntimeConfig(readViteRuntimeConfig());
   }
 
-  if (window.__YONA_RUNTIME_CONFIG__) {
-    return resolveRuntimeConfig(window.__YONA_RUNTIME_CONFIG__);
+  const browserWindow = window as Window & {
+    __YONA_RUNTIME_CONFIG__?: Partial<RuntimeConfig>;
+  };
+  if (browserWindow.__YONA_RUNTIME_CONFIG__) {
+    return resolveRuntimeConfig(browserWindow.__YONA_RUNTIME_CONFIG__);
   }
 
   return resolveRuntimeConfig(readViteRuntimeConfig());
@@ -73,4 +76,9 @@ export function prefixBasePath(basePath: string, href: string): string {
 
   const normalizedHref = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
   return basePath === "/" ? normalizedHref : `${basePath}${normalizedHref}`;
+}
+
+export function normalizeProjectDefaultScope(input: string | null | undefined): string {
+  const normalized = (input ?? "").trim().toLowerCase();
+  return ["public", "protected", "private"].includes(normalized) ? normalized : "public";
 }

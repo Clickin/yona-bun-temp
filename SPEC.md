@@ -466,6 +466,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 - [x] `/:owner/:project/webhooks`는 UPDATE 가능한 프로젝트의 legacy `project/webhooks.scala.html` form/list anchors를 보존하고 `/api/v1/owners/:owner/projects/:project/webhooks` REST CRUD로 payload URL, secret, webhook type, gitPush 값을 저장/삭제한다
 - [x] `/:owner/:project/transfer`는 UPDATE 가능한 프로젝트의 legacy `project/transfer.scala.html` checkbox/modal shell을 보존하고 `/api/v1/owners/:owner/projects/:project/transfer` request와 `/project/transfer/:id/:key` accept link로 owner/name, previous owner/name alias, sender/destination membership을 갱신하며 transfer request mail을 발송한다
 - [x] Project transfer keeps the Git repository at `YONA_DATA/repo/<project_id>.git`; owner/name filesystem path move is intentionally not required under the Rust ID-based repository layout
+- [x] `project.default.scope.when.create` / `YONA_PROJECT_DEFAULT_SCOPE`는 프로젝트 생성 폼 기본 공개범위와 scope가 생략된 생성 요청의 기본값을 제어하고, 명시된 요청 scope는 그대로 우선한다
 - [x] `/:owner/:project/changeVCS`는 UPDATE 가능한 프로젝트의 legacy `project/change_vcs.scala.html` checkbox/modal shell을 보존하고 `/api/v1/owners/:owner/projects/:project/change-vcs`로 `vcs` metadata toggle, README posting flag clear, ID-based repository storage reset을 수행한다
 - [ ] Smart HTTP clone URL/update behavior after transfer remains a VCS lifecycle follow-up
 

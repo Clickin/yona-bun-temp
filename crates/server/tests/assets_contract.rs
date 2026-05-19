@@ -1,4 +1,5 @@
 use std::fs;
+use std::sync::{Mutex, OnceLock};
 
 use axum::body::Body;
 use http::{Method, Request, StatusCode};
@@ -16,6 +17,11 @@ use yona_rust_pilot_server::{
     create_router_with_app_repository, create_router_with_embedded_assets,
     create_router_with_filesystem_assets, RuntimeConfig,
 };
+
+fn project_scope_env_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
 
 async fn build_auth_router() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -227,10 +233,13 @@ async fn filesystem_assets_support_base_path_injection_and_spa_fallback() {
 
 #[tokio::test]
 async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
+    let _guard = project_scope_env_lock().lock().unwrap();
+    std::env::set_var("YONA_PROJECT_DEFAULT_SCOPE", "private");
     let app = create_router_with_embedded_assets(RuntimeConfig {
         base_path: "/yona".to_string(),
         public_origin: String::new(),
     });
+    std::env::remove_var("YONA_PROJECT_DEFAULT_SCOPE");
 
     let index = app
         .clone()
@@ -248,6 +257,7 @@ async fn embedded_assets_support_base_path_injection_and_spa_fallback() {
     let html = String::from_utf8(index_body.to_vec()).unwrap();
     assert!(html.contains("window.__YONA_RUNTIME_CONFIG__"));
     assert!(html.contains("\"basePath\":\"/yona\""));
+    assert!(html.contains("\"projectDefaultScope\":\"private\""));
 
     let asset = app
         .clone()

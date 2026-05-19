@@ -136,6 +136,7 @@ Interpretation:
 - [x] Project watchers page
 - [x] Webhook CRUD
 - [x] Project transfer request/accept/mail
+- [x] Project default scope configuration (`project.default.scope.when.create` / `YONA_PROJECT_DEFAULT_SCOPE`)
 - [~] Git/SVN type change shell, metadata toggle, README flag clear, and repository reset
 - [x] Project statistics under-construction shell
 - [ ] Full legacy project home/dashboard/history composition

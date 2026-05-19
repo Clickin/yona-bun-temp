@@ -22,6 +22,7 @@ function ProjectNewRouteComponent() {
 
   return (
     <ProjectNewPage
+      defaultProjectScope={runtimeConfig.projectDefaultScope}
       onCreateProject={async (input) => {
         try {
           const detail = await createProject(runtimeConfig, csrfToken, input);

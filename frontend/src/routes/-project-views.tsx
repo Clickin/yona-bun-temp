@@ -1,5 +1,9 @@
 import * as React from "react";
-import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import {
+  normalizeProjectDefaultScope,
+  prefixBasePath,
+  type RuntimeConfig,
+} from "../runtime-config";
 import type { BoardPostDetail } from "../api/boards";
 import type {
   ProjectChangeVcsResponse,
@@ -93,6 +97,7 @@ export function ProjectMenu(props: {
 }
 
 export function ProjectNewPage(props: {
+  defaultProjectScope?: string;
   onCreateProject?: (input: {
     ownerName: string;
     overview: string;
@@ -105,7 +110,7 @@ export function ProjectNewPage(props: {
     ownerName: "",
     overview: "",
     projectName: "",
-    projectScope: "public",
+    projectScope: normalizeProjectDefaultScope(props.defaultProjectScope),
   });
 
   return (

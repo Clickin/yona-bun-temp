@@ -349,6 +349,38 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
 }
 
 #[tokio::test]
+async fn create_project_uses_configured_default_scope_when_request_omits_scope() {
+    let _guard = yona_data_env_lock().lock().unwrap();
+    std::env::set_var("YONA_PROJECT_DEFAULT_SCOPE", "private");
+    let app = build_app().await;
+
+    let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
+
+    let create_project = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/CreateProject")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from(
+                    "{\"ownerName\":\"admin\",\"projectName\":\"projectYobi\",\"overview\":\"Yona\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    std::env::remove_var("YONA_PROJECT_DEFAULT_SCOPE");
+    assert_eq!(create_project.status(), StatusCode::OK);
+
+    let json = response_json(create_project).await;
+    assert!(json.contains("\"projectScope\":\"private\""));
+}
+
+#[tokio::test]
 async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round_trip() {
     let app = build_app().await;
 
