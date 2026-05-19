@@ -75,9 +75,14 @@ function CodeCommitDetailRouteComponent() {
     [setErrorMessage],
   );
   const createCommentMutation = useMutation({
-    mutationFn: (input: { contentsMarkdown: string; threadId?: number }) =>
+    mutationFn: (input: {
+      attachmentIds?: number[];
+      contentsMarkdown: string;
+      threadId?: number;
+    }) =>
       createCommitDiscussionCommentRest(runtimeConfig, csrfToken, {
         ...scope,
+        attachmentIds: input.attachmentIds,
         contentsMarkdown: input.contentsMarkdown,
         threadId: input.threadId,
       }),
@@ -142,6 +147,7 @@ function CodeCommitDetailRouteComponent() {
   return (
     <CodeCommitDetailPage
       commitDetail={commitDetailQuery.data ? toCodeCommitDetailView(commitDetailQuery.data) : null}
+      csrfToken={csrfToken}
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       runtimeConfig={runtimeConfig}
       onCloseThread={async (threadId) => {

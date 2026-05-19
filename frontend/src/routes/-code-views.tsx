@@ -1,5 +1,6 @@
 import * as React from "react";
 import type { RuntimeConfig } from "../runtime-config";
+import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
 import type { CodeBrowserViewModel, ProjectDetailViewModel } from "./-view-models";
 
@@ -72,6 +73,7 @@ export interface CodeReviewThreadViewModel {
 }
 
 export type CommitDiscussionCommentSubmitInput = {
+  attachmentIds?: number[];
   contentsMarkdown: string;
   threadId?: number;
 };
@@ -438,6 +440,7 @@ export function CodeBrowserPage(props: {
 
 export function CodeCommitDetailPage(props: {
   commitDetail: CodeCommitDetailViewModel | null;
+  csrfToken?: string;
   detail: ProjectDetailViewModel | null;
   onCloseThread?: (threadId: number) => Promise<void> | void;
   onCreateComment?: (input: CommitDiscussionCommentSubmitInput) => Promise<void> | void;
@@ -508,6 +511,7 @@ export function CodeCommitDetailPage(props: {
             ) : (
               <CodeCommitDiffView
                 commitDetail={commitDetail}
+                csrfToken={props.csrfToken}
                 runtimeConfig={props.runtimeConfig}
                 onCloseThread={props.onCloseThread}
                 onCreateComment={props.onCreateComment}
@@ -825,6 +829,7 @@ function CodeBranchRow(props: {
 
 function CodeCommitDiffView(props: {
   commitDetail: CodeCommitDetailViewModel | null;
+  csrfToken?: string;
   onCloseThread?: (threadId: number) => Promise<void> | void;
   onCreateComment?: (input: CommitDiscussionCommentSubmitInput) => Promise<void> | void;
   onDeleteComment?: (commentId: number) => Promise<void> | void;
@@ -839,6 +844,7 @@ function CodeCommitDiffView(props: {
   const openThreads = threads.filter((thread) => thread.state.toLowerCase() !== "closed");
   const closedThreads = threads.filter((thread) => thread.state.toLowerCase() === "closed");
   const [commentText, setCommentText] = React.useState("");
+  const [commentAttachmentIds, setCommentAttachmentIds] = React.useState<number[]>([]);
   const canComment = commitDetail?.permissions.canComment ?? false;
 
   async function submitComment(event: React.FormEvent<HTMLFormElement>) {
@@ -847,7 +853,8 @@ function CodeCommitDiffView(props: {
     if (!contentsMarkdown || !props.onCreateComment) {
       return;
     }
-    await props.onCreateComment({ contentsMarkdown });
+    await props.onCreateComment({ attachmentIds: commentAttachmentIds, contentsMarkdown });
+    setCommentAttachmentIds([]);
     setCommentText("");
   }
 
@@ -909,6 +916,7 @@ function CodeCommitDiffView(props: {
               ? nonRangedThreads.map((thread) => (
                   <CommitDiscussionThread
                     commitDetail={commitDetail}
+                    csrfToken={props.csrfToken}
                     key={thread.id}
                     runtimeConfig={props.runtimeConfig}
                     thread={thread}
@@ -932,13 +940,18 @@ function CodeCommitDiffView(props: {
               void submitComment(event);
             }}
           >
-            <textarea
-              aria-label="Commit comment"
+            <MarkdownAttachmentTextarea
+              ariaLabel="Commit comment"
+              csrfToken={props.csrfToken}
               disabled={!canComment}
               name="contentsMarkdown"
-              onChange={(event) => setCommentText(event.currentTarget.value)}
+              onAttachmentUpload={(attachment) =>
+                setCommentAttachmentIds((current) => [...current, attachment.id])
+              }
+              onChange={setCommentText}
+              runtimeConfig={props.runtimeConfig}
               value={commentText}
-            ></textarea>
+            />
             <button className="ybtn" disabled={!canComment} type="submit">
               Comment
             </button>
@@ -1002,6 +1015,7 @@ function CommitDiscussionReviewCard(props: { thread: CodeReviewThreadViewModel }
 
 function CommitDiscussionThread(props: {
   commitDetail: CodeCommitDetailViewModel;
+  csrfToken?: string;
   onCloseThread?: (threadId: number) => Promise<void> | void;
   onCreateComment?: (input: CommitDiscussionCommentSubmitInput) => Promise<void> | void;
   onDeleteComment?: (commentId: number) => Promise<void> | void;
@@ -1010,6 +1024,7 @@ function CommitDiscussionThread(props: {
   thread: CodeReviewThreadViewModel;
 }) {
   const [replyText, setReplyText] = React.useState("");
+  const [replyAttachmentIds, setReplyAttachmentIds] = React.useState<number[]>([]);
   const state = props.thread.state.toLowerCase() === "closed" ? "closed" : "open";
   const canComment = props.commitDetail.permissions.canComment;
   const stateSuffix = `/threads/${props.thread.id}/${state === "closed" ? "open" : "close"}`;
@@ -1021,7 +1036,12 @@ function CommitDiscussionThread(props: {
     if (!contentsMarkdown || !props.onCreateComment) {
       return;
     }
-    await props.onCreateComment({ contentsMarkdown, threadId: props.thread.id });
+    await props.onCreateComment({
+      attachmentIds: replyAttachmentIds,
+      contentsMarkdown,
+      threadId: props.thread.id,
+    });
+    setReplyAttachmentIds([]);
     setReplyText("");
   }
 
@@ -1102,13 +1122,18 @@ function CommitDiscussionThread(props: {
         }}
       >
         <input name="threadId" type="hidden" value={props.thread.id} />
-        <textarea
-          aria-label="Reply to commit comment"
+        <MarkdownAttachmentTextarea
+          ariaLabel="Reply to commit comment"
+          csrfToken={props.csrfToken}
           disabled={!canComment}
           name="contentsMarkdown"
-          onChange={(event) => setReplyText(event.currentTarget.value)}
+          onAttachmentUpload={(attachment) =>
+            setReplyAttachmentIds((current) => [...current, attachment.id])
+          }
+          onChange={setReplyText}
+          runtimeConfig={props.runtimeConfig}
           value={replyText}
-        ></textarea>
+        />
         <button className="ybtn" disabled={!canComment} type="submit">
           Comment
         </button>

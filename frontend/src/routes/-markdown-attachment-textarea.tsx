@@ -39,6 +39,7 @@ export function MarkdownAttachmentTextarea(props: {
   ariaLabel?: string;
   className?: string;
   csrfToken?: string;
+  disabled?: boolean;
   id?: string;
   name?: string;
   onAttachmentUpload: (attachment: UploadedAttachment) => void;
@@ -81,6 +82,7 @@ export function MarkdownAttachmentTextarea(props: {
     <textarea
       aria-label={props.ariaLabel}
       className={props.className}
+      disabled={props.disabled}
       id={props.id}
       name={props.name}
       onChange={(event) => props.onChange(event.target.value)}
