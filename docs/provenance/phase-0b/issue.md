@@ -113,7 +113,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 
 - Legacy `yobi.Files` attaches `paste` and `drop` handlers to issue markdown textareas and uploads image files to the attachment endpoint, while `yobi.Attachments` inserts `![name](url)` for image MIME types and tracks temporary upload ids for form submission.
 - Rust implements the same issue body/comment editor behavior with `frontend/src/api/attachments.ts` and `IssueMentionTextarea`: pasted or dropped image files post to `/files` with the active CSRF token, insert the legacy image Markdown token at the cursor, and carry the uploaded ids into issue create/update and comment create/update `attachmentIds`.
-- This rule is issue-scoped, but the same `/files` upload path is now reused by board, pull-request, milestone, and non-ranged Git code comment/reply editors. Single-line inline code-comment creation/readback belongs to the code-browser provenance; inline ranged reply upload remains a separate code-browser follow-up.
+- This rule is issue-scoped, but the same `/files` upload path is now reused by board, pull-request, milestone, non-ranged Git code comment/reply editors, and inline ranged Git code-comment reply editors. Single-line inline code-comment creation/readback and inline ranged reply upload belong to the code-browser provenance.
 
 ## Phase 2A Evidence
 

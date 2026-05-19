@@ -3,7 +3,7 @@
 ## Scope
 
 - Phase 3A/3B/3C/3D/3E/3F/3G read-only Git code browser parity, Phase 3H branch administration parity, Phase 3I Git commit discussion parity, and Phase 3J repository provisioning.
-- Covers Git repository paths: project creation provisioning, no-head state, branch selector, breadcrumbs, folder listing, text file view, Markdown file rendering with local image path rewrite, raw file streaming, browser-open file streaming, image preview streaming, branch archive download, numbered syntax-highlighted text rendering, commit history listing, commit detail/diff rendering, commit non-ranged comments/replies/delete/thread open-close, single-line inline code comment creation/readback, commit comment image paste/drop upload, commit comment counts, commit compare rendering, branch list rendering, branch-row latest PR links, default branch mutation, and non-default branch delete.
+- Covers Git repository paths: project creation provisioning, no-head state, branch selector, breadcrumbs, folder listing, text file view, Markdown file rendering with local image path rewrite, raw file streaming, browser-open file streaming, image preview streaming, branch archive download, numbered syntax-highlighted text rendering, commit history listing, commit detail/diff rendering, commit non-ranged comments/replies/delete/thread open-close, single-line inline code comment creation/readback, commit comment and inline ranged reply image paste/drop upload, commit comment counts, commit compare rendering, branch list rendering, branch-row latest PR links, default branch mutation, and non-default branch delete.
 - Does not cover Smart HTTP, multi-line block comment selection polish, inline edit, or SVN.
 
 ## Legacy Sources
@@ -67,7 +67,7 @@
 ## Remaining Phase 3 Follow-ups
 
 - Smart HTTP clone/pull/push and post-receive hooks.
-- Multi-line block selection, inline ranged reply upload polish, and inline edit remain follow-ups; Phase 3I covers non-ranged Git commit discussion and single-line inline commit comment creation/readback.
+- Multi-line block selection and inline edit remain follow-ups; Phase 3I covers non-ranged Git commit discussion, single-line inline commit comment creation/readback, and inline ranged reply upload.
 - Git README write-back/sync through board README editing remains a board/VCS lifecycle follow-up.
 - SVN remains deferred.
 

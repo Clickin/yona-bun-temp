@@ -310,6 +310,108 @@ test("commit thread reply editor submits pasted image uploads", async ({ page })
   });
 });
 
+test("inline ranged commit thread reply editor submits pasted image uploads", async ({ page }) => {
+  const rangedThread = {
+    authorId: 1,
+    authorLabel: "Admin",
+    authorLoginId: "admin",
+    comments: [
+      {
+        authorId: 1,
+        authorLabel: "Admin",
+        authorLoginId: "admin",
+        canDelete: true,
+        contentsHtml: "<p>Inline line note</p>",
+        contentsMarkdown: "Inline line note",
+        createdLabel: "2026-04-21",
+        id: 32,
+        threadId: 31,
+      },
+    ],
+    commitId,
+    createdLabel: "2026-04-21",
+    endLine: 2,
+    id: 31,
+    path: "src/main.rs",
+    prevCommitId: "",
+    startLine: 2,
+    state: "open",
+  };
+  const uploadedHeaders: string[] = [];
+
+  await page.route("**/files", async (route) => {
+    uploadedHeaders.push(route.request().headers()["x-csrf-token"] ?? "");
+    await route.fulfill({
+      body: JSON.stringify({
+        id: 864,
+        mimeType: "image/png",
+        name: "inline-reply.png",
+        size: 8,
+        url: "/yona/files/864",
+      }),
+      headers: restJsonHeaders,
+      status: 201,
+    });
+  });
+  await page.route(apiV1Route(`/projects/admin/projectYobi/commit/${commitId}`), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(commitDetailPayload([rangedThread])),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(
+    apiV1Route(`/projects/admin/projectYobi/commit/${commitId}/comments`),
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify(commitDetailPayload([rangedThread])),
+        headers: restJsonHeaders,
+        status: 201,
+      });
+    },
+  );
+
+  await page.goto(`/yona/admin/projectYobi/commit/${commitId}`);
+  const inlineThread = page.locator("#thread-31");
+  await expect(inlineThread).toHaveAttribute("data-range-path", "src/main.rs");
+  await expect(inlineThread).toHaveAttribute("data-range-startline", "2");
+  const replyEditor = inlineThread.locator(".thread-comment-form textarea");
+
+  await replyEditor.evaluate((element) => {
+    const data = new DataTransfer();
+    data.items.add(new File(["pasted"], "inline-reply.png", { type: "image/png" }));
+    element.dispatchEvent(
+      new ClipboardEvent("paste", {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: data,
+      }),
+    );
+  });
+  await expect(replyEditor).toHaveValue("![inline-reply.png](/yona/files/864) ");
+
+  const replyRequest = page.waitForRequest(
+    (request) =>
+      request.url().endsWith(`/commit/${commitId}/comments`) && request.method() === "POST",
+  );
+  await inlineThread
+    .locator(".thread-comment-form")
+    .getByRole("button", { name: "Comment" })
+    .click();
+  const submittedReply = (await replyRequest).postDataJSON() as {
+    attachmentIds?: number[];
+    contentsMarkdown?: string;
+    threadId?: number;
+  };
+
+  expect(uploadedHeaders).toEqual(["csrf-123"]);
+  expect(submittedReply).toMatchObject({
+    attachmentIds: [864],
+    contentsMarkdown: "![inline-reply.png](/yona/files/864)",
+    threadId: 31,
+  });
+});
+
 test("commit diff line comment creates a ranged review thread", async ({ page }) => {
   const rangedThread = {
     authorId: 1,
