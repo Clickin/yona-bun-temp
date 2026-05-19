@@ -156,6 +156,7 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 
 - `YONA_AUTH_SOCIAL_LOGIN_ONLY`: 설정은 파싱하고 auth UI capability에 반영한다. Social-login-only UI gating은 수행할 수 있지만, OAuth provider 로그인 플로우는 deferred다. provider가 없거나 미지원이면 조용히 무시하지 말고 warning/unsupported state를 노출한다.
 - `YONA_LANGS`: 설정은 파싱하고 browser runtime config의 `supportedLanguages`로 보존한다. 1차 PoC에서는 legacy copy parity를 우선하며 동적 i18n runtime 전환은 deferred다.
+- `YONA_PROJECT_DEFAULT_MENUS`: 설정은 프로젝트 생성 시 `project_menu_setting` 기본 row에 반영한다. legacy create form의 수동 메뉴 checkbox UX와 settings 화면의 메뉴 toggle mutation은 별도 project UI parity follow-up이다.
 - deferred 기능과 연결된 설정은 명시된 no-op/fallback/warning 동작 없이 조용히 무시하면 안 된다.
 
 ---
@@ -467,6 +468,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 - [x] `/:owner/:project/transfer`는 UPDATE 가능한 프로젝트의 legacy `project/transfer.scala.html` checkbox/modal shell을 보존하고 `/api/v1/owners/:owner/projects/:project/transfer` request와 `/project/transfer/:id/:key` accept link로 owner/name, previous owner/name alias, sender/destination membership을 갱신하며 transfer request mail을 발송한다
 - [x] Project transfer keeps the Git repository at `YONA_DATA/repo/<project_id>.git`; owner/name filesystem path move is intentionally not required under the Rust ID-based repository layout
 - [x] `project.default.scope.when.create` / `YONA_PROJECT_DEFAULT_SCOPE`는 프로젝트 생성 폼 기본 공개범위와 scope가 생략된 생성 요청의 기본값을 제어하고, 명시된 요청 scope는 그대로 우선한다
+- [x] `project.creation.default.menus` / `YONA_PROJECT_DEFAULT_MENUS`는 새 프로젝트의 `project_menu_setting` 기본값을 제어한다. Code가 꺼져 있으면 Pull Requests/Reviews도 legacy처럼 code menu visibility에 종속되어 숨겨진다
 - [x] `/:owner/:project/changeVCS`는 UPDATE 가능한 프로젝트의 legacy `project/change_vcs.scala.html` checkbox/modal shell을 보존하고 `/api/v1/owners/:owner/projects/:project/change-vcs`로 `vcs` metadata toggle, README posting flag clear, ID-based repository storage reset을 수행한다
 - [ ] Smart HTTP clone URL/update behavior after transfer remains a VCS lifecycle follow-up
 

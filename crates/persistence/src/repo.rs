@@ -578,6 +578,57 @@ fn bool_to_i16(value: bool) -> i16 {
     }
 }
 
+fn all_project_menu_settings_enabled() -> ProjectMenuSettingsRecord {
+    ProjectMenuSettingsRecord {
+        board: true,
+        code: true,
+        issue: true,
+        milestone: true,
+        pull_request: true,
+        review: true,
+    }
+}
+
+fn configured_project_default_menu_settings() -> ProjectMenuSettingsRecord {
+    let Some(configured) = std::env::var("YONA_PROJECT_DEFAULT_MENUS")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+    else {
+        return all_project_menu_settings_enabled();
+    };
+
+    let mut settings = ProjectMenuSettingsRecord {
+        board: false,
+        code: false,
+        issue: false,
+        milestone: false,
+        pull_request: false,
+        review: false,
+    };
+
+    for menu in configured.split(',').map(normalize_project_menu_config_key) {
+        match menu.as_str() {
+            "board" => settings.board = true,
+            "code" => settings.code = true,
+            "issue" => settings.issue = true,
+            "milestone" => settings.milestone = true,
+            "pullrequest" => settings.pull_request = true,
+            "review" => settings.review = true,
+            _ => {}
+        }
+    }
+
+    settings
+}
+
+fn normalize_project_menu_config_key(value: &str) -> String {
+    value
+        .chars()
+        .filter(|ch| !ch.is_whitespace() && *ch != '_' && *ch != '-')
+        .collect::<String>()
+        .to_ascii_lowercase()
+}
+
 fn is_unique_posting_number_conflict(error: &DbErr) -> bool {
     let message = error.to_string().to_ascii_lowercase();
     (message.contains("unique") || message.contains("duplicate"))
@@ -4947,15 +4998,16 @@ impl AppRepository {
         .insert(&self.db)
         .await?;
 
+        let menu_settings = configured_project_default_menu_settings();
         project_menu_setting::ActiveModel {
             id: NotSet,
             project_id: Set(Some(created.id)),
-            code: Set(Some(1)),
-            issue: Set(Some(1)),
-            pull_request: Set(Some(1)),
-            review: Set(Some(1)),
-            milestone: Set(Some(1)),
-            board: Set(Some(1)),
+            code: Set(Some(bool_to_i16(menu_settings.code))),
+            issue: Set(Some(bool_to_i16(menu_settings.issue))),
+            pull_request: Set(Some(bool_to_i16(menu_settings.pull_request))),
+            review: Set(Some(bool_to_i16(menu_settings.review))),
+            milestone: Set(Some(bool_to_i16(menu_settings.milestone))),
+            board: Set(Some(bool_to_i16(menu_settings.board))),
         }
         .insert(&self.db)
         .await?;
@@ -6011,14 +6063,7 @@ impl AppRepository {
             .one(&self.db)
             .await?
         else {
-            return Ok(ProjectMenuSettingsRecord {
-                board: true,
-                code: true,
-                issue: true,
-                milestone: true,
-                pull_request: true,
-                review: true,
-            });
+            return Ok(all_project_menu_settings_enabled());
         };
 
         Ok(ProjectMenuSettingsRecord {

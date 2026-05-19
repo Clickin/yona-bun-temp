@@ -381,6 +381,66 @@ async fn create_project_uses_configured_default_scope_when_request_omits_scope()
 }
 
 #[tokio::test]
+async fn create_project_uses_configured_default_menus_for_new_project_container() {
+    let _guard = yona_data_env_lock().lock().unwrap();
+    std::env::set_var("YONA_PROJECT_DEFAULT_MENUS", "issue, board");
+    let (app, app_repo) = build_app_with_repository().await;
+
+    let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
+
+    create_project(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "admin",
+        "projectYobi",
+        "Yona",
+        "public",
+    )
+    .await;
+    std::env::remove_var("YONA_PROJECT_DEFAULT_MENUS");
+
+    let authorization = app_repo
+        .read_project_authorization("admin", "projectYobi", None)
+        .await
+        .expect("read project authorization")
+        .expect("created project authorization");
+    let menu_settings = app_repo
+        .read_project_menu_settings(authorization.project.id)
+        .await
+        .expect("read project menu settings");
+    assert!(menu_settings.issue);
+    assert!(menu_settings.board);
+    assert!(!menu_settings.code);
+    assert!(!menu_settings.pull_request);
+    assert!(!menu_settings.review);
+    assert!(!menu_settings.milestone);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/owners/admin/projects/projectYobi/container")
+                .header(http::header::COOKIE, &admin_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let json = response_json(response).await;
+    let payload: serde_json::Value = serde_json::from_str(&json).expect("container json");
+    assert_eq!(payload["showIssue"], true);
+    assert_eq!(payload["showBoard"], true);
+    assert!(payload.get("showCode").is_none());
+    assert!(payload.get("showPullRequest").is_none());
+    assert!(payload.get("showReview").is_none());
+    assert!(payload.get("showMilestone").is_none());
+}
+
+#[tokio::test]
 async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round_trip() {
     let app = build_app().await;
 
