@@ -287,6 +287,17 @@ function SiteAdminRouteComponent() {
     );
   }
 
+  if (pageName === "update") {
+    return (
+      <SiteUpdateRoute
+        bootstrapping={bootstrapping}
+        currentIsSiteAdmin={currentIsSiteAdmin}
+        href={href}
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
+
   if (pageName === "diagnostic") {
     return (
       <SiteDiagnosticRoute
@@ -300,6 +311,33 @@ function SiteAdminRouteComponent() {
   }
 
   return <PlaceholderPage href={`/sites/${pageName}`} title="Site Admin" />;
+}
+
+function SiteUpdateRoute({
+  bootstrapping,
+  currentIsSiteAdmin,
+  href,
+  runtimeConfig,
+}: {
+  bootstrapping: boolean;
+  currentIsSiteAdmin: boolean;
+  href: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const canRender = useRequireAuthenticatedRoute(href);
+
+  if (bootstrapping || !canRender) {
+    return (
+      <main className="app-shell site-admin-page">
+        <h1>Loading&hellip;</h1>
+      </main>
+    );
+  }
+  if (!currentIsSiteAdmin) {
+    return <ForbiddenPage href="/sites/update" />;
+  }
+
+  return <SiteAdminUpdatePage runtimeConfig={runtimeConfig} />;
 }
 
 function SiteUserListRoute({
@@ -1322,6 +1360,33 @@ function SiteAdminMassMailPage({
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function SiteAdminUpdatePage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  return (
+    <main className="app-shell site-admin-page">
+      <div className="site-breadcrumb-outer">
+        <div className="site-breadcrumb-inner">
+          <h3>Site Admin</h3>
+        </div>
+      </div>
+      <div className="page-wrap-outer">
+        <div className="site-setting-wrap">
+          <div className="row-fluid site-setting-layout">
+            <div className="span2">
+              <SiteAdminSidebar activePageName="update" runtimeConfig={runtimeConfig} />
+            </div>
+            <div className="span10">
+              <div className="title_area">
+                <h2 className="pull-left">Update</h2>
+              </div>
+              <p>site.update.isNotNecessary</p>
             </div>
           </div>
         </div>
