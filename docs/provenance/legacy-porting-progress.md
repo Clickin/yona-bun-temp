@@ -167,6 +167,7 @@ Interpretation:
 - [x] Mass update
 - [x] Issue label consumption in list/detail
 - [x] Issue milestone consumption in list/detail
+- [x] Project issue list state/author/assignee/label/milestone filter form wiring
 - [x] Issue sharer direct share/unshare
 - [x] Issue sharer public project target expansion
 - [x] Private issue read/comment ACL for directly shared users

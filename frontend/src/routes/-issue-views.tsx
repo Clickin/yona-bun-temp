@@ -35,10 +35,22 @@ function fallbackProjectDetail(): ProjectDetailViewModel {
 
 export function ProjectIssueListPage(props: {
   detail: ProjectDetailViewModel | null;
+  labels?: IssueListFilterLabel[];
   issueList: ProjectIssueListViewModel | null;
+  milestones?: IssueListFilterMilestone[];
+  query?: ProjectIssueListQuery;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
+  const query = props.query ?? {
+    assigneeLoginId: "",
+    authorLoginId: "",
+    labelIds: [],
+    milestoneId: 0,
+    pageNum: 1,
+    state: "",
+  };
+  const selectedLabelIds = query.labelIds.map(String);
 
   return (
     <main className="app-shell">
@@ -48,6 +60,7 @@ export function ProjectIssueListPage(props: {
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
       <section>
         <form
+          className="issue-search-form"
           action={buildProjectHref(
             props.runtimeConfig,
             detail.ownerName,
@@ -55,13 +68,42 @@ export function ProjectIssueListPage(props: {
             "issues",
           )}
         >
-          <select name="state" defaultValue="">
+          <input name="pageNum" type="hidden" value="1" />
+          <select name="state" defaultValue={query.state}>
             <option value="">All</option>
             <option value="open">Open</option>
             <option value="closed">Closed</option>
           </select>
-          <input name="authorLoginId" placeholder="Author" />
-          <input name="assigneeLoginId" placeholder="Assignee" />
+          <input name="authorLoginId" placeholder="Author" defaultValue={query.authorLoginId} />
+          <input
+            name="assigneeLoginId"
+            placeholder="Assignee"
+            defaultValue={query.assigneeLoginId}
+          />
+          <select
+            name="milestoneId"
+            defaultValue={query.milestoneId ? String(query.milestoneId) : ""}
+          >
+            <option value="">All milestones</option>
+            {(props.milestones ?? []).map((milestone) => (
+              <option key={milestone.id} value={milestone.id}>
+                {milestone.title}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="Labels"
+            className="issue-label-filter"
+            defaultValue={selectedLabelIds}
+            multiple
+            name="labelIds"
+          >
+            {(props.labels ?? []).map((label) => (
+              <option key={label.id} value={label.id}>
+                {label.categoryName ? `${label.categoryName}: ${label.name}` : label.name}
+              </option>
+            ))}
+          </select>
           <button type="submit">Search</button>
         </form>
         <a
@@ -115,6 +157,28 @@ export function ProjectIssueListPage(props: {
       </section>
     </main>
   );
+}
+
+export interface ProjectIssueListQuery {
+  assigneeLoginId: string;
+  authorLoginId: string;
+  labelIds: number[];
+  milestoneId: number;
+  pageNum: number;
+  state: string;
+}
+
+export interface IssueListFilterLabel {
+  categoryName: string;
+  color: string;
+  id: number;
+  name: string;
+}
+
+export interface IssueListFilterMilestone {
+  id: number;
+  state: string;
+  title: string;
 }
 
 export function ProjectIssueDetailPage(props: {

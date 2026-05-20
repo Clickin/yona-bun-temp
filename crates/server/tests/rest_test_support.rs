@@ -253,7 +253,14 @@ fn route_request(method_name: &str, mut payload: Value) -> (Method, String, Opti
                 string(&payload, "projectName"),
                 query(
                     &payload,
-                    &["state", "pageNum", "assigneeLoginId", "authorLoginId"]
+                    &[
+                        "state",
+                        "pageNum",
+                        "assigneeLoginId",
+                        "authorLoginId",
+                        "labelIds",
+                        "milestoneId",
+                    ],
                 )
             )),
             None,

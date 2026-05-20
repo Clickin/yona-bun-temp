@@ -194,7 +194,16 @@ test.beforeEach(async ({ page }) => {
   await page.route(apiV1Route("/owners/admin/projects/projectYobi/labels"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
-        labels: [],
+        labels: [
+          {
+            categoryId: "4",
+            categoryIsExclusive: false,
+            categoryName: "Type",
+            color: "#f44336",
+            id: "5",
+            name: "bug",
+          },
+        ],
       }),
       headers: restJsonHeaders,
       status: 200,
@@ -872,10 +881,64 @@ test("organization admin routes render forbidden and not-found shells for authen
   await expect(page.getByText("/organizations/missinglabs/deleteForm")).toBeVisible();
 });
 
-test("project issue routes render data-backed issue list and detail screens", async ({ page }) => {
-  await page.goto("/yona/admin/projectYobi/issues?pageNum=1");
+test("project issue routes render data-backed issue list filters and detail screens", async ({
+  page,
+}) => {
+  let issueListUrl = "";
+  await page.route(/\/api\/v1\/projects\/admin\/projectYobi\/issues(?:\?.*)?$/, async (route) => {
+    issueListUrl = route.request().url();
+    await route.fulfill({
+      body: JSON.stringify({
+        items: [
+          {
+            assigneeLabel: "Door",
+            authorLabel: "Nori",
+            commentCount: 3,
+            issueNumber: "1",
+            labels: [
+              {
+                color: "#f44336",
+                id: "5",
+                name: "bug",
+              },
+            ],
+            milestoneTitle: "v1.0",
+            ownerName: "admin",
+            projectName: "projectYobi",
+            state: "open",
+            title: "Pilot issue",
+            updatedLabel: "2026-04-15",
+            voterCount: 0,
+            watcherCount: 0,
+          },
+        ],
+        ownerName: "admin",
+        pageNum: 2,
+        pageSize: 15,
+        projectName: "projectYobi",
+        totalCount: 1,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto(
+    "/yona/admin/projectYobi/issues?state=open&authorLoginId=nori&assigneeLoginId=door&labelIds=5&milestoneId=7&pageNum=2",
+  );
   await expect(page.getByText("Pilot issue")).toBeVisible();
   await expect(page.getByText("2026-04-15")).toBeVisible();
+  await expect(page.locator('select[name="state"]')).toHaveValue("open");
+  await expect(page.locator('input[name="authorLoginId"]')).toHaveValue("nori");
+  await expect(page.locator('input[name="assigneeLoginId"]')).toHaveValue("door");
+  await expect(page.locator('select[name="milestoneId"]')).toHaveValue("7");
+  await expect(page.locator('select[name="labelIds"] option[value="5"]')).toHaveJSProperty(
+    "selected",
+    true,
+  );
+  const issueListSearchParams = new URL(issueListUrl).searchParams;
+  expect(issueListSearchParams.get("labelIds")).toBe("5");
+  expect(issueListSearchParams.get("milestoneId")).toBe("7");
 
   await page.goto("/yona/admin/projectYobi/issue/1");
   await expect(page.getByRole("heading", { name: "Pilot issue" })).toBeVisible();

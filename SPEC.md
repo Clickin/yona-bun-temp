@@ -525,7 +525,7 @@ POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → le
 
 #### 검수 기준
 
-- [ ] 이슈 목록 필터: state(open/closed), assignee, label, milestone — legacy `IssueApp.issues()` 파라미터 동일
+- [x] 이슈 목록 필터: state(open/closed), assignee, label, milestone — legacy `IssueApp.issues()` 파라미터 동일; `/issues` form now preserves query values and submits `labelIds`/`milestoneId` through `/api/v1/projects/:owner/:project/issues`
 - [ ] 이슈 번호: 프로젝트 내 자동 증가 (`#1`, `#2`, ...) — legacy `Issue.nextNumber()` 동일
 - [ ] 이슈 상세: 제목, 본문(마크다운 렌더링), 사이드바(담당자/마일스톤/라벨/감시자/투표수) — legacy `issue/view.scala.html` 레이아웃 동일
 - [ ] 댓글: 시간순 정렬, 작성자 아바타, 마크다운 렌더링
