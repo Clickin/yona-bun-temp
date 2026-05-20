@@ -42,6 +42,60 @@ function renderProjectHome(routeHref: string, overrides: Partial<ProjectDetailVi
 }
 
 describe("project home tab parity", () => {
+  it("renders the legacy project layout header and menu shell", () => {
+    const html = renderProjectHome("/yona/yona/projectYobi", {
+      backgroundUrl: "/yona/assets/bg.png",
+      cloneUrl: "https://example.com/yona/projectYobi.git",
+      isFavorited: true,
+      logoUrl: "/yona/assets/logo.png",
+      projectScope: "private",
+      showAdmin: true,
+      viewerCanUpdate: true,
+    });
+
+    expect(html).toContain('class="project-header-outer"');
+    expect(html).toContain('style="background-image:url(/yona/assets/bg.png)"');
+    expect(html).toContain('class="project-header-inner"');
+    expect(html).toContain('class="project-header-wrap"');
+    expect(html).toContain('class="project-header-avatar"');
+    expect(html).toContain('src="/yona/assets/logo.png"');
+    expect(html).toContain('class="project-breadcrumb-wrap"');
+    expect(html).toContain('class="project-author hide-in-mobile"');
+    expect(html).toContain('href="/yona/yona"');
+    expect(html).toContain('class="project-separator hide-in-mobile"');
+    expect(html).toContain('class="project-name"');
+    expect(html).toContain('class="user-project-list"');
+    expect(html).toContain('class="starred star material-icons va-text-top"');
+    expect(html).toContain('class="project-private"');
+    expect(html).toContain('class="project-menu-outer"');
+    expect(html).toContain('class="project-menu-inner"');
+    expect(html).toContain('class="project-menu-nav project-menu-gruop"');
+    expect(html).toContain('class="code-menu');
+    expect(html).toContain('class="project-menu-count"');
+    expect(html).toContain('class="project-setting"');
+    expect(html).toContain('class="yobicon-cog"');
+    expect(html).toContain('class="page-wrap-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="project-home-header row-fluid"');
+    expect(html).toContain('class="project-overview span9 span-hard-wrap"');
+    expect(html).toContain('class="project-description"');
+    expect(html).toContain('id="project-description"');
+    expect(html).toContain('class="markdown-wrap"');
+    expect(html).toContain('class="ybtn ybtn-minimum"');
+    expect(html).toContain('data-toggle="description-edit"');
+    expect(html).toContain('class="project-clone-wrap span3 hide-in-mobile"');
+    expect(html).toContain('class="project-clone-url"');
+    expect(html).toContain('id="cloneURL"');
+    expect(html).toContain('class="ybtn project-clone-button"');
+    expect(html).toContain('id="cloneURLBtn"');
+    expect(html).toContain('class="span9 span-left-pane"');
+    expect(html).toContain('class="nav nav-tabs"');
+    expect(html).toContain('class="tab-content"');
+    expect(html).toContain('class="tab-pane active"');
+    expect(html).toContain('class="span3 span-right-pane"');
+    expect(html).toContain('class="bubble-wrap gray project-home"');
+  });
+
   it("uses tabId=history to render the legacy history stream shell", () => {
     const html = renderProjectHome("/yona/yona/projectYobi?tabId=history", {
       history: {

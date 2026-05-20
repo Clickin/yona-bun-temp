@@ -457,7 +457,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 
 #### 검수 기준
 
-- [ ] `/:owner/:project` 레이아웃이 legacy의 `projectLayout.scala.html`과 동일한 구조(헤더 + 메뉴 + 컨텐츠)를 따른다
+- [x] `/:owner/:project` project home 레이아웃은 legacy `projectLayout.scala.html`, `project/header.scala.html`, `projectMenu.scala.html`, `project/home.scala.html` 구조를 따라 프로젝트 헤더 + 메뉴 + `.page-wrap-outer` / `.project-page-wrap` 컨텐츠 셸을 렌더링한다
 - [x] 프로젝트 메뉴: Code / Issues / Pull Requests / Reviews / Milestones / Board 순서 (legacy 동일), `project_menu_setting`에 따라 on/off
 - [ ] 공개범위별 접근 제어: public(누구나 읽기), protected(조직 멤버 읽기), private(프로젝트 멤버만)
 - [ ] site_admin은 모든 프로젝트에 read + write 권한 (legacy `ProjectApp` 동작)
@@ -472,7 +472,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 - [x] `project.creation.default.menus` / `YONA_PROJECT_DEFAULT_MENUS`는 새 프로젝트의 `project_menu_setting` 기본값을 제어한다. Code가 꺼져 있으면 Pull Requests/Reviews도 legacy처럼 code menu visibility에 종속되어 숨겨진다
 - [x] Project create/settings forms expose legacy menu checkbox IDs and persist Code/Issues/Pull Requests/Reviews/Milestones/Board toggle changes through `/api/v1/owners/:owner/projects/:project`
 - [x] `/:owner/:project/changeVCS`는 UPDATE 가능한 프로젝트의 legacy `project/change_vcs.scala.html` checkbox/modal shell을 보존하고 `/api/v1/owners/:owner/projects/:project/change-vcs`로 `vcs` metadata toggle, README posting flag clear, ID-based repository storage reset을 수행한다
-- [x] `/:owner/:project?tabId=history|dashboard`는 legacy project home tab query를 반영해 `partial_history`의 `.content-container.nm`, `.main-stream`, `.activity-streams.unstyled`, `.activity-stream`, `.avatar-wrap.pull-left.mr10`, `.actor`, `.where`, `.title`, `.date` anchors와 `partial_dashboard`의 `.project-overview-home`, `.overview-assignee`, `.overview-milestone`, `.overview-pullrequest`, `.overview-label` anchors를 렌더링한다. Project container REST now returns `history.items` for DB-backed issue/post/pullrequest rows and Git commit rows, plus `dashboard.labels`, `dashboard.assignees`, `dashboard.unassignedOpenIssueCount` for label/assignee dashboard rows; broader project-home composition remains a follow-up.
+- [x] `/:owner/:project?tabId=history|dashboard`는 legacy project home tab query를 반영해 `partial_history`의 `.content-container.nm`, `.main-stream`, `.activity-streams.unstyled`, `.activity-stream`, `.avatar-wrap.pull-left.mr10`, `.actor`, `.where`, `.title`, `.date` anchors와 `partial_dashboard`의 `.project-overview-home`, `.overview-assignee`, `.overview-milestone`, `.overview-pullrequest`, `.overview-label` anchors를 렌더링한다. Project container REST now returns `history.items` for DB-backed issue/post/pullrequest rows and Git commit rows, plus `dashboard.labels`, `dashboard.assignees`, `dashboard.unassignedOpenIssueCount` for label/assignee dashboard rows; remaining project-home overview edit-flow polish stays follow-up.
 - [ ] Smart HTTP clone URL/update behavior after transfer remains a VCS lifecycle follow-up
 
 ---

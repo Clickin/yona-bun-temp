@@ -142,12 +142,13 @@ Interpretation:
 - [x] Project default menu configuration and create/settings checkbox persistence (`project.creation.default.menus` / `YONA_PROJECT_DEFAULT_MENUS`)
 - [~] Git/SVN type change shell, metadata toggle, README flag clear, and repository reset
 - [x] Project statistics under-construction shell
+- [x] Project home legacy header/menu/page shell anchors
 - [x] Project home `tabId=history|dashboard` selection and legacy history/dashboard shell anchors
 - [x] Project home dashboard open issue counts by label
 - [x] Project home dashboard open issue counts by assignee
 - [x] Project home history issue/post/pull-request activity rows
 - [x] Project home history commit activity rows
-- [~] Full legacy project home/dashboard/history composition
+- [~] Project home overview edit-flow polish and remaining minor composition details
 
 ## Issues
 

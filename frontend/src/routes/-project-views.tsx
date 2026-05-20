@@ -439,72 +439,199 @@ function projectMenuSettingsFromDetail(
 }
 
 export function ProjectMenu(props: {
+  activeMenu?:
+    | "home"
+    | "code"
+    | "issue"
+    | "pullRequest"
+    | "review"
+    | "milestone"
+    | "board"
+    | "settings";
   detail: ProjectDetailViewModel;
   runtimeConfig: RuntimeConfig;
 }) {
   const { detail, runtimeConfig } = props;
   const menuItems = [
     {
+      key: "home",
       href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName),
       label: "Home",
+      menuName: "title.projectHome",
       show: true,
+      shortMenu: "H",
     },
     {
+      className: "code-menu",
+      key: "code",
       href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "code"),
       label: "Code",
+      menuName: "menu.code",
       show: detail.showCode,
+      shortMenu: "C",
     },
     {
+      count: detail.openIssueCount,
+      key: "issue",
       href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "issues"),
       label: `Issues ${detail.openIssueCount ?? 0}`,
+      menuName: "menu.issue",
       show: detail.showIssue,
+      shortMenu: "I",
     },
     {
+      count: detail.openPullRequestCount,
+      key: "pullRequest",
       href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "pullRequests"),
       label: `Pull requests ${detail.openPullRequestCount ?? 0}`,
+      menuName: "menu.pullRequest",
       show: detail.showPullRequest,
+      shortMenu: "P",
     },
     {
+      count: detail.reviewCount,
+      key: "review",
       href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "reviews"),
       label: `Reviews ${detail.reviewCount ?? 0}`,
+      menuName: "menu.review",
       show: detail.showReview,
+      shortMenu: "R",
     },
     {
+      key: "milestone",
       href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "milestones"),
       label: "Milestones",
+      menuName: "milestone",
       show: detail.showMilestone,
+      shortMenu: "M",
     },
     {
+      count: detail.boardCount,
+      key: "board",
       href: buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, "posts"),
       label: `Boards ${detail.boardCount ?? 0}`,
+      menuName: "menu.board",
       show: detail.showBoard,
+      shortMenu: "B",
     },
   ];
 
   return (
-    <nav aria-label="Project menu">
-      {menuItems.flatMap((item) =>
-        item.show
-          ? [
-              <a href={item.href} key={item.label}>
-                {item.label}
-              </a>,
-            ]
-          : [],
-      )}
-      {detail.showAdmin || detail.viewerCanUpdate ? (
-        <a
-          href={buildProjectHref(
-            runtimeConfig,
-            detail.ownerName,
-            detail.projectName,
-            "settingform",
-          )}
-        >
-          Settings
-        </a>
-      ) : null}
-    </nav>
+    <div className="project-menu-outer">
+      <div className="project-menu-inner">
+        <ul className="project-menu-nav project-menu-gruop">
+          {menuItems.flatMap((item) => {
+            if (!item.show) {
+              return [];
+            }
+            const classNames = [item.className, props.activeMenu === item.key ? "active" : ""]
+              .filter(Boolean)
+              .join(" ");
+            return [
+              <li className={classNames || undefined} key={item.key}>
+                <a href={item.href} title={item.label}>
+                  <span className="menu-name">{item.menuName}</span>
+                  <span className="short-menu">{item.shortMenu}</span>{" "}
+                  {(item.count ?? 0) > 0 ? (
+                    <span className="project-menu-count">{item.count}</span>
+                  ) : null}
+                </a>
+              </li>,
+            ];
+          })}
+        </ul>
+        {detail.showAdmin || detail.viewerCanUpdate ? (
+          <div className="project-setting">
+            <ul className="project-menu-nav">
+              <li className={props.activeMenu === "settings" ? "active" : undefined}>
+                <a
+                  href={buildProjectHref(
+                    runtimeConfig,
+                    detail.ownerName,
+                    detail.projectName,
+                    "settingform",
+                  )}
+                  title="Settings"
+                >
+                  <i className="yobicon-cog" />
+                  <span className="blind">
+                    <span className="menu-name">menu.admin</span>
+                  </span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ProjectHeader(props: { detail: ProjectDetailViewModel; runtimeConfig: RuntimeConfig }) {
+  const { detail, runtimeConfig } = props;
+  const projectHref = buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName);
+  const ownerHref = prefixBasePath(runtimeConfig.basePath, `/${detail.ownerName}`);
+  const favoriteClass = `${detail.isFavorited ? "starred " : ""}star material-icons va-text-top`;
+  const breadcrumbClass = `project-breadcrumb-wrap${
+    detail.originOwnerName && detail.originProjectName ? " fork" : ""
+  }`;
+
+  return (
+    <div
+      className="project-header-outer"
+      style={{ backgroundImage: `url(${detail.backgroundUrl ?? ""})` }}
+    >
+      <div className="project-header-inner">
+        <div className="project-header-wrap">
+          <div className="project-header-avatar">
+            {detail.logoUrl ? <img alt="" src={detail.logoUrl} /> : null}
+          </div>
+          <div className={breadcrumbClass}>
+            <div className="project-breadcrumb">
+              <span className="project-author hide-in-mobile">
+                <a href={ownerHref}>{detail.ownerName}</a>
+              </span>
+              <span className="project-separator hide-in-mobile">/</span>
+              <span className="project-name">
+                <a href={projectHref}>{detail.projectName}</a>
+              </span>
+              <span className="project-title-text">{`${detail.ownerName} / ${detail.projectName}`}</span>
+              <span className="user-project-list">
+                <i className={favoriteClass}>star</i>
+              </span>
+              {detail.projectScope === "private" ? (
+                <span className="project-private">
+                  <i className="yobicon-lock" />
+                </span>
+              ) : null}
+              {detail.projectScope === "protected" ? (
+                <span className="project-protected" title="Group Project">
+                  G
+                </span>
+              ) : null}
+            </div>
+            {detail.originOwnerName && detail.originProjectName ? (
+              <div className="project-origin">
+                <span className="project-origin-title">fork.original</span>
+                <a
+                  className="project-origin-name"
+                  href={buildProjectHref(
+                    runtimeConfig,
+                    detail.originOwnerName,
+                    detail.originProjectName,
+                  )}
+                >
+                  {detail.originOwnerName} / {detail.originProjectName}
+                </a>
+                <span className="project-origin-text">
+                  {`Original project: ${detail.originOwnerName} / ${detail.originProjectName}`}
+                </span>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -665,175 +792,263 @@ export function ProjectDetailPage(props: {
     projectHomeTabFromHref(props.routeHref) ??
     normalizeProjectHomeTab(detail.defaultTab) ??
     "readme";
+  const projectHref = buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName);
 
   return (
     <main className="app-shell">
-      <p className="eyebrow">Yona Rust Project</p>
-      <h1>{`${detail.ownerName} / ${detail.projectName}`}</h1>
-      <p>{`${detail.ownerName}/${detail.projectName}`}</p>
-      {detail.originOwnerName && detail.originProjectName ? (
-        <p>{`Original project: ${detail.originOwnerName} / ${detail.originProjectName}`}</p>
-      ) : null}
-      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <p>Scope: {detail.projectScope}</p>
-      <section>
-        <h2>Project actions</h2>
-        <div className="runtime-grid">
-          <button
-            type="button"
-            onClick={() => props.onToggleFavoriteProject?.(detail.ownerName, detail.projectName)}
-          >
-            {detail.isFavorited ? "Unfavorite project" : "Favorite project"}
-          </button>
-          {detail.viewerCanWatch ? (
-            <button
-              type="button"
-              onClick={() =>
-                props.onToggleProjectWatch?.(
-                  detail.ownerName,
-                  detail.projectName,
-                  !detail.isWatching,
-                )
-              }
-            >
-              {detail.isWatching ? "Unwatch project" : "Watch project"}
-            </button>
-          ) : null}
-          {detail.viewerCanEnroll ? (
-            detail.enrollmentRequested ? (
-              <button
-                type="button"
-                onClick={() => props.onCancelEnrollProject?.(detail.ownerName, detail.projectName)}
-              >
-                Cancel enrollment request
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => props.onEnrollProject?.(detail.ownerName, detail.projectName)}
-              >
-                Request enrollment
-              </button>
-            )
-          ) : null}
-        </div>
-      </section>
-      <section>
-        <h2>Watchers</h2>
-        <a
-          className="btn watcher-count no-border"
-          href={buildProjectHref(
-            props.runtimeConfig,
-            detail.ownerName,
-            detail.projectName,
-            "watchers",
-          )}
-        >
-          {detail.watchCount ?? 0}
-        </a>
-      </section>
-      <section>
-        <h2>Clone URL</h2>
-        <input readOnly type="text" value={detail.cloneUrl ?? ""} />
-      </section>
-      <section>
-        <h2>Overview</h2>
-        {editingOverview ? (
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              props.onUpdateProjectOverview?.(detail.ownerName, detail.projectName, overviewDraft);
-              setEditingOverview(false);
-            }}
-          >
-            <textarea
-              name="overview"
-              value={overviewDraft}
-              onChange={(event) => setOverviewDraft(event.target.value)}
-            />
-            <button type="submit">Save overview</button>
-            <button type="button" onClick={() => setEditingOverview(false)}>
-              Cancel
-            </button>
-          </form>
-        ) : (
-          <>
-            <p>{detail.overview || "No overview yet."}</p>
-            {detail.overviewEditable ? (
-              <button type="button" onClick={() => setEditingOverview(true)}>
-                Edit overview
-              </button>
+      <ProjectHeader detail={detail} runtimeConfig={props.runtimeConfig} />
+      <ProjectMenu activeMenu="home" detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="project-breadcrumb hide show-in-mobile">
+            <span className="project-author">
+              <a href={prefixBasePath(props.runtimeConfig.basePath, `/${detail.ownerName}`)}>
+                {detail.ownerName}
+              </a>
+            </span>
+            <span className="project-separator">/</span>
+            <span className="project-name">
+              <a href={projectHref}>{detail.projectName}</a>
+            </span>
+            {detail.projectScope === "private" ? (
+              <span className="project-private">
+                <i className="yobicon-lock" />
+              </span>
             ) : null}
-          </>
-        )}
-      </section>
-      <section>
-        <h2>Tabs</h2>
-        <nav aria-label="Project home tabs">
-          <a href={buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName)}>
-            README
-          </a>
-          <a
-            href={`${buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName)}?tabId=history`}
-          >
-            Recent history
-          </a>
-          <a
-            href={`${buildProjectHref(props.runtimeConfig, detail.ownerName, detail.projectName)}?tabId=dashboard`}
-          >
-            Dashboard
-          </a>
-        </nav>
-        <div>
-          {activeTab === "readme" ? (
-            props.readmePost ? (
-              <article className="board-view project-readme-post">
-                <h3>{props.readmePost.title || "README"}</h3>
-                <div dangerouslySetInnerHTML={{ __html: props.readmePost.bodyHtml }} />
-              </article>
-            ) : detail.readmeFile ? (
-              <article className="readme-wrap project-git-readme">
-                <header>
-                  <strong>{detail.readmeFile.name || "README.md"}</strong>
-                </header>
-                <div
-                  className="readme-body markdown-wrap"
-                  dangerouslySetInnerHTML={{ __html: detail.readmeFile.bodyHtml }}
+          </div>
+          <div className="project-home-header row-fluid">
+            <div className="project-overview span9 span-hard-wrap">
+              <div className="project-description" data-toggle="project-description-tab">
+                <h3>
+                  <span className="markdown-wrap" id="project-description">
+                    {detail.overview || "project.description.placeholder"}
+                  </span>
+                  {detail.overviewEditable || detail.viewerCanUpdate ? (
+                    <button
+                      aria-label="Edit overview"
+                      className="ybtn ybtn-minimum"
+                      data-toggle="description-edit"
+                      title="Edit overview"
+                      type="button"
+                      onClick={() => setEditingOverview(true)}
+                    >
+                      <i className="yobicon-edit" />
+                    </button>
+                  ) : null}
+                </h3>
+              </div>
+              {editingOverview ? (
+                <div className="project-description-edit" data-toggle="project-description-tab">
+                  <form
+                    action={projectHref}
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      props.onUpdateProjectOverview?.(
+                        detail.ownerName,
+                        detail.projectName,
+                        overviewDraft,
+                      );
+                      setEditingOverview(false);
+                    }}
+                  >
+                    <input
+                      className="span6"
+                      id="project-description-input"
+                      name="overview"
+                      placeholder="project.description.placeholder"
+                      type="text"
+                      value={overviewDraft}
+                      onChange={(event) => setOverviewDraft(event.target.value)}
+                    />
+                    <button className="ybtn ybtn-success" id="descriptionSaveBtn" type="submit">
+                      button.save
+                    </button>{" "}
+                    <button
+                      className="ybtn"
+                      data-toggle="description-cancel"
+                      type="button"
+                      onClick={() => setEditingOverview(false)}
+                    >
+                      button.cancel
+                    </button>
+                  </form>
+                </div>
+              ) : null}
+            </div>
+            {detail.showCode ? (
+              <div className="project-clone-wrap span3 hide-in-mobile">
+                <input
+                  aria-label="Clone URL"
+                  className="project-clone-url"
+                  id="cloneURL"
+                  readOnly
+                  title="Clone URL"
+                  type="text"
+                  value={detail.cloneUrl ?? ""}
                 />
-              </article>
-            ) : (
-              <>
-                <h3>README</h3>
-                <p>No README post yet.</p>
-              </>
-            )
-          ) : null}
-          {activeTab === "history" ? <ProjectHomeHistoryPane detail={detail} /> : null}
-          {activeTab === "dashboard" ? (
-            <ProjectHomeDashboardPane detail={detail} runtimeConfig={props.runtimeConfig} />
-          ) : null}
+                <button
+                  className="ybtn project-clone-button"
+                  data-clipboard-target="cloneURL"
+                  id="cloneURLBtn"
+                  type="button"
+                >
+                  code.copyUrl
+                </button>
+              </div>
+            ) : null}
+          </div>
+          <div className="row-fluid">
+            <div className="span9 span-left-pane">
+              <ul className="nav nav-tabs">
+                <li className={activeTab === "readme" ? "active" : undefined}>
+                  <a href={projectHref}>README</a>
+                </li>
+                <li className={activeTab === "history" ? "active" : undefined}>
+                  <a href={`${projectHref}?tabId=history`}>Recent history</a>
+                </li>
+                <li className={activeTab === "dashboard" ? "active" : undefined}>
+                  <a href={`${projectHref}?tabId=dashboard`}>Dashboard</a>
+                </li>
+              </ul>
+              <div className="tab-content">
+                <div className="tab-pane active">
+                  {activeTab === "readme" ? (
+                    props.readmePost ? (
+                      <article className="board-view project-readme-post">
+                        <h3>{props.readmePost.title || "README"}</h3>
+                        <div dangerouslySetInnerHTML={{ __html: props.readmePost.bodyHtml }} />
+                      </article>
+                    ) : detail.readmeFile ? (
+                      <article className="readme-wrap project-git-readme">
+                        <header>
+                          <strong>{detail.readmeFile.name || "README.md"}</strong>
+                        </header>
+                        <div
+                          className="readme-body markdown-wrap"
+                          dangerouslySetInnerHTML={{ __html: detail.readmeFile.bodyHtml }}
+                        />
+                      </article>
+                    ) : (
+                      <>
+                        <h3>README</h3>
+                        <p>No README post yet.</p>
+                      </>
+                    )
+                  ) : null}
+                  {activeTab === "history" ? <ProjectHomeHistoryPane detail={detail} /> : null}
+                  {activeTab === "dashboard" ? (
+                    <ProjectHomeDashboardPane detail={detail} runtimeConfig={props.runtimeConfig} />
+                  ) : null}
+                </div>
+              </div>
+            </div>
+            <div className="span3 span-right-pane">
+              <div className="bubble-wrap gray project-home">
+                <div className="project-btn-wrap">
+                  {detail.showIssue ? (
+                    <span className="project-btn-item">
+                      <a className="ybtn ybtn-success" href={`${projectHref}/issues/new`}>
+                        button.newIssue
+                      </a>
+                    </span>
+                  ) : null}
+                  {detail.showCode ? (
+                    <span className="project-btn-item">
+                      <a className="ybtn ybtn-inverse" href={`${projectHref}/fork`}>
+                        fork
+                      </a>
+                    </span>
+                  ) : null}
+                </div>
+                <section>
+                  <h3>Project actions</h3>
+                  <div className="runtime-grid">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        props.onToggleFavoriteProject?.(detail.ownerName, detail.projectName)
+                      }
+                    >
+                      {detail.isFavorited ? "Unfavorite project" : "Favorite project"}
+                    </button>
+                    {detail.viewerCanWatch ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          props.onToggleProjectWatch?.(
+                            detail.ownerName,
+                            detail.projectName,
+                            !detail.isWatching,
+                          )
+                        }
+                      >
+                        {detail.isWatching ? "Unwatch project" : "Watch project"}
+                      </button>
+                    ) : null}
+                    {detail.viewerCanEnroll ? (
+                      detail.enrollmentRequested ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            props.onCancelEnrollProject?.(detail.ownerName, detail.projectName)
+                          }
+                        >
+                          Cancel enrollment request
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            props.onEnrollProject?.(detail.ownerName, detail.projectName)
+                          }
+                        >
+                          Request enrollment
+                        </button>
+                      )
+                    ) : null}
+                  </div>
+                </section>
+                <section>
+                  <h3>Watchers</h3>
+                  <a
+                    className="btn watcher-count no-border"
+                    href={buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      "watchers",
+                    )}
+                  >
+                    {detail.watchCount ?? 0}
+                  </a>
+                </section>
+                <section className="inner member-info">
+                  <header>
+                    <h3>Members</h3>
+                  </header>
+                  <ul>
+                    {(detail.members ?? []).map((member) => (
+                      <li key={member.loginId}>
+                        {`${member.userLabel} @${member.loginId} (${member.role})`}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+                {detail.currentMilestone ? (
+                  <section>
+                    <h3>Current milestone</h3>
+                    <p>{detail.currentMilestone.title}</p>
+                    <p>{detail.currentMilestone.dueDateLabel}</p>
+                    <p>{`Open issues: ${detail.currentMilestone.openIssueCount}`}</p>
+                    <p>{`Closed issues: ${detail.currentMilestone.closedIssueCount}`}</p>
+                    <p>{`Progress: ${detail.currentMilestone.completionPercent}%`}</p>
+                  </section>
+                ) : null}
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
-      <section>
-        <h2>Members</h2>
-        <ul>
-          {(detail.members ?? []).map((member) => (
-            <li key={member.loginId}>
-              {member.userLabel} @{member.loginId} ({member.role})
-            </li>
-          ))}
-        </ul>
-      </section>
-      {detail.currentMilestone ? (
-        <section>
-          <h2>Current milestone</h2>
-          <p>{detail.currentMilestone.title}</p>
-          <p>{detail.currentMilestone.dueDateLabel}</p>
-          <p>{`Open issues: ${detail.currentMilestone.openIssueCount}`}</p>
-          <p>{`Closed issues: ${detail.currentMilestone.closedIssueCount}`}</p>
-          <p>{`Progress: ${detail.currentMilestone.completionPercent}%`}</p>
-        </section>
-      ) : null}
+      </div>
     </main>
   );
 }
