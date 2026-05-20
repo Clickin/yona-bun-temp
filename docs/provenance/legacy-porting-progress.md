@@ -42,7 +42,7 @@ Interpretation:
 | Pull Request / Review                   | [~] Strong partial        | Phase 4A restores read surfaces and Phase 4B restores create/edit, close/reopen, review/unreview, general PR comments, and thread open/close; merge/fork/reviewer lifecycle/ranged inline CRUD remain. |
 | Board / Posting                         | [~] Strong partial        | Project board CRUD/comment/watch/notice/README/label flows, read-only Git README fallback rendering, and organization board list exist over `/api/v1`; Git README write-back/sync, issue template/file edit, and legacy external API compatibility remain. |
 | Search                                  | [~] Strong partial        | Global/project/organization app search exists over `/api/v1` with all legacy result tabs, counts, snippets, pagination, and ACL filtering; full-text/indexed search and external API compatibility remain deferred. |
-| Notifications / Webhooks / Admin / External REST | [~] Partially implemented | Notification inbox/list with legacy route wrapper anchors, mail queue staging, site-admin mail test/mass-mail recipient lookup, update shell, webhook CRUD, and issue/comment plus PR create/review/comment webhook fan-out exist while full SMTP batching, push JSON, PR merge/commit-changed delivery, delivery history/hardening, live update check/download, and admin data management remain gaps; `/-_-api/v1` compatibility is separate migrator scope. |
+| Notifications / Webhooks / Admin / External REST | [~] Partially implemented | Notification inbox/list with legacy route wrapper anchors, mail queue staging, site-admin mail test/mass-mail recipient lookup, update shell, data management shell, webhook CRUD, and issue/comment plus PR create/review/comment webhook fan-out exist while full SMTP batching, push JSON, PR merge/commit-changed delivery, delivery history/hardening, live update check/download, and live admin data import/export remain gaps; `/-_-api/v1` compatibility is separate migrator scope. |
 
 ## Foundation / Deployment / DB
 
@@ -353,6 +353,7 @@ Interpretation:
 - [x] System diagnostics (`/sites/diagnostic` + `/api/v1/site/diagnostics`)
 - [x] Mail settings/test/mass mail (`/sites/mail`, `/sites/massmail`, `/api/v1/site/mail*`)
 - [x] Update shell (`/sites/update` legacy sidebar/title/no-update surface)
+- [x] Data management shell (`/sites/data` legacy warning/export/import surface)
 - [ ] Data import/export (deferred)
 - [ ] Live update check/download (deferred)
 

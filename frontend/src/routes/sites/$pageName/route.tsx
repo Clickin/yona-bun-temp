@@ -287,6 +287,17 @@ function SiteAdminRouteComponent() {
     );
   }
 
+  if (pageName === "data") {
+    return (
+      <SiteDataRoute
+        bootstrapping={bootstrapping}
+        currentIsSiteAdmin={currentIsSiteAdmin}
+        href={href}
+        runtimeConfig={runtimeConfig}
+      />
+    );
+  }
+
   if (pageName === "update") {
     return (
       <SiteUpdateRoute
@@ -311,6 +322,33 @@ function SiteAdminRouteComponent() {
   }
 
   return <PlaceholderPage href={`/sites/${pageName}`} title="Site Admin" />;
+}
+
+function SiteDataRoute({
+  bootstrapping,
+  currentIsSiteAdmin,
+  href,
+  runtimeConfig,
+}: {
+  bootstrapping: boolean;
+  currentIsSiteAdmin: boolean;
+  href: string;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const canRender = useRequireAuthenticatedRoute(href);
+
+  if (bootstrapping || !canRender) {
+    return (
+      <main className="app-shell site-admin-page">
+        <h1>Loading&hellip;</h1>
+      </main>
+    );
+  }
+  if (!currentIsSiteAdmin) {
+    return <ForbiddenPage href="/sites/data" />;
+  }
+
+  return <SiteAdminDataPage runtimeConfig={runtimeConfig} />;
 }
 
 function SiteUpdateRoute({
@@ -1360,6 +1398,72 @@ function SiteAdminMassMailPage({
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function SiteAdminDataPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+  return (
+    <main className="app-shell site-admin-page">
+      <div className="site-breadcrumb-outer">
+        <div className="site-breadcrumb-inner">
+          <h3>Site Admin</h3>
+        </div>
+      </div>
+      <div className="page-wrap-outer">
+        <div className="site-setting-wrap">
+          <div className="row-fluid site-setting-layout">
+            <div className="span2">
+              <SiteAdminSidebar activePageName="data" runtimeConfig={runtimeConfig} />
+            </div>
+            <div className="span10">
+              <div className="title_area">
+                <h2 className="pull-left">site.sidebar.data</h2>
+              </div>
+              <div className="cu-desc">
+                <ul>
+                  <li className="notice">
+                    <strong>site.data.warning1</strong>
+                  </li>
+                  <li className="notice">
+                    <strong>site.data.warning2</strong>
+                  </li>
+                  <li className="notice">
+                    <strong>site.data.warning3</strong>
+                  </li>
+                </ul>
+              </div>
+
+              <h3>site.data.export</h3>
+              <p>site.data.export.info</p>
+              <a
+                aria-disabled="true"
+                className="ybtn ybtn-primary disabled"
+                data-deferred="site.data.export"
+                href={appHref(runtimeConfig, "/sites/export")}
+                onClick={(event) => event.preventDefault()}
+              >
+                <strong>site.data.export</strong>
+              </a>
+
+              <h3>site.data.import</h3>
+              <p>site.data.import.info</p>
+              <form
+                action={appHref(runtimeConfig, "/sites/import")}
+                data-deferred="site.data.import"
+                encType="multipart/form-data"
+                method="post"
+                onSubmit={(event) => event.preventDefault()}
+              >
+                <input disabled name="data" type="file" />
+                <p>
+                  <input disabled readOnly type="submit" value="site.data.import" />
+                </p>
+              </form>
             </div>
           </div>
         </div>
