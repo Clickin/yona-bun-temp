@@ -3378,7 +3378,26 @@ struct RestProjectOverviewBody {
 struct RestProjectContainerResponse {
     #[serde(flatten)]
     container: ProjectContainer,
+    dashboard: RestProjectDashboard,
     readme_file: Option<RestProjectReadmeFile>,
+}
+
+#[derive(Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectDashboard {
+    labels: Vec<RestProjectDashboardLabel>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectDashboardLabel {
+    category_id: Option<i64>,
+    category_is_exclusive: bool,
+    category_name: String,
+    color: String,
+    id: i64,
+    name: String,
+    open_issue_count: u32,
 }
 
 #[derive(Serialize)]
@@ -8386,13 +8405,55 @@ async fn rest_read_project_container(
     let readme_file = rest_project_readme_file(&service, &headers, &payload)
         .await
         .map_err(RestRouteError::from_connect_error)?;
+    let dashboard = rest_project_home_dashboard(&service, &headers, &payload)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(
         RestProjectContainerResponse {
             container: payload,
+            dashboard,
             readme_file,
         },
         ctx,
     ))
+}
+
+async fn rest_project_home_dashboard(
+    service: &PilotServiceImpl,
+    headers: &HeaderMap,
+    container: &ProjectContainer,
+) -> Result<RestProjectDashboard, ConnectError> {
+    if !container.show_issue {
+        return Ok(RestProjectDashboard::default());
+    }
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Ok(RestProjectDashboard::default());
+    };
+    let authorization = repository
+        .read_project_authorization(&container.owner_name, &container.project_name, actor_id)
+        .await
+        .map_err(internal_error)?
+        .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    let labels = repository
+        .list_project_dashboard_labels(authorization.project.id)
+        .await
+        .map_err(internal_error)?
+        .into_iter()
+        .map(|label| RestProjectDashboardLabel {
+            category_id: label.category_id,
+            category_is_exclusive: label.category_is_exclusive,
+            category_name: label.category_name,
+            color: label.color,
+            id: label.id,
+            name: label.name,
+            open_issue_count: label.open_issue_count,
+        })
+        .collect();
+    Ok(RestProjectDashboard { labels })
 }
 
 async fn rest_project_readme_file(

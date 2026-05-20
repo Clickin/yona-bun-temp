@@ -16,20 +16,20 @@ use crate::repo_types::{
     OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationPostingListFilter,
     OrganizationPostingListRecord, OrganizationPostingProjectOptionRecord, OrganizationRecord,
     OrganizationViewerRecord, PostingCommentRecord, PostingListFilter, PostingRecord,
-    ProjectAuthorizationRecord, ProjectEnrollmentRequestRecord, ProjectIssueListItemRecord,
-    ProjectIssueListRecord, ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord,
-    ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
-    ProjectMilestoneSummaryRecord, ProjectPostingListItemRecord, ProjectPostingListRecord,
-    ProjectRecord, ProjectTransferRecord, ProjectTransferRequestInput, ProjectViewerRecord,
-    ProjectWatcherListRecord, ProjectWatcherRecord, ProjectWebhookListRecord, ProjectWebhookRecord,
-    PullRequestCommitRecord, PullRequestDetailRecord, PullRequestEventRecord,
-    PullRequestListFilter, PullRequestListItemRecord, PullRequestListRecord,
-    PullRequestReviewInput, PullRequestStateInput, PullRequestThreadStateInput,
-    PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
-    ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
-    SearchRepositoryInput, SearchResultRecord, SearchScope, SiteIssueListRecord,
-    SitePostingListRecord, SiteUserDeleteResult, SiteUserListFilter, SiteUserListRecord,
-    SiteUserRecord, ToggleFavoriteIssueResult, ToggleFavoriteProjectResult,
+    ProjectAuthorizationRecord, ProjectDashboardLabelRecord, ProjectEnrollmentRequestRecord,
+    ProjectIssueListItemRecord, ProjectIssueListRecord, ProjectIssueReferenceRecord,
+    ProjectIssueReferenceSearchRecord, ProjectListEntry, ProjectMemberDirectoryRecord,
+    ProjectMemberRecord, ProjectMenuSettingsRecord, ProjectMilestoneSummaryRecord,
+    ProjectPostingListItemRecord, ProjectPostingListRecord, ProjectRecord, ProjectTransferRecord,
+    ProjectTransferRequestInput, ProjectViewerRecord, ProjectWatcherListRecord,
+    ProjectWatcherRecord, ProjectWebhookListRecord, ProjectWebhookRecord, PullRequestCommitRecord,
+    PullRequestDetailRecord, PullRequestEventRecord, PullRequestListFilter,
+    PullRequestListItemRecord, PullRequestListRecord, PullRequestReviewInput,
+    PullRequestStateInput, PullRequestThreadStateInput, PullRequestUserRecord, ReviewCommentRecord,
+    ReviewThreadListFilter, ReviewThreadListRecord, ReviewThreadRecord, SearchContextRecord,
+    SearchCountsRecord, SearchItemRecord, SearchRepositoryInput, SearchResultRecord, SearchScope,
+    SiteIssueListRecord, SitePostingListRecord, SiteUserDeleteResult, SiteUserListFilter,
+    SiteUserListRecord, SiteUserRecord, ToggleFavoriteIssueResult, ToggleFavoriteProjectResult,
     UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput,
     UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
     UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestInput,
@@ -6109,6 +6109,49 @@ impl AppRepository {
             .filter(issue::Column::State.eq(Some(0)))
             .count(&self.db)
             .await? as u32)
+    }
+
+    pub async fn list_project_dashboard_labels(
+        &self,
+        project_id: i64,
+    ) -> Result<Vec<ProjectDashboardLabelRecord>, DbErr> {
+        let labels = issue_label::Entity::find()
+            .filter(issue_label::Column::ProjectId.eq(Some(project_id)))
+            .order_by_asc(issue_label::Column::CategoryId)
+            .order_by_asc(issue_label::Column::Name)
+            .all(&self.db)
+            .await?;
+        let mut records = Vec::new();
+        for label in labels {
+            let issue_ids = issue_issue_label::Entity::find()
+                .filter(issue_issue_label::Column::IssueLabelId.eq(label.id))
+                .all(&self.db)
+                .await?
+                .into_iter()
+                .map(|link| link.issue_id)
+                .collect::<Vec<_>>();
+            let open_issue_count = if issue_ids.is_empty() {
+                0
+            } else {
+                issue::Entity::find()
+                    .filter(issue::Column::Id.is_in(issue_ids))
+                    .filter(issue::Column::ProjectId.eq(Some(project_id)))
+                    .filter(issue::Column::State.eq(Some(0)))
+                    .count(&self.db)
+                    .await? as u32
+            };
+            let record = self.issue_label_record(label).await?;
+            records.push(ProjectDashboardLabelRecord {
+                category_id: record.category_id,
+                category_is_exclusive: record.category_is_exclusive,
+                category_name: record.category_name,
+                color: record.color,
+                id: record.id,
+                name: record.name,
+                open_issue_count,
+            });
+        }
+        Ok(records)
     }
 
     pub async fn count_open_pull_requests_for_project(

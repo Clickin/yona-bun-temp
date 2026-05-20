@@ -74,6 +74,28 @@ function ProjectDashboardMetric(props: {
   );
 }
 
+function ProjectDashboardLabelMetric(props: {
+  count: number;
+  href: string;
+  labelId: number;
+  labelName: string;
+}) {
+  return (
+    <div className="row-fluid">
+      <div className="span10">
+        <a href={props.href}>
+          <span className="issue-label list-label active" data-label-id={props.labelId}>
+            {props.labelName}
+          </span>
+        </a>
+      </div>
+      <div className="span2 num">
+        <strong>{props.count}</strong>
+      </div>
+    </div>
+  );
+}
+
 function ProjectHomeHistoryPane() {
   return (
     <div className="content-container nm">
@@ -94,6 +116,19 @@ function ProjectHomeDashboardPane(props: {
   const openIssueCount = detail.openIssueCount ?? 0;
   const pullRequestCount = detail.openPullRequestCount ?? 0;
   const milestonePercent = detail.currentMilestone?.completionPercent ?? 0;
+  const dashboardLabels = detail.dashboard?.labels ?? [];
+  const dashboardLabelCategories = dashboardLabels.reduce<
+    Array<{ categoryName: string; labels: typeof dashboardLabels }>
+  >((categories, label) => {
+    const categoryName = label.categoryName || "project.dashboard.openIssuesByLabel";
+    const existing = categories.find((category) => category.categoryName === categoryName);
+    if (existing) {
+      existing.labels.push(label);
+    } else {
+      categories.push({ categoryName, labels: [label] });
+    }
+    return categories;
+  }, []);
 
   return (
     <div className="content-container nm">
@@ -175,17 +210,36 @@ function ProjectHomeDashboardPane(props: {
         {detail.showIssue ? (
           <div className="span6">
             <h5>project.dashboard.openIssuesByLabel</h5>
-            <dl className="dl-horizontal overview-label">
-              <dt>project.dashboard.openIssuesByLabel</dt>
-              <dd>
-                <ProjectDashboardMetric
-                  count={openIssueCount}
-                  href={projectHref("issues?state=open")}
-                  label="label.none"
-                  percent={openIssueCount > 0 ? 100 : 0}
-                />
-              </dd>
-            </dl>
+            {dashboardLabelCategories.length > 0 ? (
+              dashboardLabelCategories.map((category) => (
+                <dl className="dl-horizontal overview-label" key={category.categoryName}>
+                  <dt>{category.categoryName}</dt>
+                  <dd>
+                    {category.labels.map((label) => (
+                      <ProjectDashboardLabelMetric
+                        count={label.openIssueCount}
+                        href={projectHref(`issues?state=open&labelIds=${label.id}`)}
+                        key={label.id}
+                        labelId={label.id}
+                        labelName={label.name}
+                      />
+                    ))}
+                  </dd>
+                </dl>
+              ))
+            ) : (
+              <dl className="dl-horizontal overview-label">
+                <dt>project.dashboard.openIssuesByLabel</dt>
+                <dd>
+                  <ProjectDashboardMetric
+                    count={openIssueCount}
+                    href={projectHref("issues?state=open")}
+                    label="label.none"
+                    percent={openIssueCount > 0 ? 100 : 0}
+                  />
+                </dd>
+              </dl>
+            )}
           </div>
         ) : null}
       </div>

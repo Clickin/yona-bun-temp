@@ -66,4 +66,27 @@ describe("project home tab parity", () => {
     expect(html).not.toContain("Legacy placeholder panel");
     expect(html).not.toContain("No README post yet.");
   });
+
+  it("renders project dashboard label rows from container data", () => {
+    const html = renderProjectHome("/yona/yona/projectYobi?tabId=dashboard", {
+      dashboard: {
+        labels: [
+          {
+            categoryName: "Type",
+            color: "#00aa55",
+            id: 7,
+            name: "Guide",
+            openIssueCount: 3,
+          },
+        ],
+      },
+    });
+
+    expect(html).toContain('class="issue-label list-label active"');
+    expect(html).toContain('data-label-id="7"');
+    expect(html).toContain('href="/yona/yona/projectYobi/issues?state=open&amp;labelIds=7"');
+    expect(html).toContain("Guide");
+    expect(html).toContain("<strong>3</strong>");
+    expect(html).not.toContain("label.none");
+  });
 });

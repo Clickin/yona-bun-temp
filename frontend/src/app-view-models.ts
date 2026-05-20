@@ -263,6 +263,17 @@ export function toProjectContainerView(
   detail: Awaited<ReturnType<typeof readProjectContainer>>,
 ): ProjectDetailViewModel {
   const detailWithReadme = detail as typeof detail & {
+    dashboard?: {
+      labels?: Array<{
+        categoryId?: number | null;
+        categoryIsExclusive?: boolean;
+        categoryName?: string;
+        color?: string;
+        id?: number;
+        name?: string;
+        openIssueCount?: number;
+      }>;
+    };
     readmeFile?: { bodyHtml?: string; bodyMarkdown?: string; name?: string } | null;
   };
   return {
@@ -279,6 +290,17 @@ export function toProjectContainerView(
           title: detail.currentMilestone.title,
         }
       : undefined,
+    dashboard: {
+      labels: (detailWithReadme.dashboard?.labels ?? []).map((label) => ({
+        categoryId: label.categoryId ?? null,
+        categoryIsExclusive: label.categoryIsExclusive ?? false,
+        categoryName: label.categoryName ?? "",
+        color: label.color ?? "",
+        id: label.id ?? 0,
+        name: label.name ?? "",
+        openIssueCount: label.openIssueCount ?? 0,
+      })),
+    },
     defaultTab: detail.defaultTab,
     enrollmentRequested: detail.enrollmentRequested,
     isFavorited: detail.isFavorited,

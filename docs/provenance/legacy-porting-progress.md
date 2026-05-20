@@ -143,6 +143,7 @@ Interpretation:
 - [~] Git/SVN type change shell, metadata toggle, README flag clear, and repository reset
 - [x] Project statistics under-construction shell
 - [x] Project home `tabId=history|dashboard` selection and legacy history/dashboard shell anchors
+- [x] Project home dashboard open issue counts by label
 - [~] Full legacy project home/dashboard/history composition
 
 ## Issues

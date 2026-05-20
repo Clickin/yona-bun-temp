@@ -155,6 +155,17 @@ export interface ProjectDetailViewModel {
     openIssueCount: number;
     title: string;
   };
+  dashboard?: {
+    labels: Array<{
+      categoryId?: number | null;
+      categoryIsExclusive?: boolean;
+      categoryName: string;
+      color: string;
+      id: number;
+      name: string;
+      openIssueCount: number;
+    }>;
+  };
   defaultTab?: string;
   enrollmentRequested: boolean;
   isFavorited: boolean;

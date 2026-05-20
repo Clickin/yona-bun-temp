@@ -403,6 +403,17 @@ pub struct IssueLabelCategoryRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectDashboardLabelRecord {
+    pub category_id: Option<i64>,
+    pub category_is_exclusive: bool,
+    pub category_name: String,
+    pub color: String,
+    pub id: i64,
+    pub name: String,
+    pub open_issue_count: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CreateProjectLabelInput {
     pub category_is_exclusive: bool,
     pub category_name: String,

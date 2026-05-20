@@ -8,7 +8,7 @@ use std::process::Command;
 use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tower::ServiceExt;
-use yona_rust_persistence::AppRepository;
+use yona_rust_persistence::{AppRepository, CreateProjectLabelInput};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
@@ -854,6 +854,146 @@ async fn rest_project_container_includes_git_readme_with_legacy_readme_link_rewr
         body_html.contains(r#"href="/yona/admin/projectYobi/code/main/docs/guide.md""#),
         "{body_html}"
     );
+}
+
+#[tokio::test]
+async fn rest_project_container_includes_dashboard_open_issue_counts_by_label() {
+    let (app, repo) = build_app_with_repository().await;
+
+    let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
+
+    create_project(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "admin",
+        "projectYobi",
+        "Project dashboard labels",
+        "public",
+    )
+    .await;
+
+    let guide_label = repo
+        .create_project_label(CreateProjectLabelInput {
+            category_is_exclusive: false,
+            category_name: "Type".to_string(),
+            label_color: "#00aa55".to_string(),
+            label_name: "Guide".to_string(),
+            owner_name: "admin".to_string(),
+            project_name: "projectYobi".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("created guide label")
+        .0;
+    let chore_label = repo
+        .create_project_label(CreateProjectLabelInput {
+            category_is_exclusive: false,
+            category_name: "Type".to_string(),
+            label_color: "#5577ff".to_string(),
+            label_name: "Chore".to_string(),
+            owner_name: "admin".to_string(),
+            project_name: "projectYobi".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("created chore label")
+        .0;
+
+    let create_open_issue = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/projects/admin/projectYobi/issues")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from(format!(
+                    "{{\"title\":\"Open guide issue\",\"bodyMarkdown\":\"open\",\"labelIds\":[{}]}}",
+                    guide_label.id
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(create_open_issue.status(), StatusCode::OK);
+
+    let create_closed_issue = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/projects/admin/projectYobi/issues")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from(format!(
+                    "{{\"title\":\"Closed guide issue\",\"bodyMarkdown\":\"closed\",\"labelIds\":[{}]}}",
+                    guide_label.id
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(create_closed_issue.status(), StatusCode::OK);
+    let closed_issue: serde_json::Value =
+        serde_json::from_str(&response_json(create_closed_issue).await).expect("issue json");
+    let closed_issue_number = closed_issue["issueNumber"]
+        .as_str()
+        .expect("closed issue number");
+
+    let close_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri(format!(
+                    "/yona/api/v1/projects/admin/projectYobi/issues/{closed_issue_number}/state"
+                ))
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from("{\"state\":\"closed\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(close_response.status(), StatusCode::OK);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/owners/admin/projects/projectYobi/container")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let json = response_json(response).await;
+    let payload: serde_json::Value = serde_json::from_str(&json).expect("container json");
+    let labels = payload["dashboard"]["labels"]
+        .as_array()
+        .expect("dashboard labels");
+    let guide = labels
+        .iter()
+        .find(|label| label["id"].as_i64() == Some(guide_label.id))
+        .expect("guide dashboard label");
+    assert_eq!(guide["name"], "Guide");
+    assert_eq!(guide["categoryName"], "Type");
+    assert_eq!(guide["color"], "#00aa55");
+    assert_eq!(guide["openIssueCount"], 1);
+
+    let chore = labels
+        .iter()
+        .find(|label| label["id"].as_i64() == Some(chore_label.id))
+        .expect("chore dashboard label");
+    assert_eq!(chore["name"], "Chore");
+    assert_eq!(chore["openIssueCount"], 0);
 }
 
 #[tokio::test]
