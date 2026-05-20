@@ -197,6 +197,7 @@ export interface SessionBootstrapResult {
 }
 
 export interface ProjectIssueListOptions {
+  assigneeId?: bigint | number;
   assigneeLoginId?: string;
   authorLoginId?: string;
   labelIds?: Array<bigint | number>;
@@ -523,6 +524,7 @@ export async function listProjectIssues(
   return restFetch<ListProjectIssuesResponse>(
     runtimeConfig,
     `${projectIssuesRestPath(ownerName, projectName)}${issueQueryString({
+      assigneeId: input.assigneeId,
       assigneeLoginId: input.assigneeLoginId,
       authorLoginId: input.authorLoginId,
       labelIds: input.labelIds,

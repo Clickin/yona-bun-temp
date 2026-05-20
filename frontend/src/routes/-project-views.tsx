@@ -96,6 +96,84 @@ function ProjectDashboardLabelMetric(props: {
   );
 }
 
+function ProjectDashboardAssigneeMetric(props: {
+  avatarUrl: string;
+  count: number;
+  href: string;
+  loginId: string;
+  totalCount: number;
+  userLabel: string;
+}) {
+  const percent = dashboardPercent(props.count, props.totalCount);
+
+  return (
+    <div className="row-fluid">
+      <div className="span6">
+        <a className="usf-group" href={props.href} title={`${props.userLabel} (@${props.loginId})`}>
+          <span className="avatar-wrap smaller">
+            <img alt="" height="20" src={props.avatarUrl} width="20" />
+          </span>
+          <strong className="name">{props.userLabel}</strong>
+          <span className="loginid">
+            {" "}
+            <strong>@</strong>
+            {props.loginId}
+          </span>
+        </a>
+      </div>
+      <div className="span3 num">
+        <strong>{props.count}</strong>
+      </div>
+      <div className="span3 nm">
+        <div
+          className={`progress progress-warning ${percent === 0 ? "empty" : ""}`.trim()}
+          data-toggle="tooltip"
+          title={`${percent}%`}
+        >
+          <div className="bar" style={{ width: `${percent}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProjectDashboardUnassignedMetric(props: {
+  count: number;
+  href: string;
+  totalCount: number;
+}) {
+  const percent = dashboardPercent(props.count, props.totalCount);
+
+  return (
+    <div className="row-fluid">
+      <div className="span6">
+        <a className="usf-group" href={props.href}>
+          <span className="avatar-wrap smaller">
+            <i className="yobicon-blankstare" />
+          </span>
+          <span className="name">issue.noAssignee</span>
+        </a>
+      </div>
+      <div className="span3 num">
+        <strong>{props.count}</strong>
+      </div>
+      <div className="span3 nm">
+        <div
+          className={`progress progress-warning ${percent === 0 ? "empty" : ""}`.trim()}
+          data-toggle="tooltip"
+          title={`${percent}%`}
+        >
+          <div className="bar" style={{ width: `${percent}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function dashboardPercent(count: number, totalCount: number) {
+  return totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
+}
+
 function ProjectHomeHistoryPane() {
   return (
     <div className="content-container nm">
@@ -116,6 +194,10 @@ function ProjectHomeDashboardPane(props: {
   const openIssueCount = detail.openIssueCount ?? 0;
   const pullRequestCount = detail.openPullRequestCount ?? 0;
   const milestonePercent = detail.currentMilestone?.completionPercent ?? 0;
+  const dashboardAssignees = detail.dashboard?.assignees ?? [];
+  const hasAssigneeDashboardData =
+    detail.dashboard !== undefined &&
+    (dashboardAssignees.length > 0 || detail.dashboard.unassignedOpenIssueCount !== undefined);
   const dashboardLabels = detail.dashboard?.labels ?? [];
   const dashboardLabelCategories = dashboardLabels.reduce<
     Array<{ categoryName: string; labels: typeof dashboardLabels }>
@@ -145,6 +227,29 @@ function ProjectHomeDashboardPane(props: {
                       issue.menu.new
                     </a>
                   </div>
+                ) : hasAssigneeDashboardData ? (
+                  <>
+                    {dashboardAssignees.map((assignee) => (
+                      <ProjectDashboardAssigneeMetric
+                        avatarUrl={assignee.avatarUrl}
+                        count={assignee.openIssueCount}
+                        href={projectHref(
+                          `issues?state=open&assigneeLoginId=${encodeURIComponent(
+                            assignee.loginId,
+                          )}`,
+                        )}
+                        key={assignee.userId}
+                        loginId={assignee.loginId}
+                        totalCount={openIssueCount}
+                        userLabel={assignee.userLabel}
+                      />
+                    ))}
+                    <ProjectDashboardUnassignedMetric
+                      count={detail.dashboard?.unassignedOpenIssueCount ?? 0}
+                      href={projectHref("issues?state=open&assigneeId=0")}
+                      totalCount={openIssueCount}
+                    />
+                  </>
                 ) : (
                   <ProjectDashboardMetric
                     count={openIssueCount}

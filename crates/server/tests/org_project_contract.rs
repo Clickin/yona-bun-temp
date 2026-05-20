@@ -997,6 +997,130 @@ async fn rest_project_container_includes_dashboard_open_issue_counts_by_label() 
 }
 
 #[tokio::test]
+async fn rest_project_container_includes_dashboard_open_issue_counts_by_assignee() {
+    let (app, _repo) = build_app_with_repository().await;
+
+    let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
+
+    let (member_csrf, member_cookie) = bootstrap(app.clone()).await;
+    let member_id = register_user(app.clone(), &member_cookie, &member_csrf, "assigned").await;
+
+    create_project(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "admin",
+        "projectYobi",
+        "Project dashboard assignees",
+        "public",
+    )
+    .await;
+
+    let create_assigned_open = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/projects/admin/projectYobi/issues")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from(
+                    "{\"title\":\"Open assigned issue\",\"bodyMarkdown\":\"open\",\"assigneeLoginId\":\"assigned\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(create_assigned_open.status(), StatusCode::OK);
+
+    let create_assigned_closed = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/projects/admin/projectYobi/issues")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from(
+                    "{\"title\":\"Closed assigned issue\",\"bodyMarkdown\":\"closed\",\"assigneeLoginId\":\"assigned\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(create_assigned_closed.status(), StatusCode::OK);
+    let closed_issue: serde_json::Value =
+        serde_json::from_str(&response_json(create_assigned_closed).await).expect("issue json");
+    let closed_issue_number = closed_issue["issueNumber"]
+        .as_str()
+        .expect("closed issue number");
+    let close_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri(format!(
+                    "/yona/api/v1/projects/admin/projectYobi/issues/{closed_issue_number}/state"
+                ))
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from("{\"state\":\"closed\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(close_response.status(), StatusCode::OK);
+
+    let create_unassigned_open = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/projects/admin/projectYobi/issues")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from(
+                    "{\"title\":\"Open unassigned issue\",\"bodyMarkdown\":\"open\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(create_unassigned_open.status(), StatusCode::OK);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/owners/admin/projects/projectYobi/container")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let json = response_json(response).await;
+    let payload: serde_json::Value = serde_json::from_str(&json).expect("container json");
+    let assignees = payload["dashboard"]["assignees"]
+        .as_array()
+        .expect("dashboard assignees");
+    let assigned = assignees
+        .iter()
+        .find(|assignee| assignee["userId"].as_i64() == Some(member_id))
+        .expect("assigned dashboard row");
+    assert_eq!(assigned["loginId"], "assigned");
+    assert_eq!(assigned["userLabel"], "assigned");
+    assert_eq!(assigned["openIssueCount"], 1);
+    assert_eq!(payload["dashboard"]["unassignedOpenIssueCount"], 1);
+}
+
+#[tokio::test]
 async fn update_project_overview_returns_refreshed_project_container() {
     let app = build_app().await;
 

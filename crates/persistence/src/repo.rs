@@ -16,20 +16,21 @@ use crate::repo_types::{
     OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationPostingListFilter,
     OrganizationPostingListRecord, OrganizationPostingProjectOptionRecord, OrganizationRecord,
     OrganizationViewerRecord, PostingCommentRecord, PostingListFilter, PostingRecord,
-    ProjectAuthorizationRecord, ProjectDashboardLabelRecord, ProjectEnrollmentRequestRecord,
-    ProjectIssueListItemRecord, ProjectIssueListRecord, ProjectIssueReferenceRecord,
-    ProjectIssueReferenceSearchRecord, ProjectListEntry, ProjectMemberDirectoryRecord,
-    ProjectMemberRecord, ProjectMenuSettingsRecord, ProjectMilestoneSummaryRecord,
-    ProjectPostingListItemRecord, ProjectPostingListRecord, ProjectRecord, ProjectTransferRecord,
-    ProjectTransferRequestInput, ProjectViewerRecord, ProjectWatcherListRecord,
-    ProjectWatcherRecord, ProjectWebhookListRecord, ProjectWebhookRecord, PullRequestCommitRecord,
-    PullRequestDetailRecord, PullRequestEventRecord, PullRequestListFilter,
-    PullRequestListItemRecord, PullRequestListRecord, PullRequestReviewInput,
-    PullRequestStateInput, PullRequestThreadStateInput, PullRequestUserRecord, ReviewCommentRecord,
-    ReviewThreadListFilter, ReviewThreadListRecord, ReviewThreadRecord, SearchContextRecord,
-    SearchCountsRecord, SearchItemRecord, SearchRepositoryInput, SearchResultRecord, SearchScope,
-    SiteIssueListRecord, SitePostingListRecord, SiteUserDeleteResult, SiteUserListFilter,
-    SiteUserListRecord, SiteUserRecord, ToggleFavoriteIssueResult, ToggleFavoriteProjectResult,
+    ProjectAuthorizationRecord, ProjectDashboardAssigneeRecord, ProjectDashboardLabelRecord,
+    ProjectEnrollmentRequestRecord, ProjectIssueListItemRecord, ProjectIssueListRecord,
+    ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord, ProjectListEntry,
+    ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
+    ProjectMilestoneSummaryRecord, ProjectPostingListItemRecord, ProjectPostingListRecord,
+    ProjectRecord, ProjectTransferRecord, ProjectTransferRequestInput, ProjectViewerRecord,
+    ProjectWatcherListRecord, ProjectWatcherRecord, ProjectWebhookListRecord, ProjectWebhookRecord,
+    PullRequestCommitRecord, PullRequestDetailRecord, PullRequestEventRecord,
+    PullRequestListFilter, PullRequestListItemRecord, PullRequestListRecord,
+    PullRequestReviewInput, PullRequestStateInput, PullRequestThreadStateInput,
+    PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
+    ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
+    SearchRepositoryInput, SearchResultRecord, SearchScope, SiteIssueListRecord,
+    SitePostingListRecord, SiteUserDeleteResult, SiteUserListFilter, SiteUserListRecord,
+    SiteUserRecord, ToggleFavoriteIssueResult, ToggleFavoriteProjectResult,
     UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput,
     UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
     UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestInput,
@@ -2597,6 +2598,7 @@ impl AppRepository {
                 owner_name,
                 project_name,
                 IssueListFilter {
+                    assignee_id: None,
                     assignee_login_id: None,
                     author_login_id: None,
                     label_ids: Vec::new(),
@@ -2653,6 +2655,26 @@ impl AppRepository {
             if let Some(milestone_id) = filter.milestone_id {
                 if model.milestone_id != Some(milestone_id) {
                     continue;
+                }
+            }
+            if let Some(assignee_user_id) = filter.assignee_id {
+                if assignee_user_id <= 0 {
+                    if model.assignee_id.is_some() {
+                        continue;
+                    }
+                } else {
+                    let Some(issue_assignee_id) = model.assignee_id else {
+                        continue;
+                    };
+                    let Some(issue_assignee) = assignee::Entity::find_by_id(issue_assignee_id)
+                        .one(&self.db)
+                        .await?
+                    else {
+                        continue;
+                    };
+                    if issue_assignee.user_id != Some(assignee_user_id) {
+                        continue;
+                    }
                 }
             }
             if let Some(assignee_login_id) = filter.assignee_login_id.as_deref() {
@@ -6109,6 +6131,55 @@ impl AppRepository {
             .filter(issue::Column::State.eq(Some(0)))
             .count(&self.db)
             .await? as u32)
+    }
+
+    pub async fn count_unassigned_open_issues_for_project(
+        &self,
+        project_id: i64,
+    ) -> Result<u32, DbErr> {
+        Ok(issue::Entity::find()
+            .filter(issue::Column::ProjectId.eq(Some(project_id)))
+            .filter(issue::Column::State.eq(Some(0)))
+            .filter(issue::Column::AssigneeId.is_null())
+            .count(&self.db)
+            .await? as u32)
+    }
+
+    pub async fn list_project_dashboard_assignees(
+        &self,
+        project_id: i64,
+    ) -> Result<Vec<ProjectDashboardAssigneeRecord>, DbErr> {
+        let assignees = assignee::Entity::find()
+            .filter(assignee::Column::ProjectId.eq(Some(project_id)))
+            .order_by_asc(assignee::Column::Id)
+            .all(&self.db)
+            .await?;
+        let mut records = Vec::new();
+        for assignee in assignees {
+            let open_issue_count = issue::Entity::find()
+                .filter(issue::Column::ProjectId.eq(Some(project_id)))
+                .filter(issue::Column::State.eq(Some(0)))
+                .filter(issue::Column::AssigneeId.eq(Some(assignee.id)))
+                .count(&self.db)
+                .await? as u32;
+            if open_issue_count == 0 {
+                continue;
+            }
+            let Some(user_id) = assignee.user_id else {
+                continue;
+            };
+            let Some(user) = n4user::Entity::find_by_id(user_id).one(&self.db).await? else {
+                continue;
+            };
+            records.push(ProjectDashboardAssigneeRecord {
+                email_address: user.email.unwrap_or_default(),
+                login_id: user.login_id.unwrap_or_default(),
+                open_issue_count,
+                user_id: user.id,
+                user_label: user.name.unwrap_or_default(),
+            });
+        }
+        Ok(records)
     }
 
     pub async fn list_project_dashboard_labels(

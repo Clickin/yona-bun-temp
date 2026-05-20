@@ -317,6 +317,7 @@ pub struct OrganizationIssueListRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IssueListFilter {
+    pub assignee_id: Option<i64>,
     pub assignee_login_id: Option<String>,
     pub author_login_id: Option<String>,
     pub label_ids: Vec<i64>,
@@ -411,6 +412,15 @@ pub struct ProjectDashboardLabelRecord {
     pub id: i64,
     pub name: String,
     pub open_issue_count: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectDashboardAssigneeRecord {
+    pub email_address: String,
+    pub login_id: String,
+    pub open_issue_count: u32,
+    pub user_id: i64,
+    pub user_label: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

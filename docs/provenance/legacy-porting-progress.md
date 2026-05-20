@@ -144,6 +144,7 @@ Interpretation:
 - [x] Project statistics under-construction shell
 - [x] Project home `tabId=history|dashboard` selection and legacy history/dashboard shell anchors
 - [x] Project home dashboard open issue counts by label
+- [x] Project home dashboard open issue counts by assignee
 - [~] Full legacy project home/dashboard/history composition
 
 ## Issues

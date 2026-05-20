@@ -89,4 +89,38 @@ describe("project home tab parity", () => {
     expect(html).toContain("<strong>3</strong>");
     expect(html).not.toContain("label.none");
   });
+
+  it("renders project dashboard assignee rows from container data", () => {
+    const html = renderProjectHome("/yona/yona/projectYobi?tabId=dashboard", {
+      dashboard: {
+        assignees: [
+          {
+            avatarUrl: "/yona/assets/avatar.png",
+            loginId: "assigned",
+            openIssueCount: 2,
+            userId: 11,
+            userLabel: "Assigned User",
+          },
+        ],
+        labels: [],
+        unassignedOpenIssueCount: 1,
+      },
+      openIssueCount: 3,
+    });
+
+    expect(html).toContain('class="avatar-wrap smaller"');
+    expect(html).toContain('src="/yona/assets/avatar.png"');
+    expect(html).toContain('class="loginid"');
+    expect(html).toContain("<strong>@</strong>assigned");
+    expect(html).toContain(
+      'href="/yona/yona/projectYobi/issues?state=open&amp;assigneeLoginId=assigned"',
+    );
+    expect(html).toContain('href="/yona/yona/projectYobi/issues?state=open&amp;assigneeId=0"');
+    expect(html).toContain("Assigned User");
+    expect(html).toContain("issue.noAssignee");
+    expect(html).toContain("<strong>2</strong>");
+    expect(html).toContain("<strong>1</strong>");
+    expect(html).toContain('title="67%"');
+    expect(html).toContain('title="33%"');
+  });
 });

@@ -52,6 +52,7 @@ function ProjectIssuesRouteComponent() {
         const [nextDetail, nextIssueList, nextLabels, nextMilestones] = await Promise.all([
           readProjectContainer(runtimeConfig, owner, projectName),
           listProjectIssues(runtimeConfig, owner, projectName, {
+            assigneeId: nextQuery.assigneeId,
             assigneeLoginId: nextQuery.assigneeLoginId,
             authorLoginId: nextQuery.authorLoginId,
             labelIds: nextQuery.labelIds,
@@ -146,6 +147,7 @@ function issueListQueryFromSearchParams(searchParams: URLSearchParams): ProjectI
   }
 
   return {
+    assigneeId: optionalNumber(searchParams.get("assigneeId")),
     assigneeLoginId: searchParams.get("assigneeLoginId") ?? "",
     authorLoginId: searchParams.get("authorLoginId") ?? "",
     labelIds,
@@ -158,4 +160,12 @@ function issueListQueryFromSearchParams(searchParams: URLSearchParams): ProjectI
 function positiveNumber(value: string | null): number {
   const parsed = Number(value ?? "");
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function optionalNumber(value: string | null): number | undefined {
+  if (value === null) {
+    return undefined;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }

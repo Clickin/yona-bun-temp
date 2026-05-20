@@ -69,6 +69,9 @@ export function ProjectIssueListPage(props: {
           )}
         >
           <input name="pageNum" type="hidden" value="1" />
+          {query.assigneeId !== undefined ? (
+            <input name="assigneeId" type="hidden" value={query.assigneeId} />
+          ) : null}
           <select name="state" defaultValue={query.state}>
             <option value="">All</option>
             <option value="open">Open</option>
@@ -160,6 +163,7 @@ export function ProjectIssueListPage(props: {
 }
 
 export interface ProjectIssueListQuery {
+  assigneeId?: number;
   assigneeLoginId: string;
   authorLoginId: string;
   labelIds: number[];

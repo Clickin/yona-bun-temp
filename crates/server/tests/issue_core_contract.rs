@@ -355,6 +355,80 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
 }
 
 #[tokio::test]
+async fn project_issue_list_filters_unassigned_issues_by_legacy_assignee_id_zero() {
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+    let _ = register_user(app.clone(), "assigned").await;
+
+    let project = rpc(
+        app.clone(),
+        "CreateProject",
+        Some(&cookie),
+        Some(&csrf),
+        json!({
+            "ownerName": "owner",
+            "projectName": "projectYobi",
+            "overview": "Issue filter parity",
+            "projectScope": "public"
+        }),
+    )
+    .await;
+    response_json(project).await;
+
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "assigneeLoginId": "assigned",
+                "bodyMarkdown": "assigned",
+                "title": "Assigned open issue"
+            })),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "bodyMarkdown": "unassigned",
+                "title": "Unassigned open issue"
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    let listed = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues?state=open&assigneeId=0",
+            None,
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(listed["totalCount"], 1);
+    assert_eq!(listed["items"][0]["title"], "Unassigned open issue");
+    assert!(listed["items"][0]
+        .get("assigneeLabel")
+        .and_then(serde_json::Value::as_str)
+        .is_none_or(str::is_empty));
+}
+
+#[tokio::test]
 async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
     let (app, repo) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;

@@ -3385,7 +3385,19 @@ struct RestProjectContainerResponse {
 #[derive(Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestProjectDashboard {
+    assignees: Vec<RestProjectDashboardAssignee>,
     labels: Vec<RestProjectDashboardLabel>,
+    unassigned_open_issue_count: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectDashboardAssignee {
+    avatar_url: String,
+    login_id: String,
+    open_issue_count: u32,
+    user_id: i64,
+    user_label: String,
 }
 
 #[derive(Serialize)]
@@ -8438,6 +8450,19 @@ async fn rest_project_home_dashboard(
         .await
         .map_err(internal_error)?
         .ok_or_else(|| ConnectError::not_found("project not found"))?;
+    let assignees = repository
+        .list_project_dashboard_assignees(authorization.project.id)
+        .await
+        .map_err(internal_error)?
+        .into_iter()
+        .map(|assignee| RestProjectDashboardAssignee {
+            avatar_url: gravatar_url(&assignee.email_address),
+            login_id: assignee.login_id,
+            open_issue_count: assignee.open_issue_count,
+            user_id: assignee.user_id,
+            user_label: assignee.user_label,
+        })
+        .collect();
     let labels = repository
         .list_project_dashboard_labels(authorization.project.id)
         .await
@@ -8453,7 +8478,15 @@ async fn rest_project_home_dashboard(
             open_issue_count: label.open_issue_count,
         })
         .collect();
-    Ok(RestProjectDashboard { labels })
+    let unassigned_open_issue_count = repository
+        .count_unassigned_open_issues_for_project(authorization.project.id)
+        .await
+        .map_err(internal_error)?;
+    Ok(RestProjectDashboard {
+        assignees,
+        labels,
+        unassigned_open_issue_count,
+    })
 }
 
 async fn rest_project_readme_file(
@@ -12237,6 +12270,7 @@ where
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestProjectIssuesQuery {
+    assignee_id: Option<i64>,
     assignee_login_id: String,
     author_login_id: String,
     label_ids: Vec<i64>,
@@ -12470,6 +12504,7 @@ fn rest_project_issue_filter_from_query(
     query: RestProjectIssuesQuery,
 ) -> persistence::IssueListFilter {
     persistence::IssueListFilter {
+        assignee_id: query.assignee_id,
         assignee_login_id: (!query.assignee_login_id.trim().is_empty())
             .then(|| query.assignee_login_id.trim().to_string()),
         author_login_id: (!query.author_login_id.trim().is_empty())
@@ -17379,6 +17414,7 @@ fn issue_list_filter_from_request(
     request: &ListProjectIssuesRequestView<'_>,
 ) -> persistence::IssueListFilter {
     persistence::IssueListFilter {
+        assignee_id: None,
         assignee_login_id: (!request.assignee_login_id.trim().is_empty())
             .then(|| request.assignee_login_id.trim().to_string()),
         author_login_id: (!request.author_login_id.trim().is_empty())

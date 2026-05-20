@@ -156,6 +156,13 @@ export interface ProjectDetailViewModel {
     title: string;
   };
   dashboard?: {
+    assignees?: Array<{
+      avatarUrl: string;
+      loginId: string;
+      openIssueCount: number;
+      userId: number;
+      userLabel: string;
+    }>;
     labels: Array<{
       categoryId?: number | null;
       categoryIsExclusive?: boolean;
@@ -165,6 +172,7 @@ export interface ProjectDetailViewModel {
       name: string;
       openIssueCount: number;
     }>;
+    unassignedOpenIssueCount?: number;
   };
   defaultTab?: string;
   enrollmentRequested: boolean;

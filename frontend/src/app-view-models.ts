@@ -264,6 +264,13 @@ export function toProjectContainerView(
 ): ProjectDetailViewModel {
   const detailWithReadme = detail as typeof detail & {
     dashboard?: {
+      assignees?: Array<{
+        avatarUrl?: string;
+        loginId?: string;
+        openIssueCount?: number;
+        userId?: number;
+        userLabel?: string;
+      }>;
       labels?: Array<{
         categoryId?: number | null;
         categoryIsExclusive?: boolean;
@@ -273,6 +280,7 @@ export function toProjectContainerView(
         name?: string;
         openIssueCount?: number;
       }>;
+      unassignedOpenIssueCount?: number;
     };
     readmeFile?: { bodyHtml?: string; bodyMarkdown?: string; name?: string } | null;
   };
@@ -291,6 +299,13 @@ export function toProjectContainerView(
         }
       : undefined,
     dashboard: {
+      assignees: (detailWithReadme.dashboard?.assignees ?? []).map((assignee) => ({
+        avatarUrl: assignee.avatarUrl ?? "",
+        loginId: assignee.loginId ?? "",
+        openIssueCount: assignee.openIssueCount ?? 0,
+        userId: assignee.userId ?? 0,
+        userLabel: assignee.userLabel ?? "",
+      })),
       labels: (detailWithReadme.dashboard?.labels ?? []).map((label) => ({
         categoryId: label.categoryId ?? null,
         categoryIsExclusive: label.categoryIsExclusive ?? false,
@@ -300,6 +315,7 @@ export function toProjectContainerView(
         name: label.name ?? "",
         openIssueCount: label.openIssueCount ?? 0,
       })),
+      unassignedOpenIssueCount: detailWithReadme.dashboard?.unassignedOpenIssueCount ?? undefined,
     },
     defaultTab: detail.defaultTab,
     enrollmentRequested: detail.enrollmentRequested,
