@@ -8,6 +8,7 @@
 - Project enrollment request/cancel
 - Project watcher directory
 - Project delete confirmation flow
+- Project home history/dashboard tab shell
 - Project statistics under-construction shell
 - Project change VCS confirmation flow
 - Project create/settings menu checkbox persistence
@@ -31,6 +32,9 @@
 - `yona-original/app/views/project/delete.scala.html`
 - `yona-original/app/views/project/statistics.scala.html`
 - `yona-original/app/views/project/partial_settingmenu.scala.html`
+- `yona-original/target/scala-2.10/twirl/main/views/html/project/home.template.scala`
+- `yona-original/target/scala-2.10/twirl/main/views/html/project/partial_history.template.scala`
+- `yona-original/target/scala-2.10/twirl/main/views/html/project/partial_dashboard.template.scala`
 - `yona-original/app/models/Webhook.java`
 - `yona-original/app/models/ProjectTransfer.java`
 - `yona-original/app/models/Project.java`
@@ -55,6 +59,7 @@
 | `ProjectTest.projectNameChangeable` | rename stays owner-scoped and duplicate project names reject under the same owner | `crates/persistence` conflict helper + `crates/domain` update service |
 | `ProjectApp.newProject` | create under personal owner is allowed; org owner create requires org-admin authority | `crates/domain` create service + `crates/server` mutation contract test |
 | `ProjectApp.project` | detail read is permission filtered and records recent visit semantics | `crates/domain` detail resolution + `frontend` route/UI test |
+| `project/home.scala.html`, `project/partial_history.scala.html`, and `project/partial_dashboard.scala.html` | project home honors `tabId=history|dashboard` and renders the legacy tab panes with `.activity-streams` and `.project-overview-home` dashboard anchors | `frontend` project route query wiring + project detail view shell + route/UI test; live history rows and per-assignee/label dashboard data remain follow-up |
 | `ProjectApp.projectOverviewUpdate` | manager-level actor can update overview content | `crates/domain` update service + `crates/server` mutation contract test |
 | `project.creation.default.menus`, `project/create.scala.html`, and `project/setting.scala.html` | create/settings forms expose Code/Issues/Pull Requests/Reviews/Milestones/Board checkboxes and persist `project_menu_setting` rows | `YONA_PROJECT_DEFAULT_MENUS`, `/api/v1/owners/:owner/projects` create/update bodies, and frontend `menuSetting*` checkbox anchors |
 | `ProjectApp.members`, `newMember`, `editMember`, `deleteMember` and `project/members.scala.html` | member administration is UPDATE-gated except self-leave, preserves owner guards, accepts enrollment requests through add-member, and uses legacy member row/action anchors | `GET/POST/PATCH/DELETE /api/v1/owners/:owner/projects/:project/members` + `/:owner/:project/members` route + contract/unit/Playwright assertions |
@@ -94,3 +99,4 @@
 - The project statistics closeout adds the legacy deep-link route for `/:owner/:project/statistics`, reads the normal project container, and preserves the `project/statistics.scala.html` under-construction shell instead of inventing computed statistics that legacy Yona did not expose.
 - The project change VCS closeout adds the UPDATE-gated legacy deep-link route for `/:owner/:project/changeVCS`, app REST form/mutation under `/change-vcs`, `vcs` metadata toggling, DB-backed README posting flag clear, ID-based repository storage reset, and `project/change_vcs.scala.html` checkbox/modal anchors. SVN executable-backed repository creation/serve behavior remains a VCS lifecycle follow-up.
 - The project menu checkbox closeout maps `YONA_PROJECT_DEFAULT_MENUS` into create-form defaults, keeps legacy checkbox IDs (`menuSettingCode`, `menuSettingIssue`, `menuSettingPullRequest`, `menuSettingReview`, `menuSettingMilestone`, `menuSettingBoard`), and persists settings-form toggles into `project_menu_setting` through `/api/v1/owners/:owner/projects/:project`.
+- The project home tab closeout wires `?tabId=history|dashboard` through the React route and replaces the prior placeholder copy with legacy `partial_history` / `partial_dashboard` shell anchors. It intentionally does not claim live history row feed or full assignee/label dashboard aggregation parity.

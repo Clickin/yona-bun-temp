@@ -440,7 +440,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 | -------------------- | -------------------------------------------------- | ----------------- | ----- |
 | 프로젝트 목록 (공개) | 검색, 페이지네이션(10개), 메타데이터, 로고, 멤버수 | ✅ 구현           | 1     |
 | 프로젝트 생성        | owner 선택(개인/조직), 이름, VCS 타입, 공개범위    | ✅ 구현           | 1     |
-| 프로젝트 홈          | overview(README), 최근 활동, 코드 링크             | ✅ 기본 구현      | 1     |
+| 프로젝트 홈          | overview(README), 최근 활동, 코드 링크             | ✅ 기본 구현(`tabId` history/dashboard shell 보강) | 1     |
 | 프로젝트 설정        | 이름/설명/공개범위 변경, 메뉴 토글                 | ✅ 구현           | 1     |
 | 프로젝트 삭제        | 확인 + 삭제                                        | ✅ 구현           | 2     |
 | 멤버 관리            | 멤버 추가/삭제/역할변경                            | ✅ 구현           | 2     |
@@ -472,6 +472,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 - [x] `project.creation.default.menus` / `YONA_PROJECT_DEFAULT_MENUS`는 새 프로젝트의 `project_menu_setting` 기본값을 제어한다. Code가 꺼져 있으면 Pull Requests/Reviews도 legacy처럼 code menu visibility에 종속되어 숨겨진다
 - [x] Project create/settings forms expose legacy menu checkbox IDs and persist Code/Issues/Pull Requests/Reviews/Milestones/Board toggle changes through `/api/v1/owners/:owner/projects/:project`
 - [x] `/:owner/:project/changeVCS`는 UPDATE 가능한 프로젝트의 legacy `project/change_vcs.scala.html` checkbox/modal shell을 보존하고 `/api/v1/owners/:owner/projects/:project/change-vcs`로 `vcs` metadata toggle, README posting flag clear, ID-based repository storage reset을 수행한다
+- [x] `/:owner/:project?tabId=history|dashboard`는 legacy project home tab query를 반영해 `partial_history`의 `.content-container.nm`, `.main-stream`, `.activity-streams.unstyled` shell과 `partial_dashboard`의 `.project-overview-home`, `.overview-assignee`, `.overview-milestone`, `.overview-pullrequest`, `.overview-label` anchors를 렌더링한다. 실제 history row feed와 assignee/label별 세부 집계는 후속 dashboard data parity gap이다
 - [ ] Smart HTTP clone URL/update behavior after transfer remains a VCS lifecycle follow-up
 
 ---

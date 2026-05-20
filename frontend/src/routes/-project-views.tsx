@@ -26,6 +26,173 @@ export function buildProjectHref(
   return prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}${normalizedSuffix}`);
 }
 
+type ProjectHomeTab = "dashboard" | "history" | "readme";
+
+function normalizeProjectHomeTab(value: string | undefined): ProjectHomeTab | null {
+  const normalized = (value ?? "").trim().toLowerCase();
+  return normalized === "dashboard" || normalized === "history" || normalized === "readme"
+    ? normalized
+    : null;
+}
+
+function projectHomeTabFromHref(routeHref: string | undefined): ProjectHomeTab | null {
+  if (!routeHref) {
+    return null;
+  }
+  const tabId = new URL(routeHref, "http://yona.local").searchParams.get("tabId");
+  return normalizeProjectHomeTab(tabId ?? undefined);
+}
+
+function ProjectDashboardMetric(props: {
+  count: number;
+  href: string;
+  label: string;
+  percent?: number;
+}) {
+  const percent = props.percent ?? 0;
+
+  return (
+    <div className="row-fluid">
+      <div className="span6">
+        <a className="usf-group" href={props.href}>
+          <span className="name">{props.label}</span>
+        </a>
+      </div>
+      <div className="span3 num">
+        <strong>{props.count}</strong>
+      </div>
+      <div className="span3 nm">
+        <div
+          className={`progress progress-warning ${percent === 0 ? "empty" : ""}`.trim()}
+          data-toggle="tooltip"
+          title={`${percent}%`}
+        >
+          <div className="bar" style={{ width: `${percent}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProjectHomeHistoryPane() {
+  return (
+    <div className="content-container nm">
+      <div className="main-stream" style={{ width: "100%" }}>
+        <ul className="activity-streams unstyled" />
+      </div>
+    </div>
+  );
+}
+
+function ProjectHomeDashboardPane(props: {
+  detail: ProjectDetailViewModel;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const { detail, runtimeConfig } = props;
+  const projectHref = (suffix = "") =>
+    buildProjectHref(runtimeConfig, detail.ownerName, detail.projectName, suffix);
+  const openIssueCount = detail.openIssueCount ?? 0;
+  const pullRequestCount = detail.openPullRequestCount ?? 0;
+  const milestonePercent = detail.currentMilestone?.completionPercent ?? 0;
+
+  return (
+    <div className="content-container nm">
+      <div className="project-overview-home row-fluid">
+        <div className="span6">
+          {detail.showIssue ? (
+            <>
+              <h5>project.dashboard.openIssuesByAssignee</h5>
+              <div className="overview-assignee">
+                {openIssueCount === 0 ? (
+                  <div className="empty">
+                    <p>issue.is.empty</p>
+                    <a className="ybtn ybtn-small" href={projectHref("issue/new")} target="_blank">
+                      issue.menu.new
+                    </a>
+                  </div>
+                ) : (
+                  <ProjectDashboardMetric
+                    count={openIssueCount}
+                    href={projectHref("issues?state=open")}
+                    label="issue.noAssignee"
+                    percent={100}
+                  />
+                )}
+              </div>
+
+              <hr />
+
+              <h5>project.dashboard.openIssuesByMilestone</h5>
+              <div className="overview-milestone">
+                {detail.currentMilestone ? (
+                  <ProjectDashboardMetric
+                    count={detail.currentMilestone.openIssueCount}
+                    href={projectHref("milestones")}
+                    label={detail.currentMilestone.title}
+                    percent={milestonePercent}
+                  />
+                ) : (
+                  <ProjectDashboardMetric
+                    count={openIssueCount}
+                    href={projectHref("issues?state=open")}
+                    label="milestone.none"
+                    percent={0}
+                  />
+                )}
+              </div>
+            </>
+          ) : null}
+
+          {detail.showPullRequest ? (
+            <>
+              {detail.showIssue ? <hr /> : null}
+              <h5>project.dashboard.pullRequests</h5>
+              <div className="overview-pullrequest">
+                {pullRequestCount === 0 ? (
+                  <div className="empty">
+                    <p>pullRequest.is.empty</p>
+                    <a
+                      className="ybtn ybtn-small"
+                      href={projectHref("newPullRequestForm")}
+                      target="_blank"
+                    >
+                      pullRequest.new
+                    </a>
+                  </div>
+                ) : (
+                  <ProjectDashboardMetric
+                    count={pullRequestCount}
+                    href={projectHref("pullRequests")}
+                    label="project.dashboard.pullRequests"
+                    percent={100}
+                  />
+                )}
+              </div>
+            </>
+          ) : null}
+        </div>
+
+        {detail.showIssue ? (
+          <div className="span6">
+            <h5>project.dashboard.openIssuesByLabel</h5>
+            <dl className="dl-horizontal overview-label">
+              <dt>project.dashboard.openIssuesByLabel</dt>
+              <dd>
+                <ProjectDashboardMetric
+                  count={openIssueCount}
+                  href={projectHref("issues?state=open")}
+                  label="label.none"
+                  percent={openIssueCount > 0 ? 100 : 0}
+                />
+              </dd>
+            </dl>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 type ProjectMenuSettingsInput = {
   board: boolean;
   code: boolean;
@@ -274,6 +441,7 @@ export function ProjectNewPage(props: {
 export function ProjectDetailPage(props: {
   detail: ProjectDetailViewModel | null | undefined;
   readmePost?: BoardPostDetail | null;
+  routeHref?: string;
   runtimeConfig: RuntimeConfig;
   onEnrollProject?: (ownerName: string, projectName: string) => void;
   onCancelEnrollProject?: (ownerName: string, projectName: string) => void;
@@ -304,9 +472,9 @@ export function ProjectDetailPage(props: {
   }, [detail.overview]);
 
   const activeTab =
-    detail.defaultTab === "history" || detail.defaultTab === "dashboard"
-      ? detail.defaultTab
-      : "readme";
+    projectHomeTabFromHref(props.routeHref) ??
+    normalizeProjectHomeTab(detail.defaultTab) ??
+    "readme";
 
   return (
     <main className="app-shell">
@@ -450,17 +618,9 @@ export function ProjectDetailPage(props: {
               </>
             )
           ) : null}
-          {activeTab === "history" ? (
-            <>
-              <h3>Recent history</h3>
-              <p>Legacy placeholder panel while real history content stays outside Wave 2A.</p>
-            </>
-          ) : null}
+          {activeTab === "history" ? <ProjectHomeHistoryPane /> : null}
           {activeTab === "dashboard" ? (
-            <>
-              <h3>Dashboard</h3>
-              <p>Legacy placeholder panel while real dashboard content stays outside Wave 2A.</p>
-            </>
+            <ProjectHomeDashboardPane detail={detail} runtimeConfig={props.runtimeConfig} />
           ) : null}
         </div>
       </section>

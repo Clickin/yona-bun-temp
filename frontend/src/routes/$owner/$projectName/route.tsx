@@ -13,6 +13,7 @@ import { readProjectContainerQueryOptions } from "../../../api/org-project";
 import { useAppRuntime } from "../../../app-runtime-context";
 import { toProjectContainerView } from "../../../app-view-models";
 import { ProjectDetailPage } from "../../-project-views";
+import { useCurrentHref } from "../../-shared";
 
 export const Route = createFileRoute("/$owner/$projectName")({
   component: ProjectLayoutRouteComponent,
@@ -24,6 +25,7 @@ function ProjectLayoutRouteComponent() {
 
 export function ProjectDetailRouteComponent() {
   const { owner, projectName } = Route.useParams();
+  const href = useCurrentHref();
   const {
     bootstrapping,
     csrfToken,
@@ -59,6 +61,7 @@ export function ProjectDetailRouteComponent() {
     <ProjectDetailPage
       detail={detailQuery.data ? toProjectContainerView(detailQuery.data) : null}
       readmePost={postsQuery.data?.readme ?? null}
+      routeHref={href}
       runtimeConfig={runtimeConfig}
       onCancelEnrollProject={async (nextOwnerName, nextProjectName) => {
         try {
