@@ -146,6 +146,7 @@ Interpretation:
 - [x] Project home dashboard open issue counts by label
 - [x] Project home dashboard open issue counts by assignee
 - [x] Project home history issue/post/pull-request activity rows
+- [x] Project home history commit activity rows
 - [~] Full legacy project home/dashboard/history composition
 
 ## Issues

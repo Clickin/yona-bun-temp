@@ -85,6 +85,17 @@ pub struct CodeCommitRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectHistoryCommitRecord {
+    pub author_date: String,
+    pub author_email: String,
+    pub author_name: String,
+    pub author_timestamp: i64,
+    pub commit_id: String,
+    pub commit_short_id: String,
+    pub short_message: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CodeCommitDetailSnapshot {
     pub branches: Vec<CodeBranchRecord>,
     pub breadcrumbs: Vec<CodeBreadcrumbRecord>,
@@ -363,6 +374,62 @@ pub fn read_code_history(
         path: clean_path,
         selected_branch,
     })
+}
+
+pub fn read_project_history_commits(
+    repo_path: &Path,
+    limit: usize,
+) -> Result<Vec<ProjectHistoryCommitRecord>, VcsError> {
+    if limit == 0 || !repo_path.exists() {
+        return Ok(Vec::new());
+    }
+    let repo_path = repo_path.to_path_buf();
+    let branches = list_branches(&repo_path)?;
+    if branches.is_empty() || !has_head(&repo_path) {
+        return Ok(Vec::new());
+    }
+    let selected_branch = default_branch(&repo_path).unwrap_or_else(|| branches[0].name.clone());
+    let limit_arg = format!("-n{limit}");
+    let output = git_output(
+        &repo_path,
+        &[
+            "log",
+            &limit_arg,
+            "--date=short",
+            "--format=%x1e%H%x1f%h%x1f%s%x1f%an%x1f%ae%x1f%ad%x1f%at",
+            &selected_branch,
+            "--",
+        ],
+    )?;
+    Ok(output
+        .split('\x1e')
+        .filter_map(|record| {
+            let record = record.trim_matches(|character| character == '\r' || character == '\n');
+            if record.trim().is_empty() {
+                return None;
+            }
+            let mut parts = record.split('\x1f');
+            let commit_id = parts.next()?.to_string();
+            let commit_short_id = parts.next().unwrap_or_default().to_string();
+            let short_message = parts.next().unwrap_or_default().to_string();
+            let author_name = parts.next().unwrap_or_default().to_string();
+            let author_email = parts.next().unwrap_or_default().to_string();
+            let author_date = parts.next().unwrap_or_default().to_string();
+            let author_timestamp = parts
+                .next()
+                .and_then(|value| value.parse::<i64>().ok())
+                .unwrap_or_default();
+            Some(ProjectHistoryCommitRecord {
+                author_date,
+                author_email,
+                author_name,
+                author_timestamp,
+                commit_id,
+                commit_short_id,
+                short_message,
+            })
+        })
+        .collect())
 }
 
 pub fn read_commit_detail(

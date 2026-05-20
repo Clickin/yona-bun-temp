@@ -1245,6 +1245,68 @@ async fn rest_project_container_includes_legacy_project_home_history_rows() {
 }
 
 #[tokio::test]
+async fn rest_project_container_includes_legacy_project_home_commit_history_rows() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+
+    let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
+
+    create_project(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "admin",
+        "projectYobi",
+        "Project commit history",
+        "public",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("admin", "projectYobi")
+        .await
+        .unwrap()
+        .expect("project");
+    seed_bare_repository_readme(data_dir.path(), project.id, "# Git README\n");
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/owners/admin/projects/projectYobi/container")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let json = response_json(response).await;
+    let payload: serde_json::Value = serde_json::from_str(&json).expect("container json");
+    let items = payload["history"]["items"]
+        .as_array()
+        .expect("history items");
+    let commit = items
+        .iter()
+        .find(|item| item["itemType"] == "commit")
+        .expect("commit history row");
+    assert_eq!(commit["actorName"], "Author");
+    assert_eq!(commit["actorUrl"], "#");
+    assert_eq!(commit["title"], "Initial README");
+    let created_label = commit["createdLabel"].as_str().expect("commit date label");
+    assert_eq!(created_label.len(), "YYYY-MM-DD".len());
+    let short_title = commit["shortTitle"].as_str().expect("short commit title");
+    assert_eq!(short_title.len(), 7);
+    let url = commit["url"].as_str().expect("commit url");
+    assert!(url.starts_with("/yona/admin/projectYobi/commit/"));
+    assert!(url.len() > "/yona/admin/projectYobi/commit/".len() + 7);
+}
+
+#[tokio::test]
 async fn update_project_overview_returns_refreshed_project_container() {
     let app = build_app().await;
 

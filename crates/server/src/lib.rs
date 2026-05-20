@@ -39,7 +39,8 @@ use yona_rust_search::SearchType;
 use yona_rust_vcs::{
     CodeBranchListSnapshot, CodeBrowserSnapshot, CodeCommitDetailSnapshot,
     CodeCommitFileDiffRecord, CodeCommitParentRecord, CodeCommitRecord, CodeCompareSnapshot,
-    CodeEntryRecord, CodeFileBytesRecord, CodeFileRecord, CodeHistorySnapshot, VcsError,
+    CodeEntryRecord, CodeFileBytesRecord, CodeFileRecord, CodeHistorySnapshot,
+    ProjectHistoryCommitRecord, VcsError,
 };
 
 #[allow(clippy::missing_panics_doc)]
@@ -3428,6 +3429,8 @@ struct RestProjectHistoryItem {
     created_label: String,
     item_type: String,
     short_title: String,
+    #[serde(skip)]
+    sort_key: i64,
     title: String,
     url: String,
 }
@@ -8520,7 +8523,7 @@ async fn rest_project_home_history(
     let PilotBackend::Repository(repository) = &service.backend else {
         return Ok(RestProjectHistory::default());
     };
-    let items = repository
+    let mut items: Vec<RestProjectHistoryItem> = repository
         .list_project_home_history_items(&container.owner_name, &container.project_name)
         .await
         .map_err(internal_error)?
@@ -8536,11 +8539,64 @@ async fn rest_project_home_history(
             created_label: item.created_label,
             item_type: item.item_type,
             short_title: item.short_title,
+            sort_key: item
+                .created_at
+                .map(|value| value.and_utc().timestamp())
+                .unwrap_or_default(),
             title: item.title,
             url: base_path_href(&service.base_path, &item.url_path),
         })
         .collect();
+    if let Some(project) = repository
+        .read_project_by_owner_and_name(&container.owner_name, &container.project_name)
+        .await
+        .map_err(internal_error)?
+    {
+        let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), project.id);
+        for commit in yona_rust_vcs::read_project_history_commits(&repo_path, 10)
+            .map_err(code_browser_error)?
+        {
+            items.push(rest_project_history_item_from_commit(
+                &service.base_path,
+                &container.owner_name,
+                &container.project_name,
+                commit,
+            ));
+        }
+    }
+    items.sort_by(|left, right| {
+        right
+            .sort_key
+            .cmp(&left.sort_key)
+            .then(right.url.cmp(&left.url))
+    });
     Ok(RestProjectHistory { items })
+}
+
+fn rest_project_history_item_from_commit(
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    commit: ProjectHistoryCommitRecord,
+) -> RestProjectHistoryItem {
+    RestProjectHistoryItem {
+        actor_avatar_url: gravatar_url(&commit.author_email),
+        actor_name: if commit.author_name.trim().is_empty() {
+            commit.author_email.clone()
+        } else {
+            commit.author_name
+        },
+        actor_url: "#".to_string(),
+        created_label: commit.author_date,
+        item_type: "commit".to_string(),
+        short_title: commit.commit_short_id,
+        sort_key: commit.author_timestamp,
+        title: commit.short_message,
+        url: base_path_href(
+            base_path,
+            &format!("/{owner_name}/{project_name}/commit/{}", commit.commit_id),
+        ),
+    }
 }
 
 async fn rest_project_readme_file(
