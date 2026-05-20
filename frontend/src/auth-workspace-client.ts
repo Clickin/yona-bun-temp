@@ -1498,7 +1498,7 @@ export async function deleteOrganization(
 export async function createProject(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof CreateProjectRequestSchema>,
+  input: MessageInitShape<typeof CreateProjectRequestSchema> & ProjectMenuSettingsInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectDetail> {
   return createProjectRest(
@@ -1506,6 +1506,7 @@ export async function createProject(
     csrfToken,
     input.ownerName ?? "",
     {
+      ...projectMenuSettingsInput(input),
       overview: input.overview ?? "",
       projectName: input.projectName ?? "",
       projectScope: input.projectScope ?? "",
@@ -1537,7 +1538,7 @@ export async function readProjectSettings(
   ownerName: string,
   projectName: string,
   fetchImpl: typeof fetch = fetch,
-): Promise<ProjectDetail> {
+): Promise<ProjectContainer> {
   return readProjectSettingsRest(runtimeConfig, ownerName, projectName, fetchImpl);
 }
 
@@ -1553,7 +1554,7 @@ export async function readProjectMembers(
 export async function updateProject(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof UpdateProjectRequestSchema>,
+  input: MessageInitShape<typeof UpdateProjectRequestSchema> & ProjectMenuSettingsInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<ProjectDetail> {
   return updateProjectRest(
@@ -1562,6 +1563,7 @@ export async function updateProject(
     input.currentOwnerName ?? "",
     input.currentProjectName ?? "",
     {
+      ...projectMenuSettingsInput(input),
       ownerName: input.ownerName ?? "",
       overview: input.overview ?? "",
       projectName: input.projectName ?? "",
@@ -1569,6 +1571,26 @@ export async function updateProject(
     },
     fetchImpl,
   );
+}
+
+type ProjectMenuSettingsInput = {
+  board?: boolean;
+  code?: boolean;
+  issue?: boolean;
+  milestone?: boolean;
+  pullRequest?: boolean;
+  review?: boolean;
+};
+
+function projectMenuSettingsInput(input: ProjectMenuSettingsInput): ProjectMenuSettingsInput {
+  return {
+    ...(input.board !== undefined ? { board: input.board } : {}),
+    ...(input.code !== undefined ? { code: input.code } : {}),
+    ...(input.issue !== undefined ? { issue: input.issue } : {}),
+    ...(input.milestone !== undefined ? { milestone: input.milestone } : {}),
+    ...(input.pullRequest !== undefined ? { pullRequest: input.pullRequest } : {}),
+    ...(input.review !== undefined ? { review: input.review } : {}),
+  };
 }
 
 export async function readCodeBrowser(

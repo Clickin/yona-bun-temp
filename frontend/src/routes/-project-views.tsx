@@ -26,6 +26,61 @@ export function buildProjectHref(
   return prefixBasePath(runtimeConfig.basePath, `/${ownerName}/${projectName}${normalizedSuffix}`);
 }
 
+type ProjectMenuSettingsInput = {
+  board: boolean;
+  code: boolean;
+  issue: boolean;
+  milestone: boolean;
+  pullRequest: boolean;
+  review: boolean;
+};
+
+const PROJECT_MENU_SETTINGS = [
+  { id: "menuSettingCode", key: "code", label: "menu.code", name: "code" },
+  { id: "menuSettingIssue", key: "issue", label: "menu.issue", name: "issue" },
+  {
+    id: "menuSettingPullRequest",
+    key: "pullRequest",
+    label: "menu.pullRequest",
+    name: "pullRequest",
+  },
+  { id: "menuSettingReview", key: "review", label: "menu.review", name: "review" },
+  { id: "menuSettingMilestone", key: "milestone", label: "milestone", name: "milestone" },
+  { id: "menuSettingBoard", key: "board", label: "menu.board", name: "board" },
+] as const;
+
+function defaultProjectMenuSettings(defaultMenus?: string[]): ProjectMenuSettingsInput {
+  const menus = new Set(
+    defaultMenus && defaultMenus.length > 0
+      ? defaultMenus
+      : PROJECT_MENU_SETTINGS.map((item) => item.key),
+  );
+  return {
+    board: menus.has("board"),
+    code: menus.has("code"),
+    issue: menus.has("issue"),
+    milestone: menus.has("milestone"),
+    pullRequest: menus.has("pullRequest"),
+    review: menus.has("review"),
+  };
+}
+
+function projectMenuSettingsFromDetail(
+  detail: Pick<
+    ProjectDetailViewModel,
+    "showBoard" | "showCode" | "showIssue" | "showMilestone" | "showPullRequest" | "showReview"
+  >,
+): ProjectMenuSettingsInput {
+  return {
+    board: detail.showBoard ?? true,
+    code: detail.showCode ?? true,
+    issue: detail.showIssue ?? true,
+    milestone: detail.showMilestone ?? true,
+    pullRequest: detail.showPullRequest ?? true,
+    review: detail.showReview ?? true,
+  };
+}
+
 export function ProjectMenu(props: {
   detail: ProjectDetailViewModel;
   runtimeConfig: RuntimeConfig;
@@ -97,12 +152,19 @@ export function ProjectMenu(props: {
 }
 
 export function ProjectNewPage(props: {
+  defaultProjectMenus?: string[];
   defaultProjectScope?: string;
   onCreateProject?: (input: {
+    board: boolean;
+    code: boolean;
+    issue: boolean;
+    milestone: boolean;
     ownerName: string;
     overview: string;
+    pullRequest: boolean;
     projectName: string;
     projectScope: string;
+    review: boolean;
   }) => void;
   pending?: boolean;
 }) {
@@ -111,6 +173,7 @@ export function ProjectNewPage(props: {
     overview: "",
     projectName: "",
     projectScope: normalizeProjectDefaultScope(props.defaultProjectScope),
+    ...defaultProjectMenuSettings(props.defaultProjectMenus),
   });
 
   return (
@@ -182,6 +245,26 @@ export function ProjectNewPage(props: {
             <option value="private">private</option>
           </select>
         </label>
+        <section className="menu-setting-wrap">
+          <h2>Menu settings</h2>
+          {PROJECT_MENU_SETTINGS.map((item) => (
+            <label className="checkbox" htmlFor={item.id} key={item.key}>
+              <input
+                checked={formState[item.key]}
+                id={item.id}
+                name={item.name}
+                onChange={(event) =>
+                  setFormState((current) => ({
+                    ...current,
+                    [item.key]: event.target.checked,
+                  }))
+                }
+                type="checkbox"
+              />
+              {item.label}
+            </label>
+          ))}
+        </section>
         <button type="submit">{props.pending ? "Creating…" : "Create project"}</button>
       </form>
     </main>
@@ -198,17 +281,21 @@ export function ProjectDetailPage(props: {
   onToggleProjectWatch?: (ownerName: string, projectName: string, watching: boolean) => void;
   onUpdateProjectOverview?: (ownerName: string, projectName: string, overview: string) => void;
 }) {
-  const detail = props.detail ?? {
-    enrollmentRequested: false,
-    isFavorited: false,
-    organizationName: "",
-    overview: "",
-    ownerName: "",
-    projectName: "",
-    projectScope: "public",
-    viewerCanEnroll: false,
-    viewerCanUpdate: false,
-  };
+  const detail = React.useMemo(
+    () =>
+      props.detail ?? {
+        enrollmentRequested: false,
+        isFavorited: false,
+        organizationName: "",
+        overview: "",
+        ownerName: "",
+        projectName: "",
+        projectScope: "public",
+        viewerCanEnroll: false,
+        viewerCanUpdate: false,
+      },
+    [props.detail],
+  );
   const [editingOverview, setEditingOverview] = React.useState(false);
   const [overviewDraft, setOverviewDraft] = React.useState(detail.overview);
 
@@ -1304,32 +1391,47 @@ export function ProjectSettingsPage(props: {
   detail: ProjectDetailViewModel | null | undefined;
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
-  onUpdateProjectOverview?: (input: {
+  onUpdateProjectSettings?: (input: {
+    board: boolean;
+    code: boolean;
+    issue: boolean;
+    milestone: boolean;
     overview: string;
     ownerName: string;
+    pullRequest: boolean;
     projectName: string;
+    projectScope: string;
+    review: boolean;
   }) => void;
 }) {
-  const detail = props.detail ?? {
-    enrollmentRequested: false,
-    isFavorited: false,
-    organizationName: "",
-    overview: "",
-    ownerName: "",
-    projectName: "",
-    projectScope: "public",
-    viewerCanEnroll: false,
-    viewerCanUpdate: false,
-  };
+  const detail = React.useMemo(
+    () =>
+      props.detail ?? {
+        enrollmentRequested: false,
+        isFavorited: false,
+        organizationName: "",
+        overview: "",
+        ownerName: "",
+        projectName: "",
+        projectScope: "public",
+        viewerCanEnroll: false,
+        viewerCanUpdate: false,
+      },
+    [props.detail],
+  );
   const [formState, setFormState] = React.useState({
     overview: detail.overview,
+    projectScope: detail.projectScope,
+    ...projectMenuSettingsFromDetail(detail),
   });
 
   React.useEffect(() => {
     setFormState({
       overview: detail.overview,
+      projectScope: detail.projectScope,
+      ...projectMenuSettingsFromDetail(detail),
     });
-  }, [detail.overview]);
+  }, [detail]);
 
   return (
     <main className="app-shell">
@@ -1340,10 +1442,17 @@ export function ProjectSettingsPage(props: {
         className="runtime-grid"
         onSubmit={(event) => {
           event.preventDefault();
-          props.onUpdateProjectOverview?.({
+          props.onUpdateProjectSettings?.({
+            board: formState.board,
+            code: formState.code,
+            issue: formState.issue,
+            milestone: formState.milestone,
             overview: formState.overview,
             ownerName: detail.ownerName,
+            pullRequest: formState.pullRequest,
             projectName: detail.projectName,
+            projectScope: formState.projectScope,
+            review: formState.review,
           });
         }}
       >
@@ -1375,34 +1484,40 @@ export function ProjectSettingsPage(props: {
         </label>
         <label>
           <span>Visibility</span>
-          <input name="projectScope" readOnly type="text" value={detail.projectScope} />
+          <select
+            name="projectScope"
+            value={formState.projectScope}
+            onChange={(event) =>
+              setFormState((current) => ({
+                ...current,
+                projectScope: event.target.value,
+              }))
+            }
+          >
+            <option value="public">public</option>
+            <option value="protected">protected</option>
+            <option value="private">private</option>
+          </select>
         </label>
-        <section>
+        <section className="menu-setting-wrap">
           <h2>Menu settings</h2>
-          <label>
-            <input checked={detail.showCode ?? false} readOnly type="checkbox" />
-            Code
-          </label>
-          <label>
-            <input checked={detail.showIssue ?? false} readOnly type="checkbox" />
-            Issues
-          </label>
-          <label>
-            <input checked={detail.showPullRequest ?? false} readOnly type="checkbox" />
-            Pull requests
-          </label>
-          <label>
-            <input checked={detail.showReview ?? false} readOnly type="checkbox" />
-            Reviews
-          </label>
-          <label>
-            <input checked={detail.showMilestone ?? false} readOnly type="checkbox" />
-            Milestones
-          </label>
-          <label>
-            <input checked={detail.showBoard ?? false} readOnly type="checkbox" />
-            Boards
-          </label>
+          {PROJECT_MENU_SETTINGS.map((item) => (
+            <label className="checkbox" htmlFor={item.id} key={item.key}>
+              <input
+                checked={formState[item.key]}
+                id={item.id}
+                name={item.name}
+                onChange={(event) =>
+                  setFormState((current) => ({
+                    ...current,
+                    [item.key]: event.target.checked,
+                  }))
+                }
+                type="checkbox"
+              />
+              {item.label}
+            </label>
+          ))}
         </section>
         <p>Code access is members only: {(detail.codeMemberOnly ?? false) ? "Yes" : "No"}</p>
         <button type="submit">{props.pending ? "Saving…" : "Save project"}</button>

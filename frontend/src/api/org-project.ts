@@ -39,15 +39,45 @@ type ProjectMembershipInput = ProjectPathInput & {
 };
 
 type ProjectCreateInput = {
+  board?: boolean;
+  code?: boolean;
+  issue?: boolean;
+  milestone?: boolean;
   overview: string;
+  pullRequest?: boolean;
   projectName: string;
   projectScope: string;
+  review?: boolean;
 };
 
 type ProjectUpdateInput = ProjectPathInput & {
+  board?: boolean;
+  code?: boolean;
+  issue?: boolean;
+  milestone?: boolean;
   overview: string;
+  pullRequest?: boolean;
   projectScope: string;
+  review?: boolean;
 };
+
+function projectMenuBody(input: {
+  board?: boolean;
+  code?: boolean;
+  issue?: boolean;
+  milestone?: boolean;
+  pullRequest?: boolean;
+  review?: boolean;
+}) {
+  return {
+    ...(input.board !== undefined ? { board: input.board } : {}),
+    ...(input.code !== undefined ? { code: input.code } : {}),
+    ...(input.issue !== undefined ? { issue: input.issue } : {}),
+    ...(input.milestone !== undefined ? { milestone: input.milestone } : {}),
+    ...(input.pullRequest !== undefined ? { pullRequest: input.pullRequest } : {}),
+    ...(input.review !== undefined ? { review: input.review } : {}),
+  };
+}
 
 export type ProjectWatcher = {
   avatarUrl: string;
@@ -438,6 +468,7 @@ export function createProjectRest(
 ): Promise<ProjectDetail> {
   return restFetch<ProjectDetail>(runtimeConfig, ownerProjectsPath(ownerName), {
     body: {
+      ...projectMenuBody(input),
       overview: input.overview,
       projectName: input.projectName,
       projectScope: input.projectScope,
@@ -597,11 +628,15 @@ export function readProjectSettingsRest(
   ownerName: string,
   projectName: string,
   fetchImpl: typeof fetch = fetch,
-): Promise<ProjectDetail> {
-  return restFetch<ProjectDetail>(runtimeConfig, projectPath(ownerName, projectName, "/settings"), {
-    fetchImpl,
-    method: "GET",
-  });
+): Promise<ProjectContainer> {
+  return restFetch<ProjectContainer>(
+    runtimeConfig,
+    projectPath(ownerName, projectName, "/settings"),
+    {
+      fetchImpl,
+      method: "GET",
+    },
+  );
 }
 
 export function readProjectMembersRest(
@@ -809,6 +844,7 @@ export function updateProjectRest(
     projectPath(currentOwnerName, currentProjectName),
     {
       body: {
+        ...projectMenuBody(input),
         overview: input.overview,
         projectName: input.projectName,
         projectScope: input.projectScope,

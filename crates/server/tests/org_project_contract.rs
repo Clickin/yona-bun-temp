@@ -441,6 +441,99 @@ async fn create_project_uses_configured_default_menus_for_new_project_container(
 }
 
 #[tokio::test]
+async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() {
+    let (app, app_repo) = build_app_with_repository().await;
+
+    let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
+
+    let create_project = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/owners/admin/projects")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from(
+                    "{\"projectName\":\"projectYobi\",\"overview\":\"Yona\",\"projectScope\":\"public\",\"code\":false,\"issue\":true,\"pullRequest\":false,\"review\":false,\"milestone\":false,\"board\":true}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(create_project.status(), StatusCode::OK);
+
+    let authorization = app_repo
+        .read_project_authorization("admin", "projectYobi", None)
+        .await
+        .expect("read project authorization")
+        .expect("created project authorization");
+    let menu_settings = app_repo
+        .read_project_menu_settings(authorization.project.id)
+        .await
+        .expect("read project menu settings");
+    assert!(!menu_settings.code);
+    assert!(menu_settings.issue);
+    assert!(!menu_settings.pull_request);
+    assert!(!menu_settings.review);
+    assert!(!menu_settings.milestone);
+    assert!(menu_settings.board);
+
+    let settings = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/owners/admin/projects/projectYobi/settings")
+                .header(http::header::COOKIE, &admin_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(settings.status(), StatusCode::OK);
+    let payload: serde_json::Value =
+        serde_json::from_str(&response_json(settings).await).expect("settings json");
+    assert_eq!(payload["showCode"], false);
+    assert_eq!(payload["showIssue"], true);
+    assert_eq!(payload["showPullRequest"], false);
+    assert_eq!(payload["showReview"], false);
+    assert_eq!(payload["showMilestone"], false);
+    assert_eq!(payload["showBoard"], true);
+
+    let update_project = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PATCH)
+                .uri("/yona/api/v1/owners/admin/projects/projectYobi")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from(
+                    "{\"projectName\":\"projectYobi\",\"overview\":\"Yona\",\"projectScope\":\"protected\",\"code\":true,\"issue\":false,\"pullRequest\":true,\"review\":true,\"milestone\":true,\"board\":false}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(update_project.status(), StatusCode::OK);
+
+    let updated_menu_settings = app_repo
+        .read_project_menu_settings(authorization.project.id)
+        .await
+        .expect("read updated project menu settings");
+    assert!(updated_menu_settings.code);
+    assert!(!updated_menu_settings.issue);
+    assert!(updated_menu_settings.pull_request);
+    assert!(updated_menu_settings.review);
+    assert!(updated_menu_settings.milestone);
+    assert!(!updated_menu_settings.board);
+}
+
+#[tokio::test]
 async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round_trip() {
     let app = build_app().await;
 

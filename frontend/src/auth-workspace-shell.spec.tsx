@@ -39,7 +39,7 @@ import {
   submitIssueAssigneeSuggestion,
   submitIssueAssigneeText,
 } from "./routes/-issue-views";
-import { ProjectNewPage } from "./routes/-project-views";
+import { ProjectNewPage, ProjectSettingsPage } from "./routes/-project-views";
 import type { ProjectIssueDetailViewModel } from "./routes/-view-models";
 
 describe("auth and workspace views", () => {
@@ -82,6 +82,66 @@ describe("auth and workspace views", () => {
 
     expect(html).toContain('<select name="projectScope">');
     expect(html).toContain('<option value="private" selected="">private</option>');
+  });
+
+  it("uses configured legacy project default menus on the create project form", () => {
+    const html = renderToStaticMarkup(
+      <ProjectNewPage defaultProjectMenus={["issue", "board"]} defaultProjectScope="private" />,
+    );
+
+    expect(html).toContain('id="menuSettingCode"');
+    expect(html).toContain('name="code"');
+    expect(html).toContain('id="menuSettingIssue"');
+    expect(html).toContain('name="issue" checked=""');
+    expect(html).toContain('id="menuSettingPullRequest"');
+    expect(html).toContain('name="pullRequest"');
+    expect(html).toContain('id="menuSettingReview"');
+    expect(html).toContain('name="review"');
+    expect(html).toContain('id="menuSettingMilestone"');
+    expect(html).toContain('name="milestone"');
+    expect(html).toContain('id="menuSettingBoard"');
+    expect(html).toContain('name="board" checked=""');
+  });
+
+  it("renders editable legacy menu checkboxes on the project settings form", () => {
+    const html = renderToStaticMarkup(
+      <ProjectSettingsPage
+        detail={{
+          boardCount: 0,
+          enrollmentRequested: false,
+          isFavorited: false,
+          organizationName: "",
+          overview: "Overview",
+          ownerName: "admin",
+          projectName: "projectYobi",
+          projectScope: "protected",
+          showBoard: false,
+          showCode: true,
+          showIssue: false,
+          showMilestone: true,
+          showPullRequest: true,
+          showReview: false,
+          viewerCanEnroll: false,
+          viewerCanUpdate: true,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+
+    expect(html).toContain('<select name="projectScope">');
+    expect(html).toContain('<option value="protected" selected="">protected</option>');
+    expect(html).toContain('id="menuSettingCode"');
+    expect(html).toContain('name="code" checked=""');
+    expect(html).toContain('id="menuSettingIssue"');
+    expect(html).toContain('name="issue"');
+    expect(html).toContain('id="menuSettingPullRequest"');
+    expect(html).toContain('name="pullRequest" checked=""');
+    expect(html).toContain('id="menuSettingReview"');
+    expect(html).toContain('name="review"');
+    expect(html).toContain('id="menuSettingMilestone"');
+    expect(html).toContain('name="milestone" checked=""');
+    expect(html).toContain('id="menuSettingBoard"');
+    expect(html).toContain('name="board"');
   });
 
   it("renders the canonical signup shell with legacy labels and login link", () => {

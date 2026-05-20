@@ -4999,18 +4999,8 @@ impl AppRepository {
         .await?;
 
         let menu_settings = configured_project_default_menu_settings();
-        project_menu_setting::ActiveModel {
-            id: NotSet,
-            project_id: Set(Some(created.id)),
-            code: Set(Some(bool_to_i16(menu_settings.code))),
-            issue: Set(Some(bool_to_i16(menu_settings.issue))),
-            pull_request: Set(Some(bool_to_i16(menu_settings.pull_request))),
-            review: Set(Some(bool_to_i16(menu_settings.review))),
-            milestone: Set(Some(bool_to_i16(menu_settings.milestone))),
-            board: Set(Some(bool_to_i16(menu_settings.board))),
-        }
-        .insert(&self.db)
-        .await?;
+        self.set_project_menu_settings(created.id, menu_settings)
+            .await?;
 
         self.project_record_from_model(created)
             .await?
@@ -6074,6 +6064,43 @@ impl AppRepository {
             pull_request: row.pull_request.unwrap_or(1) != 0,
             review: row.review.unwrap_or(1) != 0,
         })
+    }
+
+    pub async fn set_project_menu_settings(
+        &self,
+        project_id: i64,
+        settings: ProjectMenuSettingsRecord,
+    ) -> Result<(), DbErr> {
+        let existing = project_menu_setting::Entity::find()
+            .filter(project_menu_setting::Column::ProjectId.eq(Some(project_id)))
+            .one(&self.db)
+            .await?;
+
+        if let Some(row) = existing {
+            let mut active = project_menu_setting::ActiveModel::from(row);
+            active.code = Set(Some(bool_to_i16(settings.code)));
+            active.issue = Set(Some(bool_to_i16(settings.issue)));
+            active.pull_request = Set(Some(bool_to_i16(settings.pull_request)));
+            active.review = Set(Some(bool_to_i16(settings.review)));
+            active.milestone = Set(Some(bool_to_i16(settings.milestone)));
+            active.board = Set(Some(bool_to_i16(settings.board)));
+            active.update(&self.db).await?;
+        } else {
+            project_menu_setting::ActiveModel {
+                id: NotSet,
+                project_id: Set(Some(project_id)),
+                code: Set(Some(bool_to_i16(settings.code))),
+                issue: Set(Some(bool_to_i16(settings.issue))),
+                pull_request: Set(Some(bool_to_i16(settings.pull_request))),
+                review: Set(Some(bool_to_i16(settings.review))),
+                milestone: Set(Some(bool_to_i16(settings.milestone))),
+                board: Set(Some(bool_to_i16(settings.board))),
+            }
+            .insert(&self.db)
+            .await?;
+        }
+
+        Ok(())
     }
 
     pub async fn count_open_issues_for_project(&self, project_id: i64) -> Result<u32, DbErr> {

@@ -22,6 +22,7 @@ function ProjectNewRouteComponent() {
 
   return (
     <ProjectNewPage
+      defaultProjectMenus={runtimeConfig.projectDefaultMenus}
       defaultProjectScope={runtimeConfig.projectDefaultScope}
       onCreateProject={async (input) => {
         try {

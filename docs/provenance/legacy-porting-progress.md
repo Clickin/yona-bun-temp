@@ -139,7 +139,7 @@ Interpretation:
 - [x] Webhook CRUD
 - [x] Project transfer request/accept/mail
 - [x] Project default scope configuration (`project.default.scope.when.create` / `YONA_PROJECT_DEFAULT_SCOPE`)
-- [x] Project default menu configuration (`project.creation.default.menus` / `YONA_PROJECT_DEFAULT_MENUS`)
+- [x] Project default menu configuration and create/settings checkbox persistence (`project.creation.default.menus` / `YONA_PROJECT_DEFAULT_MENUS`)
 - [~] Git/SVN type change shell, metadata toggle, README flag clear, and repository reset
 - [x] Project statistics under-construction shell
 - [ ] Full legacy project home/dashboard/history composition

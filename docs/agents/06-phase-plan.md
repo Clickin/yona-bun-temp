@@ -72,7 +72,7 @@
 - Auth remember-me complete: `rememberMe=true` sign-in marks the Rust session cookie persistent for the legacy 30-day window, while `rememberMe=false` keeps the normal browser-scoped session cookie.
 - Auth configurable session timeout complete: `YONA_SESSION_TIMEOUT_SECONDS` maps the legacy Play `session.maxAge` knob to non-remember session cookie `Max-Age` plus server-side session-store expiry, while remember-me keeps the legacy 30-day window.
 - Runtime language configuration complete: `YONA_LANGS` maps legacy `application.langs` into browser runtime `supportedLanguages` with the legacy default `en-US, ko-KR, ja-JP, ru-RU, uz-UZ`; dynamic i18n switching remains deferred while copy parity stays fixed to legacy text.
-- Project default menu configuration complete: `YONA_PROJECT_DEFAULT_MENUS` maps legacy `project.creation.default.menus` into the `project_menu_setting` row created for new projects; create/settings checkbox UI parity remains a project surface follow-up.
+- Project default menu configuration complete: `YONA_PROJECT_DEFAULT_MENUS` maps legacy `project.creation.default.menus` into both the `project_menu_setting` row created for new projects and the create-form checkbox defaults; project settings now persists legacy menu checkbox toggles through `/api/v1`.
 - Auth anonymous-access gate partial: `YONA_ALLOW_ANONYMOUS_ACCESS=false` now preserves the legacy global login gate for anonymous app-runtime page GETs and non-auth `/api/v1` calls while leaving auth bootstrap, login/signup, reset, verify, and static assets reachable.
 
 ## Phase 3: 저장소와 VCS

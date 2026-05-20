@@ -17,6 +17,7 @@ describe("readRuntimeConfig", () => {
     expect(readRuntimeConfig()).toEqual({
       apiBaseUrl: "/api",
       basePath: "/",
+      projectDefaultMenus: ["code", "issue", "pullRequest", "review", "milestone", "board"],
       projectDefaultScope: "public",
       supportedLanguages: ["en-US", "ko-KR", "ja-JP", "ru-RU", "uz-UZ"],
     });
@@ -30,6 +31,7 @@ describe("readRuntimeConfig", () => {
     browserWindow.__YONA_RUNTIME_CONFIG__ = {
       apiBaseUrl: "/yona/api",
       basePath: "/yona/",
+      projectDefaultMenus: ["issue", "pull-request", "unknown"],
       projectDefaultScope: "private",
       supportedLanguages: ["ko-KR", "", "en-US"],
     };
@@ -37,6 +39,7 @@ describe("readRuntimeConfig", () => {
     expect(readRuntimeConfig()).toEqual({
       apiBaseUrl: "/yona/api",
       basePath: "/yona",
+      projectDefaultMenus: ["issue", "pullRequest"],
       projectDefaultScope: "private",
       supportedLanguages: ["ko-KR", "en-US"],
     });
@@ -46,15 +49,18 @@ describe("readRuntimeConfig", () => {
     globalThis.window = {} as Window & typeof globalThis;
     process.env.VITE_YONA_BASE_PATH = "/yona";
     process.env.VITE_YONA_LANGS = "ja-JP, en-US";
+    process.env.VITE_YONA_PROJECT_DEFAULT_MENUS = "issue,board";
     (import.meta as { env?: Record<string, string> }).env = {
       ...originalImportMetaEnv,
       VITE_YONA_BASE_PATH: "/yona",
       VITE_YONA_LANGS: "ja-JP, en-US",
+      VITE_YONA_PROJECT_DEFAULT_MENUS: "issue,board",
     };
 
     expect(readRuntimeConfig()).toEqual({
       apiBaseUrl: "/yona/api",
       basePath: "/yona",
+      projectDefaultMenus: ["issue", "board"],
       projectDefaultScope: "public",
       supportedLanguages: ["ja-JP", "en-US"],
     });

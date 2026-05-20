@@ -1,11 +1,16 @@
 export interface RuntimeConfig {
   apiBaseUrl: string;
   basePath: string;
+  projectDefaultMenus?: string[];
   projectDefaultScope?: string;
   supportedLanguages?: string[];
 }
 
-type RuntimeConfigInput = Omit<Partial<RuntimeConfig>, "supportedLanguages"> & {
+type RuntimeConfigInput = Omit<
+  Partial<RuntimeConfig>,
+  "projectDefaultMenus" | "supportedLanguages"
+> & {
+  projectDefaultMenus?: string[] | string | null;
   supportedLanguages?: string[] | string | null;
 };
 
@@ -14,6 +19,7 @@ declare global {
     readonly VITE_YONA_API_BASE_URL?: string;
     readonly VITE_YONA_BASE_PATH?: string;
     readonly VITE_YONA_LANGS?: string;
+    readonly VITE_YONA_PROJECT_DEFAULT_MENUS?: string;
     readonly VITE_YONA_PROJECT_DEFAULT_SCOPE?: string;
   }
 
@@ -39,6 +45,7 @@ export function resolveRuntimeConfig(input: RuntimeConfigInput = {}): RuntimeCon
   return {
     apiBaseUrl: input.apiBaseUrl ?? joinBasePath(basePath, "api"),
     basePath,
+    projectDefaultMenus: normalizeProjectDefaultMenus(input.projectDefaultMenus),
     projectDefaultScope: normalizeProjectDefaultScope(input.projectDefaultScope),
     supportedLanguages: normalizeSupportedLanguages(input.supportedLanguages),
   };
@@ -48,6 +55,7 @@ function readViteRuntimeConfig(): RuntimeConfigInput {
   return {
     apiBaseUrl: import.meta.env.VITE_YONA_API_BASE_URL,
     basePath: import.meta.env.VITE_YONA_BASE_PATH,
+    projectDefaultMenus: import.meta.env.VITE_YONA_PROJECT_DEFAULT_MENUS,
     supportedLanguages: import.meta.env.VITE_YONA_LANGS,
     projectDefaultScope: import.meta.env.VITE_YONA_PROJECT_DEFAULT_SCOPE,
   };
@@ -89,6 +97,39 @@ export function prefixBasePath(basePath: string, href: string): string {
 export function normalizeProjectDefaultScope(input: string | null | undefined): string {
   const normalized = (input ?? "").trim().toLowerCase();
   return ["public", "protected", "private"].includes(normalized) ? normalized : "public";
+}
+
+export function normalizeProjectDefaultMenus(
+  input: string[] | string | null | undefined,
+): string[] {
+  const values = Array.isArray(input) ? input : (input ?? "").split(",");
+  const normalized = values
+    .map((value) => normalizeProjectMenuKey(value))
+    .filter((value): value is NonNullable<ReturnType<typeof normalizeProjectMenuKey>> =>
+      Boolean(value),
+    );
+  return normalized.length > 0
+    ? normalized
+    : ["code", "issue", "pullRequest", "review", "milestone", "board"];
+}
+
+function normalizeProjectMenuKey(value: string): string | null {
+  switch (value.replace(/[\s_-]+/g, "").toLowerCase()) {
+    case "board":
+      return "board";
+    case "code":
+      return "code";
+    case "issue":
+      return "issue";
+    case "milestone":
+      return "milestone";
+    case "pullrequest":
+      return "pullRequest";
+    case "review":
+      return "review";
+    default:
+      return null;
+  }
 }
 
 export function normalizeSupportedLanguages(input: string[] | string | null | undefined): string[] {

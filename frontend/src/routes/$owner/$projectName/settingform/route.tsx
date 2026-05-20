@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { readProjectContainer, updateProjectOverview } from "../../../../auth-workspace-client";
+import { readProjectSettings, updateProject } from "../../../../auth-workspace-client";
 import { useAppRuntime } from "../../../../app-runtime-context";
 import { ProjectSettingsPage } from "../../../-project-views";
 import { navigateToAppHref, useRequireAuthenticatedRoute } from "../../../-shared";
@@ -24,7 +24,7 @@ function ProjectSettingsRouteComponent() {
       return;
     }
     void (async () => {
-      const nextDetail = await readProjectContainer(runtimeConfig, owner, projectName);
+      const nextDetail = await readProjectSettings(runtimeConfig, owner, projectName);
       if (!cancelled) {
         setDetail(toProjectContainerView(nextDetail));
       }
@@ -46,9 +46,18 @@ function ProjectSettingsRouteComponent() {
     <ProjectSettingsPage
       detail={detail}
       runtimeConfig={runtimeConfig}
-      onUpdateProjectOverview={async (input) => {
+      onUpdateProjectSettings={async (input) => {
         try {
-          const nextDetail = await updateProjectOverview(runtimeConfig, csrfToken, input);
+          const updated = await updateProject(runtimeConfig, csrfToken, {
+            ...input,
+            currentOwnerName: owner,
+            currentProjectName: projectName,
+          });
+          const nextDetail = await readProjectSettings(
+            runtimeConfig,
+            updated.ownerName,
+            updated.projectName,
+          );
           setDetail(toProjectContainerView(nextDetail));
           navigateToAppHref(
             runtimeConfig.basePath,

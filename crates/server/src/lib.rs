@@ -1130,6 +1130,55 @@ fn configured_project_default_scope() -> String {
         .unwrap_or_else(|| "public".to_string())
 }
 
+fn configured_project_default_menus() -> Vec<String> {
+    let Some(configured) = std::env::var("YONA_PROJECT_DEFAULT_MENUS")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+    else {
+        return default_project_menu_keys();
+    };
+
+    let menus = configured
+        .split(',')
+        .filter_map(
+            |value| match normalize_project_default_menu_config_key(value).as_str() {
+                "board" => Some("board".to_string()),
+                "code" => Some("code".to_string()),
+                "issue" => Some("issue".to_string()),
+                "milestone" => Some("milestone".to_string()),
+                "pullrequest" => Some("pullRequest".to_string()),
+                "review" => Some("review".to_string()),
+                _ => None,
+            },
+        )
+        .collect::<Vec<_>>();
+
+    if menus.is_empty() {
+        default_project_menu_keys()
+    } else {
+        menus
+    }
+}
+
+fn default_project_menu_keys() -> Vec<String> {
+    vec![
+        "code".to_string(),
+        "issue".to_string(),
+        "pullRequest".to_string(),
+        "review".to_string(),
+        "milestone".to_string(),
+        "board".to_string(),
+    ]
+}
+
+fn normalize_project_default_menu_config_key(value: &str) -> String {
+    value
+        .chars()
+        .filter(|ch| !ch.is_whitespace() && *ch != '_' && *ch != '-')
+        .collect::<String>()
+        .to_ascii_lowercase()
+}
+
 fn configured_supported_languages() -> Vec<String> {
     let languages: Vec<String> = std::env::var("YONA_LANGS")
         .ok()
@@ -3239,17 +3288,83 @@ struct RestProjectDeleteResponse {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RestProjectCreateBody {
+    board: Option<bool>,
+    code: Option<bool>,
+    issue: Option<bool>,
+    milestone: Option<bool>,
     overview: String,
+    pull_request: Option<bool>,
     project_name: String,
     project_scope: String,
+    review: Option<bool>,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RestProjectUpdateBody {
+    board: Option<bool>,
+    code: Option<bool>,
+    issue: Option<bool>,
+    milestone: Option<bool>,
     overview: String,
+    pull_request: Option<bool>,
     project_name: String,
     project_scope: String,
+    review: Option<bool>,
+}
+
+impl RestProjectCreateBody {
+    fn menu_settings(&self) -> Option<persistence::ProjectMenuSettingsRecord> {
+        rest_project_menu_settings(
+            self.code,
+            self.issue,
+            self.pull_request,
+            self.review,
+            self.milestone,
+            self.board,
+        )
+    }
+}
+
+impl RestProjectUpdateBody {
+    fn menu_settings(&self) -> Option<persistence::ProjectMenuSettingsRecord> {
+        rest_project_menu_settings(
+            self.code,
+            self.issue,
+            self.pull_request,
+            self.review,
+            self.milestone,
+            self.board,
+        )
+    }
+}
+
+fn rest_project_menu_settings(
+    code: Option<bool>,
+    issue: Option<bool>,
+    pull_request: Option<bool>,
+    review: Option<bool>,
+    milestone: Option<bool>,
+    board: Option<bool>,
+) -> Option<persistence::ProjectMenuSettingsRecord> {
+    if code.is_none()
+        && issue.is_none()
+        && pull_request.is_none()
+        && review.is_none()
+        && milestone.is_none()
+        && board.is_none()
+    {
+        return None;
+    }
+
+    Some(persistence::ProjectMenuSettingsRecord {
+        board: board.unwrap_or(false),
+        code: code.unwrap_or(false),
+        issue: issue.unwrap_or(false),
+        milestone: milestone.unwrap_or(false),
+        pull_request: pull_request.unwrap_or(false),
+        review: review.unwrap_or(false),
+    })
 }
 
 #[derive(Deserialize)]
@@ -8206,6 +8321,7 @@ async fn rest_create_project(
     body: RestProjectCreateBody,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
+    let menu_settings = body.menu_settings();
     let request = CreateProjectRequest {
         owner_name,
         overview: body.overview,
@@ -8215,9 +8331,19 @@ async fn rest_create_project(
     };
     let request = rest_owned_view::<CreateProjectRequestView<'static>>(&request)?;
     let (payload, ctx) = service
-        .create_project(Context::new(headers), request)
+        .create_project(Context::new(headers.clone()), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
+    if let Some(menu_settings) = menu_settings {
+        rest_update_project_menu_settings(
+            &service,
+            &headers,
+            &payload.owner_name,
+            &payload.project_name,
+            menu_settings,
+        )
+        .await?;
+    }
     Ok(rest_json_response(payload, ctx))
 }
 
@@ -8311,9 +8437,35 @@ async fn rest_read_project_settings(
     };
     let request = rest_owned_view::<ReadProjectSettingsRequestView<'static>>(&request)?;
     let (payload, ctx) = service
-        .read_project_settings(Context::new(headers), request)
+        .read_project_settings(Context::new(headers.clone()), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = service
+        .session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(&payload.owner_name, &payload.project_name, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    let payload = build_project_settings_container_response(
+        repository,
+        &service.public_origin,
+        &service.base_path,
+        &authorization,
+        actor_id,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+    let payload =
+        project_settings_container_json(payload).map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
 }
 
@@ -9370,6 +9522,7 @@ async fn rest_update_project(
     body: RestProjectUpdateBody,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
+    let menu_settings = body.menu_settings();
     let owner_name = current_owner_name.clone();
     let request = UpdateProjectRequest {
         current_owner_name,
@@ -9382,10 +9535,60 @@ async fn rest_update_project(
     };
     let request = rest_owned_view::<UpdateProjectRequestView<'static>>(&request)?;
     let (payload, ctx) = service
-        .update_project(Context::new(headers), request)
+        .update_project(Context::new(headers.clone()), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
+    if let Some(menu_settings) = menu_settings {
+        rest_update_project_menu_settings(
+            &service,
+            &headers,
+            &payload.owner_name,
+            &payload.project_name,
+            menu_settings,
+        )
+        .await?;
+    }
     Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_project_menu_settings(
+    service: &PilotServiceImpl,
+    headers: &HeaderMap,
+    owner_name: &str,
+    project_name: &str,
+    menu_settings: persistence::ProjectMenuSettingsRecord,
+) -> Result<(), RestRouteError> {
+    let session = require_session(&service.session_manager, headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project requires repository backend",
+        ));
+    };
+    let authorization = repository
+        .read_project_authorization(owner_name, project_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    if !project_update_allowed(&authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("project update is not allowed"),
+        ));
+    }
+
+    repository
+        .set_project_menu_settings(authorization.project.id, menu_settings)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)
 }
 
 async fn rest_update_project_overview(
@@ -14841,6 +15044,8 @@ struct BrowserRuntimeConfig {
     api_base_url: String,
     #[serde(rename = "basePath")]
     base_path: String,
+    #[serde(rename = "projectDefaultMenus")]
+    project_default_menus: Vec<String>,
     #[serde(rename = "projectDefaultScope")]
     project_default_scope: String,
     #[serde(rename = "supportedLanguages")]
@@ -14887,6 +15092,7 @@ impl BrowserRuntimeConfig {
         Self {
             api_base_url,
             base_path,
+            project_default_menus: configured_project_default_menus(),
             project_default_scope: configured_project_default_scope(),
             supported_languages: configured_supported_languages(),
         }
@@ -18418,6 +18624,63 @@ async fn build_project_container_response(
         watch_count,
         ..Default::default()
     })
+}
+
+async fn build_project_settings_container_response(
+    repository: &PilotRepository,
+    public_origin: &str,
+    base_path: &str,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor_id: Option<i64>,
+) -> Result<ProjectContainer, ConnectError> {
+    let mut container = build_project_container_response(
+        repository,
+        public_origin,
+        base_path,
+        authorization,
+        actor_id,
+    )
+    .await?;
+    let menu_settings = repository
+        .read_project_menu_settings(authorization.project.id)
+        .await
+        .map_err(internal_error)?;
+    container.show_board = menu_settings.board;
+    container.show_code = menu_settings.code;
+    container.show_issue = menu_settings.issue;
+    container.show_milestone = menu_settings.milestone;
+    container.show_pull_request = menu_settings.pull_request;
+    container.show_review = menu_settings.review;
+    Ok(container)
+}
+
+fn project_settings_container_json(
+    container: ProjectContainer,
+) -> Result<serde_json::Value, ConnectError> {
+    let show_board = container.show_board;
+    let show_code = container.show_code;
+    let show_issue = container.show_issue;
+    let show_milestone = container.show_milestone;
+    let show_pull_request = container.show_pull_request;
+    let show_review = container.show_review;
+    let mut value = serde_json::to_value(container)
+        .map_err(|error| internal_error(format!("serialize project settings: {error}")))?;
+    let Some(object) = value.as_object_mut() else {
+        return Err(internal_error("project settings response is not an object"));
+    };
+    object.insert("showBoard".to_string(), serde_json::json!(show_board));
+    object.insert("showCode".to_string(), serde_json::json!(show_code));
+    object.insert("showIssue".to_string(), serde_json::json!(show_issue));
+    object.insert(
+        "showMilestone".to_string(),
+        serde_json::json!(show_milestone),
+    );
+    object.insert(
+        "showPullRequest".to_string(),
+        serde_json::json!(show_pull_request),
+    );
+    object.insert("showReview".to_string(), serde_json::json!(show_review));
+    Ok(value)
 }
 
 impl PilotServiceImpl {

@@ -264,10 +264,16 @@ describe("organization and project REST wrappers", () => {
       runtimeConfig,
       "csrf-project-create",
       {
+        board: true,
+        code: false,
+        issue: true,
+        milestone: false,
         ownerName: "owner space",
         overview: "project overview",
+        pullRequest: false,
         projectName: "project/name",
         projectScope: "public",
+        review: false,
       },
       fetchMock as unknown as typeof fetch,
     );
@@ -275,12 +281,18 @@ describe("organization and project REST wrappers", () => {
       runtimeConfig,
       "csrf-project-update",
       {
+        board: false,
+        code: true,
         currentOwnerName: "owner space",
         currentProjectName: "project/name",
+        issue: false,
+        milestone: true,
         ownerName: "owner space",
         overview: "updated overview",
+        pullRequest: true,
         projectName: "project/name",
         projectScope: "private",
+        review: true,
       },
       fetchMock as unknown as typeof fetch,
     );
@@ -408,16 +420,28 @@ describe("organization and project REST wrappers", () => {
 
     const createProjectCall = mutationCalls[10]!;
     expect(JSON.parse(createProjectCall[1].body ?? "")).toEqual({
+      board: true,
+      code: false,
+      issue: true,
+      milestone: false,
       overview: "project overview",
+      pullRequest: false,
       projectName: "project/name",
       projectScope: "public",
+      review: false,
     });
 
     const updateProjectCall = mutationCalls[11]!;
     expect(JSON.parse(updateProjectCall[1].body ?? "")).toEqual({
+      board: false,
+      code: true,
+      issue: false,
+      milestone: true,
       overview: "updated overview",
+      pullRequest: true,
       projectName: "project/name",
       projectScope: "private",
+      review: true,
     });
 
     const updateOverviewCall = mutationCalls[12]!;
