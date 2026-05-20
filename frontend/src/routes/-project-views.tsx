@@ -174,11 +174,42 @@ function dashboardPercent(count: number, totalCount: number) {
   return totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
 }
 
-function ProjectHomeHistoryPane() {
+function ProjectHomeHistoryPane(props: { detail: ProjectDetailViewModel }) {
+  const items = props.detail.history?.items ?? [];
+
   return (
     <div className="content-container nm">
       <div className="main-stream" style={{ width: "100%" }}>
-        <ul className="activity-streams unstyled" />
+        <ul className="activity-streams unstyled">
+          {items.map((item) => (
+            <li className="activity-stream" key={`${item.itemType}:${item.url}`}>
+              <a className="avatar-wrap pull-left mr10" href={item.actorUrl}>
+                <img alt="" height="32" src={item.actorAvatarUrl} width="32" />
+              </a>
+              <div className="activity-desc">
+                <p className="header-text" style={{ marginBottom: "5px" }}>
+                  <a className="actor" href={item.actorUrl}>
+                    {item.actorName}
+                  </a>{" "}
+                  <span>{`project.history.type.${item.itemType}`}</span>{" "}
+                  <span className="whereis">
+                    <a className="where" href={item.url}>
+                      {item.shortTitle}
+                    </a>{" "}
+                    <a className="title" href={item.url}>
+                      {item.title}
+                    </a>
+                  </span>
+                </p>
+                <p className="others" style={{ paddingLeft: 0 }}>
+                  <span className="date" style={{ marginLeft: 0 }} title={item.createdLabel}>
+                    {item.createdLabel}
+                  </span>
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
@@ -777,7 +808,7 @@ export function ProjectDetailPage(props: {
               </>
             )
           ) : null}
-          {activeTab === "history" ? <ProjectHomeHistoryPane /> : null}
+          {activeTab === "history" ? <ProjectHomeHistoryPane detail={detail} /> : null}
           {activeTab === "dashboard" ? (
             <ProjectHomeDashboardPane detail={detail} runtimeConfig={props.runtimeConfig} />
           ) : null}

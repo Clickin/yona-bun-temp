@@ -424,6 +424,19 @@ pub struct ProjectDashboardAssigneeRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectHomeHistoryItemRecord {
+    pub actor_email_address: String,
+    pub actor_login_id: String,
+    pub actor_name: String,
+    pub created_at: Option<DateTime>,
+    pub created_label: String,
+    pub item_type: String,
+    pub short_title: String,
+    pub title: String,
+    pub url_path: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CreateProjectLabelInput {
     pub category_is_exclusive: bool,
     pub category_name: String,

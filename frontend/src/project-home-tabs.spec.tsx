@@ -43,11 +43,38 @@ function renderProjectHome(routeHref: string, overrides: Partial<ProjectDetailVi
 
 describe("project home tab parity", () => {
   it("uses tabId=history to render the legacy history stream shell", () => {
-    const html = renderProjectHome("/yona/yona/projectYobi?tabId=history");
+    const html = renderProjectHome("/yona/yona/projectYobi?tabId=history", {
+      history: {
+        items: [
+          {
+            actorAvatarUrl: "/yona/assets/admin.png",
+            actorName: "Admin User",
+            actorUrl: "/yona/admin",
+            createdLabel: "2026-05-20",
+            itemType: "issue",
+            shortTitle: "#1",
+            title: "History issue",
+            url: "/yona/yona/projectYobi/issue/1",
+          },
+        ],
+      },
+    });
 
     expect(html).toContain('class="content-container nm"');
     expect(html).toContain('class="main-stream"');
     expect(html).toContain('class="activity-streams unstyled"');
+    expect(html).toContain('class="activity-stream"');
+    expect(html).toContain('class="avatar-wrap pull-left mr10"');
+    expect(html).toContain('src="/yona/assets/admin.png"');
+    expect(html).toContain('class="actor"');
+    expect(html).toContain('href="/yona/admin"');
+    expect(html).toContain("Admin User");
+    expect(html).toContain("project.history.type.issue");
+    expect(html).toContain('class="where"');
+    expect(html).toContain('class="title"');
+    expect(html).toContain("History issue");
+    expect(html).toContain('class="date"');
+    expect(html).toContain("2026-05-20");
     expect(html).not.toContain("Legacy placeholder panel");
     expect(html).not.toContain("No README post yet.");
   });

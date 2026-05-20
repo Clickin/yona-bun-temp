@@ -176,6 +176,18 @@ export interface ProjectDetailViewModel {
   };
   defaultTab?: string;
   enrollmentRequested: boolean;
+  history?: {
+    items: Array<{
+      actorAvatarUrl: string;
+      actorName: string;
+      actorUrl: string;
+      createdLabel: string;
+      itemType: string;
+      shortTitle: string;
+      title: string;
+      url: string;
+    }>;
+  };
   isFavorited: boolean;
   isForked?: boolean;
   isWatching?: boolean;

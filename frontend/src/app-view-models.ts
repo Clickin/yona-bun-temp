@@ -282,6 +282,18 @@ export function toProjectContainerView(
       }>;
       unassignedOpenIssueCount?: number;
     };
+    history?: {
+      items?: Array<{
+        actorAvatarUrl?: string;
+        actorName?: string;
+        actorUrl?: string;
+        createdLabel?: string;
+        itemType?: string;
+        shortTitle?: string;
+        title?: string;
+        url?: string;
+      }>;
+    };
     readmeFile?: { bodyHtml?: string; bodyMarkdown?: string; name?: string } | null;
   };
   return {
@@ -319,6 +331,18 @@ export function toProjectContainerView(
     },
     defaultTab: detail.defaultTab,
     enrollmentRequested: detail.enrollmentRequested,
+    history: {
+      items: (detailWithReadme.history?.items ?? []).map((item) => ({
+        actorAvatarUrl: item.actorAvatarUrl ?? "",
+        actorName: item.actorName ?? "",
+        actorUrl: item.actorUrl ?? "#",
+        createdLabel: item.createdLabel ?? "",
+        itemType: item.itemType ?? "",
+        shortTitle: item.shortTitle ?? "",
+        title: item.title ?? "",
+        url: item.url ?? "#",
+      })),
+    },
     isFavorited: detail.isFavorited,
     isForked: detail.isForked,
     isWatching: detail.isWatching,

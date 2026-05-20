@@ -3379,6 +3379,7 @@ struct RestProjectContainerResponse {
     #[serde(flatten)]
     container: ProjectContainer,
     dashboard: RestProjectDashboard,
+    history: RestProjectHistory,
     readme_file: Option<RestProjectReadmeFile>,
 }
 
@@ -3410,6 +3411,25 @@ struct RestProjectDashboardLabel {
     id: i64,
     name: String,
     open_issue_count: u32,
+}
+
+#[derive(Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectHistory {
+    items: Vec<RestProjectHistoryItem>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestProjectHistoryItem {
+    actor_avatar_url: String,
+    actor_name: String,
+    actor_url: String,
+    created_label: String,
+    item_type: String,
+    short_title: String,
+    title: String,
+    url: String,
 }
 
 #[derive(Serialize)]
@@ -8420,10 +8440,14 @@ async fn rest_read_project_container(
     let dashboard = rest_project_home_dashboard(&service, &headers, &payload)
         .await
         .map_err(RestRouteError::from_connect_error)?;
+    let history = rest_project_home_history(&service, &payload)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(
         RestProjectContainerResponse {
             container: payload,
             dashboard,
+            history,
             readme_file,
         },
         ctx,
@@ -8487,6 +8511,36 @@ async fn rest_project_home_dashboard(
         labels,
         unassigned_open_issue_count,
     })
+}
+
+async fn rest_project_home_history(
+    service: &PilotServiceImpl,
+    container: &ProjectContainer,
+) -> Result<RestProjectHistory, ConnectError> {
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Ok(RestProjectHistory::default());
+    };
+    let items = repository
+        .list_project_home_history_items(&container.owner_name, &container.project_name)
+        .await
+        .map_err(internal_error)?
+        .into_iter()
+        .map(|item| RestProjectHistoryItem {
+            actor_avatar_url: gravatar_url(&item.actor_email_address),
+            actor_name: item.actor_name,
+            actor_url: if item.actor_login_id.trim().is_empty() {
+                "#".to_string()
+            } else {
+                base_path_href(&service.base_path, &format!("/{}", item.actor_login_id))
+            },
+            created_label: item.created_label,
+            item_type: item.item_type,
+            short_title: item.short_title,
+            title: item.title,
+            url: base_path_href(&service.base_path, &item.url_path),
+        })
+        .collect();
+    Ok(RestProjectHistory { items })
 }
 
 async fn rest_project_readme_file(

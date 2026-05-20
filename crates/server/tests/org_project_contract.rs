@@ -8,7 +8,10 @@ use std::process::Command;
 use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tower::ServiceExt;
-use yona_rust_persistence::{AppRepository, CreateProjectLabelInput};
+use yona_rust_persistence::{
+    AppRepository, CreatePostingInput, CreateProjectLabelInput, CreatePullRequestInput,
+    PostingMutationInput, PullRequestMutationInput,
+};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
@@ -1118,6 +1121,127 @@ async fn rest_project_container_includes_dashboard_open_issue_counts_by_assignee
     assert_eq!(assigned["userLabel"], "assigned");
     assert_eq!(assigned["openIssueCount"], 1);
     assert_eq!(payload["dashboard"]["unassignedOpenIssueCount"], 1);
+}
+
+#[tokio::test]
+async fn rest_project_container_includes_legacy_project_home_history_rows() {
+    let (app, repo) = build_app_with_repository().await;
+
+    let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
+    let admin_id = register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
+
+    create_project(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "admin",
+        "projectYobi",
+        "Project home history",
+        "public",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("admin", "projectYobi")
+        .await
+        .unwrap()
+        .expect("project");
+
+    let create_issue = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/projects/admin/projectYobi/issues")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from(
+                    "{\"title\":\"History issue\",\"bodyMarkdown\":\"issue history\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(create_issue.status(), StatusCode::OK);
+    repo.create_posting(CreatePostingInput {
+        actor_display_name: "admin".to_string(),
+        actor_id: admin_id,
+        actor_login_id: "admin".to_string(),
+        owner_name: "admin".to_string(),
+        project_name: "projectYobi".to_string(),
+        values: PostingMutationInput {
+            attachment_ids: Vec::new(),
+            body_markdown: "posting history".to_string(),
+            label_ids: Vec::new(),
+            notice: false,
+            readme: false,
+            title: "History post".to_string(),
+        },
+    })
+    .await
+    .unwrap()
+    .expect("posting");
+    repo.create_pull_request(CreatePullRequestInput {
+        actor_display_name: "admin".to_string(),
+        actor_id: admin_id,
+        actor_login_id: "admin".to_string(),
+        from_branch: "topic".to_string(),
+        from_project_id: project.id,
+        to_branch: "main".to_string(),
+        to_project_id: project.id,
+        values: PullRequestMutationInput {
+            attachment_ids: Vec::new(),
+            body_markdown: "pull request history".to_string(),
+            title: "History pull request".to_string(),
+        },
+    })
+    .await
+    .unwrap()
+    .expect("pull request");
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/owners/admin/projects/projectYobi/container")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let json = response_json(response).await;
+    let payload: serde_json::Value = serde_json::from_str(&json).expect("container json");
+    let items = payload["history"]["items"]
+        .as_array()
+        .expect("history items");
+
+    let issue = items
+        .iter()
+        .find(|item| item["itemType"] == "issue")
+        .expect("issue history row");
+    assert_eq!(issue["actorName"], "admin");
+    assert_eq!(issue["actorUrl"], "/yona/admin");
+    assert_eq!(issue["shortTitle"], "#1");
+    assert_eq!(issue["title"], "History issue");
+    assert_eq!(issue["url"], "/yona/admin/projectYobi/issue/1");
+
+    let post = items
+        .iter()
+        .find(|item| item["itemType"] == "post")
+        .expect("post history row");
+    assert_eq!(post["shortTitle"], "#1");
+    assert_eq!(post["title"], "History post");
+    assert_eq!(post["url"], "/yona/admin/projectYobi/post/1");
+
+    let pull_request = items
+        .iter()
+        .find(|item| item["itemType"] == "pullrequest")
+        .expect("pull request history row");
+    assert_eq!(pull_request["shortTitle"], "#1");
+    assert_eq!(pull_request["title"], "History pull request");
+    assert_eq!(pull_request["url"], "/yona/admin/projectYobi/pullRequest/1");
 }
 
 #[tokio::test]

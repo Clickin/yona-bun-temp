@@ -145,6 +145,7 @@ Interpretation:
 - [x] Project home `tabId=history|dashboard` selection and legacy history/dashboard shell anchors
 - [x] Project home dashboard open issue counts by label
 - [x] Project home dashboard open issue counts by assignee
+- [x] Project home history issue/post/pull-request activity rows
 - [~] Full legacy project home/dashboard/history composition
 
 ## Issues
