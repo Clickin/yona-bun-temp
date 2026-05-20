@@ -129,6 +129,8 @@ Interpretation:
 - [x] Update project settings
 - [x] Update project overview
 - [x] Public/protected/private read authorization
+- [x] Site-admin project read/update authorization bypass
+- [x] Public project directory fixed 10-item `pageNum` pagination
 - [x] Project watch toggle
 - [x] Favorite project toggle
 - [x] Recent project visit recording

@@ -647,6 +647,23 @@ describe("file-route parity harness", () => {
     expect(html).toContain("No public projects found.");
   });
 
+  it("keeps the legacy project directory pageNum pagination at ten projects", () => {
+    const items = Array.from({ length: 11 }, (_, index) => ({
+      ownerName: "owner",
+      overview: `Project ${index + 1} overview`,
+      projectName: `project-${index + 1}`,
+      projectScope: "public",
+    }));
+    const html = renderProjectDirectory({ items }, "/projects?pageNum=2");
+
+    expect(html).not.toContain('href="/yona/owner/project-1"');
+    expect(html).toContain('href="/yona/owner/project-11"');
+    expect(html).toContain('href="/projects?pageNum=1"');
+    expect(html).toContain('class="nav-pill active"');
+    expect(html).toContain(">2</span>");
+    expect(html).toContain("Next</span>");
+  });
+
   it("pins organization directory empty state and search CTA", () => {
     const html = renderOrganizationDirectory({ items: [] }, "/orgs?pageNum=1");
 

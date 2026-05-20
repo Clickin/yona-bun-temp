@@ -459,9 +459,9 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 
 - [x] `/:owner/:project` project home 레이아웃은 legacy `projectLayout.scala.html`, `project/header.scala.html`, `projectMenu.scala.html`, `project/home.scala.html` 구조를 따라 프로젝트 헤더 + 메뉴 + `.page-wrap-outer` / `.project-page-wrap` 컨텐츠 셸을 렌더링한다
 - [x] 프로젝트 메뉴: Code / Issues / Pull Requests / Reviews / Milestones / Board 순서 (legacy 동일), `project_menu_setting`에 따라 on/off
-- [ ] 공개범위별 접근 제어: public(누구나 읽기), protected(조직 멤버 읽기), private(프로젝트 멤버만)
-- [ ] site_admin은 모든 프로젝트에 read + write 권한 (legacy `ProjectApp` 동작)
-- [ ] 프로젝트 목록 페이지네이션: 한 페이지 10개, legacy `pageNum` 방식
+- [x] 공개범위별 접근 제어: public(누구나 읽기), protected(조직 멤버 읽기), private(프로젝트 멤버만)
+- [x] site_admin은 모든 프로젝트에 read + write 권한 (legacy `ProjectApp` 동작)
+- [x] 프로젝트 목록 페이지네이션: 한 페이지 10개, legacy `pageNum` 방식
 - [x] `/:owner/:project/watchers`는 READ 가능한 프로젝트의 실제 watcher 목록을 legacy `project/watchers.scala.html` class anchor로 표시한다
 - [x] `/:owner/:project/members`는 UPDATE 가능한 프로젝트의 멤버 추가/역할 변경/삭제/가입 요청 수락을 legacy `project/members.scala.html` class anchor와 `/api/v1/owners/:owner/projects/:project/members` REST mutation으로 제공한다
 - [x] `/:owner/:project/deleteform`은 UPDATE 가능한 프로젝트의 legacy `project/delete.scala.html` 확인 셸을 보존하고 `/api/v1/owners/:owner/projects/:project` DELETE로 프로젝트 DB 상태와 bare Git repository를 삭제한 뒤 `/`로 이동한다

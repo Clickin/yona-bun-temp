@@ -210,3 +210,94 @@ pub fn can_request_project_enrollment(
         && !is_project_member
         && !is_site_admin
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn facts(project_scope: ProjectScope) -> ProjectAccessFacts {
+        ProjectAccessFacts {
+            is_anonymous: false,
+            is_organization_admin: false,
+            is_organization_member: false,
+            is_project_manager: false,
+            is_project_member: false,
+            is_site_admin: false,
+            project_scope,
+        }
+    }
+
+    #[test]
+    fn project_read_access_matches_legacy_scope_rules() {
+        assert_eq!(
+            authorize_project_access(&facts(ProjectScope::Public), ProjectOperation::Read),
+            ProjectAccessDecision {
+                allowed: true,
+                reason: ProjectAccessReason::PublicRead,
+            },
+        );
+
+        assert_eq!(
+            authorize_project_access(&facts(ProjectScope::Protected), ProjectOperation::Read),
+            ProjectAccessDecision {
+                allowed: false,
+                reason: ProjectAccessReason::PrivateProjectDenied,
+            },
+        );
+
+        let mut organization_member = facts(ProjectScope::Protected);
+        organization_member.is_organization_member = true;
+        assert_eq!(
+            authorize_project_access(&organization_member, ProjectOperation::Read),
+            ProjectAccessDecision {
+                allowed: true,
+                reason: ProjectAccessReason::OrganizationMemberRead,
+            },
+        );
+
+        assert_eq!(
+            authorize_project_access(&facts(ProjectScope::Private), ProjectOperation::Read),
+            ProjectAccessDecision {
+                allowed: false,
+                reason: ProjectAccessReason::PrivateProjectDenied,
+            },
+        );
+
+        let mut project_member = facts(ProjectScope::Private);
+        project_member.is_project_member = true;
+        assert_eq!(
+            authorize_project_access(&project_member, ProjectOperation::Read),
+            ProjectAccessDecision {
+                allowed: true,
+                reason: ProjectAccessReason::ProjectMemberRead,
+            },
+        );
+    }
+
+    #[test]
+    fn site_admin_can_read_and_update_any_project_scope() {
+        for project_scope in [
+            ProjectScope::Public,
+            ProjectScope::Protected,
+            ProjectScope::Private,
+        ] {
+            let mut site_admin = facts(project_scope);
+            site_admin.is_site_admin = true;
+
+            assert_eq!(
+                authorize_project_access(&site_admin, ProjectOperation::Read),
+                ProjectAccessDecision {
+                    allowed: true,
+                    reason: ProjectAccessReason::SiteAdminRead,
+                },
+            );
+            assert_eq!(
+                authorize_project_access(&site_admin, ProjectOperation::Update),
+                ProjectAccessDecision {
+                    allowed: true,
+                    reason: ProjectAccessReason::SiteAdminUpdate,
+                },
+            );
+        }
+    }
+}

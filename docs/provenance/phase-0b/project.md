@@ -58,7 +58,7 @@
 | --- | --- | --- |
 | `ProjectTest.create` | project create persists identity, overview, scope, VCS, and derived site URL semantics | `crates/persistence` repository helper + `crates/domain` create service |
 | `ProjectTest.findByNameAndOwner` and `Project.exists` | public routing keys are owner plus project name | REST path identifiers plus lookup helper in `crates/persistence` |
-| `ProjectApp.projects` and `project/list.scala.html` | `/projects` is a public, searchable, paginated directory entry surface and must not fall back to an unsupported route | `frontend` route shell + `GET /api/v1/projects` query + browser smoke |
+| `ProjectApp.projects` and `project/list.scala.html` | `/projects` is a public, searchable, paginated directory entry surface and must not fall back to an unsupported route | `frontend` route shell + `GET /api/v1/projects` query + fixed 10-item `pageNum` route/UI test + browser smoke |
 | `ProjectTest.projectNameChangeable` | rename stays owner-scoped and duplicate project names reject under the same owner | `crates/persistence` conflict helper + `crates/domain` update service |
 | `ProjectApp.newProject` | create under personal owner is allowed; org owner create requires org-admin authority | `crates/domain` create service + `crates/server` mutation contract test |
 | `ProjectApp.project` | detail read is permission filtered and records recent visit semantics | `crates/domain` detail resolution + `frontend` route/UI test |
@@ -72,7 +72,7 @@
 | `ProjectApp.changeVCSForm`, `changeVCS`, `Project.changeVCS`, and `project/change_vcs.scala.html` | change VCS is UPDATE-gated, clears DB-backed README posting state, resets repository storage, toggles `GIT`/`Subversion`, and uses the legacy checkbox/modal confirmation shell | `GET/POST /api/v1/owners/:owner/projects/:project/change-vcs` + `/:owner/:project/changeVCS` route + contract/Playwright assertions; SVN executable-backed repository/serve behavior remains VCS lifecycle follow-up |
 | `ProjectApp.deleteForm`, `deleteProject`, `Project.delete`, and `project/delete.scala.html` | delete is UPDATE-gated, uses the legacy checkbox/modal confirmation shell, removes dependent project state and the repository, then redirects to `/` | `DELETE /api/v1/owners/:owner/projects/:project` + `/:owner/:project/deleteform` route + contract/Playwright assertions |
 | `StatisticsApp.statistics` and `project/statistics.scala.html` | project statistics route is READ-gated by the default project check and renders only the legacy `Under Construction` shell inside `projectLayout` | `/:owner/:project/statistics` route + project container read + route/Playwright assertions for `.page-wrap-outer`, `.project-page-wrap`, and `Under Construction` |
-| `ProjectAppTest` visibility cases | public/protected/private visibility gates readable discovery | `crates/domain` read matrix + `crates/server` query contract test |
+| `ProjectAppTest` visibility cases | public/protected/private visibility gates readable discovery, and site admins bypass project read/update gates | `crates/domain` read/update matrix + `crates/server` query contract test |
 | `EnrollProjectAppTest` | enrollment request and cancel stay guest-only, not-found for missing projects, idempotent | `crates/domain` enrollment service + `crates/server` mutation contract test |
 | `RecentlyVisitedProjectsTest` and `WatchProjectAppTest` | recent visits dedupe/reorder and favorites remain workspace-local behavior | `crates/domain` workspace service + `crates/persistence` workspace repo + `frontend` route/UI test |
 
@@ -92,7 +92,8 @@
 ## R0-3 Delivery Note
 
 - `R0-3` now covers project create/detail/settings, visibility-aware read, guest-only enrollment request/cancel, member summary, and workspace favorite/recent linkage in `repo root`.
-- The Wave 0 route-foundation slice also mounts the public `/projects` directory in `frontend` through file routes under `src/routes/projects/**`, with route-parity tests and a shell-routing Playwright smoke pack.
+- The Wave 0 route-foundation slice also mounts the public `/projects` directory in `frontend` through file routes under `src/routes/projects/**`, with route-parity tests for legacy fixed 10-item `pageNum` pagination and a shell-routing Playwright smoke pack.
+- The project visibility closeout locks public/protected/private read behavior and site-admin read/update bypass in `crates/domain::org_project` tests; server routes consume the same `authorize_project_access` decision helper for project read/update gates.
 - Project detail read records recent visits for authenticated viewers, and `/me` now reflects favorite/recent project state through `GET /api/v1/workspace`.
 - The project watcher closeout adds an app REST watcher directory and legacy deep-link route for `/:owner/:project/watchers`; unreadable projects keep the project READ denial while readable projects list actual watcher users with legacy member-row class anchors.
 - The project member management closeout adds the UPDATE-gated legacy deep-link route for `/:owner/:project/members`, app REST add/role/delete mutations, enrollment cleanup, member-accept notification/mail staging, owner/self-leave guards, and legacy `project/members.scala.html` class anchors.
