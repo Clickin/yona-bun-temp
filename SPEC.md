@@ -989,7 +989,7 @@ GET   /sites/export            → 데이터 익스포트
 | 프로젝트 목록/관리     | 목록, 검색, 삭제                   | ✅ 구현(`/sites/projectList`, `/sites/project/delete/:id`, `/api/v1/site/projects`) | 6     |
 | 게시글 목록            | 전체 게시글 읽기 목록              | ✅ 구현(`/sites/postList`, `/api/v1/site/posts`) | 6     |
 | 이슈 목록              | 전체 이슈 읽기 목록                | ✅ 구현(`/sites/issueList`, `/api/v1/site/issues`) | 6     |
-| 메일 설정/테스트       | SMTP 테스트, 대량 메일             | ✅ 구현(`/sites/mail`, `/sites/massmail`, `/api/v1/site/mail*`) | 6     |
+| 메일 설정/테스트       | SMTP 테스트, 대량 메일             | ✅ 구현(`/sites/mail`, `/sites/massmail`, `/sites/mailList`, `/api/v1/site/mail*`) | 6     |
 | 시스템 진단            | Diagnostic.checkAll 오류 목록      | ✅ 구현(`/sites/diagnostic`, `/api/v1/site/diagnostics`) | 6     |
 | 데이터 임포트/익스포트 | 전체 데이터 백업/복원              | shell implemented (`/sites/data`); live import/export deferred | 2차   |
 | 업데이트 확인          | 새 버전 확인                       | shell implemented (`/sites/update`); live version check/download deferred | 2차   |
@@ -1006,7 +1006,7 @@ GET   /sites/export            → 데이터 익스포트
 - [x] 게시글 목록: site admin 전용 `/api/v1/site/posts`, 30-item pagination, legacy `/sites/postList` shell/sidebar/list/link anchors
 - [x] 이슈 목록: site admin 전용 `/api/v1/site/issues`, `open`/`closed` tabs, 30-item pagination, legacy `/sites/issueList` shell/sidebar/list/link anchors
 - [x] 시스템 진단: site admin 전용 `/api/v1/site/diagnostics`, legacy `/sites/diagnostic` shell/sidebar/title area, no-error message, error count, and `<pre>` error rows
-- [x] 메일 테스트/대량 메일: site admin 전용 `/api/v1/site/mail`, `/api/v1/site/mail/test`, `/api/v1/site/mail-list`, legacy `/sites/mail` form shell, `/sites/massmail` recipient lookup/mailto shell
+- [x] 메일 테스트/대량 메일: site admin 전용 `/api/v1/site/mail`, `/api/v1/site/mail/test`, `/api/v1/site/mail-list`, legacy `/sites/mail` form shell, `/sites/massmail` recipient lookup/mailto shell, and direct `/sites/mailList` form-urlencoded JSON-array recipient resolver
 - [x] 업데이트 화면 shell: `/sites/update` is site-admin-gated and preserves the legacy `site/update.scala.html` sidebar/title/no-update shell; live version refresh/download remains deferred
 - [x] 데이터 관리 화면 shell: `/sites/data` is site-admin-gated and preserves the legacy `site/data.scala.html` title, warning list, export anchor, multipart import form, and `name="data"` file input; live import/export execution remains deferred
 
@@ -1449,6 +1449,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/sites/project/delete/:id`         | DELETE   | `DELETE /api/v1/site/projects/:id`    | `sites/$pageName` action modal                | implemented        |
 | `/sites/postList`                   | GET      | `GET /api/v1/site/posts`              | `sites/$pageName`                             | implemented        |
 | `/sites/issueList`                  | GET      | `GET /api/v1/site/issues`             | `sites/$pageName`                             | implemented        |
+| `/sites/mailList`                   | POST     | `POST /api/v1/site/mail-list`         | `sites/$pageName` massmail action             | implemented        |
 | `/sites/diagnostic`                 | GET      | `GET /api/v1/site/diagnostics`        | `sites/$pageName`                             | implemented        |
 | `/sites/*`                         | GET      | —                                     | `sites/$pageName` placeholders                | remaining gap      |
 | `/-_-api/v1/*`                     | Various  | —                                     | —                                             | unsupported in app; migrator/deferred |

@@ -1296,7 +1296,7 @@ async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
 
     let project_recipients = response_json(
         rest_json(
-            app,
+            app.clone(),
             Method::POST,
             "/yona/api/v1/site/mail-list",
             Some(&admin_cookie),
@@ -1308,6 +1308,44 @@ async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
     .await;
     assert_eq!(
         project_recipients["recipients"],
+        json!(["member@example.com", "observer@example.com"])
+    );
+
+    let direct_all_recipients = response_json(
+        rest_raw_post(
+            app.clone(),
+            "/yona/sites/mailList",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            "application/x-www-form-urlencoded",
+            "all=true",
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        direct_all_recipients,
+        json!([
+            "member@example.com",
+            "observer@example.com",
+            "siteboss@example.com"
+        ])
+    );
+
+    let direct_project_recipients = response_json(
+        rest_raw_post(
+            app,
+            "/yona/sites/mailList",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            "application/x-www-form-urlencoded",
+            "0=member%2Fmailproj",
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        direct_project_recipients,
         json!(["member@example.com", "observer@example.com"])
     );
 }

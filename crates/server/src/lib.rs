@@ -306,6 +306,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let site_no_avatar_session_manager = session_manager.clone();
     let site_set_avatar_backend = route_backend.clone();
     let site_set_avatar_session_manager = session_manager.clone();
+    let site_mail_list_backend = route_backend.clone();
+    let site_mail_list_session_manager = session_manager.clone();
     let site_toggle_admin_backend = route_backend.clone();
     let site_toggle_admin_session_manager = session_manager.clone();
     let site_toggle_admin_base_path = base_path.clone();
@@ -475,6 +477,20 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         body,
                         site_set_avatar_session_manager.clone(),
                         site_set_avatar_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/mailList",
+            post(move |headers: HeaderMap, body: Bytes| {
+                async move {
+                    direct_read_site_mail_list(
+                        headers,
+                        body,
+                        site_mail_list_session_manager.clone(),
+                        site_mail_list_backend.clone(),
                     )
                     .await
                 }
@@ -1879,6 +1895,47 @@ async fn direct_set_attachment_to_user_avatar(
         Ok(Json(payload)) => Json(payload).into_response(),
         Err(error) => error.into_response(),
     }
+}
+
+async fn direct_read_site_mail_list(
+    headers: HeaderMap,
+    body: Bytes,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let body = direct_site_mail_list_body(&body);
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_read_site_mail_list(headers, body, service).await {
+        Ok(Json(payload)) => Json(payload.recipients).into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
+fn direct_site_mail_list_body(body: &[u8]) -> RestSiteMailListBody {
+    if let Ok(body) = serde_json::from_slice::<RestSiteMailListBody>(body) {
+        return body;
+    }
+    let raw = std::str::from_utf8(body).unwrap_or_default();
+    let mut parsed = RestSiteMailListBody::default();
+    for pair in raw.split('&').filter(|pair| !pair.is_empty()) {
+        let (key, value) = pair.split_once('=').unwrap_or((pair, ""));
+        let key = decode_query_component(key);
+        let value = decode_query_component(value);
+        if key == "all" {
+            parsed.all = value.trim().eq_ignore_ascii_case("true");
+            if parsed.all {
+                parsed.projects.clear();
+            }
+        } else if !parsed.all && !value.trim().is_empty() {
+            parsed.projects.push(value);
+        }
+    }
+    parsed
 }
 
 async fn direct_toggle_site_admin_role(
