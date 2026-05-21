@@ -1,17 +1,18 @@
 use crate::repo_types::{
     AppUserInput, AppUserRecord, AttachmentRecord, BranchPullRequestRecord,
     CommitDiscussionThreadStateInput, CopyProjectLabelsResult, CreateCommitDiscussionCommentInput,
-    CreateIssueCommentInput, CreateIssueInput, CreateOrganizationInput, CreatePostingCommentInput,
-    CreatePostingInput, CreateProjectInput, CreateProjectLabelCategoryInput,
-    CreateProjectLabelInput, CreateProjectWebhookInput, CreatePullRequestCommentInput,
-    CreatePullRequestInput, CreatePullRequestResult, CreateUserInput, DeleteAttachmentResult,
-    DeleteCommitDiscussionCommentInput, IssueAssignableUserRecord, IssueAssignableUserSearchRecord,
-    IssueAttachmentRecord, IssueCommentRecord, IssueCommentVoterRecord, IssueLabelCategoryRecord,
-    IssueLabelRecord, IssueListFilter, IssueMentionUserRecord, IssueMentionUserSearchRecord,
-    IssueMilestoneRecord, IssueRecord, IssueShareStatus, IssueSharerRecord,
-    IssueTimelineItemRecord, MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter,
-    MilestoneMutationInput, NotificationActorRecord, NotificationItemRecord,
-    NotificationListRecord, OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
+    CreateForkProjectInput, CreateIssueCommentInput, CreateIssueInput, CreateOrganizationInput,
+    CreatePostingCommentInput, CreatePostingInput, CreateProjectInput,
+    CreateProjectLabelCategoryInput, CreateProjectLabelInput, CreateProjectWebhookInput,
+    CreatePullRequestCommentInput, CreatePullRequestInput, CreatePullRequestResult,
+    CreateUserInput, DeleteAttachmentResult, DeleteCommitDiscussionCommentInput,
+    IssueAssignableUserRecord, IssueAssignableUserSearchRecord, IssueAttachmentRecord,
+    IssueCommentRecord, IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord,
+    IssueListFilter, IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord,
+    IssueRecord, IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord,
+    MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
+    NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
+    OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
     OrganizationIssueListFilter, OrganizationIssueListRecord, OrganizationIssueProjectOptionRecord,
     OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationPostingListFilter,
     OrganizationPostingListRecord, OrganizationPostingProjectOptionRecord, OrganizationRecord,
@@ -5115,6 +5116,65 @@ impl AppRepository {
         self.project_record_from_model(created)
             .await?
             .ok_or_else(|| DbErr::Custom("project owner/name missing".to_string()))
+    }
+
+    pub async fn create_fork_project(
+        &self,
+        input: CreateForkProjectInput,
+    ) -> Result<ProjectRecord, DbErr> {
+        let created = project::ActiveModel {
+            id: NotSet,
+            name: Set(Some(input.project_name.trim().to_string())),
+            overview: Set(empty_to_none(input.overview)),
+            vcs: Set(Some(input.vcs.trim().to_string())),
+            siteurl: Set(None),
+            owner: Set(Some(input.owner_name.trim().to_string())),
+            created_date: Set(Some(current_datetime())),
+            last_issue_number: Set(Some(0)),
+            last_posting_number: Set(Some(0)),
+            original_project_id: Set(Some(input.original_project_id)),
+            last_pushed_date: Set(None),
+            default_reviewer_count: Set(Some(0)),
+            is_using_reviewer_count: Set(Some(0)),
+            organization_id: Set(input.organization_id),
+            project_scope: Set(Some(normalize_identity(&input.project_scope))),
+            previous_owner_login_id: Set(None),
+            previous_name: Set(None),
+            previous_name_changed_time: Set(None),
+            is_code_accessible_member_only: Set(Some(0)),
+        }
+        .insert(&self.db)
+        .await?;
+
+        let menu_settings = configured_project_default_menu_settings();
+        self.set_project_menu_settings(created.id, menu_settings)
+            .await?;
+
+        self.project_record_from_model(created)
+            .await?
+            .ok_or_else(|| DbErr::Custom("project owner/name missing".to_string()))
+    }
+
+    pub async fn list_project_forks(
+        &self,
+        original_project_id: i64,
+    ) -> Result<Vec<ProjectRecord>, DbErr> {
+        let rows = project::Entity::find()
+            .filter(project::Column::OriginalProjectId.eq(Some(original_project_id)))
+            .all(&self.db)
+            .await?;
+        let mut forks = Vec::new();
+        for row in rows {
+            if let Some(record) = self.project_record_from_model(row).await? {
+                forks.push(record);
+            }
+        }
+        forks.sort_by(|left, right| {
+            left.owner_name
+                .cmp(&right.owner_name)
+                .then_with(|| left.project_name.cmp(&right.project_name))
+        });
+        Ok(forks)
     }
 
     pub async fn change_project_vcs(

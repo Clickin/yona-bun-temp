@@ -729,6 +729,17 @@ pub struct CreateProjectInput {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateForkProjectInput {
+    pub organization_id: Option<i64>,
+    pub original_project_id: i64,
+    pub owner_name: String,
+    pub overview: Option<String>,
+    pub project_name: String,
+    pub project_scope: String,
+    pub vcs: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpdateProjectInput {
     pub current_owner_name: String,
     pub current_project_name: String,

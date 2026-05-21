@@ -262,6 +262,36 @@ pub fn create_bare_repository(repo_path: &Path) -> Result<(), VcsError> {
     }
 }
 
+pub fn clone_bare_repository(source_repo_path: &Path, repo_path: &Path) -> Result<(), VcsError> {
+    if !source_repo_path.exists() || !source_repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    if repo_path.exists() {
+        return Err(VcsError::FilesystemFailed(format!(
+            "{} already exists",
+            repo_path.display()
+        )));
+    }
+    if let Some(parent) = repo_path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|error| VcsError::FilesystemFailed(error.to_string()))?;
+    }
+
+    let output = Command::new("git")
+        .args(["clone", "--bare"])
+        .arg(source_repo_path)
+        .arg(repo_path)
+        .output()
+        .map_err(|_| VcsError::GitUnavailable)?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(VcsError::GitFailed(
+            String::from_utf8_lossy(&output.stderr).trim().to_string(),
+        ))
+    }
+}
+
 pub fn delete_repository(repo_path: &Path) -> Result<(), VcsError> {
     if !repo_path.exists() {
         return Ok(());

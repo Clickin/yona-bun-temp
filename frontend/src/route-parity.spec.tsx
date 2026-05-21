@@ -550,6 +550,39 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain('id="btnTransferExec"');
   });
 
+  it("requires project fork route to preserve legacy anchors and mutation wiring", () => {
+    const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
+    expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/newFork'");
+
+    const routePath = path.resolve(__dirname, "routes/$owner/$projectName/newFork/route.tsx");
+    expect(fs.existsSync(routePath)).toBe(true);
+    const routeSource = fs.readFileSync(routePath, "utf8");
+    expect(routeSource).not.toContain("PlaceholderPage");
+    expect(routeSource).toContain("readProjectForkOptionsQueryOptions");
+    expect(routeSource).toContain("forkProjectRest");
+
+    const apiSource = fs.readFileSync(path.resolve(__dirname, "api/org-project.ts"), "utf8");
+    expect(apiSource).toContain("ProjectForkOptionsResponse");
+    expect(apiSource).toContain('projectPath(ownerName, projectName, "/fork-options")');
+    expect(apiSource).toContain('projectPath(input.ownerName, input.projectName, "/fork")');
+
+    const viewSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-project-views.tsx"),
+      "utf8",
+    );
+    expect(viewSource).toContain("ProjectForkPage");
+    expect(viewSource).toContain("href={`${projectHref}/newFork`}");
+    expect(viewSource).toContain('className="content-wrap frm-wrap"');
+    expect(viewSource).toContain('id="helpMessage"');
+    expect(viewSource).toContain('id="project-owner"');
+    expect(viewSource).toContain('id="inputName"');
+    expect(viewSource).toContain('name="projectScope"');
+    expect(viewSource).toContain("label-public");
+    expect(viewSource).toContain("label-protected");
+    expect(viewSource).toContain("label-private");
+    expect(viewSource).toContain("images/fork-pull/fork.jpg");
+  });
+
   it("requires project statistics route to preserve the legacy under-construction shell", () => {
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/statistics'");

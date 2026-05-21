@@ -179,6 +179,52 @@ export type ProjectChangeVcsResponse = {
   viewerCanChange: boolean;
 };
 
+export type ProjectForkSource = {
+  isForked: boolean;
+  overview: string;
+  ownerName: string;
+  projectName: string;
+  projectScope: string;
+  vcs: string;
+};
+
+export type ProjectForkOwnerOption = {
+  organization: boolean;
+  ownerName: string;
+  selected: boolean;
+};
+
+export type ProjectForkSelected = {
+  ownerName: string;
+  projectName: string;
+  projectScope: string;
+};
+
+export type ProjectForkSummary = {
+  ownerName: string;
+  projectName: string;
+};
+
+export type ProjectForkOptionsResponse = {
+  canFork: boolean;
+  existingForks: ProjectForkSummary[];
+  ownerOptions: ProjectForkOwnerOption[];
+  selected: ProjectForkSelected;
+  source: ProjectForkSource;
+};
+
+export type ProjectForkInput = {
+  owner: string;
+  name: string;
+  projectScope: string;
+};
+
+export type ProjectForkResponse = {
+  ok: boolean;
+  project: ProjectDetail;
+  redirectPath: string;
+};
+
 function toInt64Number(value: bigint | number): number {
   return Number(value);
 }
@@ -590,6 +636,54 @@ export function changeProjectVcsRest(
     runtimeConfig,
     projectPath(input.ownerName, input.projectName, "/change-vcs"),
     {
+      csrfToken,
+      fetchImpl,
+      method: "POST",
+    },
+  );
+}
+
+export function readProjectForkOptionsRest(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectForkOptionsResponse> {
+  return restFetch<ProjectForkOptionsResponse>(
+    runtimeConfig,
+    projectPath(ownerName, projectName, "/fork-options"),
+    {
+      fetchImpl,
+      method: "GET",
+    },
+  );
+}
+
+export function readProjectForkOptionsQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectPathInput,
+) {
+  return queryOptions({
+    queryFn: () => readProjectForkOptionsRest(runtimeConfig, input.ownerName, input.projectName),
+    queryKey: apiQueryKeys.project.forkOptions(input.ownerName, input.projectName),
+  });
+}
+
+export function forkProjectRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: ProjectPathInput & ProjectForkInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectForkResponse> {
+  return restFetch<ProjectForkResponse>(
+    runtimeConfig,
+    projectPath(input.ownerName, input.projectName, "/fork"),
+    {
+      body: {
+        name: input.name,
+        owner: input.owner,
+        projectScope: input.projectScope,
+      },
       csrfToken,
       fetchImpl,
       method: "POST",

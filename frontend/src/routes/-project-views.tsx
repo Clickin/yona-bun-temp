@@ -7,6 +7,7 @@ import {
 import type { BoardPostDetail } from "../api/boards";
 import type {
   ProjectChangeVcsResponse,
+  ProjectForkOptionsResponse,
   ProjectMembersResponse,
   ProjectTransferResponse,
   ProjectWebhookInput,
@@ -954,7 +955,7 @@ export function ProjectDetailPage(props: {
                   ) : null}
                   {detail.showCode ? (
                     <span className="project-btn-item">
-                      <a className="ybtn ybtn-inverse" href={`${projectHref}/fork`}>
+                      <a className="ybtn ybtn-inverse" href={`${projectHref}/newFork`}>
                         fork
                       </a>
                     </span>
@@ -1614,6 +1615,222 @@ export function ProjectTransferPage(props: {
           <button className="ybtn" onClick={() => setModalOpen(false)} type="button">
             button.cancel
           </button>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export function ProjectForkPage(props: {
+  detail: ProjectDetailViewModel | null | undefined;
+  forkOptions: ProjectForkOptionsResponse | null | undefined;
+  onFork?: (input: { name: string; owner: string; projectScope: string }) => Promise<void>;
+  pending?: boolean;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const detail = props.detail ?? {
+    enrollmentRequested: false,
+    isFavorited: false,
+    organizationName: "",
+    overview: "",
+    ownerName: "",
+    projectName: "",
+    projectScope: "public",
+    showCode: true,
+    viewerCanEnroll: false,
+    viewerCanUpdate: false,
+  };
+  const selected = props.forkOptions?.selected ?? {
+    ownerName: detail.ownerName,
+    projectName: detail.projectName,
+    projectScope: detail.projectScope || "public",
+  };
+  const [owner, setOwner] = React.useState(selected.ownerName);
+  const [name, setName] = React.useState(selected.projectName);
+  const [projectScope, setProjectScope] = React.useState(selected.projectScope || "public");
+
+  React.useEffect(() => {
+    setOwner(selected.ownerName);
+    setName(selected.projectName);
+    setProjectScope(selected.projectScope || "public");
+  }, [selected.ownerName, selected.projectName, selected.projectScope]);
+
+  const ownerOptions = props.forkOptions?.ownerOptions.length
+    ? props.forkOptions.ownerOptions
+    : [
+        {
+          organization: false,
+          ownerName: selected.ownerName,
+          selected: true,
+        },
+      ];
+  const existingForks = props.forkOptions?.existingForks ?? [];
+  const canSubmit =
+    Boolean(props.forkOptions?.canFork) && owner.trim().length > 0 && name.trim().length > 0;
+  const forkPath = buildProjectHref(
+    props.runtimeConfig,
+    detail.ownerName,
+    detail.projectName,
+    "fork",
+  );
+
+  return (
+    <main className="app-shell">
+      <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="content-wrap frm-wrap">
+            <form
+              action={forkPath}
+              className="form-horizontal nm"
+              method="post"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!canSubmit || props.pending) {
+                  return;
+                }
+                void props.onFork?.({
+                  name: name.trim(),
+                  owner: owner.trim(),
+                  projectScope,
+                });
+              }}
+            >
+              <input name="owner" type="hidden" value={detail.ownerName} />
+              <fieldset>
+                <legend>
+                  <h4>{`${detail.ownerName}/${detail.projectName}`}</h4>
+                </legend>
+                <div className="well" id="helpMessage">
+                  <div className="row-fluid">
+                    <div className="span6 pull-left">
+                      <img
+                        alt="fork"
+                        className="img-polaroid"
+                        src={prefixBasePath(
+                          props.runtimeConfig.basePath,
+                          "/images/fork-pull/fork.jpg",
+                        )}
+                      />
+                    </div>
+                    <div className="span6 help-messages">
+                      <p className="lead">project.fork.help</p>
+                      {existingForks.length ? (
+                        <ul className="unstyled existing-forks">
+                          {existingForks.map((fork) => (
+                            <li key={`${fork.ownerName}/${fork.projectName}`}>
+                              <a
+                                href={buildProjectHref(
+                                  props.runtimeConfig,
+                                  fork.ownerName,
+                                  fork.projectName,
+                                )}
+                              >
+                                {`${fork.ownerName}/${fork.projectName}`}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="control-group">
+                  <label className="control-label" htmlFor="project-owner">
+                    project.owner
+                  </label>
+                  <div className="controls">
+                    <select
+                      id="project-owner"
+                      name="owner"
+                      onChange={(event) => setOwner(event.currentTarget.value)}
+                      value={owner}
+                    >
+                      {ownerOptions.map((option) => (
+                        <option
+                          data-owner-type={option.organization ? "organization" : "user"}
+                          data-url={buildProjectHref(
+                            props.runtimeConfig,
+                            option.ownerName,
+                            detail.projectName,
+                          )}
+                          key={option.ownerName}
+                          value={option.ownerName}
+                        >
+                          {option.ownerName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="control-group">
+                  <label className="control-label" htmlFor="inputName">
+                    project.name
+                  </label>
+                  <div className="controls">
+                    <input
+                      className="text"
+                      id="inputName"
+                      maxLength={250}
+                      name="name"
+                      onChange={(event) => setName(event.currentTarget.value)}
+                      type="text"
+                      value={name}
+                    />
+                    <span className="help-inline">project.name.help</span>
+                  </div>
+                </div>
+
+                <div className="control-group project-share-option">
+                  <label className="control-label" htmlFor="public">
+                    project.scope
+                  </label>
+                  <div className="controls">
+                    {[
+                      { className: "bg-radiobtn label-public", id: "public" },
+                      { className: "bg-radiobtn label-protected", id: "protected" },
+                      { className: "bg-radiobtn label-private", id: "private" },
+                    ].map((scope) => (
+                      <label className={scope.className} htmlFor={scope.id} key={scope.id}>
+                        <input
+                          checked={projectScope === scope.id}
+                          id={scope.id}
+                          name="projectScope"
+                          onChange={() => setProjectScope(scope.id)}
+                          type="radio"
+                          value={scope.id.toUpperCase()}
+                        />
+                        {`project.scope.${scope.id}`}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="actions">
+                  <button
+                    className="ybtn ybtn-info"
+                    disabled={!canSubmit || props.pending}
+                    type="submit"
+                  >
+                    <i className="yobicon-fork" /> project.fork
+                  </button>
+                  <a
+                    className="ybtn"
+                    href={buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      "pullRequests",
+                    )}
+                  >
+                    button.cancel
+                  </a>
+                </div>
+              </fieldset>
+            </form>
+          </div>
         </div>
       </div>
     </main>

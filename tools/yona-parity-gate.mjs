@@ -287,9 +287,19 @@ const DOMAIN_BUCKETS = [
     status: "gap",
     implementationPatterns: [
       /^frontend\/.*(pulls|pull-requests?|pullrequests?|pull-request|reviews?)/i,
+      /^frontend\/public\/images\/fork-pull\/fork\.jpg$/i,
       /^crates\/(?:domain|server)\/.*(pull-requests?|pull_request|review)/i,
     ],
-    testKeywords: ["pull-request", "pull_request", "pulls", "review", "reviews"],
+    testKeywords: [
+      "fork",
+      "project-fork",
+      "pull-request",
+      "pull_request",
+      "pulls",
+      "review",
+      "reviews",
+      "route-parity",
+    ],
     provenanceDocs: [
       "docs/provenance/phase-0b/pull-request-review.md",
       "docs/provenance/core-parity-audit.md",

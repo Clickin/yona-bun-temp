@@ -80,6 +80,8 @@ export const apiQueryKeys = {
       [...apiQueryKeys.project.base(ownerName, projectName), "members"] as const,
     changeVcs: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.project.base(ownerName, projectName), "change-vcs"] as const,
+    forkOptions: (ownerName: string, projectName: string) =>
+      [...apiQueryKeys.project.base(ownerName, projectName), "fork-options"] as const,
     transfer: (ownerName: string, projectName: string) =>
       [...apiQueryKeys.project.base(ownerName, projectName), "transfer"] as const,
     webhooks: (ownerName: string, projectName: string) =>

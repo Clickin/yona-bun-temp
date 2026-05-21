@@ -9,14 +9,14 @@ Last updated: 2026-05-20
 
 | Scope                                   | Estimate | Basis                                                                                                                         |
 | --------------------------------------- | -------: | ----------------------------------------------------------------------------------------------------------------------------- |
-| Full legacy Yona parity                 |     ~49% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and separate migrator/external API compatibility. |
-| Current first-priority conversion scope |     ~57% | Same as above, but excluding explicitly deferred second-priority items such as SVN, LDAP, import/export tooling, and legacy external API compatibility. |
-| Mechanical SPEC row count               |     ~48% | Phase -1 moved implemented application flows to `/api/v1` REST and removed runtime RPC; Phase 3L closes Git browser/history/compare/branch-admin/provisioning/Smart HTTP transport and push post-receive rows, Phase 4B closes PR interaction rows, Phase 5B closes board/posting core rows, Phase 5C closes app search rows, and project webhook CRUD, transfer request/accept/mail, legacy project statistics shell, public `/:user` profile route, user statistics counts, plus site-admin mail/mass-mail are now implemented while many product rows remain gaps. |
+| Full legacy Yona parity                 |     ~50% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and separate migrator/external API compatibility. |
+| Current first-priority conversion scope |     ~58% | Same as above, but excluding explicitly deferred second-priority items such as SVN, LDAP, import/export tooling, and legacy external API compatibility. |
+| Mechanical SPEC row count               |     ~49% | Phase -1 moved implemented application flows to `/api/v1` REST and removed runtime RPC; Phase 3L closes Git browser/history/compare/branch-admin/provisioning/Smart HTTP transport and push post-receive rows, Phase 4B closes PR interaction rows, the fork/clone slice closes native bare-repo fork creation, Phase 5B closes board/posting core rows, Phase 5C closes app search rows, and project webhook CRUD, transfer request/accept/mail, legacy project statistics shell, public `/:user` profile route, user statistics counts, plus site-admin mail/mass-mail are now implemented while many product rows remain gaps. |
 
 Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace/public profile, organization/project ownership, issue-tracker core behavior, Git read/admin surfaces, PR/review interaction surfaces, and board/posting core app behavior.
-- The largest remaining gaps are still PR/review merge/fork/reviewer lifecycle and ranged inline review CRUD, board/posting follow-ups, notification fan-out/read state, PR merge/commit-changed webhook payload delivery plus delivery hardening/history, full-text/indexed search hardening, SVN executable-backed serve, and separate migrator/external API compatibility.
+- The largest remaining gaps are still PR/review merge/reviewer lifecycle and ranged inline review CRUD, board/posting follow-ups, notification fan-out/read state, PR merge/commit-changed webhook payload delivery plus delivery hardening/history, full-text/indexed search hardening, SVN executable-backed serve, and separate migrator/external API compatibility.
 - Percentages are approximate. Update them only when a slice lands with tests and provenance updates.
 
 ## Update Protocol
@@ -39,7 +39,7 @@ Interpretation:
 | Organization / Project core             | [~] Partially implemented | CRUD, members, enrollment, watch/favorite, webhook CRUD plus issue/comment, PR create/review/comment fan-out, git-push JSON fan-out, transfer request/accept/mail, change VCS shell/metadata reset, Smart HTTP clone/push transport, and the legacy project statistics shell exist; SVN executable-backed serve and remaining webhook delivery hardening remain. |
 | Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists, favorite issue, direct/project sharer effects, and issue/comment mention row effects exist over `/api/v1`; legacy external REST parity is separate migrator scope. |
 | VCS / Code hosting                      | [~] Strong partial        | Git code browser, Markdown file rendering with local image path rewrite, raw/open/image streaming, archive download, syntax/line rendering, commit history/detail/compare, commit discussion, branch admin, project-create provisioning, Smart HTTP upload-pack/receive-pack transport, and push post-receive records/webhooks exist; SVN and PR merge/commit-changed lifecycle remain. |
-| Pull Request / Review                   | [~] Strong partial        | Phase 4A restores read surfaces and Phase 4B restores create/edit, close/reopen, review/unreview, general PR comments, and thread open/close; merge/fork/reviewer lifecycle/ranged inline CRUD remain. |
+| Pull Request / Review                   | [~] Strong partial        | Phase 4A restores read surfaces, Phase 4B restores create/edit, close/reopen, review/unreview, general PR comments, and thread open/close, and the fork/clone slice restores legacy `newFork` plus native bare-repo clone; merge/reviewer lifecycle/ranged inline CRUD remain. |
 | Board / Posting                         | [~] Strong partial        | Project board CRUD/comment/watch/notice/README/label flows, read-only Git README fallback rendering, and organization board list exist over `/api/v1`; Git README write-back/sync, issue template/file edit, and legacy external API compatibility remain. |
 | Search                                  | [~] Strong partial        | Global/project/organization app search exists over `/api/v1` with all legacy result tabs, counts, snippets, pagination, and ACL filtering; full-text/indexed search and external API compatibility remain deferred. |
 | Notifications / Webhooks / Admin / External REST | [~] Partially implemented | Notification inbox/list with legacy route wrapper anchors, mail queue staging, site-admin mail test/mass-mail recipient lookup plus direct `/sites/mailList`, direct site-admin user/project mutation aliases, no-avatar user JSON/avatar repair, update shell, data management shell, webhook CRUD, issue/comment plus PR create/review/comment webhook fan-out, and git-push JSON webhook fan-out exist while full SMTP batching, PR merge/commit-changed delivery, delivery history/hardening, live update check/download, and live admin data import/export remain gaps; `/-_-api/v1` compatibility is separate migrator scope. |
@@ -291,7 +291,7 @@ Interpretation:
 - [~] Review approve/reject
 - [~] Inline review comments
 - [x] Review thread lifecycle
-- [ ] Fork and PR workflow
+- [~] Fork and PR workflow: fork form/clone implemented; merge lifecycle and source branch cleanup remain gaps
 - [ ] Source branch cleanup
 
 ## Search
