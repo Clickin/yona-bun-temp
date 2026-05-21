@@ -2078,6 +2078,99 @@ async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspa
 }
 
 #[tokio::test]
+async fn direct_legacy_usermenu_tab_content_list_returns_legacy_fragment() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+    let (app, repository, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let user = repository
+        .find_user_by_identifier("door")
+        .await
+        .unwrap()
+        .expect("registered user");
+    repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "door".to_string(),
+            overview: Some("Yona project".to_string()),
+            project_name: "projectYobi".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+    repository
+        .record_recent_project_visit(user.id, "door", "projectYobi")
+        .await
+        .unwrap();
+
+    let fragment = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/user/usermenuTabContentList")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(fragment.status(), StatusCode::OK);
+    assert_eq!(
+        fragment
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok()),
+        Some("text/html; charset=utf-8")
+    );
+    let html = response_text(fragment).await;
+    assert!(
+        html.contains(r#"<div class="tab-pane user-project-list active" id="myOrganizationList">"#)
+    );
+    assert!(html.contains(r#"<div class="tab-pane user-project-list" id="myProjectList">"#));
+    assert!(html.contains(r#"<div class="tab-pane user-project-list" id="myRecentIssueList">"#));
+    assert!(html.contains(r#"class="search-input org-search""#));
+    assert!(html.contains(r#"class="search-input project-search""#));
+    assert!(html.contains(r##"href="#recentlyVisited""##));
+    assert!(html.contains(r##"href="#createdByMe""##));
+    assert!(html.contains(r##"href="#watching""##));
+    assert!(html.contains(r##"href="#joinmember""##));
+    assert!(html.contains(r#"id="recentlyVisitedIssues""#));
+    assert!(html.contains(r#"href="/yona/door/projectYobi""#));
+    assert!(html.contains("projectYobi"));
+
+    let anonymous_fragment = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/user/usermenuTabContentList")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(anonymous_fragment.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[tokio::test]
 async fn direct_legacy_user_reset_password_route_logs_out_and_accepts_new_password() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");

@@ -102,6 +102,7 @@ Interpretation:
 - [x] Watched project notification preference basics
 - [x] Public profile route `/:user`
 - [x] User activity statistics
+- [x] Legacy global user menu tab fragment (`/user/usermenuTabContentList`)
 - [x] Favorite issue management
 - [x] User aggregate issue list
 

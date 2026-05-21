@@ -242,6 +242,9 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let reset_visited_session_manager = session_manager.clone();
     let reset_visited_backend = route_backend.clone();
     let reset_visited_base_path = base_path.clone();
+    let usermenu_tab_session_manager = session_manager.clone();
+    let usermenu_tab_backend = route_backend.clone();
+    let usermenu_tab_base_path = base_path.clone();
     let default_login_page_session_manager = session_manager.clone();
     let default_login_page_backend = route_backend.clone();
     let update_profile_session_manager = session_manager.clone();
@@ -500,6 +503,20 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         reset_visited_session_manager.clone(),
                         reset_visited_backend.clone(),
                         reset_visited_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/user/usermenuTabContentList",
+            get(move |headers: HeaderMap| {
+                async move {
+                    direct_user_menu_tab_content_list(
+                        headers,
+                        usermenu_tab_session_manager.clone(),
+                        usermenu_tab_backend.clone(),
+                        usermenu_tab_base_path.clone(),
                     )
                     .await
                 }
@@ -2056,6 +2073,381 @@ async fn direct_reset_user_visited_list(
             RestRouteError::not_implemented("workspace requires repository backend").into_response()
         }
     }
+}
+
+async fn direct_user_menu_tab_content_list(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let repository = match backend {
+        PilotBackend::Repository(repository) => repository,
+        PilotBackend::Static => {
+            return RestRouteError::not_implemented("usermenu requires repository backend")
+                .into_response();
+        }
+    };
+    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+        return RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+        .into_response();
+    };
+    let actor = match require_authenticated_user(&repository, session.user_id).await {
+        Ok(actor) => actor,
+        Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+    };
+    let recent_projects = match repository.list_recent_projects_for_user(actor.id).await {
+        Ok(projects) => projects,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let member_projects = match repository.list_member_projects_for_user(actor.id).await {
+        Ok(projects) => projects,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let recent_issue_records = match repository
+        .list_recent_workspace_issues_for_user(actor.id, u64::from(WORKSPACE_DAYS_AGO))
+        .await
+    {
+        Ok(issues) => issues,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let recent_issues =
+        match filter_workspace_issue_items_by_read_acl(&repository, actor.id, recent_issue_records)
+            .await
+        {
+            Ok(issues) => issues,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+
+    (
+        [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
+        render_legacy_usermenu_tab_content_list(
+            &base_path,
+            &actor.login_id,
+            &recent_projects,
+            &member_projects,
+            &recent_issues,
+        ),
+    )
+        .into_response()
+}
+
+fn render_legacy_usermenu_tab_content_list(
+    base_path: &str,
+    actor_login_id: &str,
+    recent_projects: &[persistence::ProjectListEntry],
+    member_projects: &[persistence::WorkspaceMemberProjectRecord],
+    recent_issues: &[WorkspaceIssueItem],
+) -> String {
+    format!(
+        r#"<div class="tab-pane user-project-list active" id="myOrganizationList">
+{}
+</div>
+<div class="tab-pane user-project-list" id="myProjectList">
+{}
+</div>
+<div class="tab-pane user-project-list" id="myRecentIssueList">
+{}
+</div>
+"#,
+        render_legacy_usermenu_organizations(base_path, actor_login_id, member_projects),
+        render_legacy_usermenu_projects(
+            base_path,
+            actor_login_id,
+            recent_projects,
+            member_projects
+        ),
+        render_legacy_usermenu_recent_issues(base_path, recent_issues)
+    )
+}
+
+fn render_legacy_usermenu_organizations(
+    base_path: &str,
+    actor_login_id: &str,
+    member_projects: &[persistence::WorkspaceMemberProjectRecord],
+) -> String {
+    let body = if member_projects.is_empty() {
+        render_legacy_usermenu_no_result("organizations", true)
+    } else {
+        let projects = member_projects
+            .iter()
+            .map(|project| {
+                render_legacy_usermenu_project_item(
+                    base_path,
+                    &project.owner_name,
+                    &project.project_name,
+                    &project.project_scope,
+                    false,
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("");
+        format!(
+            r#"<ul class="tab-pane user-ul active" id="organizations">
+<li class="org-li">
+<div class="org-list project-flex-container all-orgs">
+<div class="project-item project-item-container">
+<div class="flex-item site-logo"><i class="yobicon-angle-right"></i></div>
+<div class="projectName-owner all-org-names flex-item">
+<div class="project-name org-name flex-item">{}</div>
+<div class="project-owner flex-item sub-project-counter"></div>
+</div>
+</div>
+<div class="star-org flex-item"></div>
+</div>
+<ul class="project-ul">
+{}
+</ul>
+</li>
+<ul class="etc-favorites"></ul>
+</ul>"#,
+            escape_html_text(actor_login_id),
+            projects
+        )
+    };
+
+    format!(
+        r#"<div class="search-result">
+<div class="group">
+<input class="search-input org-search" type="text" autocomplete="off" placeholder="title.type.name">
+<span class="bar"></span>
+</div>
+{}
+</div>"#,
+        body
+    )
+}
+
+fn render_legacy_usermenu_projects(
+    base_path: &str,
+    actor_login_id: &str,
+    recent_projects: &[persistence::ProjectListEntry],
+    member_projects: &[persistence::WorkspaceMemberProjectRecord],
+) -> String {
+    let created_projects = member_projects
+        .iter()
+        .filter(|project| {
+            normalize_identifier(&project.owner_name) == normalize_identifier(actor_login_id)
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    let joined_projects = member_projects
+        .iter()
+        .filter(|project| {
+            normalize_identifier(&project.owner_name) != normalize_identifier(actor_login_id)
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+
+    format!(
+        r##"<div>
+<div class="search-result">
+<div class="tab-pane myproject-list-wrap" >
+<div class="group">
+<input class="search-input project-search" type="text" id="query" autocomplete="off" placeholder="title.type.name">
+<span class="bar"></span>
+</div>
+<div class="subtab-wrap subtab-group">
+<ul class="nav-subtab unstyled">
+<li class="active"><a href="#recentlyVisited" data-toggle="tab">title.recently.visited</a></li>
+<li><a href="#createdByMe" data-toggle="tab">title.createdByMe</a></li>
+<li><a href="#watching" data-toggle="tab">title.watching</a></li>
+<li><a href="#joinmember" data-toggle="tab">title.joinmember</a></li>
+</ul>
+</div>
+<div class="tab-content">
+{}
+{}
+{}
+{}
+</div>
+</div>
+</div>
+</div>"##,
+        render_legacy_usermenu_project_entries(base_path, "recentlyVisited", recent_projects, true),
+        render_legacy_usermenu_project_records(base_path, "watching", &[], false),
+        render_legacy_usermenu_project_records(base_path, "createdByMe", &created_projects, false),
+        render_legacy_usermenu_project_records(base_path, "joinmember", &joined_projects, false)
+    )
+}
+
+fn render_legacy_usermenu_project_entries(
+    base_path: &str,
+    id: &str,
+    projects: &[persistence::ProjectListEntry],
+    active: bool,
+) -> String {
+    if projects.is_empty() {
+        return render_legacy_usermenu_no_result(id, active);
+    }
+
+    let rows = projects
+        .iter()
+        .map(|project| {
+            render_legacy_usermenu_project_item(
+                base_path,
+                &project.owner_name,
+                &project.project_name,
+                "",
+                false,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("");
+    render_legacy_usermenu_list(id, active, &rows)
+}
+
+fn render_legacy_usermenu_project_records(
+    base_path: &str,
+    id: &str,
+    projects: &[persistence::WorkspaceMemberProjectRecord],
+    active: bool,
+) -> String {
+    if projects.is_empty() {
+        return render_legacy_usermenu_no_result(id, active);
+    }
+
+    let rows = projects
+        .iter()
+        .map(|project| {
+            render_legacy_usermenu_project_item(
+                base_path,
+                &project.owner_name,
+                &project.project_name,
+                &project.project_scope,
+                false,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("");
+    render_legacy_usermenu_list(id, active, &rows)
+}
+
+fn render_legacy_usermenu_recent_issues(
+    base_path: &str,
+    recent_issues: &[WorkspaceIssueItem],
+) -> String {
+    format!(
+        r#"<div>
+<div class="search-result">
+<div class="tab-pane myproject-list-wrap" >
+<div class="group">
+<input class="search-input project-search" type="text" id="query" autocomplete="off" placeholder="title.type.name">
+<span class="bar"></span>
+</div>
+<div class="tab-content">
+{}
+</div>
+</div>
+</div>
+</div>"#,
+        render_legacy_usermenu_issue_entries(
+            base_path,
+            "recentlyVisitedIssues",
+            recent_issues,
+            true
+        )
+    )
+}
+
+fn render_legacy_usermenu_issue_entries(
+    base_path: &str,
+    id: &str,
+    issues: &[WorkspaceIssueItem],
+    active: bool,
+) -> String {
+    if issues.is_empty() {
+        return render_legacy_usermenu_no_result(id, active);
+    }
+
+    let rows = issues
+        .iter()
+        .map(|issue| {
+            let path = format!(
+                "/{}/{}/issue/{}",
+                issue.owner_name, issue.project_name, issue.issue_number
+            );
+            let href = base_path_href(base_path, &path);
+            format!(
+                r##"<li class="user-li " data-location="{}">
+<div class="project-list project-flex-container" data-toggle='popover' data-trigger="hover" data-placement="right" data-content="#{}">
+<div class="project-item project-item-container">
+<div class="issue-item projectName-owner flex-item">
+<div class="issue-title-start">-</div><div class="issue-title flex-item"><a href="{}">{}</a></div>
+</div>
+</div>
+</div>
+</li>"##,
+                escape_html_attr(&href),
+                issue.issue_number,
+                escape_html_attr(&href),
+                escape_html_text(&issue.title)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("");
+    render_legacy_usermenu_list(id, active, &rows)
+}
+
+fn render_legacy_usermenu_project_item(
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    project_scope: &str,
+    favored: bool,
+) -> String {
+    let path = format!("/{owner_name}/{project_name}");
+    let href = base_path_href(base_path, &path);
+    let lock_icon = if normalize_identifier(project_scope) == "private" {
+        r#" <i class="yobicon-lock yobicon-small"></i>"#
+    } else {
+        ""
+    };
+    let star_class = if favored { "starred" } else { "" };
+    format!(
+        r#"<li class="user-li " data-location="{}">
+<div class="project-list project-flex-container">
+<div class="project-item project-item-container">
+<div class="flex-item site-logo"><i class="project-avatar"><span class="dummy-25px"> </span></i></div>
+<div class="projectName-owner flex-item">
+<div class="project-name flex-item"><a href="{}">{}{}</a></div>
+<div class="project-owner flex-item"><a href="{}">{}</a></div>
+</div>
+</div>
+<div class="star-project flex-item" data-project-id="">
+<i class="star {} material-icons">star</i>
+</div>
+</div>
+</li>"#,
+        escape_html_attr(&href),
+        escape_html_attr(&href),
+        escape_html_text(project_name),
+        lock_icon,
+        escape_html_attr(&base_path_href(base_path, &format!("/{owner_name}"))),
+        escape_html_text(owner_name),
+        star_class
+    )
+}
+
+fn render_legacy_usermenu_no_result(id: &str, active: bool) -> String {
+    format!(
+        r#"<div id="{}" class="no-result tab-pane user-ul {}">title.no.results</div>"#,
+        escape_html_attr(id),
+        if active { "active" } else { "" }
+    )
+}
+
+fn render_legacy_usermenu_list(id: &str, active: bool, rows: &str) -> String {
+    format!(
+        r#"<ul class="tab-pane user-ul {}" id="{}">
+{}
+</ul>"#,
+        if active { "active" } else { "" },
+        escape_html_attr(id),
+        rows
+    )
 }
 
 async fn direct_set_default_login_page(

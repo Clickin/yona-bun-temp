@@ -325,6 +325,7 @@ GET   /user/email/confirm/:id/:token     → 이메일 인증 확인
 POST  /user/resetPassword       → 비밀번호 변경
 POST  /user/resetVisitedList    → 방문 기록 초기화
 POST  /user/defultLoginPage     → 기본 랜딩 페이지 설정
+GET   /user/usermenuTabContentList → global user menu tab fragment
 GET   /notification             → 알림 목록
 POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
 ```
@@ -1415,6 +1416,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/:user`                           | GET      | `GET /api/v1/users/:loginId/profile`; `GET /api/v1/users/:loginId/statistics` | `$user/`                                      | implemented        |
 | `/:user`                           | POST     | `POST /api/v1/site/users/:loginId/password/reset` | `sites/$pageName` action modal                | implemented        |
 | `/user/editform`                   | GET      | SPA                                   | `user/editform/`                              | implemented        |
+| `/user/usermenuTabContentList`     | GET      | direct legacy HTML fragment           | global user menu tab content                  | implemented        |
 | `/user/editform/token_reset`       | POST     | direct workspace API token reset      | `user/editform/token`                         | implemented        |
 | `/user/edit`                       | POST     | direct workspace profile mutation     | `user/editform`                               | implemented        |
 | `/user/resetVisitedList`           | POST     | direct workspace visited reset        | `user/editform`                               | implemented        |
