@@ -311,6 +311,16 @@ fn login_ids(payload: &Value) -> Vec<String> {
         .collect()
 }
 
+fn response_location(response: &Response<Body>) -> String {
+    response
+        .headers()
+        .get(http::header::LOCATION)
+        .expect("location header")
+        .to_str()
+        .expect("location utf8")
+        .to_string()
+}
+
 #[tokio::test]
 async fn site_admin_no_avatar_json_routes_follow_legacy_contract() {
     let (app, repo, db) = build_app_with_repository().await;
@@ -438,6 +448,141 @@ async fn site_admin_no_avatar_json_routes_follow_legacy_contract() {
     )
     .await;
     assert!(!login_ids(&after_promote).contains(&"plain".to_string()));
+}
+
+#[tokio::test]
+async fn site_admin_direct_mutation_aliases_follow_legacy_routes() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
+    let (_deletee_csrf, _deletee_cookie, deletee_id) = register_user(app.clone(), "deletee").await;
+    mark_site_admin(&db, admin_id).await;
+
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &member_csrf,
+        "member",
+        "legacy-delete-project",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("member", "legacy-delete-project")
+        .await
+        .expect("read legacy delete project")
+        .expect("legacy delete project");
+
+    let forbidden_toggle = rest_post(
+        app.clone(),
+        "/yona/sites/toggleSiteAdminRole/siteboss",
+        Some(&member_cookie),
+        Some(&member_csrf),
+    )
+    .await;
+    assert_eq!(forbidden_toggle.status(), StatusCode::FORBIDDEN);
+
+    let promoted = rest_post(
+        app.clone(),
+        "/yona/sites/toggleSiteAdminRole/member",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+    )
+    .await;
+    assert_eq!(promoted.status(), StatusCode::SEE_OTHER);
+    assert_eq!(response_location(&promoted), "/yona/sites/userList");
+    assert!(
+        repo.find_user_by_login_id("member")
+            .await
+            .expect("read promoted member")
+            .expect("promoted member")
+            .is_site_admin
+    );
+
+    let locked = rest_post(
+        app.clone(),
+        "/yona/sites/toggleAccountLock?loginId=member&state=ACTIVE&query=mem",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+    )
+    .await;
+    assert_eq!(locked.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response_location(&locked),
+        "/yona/sites/userList?state=ACTIVE&query=mem"
+    );
+    assert!(
+        !repo
+            .find_user_by_login_id("member")
+            .await
+            .expect("read locked member")
+            .expect("locked member")
+            .is_confirmed
+    );
+
+    let guest = rest_post(
+        app.clone(),
+        "/yona/sites/toggleGuestMode?loginId=member&state=LOCKED&query=mem",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+    )
+    .await;
+    assert_eq!(guest.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response_location(&guest),
+        "/yona/sites/userList?state=LOCKED&query=mem"
+    );
+    assert_eq!(
+        user(
+            &response_json(
+                rest_get(
+                    app.clone(),
+                    "/yona/api/v1/site/users?state=GUEST",
+                    Some(&admin_cookie),
+                )
+                .await,
+            )
+            .await,
+            "member",
+        )["id"]
+            .as_i64(),
+        Some(member_id)
+    );
+
+    let deleted_user = rest_delete(
+        app.clone(),
+        &format!("/yona/sites/user/delete{deletee_id}"),
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+    )
+    .await;
+    assert_eq!(deleted_user.status(), StatusCode::SEE_OTHER);
+    assert_eq!(response_location(&deleted_user), "/yona/sites/userList");
+    assert_eq!(
+        repo.find_user_by_login_id("deletee")
+            .await
+            .expect("read deleted user")
+            .expect("deleted user")
+            .is_confirmed,
+        false
+    );
+
+    let deleted_project = rest_delete(
+        app.clone(),
+        &format!("/yona/sites/project/delete/{}", project.id),
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+    )
+    .await;
+    assert_eq!(deleted_project.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response_location(&deleted_project),
+        "/yona/sites/projectList"
+    );
+    assert!(repo
+        .read_project_by_id(project.id)
+        .await
+        .expect("read deleted project")
+        .is_none());
 }
 
 #[tokio::test]

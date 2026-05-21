@@ -306,6 +306,21 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let site_no_avatar_session_manager = session_manager.clone();
     let site_set_avatar_backend = route_backend.clone();
     let site_set_avatar_session_manager = session_manager.clone();
+    let site_toggle_admin_backend = route_backend.clone();
+    let site_toggle_admin_session_manager = session_manager.clone();
+    let site_toggle_admin_base_path = base_path.clone();
+    let site_toggle_lock_backend = route_backend.clone();
+    let site_toggle_lock_session_manager = session_manager.clone();
+    let site_toggle_lock_base_path = base_path.clone();
+    let site_toggle_guest_backend = route_backend.clone();
+    let site_toggle_guest_session_manager = session_manager.clone();
+    let site_toggle_guest_base_path = base_path.clone();
+    let site_delete_user_backend = route_backend.clone();
+    let site_delete_user_session_manager = session_manager.clone();
+    let site_delete_user_base_path = base_path.clone();
+    let site_delete_project_backend = route_backend.clone();
+    let site_delete_project_session_manager = session_manager.clone();
+    let site_delete_project_base_path = base_path.clone();
     let rest_router = build_rest_router(pilot_service.clone());
 
     let mut base_router = Router::new()
@@ -460,6 +475,87 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         body,
                         site_set_avatar_session_manager.clone(),
                         site_set_avatar_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/toggleSiteAdminRole/{login_id}",
+            post(move |headers: HeaderMap, Path(login_id): Path<String>| {
+                async move {
+                    direct_toggle_site_admin_role(
+                        headers,
+                        login_id,
+                        site_toggle_admin_session_manager.clone(),
+                        site_toggle_admin_backend.clone(),
+                        site_toggle_admin_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/toggleAccountLock",
+            post(
+                move |headers: HeaderMap,
+                      Query(query): Query<RestSiteDirectUserMutationQuery>| {
+                    async move {
+                        direct_toggle_site_user_account_lock(
+                            headers,
+                            query,
+                            site_toggle_lock_session_manager.clone(),
+                            site_toggle_lock_backend.clone(),
+                            site_toggle_lock_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/sites/toggleGuestMode",
+            post(
+                move |headers: HeaderMap,
+                      Query(query): Query<RestSiteDirectUserMutationQuery>| {
+                    async move {
+                        direct_toggle_site_user_guest(
+                            headers,
+                            query,
+                            site_toggle_guest_session_manager.clone(),
+                            site_toggle_guest_backend.clone(),
+                            site_toggle_guest_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/sites/user/{*legacy_path}",
+            delete(move |headers: HeaderMap, Path(legacy_path): Path<String>| {
+                async move {
+                    direct_delete_site_user_by_legacy_path(
+                        headers,
+                        legacy_path,
+                        site_delete_user_session_manager.clone(),
+                        site_delete_user_backend.clone(),
+                        site_delete_user_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/project/delete/{project_id}",
+            delete(move |headers: HeaderMap, Path(project_id): Path<i64>| {
+                async move {
+                    direct_delete_site_project(
+                        headers,
+                        project_id,
+                        site_delete_project_session_manager.clone(),
+                        site_delete_project_backend.clone(),
+                        site_delete_project_base_path.clone(),
                     )
                     .await
                 }
@@ -1785,6 +1881,161 @@ async fn direct_set_attachment_to_user_avatar(
     }
 }
 
+async fn direct_toggle_site_admin_role(
+    headers: HeaderMap,
+    login_id: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_toggle_site_user_admin(headers, login_id, service).await {
+        Ok(Json(_)) => redirect_to(&base_path, "/sites/userList"),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_toggle_site_user_account_lock(
+    headers: HeaderMap,
+    query: RestSiteDirectUserMutationQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let login_id = query.login_id.trim().to_string();
+    if login_id.is_empty() {
+        return RestRouteError::bad_request("loginId is required").into_response();
+    }
+    let redirect_path = direct_site_user_list_href(query.state.as_deref(), query.query.as_deref());
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_toggle_site_user_account_lock(headers, login_id, service).await {
+        Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_toggle_site_user_guest(
+    headers: HeaderMap,
+    query: RestSiteDirectUserMutationQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let login_id = query.login_id.trim().to_string();
+    if login_id.is_empty() {
+        return RestRouteError::bad_request("loginId is required").into_response();
+    }
+    let redirect_path = direct_site_user_list_href(query.state.as_deref(), query.query.as_deref());
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_toggle_site_user_guest(headers, login_id, service).await {
+        Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_delete_site_user_by_legacy_path(
+    headers: HeaderMap,
+    legacy_path: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let user_id = match direct_site_user_delete_id(&legacy_path) {
+        Ok(user_id) => user_id,
+        Err(error) => return error.into_response(),
+    };
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    let repository = match rest_require_site_admin_repository(&service, &headers, true).await {
+        Ok(repository) => repository,
+        Err(error) => return error.into_response(),
+    };
+    let user = match repository.find_user_by_id(user_id).await {
+        Ok(Some(user)) => user,
+        Ok(None) => return RestRouteError::not_found("user not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    match repository.delete_site_user(&user.login_id).await {
+        Ok(persistence::SiteUserDeleteResult::Deleted(_)) => {
+            redirect_to(&base_path, "/sites/userList")
+        }
+        Ok(persistence::SiteUserDeleteResult::NotFound) => {
+            RestRouteError::not_found("user not found").into_response()
+        }
+        Ok(persistence::SiteUserDeleteResult::OnlyManager) => RestRouteError::from_connect_error(
+            ConnectError::permission_denied("site.userList.deleteAlert"),
+        )
+        .into_response(),
+        Err(error) => RestRouteError::internal(error.to_string()).into_response(),
+    }
+}
+
+async fn direct_delete_site_project(
+    headers: HeaderMap,
+    project_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_delete_site_project(headers, project_id, service).await {
+        Ok(Json(_)) => redirect_to(&base_path, "/sites/projectList"),
+        Err(error) => error.into_response(),
+    }
+}
+
+fn direct_site_user_delete_id(legacy_path: &str) -> Result<i64, RestRouteError> {
+    let Some(candidate) = legacy_path
+        .strip_prefix("delete/")
+        .or_else(|| legacy_path.strip_prefix("delete"))
+    else {
+        return Err(RestRouteError::not_found("user not found"));
+    };
+    candidate
+        .trim()
+        .parse()
+        .map_err(|_| RestRouteError::bad_request("invalid user id"))
+}
+
+fn direct_site_user_list_href(state: Option<&str>, query: Option<&str>) -> String {
+    let mut params = Vec::new();
+    if let Some(state) = state.map(str::trim).filter(|state| !state.is_empty()) {
+        params.push(format!("state={}", percent_encode_uri_component(state)));
+    }
+    if let Some(query) = query.map(str::trim).filter(|query| !query.is_empty()) {
+        params.push(format!("query={}", percent_encode_uri_component(query)));
+    }
+    if params.is_empty() {
+        "/sites/userList".to_string()
+    } else {
+        format!("/sites/userList?{}", params.join("&"))
+    }
+}
+
 fn form_value<'a>(form: &'a HashMap<String, String>, keys: &[&str]) -> &'a str {
     keys.iter()
         .find_map(|key| form.get(*key).map(String::as_str))
@@ -2726,6 +2977,14 @@ struct RestUserStatisticsResponse {
 #[serde(rename_all = "camelCase", default)]
 struct RestSiteUsersQuery {
     page: Option<u32>,
+    query: Option<String>,
+    state: Option<String>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteDirectUserMutationQuery {
+    login_id: String,
     query: Option<String>,
     state: Option<String>,
 }
