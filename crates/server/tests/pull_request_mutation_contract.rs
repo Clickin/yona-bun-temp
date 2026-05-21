@@ -302,6 +302,11 @@ fn seed_bare_repo_with_branches(data_root: &Path, project_id: i64) {
     run_git(&work_path, &["add", "README.md"]);
     run_git(&work_path, &["commit", "-m", "topic"]);
     run_git(&work_path, &["checkout", "main"]);
+    run_git(&work_path, &["checkout", "-b", "topic/conflict"]);
+    write_repo_file(&work_path, "README.md", "conflict\n");
+    run_git(&work_path, &["add", "README.md"]);
+    run_git(&work_path, &["commit", "-m", "conflict"]);
+    run_git(&work_path, &["checkout", "main"]);
     run_git(&work_path, &["checkout", "-b", "topic/direct"]);
     write_repo_file(&work_path, "DIRECT.md", "direct\n");
     run_git(&work_path, &["add", "DIRECT.md"]);
@@ -1132,6 +1137,62 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         git_dir_output(&repo_path, &["show", "refs/heads/topic/direct:DIRECT.md"]),
         "direct\n"
     );
+
+    let conflict_created = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "fromProjectId": project.id,
+                "toProjectId": project.id,
+                "fromBranch": "topic/conflict",
+                "toBranch": "main",
+                "title": "Conflict accept parity",
+                "bodyMarkdown": "Conflict accept body",
+                "attachmentIds": []
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(conflict_created["pullRequestNumber"], 3);
+    let webhook_count_before_conflict_accept = snapshot_test_webhook_outbox().len();
+    let conflict_accept = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/3/accept",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({}),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(conflict_accept["state"], "conflict");
+    assert_eq!(conflict_accept["conflict"], true);
+    assert_eq!(conflict_accept["permissions"]["canUpdateState"], true);
+    assert_eq!(
+        count_rows(&db, "pull_request_event", "PULL_REQUEST_MERGED").await,
+        2
+    );
+    assert_eq!(
+        snapshot_test_webhook_outbox().len(),
+        webhook_count_before_conflict_accept
+    );
+    let repeated_conflict_accept = rest_json(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/3/accept",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        json!({}),
+    )
+    .await;
+    assert_eq!(repeated_conflict_accept.status(), StatusCode::BAD_REQUEST);
 
     create_project(
         app.clone(),

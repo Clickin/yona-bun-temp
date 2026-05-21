@@ -93,9 +93,9 @@
   `merged_commit_id_from`, `merged_commit_id_to`, `last_commit_id`,
   `PULL_REQUEST_MERGED`, notification rows, and the legacy PR merge webhook text
   payload. Branch delete/restore is not implied by accept.
-- If the native merge detects a conflict during accept, the PR is marked conflict
-  and returned without a merge event/webhook; the legacy conflict-resolution help
-  UI remains a follow-up.
+- If the native merge detects a conflict during accept, the PR is marked conflict,
+  merge accept is disabled, visible conflict help is rendered, and no merge
+  event/webhook is emitted. In-app conflict resolution remains deferred.
 
 ## Source Branch Lifecycle Rules
 
@@ -134,7 +134,7 @@
 
 ## Explicit Phase 4 Deferrals
 
-- merge conflict resolution/help UX
+- in-app merge conflict resolution workflow
 - reviewer threshold and reviewer assignment lifecycle
 - multi-line ranged inline review selection polish
 - diff composition and PR event timeline

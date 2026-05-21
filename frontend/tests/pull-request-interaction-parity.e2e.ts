@@ -617,6 +617,34 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   await expect(page.getByRole("heading", { name: "Updated interaction parity" })).toBeVisible();
 });
 
+test("shows legacy conflict guidance and disables merge accept for conflicted pull requests", async ({
+  page,
+}) => {
+  await page.route(
+    apiV1Route("/owners/admin/projects/projectYobi/pull-requests/9"),
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify(
+          detail({
+            conflict: true,
+            state: "conflict",
+          }),
+        ),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+
+  await page.goto("/yona/admin/projectYobi/pullRequest/9");
+  await expect(page.locator(".board-header .pullRequest-stateInfo.conflict")).toBeVisible();
+  await expect(page.locator("#btnAccept")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Merge" })).toBeDisabled();
+  await expect(page.locator(".merge-conflict-help")).toContainText(
+    "pullRequest.conflict.manualResolve",
+  );
+});
+
 test("project pull request form editor inserts pasted and dropped image uploads", async ({
   page,
 }) => {

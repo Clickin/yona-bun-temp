@@ -446,6 +446,8 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain("canDelete");
     expect(pullRequestViewsSource).toContain('id="btnAccept"');
     expect(pullRequestViewsSource).toContain('data-request-method="post"');
+    expect(pullRequestViewsSource).toContain("merge-conflict-help");
+    expect(pullRequestViewsSource).toContain("pullRequest.conflict.manualResolve");
     expect(pullRequestViewsSource).toContain("pull-request-source-branch");
     expect(pullRequestViewsSource).toContain("pullRequest.delete.frombranch.message");
     expect(pullRequestViewsSource).toContain("pullRequest.restore.frombranch.message");

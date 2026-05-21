@@ -595,6 +595,12 @@ h1 {
   background: #fbe9e7;
 }
 
+.merge-conflict-help {
+  flex-basis: 100%;
+  margin: 0;
+  color: #b13427;
+}
+
 .review-list-wrap,
 .comment-thread-wrap {
   margin-top: 18px;

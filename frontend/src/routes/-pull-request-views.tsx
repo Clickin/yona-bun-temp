@@ -720,16 +720,21 @@ function PullRequestActionBar(props: {
             Merge
           </a>
         ) : (
-          <button
-            className="ybtn ybtn-disabled"
-            data-placement="top"
-            data-toggle="tooltip"
-            disabled
-            title={pr.conflict ? "pullRequest.is.not.safe" : "pullRequest.merge.disabled"}
-            type="button"
-          >
-            Merge
-          </button>
+          <>
+            <button
+              className="ybtn ybtn-disabled"
+              data-placement="top"
+              data-toggle="tooltip"
+              disabled
+              title={pr.conflict ? "pullRequest.is.not.safe" : "pullRequest.merge.disabled"}
+              type="button"
+            >
+              Merge
+            </button>
+            {pr.conflict ? (
+              <p className="merge-conflict-help">pullRequest.conflict.manualResolve</p>
+            ) : null}
+          </>
         )
       ) : null}
     </div>
