@@ -11,6 +11,7 @@
 - General PR review comment creation
 - Single-line ranged PR review comment creation/edit/deletion
 - Review-thread list/filter semantics plus open/close mutation
+- PR watcher projection
 - Full pull-request/review parity는 주장하지 않는다
 
 ## Legacy Sources
@@ -86,6 +87,10 @@
 - PR detail now projects legacy reviewer threshold state from project settings
   as `requiredReviewerCount`, `lackingReviewerCount`, and `reviewed`, and the
   frontend exposes a `reviewer-status` anchor beside the reviewer list.
+- PR detail watcher projection follows `PullRequestTest.getWatchers_*`: the
+  contributor, explicit PR watchers, target project watchers, and review comment
+  authors count as watchers; PR-level unwatch removes inherited watchers; users
+  that cannot read a private target project are filtered out.
 
 ## Merge Accept Rules
 
@@ -134,6 +139,7 @@
 | `PullRequestEventTest` | PR creation, state changes, review actions, comments, and thread state changes append legacy event rows | `pull_request_mutation_contract` event assertions |
 | `ReviewApp.review` and `unreview` | reviewers can mark and cancel review state when detail permissions allow it | `/review` and `/unreview` REST mutation contracts plus frontend action controls |
 | `PullRequestTest.testReviewPoint` | required reviewer count follows project default reviewer settings, lacking count decreases after review, and `isReviewed` reflects the threshold | PR detail `requiredReviewerCount`/`lackingReviewerCount`/`reviewed` projection plus reviewer status UI assertions |
+| `PullRequestTest.getWatchers_*` | PR watchers are inherited from contributor, explicit PR watch, target project watch, and review comment authors, with PR unwatch and project read filtering | PR detail `watcherCount`/`isWatching` projection contract in `pull_request_mutation_contract` |
 | `PullRequestApp.newComment` and `CommentThreadApp.open/close` | authenticated readable PR users can add a general review comment; thread owners/reviewers/updaters can close/open threads | review comment and thread state REST mutations plus Playwright interaction smoke |
 | `git/viewChanges.scala.html`, `partial_diff_comment_on_line.scala.html`, `ReviewCommentTest.update`, and `ReviewCommentTest.deleteLastReviewComment` | PR changes can create and edit side-aware line-attached review comments, and deleting the last review comment removes the backing thread | PR changes line form, `path/startLine/endLine/startSide/endSide` REST comment body, PR comment PATCH/DELETE mutations, and mutation/Playwright assertions |
 | `PullRequestEventTest.getPullRequestCommits` and `PullRequest.DELIMETER` | commit-changed PR events carry comma-delimited `PullRequestCommit` ids that resolve back to commit rows | Smart HTTP push contract for `PULL_REQUEST_COMMIT_CHANGED` rows, event `newValue`, notifications, and non-JSON PR webhook |
@@ -145,6 +151,7 @@
 
 - in-app merge conflict resolution workflow
 - reviewer assignment and default-threshold settings lifecycle
+- separate PR watch/unwatch mutation if legacy route/UI evidence requires it
 - multi-line ranged inline review selection polish
 - diff composition and PR event timeline
 - legacy external `/-_-api/v1/**` compatibility

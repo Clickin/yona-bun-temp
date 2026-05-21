@@ -10005,9 +10005,14 @@ impl AppRepository {
         let threads = self.list_pull_request_review_threads(row.id).await?;
         let commits = self.list_pull_request_commits(row.id).await?;
         let events = self.list_pull_request_events(row.id).await?;
-        let watcher_count = self.count_pull_request_watchers(row.id).await?;
+        let watcher_count = self
+            .count_pull_request_watchers(project, row.id, row.contributor_id)
+            .await?;
         let is_watching = match viewer_id {
-            Some(user_id) => self.is_pull_request_watched_by(row.id, user_id).await?,
+            Some(user_id) => {
+                self.is_pull_request_watched_by(project, row.id, row.contributor_id, user_id)
+                    .await?
+            }
             None => false,
         };
 
@@ -11434,12 +11439,17 @@ impl AppRepository {
             .await? as u32)
     }
 
-    async fn count_pull_request_watchers(&self, pull_request_id: i64) -> Result<u32, DbErr> {
-        Ok(watch::Entity::find()
-            .filter(watch::Column::ResourceType.eq(Some("PULL_REQUEST".to_string())))
-            .filter(watch::Column::ResourceId.eq(Some(pull_request_id.to_string())))
-            .count(&self.db)
-            .await? as u32)
+    async fn count_pull_request_watchers(
+        &self,
+        project: &ProjectRecord,
+        pull_request_id: i64,
+        contributor_id: Option<i64>,
+    ) -> Result<u32, DbErr> {
+        Ok(usize_to_u32_saturating(
+            self.pull_request_watcher_ids(project, pull_request_id, contributor_id)
+                .await?
+                .len(),
+        ))
     }
 
     async fn count_posting_watchers(&self, posting_id: i64) -> Result<u32, DbErr> {
@@ -11462,21 +11472,20 @@ impl AppRepository {
 
     async fn is_pull_request_watched_by(
         &self,
+        project: &ProjectRecord,
         pull_request_id: i64,
+        contributor_id: Option<i64>,
         user_id: i64,
     ) -> Result<bool, DbErr> {
-        Ok(watch::Entity::find()
-            .filter(watch::Column::UserId.eq(Some(user_id)))
-            .filter(watch::Column::ResourceType.eq(Some("PULL_REQUEST".to_string())))
-            .filter(watch::Column::ResourceId.eq(Some(pull_request_id.to_string())))
-            .one(&self.db)
+        Ok(self
+            .pull_request_watcher_ids(project, pull_request_id, contributor_id)
             .await?
-            .is_some())
+            .contains(&user_id))
     }
 
     async fn watch_pull_request(&self, pull_request_id: i64, user_id: i64) -> Result<(), DbErr> {
         if self
-            .is_pull_request_watched_by(pull_request_id, user_id)
+            .has_explicit_pull_request_watch(pull_request_id, user_id)
             .await?
         {
             return Ok(());
@@ -11489,6 +11498,136 @@ impl AppRepository {
         }
         .insert(&self.db)
         .await?;
+        Ok(())
+    }
+
+    async fn has_explicit_pull_request_watch(
+        &self,
+        pull_request_id: i64,
+        user_id: i64,
+    ) -> Result<bool, DbErr> {
+        Ok(watch::Entity::find()
+            .filter(watch::Column::UserId.eq(Some(user_id)))
+            .filter(watch::Column::ResourceType.eq(Some("PULL_REQUEST".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(pull_request_id.to_string())))
+            .one(&self.db)
+            .await?
+            .is_some())
+    }
+
+    async fn pull_request_watcher_ids(
+        &self,
+        project: &ProjectRecord,
+        pull_request_id: i64,
+        contributor_id: Option<i64>,
+    ) -> Result<Vec<i64>, DbErr> {
+        let mut user_ids = Vec::new();
+        let mut seen = HashSet::new();
+        self.push_readable_pull_request_watcher_id(
+            project,
+            &mut user_ids,
+            &mut seen,
+            contributor_id,
+        )
+        .await?;
+
+        for user_id in self
+            .active_watch_user_ids("PULL_REQUEST", &pull_request_id.to_string())
+            .await?
+        {
+            self.push_readable_pull_request_watcher_id(
+                project,
+                &mut user_ids,
+                &mut seen,
+                Some(user_id),
+            )
+            .await?;
+        }
+
+        for user_id in self
+            .active_watch_user_ids("PROJECT", &project.id.to_string())
+            .await?
+        {
+            self.push_readable_pull_request_watcher_id(
+                project,
+                &mut user_ids,
+                &mut seen,
+                Some(user_id),
+            )
+            .await?;
+        }
+
+        for user_id in self
+            .pull_request_review_comment_author_ids(pull_request_id)
+            .await?
+        {
+            self.push_readable_pull_request_watcher_id(
+                project,
+                &mut user_ids,
+                &mut seen,
+                Some(user_id),
+            )
+            .await?;
+        }
+
+        let pull_request_unwatchers = self
+            .active_unwatch_user_ids("PULL_REQUEST", &pull_request_id.to_string())
+            .await?
+            .into_iter()
+            .collect::<HashSet<_>>();
+        user_ids.retain(|user_id| !pull_request_unwatchers.contains(user_id));
+        Ok(user_ids)
+    }
+
+    async fn pull_request_review_comment_author_ids(
+        &self,
+        pull_request_id: i64,
+    ) -> Result<Vec<i64>, DbErr> {
+        let thread_ids = comment_thread::Entity::find()
+            .filter(comment_thread::Column::PullRequestId.eq(Some(pull_request_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect::<Vec<_>>();
+        if thread_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let rows = review_comment::Entity::find()
+            .filter(review_comment::Column::ThreadId.is_in(thread_ids.into_iter().map(Some)))
+            .all(&self.db)
+            .await?;
+        Ok(rows.into_iter().filter_map(|row| row.author_id).collect())
+    }
+
+    async fn push_readable_pull_request_watcher_id(
+        &self,
+        project: &ProjectRecord,
+        user_ids: &mut Vec<i64>,
+        seen: &mut HashSet<i64>,
+        user_id: Option<i64>,
+    ) -> Result<(), DbErr> {
+        let Some(user_id) = user_id else {
+            return Ok(());
+        };
+        if seen.contains(&user_id) {
+            return Ok(());
+        }
+        if !self
+            .find_user_model_by_id(user_id)
+            .await?
+            .is_some_and(|user| n4user_is_active(&user))
+        {
+            return Ok(());
+        }
+        if !self
+            .search_project_visible_for_actor(project, Some(user_id))
+            .await?
+        {
+            return Ok(());
+        }
+        seen.insert(user_id);
+        user_ids.push(user_id);
         Ok(())
     }
 

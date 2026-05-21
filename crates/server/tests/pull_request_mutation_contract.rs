@@ -6,6 +6,7 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
@@ -14,6 +15,15 @@ use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;
+
+static YONA_DATA_TEST_LOCK: OnceLock<tokio::sync::Mutex<()>> = OnceLock::new();
+
+async fn lock_yona_data_tests() -> tokio::sync::MutexGuard<'static, ()> {
+    YONA_DATA_TEST_LOCK
+        .get_or_init(|| tokio::sync::Mutex::new(()))
+        .lock()
+        .await
+}
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -266,6 +276,44 @@ async fn count_project_pushed_branch(
     rows.len() as u64
 }
 
+async fn insert_resource_watch(
+    db: &DatabaseConnection,
+    user_id: i64,
+    resource_type: &str,
+    resource_id: i64,
+) {
+    db.execute(Statement::from_sql_and_values(
+        db.get_database_backend(),
+        "INSERT INTO watch (user_id, resource_type, resource_id) VALUES (?, ?, ?)",
+        vec![
+            user_id.into(),
+            resource_type.to_string().into(),
+            resource_id.to_string().into(),
+        ],
+    ))
+    .await
+    .expect("insert watch row");
+}
+
+async fn insert_resource_unwatch(
+    db: &DatabaseConnection,
+    user_id: i64,
+    resource_type: &str,
+    resource_id: i64,
+) {
+    db.execute(Statement::from_sql_and_values(
+        db.get_database_backend(),
+        "INSERT INTO unwatch (user_id, resource_type, resource_id) VALUES (?, ?, ?)",
+        vec![
+            user_id.into(),
+            resource_type.to_string().into(),
+            resource_id.to_string().into(),
+        ],
+    ))
+    .await
+    .expect("insert unwatch row");
+}
+
 fn write_repo_file(repo_path: &Path, relative_path: &str, contents: &str) {
     let path = repo_path.join(relative_path);
     if let Some(parent) = path.parent() {
@@ -318,7 +366,182 @@ fn seed_bare_repo_with_branches(data_root: &Path, project_id: i64) {
 }
 
 #[tokio::test]
+async fn pull_request_watcher_projection_matches_legacy_get_watchers() {
+    let _yona_data_guard = lock_yona_data_tests().await;
+    let data_root = temp_path("watchers-data");
+    fs::create_dir_all(&data_root).unwrap();
+    std::env::set_var("YONA_DATA", &data_root);
+    clear_test_webhook_outbox();
+
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "watchowner").await;
+    let (commenter_csrf, commenter_cookie, _) = register_user(app.clone(), "watchcommenter").await;
+    let (_, project_watcher_cookie, project_watcher_id) =
+        register_user(app.clone(), "projectwatcher").await;
+    let (_, _, explicit_watcher_id) = register_user(app.clone(), "explicitwatcher").await;
+    let (_, _, private_outsider_id) = register_user(app.clone(), "privateoutsider").await;
+
+    create_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "watchowner",
+        "watchPublic",
+        "public",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("watchowner", "watchPublic")
+        .await
+        .unwrap()
+        .expect("public project");
+    seed_bare_repo_with_branches(&data_root, project.id);
+
+    let created = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/watchowner/projects/watchPublic/pull-requests",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "fromProjectId": project.id,
+                "toProjectId": project.id,
+                "fromBranch": "topic/pr",
+                "toBranch": "main",
+                "title": "Watcher projection parity",
+                "bodyMarkdown": "Watcher projection body"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let pull_request_id = created["id"].as_i64().unwrap();
+    assert_eq!(created["watcherCount"], 1);
+    assert_eq!(created["isWatching"], true);
+
+    insert_resource_watch(&db, project_watcher_id, "PROJECT", project.id).await;
+    let with_project_watcher = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/watchowner/projects/watchPublic/pull-requests/1",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(with_project_watcher["watcherCount"], 2);
+    let project_watcher_detail = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/watchowner/projects/watchPublic/pull-requests/1",
+            Some(&project_watcher_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(project_watcher_detail["isWatching"], true);
+
+    let commented = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/watchowner/projects/watchPublic/pull-requests/1/comments",
+            Some(&commenter_cookie),
+            Some(&commenter_csrf),
+            json!({
+                "contentsMarkdown": "Comment author watches by participation",
+                "commitId": "topic-head"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(commented["watcherCount"], 3);
+
+    insert_resource_watch(&db, explicit_watcher_id, "PULL_REQUEST", pull_request_id).await;
+    let with_explicit_watcher = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/watchowner/projects/watchPublic/pull-requests/1",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(with_explicit_watcher["watcherCount"], 4);
+
+    insert_resource_unwatch(&db, project_watcher_id, "PULL_REQUEST", pull_request_id).await;
+    let after_unwatch = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/watchowner/projects/watchPublic/pull-requests/1",
+            Some(&project_watcher_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(after_unwatch["watcherCount"], 3);
+    assert_eq!(after_unwatch["isWatching"], false);
+
+    create_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "watchowner",
+        "watchPrivate",
+        "private",
+    )
+    .await;
+    let private_project = repo
+        .read_project_by_owner_and_name("watchowner", "watchPrivate")
+        .await
+        .unwrap()
+        .expect("private project");
+    seed_bare_repo_with_branches(&data_root, private_project.id);
+    let private_created = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/watchowner/projects/watchPrivate/pull-requests",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "fromProjectId": private_project.id,
+                "toProjectId": private_project.id,
+                "fromBranch": "topic/pr",
+                "toBranch": "main",
+                "title": "Private watcher filtering",
+                "bodyMarkdown": "Private watcher body"
+            }),
+        )
+        .await,
+    )
+    .await;
+    insert_resource_watch(
+        &db,
+        private_outsider_id,
+        "PULL_REQUEST",
+        private_created["id"].as_i64().unwrap(),
+    )
+    .await;
+    let private_detail = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/owners/watchowner/projects/watchPrivate/pull-requests/1",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(private_detail["watcherCount"], 1);
+
+    fs::remove_dir_all(data_root).unwrap();
+}
+
+#[tokio::test]
 async fn pull_request_interaction_surface_mutates_state_review_comments_threads_and_events() {
+    let _yona_data_guard = lock_yona_data_tests().await;
     let data_root = temp_path("data");
     fs::create_dir_all(&data_root).unwrap();
     std::env::set_var("YONA_DATA", &data_root);

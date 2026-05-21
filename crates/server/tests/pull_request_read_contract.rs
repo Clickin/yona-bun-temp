@@ -696,8 +696,8 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         comment_html.contains("<code>&lt;script&gt;alert(1)&lt;/script&gt; @reviewer #1</code>"),
         "{comment_html}"
     );
-    assert_eq!(detail["watcherCount"], 1);
-    assert_eq!(detail["isWatching"], false);
+    assert_eq!(detail["watcherCount"], 2);
+    assert_eq!(detail["isWatching"], true);
     assert_eq!(detail["permissions"]["canRead"], true);
     assert_eq!(detail["permissions"]["canReadChanges"], true);
     assert_eq!(detail["permissions"]["canComment"], true);
