@@ -118,7 +118,8 @@
 - Phase 4E+ partial: Smart HTTP pushes to open PR source branches now persist `pull_request_commit` rows, append `PULL_REQUEST_COMMIT_CHANGED` events/notifications, and fan out the legacy non-JSON PR webhook payload. Verification: `smart_http_contract`.
 - Phase 4E+ partial: PR detail watcher projection now follows legacy `PullRequestTest.getWatchers_*` semantics for contributor, explicit PR watchers, target project watchers, review comment authors, PR-level unwatch, and project READ filtering. Verification: `pull_request_mutation_contract`.
 - Phase 4E+ partial: PR notification receivers now include review comment authors through the same legacy `PullRequest.getWatchers()` participation rule and active users mentioned in the PR body through legacy `getDefaultReceivers(PullRequest)`, while broader PR/review mail delivery hardening remains notification follow-up scope. Verification: `pull_request_mutation_contract`.
-- Phase 4E+ deferred: in-app merge conflict resolution workflow, multi-line selection polish, per-PR reviewer assignment lifecycle, separate PR watch mutation if legacy evidence requires it, and legacy external `/-_-api/v1/**` compatibility for migrator scope.
+- Phase 4E+ partial: legacy generated routes expose no separate per-PR reviewer assignment endpoint; `ReviewApp.review`/`unreview` is the reviewer lifecycle, so the Rust review/unreview mutation plus reviewer threshold projection/settings cover that surface.
+- Phase 4E+ deferred: in-app merge conflict resolution workflow, multi-line selection polish, separate PR watch mutation if legacy evidence requires it, and legacy external `/-_-api/v1/**` compatibility for migrator scope.
 - Progress checkpoint after Phase 5A baseline and Phase 4A read surface: full legacy parity ~42%, current first-priority conversion scope ~49%, mechanical SPEC row count ~33%.
 
 ## Phase 5: 검색, 보드, 알림, 연동

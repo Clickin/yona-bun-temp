@@ -146,6 +146,7 @@
 | `PullRequestEventTest` | PR creation, state changes, review actions, comments, and thread state changes append legacy event rows | `pull_request_mutation_contract` event assertions |
 | `ReviewApp.review` and `unreview` | reviewers can mark and cancel review state when detail permissions allow it | `/review` and `/unreview` REST mutation contracts plus frontend action controls |
 | `Project.defaultReviewerCount`, `Project.isUsingReviewerCount`, `Project.getMaxNumberOfRequiredReviewerCount`, `project/setting.scala.html`, and `PullRequestTest.testReviewPoint` | project settings choose whether reviewer count is used, default reviewer count starts at 1, the count selector is bounded by project member count with minimum 1, required reviewer count follows project default reviewer settings, lacking count decreases after review, and `isReviewed` reflects the threshold | `/api/v1/owners/:owner/projects/:project/settings` `defaultReviewerCount`/`isUsingReviewerCount`/`maxReviewerCount`, legacy settings anchors, PR detail `requiredReviewerCount`/`lackingReviewerCount`/`reviewed` projection, and reviewer status UI assertions |
+| `routes_routing.scala` PR route block and `ReviewApp.review`/`unreview` bytecode | legacy has no separate per-PR reviewer assignment route; reviewer membership changes only when the current user reviews or unreviews | the prior per-PR reviewer assignment gap is reclassified as covered by the implemented review/unreview lifecycle |
 | `PullRequestTest.getWatchers_*` | PR watchers are inherited from contributor, explicit PR watch, target project watch, and review comment authors, with PR unwatch and project read filtering | PR detail `watcherCount`/`isWatching` projection contract in `pull_request_mutation_contract` |
 | `NotificationEvent.afterNewPullRequest`, `NotificationEvent.afterPullRequestUpdated`, and `getDefaultReceivers(PullRequest)` | PR notifications use the PR watcher set plus PR body mentioned users | PR notification receiver contract in `pull_request_mutation_contract` |
 | `PullRequestApp.newComment` and `CommentThreadApp.open/close` | authenticated readable PR users can add a general review comment; thread owners/reviewers/updaters can close/open threads | review comment and thread state REST mutations plus Playwright interaction smoke |
@@ -158,7 +159,6 @@
 ## Explicit Phase 4 Deferrals
 
 - in-app merge conflict resolution workflow
-- per-PR reviewer assignment lifecycle
 - separate PR watch/unwatch mutation if legacy route/UI evidence requires it
 - multi-line ranged inline review selection polish
 - diff composition and PR event timeline
