@@ -873,6 +873,12 @@ export function ProjectPullRequestDetailPage(props: {
           />
           <section id="reviewers" className="review-list-wrap">
             <h2>Reviewers</h2>
+            <p className={`reviewer-status ${pr.reviewed ? "reviewed" : "lacking"}`}>
+              {`pullRequest.review.required ${pr.reviewers.length}/${pr.requiredReviewerCount}`}
+              {pr.reviewed
+                ? " pullRequest.review.complete"
+                : ` pullRequest.review.lacking ${pr.lackingReviewerCount}`}
+            </p>
             {pr.reviewers.length === 0 ? (
               <div className="warning-none">pullRequest.reviewers.empty</div>
             ) : (

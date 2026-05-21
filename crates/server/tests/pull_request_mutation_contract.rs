@@ -343,6 +343,15 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         .await
         .unwrap()
         .expect("project");
+    db.execute(Statement::from_string(
+        db.get_database_backend(),
+        format!(
+            "UPDATE project SET default_reviewer_count = 1, is_using_reviewer_count = 1 WHERE id = {}",
+            project.id
+        ),
+    ))
+    .await
+    .expect("set reviewer threshold");
     repo.add_project_membership(project.id, reviewer_id, "member")
         .await
         .unwrap();
@@ -446,6 +455,9 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert_eq!(created["pullRequestNumber"], 1);
     assert_eq!(created["title"], "Interaction parity");
     assert_eq!(created["state"], "open");
+    assert_eq!(created["requiredReviewerCount"], 1);
+    assert_eq!(created["lackingReviewerCount"], 1);
+    assert_eq!(created["reviewed"], false);
     assert_eq!(created["events"][0]["eventType"], "NEW_PULL_REQUEST");
     assert_eq!(created["contributor"]["userId"], owner_id);
     assert_eq!(created["receiver"]["userId"], owner_id);
@@ -568,6 +580,9 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         .unwrap()
         .iter()
         .any(|reviewer| reviewer["loginId"] == "reviewer"));
+    assert_eq!(reviewed["requiredReviewerCount"], 1);
+    assert_eq!(reviewed["lackingReviewerCount"], 0);
+    assert_eq!(reviewed["reviewed"], true);
     assert_eq!(
         reviewed["events"].as_array().unwrap().last().unwrap()["eventType"],
         "PULL_REQUEST_REVIEW_STATE_CHANGED"
@@ -604,6 +619,9 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         .unwrap()
         .iter()
         .any(|reviewer| reviewer["loginId"] == "reviewer"));
+    assert_eq!(unreviewed["requiredReviewerCount"], 1);
+    assert_eq!(unreviewed["lackingReviewerCount"], 1);
+    assert_eq!(unreviewed["reviewed"], false);
     let deliveries = snapshot_test_webhook_outbox();
     assert_eq!(deliveries.len(), 3);
     let unreviewed_payload: Value =

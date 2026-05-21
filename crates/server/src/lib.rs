@@ -7074,6 +7074,7 @@ struct RestPullRequestDetailResponse {
     from_project_name: String,
     id: i64,
     is_watching: bool,
+    lacking_reviewer_count: u32,
     merged_commit_id_from: String,
     merged_commit_id_to: String,
     owner_name: String,
@@ -7081,6 +7082,8 @@ struct RestPullRequestDetailResponse {
     project_name: String,
     pull_request_number: i64,
     receiver: RestPullRequestUser,
+    required_reviewer_count: u32,
+    reviewed: bool,
     reviewers: Vec<RestPullRequestUser>,
     source_branch_exists: bool,
     state: String,
@@ -28311,6 +28314,7 @@ fn rest_pull_request_detail_from_record_with_issue_references(
         from_project_name: record.from_project_name,
         id: record.id,
         is_watching: record.is_watching,
+        lacking_reviewer_count: record.lacking_reviewer_count,
         merged_commit_id_from: record.merged_commit_id_from,
         merged_commit_id_to: record.merged_commit_id_to,
         owner_name: owner_name.clone(),
@@ -28327,6 +28331,8 @@ fn rest_pull_request_detail_from_record_with_issue_references(
         project_name: project_name.clone(),
         pull_request_number: record.pull_request_number,
         receiver: rest_pull_request_user_from_record(record.receiver),
+        required_reviewer_count: record.required_reviewer_count,
+        reviewed: record.reviewed,
         reviewers: record
             .reviewers
             .into_iter()

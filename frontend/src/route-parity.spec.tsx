@@ -444,6 +444,9 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain("review-comment-edit-form");
     expect(pullRequestViewsSource).toContain("line-comment-trigger");
     expect(pullRequestViewsSource).toContain("canDelete");
+    expect(pullRequestViewsSource).toContain("reviewer-status");
+    expect(pullRequestViewsSource).toContain("pullRequest.review.required");
+    expect(pullRequestViewsSource).toContain("pullRequest.review.lacking");
     expect(pullRequestViewsSource).toContain('id="btnAccept"');
     expect(pullRequestViewsSource).toContain('data-request-method="post"');
     expect(pullRequestViewsSource).toContain("merge-conflict-help");

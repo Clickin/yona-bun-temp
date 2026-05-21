@@ -606,6 +606,19 @@ h1 {
   margin-top: 18px;
 }
 
+.reviewer-status {
+  margin: 0 0 8px;
+  color: #666;
+}
+
+.reviewer-status.lacking {
+  color: #b13427;
+}
+
+.reviewer-status.reviewed {
+  color: #2f6f36;
+}
+
 .review-card {
   padding: 12px 0;
   border-bottom: 1px solid #e5e5e5;

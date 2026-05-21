@@ -717,8 +717,10 @@ fn review_thread_closed_condition() -> Condition {
 #[derive(Debug, FromQueryResult)]
 struct ProjectRow {
     created_date: Option<DateTime>,
+    default_reviewer_count: Option<i32>,
     id: i64,
     is_code_accessible_member_only: Option<i16>,
+    is_using_reviewer_count: Option<i16>,
     last_pushed_date: Option<DateTime>,
     name: Option<String>,
     original_project_id: Option<i64>,
@@ -1171,8 +1173,10 @@ impl AppRepository {
         let rows = project::Entity::find()
             .select_only()
             .column(project::Column::CreatedDate)
+            .column(project::Column::DefaultReviewerCount)
             .column(project::Column::Id)
             .column(project::Column::IsCodeAccessibleMemberOnly)
+            .column(project::Column::IsUsingReviewerCount)
             .column(project::Column::LastPushedDate)
             .column(project::Column::Name)
             .column(project::Column::OriginalProjectId)
@@ -4839,8 +4843,10 @@ impl AppRepository {
         let rows = project::Entity::find()
             .select_only()
             .column(project::Column::CreatedDate)
+            .column(project::Column::DefaultReviewerCount)
             .column(project::Column::Id)
             .column(project::Column::IsCodeAccessibleMemberOnly)
+            .column(project::Column::IsUsingReviewerCount)
             .column(project::Column::LastPushedDate)
             .column(project::Column::Name)
             .column(project::Column::OriginalProjectId)
@@ -9636,8 +9642,10 @@ impl AppRepository {
 
         Ok(Some(ProjectRecord {
             created_date: row.created_date,
+            default_reviewer_count: row.default_reviewer_count.unwrap_or_default().max(0) as u32,
             is_code_accessible_member_only: row.is_code_accessible_member_only.unwrap_or_default()
                 != 0,
+            is_using_reviewer_count: row.is_using_reviewer_count.unwrap_or_default() != 0,
             last_pushed_date: row.last_pushed_date,
             id: row.id,
             original_project_id: row.original_project_id,
@@ -9673,10 +9681,12 @@ impl AppRepository {
 
         Ok(Some(ProjectRecord {
             created_date: model.created_date,
+            default_reviewer_count: model.default_reviewer_count.unwrap_or_default().max(0) as u32,
             is_code_accessible_member_only: model
                 .is_code_accessible_member_only
                 .unwrap_or_default()
                 != 0,
+            is_using_reviewer_count: model.is_using_reviewer_count.unwrap_or_default() != 0,
             last_pushed_date: model.last_pushed_date,
             id: model.id,
             original_project_id: model.original_project_id,
@@ -9859,6 +9869,13 @@ impl AppRepository {
         let contributor = self.user_record_for_optional_id(row.contributor_id).await?;
         let receiver = self.user_record_for_optional_id(row.receiver_id).await?;
         let reviewers = self.list_pull_request_reviewers(row.id).await?;
+        let required_reviewer_count = if project.is_using_reviewer_count {
+            project.default_reviewer_count
+        } else {
+            0
+        };
+        let lacking_reviewer_count = required_reviewer_count.saturating_sub(reviewers.len() as u32);
+        let reviewed = lacking_reviewer_count == 0;
         let threads = self.list_pull_request_review_threads(row.id).await?;
         let commits = self.list_pull_request_commits(row.id).await?;
         let events = self.list_pull_request_events(row.id).await?;
@@ -9882,12 +9899,15 @@ impl AppRepository {
             from_project_name: list_item.from_project_name,
             id: row.id,
             is_watching,
+            lacking_reviewer_count,
             merged_commit_id_from: row.merged_commit_id_from.unwrap_or_default(),
             merged_commit_id_to: row.merged_commit_id_to.unwrap_or_default(),
             owner_name: project.owner_name.clone(),
             project_name: project.project_name.clone(),
             pull_request_number: list_item.pull_request_number,
             receiver,
+            required_reviewer_count,
+            reviewed,
             reviewers,
             state: list_item.state,
             threads,

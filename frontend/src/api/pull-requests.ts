@@ -136,6 +136,7 @@ export type PullRequestDetailResponse = {
   fromProjectName: string;
   id: number;
   isWatching: boolean;
+  lackingReviewerCount: number;
   mergedCommitIdFrom: string;
   mergedCommitIdTo: string;
   ownerName: string;
@@ -143,6 +144,8 @@ export type PullRequestDetailResponse = {
   projectName: string;
   pullRequestNumber: number;
   receiver: PullRequestUser;
+  requiredReviewerCount: number;
+  reviewed: boolean;
   reviewers: PullRequestUser[];
   sourceBranchExists: boolean;
   state: PullRequestState;
@@ -402,6 +405,7 @@ function normalizeDetail(response: Partial<PullRequestDetailResponse>): PullRequ
     fromProjectName: response.fromProjectName ?? "",
     id: response.id ?? 0,
     isWatching: response.isWatching ?? false,
+    lackingReviewerCount: response.lackingReviewerCount ?? 0,
     mergedCommitIdFrom: response.mergedCommitIdFrom ?? "",
     mergedCommitIdTo: response.mergedCommitIdTo ?? "",
     ownerName: response.ownerName ?? "",
@@ -418,6 +422,8 @@ function normalizeDetail(response: Partial<PullRequestDetailResponse>): PullRequ
     projectName: response.projectName ?? "",
     pullRequestNumber: response.pullRequestNumber ?? 0,
     receiver: normalizeUser(response.receiver),
+    requiredReviewerCount: response.requiredReviewerCount ?? 0,
+    reviewed: response.reviewed ?? false,
     reviewers: (response.reviewers ?? []).map(normalizeUser),
     sourceBranchExists: response.sourceBranchExists ?? false,
     state: response.state ?? "open",

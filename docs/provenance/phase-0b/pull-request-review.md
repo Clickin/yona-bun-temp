@@ -79,6 +79,9 @@
   comments expose edit/delete controls; delete removes the last comment's thread
   like legacy `ReviewComment` deletion tests. Multi-line selection polish remains
   follow-up scope.
+- PR detail now projects legacy reviewer threshold state from project settings
+  as `requiredReviewerCount`, `lackingReviewerCount`, and `reviewed`, and the
+  frontend exposes a `reviewer-status` anchor beside the reviewer list.
 
 ## Merge Accept Rules
 
@@ -126,6 +129,7 @@
 | `PullRequestApp.create`, `newPullRequestForm`, and `editform` | create/edit forms expose from/to project and branch controls while edit keeps branch/project selection immutable | `/api/v1/owners/:owner/projects/:project/pull-requests/*form-options`, frontend form route parity |
 | `PullRequestEventTest` | PR creation, state changes, review actions, comments, and thread state changes append legacy event rows | `pull_request_mutation_contract` event assertions |
 | `ReviewApp.review` and `unreview` | reviewers can mark and cancel review state when detail permissions allow it | `/review` and `/unreview` REST mutation contracts plus frontend action controls |
+| `PullRequestTest.testReviewPoint` | required reviewer count follows project default reviewer settings, lacking count decreases after review, and `isReviewed` reflects the threshold | PR detail `requiredReviewerCount`/`lackingReviewerCount`/`reviewed` projection plus reviewer status UI assertions |
 | `PullRequestApp.newComment` and `CommentThreadApp.open/close` | authenticated readable PR users can add a general review comment; thread owners/reviewers/updaters can close/open threads | review comment and thread state REST mutations plus Playwright interaction smoke |
 | `git/viewChanges.scala.html`, `partial_diff_comment_on_line.scala.html`, `ReviewCommentTest.update`, and `ReviewCommentTest.deleteLastReviewComment` | PR changes can create and edit side-aware line-attached review comments, and deleting the last review comment removes the backing thread | PR changes line form, `path/startLine/endLine/startSide/endSide` REST comment body, PR comment PATCH/DELETE mutations, and mutation/Playwright assertions |
 | `PullRequestApp.newFork`, `fork`, and `git/fork.scala.html` | readable Git projects expose a legacy fork form, validate the selected owner/project name/scope, record fork origin, and clone the source bare repository | `/api/v1/owners/:owner/projects/:project/fork-options`, `/fork`, native `git clone --bare` wrapper, and `newFork` route parity |
@@ -135,7 +139,7 @@
 ## Explicit Phase 4 Deferrals
 
 - in-app merge conflict resolution workflow
-- reviewer threshold and reviewer assignment lifecycle
+- reviewer assignment and default-threshold settings lifecycle
 - multi-line ranged inline review selection polish
 - diff composition and PR event timeline
 - PR commit-changed VCS side effects, commit-changed webhook delivery, and legacy external

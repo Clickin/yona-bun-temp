@@ -47,7 +47,13 @@ const baseThread = {
 };
 
 function detail(overrides: Record<string, unknown> = {}) {
-  return {
+  const reviewers =
+    (overrides.reviewers as
+      | Array<{ loginId: string; userId: number; userLabel: string }>
+      | undefined) ?? [];
+  const requiredReviewerCount = Number(overrides.requiredReviewerCount ?? 1);
+  const lackingReviewerCount = Math.max(requiredReviewerCount - reviewers.length, 0);
+  const response = {
     bodyHtml: "<p>Pull request body</p>",
     bodyMarkdown: "Pull request body",
     commits: [],
@@ -76,7 +82,7 @@ function detail(overrides: Record<string, unknown> = {}) {
     projectName: "projectYobi",
     pullRequestNumber: 9,
     receiver: { loginId: "reviewer", userId: 2, userLabel: "Reviewer" },
-    reviewers: [],
+    reviewers,
     sourceBranchExists: true,
     state: "open",
     threads: [baseThread],
@@ -85,6 +91,13 @@ function detail(overrides: Record<string, unknown> = {}) {
     updatedLabel: "2026-05-02",
     watcherCount: 1,
     ...overrides,
+  };
+  return {
+    ...response,
+    reviewers,
+    requiredReviewerCount,
+    lackingReviewerCount,
+    reviewed: lackingReviewerCount === 0,
   };
 }
 
@@ -503,10 +516,19 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   await expect(page).toHaveURL(/\/yona\/admin\/projectYobi\/pullRequest\/9$/);
 
   await expect(page.locator(".board-header .pullRequest-stateInfo.open")).toBeVisible();
+  await expect(page.locator("#reviewers .reviewer-status.lacking")).toContainText(
+    "pullRequest.review.lacking 1",
+  );
   await expect(page.locator("#reviewers")).toContainText("pullRequest.reviewers.empty");
   await page.getByRole("button", { name: "Review" }).click();
+  await expect(page.locator("#reviewers .reviewer-status.reviewed")).toContainText(
+    "pullRequest.review.complete",
+  );
   await expect(page.locator("#reviewers")).toContainText("Reviewer");
   await page.getByRole("button", { name: "Unreview" }).click();
+  await expect(page.locator("#reviewers .reviewer-status.lacking")).toContainText(
+    "pullRequest.review.lacking 1",
+  );
   await expect(page.locator("#reviewers")).toContainText("pullRequest.reviewers.empty");
 
   await page.locator(".review-form textarea").fill("New review comment");
