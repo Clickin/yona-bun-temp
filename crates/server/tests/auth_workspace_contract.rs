@@ -102,6 +102,14 @@ fn named_cookie<'a>(cookies: &'a [String], name: &str) -> &'a str {
         .unwrap_or_else(|| panic!("missing {name} cookie in {cookies:?}"))
 }
 
+fn cookie_header_from_set_cookie_response(response: &axum::response::Response) -> String {
+    set_cookie_headers(response)
+        .iter()
+        .map(|value| value.split(';').next().unwrap().to_string())
+        .collect::<Vec<_>>()
+        .join("; ")
+}
+
 fn days_ago_datetime(days: u64) -> DateTime {
     DateTimeUtc::from(SystemTime::now() - Duration::from_secs(days * 24 * 60 * 60)).naive_utc()
 }
@@ -424,6 +432,136 @@ async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
         "Password must be at least 8 characters."
     );
     assert_eq!(invalid_json["error"]["status"], 400);
+}
+
+#[tokio::test]
+async fn direct_legacy_login_and_signup_form_routes_accept_form_csrf_redirect_and_authenticate() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+
+    let (app, _, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let signup = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/users/signup")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::from(format!(
+                    "csrfToken={csrf}&loginId=door&name=Door&emailAddress=door%40example.com&password=doorpass1&retypedPassword=doorpass1"
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(signup.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        signup
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/me")
+    );
+    let signup_cookie_header = cookie_header_from_set_cookie_response(&signup);
+    assert!(!signup_cookie_header.is_empty());
+
+    let signed_up_session = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/session")
+                .header(http::header::COOKIE, &signup_cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(signed_up_session.status(), StatusCode::OK);
+    assert!(response_text(signed_up_session)
+        .await
+        .contains("\"loginId\":\"door\""));
+
+    let (login_csrf, login_cookie_header) = bootstrap(app.clone()).await;
+    let login = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/users/login")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .header(http::header::COOKIE, &login_cookie_header)
+                .body(Body::from(format!(
+                    "csrfToken={login_csrf}&loginIdOrEmail=door&password=doorpass1&rememberMe=on&redirectUrl=%2Fprojects"
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(login.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        login
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/projects")
+    );
+    let login_cookie_header = cookie_header_from_set_cookie_response(&login);
+    assert!(!login_cookie_header.is_empty());
+
+    let signed_in_session = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/session")
+                .header(http::header::COOKIE, &login_cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(signed_in_session.status(), StatusCode::OK);
+    assert!(response_text(signed_in_session)
+        .await
+        .contains("\"loginId\":\"door\""));
+
+    let (unsafe_csrf, unsafe_cookie_header) = bootstrap(app.clone()).await;
+    let unsafe_redirect_login = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/users/login")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .header(http::header::COOKIE, &unsafe_cookie_header)
+                .body(Body::from(format!(
+                    "csrfToken={unsafe_csrf}&loginIdOrEmail=door&password=doorpass1&rememberMe=on&redirectUrl=https%3A%2F%2Fevil.example%2Fsteal"
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unsafe_redirect_login.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        unsafe_redirect_login
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/me")
+    );
 }
 
 #[tokio::test]

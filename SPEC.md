@@ -289,6 +289,7 @@ GET   /authenticate/:provider   → OAuth 시작
 
 - [x] `/users/loginform` GET 시 로그인 폼이 legacy와 동일한 레이아웃으로 표시되고 legacy placeholder 설정을 반영한다
 - [x] 로그인 성공 후 `redirectUrl` 파라미터가 있으면 해당 URL로 이동한다 (legacy 동작 동일)
+- [x] legacy direct `POST /users/login`과 `POST /users/signup` form submit은 legacy field name과 hidden `csrfToken`을 받아 세션 쿠키를 갱신하고 성공 redirect를 반환한다
 - [x] 로그인 실패 시 REST/Connect error payload가 legacy Ajax 메시지 키(`user.login.invalid`, `user.login.required`)를 반환한다
 - [x] `rememberMe=true` 로그인은 legacy 30일 유지 세션을 만들고, `rememberMe=false` 로그인은 브라우저 세션으로 남는다
 - [x] `YONA_SESSION_TIMEOUT_SECONDS` 설정 시 non-remember 세션 쿠키와 서버 세션 저장소가 해당 초 단위 타임아웃을 적용하고, remember-me 세션은 legacy 30일 유지 정책을 보존한다
@@ -1399,8 +1400,8 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/`                                | GET      | SPA fallback                          | `__root.tsx`                                  | implemented        |
 | `/users/loginform`                 | GET      | SPA                                   | `legacy-auth/users/loginform`                 | implemented        |
 | `/users/signupform`                | GET      | SPA                                   | `legacy-auth/users/signupform`                | implemented        |
-| `/users/login`                     | POST     | `POST /api/v1/auth/sign-in`           | —                                             | implemented        |
-| `/users/signup`                    | POST     | `POST /api/v1/auth/register`          | —                                             | implemented        |
+| `/users/login`                     | POST     | direct form adapter over `/api/v1/auth/sign-in` | —                                             | implemented        |
+| `/users/signup`                    | POST     | direct form adapter over `/api/v1/auth/register` | —                                             | implemented        |
 | `/user/isUsed`                     | GET      | direct signup Ajax validator          | —                                             | implemented        |
 | `/user/isEmailExist`               | GET      | direct signup Ajax validator          | —                                             | implemented        |
 | `/lostPassword`                    | GET/POST | `POST /lostPassword` direct           | `lostPassword/`                               | implemented        |

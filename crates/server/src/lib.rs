@@ -223,6 +223,14 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let direct_logout_base_path = base_path.clone();
     let direct_user_logout_session_manager = session_manager.clone();
     let direct_user_logout_base_path = base_path.clone();
+    let direct_login_session_manager = session_manager.clone();
+    let direct_login_backend = route_backend.clone();
+    let direct_login_base_path = base_path.clone();
+    let direct_login_public_origin = public_origin.clone();
+    let direct_signup_session_manager = session_manager.clone();
+    let direct_signup_backend = route_backend.clone();
+    let direct_signup_base_path = base_path.clone();
+    let direct_signup_public_origin = public_origin.clone();
     let signup_name_validator_backend = route_backend.clone();
     let signup_email_validator_backend = route_backend.clone();
     let lost_password_session_manager = session_manager.clone();
@@ -394,6 +402,38 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         headers,
                         direct_user_logout_session_manager.clone(),
                         direct_user_logout_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/users/login",
+            post(move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_legacy_login(
+                        headers,
+                        form,
+                        direct_login_session_manager.clone(),
+                        direct_login_backend.clone(),
+                        direct_login_base_path.clone(),
+                        direct_login_public_origin.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/users/signup",
+            post(move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_legacy_signup(
+                        headers,
+                        form,
+                        direct_signup_session_manager.clone(),
+                        direct_signup_backend.clone(),
+                        direct_signup_base_path.clone(),
+                        direct_signup_public_origin.clone(),
                     )
                     .await
                 }
@@ -2055,6 +2095,164 @@ fn headers_with_form_csrf(mut headers: HeaderMap, form: &HashMap<String, String>
         headers.insert("x-csrf-token", value);
     }
     headers
+}
+
+fn legacy_form_checkbox_checked(form: &HashMap<String, String>, key: &str) -> bool {
+    form.get(key)
+        .map(|value| {
+            matches!(
+                value.trim().to_ascii_lowercase().as_str(),
+                "1" | "true" | "yes" | "on" | "checked"
+            )
+        })
+        .unwrap_or(false)
+}
+
+fn has_absolute_url_scheme(value: &str) -> bool {
+    let Some(index) = value.find("://") else {
+        return false;
+    };
+    let scheme = &value[..index];
+    let mut chars = scheme.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    first.is_ascii_alphabetic()
+        && chars.all(|character| {
+            character.is_ascii_alphanumeric() || matches!(character, '+' | '.' | '-')
+        })
+}
+
+fn safe_legacy_auth_redirect_path(value: Option<&String>) -> Option<String> {
+    let trimmed = value?.trim();
+    if trimmed.is_empty()
+        || !trimmed.starts_with('/')
+        || trimmed.starts_with("//")
+        || has_absolute_url_scheme(trimmed)
+    {
+        return None;
+    }
+    Some(trimmed.to_string())
+}
+
+fn post_auth_landing_path(redirect_path: Option<&String>, default_landing_path: &str) -> String {
+    safe_legacy_auth_redirect_path(redirect_path).unwrap_or_else(|| {
+        let trimmed = default_landing_path.trim();
+        if trimmed.is_empty() {
+            "/me".to_string()
+        } else {
+            trimmed.to_string()
+        }
+    })
+}
+
+fn redirect_with_context_headers(base_path: &str, path: &str, ctx: &Context) -> Response {
+    let mut response = Redirect::to(&base_path_href(base_path, path)).into_response();
+    append_response_headers(response.headers_mut(), &ctx.response_headers);
+    response
+}
+
+async fn direct_legacy_login(
+    headers: HeaderMap,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+    public_origin: String,
+) -> Response {
+    let request = SignInWithPasswordRequest {
+        identifier: form
+            .get("loginIdOrEmail")
+            .or_else(|| form.get("loginId"))
+            .cloned()
+            .unwrap_or_default(),
+        password: form.get("password").cloned().unwrap_or_default(),
+        remember_me: legacy_form_checkbox_checked(&form, "rememberMe"),
+        ..Default::default()
+    };
+    let request = match rest_owned_view::<SignInWithPasswordRequestView<'static>>(&request) {
+        Ok(request) => request,
+        Err(error) => return error.into_response(),
+    };
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin,
+        session_manager,
+        backend,
+    };
+    match service
+        .sign_in_with_password(
+            Context::new(headers_with_form_csrf(headers, &form)),
+            request,
+        )
+        .await
+    {
+        Ok((payload, ctx)) => {
+            let redirect_path = post_auth_landing_path(
+                form.get("redirectUrl").or_else(|| form.get("redirect")),
+                &payload.default_landing_path,
+            );
+            redirect_with_context_headers(&base_path, &redirect_path, &ctx)
+        }
+        Err(error) => RestRouteError::from_connect_error(error).into_response(),
+    }
+}
+
+async fn direct_legacy_signup(
+    headers: HeaderMap,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+    public_origin: String,
+) -> Response {
+    let request = RegisterWithPasswordRequest {
+        email_address: form.get("emailAddress").cloned().unwrap_or_default(),
+        login_id: form.get("loginId").cloned().unwrap_or_default(),
+        name: form.get("name").cloned().unwrap_or_default(),
+        password: form.get("password").cloned().unwrap_or_default(),
+        retyped_password: form.get("retypedPassword").cloned().unwrap_or_default(),
+        ..Default::default()
+    };
+    let request = match rest_owned_view::<RegisterWithPasswordRequestView<'static>>(&request) {
+        Ok(request) => request,
+        Err(error) => return error.into_response(),
+    };
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin,
+        session_manager,
+        backend,
+    };
+    match service
+        .register_with_password(
+            Context::new(headers_with_form_csrf(headers, &form)),
+            request,
+        )
+        .await
+    {
+        Ok((payload, ctx)) => {
+            let redirect_path = if payload.is_anonymous {
+                let capabilities = fixed_auth_ui_capabilities();
+                if capabilities.signup_require_confirm {
+                    "/users/loginform?signup=requested"
+                } else if capabilities.email_verification_enabled {
+                    "/users/loginform?verify=sent"
+                } else {
+                    "/users/loginform"
+                }
+            } else {
+                payload.default_landing_path.trim()
+            };
+            let redirect_path = if redirect_path.is_empty() {
+                "/me"
+            } else {
+                redirect_path
+            };
+            redirect_with_context_headers(&base_path, redirect_path, &ctx)
+        }
+        Err(error) => RestRouteError::from_connect_error(error).into_response(),
+    }
 }
 
 async fn direct_update_user_profile(

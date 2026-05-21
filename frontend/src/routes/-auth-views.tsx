@@ -38,12 +38,14 @@ export function resolveAuthRedirectPath(
 
 export function LoginPage({
   authUiCapabilities,
+  csrfToken,
   onSignIn,
   pending,
   routeHref,
   runtimeConfig,
 }: {
   authUiCapabilities?: AuthUiCapabilitiesViewModel | null;
+  csrfToken?: string;
   onSignIn?: (input: { identifier: string; password: string; rememberMe: boolean }) => void;
   pending?: boolean;
   routeHref: string;
@@ -106,6 +108,7 @@ export function LoginPage({
               />
             </label>
             <input name="redirectUrl" type="hidden" value={redirectUrl ?? ""} />
+            <input name="csrfToken" type="hidden" value={csrfToken ?? ""} />
             <label>
               <span>Password</span>
               <input
@@ -150,11 +153,13 @@ export function LoginPage({
 
 export function RegisterPage({
   authUiCapabilities,
+  csrfToken,
   onRegister,
   pending,
   runtimeConfig,
 }: {
   authUiCapabilities?: AuthUiCapabilitiesViewModel | null;
+  csrfToken?: string;
   onRegister?: (input: {
     emailAddress: string;
     loginId: string;
@@ -206,6 +211,7 @@ export function RegisterPage({
                 }
               />
             </label>
+            <input name="csrfToken" type="hidden" value={csrfToken ?? ""} />
             <label>
               <span>Name</span>
               <input

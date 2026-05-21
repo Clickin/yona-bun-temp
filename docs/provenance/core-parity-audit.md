@@ -76,6 +76,7 @@
 
 ## Auth, Route, And Mail Notes
 
+- Direct auth form route parity now includes legacy `POST /users/login` and `POST /users/signup`; both accept no-JS form submissions with hidden `csrfToken`, reuse the app-runtime auth services, attach updated session headers, and keep login `redirectUrl` constrained to safe local paths.
 - Direct auth route parity now includes legacy `GET /users/logout` plus OAuth wrapper `GET /logout`, both clearing the Rust session without CSRF and returning a Referer redirect with a fresh anonymous session cookie.
 - Direct signup Ajax validator parity now includes legacy `GET /user/isUsed` and `GET /user/isEmailExist`; `isUsed` reports login ID, organization-name, and reserved route-word collisions with the legacy `isExist`/`isReserved` JSON shape.
 - Site-admin mail options and outbound SMTP delivery now accept `YONA_SMTP_HOST`, `YONA_SMTP_PORT`, `YONA_SMTP_USER`, and `YONA_SMTP_PASSWORD` as aliases for the existing `SMTP_*` names. `smtp.ssl` semantics and full notification mail batching remain delivery-hardening follow-up scope.

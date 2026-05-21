@@ -33,6 +33,7 @@ function RegisterRouteComponent() {
   return (
     <RegisterPage
       authUiCapabilities={authUiCapabilities}
+      csrfToken={csrfToken}
       pending={pending}
       runtimeConfig={runtimeConfig}
       onRegister={async (input) => {

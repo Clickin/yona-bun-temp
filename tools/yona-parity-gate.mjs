@@ -241,6 +241,7 @@ const DOMAIN_BUCKETS = [
     status: "gap",
     implementationPatterns: [
       /^frontend\/src\/app-runtime-context\.tsx$/i,
+      /^frontend\/src\/routes\/users\/(?:loginform|signupform)\/route\.tsx$/i,
       /^frontend\/.*auth/i,
       /^crates\/(?:server|domain)\/.*(auth|session|password|account)/i,
       /^crates\/persistence\/.*(auth|user|session|workspace)/i,

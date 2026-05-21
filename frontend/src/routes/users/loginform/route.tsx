@@ -34,6 +34,7 @@ function LoginRouteComponent() {
   return (
     <LoginPage
       authUiCapabilities={authUiCapabilities}
+      csrfToken={csrfToken}
       pending={pending}
       routeHref={currentHref}
       runtimeConfig={runtimeConfig}
