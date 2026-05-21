@@ -1779,6 +1779,95 @@ async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspa
 }
 
 #[tokio::test]
+async fn direct_legacy_user_reset_password_route_logs_out_and_accepts_new_password() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+    let (app, _, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let changed_password = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/user/resetPassword")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "loginId=door&oldPassword=doorpass1&password=doorpass2&retypedPassword=doorpass2",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(changed_password.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        changed_password
+            .headers()
+            .get(http::header::LOCATION)
+            .unwrap(),
+        "/yona/users/loginform"
+    );
+    assert!(!set_cookie_headers(&changed_password).is_empty());
+
+    let old_password = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/SignInWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"door\",\"password\":\"doorpass1\",\"rememberMe\":true}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(old_password.status(), StatusCode::UNAUTHORIZED);
+
+    let new_password = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/SignInWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"identifier\":\"door\",\"password\":\"doorpass2\",\"rememberMe\":true}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(new_password.status(), StatusCode::OK);
+}
+
+#[tokio::test]
 async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");

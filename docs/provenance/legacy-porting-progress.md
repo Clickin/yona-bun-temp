@@ -95,7 +95,7 @@ Interpretation:
 - [x] User settings legacy paths under `/user/editform`
 - [x] Default landing direct route (`/user/defultLoginPage`)
 - [x] Email management, including direct delete/set-main routes
-- [x] Password settings
+- [x] Password settings, including direct reset route
 - [x] Token settings
 - [x] Avatar upload/crop/display
 - [x] Watched project notification preference basics

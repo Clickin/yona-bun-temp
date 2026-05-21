@@ -236,6 +236,9 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let reset_visited_base_path = base_path.clone();
     let default_login_page_session_manager = session_manager.clone();
     let default_login_page_backend = route_backend.clone();
+    let change_user_password_session_manager = session_manager.clone();
+    let change_user_password_backend = route_backend.clone();
+    let change_user_password_base_path = base_path.clone();
     let delete_email_session_manager = session_manager.clone();
     let delete_email_backend = route_backend.clone();
     let delete_email_base_path = base_path.clone();
@@ -457,6 +460,21 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         query,
                         default_login_page_session_manager.clone(),
                         default_login_page_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/user/resetPassword",
+            post(move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_change_user_password(
+                        headers,
+                        form,
+                        change_user_password_session_manager.clone(),
+                        change_user_password_backend.clone(),
+                        change_user_password_base_path.clone(),
                     )
                     .await
                 }
@@ -1944,6 +1962,43 @@ async fn direct_set_default_login_page(
         _ => {
             RestRouteError::not_implemented("workspace requires repository backend").into_response()
         }
+    }
+}
+
+async fn direct_change_user_password(
+    headers: HeaderMap,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let body = RestChangePasswordBody {
+        login_id: form.get("loginId").cloned().unwrap_or_default(),
+        old_password: form.get("oldPassword").cloned().unwrap_or_default(),
+        password: form.get("password").cloned().unwrap_or_default(),
+        retyped_password: form.get("retypedPassword").cloned().unwrap_or_default(),
+    };
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_change_password(headers, body, service).await {
+        Ok(rest_response) => {
+            let mut response =
+                Redirect::to(&base_path_href(&base_path, "/users/loginform")).into_response();
+            for value in rest_response.headers().get_all(SET_COOKIE) {
+                response.headers_mut().append(SET_COOKIE, value.clone());
+            }
+            if let Some(csrf_token) = rest_response.headers().get("x-csrf-token") {
+                response
+                    .headers_mut()
+                    .insert("x-csrf-token", csrf_token.clone());
+            }
+            response
+        }
+        Err(error) => error.into_response(),
     }
 }
 
