@@ -138,7 +138,7 @@ Interpretation:
 - [x] Favorite project toggle
 - [x] Recent project visit recording
 - [x] Member list read
-- [x] Full project member management
+- [x] Full project member management, including direct `/info/leave/:owner/:project` self-leave route
 - [x] Project delete confirmation flow
 - [x] Project watchers page
 - [x] Webhook CRUD

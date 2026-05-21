@@ -455,3 +455,53 @@ async fn project_member_self_leave_private_project_does_not_leak_directory() {
         .expect("project member lookup")
         .is_none());
 }
+
+#[tokio::test]
+async fn direct_legacy_info_leave_route_removes_current_user_and_redirects_to_profile_projects() {
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf).await;
+    let project = repository
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .expect("project lookup")
+        .expect("project exists");
+
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/members",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({ "loginId": "member" })),
+        )
+        .await,
+    )
+    .await;
+
+    let legacy_leave = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/info/leave/owner/projectYobi")
+                .header(http::header::COOKIE, &member_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(legacy_leave.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        legacy_leave.headers().get(http::header::LOCATION).unwrap(),
+        "/yona/member?daysAgo=14&selected=projects"
+    );
+    assert!(project_user::Entity::find()
+        .filter(project_user::Column::ProjectId.eq(Some(project.id)))
+        .filter(project_user::Column::UserId.eq(Some(member_id)))
+        .one(&db)
+        .await
+        .expect("project member lookup")
+        .is_none());
+}

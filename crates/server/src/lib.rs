@@ -261,6 +261,9 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let confirm_email_session_manager = session_manager.clone();
     let confirm_email_backend = route_backend.clone();
     let confirm_email_base_path = base_path.clone();
+    let info_leave_session_manager = session_manager.clone();
+    let info_leave_backend = route_backend.clone();
+    let info_leave_base_path = base_path.clone();
     let file_session_manager = session_manager.clone();
     let file_backend = route_backend.clone();
     let file_base_path = base_path.clone();
@@ -596,6 +599,25 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     .await
                 }
             }),
+        )
+        .route(
+            "/info/leave/{owner_name}/{project_name}",
+            get(
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>| {
+                    async move {
+                        direct_legacy_leave_project(
+                            headers,
+                            owner_name,
+                            project_name,
+                            info_leave_session_manager.clone(),
+                            info_leave_backend.clone(),
+                            info_leave_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
         )
         .route(
             "/files",
@@ -2551,6 +2573,50 @@ async fn direct_legacy_logout(
     let mut response = Redirect::to(&redirect_target).into_response();
     append_response_headers(response.headers_mut(), &ctx.response_headers);
     response
+}
+
+async fn direct_legacy_leave_project(
+    mut headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let login_redirect = base_path_href(
+        &base_path,
+        "/users/loginform?redirectUrl=%2Fuser%2Feditform",
+    );
+    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+        return Redirect::to(&login_redirect).into_response();
+    };
+    let Some(user_id) = session.user_id else {
+        return Redirect::to(&login_redirect).into_response();
+    };
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("project leave requires repository backend")
+            .into_response();
+    };
+    let user = match repository.find_user_by_id(user_id).await {
+        Ok(Some(user)) => user,
+        Ok(None) => return RestRouteError::not_found("user not found").into_response(),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    headers.insert(
+        "x-csrf-token",
+        HeaderValue::from_str(&session.csrf_token).expect("csrf token header"),
+    );
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    let _ = rest_delete_project_member(headers, owner_name, project_name, user_id, service).await;
+    redirect_to(
+        &base_path,
+        &format!("/{}?daysAgo=14&selected=projects", user.login_id),
+    )
 }
 
 async fn direct_toggle_site_admin_role(

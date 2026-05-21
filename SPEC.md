@@ -423,6 +423,7 @@ GET   /:owner/:project/members        → 프로젝트 멤버
 POST  /:owner/:project/members        → 멤버 추가
 POST  /:owner/:project/member/:id/edit → 멤버 역할 변경
 DELETE /:owner/:project/member/:id/delete → 멤버 삭제
+GET   /info/leave/:owner/:project      → 현재 사용자 프로젝트 탈퇴
 GET   /:owner/:project/watchers       → 프로젝트 감시자
 POST  /:owner/:project/watch          → 감시 시작
 POST  /:owner/:project/unwatch        → 감시 해제
@@ -468,7 +469,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 - [x] site_admin은 모든 프로젝트에 read + write 권한 (legacy `ProjectApp` 동작)
 - [x] 프로젝트 목록 페이지네이션: 한 페이지 10개, legacy `pageNum` 방식
 - [x] `/:owner/:project/watchers`는 READ 가능한 프로젝트의 실제 watcher 목록을 legacy `project/watchers.scala.html` class anchor로 표시한다
-- [x] `/:owner/:project/members`는 UPDATE 가능한 프로젝트의 멤버 추가/역할 변경/삭제/가입 요청 수락을 legacy `project/members.scala.html` class anchor와 `/api/v1/owners/:owner/projects/:project/members` REST mutation으로 제공한다
+- [x] `/:owner/:project/members`는 UPDATE 가능한 프로젝트의 멤버 추가/역할 변경/삭제/가입 요청 수락을 legacy `project/members.scala.html` class anchor와 `/api/v1/owners/:owner/projects/:project/members` REST mutation으로 제공하고, legacy `GET /info/leave/:owner/:project` 현재 사용자 탈퇴 redirect를 보존한다
 - [x] `/:owner/:project/deleteform`은 UPDATE 가능한 프로젝트의 legacy `project/delete.scala.html` 확인 셸을 보존하고 `/api/v1/owners/:owner/projects/:project` DELETE로 프로젝트 DB 상태와 bare Git repository를 삭제한 뒤 `/`로 이동한다
 - [x] `/:owner/:project/webhooks`는 UPDATE 가능한 프로젝트의 legacy `project/webhooks.scala.html` form/list anchors를 보존하고 `/api/v1/owners/:owner/projects/:project/webhooks` REST CRUD로 payload URL, secret, webhook type, gitPush 값을 저장/삭제한다
 - [x] `/:owner/:project/transfer`는 UPDATE 가능한 프로젝트의 legacy `project/transfer.scala.html` checkbox/modal shell을 보존하고 `/api/v1/owners/:owner/projects/:project/transfer` request와 `/project/transfer/:id/:key` accept link로 owner/name, previous owner/name alias, sender/destination membership을 갱신하며 transfer request mail을 발송한다
@@ -1423,6 +1424,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/:owner/:project`                 | GET      | `GET /api/v1/owners/:owner/projects/:project` | `$owner/$projectName/`                        | implemented        |
 | `/:owner/:project`                 | PUT      | `PUT /api/v1/owners/:owner/projects/:project/overview` | `$owner/$projectName/` overview edit          | implemented        |
 | `/:owner/:project/settingform`     | GET      | `GET /api/v1/owners/:owner/projects/:project/settings` | `$owner/$projectName/settingform`             | implemented        |
+| `/info/leave/:owner/:project`      | GET      | direct project self-leave adapter       | `/:user?selected=projects`                    | implemented        |
 | `/:owner/:project/issues`          | GET      | `GET /api/v1/projects/:owner/:project/issues` | `$owner/$projectName/issues`                  | implemented        |
 | `/:owner/:project/issue/:number`   | GET      | `GET /api/v1/projects/:owner/:project/issues/:number` | `$owner/$projectName/issue/$issueNumber`      | implemented        |
 | `/:owner/:project/posts`           | GET      | `GET /api/v1/projects/:owner/:project/posts` | `$owner/$projectName/posts`                   | implemented (core) |
