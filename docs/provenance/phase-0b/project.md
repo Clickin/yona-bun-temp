@@ -80,14 +80,14 @@
 
 - org enrollment management
 - full workspace settings and default landing UX parity
-- webhook delivery, event payload/HMAC compatibility, and delivery history/retry behavior
+- PR merge/commit-changed webhook delivery, optional event payload/HMAC compatibility, and delivery history/retry behavior
 - SVN executable-backed repository creation/serve behavior after `changeVCS`
 
 이 항목들은 후속 follow-up과 provenance gap으로 계속 남는다.
 
 ## Internal Translation Notes
 
-- Legacy physically moves owner/project repository paths during transfer. Rust stores Git repositories at `YONA_DATA/repo/<project_id>.git`, as recorded in `docs/provenance/phase-0b/code-browser.md`, so owner/name filesystem path move is not a required parity action. Smart HTTP clone URLs resolve through the current owner/project route; post-receive side effects remain part of the VCS lifecycle follow-up.
+- Legacy physically moves owner/project repository paths during transfer. Rust stores Git repositories at `YONA_DATA/repo/<project_id>.git`, as recorded in `docs/provenance/phase-0b/code-browser.md`, so owner/name filesystem path move is not a required parity action. Smart HTTP clone URLs and push post-receive side effects resolve through the current owner/project route.
 
 ## R0-3 Delivery Note
 

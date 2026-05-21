@@ -2,7 +2,7 @@ use axum::body::Body;
 use base64::{engine::general_purpose, Engine as _};
 use http::{HeaderMap, Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
-use sea_orm::{Database, DatabaseConnection};
+use sea_orm::{ColumnTrait, Database, DatabaseConnection, EntityTrait, QueryFilter};
 use serde_json::json;
 use std::fs;
 use std::path::Path;
@@ -11,7 +11,10 @@ use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tokio::sync::oneshot;
 use tower::ServiceExt;
-use yona_rust_persistence::AppRepository;
+use yona_rust_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
+use yona_rust_persistence::{
+    notification_event, project_pushed_branch, AppRepository, CreateProjectWebhookInput,
+};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
@@ -530,6 +533,145 @@ async fn smart_http_supports_real_git_clone_and_authenticated_push() {
         None,
     );
     assert_eq!(server_head.trim(), pushed_head.trim());
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
+async fn smart_http_push_records_legacy_post_receive_side_effects() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    clear_test_webhook_outbox();
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, _, member_id) = register_user(app.clone(), "member").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("project");
+    repo.add_project_membership(project.id, member_id, "member")
+        .await
+        .unwrap();
+    repo.set_project_watch(owner_id, project.id, true)
+        .await
+        .unwrap();
+    repo.create_project_webhook(CreateProjectWebhookInput {
+        git_push: true,
+        payload_url: "http://example.test/push".to_string(),
+        project_id: project.id,
+        secret: "push-secret".to_string(),
+        webhook_type: 3,
+    })
+    .await
+    .unwrap();
+    repo.create_project_webhook(CreateProjectWebhookInput {
+        git_push: false,
+        payload_url: "http://example.test/issue".to_string(),
+        project_id: project.id,
+        secret: "issue-secret".to_string(),
+        webhook_type: 0,
+    })
+    .await
+    .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let client_parent = tempdir().expect("client parent");
+    let clone_path = client_parent.path().join("clone");
+    run_git_blocking(
+        vec![
+            "clone".to_string(),
+            format!("{base_url}/yona/owner/projectYobi.git"),
+            clone_path.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    fs::write(clone_path.join("PUSHED.md"), "post receive parity\n").expect("pushed file");
+    run_git_blocking(
+        vec!["add".to_string(), "PUSHED.md".to_string()],
+        Some(clone_path.clone()),
+    )
+    .await;
+    run_git_blocking(
+        vec![
+            "-c".to_string(),
+            "user.email=member@example.com".to_string(),
+            "-c".to_string(),
+            "user.name=Member".to_string(),
+            "commit".to_string(),
+            "-m".to_string(),
+            "Trigger post receive side effects".to_string(),
+        ],
+        Some(clone_path.clone()),
+    )
+    .await;
+    let pushed_head = git_stdout(&["rev-parse", "HEAD"], Some(&clone_path));
+    let authenticated_url = base_url.replacen("http://", "http://member:doorpass1@", 1);
+    run_git_blocking(
+        vec![
+            "remote".to_string(),
+            "set-url".to_string(),
+            "origin".to_string(),
+            format!("{authenticated_url}/yona/owner/projectYobi.git"),
+        ],
+        Some(clone_path.clone()),
+    )
+    .await;
+    run_git_blocking(
+        vec!["push".to_string(), "origin".to_string(), "main".to_string()],
+        Some(clone_path.clone()),
+    )
+    .await;
+
+    let refreshed_project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("refreshed project");
+    assert!(
+        refreshed_project.last_pushed_date.is_some(),
+        "push should update project.last_pushed_date"
+    );
+    let pushed_branch = project_pushed_branch::Entity::find()
+        .filter(project_pushed_branch::Column::ProjectId.eq(Some(project.id)))
+        .filter(project_pushed_branch::Column::Name.eq(Some("main".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("pushed branch row");
+    assert!(
+        pushed_branch.pushed_date.is_some(),
+        "push should update branch pushed_date"
+    );
+    let commit_events = notification_event::Entity::find()
+        .filter(notification_event::Column::EventType.eq(Some("NEW_COMMIT".to_string())))
+        .filter(notification_event::Column::ResourceType.eq(Some("PROJECT".to_string())))
+        .filter(notification_event::Column::ResourceId.eq(Some(project.id.to_string())))
+        .all(&db)
+        .await
+        .unwrap();
+    assert_eq!(commit_events.len(), 1);
+
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 1);
+    assert_eq!(deliveries[0].event_type, "NEW_COMMIT");
+    assert_eq!(deliveries[0].webhook_type, "JSON");
+    let payload: serde_json::Value =
+        serde_json::from_str(&deliveries[0].body).expect("push webhook payload");
+    assert_eq!(payload["ref"], json!(["refs/heads/main"]));
+    assert_eq!(payload["commits"][0]["id"], pushed_head.trim());
+    assert_eq!(payload["head_commit"]["id"], pushed_head.trim());
+    assert_eq!(payload["sender"]["login"], "member");
+    assert_eq!(payload["pusher"]["name"], "member");
+    assert_eq!(payload["repository"]["id"], project.id);
+    assert_eq!(payload["repository"]["name"], "projectYobi");
+    assert_eq!(payload["repository"]["owner"], "owner");
 
     let _ = shutdown.send(());
 }

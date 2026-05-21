@@ -42,8 +42,9 @@ use yona_rust_search::SearchType;
 use yona_rust_vcs::{
     CodeBranchListSnapshot, CodeBrowserSnapshot, CodeCommitDetailSnapshot,
     CodeCommitFileDiffRecord, CodeCommitParentRecord, CodeCommitRecord, CodeCompareSnapshot,
-    CodeEntryRecord, CodeFileBytesRecord, CodeFileRecord, CodeHistorySnapshot,
-    GitHttpBackendRequest, ProjectHistoryCommitRecord, VcsError, MAX_SMART_HTTP_RPC_BYTES,
+    CodeEntryRecord, CodeFileBytesRecord, CodeFileRecord, CodeHistorySnapshot, GitHeadRefRecord,
+    GitHttpBackendRequest, GitPushCommitRecord, ProjectHistoryCommitRecord, VcsError,
+    MAX_SMART_HTTP_RPC_BYTES,
 };
 
 #[allow(clippy::missing_panics_doc)]
@@ -370,6 +371,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let smart_http_backend = route_backend.clone();
     let smart_http_session_manager = session_manager.clone();
     let smart_http_base_path = base_path.clone();
+    let smart_http_public_origin = public_origin.clone();
     let transfer_accept_backend = route_backend.clone();
     let transfer_accept_session_manager = session_manager.clone();
     let transfer_accept_base_path = base_path.clone();
@@ -1493,6 +1495,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             let smart_http_backend_for_fallback = smart_http_backend.clone();
             let smart_http_session_manager_for_fallback = smart_http_session_manager.clone();
             let smart_http_base_path_for_fallback = smart_http_base_path.clone();
+            let smart_http_public_origin_for_fallback = smart_http_public_origin.clone();
 
             if base_path == "/" {
                 base_router = base_router.route(
@@ -1546,6 +1549,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         let session_manager = smart_http_session_manager_for_fallback.clone();
                         let backend = smart_http_backend_for_fallback.clone();
                         let base_path = smart_http_base_path_for_fallback.clone();
+                        let public_origin = smart_http_public_origin_for_fallback.clone();
                         async move {
                             serve_filesystem_or_smart_http_fallback(
                                 request,
@@ -1554,6 +1558,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                                 session_manager,
                                 backend,
                                 base_path,
+                                public_origin,
                             )
                             .await
                         }
@@ -1568,6 +1573,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             let smart_http_backend_for_fallback = smart_http_backend.clone();
             let smart_http_session_manager_for_fallback = smart_http_session_manager.clone();
             let smart_http_base_path_for_fallback = smart_http_base_path.clone();
+            let smart_http_public_origin_for_fallback = smart_http_public_origin.clone();
 
             if base_path == "/" {
                 base_router = base_router.route(
@@ -1606,6 +1612,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     let session_manager = smart_http_session_manager_for_fallback.clone();
                     let backend = smart_http_backend_for_fallback.clone();
                     let base_path = smart_http_base_path_for_fallback.clone();
+                    let public_origin = smart_http_public_origin_for_fallback.clone();
                     async move {
                         serve_embedded_or_smart_http_fallback(
                             request,
@@ -1613,6 +1620,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             session_manager,
                             backend,
                             base_path,
+                            public_origin,
                         )
                         .await
                     }
@@ -1622,12 +1630,21 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             let smart_http_backend_for_fallback = smart_http_backend.clone();
             let smart_http_session_manager_for_fallback = smart_http_session_manager.clone();
             let smart_http_base_path_for_fallback = smart_http_base_path.clone();
+            let smart_http_public_origin_for_fallback = smart_http_public_origin.clone();
             base_router = base_router.fallback(move |request: Request| {
                 let session_manager = smart_http_session_manager_for_fallback.clone();
                 let backend = smart_http_backend_for_fallback.clone();
                 let base_path = smart_http_base_path_for_fallback.clone();
+                let public_origin = smart_http_public_origin_for_fallback.clone();
                 async move {
-                    smart_http_or_not_found(request, session_manager, backend, base_path).await
+                    smart_http_or_not_found(
+                        request,
+                        session_manager,
+                        backend,
+                        base_path,
+                        public_origin,
+                    )
+                    .await
                 }
             });
         }
@@ -1793,6 +1810,78 @@ struct SmartHttpRoute {
     project_name: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct SmartHttpPushChange {
+    commits: Vec<GitPushCommitRecord>,
+    full_ref: String,
+    new_oid: String,
+    old_oid: Option<String>,
+    short_ref: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct SmartHttpPushSummary {
+    deleted_refs: Vec<GitHeadRefRecord>,
+    updated_refs: Vec<SmartHttpPushChange>,
+}
+
+impl SmartHttpPushSummary {
+    fn is_empty(&self) -> bool {
+        self.deleted_refs.is_empty() && self.updated_refs.is_empty()
+    }
+
+    fn ref_names(&self) -> Vec<String> {
+        let mut refs = self
+            .updated_refs
+            .iter()
+            .map(|change| change.full_ref.clone())
+            .chain(
+                self.deleted_refs
+                    .iter()
+                    .map(|change| change.full_name.clone()),
+            )
+            .collect::<Vec<_>>();
+        refs.sort();
+        refs.dedup();
+        refs
+    }
+
+    fn updated_branch_names(&self) -> Vec<String> {
+        let mut branches = self
+            .updated_refs
+            .iter()
+            .map(|change| change.short_ref.clone())
+            .collect::<Vec<_>>();
+        branches.sort();
+        branches.dedup();
+        branches
+    }
+
+    fn deleted_branch_names(&self) -> Vec<String> {
+        let mut branches = self
+            .deleted_refs
+            .iter()
+            .map(|change| change.short_name.clone())
+            .collect::<Vec<_>>();
+        branches.sort();
+        branches.dedup();
+        branches
+    }
+
+    fn commits(&self) -> Vec<GitPushCommitRecord> {
+        let mut commits = Vec::new();
+        let mut seen = std::collections::HashSet::new();
+        for change in &self.updated_refs {
+            for commit in &change.commits {
+                if seen.insert(commit.commit_id.clone()) {
+                    commits.push(commit.clone());
+                }
+            }
+        }
+        commits
+    }
+}
+
 async fn serve_filesystem_or_smart_http_fallback(
     request: Request,
     asset_root: PathBuf,
@@ -1800,10 +1889,18 @@ async fn serve_filesystem_or_smart_http_fallback(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    public_origin: String,
 ) -> Response {
     let method = request.method().clone();
     if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
-        return direct_smart_http_request(request, session_manager, backend, base_path).await;
+        return direct_smart_http_request(
+            request,
+            session_manager,
+            backend,
+            base_path,
+            public_origin,
+        )
+        .await;
     }
     serve_filesystem_fallback(asset_root, method, browser_runtime).await
 }
@@ -1814,10 +1911,18 @@ async fn serve_embedded_or_smart_http_fallback(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    public_origin: String,
 ) -> Response {
     let method = request.method().clone();
     if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
-        return direct_smart_http_request(request, session_manager, backend, base_path).await;
+        return direct_smart_http_request(
+            request,
+            session_manager,
+            backend,
+            base_path,
+            public_origin,
+        )
+        .await;
     }
     serve_embedded_fallback(method, browser_runtime).await
 }
@@ -1827,9 +1932,17 @@ async fn smart_http_or_not_found(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    public_origin: String,
 ) -> Response {
     if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
-        return direct_smart_http_request(request, session_manager, backend, base_path).await;
+        return direct_smart_http_request(
+            request,
+            session_manager,
+            backend,
+            base_path,
+            public_origin,
+        )
+        .await;
     }
     StatusCode::NOT_FOUND.into_response()
 }
@@ -1839,6 +1952,7 @@ async fn direct_smart_http_request(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
+    public_origin: String,
 ) -> Response {
     let Some(route) = smart_http_route_from_path(request.uri().path(), &base_path) else {
         return StatusCode::NOT_FOUND.into_response();
@@ -1920,6 +2034,18 @@ async fn direct_smart_http_request(
         .get("git-protocol")
         .and_then(|value| value.to_str().ok());
     let remote_addr = smart_http_remote_addr(&parts.headers);
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let is_receive_pack_post = method == "POST" && route.git_path == "git-receive-pack";
+    let before_refs = if is_receive_pack_post {
+        match yona_rust_vcs::read_head_refs(&repo_path) {
+            Ok(refs) => refs,
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        }
+    } else {
+        Vec::new()
+    };
 
     let response = yona_rust_vcs::run_git_http_backend(GitHttpBackendRequest {
         body: &body_bytes,
@@ -1934,7 +2060,23 @@ async fn direct_smart_http_request(
     });
 
     match response {
-        Ok(output) => smart_http_backend_response(output),
+        Ok(output) => {
+            if is_receive_pack_post && (200..300).contains(&output.status) {
+                if let Some(actor) = principal.as_ref() {
+                    record_smart_http_push_side_effects(
+                        repository,
+                        &authorization.project,
+                        actor,
+                        &repo_path,
+                        before_refs,
+                        &public_origin,
+                        &base_path,
+                    )
+                    .await;
+                }
+            }
+            smart_http_backend_response(output)
+        }
         Err(VcsError::NotFound) => (StatusCode::NOT_FOUND, "Repository not found").into_response(),
         Err(VcsError::GitUnavailable) => (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -2180,6 +2322,211 @@ fn smart_http_backend_response(output: yona_rust_vcs::GitHttpBackendResponse) ->
         }
     }
     response
+}
+
+async fn record_smart_http_push_side_effects(
+    repository: &PilotRepository,
+    project: &persistence::ProjectRecord,
+    actor: &persistence::AppUserRecord,
+    repo_path: &StdPath,
+    before_refs: Vec<GitHeadRefRecord>,
+    public_origin: &str,
+    base_path: &str,
+) {
+    let Ok(summary) = smart_http_push_summary(repo_path, before_refs) else {
+        return;
+    };
+    if summary.is_empty() {
+        return;
+    }
+    let ref_names = summary.ref_names();
+    let commit_count = summary.commits().len();
+    let notification_message =
+        legacy_push_notification_message(&project.project_name, commit_count, &ref_names);
+    let _ = repository
+        .record_git_push(
+            project.id,
+            actor.id,
+            &summary.updated_branch_names(),
+            &summary.deleted_branch_names(),
+            &notification_message,
+        )
+        .await;
+    dispatch_git_push_webhooks(
+        repository,
+        project,
+        actor,
+        &summary,
+        public_origin,
+        base_path,
+    )
+    .await;
+}
+
+fn smart_http_push_summary(
+    repo_path: &StdPath,
+    before_refs: Vec<GitHeadRefRecord>,
+) -> Result<SmartHttpPushSummary, VcsError> {
+    let after_refs = yona_rust_vcs::read_head_refs(repo_path)?;
+    let before_by_full_name = before_refs
+        .iter()
+        .map(|record| (record.full_name.clone(), record.clone()))
+        .collect::<HashMap<_, _>>();
+    let after_by_full_name = after_refs
+        .iter()
+        .map(|record| (record.full_name.clone(), record.clone()))
+        .collect::<HashMap<_, _>>();
+    let before_oids = before_refs
+        .iter()
+        .map(|record| record.object_id.clone())
+        .collect::<Vec<_>>();
+
+    let mut updated_refs = Vec::new();
+    for after in after_refs {
+        let before = before_by_full_name.get(&after.full_name);
+        if before.is_some_and(|before| before.object_id == after.object_id) {
+            continue;
+        }
+        let old_oid = before.map(|record| record.object_id.clone());
+        let commits = yona_rust_vcs::read_push_commits(
+            repo_path,
+            old_oid.as_deref(),
+            &after.object_id,
+            &before_oids,
+        )?;
+        updated_refs.push(SmartHttpPushChange {
+            commits,
+            full_ref: after.full_name,
+            new_oid: after.object_id,
+            old_oid,
+            short_ref: after.short_name,
+        });
+    }
+
+    let deleted_refs = before_refs
+        .into_iter()
+        .filter(|before| !after_by_full_name.contains_key(&before.full_name))
+        .collect::<Vec<_>>();
+
+    Ok(SmartHttpPushSummary {
+        deleted_refs,
+        updated_refs,
+    })
+}
+
+fn legacy_push_notification_message(
+    project_name: &str,
+    commit_count: usize,
+    ref_names: &[String],
+) -> String {
+    if ref_names.len() == 1 {
+        format!(
+            "notification.pushed.commits.to: {project_name} {commit_count} {}",
+            ref_names[0]
+        )
+    } else {
+        format!("notification.pushed.commits: {project_name} {commit_count}")
+    }
+}
+
+async fn dispatch_git_push_webhooks(
+    repository: &PilotRepository,
+    project: &persistence::ProjectRecord,
+    actor: &persistence::AppUserRecord,
+    summary: &SmartHttpPushSummary,
+    public_origin: &str,
+    base_path: &str,
+) {
+    let Ok(webhooks) = repository.list_project_webhooks(project.id).await else {
+        return;
+    };
+    if webhooks.webhooks.is_empty() {
+        return;
+    }
+    let commits = summary.commits();
+    let body =
+        git_push_webhook_payload(project, actor, summary, &commits, public_origin, base_path);
+    for webhook in webhooks.webhooks {
+        if !webhook.git_push {
+            continue;
+        }
+        let _ = deliver_webhook(OutboundWebhook {
+            body: body.clone(),
+            event_type: "NEW_COMMIT".to_string(),
+            payload_url: webhook.payload_url,
+            secret: webhook.secret,
+            webhook_type: project_webhook_type_label(webhook.webhook_type),
+        });
+    }
+}
+
+fn git_push_webhook_payload(
+    project: &persistence::ProjectRecord,
+    actor: &persistence::AppUserRecord,
+    summary: &SmartHttpPushSummary,
+    commits: &[GitPushCommitRecord],
+    public_origin: &str,
+    base_path: &str,
+) -> String {
+    let commit_values = commits
+        .iter()
+        .map(|commit| {
+            serde_json::json!({
+                "id": commit.commit_id.as_str(),
+                "message": commit.message.as_str(),
+                "timestamp": commit.timestamp.as_str(),
+                "url": absolute_app_url(
+                    public_origin,
+                    base_path,
+                    &format!(
+                        "/{}/{}/commit/{}",
+                        project.owner_name, project.project_name, commit.commit_id
+                    ),
+                ),
+                "author": {
+                    "name": commit.author_name.as_str(),
+                    "email": commit.author_email.as_str(),
+                },
+                "committer": {
+                    "name": commit.committer_name.as_str(),
+                    "email": commit.committer_email.as_str(),
+                },
+            })
+        })
+        .collect::<Vec<_>>();
+    let head_commit = commit_values
+        .first()
+        .cloned()
+        .unwrap_or(serde_json::Value::Null);
+    let ref_names = summary.ref_names();
+    serde_json::json!({
+        "ref": ref_names,
+        "commits": commit_values,
+        "head_commit": head_commit,
+        "sender": {
+            "login": actor.login_id.as_str(),
+            "id": actor.id,
+            "avatar_url": "",
+            "type": "User",
+            "site_admin": actor.is_site_admin,
+        },
+        "pusher": {
+            "name": actor.display_name.as_str(),
+            "email": actor.email_address.as_str(),
+        },
+        "repository": {
+            "id": project.id,
+            "name": project.project_name.as_str(),
+            "owner": project.owner_name.as_str(),
+            "html_url": base_path_href(
+                base_path,
+                &format!("/{}/{}", project.owner_name, project.project_name),
+            ),
+            "overview": project.overview.clone().unwrap_or_default(),
+            "private": project.project_scope.eq_ignore_ascii_case("private"),
+        },
+    })
+    .to_string()
 }
 
 fn percent_encode_uri_component(value: &str) -> String {

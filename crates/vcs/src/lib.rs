@@ -173,6 +173,24 @@ pub struct GitHttpBackendResponse {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GitHeadRefRecord {
+    pub full_name: String,
+    pub object_id: String,
+    pub short_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GitPushCommitRecord {
+    pub author_email: String,
+    pub author_name: String,
+    pub committer_email: String,
+    pub committer_name: String,
+    pub commit_id: String,
+    pub message: String,
+    pub timestamp: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestDiffSnapshot {
     pub commits: Vec<PullRequestDiffCommitRecord>,
     pub files: Vec<PullRequestChangedFileRecord>,
@@ -339,6 +357,104 @@ pub fn run_git_http_backend(
     }
 
     parse_git_http_backend_output(&output.stdout)
+}
+
+pub fn read_head_refs(repo_path: &Path) -> Result<Vec<GitHeadRefRecord>, VcsError> {
+    if !repo_path.exists() {
+        return Ok(Vec::new());
+    }
+    let output = git_output(
+        repo_path,
+        &[
+            "for-each-ref",
+            "--format=%(refname)%1f%(objectname)%1f%(refname:short)",
+            "refs/heads",
+        ],
+    )?;
+    Ok(output
+        .lines()
+        .filter_map(|line| {
+            let mut parts = line.split('\x1f');
+            let full_name = parts.next()?.trim().to_string();
+            let object_id = parts.next().unwrap_or_default().trim().to_string();
+            let short_name = parts.next().unwrap_or_default().trim().to_string();
+            if full_name.is_empty() || object_id.is_empty() || short_name.is_empty() {
+                return None;
+            }
+            Some(GitHeadRefRecord {
+                full_name,
+                object_id,
+                short_name,
+            })
+        })
+        .collect())
+}
+
+pub fn read_push_commits(
+    repo_path: &Path,
+    old_oid: Option<&str>,
+    new_oid: &str,
+    exclude_oids: &[String],
+) -> Result<Vec<GitPushCommitRecord>, VcsError> {
+    let new_oid = new_oid.trim();
+    if new_oid.is_empty() || is_zero_oid(new_oid) {
+        return Ok(Vec::new());
+    }
+
+    let mut args = vec![
+        "log".to_string(),
+        "--reverse".to_string(),
+        "--format=%x1e%H%x1f%s%x1f%aI%x1f%aN%x1f%aE%x1f%cN%x1f%cE".to_string(),
+    ];
+    if let Some(old_oid) = old_oid.map(str::trim).filter(|value| !value.is_empty()) {
+        if !is_zero_oid(old_oid) {
+            args.push(format!("{old_oid}..{new_oid}"));
+        } else {
+            args.push(new_oid.to_string());
+        }
+    } else {
+        args.push(new_oid.to_string());
+        let excludes = exclude_oids
+            .iter()
+            .map(|value| value.trim())
+            .filter(|value| !value.is_empty() && !is_zero_oid(value))
+            .collect::<Vec<_>>();
+        if !excludes.is_empty() {
+            args.push("--not".to_string());
+            args.extend(excludes.into_iter().map(str::to_string));
+        }
+    }
+    let borrowed = args.iter().map(String::as_str).collect::<Vec<_>>();
+    let output = git_output(repo_path, &borrowed)?;
+    Ok(output
+        .split('\x1e')
+        .filter_map(|record| {
+            let record = record.trim_matches(|character| character == '\r' || character == '\n');
+            if record.trim().is_empty() {
+                return None;
+            }
+            let mut parts = record.split('\x1f');
+            let commit_id = parts.next()?.trim().to_string();
+            let message = parts.next().unwrap_or_default().trim().to_string();
+            let timestamp = parts.next().unwrap_or_default().trim().to_string();
+            let author_name = parts.next().unwrap_or_default().trim().to_string();
+            let author_email = parts.next().unwrap_or_default().trim().to_string();
+            let committer_name = parts.next().unwrap_or_default().trim().to_string();
+            let committer_email = parts.next().unwrap_or_default().trim().to_string();
+            if commit_id.is_empty() {
+                return None;
+            }
+            Some(GitPushCommitRecord {
+                author_email,
+                author_name,
+                committer_email,
+                committer_name,
+                commit_id,
+                message,
+                timestamp,
+            })
+        })
+        .collect())
 }
 
 pub fn read_code_browser(
@@ -907,6 +1023,10 @@ fn normalize_branch_name(branch_name: &str) -> Result<String, VcsError> {
 fn revision_exists(repo_path: &Path, revision: &str) -> bool {
     let spec = format!("{revision}^{{commit}}");
     git_output(repo_path, &["rev-parse", "--verify", &spec]).is_ok()
+}
+
+fn is_zero_oid(value: &str) -> bool {
+    value.chars().all(|character| character == '0')
 }
 
 fn has_head(repo_path: &Path) -> bool {
