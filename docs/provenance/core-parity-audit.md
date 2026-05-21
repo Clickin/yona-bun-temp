@@ -74,9 +74,10 @@
 
 - Project creation now persists `YONA_PROJECT_DEFAULT_MENUS` (`project.creation.default.menus`) into the new `project_menu_setting` row. This closes the config-compatibility part of default project menus while leaving the legacy create/settings checkbox UX as a project surface follow-up.
 
-## Mail Configuration Note
+## Auth, Route, And Mail Notes
 
 - Direct auth route parity now includes legacy `GET /users/logout` plus OAuth wrapper `GET /logout`, both clearing the Rust session without CSRF and returning a Referer redirect with a fresh anonymous session cookie.
+- Direct signup Ajax validator parity now includes legacy `GET /user/isUsed` and `GET /user/isEmailExist`; `isUsed` reports login ID, organization-name, and reserved route-word collisions with the legacy `isExist`/`isReserved` JSON shape.
 - Site-admin mail options and outbound SMTP delivery now accept `YONA_SMTP_HOST`, `YONA_SMTP_PORT`, `YONA_SMTP_USER`, and `YONA_SMTP_PASSWORD` as aliases for the existing `SMTP_*` names. `smtp.ssl` semantics and full notification mail batching remain delivery-hardening follow-up scope.
 - Notification route parity now includes both the legacy `/notification` inbox shell and `/notifications` full-page alias on the same Rust/React TanStack Query view; read-state/full SMTP batching remains tracked as follow-up scope.
 

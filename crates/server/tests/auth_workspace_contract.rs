@@ -13,7 +13,7 @@ use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
     assignee, attachment, comment_thread, email, issue, linked_account, n4user, project,
     pull_request, user_credential, user_project_notification, user_verification, watch,
-    AppRepository, CreateProjectInput,
+    AppRepository, CreateOrganizationInput, CreateProjectInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -1049,6 +1049,138 @@ async fn register_rejects_duplicate_login_id_and_email() {
     assert_eq!(duplicate_email.status(), StatusCode::CONFLICT);
     let duplicate_email_json = response_text(duplicate_email).await;
     assert!(duplicate_email_json.contains("Login ID or email is already in use."));
+}
+
+#[tokio::test]
+async fn direct_legacy_signup_validators_report_used_reserved_and_email_state() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+    let (app, repository, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    repository
+        .create_organization(CreateOrganizationInput {
+            organization_name: "acme".to_string(),
+            description: Some("Acme".to_string()),
+        })
+        .await
+        .expect("organization");
+
+    let used_login = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/user/isUsed?name=Door")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(used_login.status(), StatusCode::OK);
+    assert!(used_login
+        .headers()
+        .get(http::header::CONTENT_TYPE)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .contains("application/json"));
+    let used_login_json = response_text(used_login).await;
+    assert!(used_login_json.contains("\"isExist\":true"));
+    assert!(used_login_json.contains("\"isReserved\":false"));
+
+    let used_organization = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/user/isUsed?name=acme")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(used_organization.status(), StatusCode::OK);
+    let used_organization_json = response_text(used_organization).await;
+    assert!(used_organization_json.contains("\"isExist\":true"));
+
+    let reserved_name = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/user/isUsed?name=messages.js")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(reserved_name.status(), StatusCode::OK);
+    let reserved_name_json = response_text(reserved_name).await;
+    assert!(reserved_name_json.contains("\"isExist\":false"));
+    assert!(reserved_name_json.contains("\"isReserved\":true"));
+
+    let fresh_name = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/user/isUsed?name=fresh")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(fresh_name.status(), StatusCode::OK);
+    let fresh_name_json = response_text(fresh_name).await;
+    assert!(fresh_name_json.contains("\"isExist\":false"));
+    assert!(fresh_name_json.contains("\"isReserved\":false"));
+
+    let used_email = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/user/isEmailExist?email=DOOR%40example.com")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(used_email.status(), StatusCode::OK);
+    let used_email_json = response_text(used_email).await;
+    assert!(used_email_json.contains("\"isExist\":true"));
+
+    let fresh_email = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/user/isEmailExist?email=fresh%40example.com")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(fresh_email.status(), StatusCode::OK);
+    let fresh_email_json = response_text(fresh_email).await;
+    assert!(fresh_email_json.contains("\"isExist\":false"));
 }
 
 #[tokio::test]

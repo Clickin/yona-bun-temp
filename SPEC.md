@@ -254,6 +254,8 @@ GET   /users/loginform          → 로그인 폼
 POST  /users/login              → 로그인 처리
 GET   /users/signupform         → 회원가입 폼
 POST  /users/signup             → 회원가입 처리
+GET   /user/isUsed              → login ID/organization/reserved-word Ajax 검사
+GET   /user/isEmailExist        → email Ajax 중복 검사
 GET   /lostPassword             → 비밀번호 찾기 폼
 POST  /lostPassword             → 비밀번호 찾기 이메일 발송
 GET   /resetPassword            → 비밀번호 재설정 폼
@@ -269,7 +271,7 @@ GET   /authenticate/:provider   → OAuth 시작
 | 기능                         | Legacy 동작                                                         | 현재 상태 | Phase |
 | ---------------------------- | ------------------------------------------------------------------- | --------- | ----- |
 | 로그인 (ID/Password)         | `UserApp.login()` → bcrypt 검증 → 세션 생성 → `redirectUrl`로 이동  | ✅ 구현   | 1     |
-| 회원가입                     | `UserApp.newUser()` → ID/email 중복검사 → 생성 → 선택적 이메일 인증 | ✅ 구현   | 1     |
+| 회원가입                     | `UserApp.newUser()` → ID/email 중복검사 → 생성 → 선택적 이메일 인증 | ✅ 구현, direct Ajax validator 포함 | 1     |
 | 로그아웃                     | 세션 파기 후 Referer redirect                                      | ✅ direct `/logout`, `/users/logout` 구현 | 1     |
 | 비밀번호 찾기 (이메일 발송)  | verification code 생성 → 이메일 발송 → 토큰 링크                    | ✅ 구현   | 1     |
 | 비밀번호 재설정              | 토큰 검증 → 새 비밀번호 설정                                        | ✅ 구현   | 1     |
@@ -291,6 +293,7 @@ GET   /authenticate/:provider   → OAuth 시작
 - [x] `rememberMe=true` 로그인은 legacy 30일 유지 세션을 만들고, `rememberMe=false` 로그인은 브라우저 세션으로 남는다
 - [x] `YONA_SESSION_TIMEOUT_SECONDS` 설정 시 non-remember 세션 쿠키와 서버 세션 저장소가 해당 초 단위 타임아웃을 적용하고, remember-me 세션은 legacy 30일 유지 정책을 보존한다
 - [x] 회원가입 시 login ID, email 중복 검사가 동작한다
+- [x] `/user/isUsed`와 `/user/isEmailExist`가 legacy signup Ajax JSON(`isExist`, `isReserved`)을 반환한다
 - [x] `YONA_AUTH_SIGNUP_REQUIRE_CONFIRM=true` 시 신규 사용자는 legacy `LOCKED` 상태로 생성되고 site admin 활성화 대상이 된다
 - [x] `YONA_GUEST_LOGIN_PREFIX`와 매칭되는 신규 login ID는 legacy `is_guest` 계정으로 생성된다
 - [x] `YONA_AUTH_EMAIL_VERIFICATION_ENABLED=true` 시 가입 후 이메일 인증 플로우가 작동한다
@@ -1396,6 +1399,8 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/users/signupform`                | GET      | SPA                                   | `legacy-auth/users/signupform`                | implemented        |
 | `/users/login`                     | POST     | `POST /api/v1/auth/sign-in`           | —                                             | implemented        |
 | `/users/signup`                    | POST     | `POST /api/v1/auth/register`          | —                                             | implemented        |
+| `/user/isUsed`                     | GET      | direct signup Ajax validator          | —                                             | implemented        |
+| `/user/isEmailExist`               | GET      | direct signup Ajax validator          | —                                             | implemented        |
 | `/lostPassword`                    | GET/POST | `POST /lostPassword` direct           | `lostPassword/`                               | implemented        |
 | `/resetPassword`                   | GET/POST | `POST /resetPassword` direct          | `resetPassword/`                              | implemented        |
 | `/verify/:loginId/:code`           | GET      | `POST /api/v1/auth/verify`            | `verify/$loginId/$code`                       | implemented        |

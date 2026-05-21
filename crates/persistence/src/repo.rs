@@ -875,6 +875,18 @@ impl AppRepository {
         }))
     }
 
+    pub async fn user_email_exists(&self, email_address: &str) -> Result<bool, DbErr> {
+        let normalized = normalize_identity(email_address);
+        if normalized.is_empty() {
+            return Ok(false);
+        }
+
+        let users = n4user::Entity::find().all(&self.db).await?;
+        Ok(users.into_iter().any(|user| {
+            normalize_optional(user.email.as_deref()).as_deref() == Some(normalized.as_str())
+        }))
+    }
+
     /// Lists users for the legacy site-admin user-management surface.
     ///
     /// # Errors

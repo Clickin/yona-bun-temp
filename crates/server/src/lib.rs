@@ -223,6 +223,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let direct_logout_base_path = base_path.clone();
     let direct_user_logout_session_manager = session_manager.clone();
     let direct_user_logout_base_path = base_path.clone();
+    let signup_name_validator_backend = route_backend.clone();
+    let signup_email_validator_backend = route_backend.clone();
     let lost_password_session_manager = session_manager.clone();
     let lost_password_backend = route_backend.clone();
     let lost_password_base_path = base_path.clone();
@@ -366,6 +368,27 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         headers,
                         direct_user_logout_session_manager.clone(),
                         direct_user_logout_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/user/isUsed",
+            get(move |Query(query): Query<DirectUserNameValidationQuery>| {
+                async move {
+                    direct_legacy_user_name_validation(query, signup_name_validator_backend.clone())
+                        .await
+                }
+            }),
+        )
+        .route(
+            "/user/isEmailExist",
+            get(move |Query(query): Query<DirectUserEmailValidationQuery>| {
+                async move {
+                    direct_legacy_user_email_validation(
+                        query,
+                        signup_email_validator_backend.clone(),
                     )
                     .await
                 }
@@ -2008,6 +2031,122 @@ async fn direct_update_project_overview(
         Ok(_) => Json(serde_json::json!({ "overview": overview })).into_response(),
         Err(error) => error.into_response(),
     }
+}
+
+const LEGACY_RESERVED_USER_NAMES: &[&str] = &[
+    "-_-api",
+    "assets",
+    "authenticate",
+    "categories",
+    "comments",
+    "favicon.ico",
+    "files",
+    "info",
+    "labels",
+    "logout",
+    "lostPassword",
+    "markdown",
+    "messages.js",
+    "migration",
+    "new",
+    "noti",
+    "notification",
+    "notifications",
+    "organizations",
+    "orgs",
+    "project",
+    "projectform",
+    "projects",
+    "resetPassword",
+    "restricted",
+    "search",
+    "sites",
+    "svn",
+    "threads",
+    "unwatch",
+    "user",
+    "users",
+    "verify",
+    "watch",
+];
+
+#[derive(Deserialize)]
+struct DirectUserNameValidationQuery {
+    name: Option<String>,
+}
+
+#[derive(Serialize)]
+struct DirectUserNameValidationResponse {
+    #[serde(rename = "isExist")]
+    is_exist: bool,
+    #[serde(rename = "isReserved")]
+    is_reserved: bool,
+}
+
+#[derive(Deserialize)]
+struct DirectUserEmailValidationQuery {
+    email: Option<String>,
+}
+
+#[derive(Serialize)]
+struct DirectUserEmailValidationResponse {
+    #[serde(rename = "isExist")]
+    is_exist: bool,
+}
+
+async fn direct_legacy_user_name_validation(
+    query: DirectUserNameValidationQuery,
+    backend: PilotBackend,
+) -> Response {
+    let name = query.name.unwrap_or_default();
+    let is_reserved = is_legacy_reserved_user_name(&name);
+    let PilotBackend::Repository(repository) = backend else {
+        return RestRouteError::not_implemented("signup validation requires repository backend")
+            .into_response();
+    };
+
+    let user_exists = match repository.user_login_id_exists(&name).await {
+        Ok(exists) => exists,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let organization_exists = if user_exists {
+        false
+    } else {
+        match repository.organization_name_exists(&name).await {
+            Ok(exists) => exists,
+            Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+        }
+    };
+
+    Json(DirectUserNameValidationResponse {
+        is_exist: user_exists || organization_exists,
+        is_reserved,
+    })
+    .into_response()
+}
+
+async fn direct_legacy_user_email_validation(
+    query: DirectUserEmailValidationQuery,
+    backend: PilotBackend,
+) -> Response {
+    let email = query.email.unwrap_or_default();
+    let PilotBackend::Repository(repository) = backend else {
+        return RestRouteError::not_implemented("signup validation requires repository backend")
+            .into_response();
+    };
+    let is_exist = match repository.user_email_exists(&email).await {
+        Ok(exists) => exists,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+
+    Json(DirectUserEmailValidationResponse { is_exist }).into_response()
+}
+
+fn is_legacy_reserved_user_name(name: &str) -> bool {
+    let normalized = normalize_identifier(name);
+    LEGACY_RESERVED_USER_NAMES
+        .iter()
+        .any(|reserved| normalize_identifier(reserved) == normalized)
 }
 
 async fn direct_legacy_logout(
