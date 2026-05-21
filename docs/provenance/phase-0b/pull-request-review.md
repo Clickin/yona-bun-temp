@@ -92,7 +92,7 @@
 - ranged inline review comment create/edit/delete
 - diff composition and PR event timeline
 - fork/clone workflow and branch cleanup
-- Smart HTTP, merge/commit-changed/push webhook delivery, and legacy external
+- post-receive VCS side effects, merge/commit-changed/push webhook delivery, and legacy external
   `/-_-api/v1/**` compatibility
 
 이 항목들은 bounded exemplar 밖의 `deferred` scope다.

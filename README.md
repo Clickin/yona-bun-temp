@@ -38,7 +38,7 @@ Yona는 legacy Yona의 기능과 UX parity를 목표로 재구성 중인 워크�
 - Phase -1 이후에도 다음 항목은 `deferred` 또는 active `gap`으로 남아 있다.
   - `/organizations/:org/boards|pullrequests` 실제 listing body 복원
   - project admin/watchers/webhooks/transfer/change VCS/statistics/delete surface
-  - raw/download/image/history/Smart HTTP 등 code browser 후속 surface
+  - post-receive hooks/events, inline edit, and SVN wrapper 등 code browser/VCS 후속 surface
   - Phase 4+ PR/review/search/board/admin surface
 - 위 항목의 현재 근거는 [`docs/provenance/core-parity-audit.md`](/G:/programming/yona/docs/provenance/core-parity-audit.md), [`docs/provenance/phase-0b/organization.md`](/G:/programming/yona/docs/provenance/phase-0b/organization.md), [`docs/plans/2026-04-11-wave-2b-organization-follow-up.md`](/G:/programming/yona/docs/plans/2026-04-11-wave-2b-organization-follow-up.md)에 남긴다.
 

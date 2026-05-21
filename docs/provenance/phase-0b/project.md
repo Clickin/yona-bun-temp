@@ -87,7 +87,7 @@
 
 ## Internal Translation Notes
 
-- Legacy physically moves owner/project repository paths during transfer. Rust stores Git repositories at `YONA_DATA/repo/<project_id>.git`, as recorded in `docs/provenance/phase-0b/code-browser.md`, so owner/name filesystem path move is not a required parity action. Smart HTTP clone URL/update behavior is still part of the VCS lifecycle follow-up.
+- Legacy physically moves owner/project repository paths during transfer. Rust stores Git repositories at `YONA_DATA/repo/<project_id>.git`, as recorded in `docs/provenance/phase-0b/code-browser.md`, so owner/name filesystem path move is not a required parity action. Smart HTTP clone URLs resolve through the current owner/project route; post-receive side effects remain part of the VCS lifecycle follow-up.
 
 ## R0-3 Delivery Note
 

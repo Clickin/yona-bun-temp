@@ -10,10 +10,12 @@ use axum::response::{IntoResponse, Redirect, Response};
 use axum::routing::{any, delete, get, patch, post, put};
 use axum::{extract::Path, http::Method};
 use axum::{Json, Router};
+use base64::{engine::general_purpose, Engine as _};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use buffa::view::{MessageView, OwnedView};
-use http::header::SET_COOKIE;
-use http::{HeaderValue, StatusCode};
+use http::header::{AUTHORIZATION, SET_COOKIE, WWW_AUTHENTICATE};
+use http::{HeaderName, HeaderValue, StatusCode};
+use http_body_util::BodyExt;
 use md5::{Digest, Md5};
 use pulldown_cmark::{html, CowStr, Event, Options, Parser};
 use runtime_config::normalize_base_path;
@@ -41,7 +43,7 @@ use yona_rust_vcs::{
     CodeBranchListSnapshot, CodeBrowserSnapshot, CodeCommitDetailSnapshot,
     CodeCommitFileDiffRecord, CodeCommitParentRecord, CodeCommitRecord, CodeCompareSnapshot,
     CodeEntryRecord, CodeFileBytesRecord, CodeFileRecord, CodeHistorySnapshot,
-    ProjectHistoryCommitRecord, VcsError,
+    GitHttpBackendRequest, ProjectHistoryCommitRecord, VcsError, MAX_SMART_HTTP_RPC_BYTES,
 };
 
 #[allow(clippy::missing_panics_doc)]
@@ -365,6 +367,9 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let image_code_base_path = base_path.clone();
     let archive_code_backend = route_backend.clone();
     let archive_code_session_manager = session_manager.clone();
+    let smart_http_backend = route_backend.clone();
+    let smart_http_session_manager = session_manager.clone();
+    let smart_http_base_path = base_path.clone();
     let transfer_accept_backend = route_backend.clone();
     let transfer_accept_session_manager = session_manager.clone();
     let transfer_accept_base_path = base_path.clone();
@@ -1485,6 +1490,9 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             let browser_runtime_for_single_segment_fallback = browser_runtime.clone();
             let asset_root_for_two_segment_fallback = asset_root.clone();
             let browser_runtime_for_two_segment_fallback = browser_runtime.clone();
+            let smart_http_backend_for_fallback = smart_http_backend.clone();
+            let smart_http_session_manager_for_fallback = smart_http_session_manager.clone();
+            let smart_http_base_path_for_fallback = smart_http_base_path.clone();
 
             if base_path == "/" {
                 base_router = base_router.route(
@@ -1532,11 +1540,22 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             }
                         }),
                     )
-                    .fallback(move |method: Method| {
+                    .fallback(move |request: Request| {
                         let asset_root = asset_root_for_fallback.clone();
                         let browser_runtime = browser_runtime_for_fallback.clone();
+                        let session_manager = smart_http_session_manager_for_fallback.clone();
+                        let backend = smart_http_backend_for_fallback.clone();
+                        let base_path = smart_http_base_path_for_fallback.clone();
                         async move {
-                            serve_filesystem_fallback(asset_root, method, browser_runtime).await
+                            serve_filesystem_or_smart_http_fallback(
+                                request,
+                                asset_root,
+                                browser_runtime,
+                                session_manager,
+                                backend,
+                                base_path,
+                            )
+                            .await
                         }
                     });
         }
@@ -1546,6 +1565,9 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             let browser_runtime_for_fallback = browser_runtime.clone();
             let browser_runtime_for_single_segment_fallback = browser_runtime.clone();
             let browser_runtime_for_two_segment_fallback = browser_runtime.clone();
+            let smart_http_backend_for_fallback = smart_http_backend.clone();
+            let smart_http_session_manager_for_fallback = smart_http_session_manager.clone();
+            let smart_http_base_path_for_fallback = smart_http_base_path.clone();
 
             if base_path == "/" {
                 base_router = base_router.route(
@@ -1579,13 +1601,35 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         async move { serve_embedded_fallback(Method::GET, browser_runtime).await }
                     }),
                 )
-                .fallback(move |method: Method| {
+                .fallback(move |request: Request| {
                     let browser_runtime = browser_runtime_for_fallback.clone();
-                    async move { serve_embedded_fallback(method, browser_runtime).await }
+                    let session_manager = smart_http_session_manager_for_fallback.clone();
+                    let backend = smart_http_backend_for_fallback.clone();
+                    let base_path = smart_http_base_path_for_fallback.clone();
+                    async move {
+                        serve_embedded_or_smart_http_fallback(
+                            request,
+                            browser_runtime,
+                            session_manager,
+                            backend,
+                            base_path,
+                        )
+                        .await
+                    }
                 });
         }
         AssetMode::None => {
-            base_router = base_router.fallback(|| async { StatusCode::NOT_FOUND });
+            let smart_http_backend_for_fallback = smart_http_backend.clone();
+            let smart_http_session_manager_for_fallback = smart_http_session_manager.clone();
+            let smart_http_base_path_for_fallback = smart_http_base_path.clone();
+            base_router = base_router.fallback(move |request: Request| {
+                let session_manager = smart_http_session_manager_for_fallback.clone();
+                let backend = smart_http_backend_for_fallback.clone();
+                let base_path = smart_http_base_path_for_fallback.clone();
+                async move {
+                    smart_http_or_not_found(request, session_manager, backend, base_path).await
+                }
+            });
         }
     }
 
@@ -1663,7 +1707,10 @@ async fn anonymous_access_gate(
     session_manager: SessionManager,
     base_path: String,
 ) -> Response {
-    if allows_anonymous_access() || anonymous_access_path_is_public(request.uri().path()) {
+    if allows_anonymous_access()
+        || anonymous_access_path_is_public(request.uri().path())
+        || smart_http_route_from_path(request.uri().path(), &base_path).is_some()
+    {
         return next.run(request).await;
     }
 
@@ -1731,6 +1778,408 @@ fn anonymous_access_login_redirect(base_path: &str, path: &str) -> Response {
 fn anonymous_access_rest_response() -> Response {
     RestRouteError::from_connect_error(ConnectError::unauthenticated(LEGACY_LOGIN_REQUIRED_MESSAGE))
         .into_response()
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SmartHttpPermission {
+    Read,
+    Write,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct SmartHttpRoute {
+    git_path: String,
+    owner_name: String,
+    project_name: String,
+}
+
+async fn serve_filesystem_or_smart_http_fallback(
+    request: Request,
+    asset_root: PathBuf,
+    browser_runtime: BrowserRuntimeConfig,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let method = request.method().clone();
+    if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
+        return direct_smart_http_request(request, session_manager, backend, base_path).await;
+    }
+    serve_filesystem_fallback(asset_root, method, browser_runtime).await
+}
+
+async fn serve_embedded_or_smart_http_fallback(
+    request: Request,
+    browser_runtime: BrowserRuntimeConfig,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let method = request.method().clone();
+    if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
+        return direct_smart_http_request(request, session_manager, backend, base_path).await;
+    }
+    serve_embedded_fallback(method, browser_runtime).await
+}
+
+async fn smart_http_or_not_found(
+    request: Request,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
+        return direct_smart_http_request(request, session_manager, backend, base_path).await;
+    }
+    StatusCode::NOT_FOUND.into_response()
+}
+
+async fn direct_smart_http_request(
+    request: Request,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let Some(route) = smart_http_route_from_path(request.uri().path(), &base_path) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let (parts, body) = request.into_parts();
+    let method = parts.method.as_str().to_ascii_uppercase();
+    if method != "GET" && method != "POST" {
+        return StatusCode::METHOD_NOT_ALLOWED.into_response();
+    }
+    let query_string = parts.uri.query().unwrap_or_default().to_string();
+    if method == "GET" && route.git_path == "info/refs" && !smart_http_has_service(&query_string) {
+        return (StatusCode::FORBIDDEN, "Unsupported service: getanyfile").into_response();
+    }
+    if method == "POST" && smart_http_announced_body_too_large(&parts.headers) {
+        return (StatusCode::PAYLOAD_TOO_LARGE, "Request Entity Too Large").into_response();
+    }
+
+    let PilotBackend::Repository(repository) = &backend else {
+        return StatusCode::NOT_IMPLEMENTED.into_response();
+    };
+    let principal =
+        match smart_http_principal_from_headers(&parts.headers, &session_manager, repository).await
+        {
+            Ok(principal) => principal,
+            Err(response) => return response,
+        };
+    let actor_id = principal.as_ref().map(|user| user.id);
+    let remote_user = principal.as_ref().map(|user| user.login_id.clone());
+    let authorization = match repository
+        .read_project_authorization(&route.owner_name, &route.project_name, actor_id)
+        .await
+    {
+        Ok(Some(authorization)) => authorization,
+        Ok(None) => return (StatusCode::NOT_FOUND, "Repository not found").into_response(),
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
+        return (StatusCode::NOT_FOUND, "Repository not found").into_response();
+    }
+
+    let permission = if smart_http_requires_write(&route.git_path, &query_string) {
+        SmartHttpPermission::Write
+    } else {
+        SmartHttpPermission::Read
+    };
+    match smart_http_authorization(&authorization, actor_id.is_none(), permission) {
+        Ok(()) => {}
+        Err(SmartHttpAccessFailure::AuthenticationRequired) => {
+            return smart_http_basic_challenge_response();
+        }
+        Err(SmartHttpAccessFailure::Forbidden) => {
+            return (StatusCode::FORBIDDEN, "Forbidden").into_response();
+        }
+        Err(SmartHttpAccessFailure::InvalidProjectScope(error)) => {
+            return RestRouteError::from_connect_error(error).into_response();
+        }
+    }
+
+    let body_bytes = match body.collect().await {
+        Ok(collected) => collected.to_bytes(),
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
+        }
+    };
+    if body_bytes.len() > MAX_SMART_HTTP_RPC_BYTES {
+        return (StatusCode::PAYLOAD_TOO_LARGE, "Request Entity Too Large").into_response();
+    }
+
+    let repo_root = yona_data_root().join("repo");
+    let path_info = format!("/{}.git/{}", authorization.project.id, route.git_path);
+    let content_type = parts
+        .headers
+        .get(http::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok());
+    let git_protocol = parts
+        .headers
+        .get("git-protocol")
+        .and_then(|value| value.to_str().ok());
+    let remote_addr = smart_http_remote_addr(&parts.headers);
+
+    let response = yona_rust_vcs::run_git_http_backend(GitHttpBackendRequest {
+        body: &body_bytes,
+        content_type,
+        git_protocol,
+        method: &method,
+        path_info: &path_info,
+        query_string: &query_string,
+        remote_addr: &remote_addr,
+        remote_user: remote_user.as_deref(),
+        repo_root: &repo_root,
+    });
+
+    match response {
+        Ok(output) => smart_http_backend_response(output),
+        Err(VcsError::NotFound) => (StatusCode::NOT_FOUND, "Repository not found").into_response(),
+        Err(VcsError::GitUnavailable) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "git executable is unavailable",
+        )
+            .into_response(),
+        Err(VcsError::GitTimedOut) => {
+            (StatusCode::GATEWAY_TIMEOUT, "git command timed out").into_response()
+        }
+        Err(VcsError::GitFailed(message))
+            if message.contains("Smart HTTP request body exceeds limit") =>
+        {
+            (StatusCode::PAYLOAD_TOO_LARGE, "Request Entity Too Large").into_response()
+        }
+        Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
+    }
+}
+
+fn smart_http_route_from_path(path: &str, base_path: &str) -> Option<SmartHttpRoute> {
+    let mut relative = path;
+    if base_path != "/" {
+        if relative == base_path {
+            relative = "/";
+        } else if let Some(stripped) = relative.strip_prefix(&format!("{base_path}/")) {
+            relative = stripped;
+        }
+    }
+    let segments = relative
+        .trim_start_matches('/')
+        .split('/')
+        .filter(|segment| !segment.is_empty())
+        .collect::<Vec<_>>();
+    if segments.len() < 3 {
+        return None;
+    }
+    let owner_name = segments[0].to_string();
+    let project_segment = segments[1];
+    let git_path = match segments[2..] {
+        ["info", "refs"] => "info/refs",
+        ["git-upload-pack"] => "git-upload-pack",
+        ["git-receive-pack"] => "git-receive-pack",
+        _ => return None,
+    }
+    .to_string();
+
+    let project_name = project_segment
+        .strip_suffix(".git")
+        .unwrap_or(project_segment)
+        .to_string();
+    if owner_name.is_empty() || project_name.is_empty() {
+        return None;
+    }
+
+    Some(SmartHttpRoute {
+        git_path,
+        owner_name,
+        project_name,
+    })
+}
+
+fn smart_http_has_service(query_string: &str) -> bool {
+    query_string
+        .split('&')
+        .filter_map(|pair| pair.split_once('='))
+        .any(|(name, value)| name == "service" && !value.trim().is_empty())
+}
+
+fn smart_http_requires_write(git_path: &str, query_string: &str) -> bool {
+    git_path == "git-receive-pack"
+        || query_string
+            .split('&')
+            .filter_map(|pair| pair.split_once('='))
+            .any(|(name, value)| name == "service" && value == "git-receive-pack")
+}
+
+fn smart_http_announced_body_too_large(headers: &HeaderMap) -> bool {
+    headers
+        .get(http::header::CONTENT_LENGTH)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<usize>().ok())
+        .is_some_and(|length| length > MAX_SMART_HTTP_RPC_BYTES)
+}
+
+#[derive(Clone, Debug)]
+enum SmartHttpAccessFailure {
+    AuthenticationRequired,
+    Forbidden,
+    InvalidProjectScope(ConnectError),
+}
+
+fn smart_http_authorization(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    is_anonymous: bool,
+    permission: SmartHttpPermission,
+) -> Result<(), SmartHttpAccessFailure> {
+    let scope = map_project_scope(&authorization.project.project_scope)
+        .map_err(SmartHttpAccessFailure::InvalidProjectScope)?;
+    if authorization.viewer.is_site_admin
+        || authorization.viewer.is_organization_admin
+        || authorization.viewer.is_project_manager
+    {
+        return Ok(());
+    }
+
+    let requires_write = permission == SmartHttpPermission::Write
+        || (permission == SmartHttpPermission::Read
+            && authorization.project.is_code_accessible_member_only);
+    if requires_write {
+        if authorization.viewer.is_project_member
+            || (authorization.viewer.is_organization_member
+                && matches!(scope, ProjectScope::Public | ProjectScope::Protected))
+        {
+            return Ok(());
+        }
+        return if is_anonymous {
+            Err(SmartHttpAccessFailure::AuthenticationRequired)
+        } else {
+            Err(SmartHttpAccessFailure::Forbidden)
+        };
+    }
+
+    if matches!(scope, ProjectScope::Public)
+        || authorization.viewer.is_project_member
+        || (authorization.viewer.is_organization_member && matches!(scope, ProjectScope::Protected))
+    {
+        return Ok(());
+    }
+
+    if is_anonymous {
+        Err(SmartHttpAccessFailure::AuthenticationRequired)
+    } else {
+        Err(SmartHttpAccessFailure::Forbidden)
+    }
+}
+
+async fn smart_http_principal_from_headers(
+    headers: &HeaderMap,
+    session_manager: &SessionManager,
+    repository: &PilotRepository,
+) -> Result<Option<persistence::AppUserRecord>, Response> {
+    match parse_basic_authorization(headers) {
+        Ok(Some((identifier, secret))) => {
+            let Some(user) = repository
+                .find_user_by_identifier(&identifier)
+                .await
+                .map_err(|error| {
+                    RestRouteError::from_connect_error(internal_error(error)).into_response()
+                })?
+            else {
+                return Err(smart_http_basic_challenge_response());
+            };
+            let password_matches = verify(&secret, &user.password_hash).unwrap_or(false);
+            let token_matches = repository
+                .read_api_token_for_user(user.id)
+                .await
+                .map_err(|error| {
+                    RestRouteError::from_connect_error(internal_error(error)).into_response()
+                })?
+                .is_some_and(|token| !token.is_empty() && token == secret);
+            if !(password_matches || token_matches) {
+                return Err(smart_http_basic_challenge_response());
+            }
+            if confirmation_session_required() && !user.is_confirmed {
+                return Err(smart_http_basic_challenge_response());
+            }
+            Ok(Some(user))
+        }
+        Ok(None) => {
+            let Some(session) = session_manager.read_session_from_headers(headers) else {
+                return Ok(None);
+            };
+            let Some(user_id) = session.user_id else {
+                return Ok(None);
+            };
+            repository.find_user_by_id(user_id).await.map_err(|error| {
+                RestRouteError::from_connect_error(internal_error(error)).into_response()
+            })
+        }
+        Err(()) => Err(smart_http_basic_challenge_response()),
+    }
+}
+
+fn parse_basic_authorization(headers: &HeaderMap) -> Result<Option<(String, String)>, ()> {
+    let Some(value) = headers.get(AUTHORIZATION) else {
+        return Ok(None);
+    };
+    let value = value.to_str().map_err(|_| ())?;
+    let Some(encoded) = value
+        .trim()
+        .strip_prefix("Basic ")
+        .or_else(|| value.trim().strip_prefix("basic "))
+    else {
+        return Ok(None);
+    };
+    let decoded = general_purpose::STANDARD.decode(encoded).map_err(|_| ())?;
+    let Some(separator) = decoded.iter().position(|byte| *byte == b':') else {
+        return Err(());
+    };
+    let login_id = iso_8859_1_bytes_to_string(&decoded[..separator]);
+    let password = iso_8859_1_bytes_to_string(&decoded[separator + 1..]);
+    Ok(Some((login_id, password)))
+}
+
+fn iso_8859_1_bytes_to_string(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| char::from(*byte)).collect()
+}
+
+fn smart_http_basic_challenge_response() -> Response {
+    let mut response = (StatusCode::UNAUTHORIZED, LEGACY_LOGIN_REQUIRED_MESSAGE).into_response();
+    response.headers_mut().insert(
+        WWW_AUTHENTICATE,
+        HeaderValue::from_static("Basic realm=\"Yona\""),
+    );
+    response
+}
+
+fn smart_http_remote_addr(headers: &HeaderMap) -> String {
+    headers
+        .get("x-forwarded-for")
+        .or_else(|| headers.get("x-real-ip"))
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.split(',').next())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or("127.0.0.1")
+        .to_string()
+}
+
+fn smart_http_backend_response(output: yona_rust_vcs::GitHttpBackendResponse) -> Response {
+    let status = StatusCode::from_u16(output.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+    let mut response = (status, output.body).into_response();
+    for (name, value) in output.headers {
+        let Ok(name) = HeaderName::from_bytes(name.as_bytes()) else {
+            continue;
+        };
+        let Ok(value) = HeaderValue::from_str(&value) else {
+            continue;
+        };
+        if name == http::header::CONTENT_TYPE {
+            response.headers_mut().insert(name, value);
+        } else {
+            response.headers_mut().append(name, value);
+        }
+    }
+    response
 }
 
 fn percent_encode_uri_component(value: &str) -> String {

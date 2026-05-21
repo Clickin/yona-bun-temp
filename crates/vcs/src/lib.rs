@@ -1,3 +1,4 @@
+use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::thread;
@@ -6,6 +7,10 @@ use std::time::{Duration, Instant};
 pub const CRATE_OWNER: &str = "vcs";
 pub const HISTORY_ITEM_LIMIT: usize = 25;
 pub const MAX_TEXT_FILE_BYTES: i64 = 1024 * 1024;
+pub const MAX_SMART_HTTP_RPC_BYTES: usize = 100 * 1024 * 1024;
+
+const HEADER_BODY_DELIMITER_CRLF: &[u8] = b"\r\n\r\n";
+const HEADER_BODY_DELIMITER_LF: &[u8] = b"\n\n";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CodeBrowserSnapshot {
@@ -148,6 +153,26 @@ pub struct CodeBranchListItemRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GitHttpBackendRequest<'a> {
+    pub body: &'a [u8],
+    pub content_type: Option<&'a str>,
+    pub git_protocol: Option<&'a str>,
+    pub method: &'a str,
+    pub path_info: &'a str,
+    pub query_string: &'a str,
+    pub remote_addr: &'a str,
+    pub remote_user: Option<&'a str>,
+    pub repo_root: &'a Path,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GitHttpBackendResponse {
+    pub body: Vec<u8>,
+    pub headers: Vec<(String, String)>,
+    pub status: u16,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestDiffSnapshot {
     pub commits: Vec<PullRequestDiffCommitRecord>,
     pub files: Vec<PullRequestChangedFileRecord>,
@@ -239,6 +264,81 @@ pub fn delete_repository(repo_path: &Path) -> Result<(), VcsError> {
 
     std::fs::remove_dir_all(repo_path)
         .map_err(|error| VcsError::FilesystemFailed(error.to_string()))
+}
+
+pub fn run_git_http_backend(
+    request: GitHttpBackendRequest<'_>,
+) -> Result<GitHttpBackendResponse, VcsError> {
+    if request.body.len() > MAX_SMART_HTTP_RPC_BYTES {
+        return Err(VcsError::GitFailed(
+            "Smart HTTP request body exceeds limit".to_string(),
+        ));
+    }
+    if !request.repo_root.exists() || !request.repo_root.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+
+    let mut command = Command::new("git");
+    command
+        .arg("http-backend")
+        .current_dir(request.repo_root)
+        .env("GIT_PROJECT_ROOT", request.repo_root)
+        .env("PATH_INFO", request.path_info)
+        .env("REQUEST_METHOD", request.method)
+        .env("QUERY_STRING", request.query_string)
+        .env("CONTENT_TYPE", request.content_type.unwrap_or_default())
+        .env("REMOTE_ADDR", request.remote_addr)
+        .env("GIT_HTTP_EXPORT_ALL", "1")
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .stdin(Stdio::piped())
+        .stderr(Stdio::piped())
+        .stdout(Stdio::piped());
+
+    if request.method != "GET" {
+        command.env("CONTENT_LENGTH", request.body.len().to_string());
+    }
+    if let Some(protocol) = request.git_protocol.filter(|value| !value.is_empty()) {
+        command.env("HTTP_GIT_PROTOCOL", protocol);
+        command.env("GIT_PROTOCOL", protocol);
+    }
+    if let Some(remote_user) = request.remote_user.filter(|value| !value.is_empty()) {
+        command.env("REMOTE_USER", remote_user);
+    }
+
+    let mut child = command.spawn().map_err(|_| VcsError::GitUnavailable)?;
+    if let Some(mut stdin) = child.stdin.take() {
+        if !request.body.is_empty() {
+            stdin
+                .write_all(request.body)
+                .map_err(|error| VcsError::GitFailed(error.to_string()))?;
+        }
+    }
+
+    let start = Instant::now();
+    loop {
+        match child.try_wait().map_err(|_| VcsError::GitUnavailable)? {
+            Some(_) => break,
+            None if start.elapsed() > Duration::from_secs(30) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(VcsError::GitTimedOut);
+            }
+            None => thread::sleep(Duration::from_millis(10)),
+        }
+    }
+
+    let output = child
+        .wait_with_output()
+        .map_err(|_| VcsError::GitUnavailable)?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        if stderr.contains("not found") || stderr.contains("No such file") {
+            return Err(VcsError::NotFound);
+        }
+        return Err(VcsError::GitFailed(stderr));
+    }
+
+    parse_git_http_backend_output(&output.stdout)
 }
 
 pub fn read_code_browser(
@@ -1234,4 +1334,54 @@ fn git_bytes(repo_path: &Path, args: &[&str]) -> Result<Vec<u8>, VcsError> {
     } else {
         Err(VcsError::GitFailed(stderr))
     }
+}
+
+fn parse_git_http_backend_output(output: &[u8]) -> Result<GitHttpBackendResponse, VcsError> {
+    let (header_end, delimiter_len) = find_delimiter(output, HEADER_BODY_DELIMITER_CRLF)
+        .or_else(|| find_delimiter(output, HEADER_BODY_DELIMITER_LF))
+        .ok_or_else(|| {
+            VcsError::GitFailed(
+                "Invalid git-http-backend CGI output: missing header/body delimiter".to_string(),
+            )
+        })?;
+    let header_text = String::from_utf8_lossy(&output[..header_end]);
+    let body = output[header_end + delimiter_len..].to_vec();
+    let mut status = 200u16;
+    let mut headers = Vec::new();
+
+    for raw_line in header_text.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let Some((name, value)) = line.split_once(':') else {
+            continue;
+        };
+        let name = name.trim();
+        let value = value.trim();
+        if name.eq_ignore_ascii_case("status") {
+            if let Some(code) = value
+                .split_whitespace()
+                .next()
+                .and_then(|code| code.parse::<u16>().ok())
+            {
+                status = code;
+            }
+            continue;
+        }
+        headers.push((name.to_string(), value.to_string()));
+    }
+
+    Ok(GitHttpBackendResponse {
+        body,
+        headers,
+        status,
+    })
+}
+
+fn find_delimiter(buffer: &[u8], delimiter: &[u8]) -> Option<(usize, usize)> {
+    buffer
+        .windows(delimiter.len())
+        .position(|window| window == delimiter)
+        .map(|index| (index, delimiter.len()))
 }
