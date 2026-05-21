@@ -314,6 +314,7 @@ GET   /authenticate/:provider   → OAuth 시작
 ```
 GET   /:user                    → 사용자 프로필 (본인이면 Workspace)
 POST  /:user                    → site manager 비밀번호 재설정 JSON
+GET   /user/files               → 사용자 첨부파일 목록
 GET   /user/editform            → 프로필 편집 폼
 POST  /user/editform/token_reset → API 토큰 재생성
 POST  /user/edit                → 프로필 수정
@@ -344,12 +345,14 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
 | 프로젝트별 알림 설정                        | 프로젝트별 NEW_ISSUE, NEW_POSTING 등 토글  | ✅ 기본 구현 | 1     |
 | 사용자 프로필 공개 보기                     | `/:user` 경로로 다른 사용자 프로필 조회    | ✅ 구현      | 2     |
 | 사용자 활동 통계                            | 사용자별 이슈/게시글/댓글/투표 통계        | ✅ 기본 구현 | 5     |
+| 사용자 첨부파일 목록                        | `/user/files`에서 본인 업로드 파일 검색/다운로드 | ✅ 구현      | 5     |
 
 #### 검수 기준
 
 - [ ] `/me` 화면에서 Issues / Pull Requests / Projects 탭이 legacy와 동일 구조로 표시된다
 - [x] `/:user` 공개 프로필은 legacy `user/view.scala.html`의 사용자 카드, Issues / Pull Requests / Projects 탭, 프로젝트 리스트 class anchor를 유지하고 공개 READ 가능한 프로젝트만 노출한다
 - [x] `GET /api/v1/users/:loginId/statistics`는 legacy `UserApi.statistics`의 `issue`, `posting`, `assignedIssue`, `issueComment`, `postingComment`, `issueVoter`, `issueCommentVoter` count 필드를 app-runtime REST로 제공한다
+- [x] `/user/files`는 legacy `userFiles` 화면의 `nav-tabs`, 검색 폼, `.attachment-files` 목록, preview/download/location/date anchors를 유지하고 `/api/v1/workspace/files`로 현재 사용자의 첨부 파일을 검색/페이지네이션한다
 - [ ] 프로필 편집에서 아바타 업로드 시 `/files` 엔드포인트로 멀티파트 업로드 후 크롭이 동작한다
 - [x] 프로필 수정과 복수 이메일 추가/삭제/인증/주 이메일 설정이 모두 동작하고 legacy direct profile/email mutation routes가 `/user/editform` redirect를 반환한다
 - [ ] 프로젝트별 알림 토글이 legacy의 `NEW_COMMENT` 기본 off 동작을 따른다
@@ -1415,6 +1418,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/me`                              | GET      | SPA                                   | `me/`                                         | implemented        |
 | `/:user`                           | GET      | `GET /api/v1/users/:loginId/profile`; `GET /api/v1/users/:loginId/statistics` | `$user/`                                      | implemented        |
 | `/:user`                           | POST     | `POST /api/v1/site/users/:loginId/password/reset` | `sites/$pageName` action modal                | implemented        |
+| `/user/files`                      | GET      | `GET /api/v1/workspace/files`         | `user/files`                                  | implemented        |
 | `/user/editform`                   | GET      | SPA                                   | `user/editform/`                              | implemented        |
 | `/user/usermenuTabContentList`     | GET      | direct legacy HTML fragment           | global user menu tab content                  | implemented        |
 | `/user/editform/token_reset`       | POST     | direct workspace API token reset      | `user/editform/token`                         | implemented        |

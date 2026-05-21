@@ -34,10 +34,10 @@ use crate::repo_types::{
     ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateIssueCommentInput,
     UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput,
     UpdatePostingInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
-    UpdateProjectLabelInput, UpdatePullRequestInput, UserIssueCandidateRecord, UserIssueListFilter,
-    UserStatisticsRecord, WatchedProjectNotificationsRecord, WorkspaceEmailRecord,
-    WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
-    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    UpdateProjectLabelInput, UpdatePullRequestInput, UserAttachmentListRecord,
+    UserAttachmentRecord, UserIssueCandidateRecord, UserIssueListFilter, UserStatisticsRecord,
+    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
+    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
@@ -8306,6 +8306,65 @@ impl AppRepository {
             owner_login_id: model.owner_login_id.unwrap_or_default(),
             size: model.size.unwrap_or_default(),
         }))
+    }
+
+    pub async fn list_user_attachments(
+        &self,
+        owner_login_id: &str,
+        filter: &str,
+        page: u32,
+        page_size: u32,
+    ) -> Result<UserAttachmentListRecord, DbErr> {
+        let page = page.max(1);
+        let page_size = page_size.max(1);
+        let filter = filter.trim().to_string();
+        let normalized_filter = normalize_identity(&filter);
+        let mut rows = attachment::Entity::find()
+            .filter(attachment::Column::OwnerLoginId.eq(Some(owner_login_id.to_string())))
+            .order_by_desc(attachment::Column::Id)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter(|row| {
+                normalized_filter.is_empty()
+                    || normalize_identity(row.name.as_deref().unwrap_or_default())
+                        .contains(&normalized_filter)
+            })
+            .collect::<Vec<_>>();
+
+        let total = rows.len() as u32;
+        let offset = page.saturating_sub(1).saturating_mul(page_size) as usize;
+        let attachments = rows
+            .drain(..)
+            .skip(offset)
+            .take(page_size as usize)
+            .map(|model| UserAttachmentRecord {
+                container_id: model.container_id,
+                container_type: model.container_type.unwrap_or_default(),
+                created_label: model
+                    .created_date
+                    .map(|value| value.format("%Y-%m-%d %I:%M %p").to_string())
+                    .unwrap_or_default(),
+                id: model.id,
+                mime_type: model.mime_type.unwrap_or_default(),
+                name: model.name.unwrap_or_default(),
+                size: model.size.unwrap_or_default(),
+            })
+            .collect();
+        let total_pages = if total == 0 {
+            0
+        } else {
+            total.div_ceil(page_size)
+        };
+
+        Ok(UserAttachmentListRecord {
+            attachments,
+            filter,
+            page,
+            page_size,
+            total,
+            total_pages,
+        })
     }
 
     pub async fn read_avatar_attachment_for_user(

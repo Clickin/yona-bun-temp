@@ -16,6 +16,36 @@ type WorkspaceNotificationInput = {
   projectId: string;
 };
 
+export type WorkspaceFilesInput = {
+  filter?: string;
+  page?: number;
+};
+
+export type WorkspaceFileItem = {
+  containerId: number;
+  containerType: string;
+  createdLabel: string;
+  downloadUrl: string;
+  id: number;
+  locationHref: string;
+  locationLabel: string;
+  mimeType: string;
+  name: string;
+  previewUrl: string;
+  size: number;
+  sizeLabel: string;
+  url: string;
+};
+
+export type WorkspaceFilesResponse = {
+  files: WorkspaceFileItem[];
+  filter: string;
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
 function normalizeWorkspaceOverview(
   response: ReadWorkspaceOverviewResponse,
 ): ReadWorkspaceOverviewResponse {
@@ -64,6 +94,36 @@ export function readWorkspaceOverviewRest(
   return workspaceOverviewRest(runtimeConfig, "/workspace", {
     fetchImpl,
   });
+}
+
+export async function listWorkspaceFilesRest(
+  runtimeConfig: RuntimeConfig,
+  input: WorkspaceFilesInput = {},
+  fetchImpl: typeof fetch = fetch,
+): Promise<WorkspaceFilesResponse> {
+  const searchParams = new URLSearchParams();
+  const filter = input.filter?.trim() ?? "";
+  if (filter !== "") {
+    searchParams.set("filter", filter);
+  }
+  if (input.page && input.page > 1) {
+    searchParams.set("page", String(input.page));
+  }
+  const query = searchParams.toString();
+  const response = await restFetch<WorkspaceFilesResponse>(
+    runtimeConfig,
+    `/workspace/files${query === "" ? "" : `?${query}`}`,
+    { fetchImpl },
+  );
+  return {
+    ...response,
+    files: response.files ?? [],
+    filter: response.filter ?? filter,
+    page: response.page ?? input.page ?? 1,
+    pageSize: response.pageSize ?? 30,
+    total: response.total ?? 0,
+    totalPages: response.totalPages ?? 0,
+  };
 }
 
 export function setDefaultLandingPathRest(

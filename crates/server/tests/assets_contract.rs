@@ -865,6 +865,79 @@ async fn avatar_file_upload_returns_metadata_and_serves_bytes_for_owner() {
 }
 
 #[tokio::test]
+async fn workspace_files_list_returns_current_users_legacy_attachment_rows() {
+    let (app, _, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &cookie_header, &csrf, "door").await;
+
+    let avatar_id = upload_image_file(app.clone(), &cookie_header, &csrf, "avatar.png").await;
+    let (boundary, body) = multipart_body("notes.txt", "text/plain", b"plain notes");
+    let text_upload = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/files")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    format!("multipart/form-data; boundary={boundary}"),
+                )
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(text_upload.status(), StatusCode::CREATED);
+
+    let anonymous = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/workspace/files")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(anonymous.status(), StatusCode::UNAUTHORIZED);
+
+    let list = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/workspace/files?filter=avatar&page=1")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(list.status(), StatusCode::OK);
+    let body = list.into_body().collect().await.unwrap().to_bytes();
+    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(payload["filter"], "avatar");
+    assert_eq!(payload["page"], 1);
+    assert_eq!(payload["pageSize"], 30);
+    assert_eq!(payload["total"], 1);
+    assert_eq!(payload["totalPages"], 1);
+    let files = payload["files"].as_array().expect("files");
+    assert_eq!(files.len(), 1);
+    assert_eq!(files[0]["id"], avatar_id);
+    assert_eq!(files[0]["name"], "avatar.png");
+    assert_eq!(files[0]["mimeType"], "image/png");
+    assert_eq!(files[0]["url"], format!("/yona/files/{avatar_id}"));
+    assert_eq!(
+        files[0]["downloadUrl"],
+        format!("/yona/files/{avatar_id}?action=download")
+    );
+    assert_eq!(files[0]["previewUrl"], format!("/yona/files/{avatar_id}"));
+    assert!(files[0]["sizeLabel"].as_str().unwrap().ends_with("B"));
+}
+
+#[tokio::test]
 async fn uploaded_file_delete_requires_author_or_site_admin_and_removes_attachment() {
     let (app, repo, db) = build_auth_router().await;
     let (owner_csrf, owner_cookie) = bootstrap(app.clone()).await;

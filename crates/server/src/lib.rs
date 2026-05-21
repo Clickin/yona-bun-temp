@@ -1304,6 +1304,10 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             let browser_runtime_for_index = browser_runtime.clone();
             let asset_root_for_fallback = asset_root.clone();
             let browser_runtime_for_fallback = browser_runtime.clone();
+            let asset_root_for_single_segment_fallback = asset_root.clone();
+            let browser_runtime_for_single_segment_fallback = browser_runtime.clone();
+            let asset_root_for_two_segment_fallback = asset_root.clone();
+            let browser_runtime_for_two_segment_fallback = browser_runtime.clone();
 
             if base_path == "/" {
                 base_router = base_router.route(
@@ -1328,6 +1332,29 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             }
                         }),
                     )
+                    .route(
+                        "/{login_id}",
+                        get(move || {
+                            let asset_root = asset_root_for_single_segment_fallback.clone();
+                            let browser_runtime =
+                                browser_runtime_for_single_segment_fallback.clone();
+                            async move {
+                                serve_filesystem_fallback(asset_root, Method::GET, browser_runtime)
+                                    .await
+                            }
+                        }),
+                    )
+                    .route(
+                        "/{owner}/{project}",
+                        get(move || {
+                            let asset_root = asset_root_for_two_segment_fallback.clone();
+                            let browser_runtime = browser_runtime_for_two_segment_fallback.clone();
+                            async move {
+                                serve_filesystem_fallback(asset_root, Method::GET, browser_runtime)
+                                    .await
+                            }
+                        }),
+                    )
                     .fallback(move |method: Method| {
                         let asset_root = asset_root_for_fallback.clone();
                         let browser_runtime = browser_runtime_for_fallback.clone();
@@ -1340,6 +1367,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             let browser_runtime_for_index = browser_runtime.clone();
             let browser_runtime_for_assets = browser_runtime.clone();
             let browser_runtime_for_fallback = browser_runtime.clone();
+            let browser_runtime_for_single_segment_fallback = browser_runtime.clone();
+            let browser_runtime_for_two_segment_fallback = browser_runtime.clone();
 
             if base_path == "/" {
                 base_router = base_router.route(
@@ -1357,6 +1386,20 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     get(move |Path(path): Path<String>| {
                         let browser_runtime = browser_runtime_for_assets.clone();
                         async move { serve_embedded_asset(&path, browser_runtime).await }
+                    }),
+                )
+                .route(
+                    "/{login_id}",
+                    get(move || {
+                        let browser_runtime = browser_runtime_for_single_segment_fallback.clone();
+                        async move { serve_embedded_fallback(Method::GET, browser_runtime).await }
+                    }),
+                )
+                .route(
+                    "/{owner}/{project}",
+                    get(move || {
+                        let browser_runtime = browser_runtime_for_two_segment_fallback.clone();
+                        async move { serve_embedded_fallback(Method::GET, browser_runtime).await }
                     }),
                 )
                 .fallback(move |method: Method| {
@@ -4305,6 +4348,43 @@ struct RestRecentProjectVisitBody {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+struct RestWorkspaceFilesQuery {
+    filter: Option<String>,
+    page: Option<u32>,
+    page_num: Option<u32>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestWorkspaceFileItem {
+    container_id: i64,
+    container_type: String,
+    created_label: String,
+    download_url: String,
+    id: i64,
+    location_href: String,
+    location_label: String,
+    mime_type: String,
+    name: String,
+    preview_url: String,
+    size: i64,
+    size_label: String,
+    url: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestWorkspaceFilesResponse {
+    files: Vec<RestWorkspaceFileItem>,
+    filter: String,
+    page: u32,
+    page_size: u32,
+    total: u32,
+    total_pages: u32,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 struct RestPublicUserProfileQuery {
     days_ago: Option<i64>,
     selected: Option<String>,
@@ -5931,6 +6011,16 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap| {
                     let service = service.clone();
                     async move { rest_reset_visited_projects(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/workspace/files",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Query(query): Query<RestWorkspaceFilesQuery>| {
+                    let service = service.clone();
+                    async move { rest_list_workspace_files(headers, query, service).await }
                 }
             }),
         )
@@ -9011,6 +9101,47 @@ async fn rest_read_workspace_overview(
         .await
         .map_err(RestRouteError::from_connect_error)?;
     Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_list_workspace_files(
+    headers: HeaderMap,
+    query: RestWorkspaceFilesQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestWorkspaceFilesResponse>, RestRouteError> {
+    const WORKSPACE_FILES_PAGE_SIZE: u32 = 30;
+
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "workspace files require repository backend",
+        ));
+    };
+    let Some(session) = service.session_manager.read_session_from_headers(&headers) else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unauthenticated("missing authenticated session"),
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let page = query.page.or(query.page_num).unwrap_or(1).max(1);
+    let filter = query.filter.unwrap_or_default();
+    let files = repository
+        .list_user_attachments(&actor.login_id, &filter, page, WORKSPACE_FILES_PAGE_SIZE)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+
+    Ok(Json(RestWorkspaceFilesResponse {
+        files: files
+            .attachments
+            .iter()
+            .map(|record| rest_workspace_file_item(record, &service.base_path))
+            .collect(),
+        filter: files.filter,
+        page: files.page,
+        page_size: files.page_size,
+        total: files.total,
+        total_pages: files.total_pages,
+    }))
 }
 
 async fn rest_read_public_user_profile(
@@ -17337,6 +17468,64 @@ fn workspace_project_item_from_entry(item: &persistence::ProjectListEntry) -> Pr
         project_scope: String::new(),
         ..Default::default()
     }
+}
+
+fn rest_workspace_file_item(
+    record: &persistence::UserAttachmentRecord,
+    base_path: &str,
+) -> RestWorkspaceFileItem {
+    let url = base_path_href(base_path, &format!("/files/{}", record.id));
+    let preview_url = if record.mime_type.starts_with("image/") {
+        url.clone()
+    } else {
+        String::new()
+    };
+    let (location_href, location_label) = rest_workspace_file_location(record);
+
+    RestWorkspaceFileItem {
+        container_id: record.container_id,
+        container_type: record.container_type.clone(),
+        created_label: record.created_label.clone(),
+        download_url: format!("{url}?action=download"),
+        id: record.id,
+        location_href,
+        location_label,
+        mime_type: record.mime_type.clone(),
+        name: record.name.clone(),
+        preview_url,
+        size: record.size,
+        size_label: human_readable_byte_count(record.size),
+        url,
+    }
+}
+
+fn rest_workspace_file_location(record: &persistence::UserAttachmentRecord) -> (String, String) {
+    match normalize_identifier(&record.container_type).as_str() {
+        "user" | "user_avatar" => (String::new(), String::new()),
+        container_type => (
+            String::new(),
+            format!("{} #{}", container_type, record.container_id),
+        ),
+    }
+}
+
+fn human_readable_byte_count(size: i64) -> String {
+    let size = size.max(0) as f64;
+    if size < 1000.0 {
+        return format!("{} B", size as i64);
+    }
+
+    let units = ["kB", "MB", "GB", "TB", "PB", "EB"];
+    let mut value = size;
+    let mut unit = units[0];
+    for candidate in units {
+        value /= 1000.0;
+        unit = candidate;
+        if value < 1000.0 {
+            break;
+        }
+    }
+    format!("{value:.1} {unit}")
 }
 
 fn workspace_member_project_item_from_record(

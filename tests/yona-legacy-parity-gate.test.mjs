@@ -287,6 +287,22 @@ test("maps user statistics API client changes to user workspace provenance", () 
   );
 });
 
+test("maps user files route changes to the workspace provenance slice", () => {
+  const result = runGate([
+    "frontend/src/api/workspace.ts",
+    "frontend/src/routes/user/files/route.tsx",
+    "frontend/src/user-files-parity.spec.tsx",
+    "docs/provenance/core-parity-audit.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["workspace-recent-favorite-default-landing"],
+  );
+});
+
 test("maps board posting frontend files before generic project routes", () => {
   const result = runGate([
     "frontend/src/api/boards.ts",

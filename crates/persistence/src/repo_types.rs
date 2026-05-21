@@ -1051,6 +1051,27 @@ pub struct AttachmentRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UserAttachmentRecord {
+    pub container_id: i64,
+    pub container_type: String,
+    pub created_label: String,
+    pub id: i64,
+    pub mime_type: String,
+    pub name: String,
+    pub size: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UserAttachmentListRecord {
+    pub attachments: Vec<UserAttachmentRecord>,
+    pub filter: String,
+    pub page: u32,
+    pub page_size: u32,
+    pub total: u32,
+    pub total_pages: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DeleteAttachmentResult {
     Deleted(AttachmentRecord),
     Forbidden,

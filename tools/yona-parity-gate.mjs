@@ -332,9 +332,10 @@ const DOMAIN_BUCKETS = [
       /^frontend\/.*\/me/i,
       /^frontend\/src\/api\/workspace\.ts$/i,
       /^frontend\/src\/routes\/-workspace-settings-view\.tsx$/i,
+      /^frontend\/src\/routes\/user\/files\/route\.tsx$/i,
       /^crates\/(?:domain|persistence|server)\/.*(workspace|default-landing|favorite|recent)/i,
     ],
-    testKeywords: ["workspace", "default-landing", "favorite", "recent", "me"],
+    testKeywords: ["workspace", "default-landing", "favorite", "recent", "me", "user-files"],
     provenanceDocs: ["docs/provenance/phase-0b/project.md", "docs/provenance/core-parity-audit.md"],
   },
   {

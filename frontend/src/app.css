@@ -311,6 +311,87 @@ h1 {
   text-decoration: none;
 }
 
+.user-file-search {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 12px 0 16px;
+}
+
+.user-file-search .textbox {
+  width: min(320px, 100%);
+}
+
+.attachment-files {
+  width: 100%;
+  font-size: 13px;
+  border-top: 1px solid #ddd;
+}
+
+.attachment-files .row {
+  display: grid;
+  grid-template-columns: minmax(72px, 1fr) minmax(180px, 5fr) minmax(72px, 1fr) minmax(72px, 1fr) minmax(120px, 2fr) minmax(180px, 4fr);
+  align-items: center;
+  border-bottom: 1px solid #eee;
+}
+
+.attachment-files-header {
+  color: #555;
+  font-weight: 700;
+  background: #f7f7f7;
+}
+
+.attachment-files-header > div,
+.attachment-file-detail > div {
+  min-width: 0;
+  padding: 8px 10px;
+}
+
+.attachment-file-detail.hover,
+.attachment-file-detail:hover {
+  background: #f9f9f9;
+}
+
+.file-preview img {
+  max-width: 44px;
+  max-height: 44px;
+  vertical-align: middle;
+}
+
+.file-name a,
+.file-location a {
+  overflow-wrap: anywhere;
+}
+
+#pagination {
+  margin-top: 14px;
+}
+
+#pagination a {
+  display: inline-block;
+  min-width: 28px;
+  margin-right: 4px;
+  padding: 4px 8px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+#pagination a.active {
+  color: #fff;
+  background: #f36c22;
+  border-color: #f36c22;
+}
+
+@media (max-width: 900px) {
+  .attachment-files .row {
+    grid-template-columns: 1fr;
+  }
+
+  .attachment-files-header {
+    display: none;
+  }
+}
+
 .board-page {
   color: #333;
 }
