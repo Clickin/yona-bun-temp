@@ -313,6 +313,7 @@ GET   /authenticate/:provider   → OAuth 시작
 ```
 GET   /:user                    → 사용자 프로필 (본인이면 Workspace)
 GET   /user/editform            → 프로필 편집 폼
+POST  /user/editform/token_reset → API 토큰 재생성
 POST  /user/edit                → 프로필 수정
 POST  /user/email               → 이메일 추가
 DELETE /user/email/delete/:id   → 이메일 삭제
@@ -334,7 +335,7 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
 | 프로필 편집 (이름, 아바타)                  | 이름 변경, 아바타 업로드/크롭              | ✅ 구현, direct `/user/edit` 포함 | 1     |
 | 비밀번호 변경                               | 기존 비밀번호 확인 → 새 비밀번호 설정      | ✅ 구현, direct `/user/resetPassword` 포함 | 1     |
 | 이메일 관리 (추가/삭제/인증/주 이메일 설정) | 복수 이메일, 인증 흐름                     | ✅ 구현, direct `/user/email` 포함 | 1     |
-| API 토큰 관리                               | 토큰 재생성                                | ✅ 구현      | 1     |
+| API 토큰 관리                               | 토큰 재생성                                | ✅ 구현, direct `/user/editform/token_reset` 포함 | 1     |
 | 기본 랜딩 페이지 설정                       | 로그인 후 이동할 기본 경로                 | ✅ 구현, direct `/user/defultLoginPage` 포함 | 1     |
 | 방문 기록 초기화                            | 최근 방문 프로젝트 목록 리셋               | ✅ 구현, direct `/user/resetVisitedList` 포함 | 1     |
 | 프로젝트별 알림 설정                        | 프로젝트별 NEW_ISSUE, NEW_POSTING 등 토글  | ✅ 기본 구현 | 1     |
@@ -349,7 +350,7 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
 - [ ] 프로필 편집에서 아바타 업로드 시 `/files` 엔드포인트로 멀티파트 업로드 후 크롭이 동작한다
 - [x] 프로필 수정과 복수 이메일 추가/삭제/인증/주 이메일 설정이 모두 동작하고 legacy direct profile/email mutation routes가 `/user/editform` redirect를 반환한다
 - [ ] 프로젝트별 알림 토글이 legacy의 `NEW_COMMENT` 기본 off 동작을 따른다
-- [ ] API 토큰 재생성이 동작하고 새 토큰이 표시된다
+- [x] API 토큰 재생성이 동작하고 새 토큰이 표시된다
 
 ---
 
@@ -1409,6 +1410,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/me`                              | GET      | SPA                                   | `me/`                                         | implemented        |
 | `/:user`                           | GET      | `GET /api/v1/users/:loginId/profile`; `GET /api/v1/users/:loginId/statistics` | `$user/`                                      | implemented        |
 | `/user/editform`                   | GET      | SPA                                   | `user/editform/`                              | implemented        |
+| `/user/editform/token_reset`       | POST     | direct workspace API token reset      | `user/editform/token`                         | implemented        |
 | `/user/edit`                       | POST     | direct workspace profile mutation     | `user/editform`                               | implemented        |
 | `/user/resetVisitedList`           | POST     | direct workspace visited reset        | `user/editform`                               | implemented        |
 | `/user/defultLoginPage`            | POST     | direct default landing JSON mutation  | workspace pages                               | implemented        |

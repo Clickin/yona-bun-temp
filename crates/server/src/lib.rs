@@ -245,6 +245,9 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let add_workspace_email_session_manager = session_manager.clone();
     let add_workspace_email_backend = route_backend.clone();
     let add_workspace_email_base_path = base_path.clone();
+    let reset_api_token_session_manager = session_manager.clone();
+    let reset_api_token_backend = route_backend.clone();
+    let reset_api_token_base_path = base_path.clone();
     let delete_email_session_manager = session_manager.clone();
     let delete_email_backend = route_backend.clone();
     let delete_email_base_path = base_path.clone();
@@ -511,6 +514,21 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         add_workspace_email_session_manager.clone(),
                         add_workspace_email_backend.clone(),
                         add_workspace_email_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/user/editform/token_reset",
+            post(move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_reset_api_token_from_settings_form(
+                        headers,
+                        form,
+                        reset_api_token_session_manager.clone(),
+                        reset_api_token_backend.clone(),
+                        reset_api_token_base_path.clone(),
                     )
                     .await
                 }
@@ -2100,6 +2118,25 @@ async fn direct_add_workspace_email(
     };
     match rest_add_workspace_email(headers_with_form_csrf(headers, &form), body, service).await {
         Ok(_) => redirect_to(&base_path, "/user/editform"),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_reset_api_token_from_settings_form(
+    headers: HeaderMap,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_reset_api_token(headers_with_form_csrf(headers, &form), service).await {
+        Ok(_) => redirect_to(&base_path, "/user/editform/token"),
         Err(error) => error.into_response(),
     }
 }

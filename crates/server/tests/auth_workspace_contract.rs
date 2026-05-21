@@ -1780,6 +1780,74 @@ async fn direct_legacy_email_delete_and_set_main_routes_redirect_and_mutate_emai
 }
 
 #[tokio::test]
+async fn direct_legacy_token_reset_route_accepts_form_csrf_redirects_and_rotates_api_token() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+    let (app, repository, db) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let user = repository
+        .find_user_by_identifier("door")
+        .await
+        .unwrap()
+        .expect("registered user");
+    let token_before = n4user::Entity::find_by_id(user.id)
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("registered user row")
+        .token;
+
+    let reset_token = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/user/editform/token_reset")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::from(format!("csrfToken={csrf}")))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(reset_token.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        reset_token.headers().get(http::header::LOCATION).unwrap(),
+        "/yona/user/editform/token"
+    );
+
+    let token_after = n4user::Entity::find_by_id(user.id)
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("updated user row")
+        .token
+        .expect("rotated token");
+    assert!(!token_after.is_empty());
+    assert_ne!(Some(token_after), token_before);
+}
+
+#[tokio::test]
 async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspace_state() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");

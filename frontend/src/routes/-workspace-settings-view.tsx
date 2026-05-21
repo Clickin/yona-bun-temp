@@ -602,6 +602,7 @@ export function WorkspaceSettingsPage(props: {
             props.onResetApiToken?.();
           }}
         >
+          <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
           <label>
             <span>Token</span>
             <input name="name" readOnly type="text" value={apiToken} />

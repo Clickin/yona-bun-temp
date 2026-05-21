@@ -96,7 +96,7 @@ Interpretation:
 - [x] Default landing direct route (`/user/defultLoginPage`)
 - [x] Email management, including direct add/delete/set-main routes
 - [x] Password settings, including direct reset route
-- [x] Token settings
+- [x] Token settings, including direct `/user/editform/token_reset` route
 - [x] Avatar upload/crop/display
 - [x] Watched project notification preference basics
 - [x] Public profile route `/:user`
