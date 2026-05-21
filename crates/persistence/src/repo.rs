@@ -6,13 +6,13 @@ use crate::repo_types::{
     CreateProjectLabelCategoryInput, CreateProjectLabelInput, CreateProjectWebhookInput,
     CreatePullRequestCommentInput, CreatePullRequestInput, CreatePullRequestResult,
     CreateUserInput, DeleteAttachmentResult, DeleteCommitDiscussionCommentInput,
-    IssueAssignableUserRecord, IssueAssignableUserSearchRecord, IssueAttachmentRecord,
-    IssueCommentRecord, IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord,
-    IssueListFilter, IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord,
-    IssueRecord, IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord,
-    MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
-    NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
-    OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
+    DeletePullRequestCommentInput, IssueAssignableUserRecord, IssueAssignableUserSearchRecord,
+    IssueAttachmentRecord, IssueCommentRecord, IssueCommentVoterRecord, IssueLabelCategoryRecord,
+    IssueLabelRecord, IssueListFilter, IssueMentionUserRecord, IssueMentionUserSearchRecord,
+    IssueMilestoneRecord, IssueRecord, IssueShareStatus, IssueSharerRecord,
+    IssueTimelineItemRecord, MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter,
+    MilestoneMutationInput, NotificationActorRecord, NotificationItemRecord,
+    NotificationListRecord, OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
     OrganizationIssueListFilter, OrganizationIssueListRecord, OrganizationIssueProjectOptionRecord,
     OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationPostingListFilter,
     OrganizationPostingListRecord, OrganizationPostingProjectOptionRecord, OrganizationRecord,
@@ -7584,8 +7584,27 @@ impl AppRepository {
                 .filter(|value| !value.is_empty())
                 .map(ToOwned::to_owned)
                 .or_else(|| model.merged_commit_id_to.clone());
+            let prev_commit_id = input
+                .prev_commit_id
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned)
+                .or_else(|| model.merged_commit_id_from.clone());
+            let path = input
+                .path
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned);
+            let is_ranged =
+                path.is_some() || input.start_line.is_some() || input.end_line.is_some();
             comment_thread::ActiveModel {
-                dtype: Set("NonRangedCodeCommentThread".to_string()),
+                dtype: Set(if is_ranged {
+                    "CodeCommentThread".to_string()
+                } else {
+                    "NonRangedCodeCommentThread".to_string()
+                }),
                 id: NotSet,
                 author_id: Set(Some(input.actor_id)),
                 author_login_id: Set(Some(input.actor_login_id.clone())),
@@ -7594,14 +7613,14 @@ impl AppRepository {
                 created_date: Set(Some(current_datetime())),
                 pull_request_id: Set(Some(model.id)),
                 project_id: Set(Some(project.id)),
-                prev_commit_id: Set(model.merged_commit_id_from.clone()),
+                prev_commit_id: Set(prev_commit_id),
                 commit_id: Set(commit_id),
-                path: Set(None),
+                path: Set(path),
                 start_side: Set(None),
-                start_line: Set(None),
+                start_line: Set(input.start_line),
                 start_column: Set(None),
                 end_side: Set(None),
-                end_line: Set(None),
+                end_line: Set(input.end_line),
                 end_column: Set(None),
             }
             .insert(&self.db)
@@ -7660,6 +7679,55 @@ impl AppRepository {
         )
         .await?;
 
+        self.pull_request_detail_from_model(model, &project, Some(input.actor_id))
+            .await
+            .map(Some)
+    }
+
+    pub async fn delete_pull_request_comment(
+        &self,
+        input: DeletePullRequestCommentInput,
+    ) -> Result<Option<PullRequestDetailRecord>, DbErr> {
+        let Some((project, model)) = self
+            .read_project_pull_request_model(
+                &input.owner_name,
+                &input.project_name,
+                input.pull_request_number,
+            )
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(comment) = review_comment::Entity::find_by_id(input.comment_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(thread_id) = comment.thread_id else {
+            return Ok(None);
+        };
+        let Some(thread) = comment_thread::Entity::find_by_id(thread_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        if thread.pull_request_id != Some(model.id) {
+            return Ok(None);
+        }
+        review_comment::Entity::delete_by_id(input.comment_id)
+            .exec(&self.db)
+            .await?;
+        let remaining = review_comment::Entity::find()
+            .filter(review_comment::Column::ThreadId.eq(Some(thread_id)))
+            .count(&self.db)
+            .await?;
+        if remaining == 0 {
+            comment_thread::Entity::delete_by_id(thread_id)
+                .exec(&self.db)
+                .await?;
+        }
         self.pull_request_detail_from_model(model, &project, Some(input.actor_id))
             .await
             .map(Some)

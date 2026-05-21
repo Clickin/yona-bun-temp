@@ -1,6 +1,7 @@
 import * as React from "react";
 import type {
   OrganizationPullRequestListQuery,
+  PullRequestChangedFile,
   PullRequestChangesResponse,
   PullRequestDetailResponse,
   PullRequestFormOptionsResponse,
@@ -55,6 +56,108 @@ function prHref(
   );
 }
 
+function pullRequestApiHref(
+  runtimeConfig: RuntimeConfig,
+  pullRequest: PullRequestDetailResponse,
+  suffix: string,
+) {
+  return `${runtimeConfig.apiBaseUrl}/v1/owners/${encodeURIComponent(
+    pullRequest.ownerName,
+  )}/projects/${encodeURIComponent(pullRequest.projectName)}/pull-requests/${
+    pullRequest.pullRequestNumber
+  }${suffix}`;
+}
+
+function diffAnchorId(path: string) {
+  return path.replace(/[/.]/g, "-");
+}
+
+type ParsedDiffLine = {
+  commentLine?: number;
+  key: string;
+  kind: "add" | "context" | "hunk" | "meta" | "remove";
+  newLine?: number;
+  oldLine?: number;
+  text: string;
+};
+
+type InlineReviewDraft = {
+  line: number;
+  path: string;
+  side: "A" | "B";
+};
+
+function parseUnifiedDiffLines(patch: string): ParsedDiffLine[] {
+  const lines = patch.replace(/\r\n/g, "\n").split("\n");
+  if (lines.at(-1) === "") {
+    lines.pop();
+  }
+  let oldLine = 0;
+  let newLine = 0;
+  let inHunk = false;
+
+  return lines.map((text, index) => {
+    const hunkMatch = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(text);
+    if (hunkMatch) {
+      oldLine = Number.parseInt(hunkMatch[1] ?? "0", 10);
+      newLine = Number.parseInt(hunkMatch[2] ?? "0", 10);
+      inHunk = true;
+      return { key: `${index}:hunk`, kind: "hunk", text };
+    }
+
+    if (
+      !inHunk ||
+      text.startsWith("diff ") ||
+      text.startsWith("index ") ||
+      text.startsWith("---") ||
+      text.startsWith("+++")
+    ) {
+      return { key: `${index}:meta`, kind: "meta", text };
+    }
+
+    if (text.startsWith("+")) {
+      const line = newLine;
+      newLine += 1;
+      return {
+        commentLine: line,
+        key: `${index}:add:${line}`,
+        kind: "add",
+        newLine: line,
+        text,
+      };
+    }
+
+    if (text.startsWith("-")) {
+      const line = oldLine;
+      oldLine += 1;
+      return {
+        commentLine: line,
+        key: `${index}:remove:${line}`,
+        kind: "remove",
+        oldLine: line,
+        text,
+      };
+    }
+
+    const lineOld = oldLine;
+    const lineNew = newLine;
+    oldLine += 1;
+    newLine += 1;
+    return {
+      commentLine: lineNew,
+      key: `${index}:context:${lineNew}`,
+      kind: "context",
+      newLine: lineNew,
+      oldLine: lineOld,
+      text,
+    };
+  });
+}
+
+function diffLineClass(kind: ParsedDiffLine["kind"]) {
+  return kind === "hunk" ? "range" : kind;
+}
+
 function projectCategoryHref(
   runtimeConfig: RuntimeConfig,
   detail: ProjectDetailViewModel,
@@ -77,6 +180,16 @@ type PullRequestFormSubmitInput = {
   title: string;
   toBranch: string;
   toProjectId: number;
+};
+
+type PullRequestInlineCommentSubmitInput = {
+  attachmentIds: number[];
+  commitId?: string;
+  contentsMarkdown: string;
+  endLine: number;
+  path: string;
+  prevCommitId?: string;
+  startLine: number;
 };
 
 function pullRequestQueryString(query: PullRequestListQuery, category: PullRequestListCategory) {
@@ -691,6 +804,7 @@ export function ProjectPullRequestDetailPage(props: {
   viewerId?: number;
   onAccept?: () => Promise<void>;
   onClose?: () => Promise<void>;
+  onCommentDelete?: (commentId: number) => Promise<void>;
   onCommentSubmit?: (contentsMarkdown: string, attachmentIds?: number[]) => Promise<void>;
   onDeleteSourceBranch?: () => Promise<void>;
   onOpen?: () => Promise<void>;
@@ -761,7 +875,10 @@ export function ProjectPullRequestDetailPage(props: {
             <div className="markdown-wrap" dangerouslySetInnerHTML={{ __html: pr.bodyHtml }} />
           </section>
           <ReviewThreadSection
+            pullRequest={pr}
+            runtimeConfig={props.runtimeConfig}
             threads={pr.threads}
+            onCommentDelete={props.onCommentDelete}
             onThreadClose={props.onThreadClose}
             onThreadOpen={props.onThreadOpen}
           />
@@ -826,7 +943,10 @@ export function ProjectPullRequestDetailPage(props: {
 }
 
 function ReviewThreadSection(props: {
+  pullRequest?: PullRequestDetailResponse;
+  runtimeConfig?: RuntimeConfig;
   threads: ReviewThread[];
+  onCommentDelete?: (commentId: number) => Promise<void>;
   onThreadClose?: (threadId: number) => Promise<void>;
   onThreadOpen?: (threadId: number) => Promise<void>;
 }) {
@@ -839,7 +959,10 @@ function ReviewThreadSection(props: {
         props.threads.map((thread) => (
           <ReviewThreadItem
             key={thread.id}
+            pullRequest={props.pullRequest}
+            runtimeConfig={props.runtimeConfig}
             thread={thread}
+            onCommentDelete={props.onCommentDelete}
             onThreadClose={props.onThreadClose}
             onThreadOpen={props.onThreadOpen}
           />
@@ -850,7 +973,10 @@ function ReviewThreadSection(props: {
 }
 
 function ReviewThreadItem(props: {
+  pullRequest?: PullRequestDetailResponse;
+  runtimeConfig?: RuntimeConfig;
   thread: ReviewThread;
+  onCommentDelete?: (commentId: number) => Promise<void>;
   onThreadClose?: (threadId: number) => Promise<void>;
   onThreadOpen?: (threadId: number) => Promise<void>;
 }) {
@@ -885,6 +1011,21 @@ function ReviewThreadItem(props: {
       {props.thread.comments.map((comment) => (
         <div className="review-comment board-comment" id={`comment-${comment.id}`} key={comment.id}>
           <p>{`${comment.authorLabel || comment.authorLoginId || "Unknown"} ${comment.createdLabel}`}</p>
+          {comment.canDelete && props.pullRequest && props.runtimeConfig ? (
+            <button
+              className="btn-transparent pull-right close"
+              data-request-method="delete"
+              data-request-uri={pullRequestApiHref(
+                props.runtimeConfig,
+                props.pullRequest,
+                `/comments/${comment.id}`,
+              )}
+              onClick={() => void props.onCommentDelete?.(comment.id)}
+              type="button"
+            >
+              Delete
+            </button>
+          ) : null}
           <div dangerouslySetInnerHTML={{ __html: comment.contentsHtml }} />
         </div>
       ))}
@@ -893,14 +1034,187 @@ function ReviewThreadItem(props: {
 }
 
 export function PullRequestChangesPage(props: {
+  csrfToken?: string;
   changes: PullRequestChangesResponse | undefined;
   detail: ProjectDetailViewModel | null;
   runtimeConfig: RuntimeConfig;
+  onCommentDelete?: (commentId: number) => Promise<void>;
+  onInlineCommentSubmit?: (input: PullRequestInlineCommentSubmitInput) => Promise<void>;
   onThreadClose?: (threadId: number) => Promise<void>;
   onThreadOpen?: (threadId: number) => Promise<void>;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
   const pr = props.changes?.pullRequest;
+  const files = props.changes?.files ?? [];
+  const threads = props.changes?.threads ?? [];
+  const [inlineDraft, setInlineDraft] = React.useState<InlineReviewDraft | null>(null);
+  const [inlineCommentText, setInlineCommentText] = React.useState("");
+  const [inlineAttachmentIds, setInlineAttachmentIds] = React.useState<number[]>([]);
+  const canComment = pr?.permissions.canComment === true;
+
+  function inlineThreadsForLine(path: string, line: number) {
+    return threads.filter(
+      (thread) => thread.path === path && (thread.endLine ?? thread.startLine) === line,
+    );
+  }
+
+  function openInlineDraft(path: string, line: number, side: "A" | "B") {
+    setInlineDraft((current) =>
+      current?.path === path && current.line === line && current.side === side
+        ? null
+        : { line, path, side },
+    );
+    setInlineCommentText("");
+    setInlineAttachmentIds([]);
+  }
+
+  async function submitInlineComment(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const contentsMarkdown = inlineCommentText.trim();
+    if (!contentsMarkdown || !inlineDraft || !pr || !props.onInlineCommentSubmit) {
+      return;
+    }
+    await props.onInlineCommentSubmit({
+      attachmentIds: inlineAttachmentIds,
+      commitId: pr.mergedCommitIdTo,
+      contentsMarkdown,
+      endLine: inlineDraft.line,
+      path: inlineDraft.path,
+      prevCommitId: pr.mergedCommitIdFrom,
+      startLine: inlineDraft.line,
+    });
+    setInlineAttachmentIds([]);
+    setInlineCommentText("");
+    setInlineDraft(null);
+  }
+
+  function renderReviewThread(thread: ReviewThread) {
+    return (
+      <ReviewThreadItem
+        key={thread.id}
+        pullRequest={pr}
+        runtimeConfig={props.runtimeConfig}
+        thread={thread}
+        onCommentDelete={props.onCommentDelete}
+        onThreadClose={props.onThreadClose}
+        onThreadOpen={props.onThreadOpen}
+      />
+    );
+  }
+
+  function renderChangedFile(file: PullRequestChangedFile) {
+    const diffLines = parseUnifiedDiffLines(file.patch);
+    return (
+      <article
+        className="diff-file diff-container"
+        data-file-path={file.path}
+        id={diffAnchorId(file.path)}
+        key={file.path}
+      >
+        <h2>{file.path}</h2>
+        <table className="diff-code diff-table">
+          <tbody>
+            {diffLines.map((line) => {
+              const lineSide = line.kind === "remove" ? "A" : "B";
+              const lineThreads =
+                line.commentLine === undefined || line.kind === "remove"
+                  ? []
+                  : inlineThreadsForLine(file.path, line.commentLine);
+              const isInlineDraftOpen =
+                inlineDraft?.path === file.path &&
+                inlineDraft.line === line.commentLine &&
+                inlineDraft.side === lineSide;
+              return (
+                <React.Fragment key={line.key}>
+                  <tr
+                    className={diffLineClass(line.kind)}
+                    data-line={line.commentLine}
+                    data-side={lineSide}
+                    data-type={diffLineClass(line.kind)}
+                  >
+                    <td className="linenum">
+                      {line.commentLine !== undefined && line.kind !== "remove" && canComment ? (
+                        <button
+                          aria-label={`Comment on ${file.path}:${line.commentLine}`}
+                          className="btn-transparent line-comment-trigger"
+                          onClick={() =>
+                            openInlineDraft(file.path, line.commentLine ?? 0, lineSide)
+                          }
+                          type="button"
+                        >
+                          Comment
+                        </button>
+                      ) : null}
+                      <div className="line-number" data-line-num={line.oldLine ?? ""}>
+                        {line.oldLine ?? ""}
+                      </div>
+                    </td>
+                    <td className="linenum">
+                      <div className="line-number" data-line-num={line.newLine ?? ""}>
+                        {line.newLine ?? ""}
+                      </div>
+                    </td>
+                    <td className={line.kind === "hunk" ? "hunk" : "code"}>
+                      <pre className="diff-partial-codeline">{line.text}</pre>
+                    </td>
+                  </tr>
+                  {isInlineDraftOpen && pr ? (
+                    <tr className="comments board-comment-wrap inline-comment-form-row">
+                      <td colSpan={3}>
+                        <form
+                          action={pullRequestApiHref(props.runtimeConfig, pr, "/comments")}
+                          className="review-form code-review-form inline-review-form"
+                          method="post"
+                          onSubmit={(event) => void submitInlineComment(event)}
+                        >
+                          <input name="commitId" type="hidden" value={pr.mergedCommitIdTo} />
+                          <input name="prevCommitId" type="hidden" value={pr.mergedCommitIdFrom} />
+                          <input name="path" type="hidden" value={file.path} />
+                          <input name="startLine" type="hidden" value={line.commentLine ?? ""} />
+                          <input name="endLine" type="hidden" value={line.commentLine ?? ""} />
+                          <MarkdownAttachmentTextarea
+                            ariaLabel={`Pull request review comment on ${file.path}:${
+                              line.commentLine ?? ""
+                            }`}
+                            csrfToken={props.csrfToken}
+                            disabled={!canComment}
+                            name="contentsMarkdown"
+                            onAttachmentUpload={(attachment) =>
+                              setInlineAttachmentIds((current) => [...current, attachment.id])
+                            }
+                            onChange={setInlineCommentText}
+                            runtimeConfig={props.runtimeConfig}
+                            value={inlineCommentText}
+                          />
+                          <button
+                            className="ybtn ybtn-success ybtn-small"
+                            disabled={!canComment}
+                            type="submit"
+                          >
+                            Comment
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  ) : null}
+                  {lineThreads.length > 0 ? (
+                    <tr
+                      className="comments board-comment-wrap"
+                      data-commit-id={pr?.mergedCommitIdTo ?? ""}
+                    >
+                      <td colSpan={3}>{lineThreads.map(renderReviewThread)}</td>
+                    </tr>
+                  ) : null}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </article>
+    );
+  }
+
+  const unrangedThreads = threads.filter((thread) => !thread.path);
   return (
     <main className="app-shell pull-request-page">
       <p className="eyebrow">Yona Rust Project</p>
@@ -926,23 +1240,14 @@ export function PullRequestChangesPage(props: {
         ) : (
           <div className="warning-none">No commit metadata is available.</div>
         )}
-        {props.changes?.files.length ? (
-          props.changes.files.map((file) => (
-            <pre key={file.path}>
-              <code>{file.patch || file.path}</code>
-            </pre>
-          ))
+        {files.length ? (
+          <div className="diffs-wrap">
+            <div className="diff-body">{files.map(renderChangedFile)}</div>
+          </div>
         ) : (
           <div className="warning-none">No changed file diff is available.</div>
         )}
-        {(props.changes?.threads ?? []).map((thread) => (
-          <ReviewThreadItem
-            key={thread.id}
-            thread={thread}
-            onThreadClose={props.onThreadClose}
-            onThreadOpen={props.onThreadOpen}
-          />
-        ))}
+        {unrangedThreads.map(renderReviewThread)}
       </section>
     </main>
   );

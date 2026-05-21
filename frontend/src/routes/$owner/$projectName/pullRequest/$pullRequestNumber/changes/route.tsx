@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   closePullRequestThreadRest,
+  createPullRequestCommentRest,
+  deletePullRequestCommentRest,
   openPullRequestThreadRest,
   pullRequestChangesQueryOptions,
 } from "../../../../../../api/pull-requests";
@@ -30,6 +32,16 @@ function PullRequestChangesRouteComponent() {
   const queryClient = useQueryClient();
   const parsedNumber = Number(pullRequestNumber);
   const scope = { ownerName: owner, projectName, pullRequestNumber: parsedNumber };
+  const pullRequestDetailKey = apiQueryKeys.project.pullRequestDetail(
+    owner,
+    projectName,
+    parsedNumber,
+  );
+  const pullRequestChangesKey = apiQueryKeys.project.pullRequestChanges(
+    owner,
+    projectName,
+    parsedNumber,
+  );
   const containerQuery = useQuery({
     queryFn: () => readProjectContainer(runtimeConfig, owner, projectName),
     queryKey: apiQueryKeys.project.container(owner, projectName),
@@ -43,6 +55,80 @@ function PullRequestChangesRouteComponent() {
   );
   const error = containerQuery.error ?? changesQuery.error;
   const failureKind = classifyConnectFailure(error);
+  const mutationError = React.useCallback(
+    (fallback: string) => (error: unknown) => {
+      setErrorMessage(error instanceof Error ? error.message : fallback);
+    },
+    [setErrorMessage],
+  );
+  const inlineCommentMutation = useMutation({
+    mutationFn: (input: {
+      attachmentIds?: number[];
+      commitId?: string;
+      contentsMarkdown: string;
+      endLine: number;
+      path: string;
+      prevCommitId?: string;
+      startLine: number;
+    }) =>
+      createPullRequestCommentRest(runtimeConfig, csrfToken, {
+        ...scope,
+        ...input,
+      }),
+    onError: mutationError("Create pull request inline review comment failed."),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(pullRequestDetailKey, updated);
+      queryClient.setQueryData(pullRequestChangesKey, (current: typeof changesQuery.data) =>
+        current
+          ? {
+              ...current,
+              pullRequest: updated,
+              threads: updated.threads,
+            }
+          : current,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: pullRequestChangesKey }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
+  const deleteCommentMutation = useMutation({
+    mutationFn: (commentId: number) =>
+      deletePullRequestCommentRest(runtimeConfig, csrfToken, {
+        ...scope,
+        commentId,
+      }),
+    onError: mutationError("Delete pull request review comment failed."),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(pullRequestDetailKey, updated);
+      queryClient.setQueryData(pullRequestChangesKey, (current: typeof changesQuery.data) =>
+        current
+          ? {
+              ...current,
+              pullRequest: updated,
+              threads: updated.threads,
+            }
+          : current,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: pullRequestChangesKey }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
   const closeThreadMutation = useMutation({
     mutationFn: (threadId: number) =>
       closePullRequestThreadRest(runtimeConfig, csrfToken, {
@@ -54,6 +140,7 @@ function PullRequestChangesRouteComponent() {
     },
     onSuccess: async () => {
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: pullRequestChangesKey }),
         queryClient.invalidateQueries({
           queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
         }),
@@ -75,6 +162,7 @@ function PullRequestChangesRouteComponent() {
     },
     onSuccess: async () => {
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: pullRequestChangesKey }),
         queryClient.invalidateQueries({
           queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
         }),
@@ -113,9 +201,16 @@ function PullRequestChangesRouteComponent() {
 
   return (
     <PullRequestChangesPage
+      csrfToken={csrfToken}
       changes={changesQuery.data}
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       runtimeConfig={runtimeConfig}
+      onCommentDelete={async (commentId) => {
+        await deleteCommentMutation.mutateAsync(commentId);
+      }}
+      onInlineCommentSubmit={async (input) => {
+        await inlineCommentMutation.mutateAsync(input);
+      }}
       onThreadClose={async (threadId) => {
         await closeThreadMutation.mutateAsync(threadId);
       }}

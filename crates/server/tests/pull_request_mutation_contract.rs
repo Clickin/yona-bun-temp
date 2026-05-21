@@ -661,6 +661,90 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert!(commented_text.contains("/yona/owner/projectYobi/pullRequest/1#comment-"));
     assert!(commented_text.contains("|#1: Updated interaction parity"));
 
+    let ranged_commented = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/comments",
+            Some(&reviewer_cookie),
+            Some(&reviewer_csrf),
+            json!({
+                "contentsMarkdown": "Inline review body",
+                "commitId": "topic-head",
+                "prevCommitId": "base-head",
+                "path": "src/lib.rs",
+                "startLine": 2,
+                "endLine": 4
+            }),
+        )
+        .await,
+    )
+    .await;
+    let ranged_thread = ranged_commented["threads"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|thread| thread["path"] == "src/lib.rs")
+        .expect("ranged thread");
+    assert_eq!(ranged_thread["commitId"], "topic-head");
+    assert_eq!(ranged_thread["prevCommitId"], "base-head");
+    assert_eq!(ranged_thread["startLine"], 2);
+    assert_eq!(ranged_thread["endLine"], 4);
+    assert_eq!(
+        ranged_thread["comments"][0]["contentsMarkdown"],
+        "Inline review body"
+    );
+    assert_eq!(ranged_thread["comments"][0]["canDelete"], true);
+    assert_eq!(
+        ranged_commented["events"]
+            .as_array()
+            .unwrap()
+            .last()
+            .unwrap()["eventType"],
+        "NEW_REVIEW_COMMENT"
+    );
+    assert_eq!(
+        count_rows(&db, "pull_request_event", "NEW_REVIEW_COMMENT").await,
+        2
+    );
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 5);
+    assert_eq!(deliveries[4].event_type, "NEW_REVIEW_COMMENT");
+
+    let ranged_comment_id = ranged_thread["comments"][0]["id"].as_i64().unwrap();
+    let forbidden_ranged_delete = rest_json(
+        app.clone(),
+        Method::DELETE,
+        &format!(
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/comments/{ranged_comment_id}"
+        ),
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+        json!({}),
+    )
+    .await;
+    assert_eq!(forbidden_ranged_delete.status(), StatusCode::FORBIDDEN);
+
+    let ranged_deleted = response_json(
+        rest_json(
+            app.clone(),
+            Method::DELETE,
+            &format!(
+                "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/comments/{ranged_comment_id}"
+            ),
+            Some(&reviewer_cookie),
+            Some(&reviewer_csrf),
+            json!({}),
+        )
+        .await,
+    )
+    .await;
+    assert!(!ranged_deleted["threads"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|thread| thread["path"] == "src/lib.rs"));
+
     let closed_thread = response_json(
         rest_json(
             app.clone(),
@@ -742,7 +826,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         count_rows(&db, "pull_request_event", "REVIEW_THREAD_STATE_CHANGED").await,
         2
     );
-    assert_eq!(snapshot_test_webhook_outbox().len(), 4);
+    assert_eq!(snapshot_test_webhook_outbox().len(), 5);
 
     let forbidden_accept = rest_json(
         app.clone(),
@@ -795,10 +879,10 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         "topic\n"
     );
     let deliveries = snapshot_test_webhook_outbox();
-    assert_eq!(deliveries.len(), 5);
-    assert_eq!(deliveries[4].event_type, "PULL_REQUEST_MERGED");
+    assert_eq!(deliveries.len(), 6);
+    assert_eq!(deliveries[5].event_type, "PULL_REQUEST_MERGED");
     let merged_payload: Value =
-        serde_json::from_str(&deliveries[4].body).expect("merged webhook payload");
+        serde_json::from_str(&deliveries[5].body).expect("merged webhook payload");
     let merged_text = merged_payload["text"].as_str().unwrap_or_default();
     assert!(merged_text.contains("pullRequest.event.message.MERGED"));
     assert!(merged_text

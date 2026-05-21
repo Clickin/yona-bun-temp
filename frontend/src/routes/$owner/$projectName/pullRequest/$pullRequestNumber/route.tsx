@@ -6,6 +6,7 @@ import {
   closePullRequestRest,
   closePullRequestThreadRest,
   createPullRequestCommentRest,
+  deletePullRequestCommentRest,
   deletePullRequestSourceBranchRest,
   openPullRequestRest,
   openPullRequestThreadRest,
@@ -224,6 +225,29 @@ function PullRequestDetailLeafRouteComponent() {
       ]);
     },
   });
+  const deleteCommentMutation = useMutation({
+    mutationFn: (commentId: number) =>
+      deletePullRequestCommentRest(runtimeConfig, csrfToken, {
+        ...scope,
+        commentId,
+      }),
+    onError: mutationError("Delete pull request review comment failed."),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(
+        apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
+        updated,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
   const closeThreadMutation = useMutation({
     mutationFn: (threadId: number) =>
       closePullRequestThreadRest(runtimeConfig, csrfToken, {
@@ -296,6 +320,9 @@ function PullRequestDetailLeafRouteComponent() {
       }}
       onCommentSubmit={async (contentsMarkdown, attachmentIds) => {
         await commentMutation.mutateAsync({ attachmentIds, contentsMarkdown });
+      }}
+      onCommentDelete={async (commentId) => {
+        await deleteCommentMutation.mutateAsync(commentId);
       }}
       onOpen={async () => {
         await openMutation.mutateAsync();

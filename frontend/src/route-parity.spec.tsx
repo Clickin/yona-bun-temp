@@ -440,6 +440,9 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain("comment-thread-wrap");
     expect(pullRequestViewsSource).toContain("thread-actrow");
     expect(pullRequestViewsSource).toContain("review-form");
+    expect(pullRequestViewsSource).toContain("inline-review-form");
+    expect(pullRequestViewsSource).toContain("line-comment-trigger");
+    expect(pullRequestViewsSource).toContain("canDelete");
     expect(pullRequestViewsSource).toContain('id="btnAccept"');
     expect(pullRequestViewsSource).toContain('data-request-method="post"');
     expect(pullRequestViewsSource).toContain("pull-request-source-branch");
@@ -458,8 +461,19 @@ describe("file-route parity harness", () => {
     expect(detailRouteSource).toContain("pullRequestDetailQueryOptions");
     expect(detailRouteSource).toContain("useMutation");
     expect(detailRouteSource).toContain("acceptPullRequestRest");
+    expect(detailRouteSource).toContain("deletePullRequestCommentRest");
     expect(detailRouteSource).toContain("deletePullRequestSourceBranchRest");
     expect(detailRouteSource).toContain("restorePullRequestSourceBranchRest");
+
+    const changesRouteSource = fs.readFileSync(
+      path.resolve(
+        __dirname,
+        "routes/$owner/$projectName/pullRequest/$pullRequestNumber/changes/route.tsx",
+      ),
+      "utf8",
+    );
+    expect(changesRouteSource).toContain("createPullRequestCommentRest");
+    expect(changesRouteSource).toContain("deletePullRequestCommentRest");
 
     const pullRequestApiSource = fs.readFileSync(
       path.resolve(__dirname, "api/pull-requests.ts"),
@@ -467,6 +481,10 @@ describe("file-route parity harness", () => {
     );
     expect(pullRequestApiSource).toContain("acceptPullRequestRest");
     expect(pullRequestApiSource).toContain('pullRequestPath(input, "/accept")');
+    expect(pullRequestApiSource).toContain("deletePullRequestCommentRest");
+    expect(pullRequestApiSource).toContain("prevCommitId");
+    expect(pullRequestApiSource).toContain("startLine");
+    expect(pullRequestApiSource).toContain("endLine");
     expect(pullRequestApiSource).toContain("deletePullRequestSourceBranchRest");
     expect(pullRequestApiSource).toContain("restorePullRequestSourceBranchRest");
     expect(pullRequestApiSource).toContain('pullRequestPath(input, "/source-branch")');

@@ -89,6 +89,7 @@ export type ReviewComment = {
   authorId: number;
   authorLabel: string;
   authorLoginId: string;
+  canDelete: boolean;
   contentsHtml: string;
   contentsMarkdown: string;
   createdLabel: string;
@@ -213,6 +214,10 @@ export type PullRequestCommentInput = PullRequestScopeInput & {
   attachmentIds?: number[];
   commitId?: string;
   contentsMarkdown: string;
+  endLine?: number;
+  path?: string;
+  prevCommitId?: string;
+  startLine?: number;
   threadId?: number;
 };
 
@@ -353,6 +358,7 @@ function normalizeThread(thread: Partial<ReviewThread>): ReviewThread {
       authorId: comment.authorId ?? 0,
       authorLabel: comment.authorLabel ?? "",
       authorLoginId: comment.authorLoginId ?? "",
+      canDelete: comment.canDelete ?? false,
       contentsHtml: comment.contentsHtml ?? "",
       contentsMarkdown: comment.contentsMarkdown ?? "",
       createdLabel: comment.createdLabel ?? "",
@@ -501,6 +507,10 @@ function commentPullRequestBody(input: PullRequestCommentInput) {
     attachmentIds: input.attachmentIds ?? [],
     commitId: input.commitId,
     contentsMarkdown: input.contentsMarkdown,
+    endLine: input.endLine,
+    path: input.path,
+    prevCommitId: input.prevCommitId,
+    startLine: input.startLine,
     threadId: input.threadId,
   };
 }
@@ -741,6 +751,19 @@ export function createPullRequestCommentRest(
       fetchImpl,
       method: "POST",
     },
+  ).then(normalizeDetail);
+}
+
+export function deletePullRequestCommentRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestScopeInput & { commentId: number },
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestDetailResponse> {
+  return restFetch<Partial<PullRequestDetailResponse>>(
+    runtimeConfig,
+    pullRequestPath(input, `/comments/${input.commentId}`),
+    { csrfToken, fetchImpl, method: "DELETE" },
   ).then(normalizeDetail);
 }
 

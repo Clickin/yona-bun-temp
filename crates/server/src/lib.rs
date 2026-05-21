@@ -6875,6 +6875,10 @@ struct RestPullRequestCommentBody {
     attachment_ids: Vec<i64>,
     commit_id: Option<String>,
     contents_markdown: String,
+    end_line: Option<i32>,
+    path: Option<String>,
+    prev_commit_id: Option<String>,
+    start_line: Option<i32>,
     thread_id: Option<i64>,
 }
 
@@ -9311,6 +9315,32 @@ fn build_rest_pull_request_router(service: PilotServiceImpl) -> Router {
                             project_name,
                             pull_request_number,
                             body,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/comments/{comment_id}",
+            delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number, comment_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_delete_pull_request_comment(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            comment_id,
                             service,
                         )
                         .await
@@ -15913,9 +15943,13 @@ async fn rest_create_pull_request_comment(
             attachment_ids: body.attachment_ids,
             commit_id: body.commit_id,
             contents_markdown: body.contents_markdown,
+            end_line: body.end_line,
             owner_name,
+            path: body.path,
+            prev_commit_id: body.prev_commit_id,
             project_name,
             pull_request_number,
+            start_line: body.start_line,
             thread_id: body.thread_id,
         })
         .await
@@ -15943,6 +15977,70 @@ async fn rest_create_pull_request_comment(
         &service.base_path,
     )
     .await;
+    Ok(Json(
+        rest_pull_request_detail_from_record_with_repository_issue_references(
+            repository,
+            record,
+            &authorization,
+            Some(actor.id),
+            &service.base_path,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
+    ))
+}
+
+async fn rest_delete_pull_request_comment(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    comment_id: i64,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let current = rest_pull_request_detail_response(
+        repository,
+        &owner_name,
+        &project_name,
+        pull_request_number,
+        Some(actor.id),
+        &service.base_path,
+    )
+    .await?;
+    let comment = current
+        .threads
+        .iter()
+        .flat_map(|thread| thread.comments.iter())
+        .find(|comment| comment.id == comment_id)
+        .ok_or_else(|| RestRouteError::not_found("pull request comment not found"))?;
+    if !comment.can_delete {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("pull request comment delete is not allowed"),
+        ));
+    }
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let record = repository
+        .delete_pull_request_comment(persistence::DeletePullRequestCommentInput {
+            actor_id: actor.id,
+            comment_id,
+            owner_name,
+            project_name,
+            pull_request_number,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pull request comment not found"))?;
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
             repository,
@@ -27810,6 +27908,35 @@ fn rest_review_thread_from_record(
     }
 }
 
+fn rest_pull_request_thread_from_record(
+    record: persistence::ReviewThreadRecord,
+    actor_id: Option<i64>,
+    can_moderate: bool,
+    context: MarkdownLinkContext<'_>,
+) -> RestReviewThread {
+    RestReviewThread {
+        author_id: record.author_id.unwrap_or_default(),
+        author_label: record.author_label,
+        author_login_id: record.author_login_id,
+        comments: record
+            .comments
+            .into_iter()
+            .map(|comment| {
+                let can_delete = can_moderate || comment.author_id == actor_id;
+                rest_review_comment_from_record_with_permissions(comment, can_delete, context)
+            })
+            .collect(),
+        commit_id: record.commit_id,
+        created_label: record.created_label,
+        end_line: record.end_line,
+        id: record.id,
+        path: record.path,
+        prev_commit_id: record.prev_commit_id,
+        start_line: record.start_line,
+        state: record.state,
+    }
+}
+
 fn rest_commit_thread_from_record(
     record: persistence::ReviewThreadRecord,
     actor_id: Option<i64>,
@@ -28026,6 +28153,11 @@ fn rest_pull_request_detail_from_record_with_issue_references(
             || authorization.viewer.is_site_admin
             || viewer_is_receiver
             || viewer_is_reviewer);
+    let can_moderate_review_comments = actor_id.is_some()
+        && (authorization.viewer.is_project_member
+            || authorization.viewer.is_project_manager
+            || authorization.viewer.is_organization_admin
+            || authorization.viewer.is_site_admin);
     let owner_name = record.owner_name.clone();
     let project_name = record.project_name.clone();
     let markdown_context = MarkdownLinkContext::with_issue_references(
@@ -28095,7 +28227,14 @@ fn rest_pull_request_detail_from_record_with_issue_references(
         threads: record
             .threads
             .into_iter()
-            .map(|thread| rest_review_thread_from_record(thread, markdown_context))
+            .map(|thread| {
+                rest_pull_request_thread_from_record(
+                    thread,
+                    actor_id,
+                    can_moderate_review_comments,
+                    markdown_context,
+                )
+            })
             .collect(),
         title: record.title,
         to_branch: record.to_branch,

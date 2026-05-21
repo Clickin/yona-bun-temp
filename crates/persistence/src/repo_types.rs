@@ -1238,10 +1238,23 @@ pub struct CreatePullRequestCommentInput {
     pub attachment_ids: Vec<i64>,
     pub commit_id: Option<String>,
     pub contents_markdown: String,
+    pub end_line: Option<i32>,
+    pub owner_name: String,
+    pub path: Option<String>,
+    pub prev_commit_id: Option<String>,
+    pub project_name: String,
+    pub pull_request_number: i64,
+    pub start_line: Option<i32>,
+    pub thread_id: Option<i64>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DeletePullRequestCommentInput {
+    pub actor_id: i64,
+    pub comment_id: i64,
     pub owner_name: String,
     pub project_name: String,
     pub pull_request_number: i64,
-    pub thread_id: Option<i64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

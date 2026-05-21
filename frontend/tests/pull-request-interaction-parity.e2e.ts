@@ -28,6 +28,7 @@ const baseThread = {
       authorId: 2,
       authorLabel: "Reviewer",
       authorLoginId: "reviewer",
+      canDelete: true,
       contentsHtml: "<p>Initial review</p>",
       contentsMarkdown: "Initial review",
       createdLabel: "2026-05-03",
@@ -59,8 +60,8 @@ function detail(overrides: Record<string, unknown> = {}) {
     fromProjectName: "projectYobi",
     id: 9,
     isWatching: false,
-    mergedCommitIdFrom: "",
-    mergedCommitIdTo: "",
+    mergedCommitIdFrom: "base",
+    mergedCommitIdTo: "abcdef123456",
     ownerName: "admin",
     permissions: {
       canComment: true,
@@ -211,6 +212,33 @@ test.beforeEach(async ({ page }) => {
     async (route) => {
       const url = new URL(route.request().url());
       const method = route.request().method();
+      if (url.pathname.endsWith("/changes")) {
+        await route.fulfill({
+          body: JSON.stringify({
+            commits: [
+              {
+                authorDateLabel: "2026-05-03",
+                authorEmail: "reviewer@example.com",
+                commitId: "abcdef123456",
+                commitMessage: "Change src/lib.rs",
+                commitShortId: "abcdef1",
+                state: "open",
+              },
+            ],
+            files: [
+              {
+                path: "src/lib.rs",
+                patch: "@@ -1,2 +1,2 @@\n-old line\n+new line\n same line",
+              },
+            ],
+            pullRequest,
+            threads: pullRequest.threads,
+          }),
+          headers: restJsonHeaders,
+          status: 200,
+        });
+        return;
+      }
       if (url.pathname.endsWith("/form-options")) {
         await route.fulfill({
           body: JSON.stringify(formOptions("edit", pullRequest)),
@@ -232,7 +260,59 @@ test.beforeEach(async ({ page }) => {
         await route.fulfill({ body: JSON.stringify(pullRequest), headers: restJsonHeaders });
         return;
       }
+      if (url.pathname.endsWith("/comments/18") && method === "DELETE") {
+        pullRequest = detail({
+          ...pullRequest,
+          threads: pullRequest.threads.filter((thread) => thread.id !== 17),
+        });
+        await route.fulfill({ body: JSON.stringify(pullRequest), headers: restJsonHeaders });
+        return;
+      }
       if (url.pathname.endsWith("/comments")) {
+        const body = (route.request().postDataJSON() ?? {}) as {
+          contentsMarkdown?: string;
+          commitId?: string;
+          endLine?: number;
+          path?: string;
+          prevCommitId?: string;
+          startLine?: number;
+        };
+        if (body.path) {
+          pullRequest = detail({
+            ...pullRequest,
+            threads: [
+              ...pullRequest.threads,
+              {
+                authorId: 2,
+                authorLabel: "Reviewer",
+                authorLoginId: "reviewer",
+                comments: [
+                  {
+                    authorId: 2,
+                    authorLabel: "Reviewer",
+                    authorLoginId: "reviewer",
+                    canDelete: true,
+                    contentsHtml: `<p>${body.contentsMarkdown ?? ""}</p>`,
+                    contentsMarkdown: body.contentsMarkdown ?? "",
+                    createdLabel: "2026-05-04",
+                    id: 18,
+                    threadId: 17,
+                  },
+                ],
+                commitId: body.commitId ?? "",
+                createdLabel: "2026-05-04",
+                endLine: body.endLine ?? 1,
+                id: 17,
+                path: body.path,
+                prevCommitId: body.prevCommitId ?? "",
+                startLine: body.startLine ?? 1,
+                state: "open",
+              },
+            ],
+          });
+          await route.fulfill({ body: JSON.stringify(pullRequest), headers: restJsonHeaders });
+          return;
+        }
         pullRequest = detail({
           ...pullRequest,
           threads: [
@@ -244,6 +324,7 @@ test.beforeEach(async ({ page }) => {
                   authorId: 2,
                   authorLabel: "Reviewer",
                   authorLoginId: "reviewer",
+                  canDelete: true,
                   contentsHtml: "<p>New review comment</p>",
                   contentsMarkdown: "New review comment",
                   createdLabel: "2026-05-04",
@@ -407,6 +488,40 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   await expect(page.locator(".comment-thread-wrap .state.closed")).toBeVisible();
   await page.getByRole("button", { name: "Open thread" }).click();
   await expect(page.locator(".comment-thread-wrap .state.open")).toBeVisible();
+
+  await page.goto("/yona/admin/projectYobi/pullRequest/9/changes");
+  await expect(page.locator(".diff-file[data-file-path='src/lib.rs']")).toBeVisible();
+  await page.getByRole("button", { name: "Comment on src/lib.rs:1" }).first().click();
+  await expect(page.locator(".inline-review-form")).toBeVisible();
+  const inlineReviewRequest = page.waitForRequest(
+    (request) => request.url().endsWith("/pull-requests/9/comments") && request.method() === "POST",
+  );
+  await page.locator(".inline-review-form textarea").fill("Inline review body");
+  await page.locator(".inline-review-form").getByRole("button", { name: "Comment" }).click();
+  const submittedInlineReview = (await inlineReviewRequest).postDataJSON() as {
+    commitId?: string;
+    contentsMarkdown?: string;
+    endLine?: number;
+    path?: string;
+    prevCommitId?: string;
+    startLine?: number;
+  };
+  expect(submittedInlineReview).toMatchObject({
+    commitId: "abcdef123456",
+    contentsMarkdown: "Inline review body",
+    endLine: 1,
+    path: "src/lib.rs",
+    prevCommitId: "base",
+    startLine: 1,
+  });
+  await expect(page.locator("#comment-18")).toContainText("Inline review body");
+  await expect(page.locator("#comment-18 [data-request-method='delete']")).toHaveAttribute(
+    "data-request-uri",
+    "/yona/api/v1/owners/admin/projects/projectYobi/pull-requests/9/comments/18",
+  );
+  await page.locator("#comment-18").getByRole("button", { name: "Delete" }).click();
+  await expect(page.locator("#comment-18")).toHaveCount(0);
+  await page.goto("/yona/admin/projectYobi/pullRequest/9");
 
   await page.getByRole("button", { exact: true, name: "Close" }).click();
   await expect(page.locator(".board-header .pullRequest-stateInfo.closed")).toBeVisible();
