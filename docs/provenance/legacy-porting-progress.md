@@ -90,9 +90,10 @@ Interpretation:
 
 - [x] `/me` workspace shortcut
 - [x] Workspace overview shell
-- [x] Recent project list basics
+- [x] Recent project list basics, including direct reset route
 - [x] Favorite project list basics
 - [x] User settings legacy paths under `/user/editform`
+- [x] Default landing direct route (`/user/defultLoginPage`)
 - [x] Email management, including direct delete/set-main routes
 - [x] Password settings
 - [x] Token settings

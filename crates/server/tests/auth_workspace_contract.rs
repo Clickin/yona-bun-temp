@@ -1687,6 +1687,98 @@ async fn direct_legacy_email_delete_and_set_main_routes_redirect_and_mutate_emai
 }
 
 #[tokio::test]
+async fn direct_legacy_reset_visited_and_default_login_page_routes_match_workspace_state() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+    let (app, repository, db) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let user = repository
+        .find_user_by_identifier("door")
+        .await
+        .unwrap()
+        .expect("registered user");
+    repository
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "door".to_string(),
+            overview: Some("Yona project".to_string()),
+            project_name: "projectYobi".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+    repository
+        .record_recent_project_visit(user.id, "door", "projectYobi")
+        .await
+        .unwrap();
+
+    let reset_visited = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/user/resetVisitedList")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(reset_visited.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        reset_visited.headers().get(http::header::LOCATION).unwrap(),
+        "/yona/user/editform"
+    );
+    assert!(yona_rust_persistence::recent_project::Entity::find()
+        .filter(yona_rust_persistence::recent_project::Column::UserId.eq(Some(user.id)))
+        .all(&db)
+        .await
+        .unwrap()
+        .is_empty());
+
+    let set_default = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/user/defultLoginPage?path=%2Fsearch%3Fscope%3Dglobal%26pageSize%3D20")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(set_default.status(), StatusCode::OK);
+    let set_default_json = response_text(set_default).await;
+    assert!(set_default_json.contains("\"defaultLoginPage\":\"/search?pageSize=20&scope=global\""));
+    assert_eq!(
+        repository
+            .read_default_landing_path(user.id)
+            .await
+            .unwrap()
+            .as_deref(),
+        Some("/search?pageSize=20&scope=global")
+    );
+}
+
+#[tokio::test]
 async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");

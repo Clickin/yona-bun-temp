@@ -335,8 +335,8 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
 | 비밀번호 변경                               | 기존 비밀번호 확인 → 새 비밀번호 설정      | ✅ 구현      | 1     |
 | 이메일 관리 (추가/삭제/인증/주 이메일 설정) | 복수 이메일, 인증 흐름                     | ✅ 구현      | 1     |
 | API 토큰 관리                               | 토큰 재생성                                | ✅ 구현      | 1     |
-| 기본 랜딩 페이지 설정                       | 로그인 후 이동할 기본 경로                 | ✅ 구현      | 1     |
-| 방문 기록 초기화                            | 최근 방문 프로젝트 목록 리셋               | ✅ 구현      | 1     |
+| 기본 랜딩 페이지 설정                       | 로그인 후 이동할 기본 경로                 | ✅ 구현, direct `/user/defultLoginPage` 포함 | 1     |
+| 방문 기록 초기화                            | 최근 방문 프로젝트 목록 리셋               | ✅ 구현, direct `/user/resetVisitedList` 포함 | 1     |
 | 프로젝트별 알림 설정                        | 프로젝트별 NEW_ISSUE, NEW_POSTING 등 토글  | ✅ 기본 구현 | 1     |
 | 사용자 프로필 공개 보기                     | `/:user` 경로로 다른 사용자 프로필 조회    | ✅ 구현      | 2     |
 | 사용자 활동 통계                            | 사용자별 이슈/게시글/댓글/투표 통계        | ✅ 기본 구현 | 5     |
@@ -1409,6 +1409,8 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/me`                              | GET      | SPA                                   | `me/`                                         | implemented        |
 | `/:user`                           | GET      | `GET /api/v1/users/:loginId/profile`; `GET /api/v1/users/:loginId/statistics` | `$user/`                                      | implemented        |
 | `/user/editform`                   | GET      | SPA                                   | `user/editform/`                              | implemented        |
+| `/user/resetVisitedList`           | POST     | direct workspace visited reset        | `user/editform`                               | implemented        |
+| `/user/defultLoginPage`            | POST     | direct default landing JSON mutation  | workspace pages                               | implemented        |
 | `/user/email/delete/:id`           | DELETE   | direct workspace email mutation       | `user/editform/emails`                        | implemented        |
 | `/user/email/setAsMain/:id`        | PUT      | direct workspace email mutation       | `user/editform/emails`                        | implemented        |
 | `/projects`                        | GET      | `GET /api/v1/projects`                | `projects/`                                   | implemented        |
