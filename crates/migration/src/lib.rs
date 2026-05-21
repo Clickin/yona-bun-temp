@@ -104,10 +104,10 @@ where
 fn project_seed_sql(backend: DbBackend) -> &'static str {
     match backend {
         DbBackend::MySql | DbBackend::Sqlite => {
-            "INSERT INTO `project` (`id`, `name`, `overview`, `owner`, `created_date`, `last_issue_number`, `last_posting_number`, `original_project_id`, `last_pushed_date`, `default_reviewer_count`, `is_using_reviewer_count`, `organization_id`, `project_scope`, `previous_owner_login_id`, `previous_name`, `previous_name_changed_time`, `is_code_accessible_member_only`) VALUES (1, 'yona', 'Pilot projects list is using the browser-safe route tree.', 'pilot', NULL, 1, 0, NULL, NULL, 0, 0, NULL, 'public', NULL, NULL, NULL, 0);"
+            "INSERT INTO `project` (`id`, `name`, `overview`, `owner`, `created_date`, `last_issue_number`, `last_posting_number`, `original_project_id`, `last_pushed_date`, `default_reviewer_count`, `is_using_reviewer_count`, `organization_id`, `project_scope`, `previous_owner_login_id`, `previous_name`, `previous_name_changed_time`, `is_code_accessible_member_only`) VALUES (1, 'yona', 'Pilot projects list is using the browser-safe route tree.', 'pilot', NULL, 1, 0, NULL, NULL, 1, 0, NULL, 'public', NULL, NULL, NULL, 0);"
         }
         DbBackend::Postgres => {
-            "INSERT INTO \"project\" (\"id\", \"name\", \"overview\", \"owner\", \"created_date\", \"last_issue_number\", \"last_posting_number\", \"original_project_id\", \"last_pushed_date\", \"default_reviewer_count\", \"is_using_reviewer_count\", \"organization_id\", \"project_scope\", \"previous_owner_login_id\", \"previous_name\", \"previous_name_changed_time\", \"is_code_accessible_member_only\") VALUES (1, 'yona', 'Pilot projects list is using the browser-safe route tree.', 'pilot', NULL, 1, 0, NULL, NULL, 0, 0, NULL, 'public', NULL, NULL, NULL, 0);"
+            "INSERT INTO \"project\" (\"id\", \"name\", \"overview\", \"owner\", \"created_date\", \"last_issue_number\", \"last_posting_number\", \"original_project_id\", \"last_pushed_date\", \"default_reviewer_count\", \"is_using_reviewer_count\", \"organization_id\", \"project_scope\", \"previous_owner_login_id\", \"previous_name\", \"previous_name_changed_time\", \"is_code_accessible_member_only\") VALUES (1, 'yona', 'Pilot projects list is using the browser-safe route tree.', 'pilot', NULL, 1, 0, NULL, NULL, 1, 0, NULL, 'public', NULL, NULL, NULL, 0);"
         }
     }
 }

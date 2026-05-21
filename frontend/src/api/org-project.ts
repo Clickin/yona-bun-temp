@@ -53,7 +53,9 @@ type ProjectCreateInput = {
 type ProjectUpdateInput = ProjectPathInput & {
   board?: boolean;
   code?: boolean;
+  defaultReviewerCount?: number;
   issue?: boolean;
+  isUsingReviewerCount?: boolean;
   milestone?: boolean;
   overview: string;
   pullRequest?: boolean;
@@ -939,6 +941,12 @@ export function updateProjectRest(
     {
       body: {
         ...projectMenuBody(input),
+        ...(input.defaultReviewerCount !== undefined
+          ? { defaultReviewerCount: input.defaultReviewerCount }
+          : {}),
+        ...(input.isUsingReviewerCount !== undefined
+          ? { isUsingReviewerCount: input.isUsingReviewerCount }
+          : {}),
         overview: input.overview,
         projectName: input.projectName,
         projectScope: input.projectScope,

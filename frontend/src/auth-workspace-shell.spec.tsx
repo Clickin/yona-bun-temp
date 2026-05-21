@@ -115,6 +115,9 @@ describe("auth and workspace views", () => {
           ownerName: "admin",
           projectName: "projectYobi",
           projectScope: "protected",
+          defaultReviewerCount: 2,
+          isUsingReviewerCount: true,
+          maxReviewerCount: 3,
           showBoard: false,
           showCode: true,
           showIssue: false,
@@ -142,6 +145,15 @@ describe("auth and workspace views", () => {
     expect(html).toContain('name="milestone" checked=""');
     expect(html).toContain('id="menuSettingBoard"');
     expect(html).toContain('name="board"');
+    expect(html).toContain('id="reviewerCountSettingPanel"');
+    expect(html).toContain('name="isUsingReviewerCount"');
+    expect(html).toContain('id="reviewerCountEnable"');
+    expect(html).toContain('id="reviewerCountDisable"');
+    expect(html).toContain('id="welReviewerCount"');
+    expect(html).toContain('data-id="project-reviewer-count"');
+    expect(html).toContain('data-name="defaultReviewerCount"');
+    expect(html).toContain('name="defaultReviewerCount"');
+    expect(html).toContain('<option value="2" selected="">2</option>');
   });
 
   it("renders the canonical signup shell with legacy labels and login link", () => {

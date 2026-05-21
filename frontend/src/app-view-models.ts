@@ -294,6 +294,9 @@ export function toProjectContainerView(
         url?: string;
       }>;
     };
+    defaultReviewerCount?: number;
+    isUsingReviewerCount?: boolean;
+    maxReviewerCount?: number;
     readmeFile?: { bodyHtml?: string; bodyMarkdown?: string; name?: string } | null;
   };
   return {
@@ -330,6 +333,7 @@ export function toProjectContainerView(
       unassignedOpenIssueCount: detailWithReadme.dashboard?.unassignedOpenIssueCount ?? undefined,
     },
     defaultTab: detail.defaultTab,
+    defaultReviewerCount: detailWithReadme.defaultReviewerCount ?? 1,
     enrollmentRequested: detail.enrollmentRequested,
     history: {
       items: (detailWithReadme.history?.items ?? []).map((item) => ({
@@ -345,9 +349,11 @@ export function toProjectContainerView(
     },
     isFavorited: detail.isFavorited,
     isForked: detail.isForked,
+    isUsingReviewerCount: detailWithReadme.isUsingReviewerCount ?? false,
     isWatching: detail.isWatching,
     logoUrl: detail.logoUrl,
     memberCount: detail.memberCount,
+    maxReviewerCount: detailWithReadme.maxReviewerCount ?? 1,
     members: detail.members.map((member) => ({
       avatarUrl: member.avatarUrl,
       loginId: member.loginId,

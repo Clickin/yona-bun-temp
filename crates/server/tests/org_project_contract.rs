@@ -449,6 +449,9 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
     register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
+    let (reviewer_csrf, reviewer_cookie) = bootstrap(app.clone()).await;
+    let reviewer_id =
+        register_user(app.clone(), &reviewer_cookie, &reviewer_csrf, "reviewer").await;
 
     let create_project = app
         .clone()
@@ -483,6 +486,12 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
     assert!(!menu_settings.review);
     assert!(!menu_settings.milestone);
     assert!(menu_settings.board);
+    assert_eq!(authorization.project.default_reviewer_count, 1);
+    assert!(!authorization.project.is_using_reviewer_count);
+    app_repo
+        .add_project_membership(authorization.project.id, reviewer_id, "member")
+        .await
+        .expect("add reviewer member");
 
     let settings = app
         .clone()
@@ -505,6 +514,9 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
     assert_eq!(payload["showReview"], false);
     assert_eq!(payload["showMilestone"], false);
     assert_eq!(payload["showBoard"], true);
+    assert_eq!(payload["defaultReviewerCount"], 1);
+    assert_eq!(payload["isUsingReviewerCount"], false);
+    assert_eq!(payload["maxReviewerCount"], 2);
 
     let update_project = app
         .clone()
@@ -516,7 +528,7 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
                 .body(Body::from(
-                    "{\"projectName\":\"projectYobi\",\"overview\":\"Yona\",\"projectScope\":\"protected\",\"code\":true,\"issue\":false,\"pullRequest\":true,\"review\":true,\"milestone\":true,\"board\":false}",
+                    "{\"projectName\":\"projectYobi\",\"overview\":\"Yona\",\"projectScope\":\"protected\",\"code\":true,\"issue\":false,\"pullRequest\":true,\"review\":true,\"milestone\":true,\"board\":false,\"isUsingReviewerCount\":true,\"defaultReviewerCount\":2}",
                 ))
                 .unwrap(),
         )
@@ -534,6 +546,34 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
     assert!(updated_menu_settings.review);
     assert!(updated_menu_settings.milestone);
     assert!(!updated_menu_settings.board);
+
+    let updated_authorization = app_repo
+        .read_project_authorization("admin", "projectYobi", None)
+        .await
+        .expect("read updated project authorization")
+        .expect("updated project authorization");
+    assert!(updated_authorization.project.is_using_reviewer_count);
+    assert_eq!(updated_authorization.project.default_reviewer_count, 2);
+
+    let updated_settings = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/owners/admin/projects/projectYobi/settings")
+                .header(http::header::COOKIE, &admin_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(updated_settings.status(), StatusCode::OK);
+    let updated_payload: serde_json::Value =
+        serde_json::from_str(&response_json(updated_settings).await)
+            .expect("updated settings json");
+    assert_eq!(updated_payload["defaultReviewerCount"], 2);
+    assert_eq!(updated_payload["isUsingReviewerCount"], true);
+    assert_eq!(updated_payload["maxReviewerCount"], 2);
 }
 
 #[tokio::test]
@@ -857,6 +897,7 @@ async fn rest_project_container_includes_git_readme_with_legacy_readme_link_rewr
         body_html.contains(r#"href="/yona/admin/projectYobi/code/main/docs/guide.md""#),
         "{body_html}"
     );
+    std::env::remove_var("YONA_DATA");
 }
 
 #[tokio::test]
@@ -1125,6 +1166,10 @@ async fn rest_project_container_includes_dashboard_open_issue_counts_by_assignee
 
 #[tokio::test]
 async fn rest_project_container_includes_legacy_project_home_history_rows() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    std::env::remove_var("YONA_DATA");
     let (app, repo) = build_app_with_repository().await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
@@ -1304,6 +1349,7 @@ async fn rest_project_container_includes_legacy_project_home_commit_history_rows
     let url = commit["url"].as_str().expect("commit url");
     assert!(url.starts_with("/yona/admin/projectYobi/commit/"));
     assert!(url.len() > "/yona/admin/projectYobi/commit/".len() + 7);
+    std::env::remove_var("YONA_DATA");
 }
 
 #[tokio::test]

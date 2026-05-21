@@ -5113,7 +5113,7 @@ impl AppRepository {
             last_posting_number: Set(Some(0)),
             original_project_id: Set(None),
             last_pushed_date: Set(None),
-            default_reviewer_count: Set(Some(0)),
+            default_reviewer_count: Set(Some(1)),
             is_using_reviewer_count: Set(Some(0)),
             organization_id: Set(input.organization_id),
             project_scope: Set(Some(normalize_identity(&input.project_scope))),
@@ -5150,7 +5150,7 @@ impl AppRepository {
             last_posting_number: Set(Some(0)),
             original_project_id: Set(Some(input.original_project_id)),
             last_pushed_date: Set(None),
-            default_reviewer_count: Set(Some(0)),
+            default_reviewer_count: Set(Some(1)),
             is_using_reviewer_count: Set(Some(0)),
             organization_id: Set(input.organization_id),
             project_scope: Set(Some(normalize_identity(&input.project_scope))),
@@ -6286,6 +6286,25 @@ impl AppRepository {
             .await?;
         }
 
+        Ok(())
+    }
+
+    pub async fn set_project_reviewer_settings(
+        &self,
+        project_id: i64,
+        default_reviewer_count: u32,
+        is_using_reviewer_count: bool,
+    ) -> Result<(), DbErr> {
+        let Some(row) = project::Entity::find_by_id(project_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(());
+        };
+        let mut active = project::ActiveModel::from(row);
+        active.default_reviewer_count = Set(Some(default_reviewer_count.max(1) as i32));
+        active.is_using_reviewer_count = Set(Some(bool_to_i16(is_using_reviewer_count)));
+        active.update(&self.db).await?;
         Ok(())
     }
 

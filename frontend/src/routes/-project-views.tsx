@@ -2176,7 +2176,9 @@ export function ProjectSettingsPage(props: {
   onUpdateProjectSettings?: (input: {
     board: boolean;
     code: boolean;
+    defaultReviewerCount: number;
     issue: boolean;
+    isUsingReviewerCount: boolean;
     milestone: boolean;
     overview: string;
     ownerName: string;
@@ -2191,6 +2193,9 @@ export function ProjectSettingsPage(props: {
       props.detail ?? {
         enrollmentRequested: false,
         isFavorited: false,
+        defaultReviewerCount: 1,
+        isUsingReviewerCount: false,
+        maxReviewerCount: 1,
         organizationName: "",
         overview: "",
         ownerName: "",
@@ -2202,6 +2207,8 @@ export function ProjectSettingsPage(props: {
     [props.detail],
   );
   const [formState, setFormState] = React.useState({
+    defaultReviewerCount: Math.max(1, detail.defaultReviewerCount ?? 1),
+    isUsingReviewerCount: detail.isUsingReviewerCount ?? false,
     overview: detail.overview,
     projectScope: detail.projectScope,
     ...projectMenuSettingsFromDetail(detail),
@@ -2209,11 +2216,15 @@ export function ProjectSettingsPage(props: {
 
   React.useEffect(() => {
     setFormState({
+      defaultReviewerCount: Math.max(1, detail.defaultReviewerCount ?? 1),
+      isUsingReviewerCount: detail.isUsingReviewerCount ?? false,
       overview: detail.overview,
       projectScope: detail.projectScope,
       ...projectMenuSettingsFromDetail(detail),
     });
   }, [detail]);
+  const maxReviewerCount = Math.max(1, detail.maxReviewerCount ?? 1);
+  const reviewerCountOptions = Array.from({ length: maxReviewerCount }, (_, index) => index + 1);
 
   return (
     <main className="app-shell">
@@ -2227,7 +2238,9 @@ export function ProjectSettingsPage(props: {
           props.onUpdateProjectSettings?.({
             board: formState.board,
             code: formState.code,
+            defaultReviewerCount: formState.defaultReviewerCount,
             issue: formState.issue,
+            isUsingReviewerCount: formState.isUsingReviewerCount,
             milestone: formState.milestone,
             overview: formState.overview,
             ownerName: detail.ownerName,
@@ -2302,6 +2315,78 @@ export function ProjectSettingsPage(props: {
           ))}
         </section>
         <p>Code access is members only: {(detail.codeMemberOnly ?? false) ? "Yes" : "No"}</p>
+        <section className="box-wrap middle reviewer-count-wrap" id="reviewerCountSettingPanel">
+          <div className="cu-label vmiddle">project.reviewer.count</div>
+          <input
+            checked={formState.isUsingReviewerCount}
+            className="radio-btn"
+            data-action="show"
+            data-toggle="reviewer-count"
+            id="reviewerCountEnable"
+            name="isUsingReviewerCount"
+            onChange={() =>
+              setFormState((current) => ({
+                ...current,
+                isUsingReviewerCount: true,
+              }))
+            }
+            type="radio"
+            value="true"
+          />
+          <label className="bg-radiobtn label-public" htmlFor="reviewerCountEnable">
+            project.reviewer.count.enable
+          </label>
+          <input
+            checked={!formState.isUsingReviewerCount}
+            className="radio-btn"
+            data-action="hide"
+            data-toggle="reviewer-count"
+            id="reviewerCountDisable"
+            name="isUsingReviewerCount"
+            onChange={() =>
+              setFormState((current) => ({
+                ...current,
+                isUsingReviewerCount: false,
+              }))
+            }
+            type="radio"
+            value="false"
+          />
+          <label className="bg-radiobtn label-private" htmlFor="reviewerCountDisable">
+            project.reviewer.count.disable
+          </label>
+          <div
+            data-value={formState.isUsingReviewerCount ? "true" : "false"}
+            id="welReviewerCount"
+            style={{ display: formState.isUsingReviewerCount ? undefined : "none" }}
+          >
+            <div
+              className="btn-group branches"
+              data-id="project-reviewer-count"
+              data-name="defaultReviewerCount"
+            >
+              <span className="d-label">{formState.defaultReviewerCount}</span>
+              <select
+                id="project-reviewer-count"
+                name="defaultReviewerCount"
+                onChange={(event) =>
+                  setFormState((current) => ({
+                    ...current,
+                    defaultReviewerCount: Number(event.target.value),
+                  }))
+                }
+                value={Math.min(formState.defaultReviewerCount, maxReviewerCount)}
+              >
+                {reviewerCountOptions.map((count) => (
+                  <option key={count} value={count}>
+                    {count}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <span className="note ml10">project.reviewer.count.description</span>
+          </div>
+        </section>
         <button type="submit">{props.pending ? "Saving…" : "Save project"}</button>
       </form>
     </main>

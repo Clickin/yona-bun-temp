@@ -175,7 +175,9 @@ export interface ProjectDetailViewModel {
     unassignedOpenIssueCount?: number;
   };
   defaultTab?: string;
+  defaultReviewerCount?: number;
   enrollmentRequested: boolean;
+  isUsingReviewerCount?: boolean;
   history?: {
     items: Array<{
       actorAvatarUrl: string;
@@ -193,6 +195,7 @@ export interface ProjectDetailViewModel {
   isWatching?: boolean;
   logoUrl?: string;
   memberCount?: number;
+  maxReviewerCount?: number;
   members?: Array<{ avatarUrl: string; loginId: string; role: string; userLabel: string }>;
   openIssueCount?: number;
   openPullRequestCount?: number;
