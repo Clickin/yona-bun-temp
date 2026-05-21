@@ -1173,6 +1173,33 @@ pub struct PullRequestMutationInput {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestCommitChangedInput {
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub branches: Vec<PullRequestCommitChangedBranchInput>,
+    pub project_id: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestCommitChangedBranchInput {
+    pub branch_name: String,
+    pub commits: Vec<PullRequestPushedCommitInput>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestPushedCommitInput {
+    pub author_email: String,
+    pub commit_id: String,
+    pub commit_message: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestCommitChangedRecord {
+    pub commit_messages: Vec<String>,
+    pub pull_request: PullRequestDetailRecord,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CreatePullRequestInput {
     pub actor_display_name: String,
     pub actor_id: i64,

@@ -64,6 +64,10 @@
   `NEW_REVIEW_COMMENT` fan out to non-JSON webhooks with the legacy PR link/text
   shape. Plain close/reopen records PR state events but did not call project
   webhooks in the observed legacy code.
+- Smart HTTP receive-pack pushes to an open PR source branch now persist
+  `pull_request_commit` rows, append a `PULL_REQUEST_COMMIT_CHANGED` PR event
+  whose `newValue` is the comma-delimited commit-row id list, create matching
+  notification rows, and fan out the non-JSON PR webhook payload.
 - PR create/edit body editors and general review comment editors preserve the
   legacy `yobi.git.Write` / `yobi.git.View` image paste/drop path by posting
   image files to `/files`, inserting `![name](url)`, and submitting uploaded
@@ -132,6 +136,7 @@
 | `PullRequestTest.testReviewPoint` | required reviewer count follows project default reviewer settings, lacking count decreases after review, and `isReviewed` reflects the threshold | PR detail `requiredReviewerCount`/`lackingReviewerCount`/`reviewed` projection plus reviewer status UI assertions |
 | `PullRequestApp.newComment` and `CommentThreadApp.open/close` | authenticated readable PR users can add a general review comment; thread owners/reviewers/updaters can close/open threads | review comment and thread state REST mutations plus Playwright interaction smoke |
 | `git/viewChanges.scala.html`, `partial_diff_comment_on_line.scala.html`, `ReviewCommentTest.update`, and `ReviewCommentTest.deleteLastReviewComment` | PR changes can create and edit side-aware line-attached review comments, and deleting the last review comment removes the backing thread | PR changes line form, `path/startLine/endLine/startSide/endSide` REST comment body, PR comment PATCH/DELETE mutations, and mutation/Playwright assertions |
+| `PullRequestEventTest.getPullRequestCommits` and `PullRequest.DELIMETER` | commit-changed PR events carry comma-delimited `PullRequestCommit` ids that resolve back to commit rows | Smart HTTP push contract for `PULL_REQUEST_COMMIT_CHANGED` rows, event `newValue`, notifications, and non-JSON PR webhook |
 | `PullRequestApp.newFork`, `fork`, and `git/fork.scala.html` | readable Git projects expose a legacy fork form, validate the selected owner/project name/scope, record fork origin, and clone the source bare repository | `/api/v1/owners/:owner/projects/:project/fork-options`, `/fork`, native `git clone --bare` wrapper, and `newFork` route parity |
 | `ReviewThreadAppTest.projectNotFound` and `projectForbidden` | review-thread listing respects project existence and project visibility before returning data | query authorization in `crates/server` plus frontend route test |
 | `ReviewSearchConditionTest.*` | review-thread list/filter semantics cover text, commit id, path, author, participant, and thread state filtering | query contract in `proto`, domain query service in `crates/domain`, list UI in `frontend` |
@@ -142,7 +147,6 @@
 - reviewer assignment and default-threshold settings lifecycle
 - multi-line ranged inline review selection polish
 - diff composition and PR event timeline
-- PR commit-changed VCS side effects, commit-changed webhook delivery, and legacy external
-  `/-_-api/v1/**` compatibility
+- legacy external `/-_-api/v1/**` compatibility
 
 이 항목들은 bounded exemplar 밖의 `deferred` scope다.

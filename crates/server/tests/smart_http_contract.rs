@@ -13,7 +13,9 @@ use tokio::sync::oneshot;
 use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
 use yona_rust_persistence::{
-    notification_event, project_pushed_branch, AppRepository, CreateProjectWebhookInput,
+    notification_event, project_pushed_branch, pull_request_commit, AppRepository,
+    CreateProjectWebhookInput, CreatePullRequestInput, CreatePullRequestResult,
+    PullRequestMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -672,6 +674,182 @@ async fn smart_http_push_records_legacy_post_receive_side_effects() {
     assert_eq!(payload["repository"]["id"], project.id);
     assert_eq!(payload["repository"]["name"], "projectYobi");
     assert_eq!(payload["repository"]["owner"], "owner");
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
+async fn smart_http_push_records_pull_request_commit_changed_side_effects() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    clear_test_webhook_outbox();
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, _, member_id) = register_user(app.clone(), "member").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("project");
+    repo.add_project_membership(project.id, member_id, "member")
+        .await
+        .unwrap();
+    repo.create_project_webhook(CreateProjectWebhookInput {
+        git_push: false,
+        payload_url: "http://example.test/pr".to_string(),
+        project_id: project.id,
+        secret: "pr-secret".to_string(),
+        webhook_type: 0,
+    })
+    .await
+    .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+    let pull_request = match repo
+        .create_pull_request(CreatePullRequestInput {
+            actor_display_name: "Owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            from_branch: "topic/pr".to_string(),
+            from_project_id: project.id,
+            to_branch: "main".to_string(),
+            to_project_id: project.id,
+            values: PullRequestMutationInput {
+                attachment_ids: Vec::new(),
+                body_markdown: "PR body".to_string(),
+                title: "Smart PR".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("pull request created")
+    {
+        CreatePullRequestResult::Created(record) => record,
+        CreatePullRequestResult::Duplicate(_) => panic!("unexpected duplicate pull request"),
+    };
+    clear_test_webhook_outbox();
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let client_parent = tempdir().expect("client parent");
+    let clone_path = client_parent.path().join("clone");
+    run_git_blocking(
+        vec![
+            "clone".to_string(),
+            format!("{base_url}/yona/owner/projectYobi.git"),
+            clone_path.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    run_git_blocking(
+        vec![
+            "checkout".to_string(),
+            "-b".to_string(),
+            "topic/pr".to_string(),
+        ],
+        Some(clone_path.clone()),
+    )
+    .await;
+    fs::write(clone_path.join("PR.md"), "pull request commit changed\n").expect("pr file");
+    run_git_blocking(
+        vec!["add".to_string(), "PR.md".to_string()],
+        Some(clone_path.clone()),
+    )
+    .await;
+    run_git_blocking(
+        vec![
+            "-c".to_string(),
+            "user.email=member@example.com".to_string(),
+            "-c".to_string(),
+            "user.name=Member".to_string(),
+            "commit".to_string(),
+            "-m".to_string(),
+            "Push PR commit changed".to_string(),
+        ],
+        Some(clone_path.clone()),
+    )
+    .await;
+    let pushed_head = git_stdout(&["rev-parse", "HEAD"], Some(&clone_path));
+    let authenticated_url = base_url.replacen("http://", "http://member:doorpass1@", 1);
+    run_git_blocking(
+        vec![
+            "remote".to_string(),
+            "set-url".to_string(),
+            "origin".to_string(),
+            format!("{authenticated_url}/yona/owner/projectYobi.git"),
+        ],
+        Some(clone_path.clone()),
+    )
+    .await;
+    run_git_blocking(
+        vec![
+            "push".to_string(),
+            "origin".to_string(),
+            "topic/pr".to_string(),
+        ],
+        Some(clone_path.clone()),
+    )
+    .await;
+
+    let commit_rows = pull_request_commit::Entity::find()
+        .filter(pull_request_commit::Column::PullRequestId.eq(Some(pull_request.id)))
+        .all(&db)
+        .await
+        .unwrap();
+    assert_eq!(commit_rows.len(), 1);
+    assert_eq!(
+        commit_rows[0].commit_id.as_deref(),
+        Some(pushed_head.trim())
+    );
+    let detail = repo
+        .read_pull_request_detail(
+            "owner",
+            "projectYobi",
+            pull_request.pull_request_number,
+            Some(owner_id),
+        )
+        .await
+        .unwrap()
+        .expect("pull request detail");
+    assert_eq!(detail.commits.len(), 1);
+    assert_eq!(detail.commits[0].commit_id, pushed_head.trim());
+    assert_eq!(detail.commits[0].commit_message, "Push PR commit changed");
+    let changed_event = detail
+        .events
+        .iter()
+        .find(|event| event.event_type == "PULL_REQUEST_COMMIT_CHANGED")
+        .expect("commit changed event");
+    assert_eq!(changed_event.sender_login_id, "member");
+    assert_eq!(changed_event.new_value, commit_rows[0].id.to_string());
+    let notification_events = notification_event::Entity::find()
+        .filter(
+            notification_event::Column::EventType
+                .eq(Some("PULL_REQUEST_COMMIT_CHANGED".to_string())),
+        )
+        .filter(notification_event::Column::ResourceType.eq(Some("PULL_REQUEST".to_string())))
+        .filter(notification_event::Column::ResourceId.eq(Some(pull_request.id.to_string())))
+        .all(&db)
+        .await
+        .unwrap();
+    assert_eq!(notification_events.len(), 1);
+
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 1);
+    assert_eq!(deliveries[0].event_type, "PULL_REQUEST_COMMIT_CHANGED");
+    assert_eq!(deliveries[0].webhook_type, "SIMPLE");
+    let payload: serde_json::Value =
+        serde_json::from_str(&deliveries[0].body).expect("commit changed webhook payload");
+    assert!(payload["text"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("PULL_REQUEST_COMMIT_CHANGED"));
+    assert!(payload["text"]
+        .as_str()
+        .unwrap_or_default()
+        .contains("#1: Smart PR"));
 
     let _ = shutdown.send(());
 }

@@ -2437,6 +2437,15 @@ async fn record_smart_http_push_side_effects(
             &notification_message,
         )
         .await;
+    record_pull_request_commit_changed_side_effects(
+        repository,
+        project,
+        actor,
+        &summary,
+        public_origin,
+        base_path,
+    )
+    .await;
     dispatch_git_push_webhooks(
         repository,
         project,
@@ -2446,6 +2455,64 @@ async fn record_smart_http_push_side_effects(
         base_path,
     )
     .await;
+}
+
+async fn record_pull_request_commit_changed_side_effects(
+    repository: &PilotRepository,
+    project: &persistence::ProjectRecord,
+    actor: &persistence::AppUserRecord,
+    summary: &SmartHttpPushSummary,
+    public_origin: &str,
+    base_path: &str,
+) {
+    let branches = summary
+        .updated_refs
+        .iter()
+        .filter(|change| !change.commits.is_empty())
+        .map(|change| persistence::PullRequestCommitChangedBranchInput {
+            branch_name: change.short_ref.clone(),
+            commits: change
+                .commits
+                .iter()
+                .map(|commit| persistence::PullRequestPushedCommitInput {
+                    author_email: commit.author_email.clone(),
+                    commit_id: commit.commit_id.clone(),
+                    commit_message: commit.message.clone(),
+                })
+                .collect(),
+        })
+        .collect::<Vec<_>>();
+    if branches.is_empty() {
+        return;
+    }
+
+    let Ok(changed) = repository
+        .record_pull_request_commit_changes(persistence::PullRequestCommitChangedInput {
+            actor_id: actor.id,
+            actor_login_id: actor.login_id.clone(),
+            branches,
+            project_id: project.id,
+        })
+        .await
+    else {
+        return;
+    };
+
+    for record in changed {
+        let detail_markdown = record.commit_messages.join("\n");
+        dispatch_pull_request_webhooks(
+            repository,
+            &record.pull_request,
+            actor,
+            "PULL_REQUEST_COMMIT_CHANGED",
+            &detail_markdown,
+            None,
+            None,
+            public_origin,
+            base_path,
+        )
+        .await;
+    }
 }
 
 fn smart_http_push_summary(
