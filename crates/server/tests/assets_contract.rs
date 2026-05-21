@@ -413,6 +413,34 @@ async fn file_upload_requires_auth_and_preserves_general_attachments_under_legac
         .to_bytes();
     assert_eq!(get_text_body.as_ref(), text_bytes);
 
+    let get_text_file_trailing_slash = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/yona/files/{text_file_id}/"))
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(get_text_file_trailing_slash.status(), StatusCode::OK);
+    assert_eq!(
+        get_text_file_trailing_slash
+            .headers()
+            .get(http::header::CONTENT_DISPOSITION)
+            .and_then(|value| value.to_str().ok()),
+        Some("inline; filename*=UTF-8''notes.txt")
+    );
+    let trailing_slash_body = get_text_file_trailing_slash
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    assert_eq!(trailing_slash_body.as_ref(), text_bytes);
+
     let download_text_file = app
         .clone()
         .oneshot(
@@ -1012,6 +1040,34 @@ async fn uploaded_file_delete_requires_author_or_site_admin_and_removes_attachme
         .unwrap();
     assert_eq!(owner_delete.status(), StatusCode::OK);
     assert!(repo.read_attachment_by_id(file_id).await.unwrap().is_none());
+
+    let trailing_slash_delete_file_id =
+        upload_image_file(app.clone(), &owner_cookie, &owner_csrf, "slash-delete.png").await;
+    let trailing_slash_post_delete = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri(format!("/yona/files/{trailing_slash_delete_file_id}/"))
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "multipart/form-data; boundary=yona-boundary",
+                )
+                .header(http::header::COOKIE, &owner_cookie)
+                .header("x-csrf-token", &owner_csrf)
+                .body(Body::from(
+                    "--yona-boundary\r\nContent-Disposition: form-data; name=\"_method\"\r\n\r\ndelete\r\n--yona-boundary--\r\n",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(trailing_slash_post_delete.status(), StatusCode::OK);
+    assert!(repo
+        .read_attachment_by_id(trailing_slash_delete_file_id)
+        .await
+        .unwrap()
+        .is_none());
 
     let deleted_get = app
         .clone()

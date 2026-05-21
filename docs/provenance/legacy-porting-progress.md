@@ -339,12 +339,12 @@ Interpretation:
 ## Attachments / Files
 
 - [x] File upload endpoint
-- [x] File download endpoint
+- [x] File download endpoint, including legacy `GET /files/:id/` alias
 - [x] Avatar attachment flow
 - [~] Issue attachment binding
 - [~] Issue comment attachment binding
 - [~] Milestone attachment binding
-- [x] File delete authorization
+- [x] File delete authorization, including legacy `POST /files/:id/` `_method=delete` alias
 - [~] Full container type parity across issue/board/PR/project (legacy enum names and current-user temporary binding for issue/board/PR/milestone; project logo/deferred containers remain)
 - [x] Global file size policy parity
 - [x] MIME validation/detection parity for uploaded attachments

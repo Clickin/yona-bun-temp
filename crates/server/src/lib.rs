@@ -280,8 +280,12 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let file_base_path = base_path.clone();
     let file_read_session_manager = session_manager.clone();
     let file_read_backend = route_backend.clone();
+    let file_read_trailing_session_manager = session_manager.clone();
+    let file_read_trailing_backend = route_backend.clone();
     let file_delete_post_session_manager = session_manager.clone();
     let file_delete_post_backend = route_backend.clone();
+    let file_delete_post_trailing_session_manager = session_manager.clone();
+    let file_delete_post_trailing_backend = route_backend.clone();
     let file_delete_session_manager = session_manager.clone();
     let file_delete_backend = route_backend.clone();
     let label_list_backend = route_backend.clone();
@@ -727,6 +731,34 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         id,
                         file_delete_session_manager.clone(),
                         file_delete_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/files/{id}/",
+            get(move |headers: HeaderMap,
+                      Path(id): Path<i64>,
+                      RawQuery(raw_query): RawQuery| {
+                async move {
+                    get_uploaded_file(
+                        headers,
+                        id,
+                        raw_query,
+                        file_read_trailing_session_manager.clone(),
+                        file_read_trailing_backend.clone(),
+                    )
+                    .await
+                }
+            })
+            .post(move |headers: HeaderMap, Path(id): Path<i64>| {
+                async move {
+                    delete_uploaded_file(
+                        headers,
+                        id,
+                        file_delete_post_trailing_session_manager.clone(),
+                        file_delete_post_trailing_backend.clone(),
                     )
                     .await
                 }
