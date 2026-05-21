@@ -327,12 +327,31 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let milestone_close_backend = route_backend.clone();
     let milestone_close_session_manager = session_manager.clone();
     let milestone_close_base_path = base_path.clone();
+    let issue_comment_create_backend = route_backend.clone();
+    let issue_comment_create_session_manager = session_manager.clone();
+    let issue_comment_create_base_path = base_path.clone();
+    let issue_comment_create_public_origin = public_origin.clone();
+    let issue_comment_update_backend = route_backend.clone();
+    let issue_comment_update_session_manager = session_manager.clone();
+    let issue_comment_update_base_path = base_path.clone();
+    let issue_comment_delete_backend = route_backend.clone();
+    let issue_comment_delete_session_manager = session_manager.clone();
+    let issue_comment_delete_base_path = base_path.clone();
     let comment_vote_backend = route_backend.clone();
     let comment_vote_session_manager = session_manager.clone();
     let comment_vote_base_path = base_path.clone();
     let comment_unvote_backend = route_backend.clone();
     let comment_unvote_session_manager = session_manager.clone();
     let comment_unvote_base_path = base_path.clone();
+    let board_comment_create_backend = route_backend.clone();
+    let board_comment_create_session_manager = session_manager.clone();
+    let board_comment_create_base_path = base_path.clone();
+    let board_comment_update_backend = route_backend.clone();
+    let board_comment_update_session_manager = session_manager.clone();
+    let board_comment_update_base_path = base_path.clone();
+    let board_comment_delete_backend = route_backend.clone();
+    let board_comment_delete_session_manager = session_manager.clone();
+    let board_comment_delete_base_path = base_path.clone();
     let anonymous_gate_session_manager = session_manager.clone();
     let anonymous_gate_base_path = base_path.clone();
     let raw_code_backend = route_backend.clone();
@@ -1299,6 +1318,117 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         milestone_close_session_manager.clone(),
                         milestone_close_backend.clone(),
                         milestone_close_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/post/{number}/comment",
+            post(move |headers: HeaderMap, Path((owner, project, number)): Path<(String, String, i64)>, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_create_posting_comment(
+                        headers,
+                        owner,
+                        project,
+                        number,
+                        form,
+                        board_comment_create_session_manager.clone(),
+                        board_comment_create_backend.clone(),
+                        board_comment_create_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/post/{number}/comment/{comment_id}",
+            post(move |headers: HeaderMap, Path((owner, project, number, comment_id)): Path<(String, String, i64, i64)>, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_update_posting_comment(
+                        headers,
+                        owner,
+                        project,
+                        number,
+                        comment_id,
+                        form,
+                        board_comment_update_session_manager.clone(),
+                        board_comment_update_backend.clone(),
+                        board_comment_update_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/post/{number}/comment/{comment_id}/delete",
+            delete(move |headers: HeaderMap, Path((owner, project, number, comment_id)): Path<(String, String, i64, i64)>| {
+                async move {
+                    direct_delete_posting_comment(
+                        headers,
+                        owner,
+                        project,
+                        number,
+                        comment_id,
+                        board_comment_delete_session_manager.clone(),
+                        board_comment_delete_backend.clone(),
+                        board_comment_delete_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/issue/{number}/comments",
+            post(move |headers: HeaderMap, Path((owner, project, number)): Path<(String, String, i64)>, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_create_issue_comment(
+                        headers,
+                        owner,
+                        project,
+                        number,
+                        form,
+                        issue_comment_create_session_manager.clone(),
+                        issue_comment_create_backend.clone(),
+                        issue_comment_create_base_path.clone(),
+                        issue_comment_create_public_origin.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/issue/{number}/comments/{comment_id}",
+            post(move |headers: HeaderMap, Path((owner, project, number, comment_id)): Path<(String, String, i64, i64)>, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_update_issue_comment(
+                        headers,
+                        owner,
+                        project,
+                        number,
+                        comment_id,
+                        form,
+                        issue_comment_update_session_manager.clone(),
+                        issue_comment_update_backend.clone(),
+                        issue_comment_update_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}/issue/{number}/comment/{comment_id}/delete",
+            delete(move |headers: HeaderMap, Path((owner, project, number, comment_id)): Path<(String, String, i64, i64)>| {
+                async move {
+                    direct_delete_issue_comment(
+                        headers,
+                        owner,
+                        project,
+                        number,
+                        comment_id,
+                        issue_comment_delete_session_manager.clone(),
+                        issue_comment_delete_backend.clone(),
+                        issue_comment_delete_base_path.clone(),
                     )
                     .await
                 }
@@ -16579,6 +16709,245 @@ async fn rest_mass_update_issues(
         items,
         ..Default::default()
     }))
+}
+
+fn direct_comment_contents(form: &HashMap<String, String>) -> String {
+    form_value(
+        form,
+        &[
+            "contents",
+            "contentsMarkdown",
+            "contents_markdown",
+            "body",
+            "comment",
+        ],
+    )
+    .trim()
+    .to_string()
+}
+
+fn direct_comment_attachment_ids(form: &HashMap<String, String>) -> Vec<i64> {
+    parse_attachment_ids(form_value(
+        form,
+        &["attachmentIds", "attachment_ids", "temporaryUploadFiles"],
+    ))
+}
+
+fn direct_issue_comment_body(form: &HashMap<String, String>) -> RestIssueCommentBody {
+    RestIssueCommentBody {
+        attachment_ids: direct_comment_attachment_ids(form),
+        contents_markdown: direct_comment_contents(form),
+    }
+}
+
+fn direct_post_comment_body(form: &HashMap<String, String>) -> RestPostCommentBody {
+    RestPostCommentBody {
+        attachment_ids: direct_comment_attachment_ids(form),
+        contents_markdown: direct_comment_contents(form),
+    }
+}
+
+async fn direct_create_issue_comment(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    issue_number: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+    public_origin: String,
+) -> Response {
+    match rest_create_issue_comment(
+        headers_with_form_csrf(headers, &form),
+        owner.clone(),
+        project.clone(),
+        issue_number,
+        direct_issue_comment_body(&form),
+        session_manager,
+        backend,
+        base_path.clone(),
+        public_origin,
+    )
+    .await
+    {
+        Ok(Json(detail)) => {
+            let fragment = detail
+                .comments
+                .iter()
+                .max_by_key(|comment| comment.id)
+                .map(|comment| format!("#comment-{}", comment.id))
+                .unwrap_or_default();
+            redirect_to(
+                &base_path,
+                &format!("/{owner}/{project}/issue/{issue_number}{fragment}"),
+            )
+        }
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_update_issue_comment(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    issue_number: i64,
+    comment_id: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    match rest_update_issue_comment(
+        headers_with_form_csrf(headers, &form),
+        owner.clone(),
+        project.clone(),
+        issue_number,
+        comment_id,
+        direct_issue_comment_body(&form),
+        session_manager,
+        backend,
+        base_path.clone(),
+    )
+    .await
+    {
+        Ok(_) => redirect_to(
+            &base_path,
+            &format!("/{owner}/{project}/issue/{issue_number}#comment-{comment_id}"),
+        ),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_delete_issue_comment(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    issue_number: i64,
+    comment_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    match rest_delete_issue_comment(
+        headers,
+        owner.clone(),
+        project.clone(),
+        issue_number,
+        comment_id,
+        session_manager,
+        backend,
+        base_path.clone(),
+    )
+    .await
+    {
+        Ok(_) => redirect_to(
+            &base_path,
+            &format!("/{owner}/{project}/issue/{issue_number}"),
+        ),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_create_posting_comment(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    post_number: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    match rest_create_posting_comment(
+        headers_with_form_csrf(headers, &form),
+        owner.clone(),
+        project.clone(),
+        post_number,
+        direct_post_comment_body(&form),
+        session_manager,
+        backend,
+        base_path.clone(),
+    )
+    .await
+    {
+        Ok(Json(detail)) => {
+            let fragment = detail
+                .comments
+                .iter()
+                .filter_map(|comment| comment.id.parse::<i64>().ok())
+                .max()
+                .map(|comment_id| format!("#comment-{comment_id}"))
+                .unwrap_or_default();
+            redirect_to(
+                &base_path,
+                &format!("/{owner}/{project}/post/{post_number}{fragment}"),
+            )
+        }
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_update_posting_comment(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    post_number: i64,
+    comment_id: i64,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    match rest_update_posting_comment(
+        headers_with_form_csrf(headers, &form),
+        owner.clone(),
+        project.clone(),
+        post_number,
+        comment_id,
+        direct_post_comment_body(&form),
+        session_manager,
+        backend,
+        base_path.clone(),
+    )
+    .await
+    {
+        Ok(_) => redirect_to(
+            &base_path,
+            &format!("/{owner}/{project}/post/{post_number}#comment-{comment_id}"),
+        ),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_delete_posting_comment(
+    headers: HeaderMap,
+    owner: String,
+    project: String,
+    post_number: i64,
+    comment_id: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    match rest_delete_posting_comment(
+        headers,
+        owner.clone(),
+        project.clone(),
+        post_number,
+        comment_id,
+        session_manager,
+        backend,
+        base_path.clone(),
+    )
+    .await
+    {
+        Ok(_) => redirect_to(
+            &base_path,
+            &format!("/{owner}/{project}/post/{post_number}"),
+        ),
+        Err(error) => error.into_response(),
+    }
 }
 
 async fn direct_issue_comment_vote(

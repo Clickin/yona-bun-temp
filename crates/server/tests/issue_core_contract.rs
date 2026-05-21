@@ -261,6 +261,51 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         .unwrap()
         .contains("https://example.com"));
 
+    let direct_updated_comment = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/owner/projectYobi/issue/1/comments/1")
+                .header(http::header::COOKIE, &cookie)
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .body(Body::from(format!(
+                    "csrfToken={csrf}&contents=Legacy+direct+comment+edit"
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(direct_updated_comment.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        direct_updated_comment
+            .headers()
+            .get(http::header::LOCATION)
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        "/yona/owner/projectYobi/issue/1#comment-1"
+    );
+    let directly_updated_detail = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        directly_updated_detail["comments"][0]["contentsMarkdown"],
+        "Legacy direct comment edit"
+    );
+
     let updated_comment = response_json(
         rest(
             app.clone(),
@@ -327,6 +372,81 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         .get("comments")
         .and_then(serde_json::Value::as_array)
         .is_none_or(|comments| comments.is_empty()));
+
+    let direct_created_comment = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/owner/projectYobi/issue/1/comments")
+                .header(http::header::COOKIE, &cookie)
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .body(Body::from(format!(
+                    "csrfToken={csrf}&contents=Legacy+direct+comment+create"
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(direct_created_comment.status(), StatusCode::SEE_OTHER);
+    let direct_created_location = direct_created_comment
+        .headers()
+        .get(http::header::LOCATION)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(direct_created_location.starts_with("/yona/owner/projectYobi/issue/1#comment-"));
+    let direct_created_detail = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let direct_comment_id = direct_created_detail["comments"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|comment| comment["contentsMarkdown"] == "Legacy direct comment create")
+        .and_then(|comment| {
+            comment["id"]
+                .as_i64()
+                .or_else(|| comment["id"].as_str().and_then(|value| value.parse().ok()))
+        })
+        .expect("direct legacy issue comment id");
+    let direct_deleted_comment = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!(
+                    "/yona/owner/projectYobi/issue/1/comment/{direct_comment_id}/delete"
+                ))
+                .header(http::header::COOKIE, &cookie)
+                .header("x-csrf-token", &csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(direct_deleted_comment.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        direct_deleted_comment
+            .headers()
+            .get(http::header::LOCATION)
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        "/yona/owner/projectYobi/issue/1"
+    );
 
     let deleted_issue = response_json(
         rest(

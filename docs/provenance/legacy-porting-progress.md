@@ -189,6 +189,7 @@ Interpretation:
 - [x] Organization issue aggregate list
 - [x] Comment vote
 - [x] Legacy direct comment-vote POST routes
+- [x] Legacy direct issue comment create/update/delete form routes
 - [x] Mention autocomplete
 - [x] Mention notification semantics
 - [x] Shared-with-me issue filter
@@ -238,6 +239,7 @@ Interpretation:
 - [x] Posting update
 - [x] Posting delete
 - [x] Posting comment create/update/delete
+- [x] Legacy direct posting comment create/update/delete form routes
 - [x] Notice posts
 - [x] README posting (DB-backed, no Git commit/sync)
 - [x] Posting labels
