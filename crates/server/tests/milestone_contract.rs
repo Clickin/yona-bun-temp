@@ -285,7 +285,7 @@ async fn milestone_rpc_manages_crud_state_sorting_and_linked_issues() {
                 "projectName": "projectYobi",
                 "milestoneId": milestone_id,
                 "title": "v1.0 patched",
-                "contentsMarkdown": "Updated",
+                "contentsMarkdown": "Updated #1 owner/projectYobi#1",
                 "dueDate": "2026-05-11",
                 "state": "closed"
             }),
@@ -295,6 +295,12 @@ async fn milestone_rpc_manages_crud_state_sorting_and_linked_issues() {
     .await;
     assert_eq!(updated["milestone"]["title"], "v1.0 patched");
     assert_eq!(updated["milestone"]["state"], "closed");
+    let updated_html = updated["milestone"]["contentsHtml"].as_str().unwrap();
+    assert!(
+        updated_html.contains("title=\"Open milestone issue\"")
+            && updated_html.contains("data-issue-state=\"open\""),
+        "{updated_html}"
+    );
 
     let opened = response_json(
         rpc(

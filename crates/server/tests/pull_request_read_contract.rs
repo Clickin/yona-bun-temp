@@ -426,6 +426,23 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         "public",
     )
     .await;
+    let linked_issue = response_json(
+        rpc(
+            app.clone(),
+            "CreateIssue",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "title": "PR linked issue",
+                "bodyMarkdown": "issue target"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(linked_issue["issueNumber"], "1");
     create_organization(app.clone(), &owner_cookie, &owner_csrf, "acme").await;
     create_project(
         app.clone(),
@@ -642,6 +659,11 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         "{body_html}"
     );
     assert!(
+        body_html.contains("title=\"PR linked issue\"")
+            && body_html.contains("data-issue-state=\"open\""),
+        "{body_html}"
+    );
+    assert!(
         body_html.contains("<code>&lt;script&gt;alert(1)&lt;/script&gt; @reviewer #1</code>"),
         "{body_html}"
     );
@@ -663,6 +685,11 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     );
     assert!(
         comment_html.contains("href=\"/yona/owner/projectYobi/issue/1\""),
+        "{comment_html}"
+    );
+    assert!(
+        comment_html.contains("title=\"PR linked issue\"")
+            && comment_html.contains("data-issue-state=\"open\""),
         "{comment_html}"
     );
     assert!(

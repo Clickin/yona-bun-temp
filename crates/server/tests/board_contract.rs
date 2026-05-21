@@ -204,6 +204,22 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     let (_, guest_cookie, _) = register_user(app.clone(), "guest").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
     let label_id = create_label(app.clone(), &owner_cookie, &owner_csrf).await;
+    let linked_issue = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "title": "Board linked issue",
+                "bodyMarkdown": "issue target"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(linked_issue["issueNumber"], "1");
 
     let form_options = ok_json(
         rest(
@@ -232,7 +248,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
             Some(&owner_csrf),
             Some(json!({
                 "title": "Project README",
-                "bodyMarkdown": "# README\n@guest should see this board notification",
+                "bodyMarkdown": "# README\n@guest should see this board notification #1 owner/projectYobi#1",
                 "labelIds": [label_id],
                 "readme": true
             })),
@@ -247,6 +263,12 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
         .as_str()
         .unwrap()
         .contains("<h1>README</h1>"));
+    let readme_html = readme["bodyHtml"].as_str().unwrap();
+    assert!(
+        readme_html.contains("title=\"Board linked issue\"")
+            && readme_html.contains("data-issue-state=\"open\""),
+        "{readme_html}"
+    );
 
     let notice = ok_json(
         rest(
@@ -307,7 +329,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     assert_eq!(list["readme"]["postNumber"], "1");
     assert_eq!(
         list["readme"]["bodyMarkdown"],
-        "# README\n@guest should see this board notification"
+        "# README\n@guest should see this board notification #1 owner/projectYobi#1"
     );
 
     let detail = ok_json(
@@ -340,7 +362,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
-                "contentsMarkdown": "First **comment**"
+                "contentsMarkdown": "First **comment** #1"
             })),
         )
         .await,
@@ -352,6 +374,10 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
         .as_str()
         .unwrap()
         .contains("<strong>comment</strong>"));
+    assert!(commented["comments"][0]["contentsHtml"]
+        .as_str()
+        .unwrap()
+        .contains("title=\"Board linked issue\""));
 
     let comment_id = commented["comments"][0]["id"].as_str().unwrap();
     let edited_comment = ok_json(

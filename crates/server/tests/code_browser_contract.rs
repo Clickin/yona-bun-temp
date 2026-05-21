@@ -801,6 +801,23 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
     let (app, repo, db) = build_app_with_repository_and_db().await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
+    let linked_issue = response_json(
+        rpc(
+            app.clone(),
+            "CreateIssue",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "title": "Commit linked issue",
+                "bodyMarkdown": "issue target"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(linked_issue["issueNumber"], "1");
     let project = repo
         .read_project_by_owner_and_name("owner", "projectYobi")
         .await
@@ -857,6 +874,11 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
     );
     assert!(
         commit_comment_html.contains("href=\"/yona/owner/projectYobi/issue/1\""),
+        "{commit_comment_html}"
+    );
+    assert!(
+        commit_comment_html.contains("title=\"Commit linked issue\"")
+            && commit_comment_html.contains("data-issue-state=\"open\""),
         "{commit_comment_html}"
     );
     assert!(
