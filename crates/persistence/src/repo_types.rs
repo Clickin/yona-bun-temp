@@ -1258,6 +1258,17 @@ pub struct DeletePullRequestCommentInput {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UpdatePullRequestCommentInput {
+    pub actor_id: i64,
+    pub attachment_ids: Vec<i64>,
+    pub comment_id: i64,
+    pub contents_markdown: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub pull_request_number: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestThreadStateInput {
     pub actor_id: i64,
     pub actor_login_id: String,

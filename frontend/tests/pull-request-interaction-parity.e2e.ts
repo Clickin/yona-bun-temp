@@ -268,6 +268,32 @@ test.beforeEach(async ({ page }) => {
         await route.fulfill({ body: JSON.stringify(pullRequest), headers: restJsonHeaders });
         return;
       }
+      if (url.pathname.endsWith("/comments/18") && method === "PATCH") {
+        const body = (route.request().postDataJSON() ?? {}) as {
+          contentsMarkdown?: string;
+        };
+        pullRequest = detail({
+          ...pullRequest,
+          threads: pullRequest.threads.map((thread) =>
+            thread.id === 17
+              ? {
+                  ...thread,
+                  comments: thread.comments.map((comment) =>
+                    comment.id === 18
+                      ? {
+                          ...comment,
+                          contentsHtml: `<p>${body.contentsMarkdown ?? ""}</p>`,
+                          contentsMarkdown: body.contentsMarkdown ?? "",
+                        }
+                      : comment,
+                  ),
+                }
+              : thread,
+          ),
+        });
+        await route.fulfill({ body: JSON.stringify(pullRequest), headers: restJsonHeaders });
+        return;
+      }
       if (url.pathname.endsWith("/comments")) {
         const body = (route.request().postDataJSON() ?? {}) as {
           contentsMarkdown?: string;
@@ -519,6 +545,27 @@ test("covers create/edit forms and PR interaction actions without placeholders",
     "data-request-uri",
     "/yona/api/v1/owners/admin/projects/projectYobi/pull-requests/9/comments/18",
   );
+  await expect(page.locator("#comment-18 [data-request-method='patch']")).toHaveAttribute(
+    "data-request-uri",
+    "/yona/api/v1/owners/admin/projects/projectYobi/pull-requests/9/comments/18",
+  );
+  const inlineEditRequest = page.waitForRequest(
+    (request) =>
+      request.url().endsWith("/pull-requests/9/comments/18") && request.method() === "PATCH",
+  );
+  await page.locator("#comment-18").getByRole("button", { name: "Edit" }).click();
+  await page.locator("#comment-18 .review-comment-edit-form textarea").fill("Edited inline body");
+  await page
+    .locator("#comment-18 .review-comment-edit-form")
+    .getByRole("button", {
+      name: "Save",
+    })
+    .click();
+  const submittedInlineEdit = (await inlineEditRequest).postDataJSON() as {
+    contentsMarkdown?: string;
+  };
+  expect(submittedInlineEdit).toMatchObject({ contentsMarkdown: "Edited inline body" });
+  await expect(page.locator("#comment-18")).toContainText("Edited inline body");
   await page.locator("#comment-18").getByRole("button", { name: "Delete" }).click();
   await expect(page.locator("#comment-18")).toHaveCount(0);
   await page.goto("/yona/admin/projectYobi/pullRequest/9");

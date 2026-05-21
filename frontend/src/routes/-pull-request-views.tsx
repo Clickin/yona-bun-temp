@@ -806,6 +806,11 @@ export function ProjectPullRequestDetailPage(props: {
   onClose?: () => Promise<void>;
   onCommentDelete?: (commentId: number) => Promise<void>;
   onCommentSubmit?: (contentsMarkdown: string, attachmentIds?: number[]) => Promise<void>;
+  onCommentUpdate?: (
+    commentId: number,
+    contentsMarkdown: string,
+    attachmentIds?: number[],
+  ) => Promise<void>;
   onDeleteSourceBranch?: () => Promise<void>;
   onOpen?: () => Promise<void>;
   onReview?: () => Promise<void>;
@@ -875,10 +880,12 @@ export function ProjectPullRequestDetailPage(props: {
             <div className="markdown-wrap" dangerouslySetInnerHTML={{ __html: pr.bodyHtml }} />
           </section>
           <ReviewThreadSection
+            csrfToken={props.csrfToken}
             pullRequest={pr}
             runtimeConfig={props.runtimeConfig}
             threads={pr.threads}
             onCommentDelete={props.onCommentDelete}
+            onCommentUpdate={props.onCommentUpdate}
             onThreadClose={props.onThreadClose}
             onThreadOpen={props.onThreadOpen}
           />
@@ -943,10 +950,16 @@ export function ProjectPullRequestDetailPage(props: {
 }
 
 function ReviewThreadSection(props: {
+  csrfToken?: string;
   pullRequest?: PullRequestDetailResponse;
   runtimeConfig?: RuntimeConfig;
   threads: ReviewThread[];
   onCommentDelete?: (commentId: number) => Promise<void>;
+  onCommentUpdate?: (
+    commentId: number,
+    contentsMarkdown: string,
+    attachmentIds?: number[],
+  ) => Promise<void>;
   onThreadClose?: (threadId: number) => Promise<void>;
   onThreadOpen?: (threadId: number) => Promise<void>;
 }) {
@@ -958,11 +971,13 @@ function ReviewThreadSection(props: {
       ) : (
         props.threads.map((thread) => (
           <ReviewThreadItem
+            csrfToken={props.csrfToken}
             key={thread.id}
             pullRequest={props.pullRequest}
             runtimeConfig={props.runtimeConfig}
             thread={thread}
             onCommentDelete={props.onCommentDelete}
+            onCommentUpdate={props.onCommentUpdate}
             onThreadClose={props.onThreadClose}
             onThreadOpen={props.onThreadOpen}
           />
@@ -973,13 +988,41 @@ function ReviewThreadSection(props: {
 }
 
 function ReviewThreadItem(props: {
+  csrfToken?: string;
   pullRequest?: PullRequestDetailResponse;
   runtimeConfig?: RuntimeConfig;
   thread: ReviewThread;
   onCommentDelete?: (commentId: number) => Promise<void>;
+  onCommentUpdate?: (
+    commentId: number,
+    contentsMarkdown: string,
+    attachmentIds?: number[],
+  ) => Promise<void>;
   onThreadClose?: (threadId: number) => Promise<void>;
   onThreadOpen?: (threadId: number) => Promise<void>;
 }) {
+  const [editingCommentId, setEditingCommentId] = React.useState<number | null>(null);
+  const [editText, setEditText] = React.useState("");
+  const [editAttachmentIds, setEditAttachmentIds] = React.useState<number[]>([]);
+
+  function beginEdit(comment: ReviewThread["comments"][number]) {
+    setEditingCommentId(comment.id);
+    setEditText(comment.contentsMarkdown);
+    setEditAttachmentIds([]);
+  }
+
+  async function submitEdit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const contentsMarkdown = editText.trim();
+    if (!editingCommentId || !contentsMarkdown || !props.onCommentUpdate) {
+      return;
+    }
+    await props.onCommentUpdate(editingCommentId, contentsMarkdown, editAttachmentIds);
+    setEditingCommentId(null);
+    setEditText("");
+    setEditAttachmentIds([]);
+  }
+
   return (
     <article className="review-card comment-thread-wrap" id={`thread-${props.thread.id}`}>
       <header>
@@ -1012,21 +1055,73 @@ function ReviewThreadItem(props: {
         <div className="review-comment board-comment" id={`comment-${comment.id}`} key={comment.id}>
           <p>{`${comment.authorLabel || comment.authorLoginId || "Unknown"} ${comment.createdLabel}`}</p>
           {comment.canDelete && props.pullRequest && props.runtimeConfig ? (
-            <button
-              className="btn-transparent pull-right close"
-              data-request-method="delete"
-              data-request-uri={pullRequestApiHref(
+            <span className="edit pull-right">
+              {props.onCommentUpdate ? (
+                <button
+                  className="btn-transparent pull-right"
+                  data-request-method="patch"
+                  data-request-uri={pullRequestApiHref(
+                    props.runtimeConfig,
+                    props.pullRequest,
+                    `/comments/${comment.id}`,
+                  )}
+                  onClick={() => beginEdit(comment)}
+                  type="button"
+                >
+                  Edit
+                </button>
+              ) : null}
+              <button
+                className="btn-transparent pull-right close"
+                data-request-method="delete"
+                data-request-uri={pullRequestApiHref(
+                  props.runtimeConfig,
+                  props.pullRequest,
+                  `/comments/${comment.id}`,
+                )}
+                onClick={() => void props.onCommentDelete?.(comment.id)}
+                type="button"
+              >
+                Delete
+              </button>
+            </span>
+          ) : null}
+          {editingCommentId === comment.id && props.pullRequest && props.runtimeConfig ? (
+            <form
+              action={pullRequestApiHref(
                 props.runtimeConfig,
                 props.pullRequest,
                 `/comments/${comment.id}`,
               )}
-              onClick={() => void props.onCommentDelete?.(comment.id)}
-              type="button"
+              className="review-form review-comment-edit-form"
+              method="post"
+              onSubmit={(event) => void submitEdit(event)}
             >
-              Delete
-            </button>
-          ) : null}
-          <div dangerouslySetInnerHTML={{ __html: comment.contentsHtml }} />
+              <input name="_method" type="hidden" value="patch" />
+              <MarkdownAttachmentTextarea
+                csrfToken={props.csrfToken}
+                name="contentsMarkdown"
+                onAttachmentUpload={(attachment) =>
+                  setEditAttachmentIds((current) => [...current, attachment.id])
+                }
+                onChange={setEditText}
+                runtimeConfig={props.runtimeConfig}
+                value={editText}
+              />
+              <button className="ybtn ybtn-success ybtn-small" type="submit">
+                Save
+              </button>
+              <button
+                className="ybtn ybtn-small"
+                onClick={() => setEditingCommentId(null)}
+                type="button"
+              >
+                Cancel
+              </button>
+            </form>
+          ) : (
+            <div dangerouslySetInnerHTML={{ __html: comment.contentsHtml }} />
+          )}
         </div>
       ))}
     </article>
@@ -1039,6 +1134,11 @@ export function PullRequestChangesPage(props: {
   detail: ProjectDetailViewModel | null;
   runtimeConfig: RuntimeConfig;
   onCommentDelete?: (commentId: number) => Promise<void>;
+  onCommentUpdate?: (
+    commentId: number,
+    contentsMarkdown: string,
+    attachmentIds?: number[],
+  ) => Promise<void>;
   onInlineCommentSubmit?: (input: PullRequestInlineCommentSubmitInput) => Promise<void>;
   onThreadClose?: (threadId: number) => Promise<void>;
   onThreadOpen?: (threadId: number) => Promise<void>;
@@ -1095,7 +1195,9 @@ export function PullRequestChangesPage(props: {
         pullRequest={pr}
         runtimeConfig={props.runtimeConfig}
         thread={thread}
+        csrfToken={props.csrfToken}
         onCommentDelete={props.onCommentDelete}
+        onCommentUpdate={props.onCommentUpdate}
         onThreadClose={props.onThreadClose}
         onThreadOpen={props.onThreadOpen}
       />

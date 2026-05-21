@@ -7,6 +7,7 @@ import {
   deletePullRequestCommentRest,
   openPullRequestThreadRest,
   pullRequestChangesQueryOptions,
+  updatePullRequestCommentRest,
 } from "../../../../../../api/pull-requests";
 import { apiQueryKeys } from "../../../../../../api/query-keys";
 import { readProjectContainer } from "../../../../../../auth-workspace-client";
@@ -129,6 +130,40 @@ function PullRequestChangesRouteComponent() {
       ]);
     },
   });
+  const updateCommentMutation = useMutation({
+    mutationFn: (input: {
+      attachmentIds?: number[];
+      commentId: number;
+      contentsMarkdown: string;
+    }) =>
+      updatePullRequestCommentRest(runtimeConfig, csrfToken, {
+        ...scope,
+        ...input,
+      }),
+    onError: mutationError("Update pull request review comment failed."),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(pullRequestDetailKey, updated);
+      queryClient.setQueryData(pullRequestChangesKey, (current: typeof changesQuery.data) =>
+        current
+          ? {
+              ...current,
+              pullRequest: updated,
+              threads: updated.threads,
+            }
+          : current,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: pullRequestChangesKey }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
   const closeThreadMutation = useMutation({
     mutationFn: (threadId: number) =>
       closePullRequestThreadRest(runtimeConfig, csrfToken, {
@@ -207,6 +242,13 @@ function PullRequestChangesRouteComponent() {
       runtimeConfig={runtimeConfig}
       onCommentDelete={async (commentId) => {
         await deleteCommentMutation.mutateAsync(commentId);
+      }}
+      onCommentUpdate={async (commentId, contentsMarkdown, attachmentIds) => {
+        await updateCommentMutation.mutateAsync({
+          attachmentIds,
+          commentId,
+          contentsMarkdown,
+        });
       }}
       onInlineCommentSubmit={async (input) => {
         await inlineCommentMutation.mutateAsync(input);

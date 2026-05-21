@@ -35,10 +35,11 @@ use crate::repo_types::{
     ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateIssueCommentInput,
     UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput,
     UpdatePostingInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
-    UpdateProjectLabelInput, UpdatePullRequestInput, UserAttachmentListRecord,
-    UserAttachmentRecord, UserIssueCandidateRecord, UserIssueListFilter, UserStatisticsRecord,
-    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
-    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    UpdateProjectLabelInput, UpdatePullRequestCommentInput, UpdatePullRequestInput,
+    UserAttachmentListRecord, UserAttachmentRecord, UserIssueCandidateRecord, UserIssueListFilter,
+    UserStatisticsRecord, WatchedProjectNotificationsRecord, WorkspaceEmailRecord,
+    WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
+    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
@@ -7679,6 +7680,57 @@ impl AppRepository {
         )
         .await?;
 
+        self.pull_request_detail_from_model(model, &project, Some(input.actor_id))
+            .await
+            .map(Some)
+    }
+
+    pub async fn update_pull_request_comment(
+        &self,
+        input: UpdatePullRequestCommentInput,
+    ) -> Result<Option<PullRequestDetailRecord>, DbErr> {
+        let Some((project, model)) = self
+            .read_project_pull_request_model(
+                &input.owner_name,
+                &input.project_name,
+                input.pull_request_number,
+            )
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(comment) = review_comment::Entity::find_by_id(input.comment_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(thread_id) = comment.thread_id else {
+            return Ok(None);
+        };
+        let Some(thread) = comment_thread::Entity::find_by_id(thread_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        if thread.pull_request_id != Some(model.id) {
+            return Ok(None);
+        }
+        self.write_text_column(
+            "review_comment",
+            "contents",
+            input.comment_id,
+            &input.contents_markdown,
+        )
+        .await?;
+        self.sync_attachments(
+            REVIEW_COMMENT_ATTACHMENT_CONTAINER,
+            input.comment_id,
+            &input.attachment_ids,
+            Some(input.actor_id),
+        )
+        .await?;
         self.pull_request_detail_from_model(model, &project, Some(input.actor_id))
             .await
             .map(Some)

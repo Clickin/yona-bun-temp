@@ -9346,6 +9346,31 @@ fn build_rest_pull_request_router(service: PilotServiceImpl) -> Router {
                         .await
                     }
                 }
+            })
+            .patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number, comment_id)): Path<(
+                    String,
+                    String,
+                    i64,
+                    i64,
+                )>,
+                      Json(body): Json<RestPullRequestCommentBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_pull_request_comment(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            comment_id,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
             }),
         )
         .route(
@@ -15977,6 +16002,79 @@ async fn rest_create_pull_request_comment(
         &service.base_path,
     )
     .await;
+    Ok(Json(
+        rest_pull_request_detail_from_record_with_repository_issue_references(
+            repository,
+            record,
+            &authorization,
+            Some(actor.id),
+            &service.base_path,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
+    ))
+}
+
+async fn rest_update_pull_request_comment(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    comment_id: i64,
+    body: RestPullRequestCommentBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let current = rest_pull_request_detail_response(
+        repository,
+        &owner_name,
+        &project_name,
+        pull_request_number,
+        Some(actor.id),
+        &service.base_path,
+    )
+    .await?;
+    let comment = current
+        .threads
+        .iter()
+        .flat_map(|thread| thread.comments.iter())
+        .find(|comment| comment.id == comment_id)
+        .ok_or_else(|| RestRouteError::not_found("pull request comment not found"))?;
+    if !comment.can_delete {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("pull request comment update is not allowed"),
+        ));
+    }
+    let contents_markdown = body.contents_markdown.trim().to_string();
+    if contents_markdown.is_empty() {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::invalid_argument("pull request comment contents is required"),
+        ));
+    }
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let record = repository
+        .update_pull_request_comment(persistence::UpdatePullRequestCommentInput {
+            actor_id: actor.id,
+            attachment_ids: body.attachment_ids,
+            comment_id,
+            contents_markdown,
+            owner_name,
+            project_name,
+            pull_request_number,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pull request comment not found"))?;
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
             repository,

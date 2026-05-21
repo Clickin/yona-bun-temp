@@ -712,6 +712,64 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert_eq!(deliveries[4].event_type, "NEW_REVIEW_COMMENT");
 
     let ranged_comment_id = ranged_thread["comments"][0]["id"].as_i64().unwrap();
+    let forbidden_ranged_edit = rest_json(
+        app.clone(),
+        Method::PATCH,
+        &format!(
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/comments/{ranged_comment_id}"
+        ),
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+        json!({
+            "contentsMarkdown": "Forbidden inline edit"
+        }),
+    )
+    .await;
+    assert_eq!(forbidden_ranged_edit.status(), StatusCode::FORBIDDEN);
+
+    let ranged_edited = response_json(
+        rest_json(
+            app.clone(),
+            Method::PATCH,
+            &format!(
+                "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/comments/{ranged_comment_id}"
+            ),
+            Some(&reviewer_cookie),
+            Some(&reviewer_csrf),
+            json!({
+                "contentsMarkdown": "Edited inline review body @owner #1"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let edited_thread = ranged_edited["threads"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|thread| thread["path"] == "src/lib.rs")
+        .expect("edited ranged thread");
+    assert_eq!(
+        edited_thread["comments"][0]["contentsMarkdown"],
+        "Edited inline review body @owner #1"
+    );
+    let edited_html = edited_thread["comments"][0]["contentsHtml"]
+        .as_str()
+        .unwrap();
+    assert!(
+        edited_html.contains("href=\"/yona/owner\""),
+        "{edited_html}"
+    );
+    assert!(
+        edited_html.contains("href=\"/yona/owner/projectYobi/issue/1\""),
+        "{edited_html}"
+    );
+    assert_eq!(
+        count_rows(&db, "pull_request_event", "NEW_REVIEW_COMMENT").await,
+        2
+    );
+    assert_eq!(snapshot_test_webhook_outbox().len(), 5);
+
     let forbidden_ranged_delete = rest_json(
         app.clone(),
         Method::DELETE,

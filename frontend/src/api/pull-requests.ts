@@ -221,6 +221,12 @@ export type PullRequestCommentInput = PullRequestScopeInput & {
   threadId?: number;
 };
 
+export type PullRequestCommentEditInput = PullRequestScopeInput & {
+  attachmentIds?: number[];
+  commentId: number;
+  contentsMarkdown: string;
+};
+
 export type ReviewThreadListResponse = {
   closedCount: number;
   items: ReviewThread[];
@@ -515,6 +521,13 @@ function commentPullRequestBody(input: PullRequestCommentInput) {
   };
 }
 
+function editPullRequestCommentBody(input: PullRequestCommentEditInput) {
+  return {
+    attachmentIds: input.attachmentIds ?? [],
+    contentsMarkdown: input.contentsMarkdown,
+  };
+}
+
 export async function listProjectPullRequests(
   runtimeConfig: RuntimeConfig,
   input: ProjectScopeInput & PullRequestListQuery,
@@ -764,6 +777,24 @@ export function deletePullRequestCommentRest(
     runtimeConfig,
     pullRequestPath(input, `/comments/${input.commentId}`),
     { csrfToken, fetchImpl, method: "DELETE" },
+  ).then(normalizeDetail);
+}
+
+export function updatePullRequestCommentRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestCommentEditInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestDetailResponse> {
+  return restFetch<Partial<PullRequestDetailResponse>>(
+    runtimeConfig,
+    pullRequestPath(input, `/comments/${input.commentId}`),
+    {
+      body: editPullRequestCommentBody(input),
+      csrfToken,
+      fetchImpl,
+      method: "PATCH",
+    },
   ).then(normalizeDetail);
 }
 

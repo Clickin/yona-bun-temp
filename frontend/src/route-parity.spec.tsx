@@ -441,6 +441,7 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain("thread-actrow");
     expect(pullRequestViewsSource).toContain("review-form");
     expect(pullRequestViewsSource).toContain("inline-review-form");
+    expect(pullRequestViewsSource).toContain("review-comment-edit-form");
     expect(pullRequestViewsSource).toContain("line-comment-trigger");
     expect(pullRequestViewsSource).toContain("canDelete");
     expect(pullRequestViewsSource).toContain('id="btnAccept"');
@@ -462,6 +463,7 @@ describe("file-route parity harness", () => {
     expect(detailRouteSource).toContain("useMutation");
     expect(detailRouteSource).toContain("acceptPullRequestRest");
     expect(detailRouteSource).toContain("deletePullRequestCommentRest");
+    expect(detailRouteSource).toContain("updatePullRequestCommentRest");
     expect(detailRouteSource).toContain("deletePullRequestSourceBranchRest");
     expect(detailRouteSource).toContain("restorePullRequestSourceBranchRest");
 
@@ -474,6 +476,7 @@ describe("file-route parity harness", () => {
     );
     expect(changesRouteSource).toContain("createPullRequestCommentRest");
     expect(changesRouteSource).toContain("deletePullRequestCommentRest");
+    expect(changesRouteSource).toContain("updatePullRequestCommentRest");
 
     const pullRequestApiSource = fs.readFileSync(
       path.resolve(__dirname, "api/pull-requests.ts"),
@@ -482,6 +485,7 @@ describe("file-route parity harness", () => {
     expect(pullRequestApiSource).toContain("acceptPullRequestRest");
     expect(pullRequestApiSource).toContain('pullRequestPath(input, "/accept")');
     expect(pullRequestApiSource).toContain("deletePullRequestCommentRest");
+    expect(pullRequestApiSource).toContain("updatePullRequestCommentRest");
     expect(pullRequestApiSource).toContain("prevCommitId");
     expect(pullRequestApiSource).toContain("startLine");
     expect(pullRequestApiSource).toContain("endLine");
