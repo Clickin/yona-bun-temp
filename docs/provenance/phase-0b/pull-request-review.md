@@ -6,6 +6,7 @@
 - Open, close, reopen authorization semantics
 - Create/edit form and mutation surface
 - Conflict-free merge accept surface
+- Source branch cleanup/restore after merge
 - Review/unreview mutation surface
 - General PR review comment creation
 - Review-thread list/filter semantics plus open/close mutation
@@ -88,6 +89,22 @@
   and returned without a merge event/webhook; the legacy conflict-resolution help
   UI remains a follow-up.
 
+## Source Branch Lifecycle Rules
+
+- App runtime exposes `DELETE` and `POST`
+  `/api/v1/owners/:owner/projects/:project/pull-requests/:number/source-branch`
+  plus legacy direct `DELETE /:owner/:project/pullRequest/:number/deletefrombranch`
+  and `POST /:owner/:project/pullRequest/:number/restorefrombranch` redirect routes.
+- The detail response projects `sourceBranchExists`,
+  `permissions.canDeleteSourceBranch`, and `permissions.canRestoreSourceBranch`
+  so the frontend can preserve the legacy `git/partial_state.scala.html`
+  branch action slot after merge.
+- Delete/restore requires CSRF, an authenticated contributor for the merged PR,
+  a Git source project, and a non-default source branch. Delete removes the bare
+  Git ref and stale `project_pushed_branch` row. Restore recreates the source
+  branch from the target merge commit's second parent using the native Git
+  executable wrapper and upserts `project_pushed_branch`.
+
 ## Extracted Intent
 
 | Legacy source | Intent | Rust translation target |
@@ -97,6 +114,7 @@
 | `PullRequestAppTest.testClosePullRequest` and `testClosePullRequestNotAllow` | authorized actors can close; unauthorized actors cannot mutate state | transition policy in `crates/domain` plus mutation contract test |
 | `PullRequestAppTest.testOpenPullRequest`, `testOpenPullRequestBadRequest`, and `testOpenRoute` | authorized reopen succeeds; already-open reopen is bad request | transition policy in `crates/domain` plus `crates/server` contract test |
 | `PullRequestAppTest.testAcceptAnonymous`, `PullRequestTest.updateMerge`, and `git/partial_info.scala.html` | accept is auth-gated, only acceptable open PRs show `#btnAccept`, and a conflict-free merge can be calculated by the repository layer | `/accept` REST/direct routes, native `git merge --no-ff` wrapper, `PULL_REQUEST_MERGED` persistence/webhook assertions |
+| `git/partial_state.scala.html` and legacy `deletefrombranch`/`restorefrombranch` routes | merged PR contributors can delete the source branch or restore it from merge state while non-contributors do not see the action | REST `DELETE`/`POST /source-branch`, legacy direct redirects, VCS branch delete/restore helpers, and frontend `.pull-request-source-branch` anchors |
 | `PullRequestApp.create`, `newPullRequestForm`, and `editform` | create/edit forms expose from/to project and branch controls while edit keeps branch/project selection immutable | `/api/v1/owners/:owner/projects/:project/pull-requests/*form-options`, frontend form route parity |
 | `PullRequestEventTest` | PR creation, state changes, review actions, comments, and thread state changes append legacy event rows | `pull_request_mutation_contract` event assertions |
 | `ReviewApp.review` and `unreview` | reviewers can mark and cancel review state when detail permissions allow it | `/review` and `/unreview` REST mutation contracts plus frontend action controls |
@@ -111,7 +129,6 @@
 - reviewer threshold and reviewer assignment lifecycle
 - ranged inline review comment create/edit/delete
 - diff composition and PR event timeline
-- source branch cleanup/restore after merge
 - PR commit-changed VCS side effects, commit-changed webhook delivery, and legacy external
   `/-_-api/v1/**` compatibility
 

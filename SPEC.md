@@ -784,6 +784,7 @@ POST  /threads/:id/close                           → 리뷰 스레드 닫기
 GET   /:owner/:project/newFork                     → Fork 폼
 POST  /:owner/:project/fork                        → Fork 실행
 DELETE /:owner/:project/pullRequest/:id/deletefrombranch → from 브랜치 삭제
+POST  /:owner/:project/pullRequest/:id/restorefrombranch → from 브랜치 복구
 ```
 
 #### 기능 목록과 상태
@@ -797,11 +798,15 @@ wrapper를 추가해 개인/조직 owner 대상 프로젝트 fork와 `original_p
 및 legacy `/:owner/:project/pullRequest/:number/accept`를 추가하고, native `git merge --no-ff`
 wrapper로 conflict-free PR을 target bare repository에 병합한 뒤 `state = MERGED(6)`,
 `merged_commit_id_from/to`, `PULL_REQUEST_MERGED` event/webhook을 기록한다.
+후속 source branch lifecycle slice는 merged PR detail에 legacy branch action 상태를 노출하고
+`DELETE`/`POST /api/v1/owners/:owner/projects/:project/pull-requests/:number/source-branch`
+및 legacy `deletefrombranch`/`restorefrombranch` redirect route로 contributor가 non-default
+from branch를 삭제하거나 merge commit의 source parent에서 복구할 수 있게 한다.
 `/api/v1/owners/:owner/projects/:project/pull-requests`,
 `/:number`, `/:number/changes`, `/reviews`, `/api/v1/organizations/:organization/pull-requests`
 가 project READ + code-accessible-member-only 정책을 통과한 viewer에게만 열리며, mutation은
 CSRF + authenticated session + detail permission projection을 요구한다. Conflict resolution UI,
-from branch delete/restore, PR commit-changed VCS side effects, remaining commit-changed webhook delivery, legacy external `/-_-api/v1/**`
+PR commit-changed VCS side effects, remaining commit-changed webhook delivery, legacy external `/-_-api/v1/**`
 compatibility는 이번 app runtime batch에서 제외한다.
 
 | 기능                       | Legacy 동작                          | 현재 상태 | Phase |
@@ -817,7 +822,7 @@ compatibility는 이번 app runtime batch에서 제외한다.
 | 코드 리뷰 댓글             | 특정 라인에 인라인 댓글              | 일반 PR review comment Phase 4B 구현; ranged inline create/edit/delete는 gap | 4     |
 | 리뷰 스레드                | 인라인 댓글 스레드 open/close        | Phase 4B open/close mutation 구현 | 4     |
 | Fork & PR                  | 프로젝트 fork → PR 워크플로우        | fork form/clone + conflict-free PR merge accept 구현 | 4     |
-| from 브랜치 삭제           | merge 후 소스 브랜치 삭제            | gap       | 4     |
+| from 브랜치 삭제/복구      | merge 후 소스 브랜치 삭제/복구       | native Git wrapper 구현 | 4     |
 | 리뷰어 지정                | PR에 리뷰어 배정                     | gap       | 4     |
 
 #### 검수 기준
@@ -1324,7 +1329,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 라벨/마일스톤     | ✅ 구현           | 라벨/카테고리 관리, 마일스톤 CRUD/state 구현                     |
 | 코드 브라우저     | 🔶 Phase 3L 구현  | Git 폴더/파일 보기, 브랜치 선택기, raw/open/image 파일 표면, archive download, syntax/line-number 표시, commit history/detail diff/compare, commit comments/thread lifecycle, branch list/latest PR/default/delete, project create 시 bare Git repository provisioning, Smart HTTP transport, push post-receive records |
 | Git Smart HTTP    | 🔶 Phase 3L 구현 | `git http-backend` wrapper로 clone/pull upload-pack 및 인증/권한이 적용된 receive-pack transport를 구현하고, receive-pack 후 `NEW_COMMIT` notification, pushed-branch metadata, push JSON webhook outbox를 기록한다 |
-| PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, 일반 PR comment, thread open/close, fork/clone. merge/ranged inline review CRUD/branch cleanup은 gap |
+| PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, 일반 PR comment, thread open/close, fork/clone, conflict-free merge, source branch cleanup/restore. conflict UX/ranged inline review CRUD은 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, mail queue staging |
 | 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment/merge non-JSON fan-out plus git-push JSON payloads; PR commit-changed delivery, history, and hardening remain gaps |
@@ -1537,7 +1542,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Label follow-up: legacy external label/project API parity for the separate migrator/export/import scope
 - Milestone follow-up: migration export and search milestone result type
 - Code follow-up: multi-line ranged code-comment selection polish, inline code-comment edit, SVN executable repository/serve integration, PR commit-changed VCS lifecycle integration
-- PullRequest follow-up: merge conflict resolution UX, ranged inline review comment edit/delete, reviewer assignment/threshold lifecycle, branch cleanup/restore
+- PullRequest follow-up: merge conflict resolution UX, ranged inline review comment edit/delete, reviewer assignment/threshold lifecycle
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: read state, SMTP scheduler/delivery, draft-time merge, recipient limit, and full mail notification parity
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope

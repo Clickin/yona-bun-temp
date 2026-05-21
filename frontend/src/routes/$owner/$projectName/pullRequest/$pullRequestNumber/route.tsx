@@ -6,10 +6,12 @@ import {
   closePullRequestRest,
   closePullRequestThreadRest,
   createPullRequestCommentRest,
+  deletePullRequestSourceBranchRest,
   openPullRequestRest,
   openPullRequestThreadRest,
   pullRequestDetailQueryOptions,
   reviewPullRequestRest,
+  restorePullRequestSourceBranchRest,
   unreviewPullRequestRest,
 } from "../../../../../api/pull-requests";
 import { apiQueryKeys } from "../../../../../api/query-keys";
@@ -117,6 +119,44 @@ function PullRequestDetailLeafRouteComponent() {
         }),
         queryClient.invalidateQueries({
           queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
+  const deleteSourceBranchMutation = useMutation({
+    mutationFn: () => deletePullRequestSourceBranchRest(runtimeConfig, csrfToken, scope),
+    onError: mutationError("Delete pull request source branch failed."),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(
+        apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
+        updated,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: apiQueryKeys.project.codeBranches(owner, projectName),
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
+  const restoreSourceBranchMutation = useMutation({
+    mutationFn: () => restorePullRequestSourceBranchRest(runtimeConfig, csrfToken, scope),
+    onError: mutationError("Restore pull request source branch failed."),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(
+        apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
+        updated,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: apiQueryKeys.project.codeBranches(owner, projectName),
         }),
         queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
       ]);
@@ -263,8 +303,14 @@ function PullRequestDetailLeafRouteComponent() {
       onAccept={async () => {
         await acceptMutation.mutateAsync();
       }}
+      onDeleteSourceBranch={async () => {
+        await deleteSourceBranchMutation.mutateAsync();
+      }}
       onReview={async () => {
         await reviewMutation.mutateAsync();
+      }}
+      onRestoreSourceBranch={async () => {
+        await restoreSourceBranchMutation.mutateAsync();
       }}
       onThreadClose={async (threadId) => {
         await closeThreadMutation.mutateAsync(threadId);

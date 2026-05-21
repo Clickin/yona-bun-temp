@@ -8853,6 +8853,55 @@ impl AppRepository {
         .await
     }
 
+    pub async fn delete_project_pushed_branch(
+        &self,
+        project_id: i64,
+        branch_name: &str,
+    ) -> Result<(), DbErr> {
+        let branch_name = branch_name.trim();
+        if branch_name.is_empty() {
+            return Ok(());
+        }
+        project_pushed_branch::Entity::delete_many()
+            .filter(project_pushed_branch::Column::ProjectId.eq(Some(project_id)))
+            .filter(project_pushed_branch::Column::Name.eq(Some(branch_name.to_string())))
+            .exec(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn upsert_project_pushed_branch(
+        &self,
+        project_id: i64,
+        branch_name: &str,
+    ) -> Result<(), DbErr> {
+        let branch_name = branch_name.trim();
+        if branch_name.is_empty() {
+            return Ok(());
+        }
+        let now = current_datetime();
+        if let Some(row) = project_pushed_branch::Entity::find()
+            .filter(project_pushed_branch::Column::ProjectId.eq(Some(project_id)))
+            .filter(project_pushed_branch::Column::Name.eq(Some(branch_name.to_string())))
+            .one(&self.db)
+            .await?
+        {
+            let mut active = project_pushed_branch::ActiveModel::from(row);
+            active.pushed_date = Set(Some(now));
+            active.update(&self.db).await?;
+        } else {
+            project_pushed_branch::ActiveModel {
+                id: NotSet,
+                pushed_date: Set(Some(now)),
+                name: Set(Some(branch_name.to_string())),
+                project_id: Set(Some(project_id)),
+            }
+            .insert(&self.db)
+            .await?;
+        }
+        Ok(())
+    }
+
     pub async fn is_watching_project(&self, user_id: i64, project_id: i64) -> Result<bool, DbErr> {
         Ok(watch::Entity::find()
             .filter(watch::Column::UserId.eq(Some(user_id)))

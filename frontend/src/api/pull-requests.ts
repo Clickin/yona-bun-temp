@@ -67,9 +67,11 @@ export type PullRequestUser = {
 
 export type PullRequestPermissions = {
   canComment: boolean;
+  canDeleteSourceBranch: boolean;
   canRead: boolean;
   canReadChanges: boolean;
   canReview: boolean;
+  canRestoreSourceBranch: boolean;
   canUpdate: boolean;
   canUpdateState: boolean;
 };
@@ -139,6 +141,7 @@ export type PullRequestDetailResponse = {
   pullRequestNumber: number;
   receiver: PullRequestUser;
   reviewers: PullRequestUser[];
+  sourceBranchExists: boolean;
   state: PullRequestState;
   threads: ReviewThread[];
   title: string;
@@ -386,9 +389,11 @@ function normalizeDetail(response: Partial<PullRequestDetailResponse>): PullRequ
     ownerName: response.ownerName ?? "",
     permissions: {
       canComment: response.permissions?.canComment ?? false,
+      canDeleteSourceBranch: response.permissions?.canDeleteSourceBranch ?? false,
       canRead: response.permissions?.canRead ?? false,
       canReadChanges: response.permissions?.canReadChanges ?? false,
       canReview: response.permissions?.canReview ?? false,
+      canRestoreSourceBranch: response.permissions?.canRestoreSourceBranch ?? false,
       canUpdate: response.permissions?.canUpdate ?? false,
       canUpdateState: response.permissions?.canUpdateState ?? false,
     },
@@ -396,6 +401,7 @@ function normalizeDetail(response: Partial<PullRequestDetailResponse>): PullRequ
     pullRequestNumber: response.pullRequestNumber ?? 0,
     receiver: normalizeUser(response.receiver),
     reviewers: (response.reviewers ?? []).map(normalizeUser),
+    sourceBranchExists: response.sourceBranchExists ?? false,
     state: response.state ?? "open",
     threads: (response.threads ?? []).map(normalizeThread),
     title: response.title ?? "",
@@ -664,6 +670,32 @@ export function acceptPullRequestRest(
   return restFetch<Partial<PullRequestDetailResponse>>(
     runtimeConfig,
     pullRequestPath(input, "/accept"),
+    { csrfToken, fetchImpl, method: "POST" },
+  ).then(normalizeDetail);
+}
+
+export function deletePullRequestSourceBranchRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestScopeInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestDetailResponse> {
+  return restFetch<Partial<PullRequestDetailResponse>>(
+    runtimeConfig,
+    pullRequestPath(input, "/source-branch"),
+    { csrfToken, fetchImpl, method: "DELETE" },
+  ).then(normalizeDetail);
+}
+
+export function restorePullRequestSourceBranchRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestScopeInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestDetailResponse> {
+  return restFetch<Partial<PullRequestDetailResponse>>(
+    runtimeConfig,
+    pullRequestPath(input, "/source-branch"),
     { csrfToken, fetchImpl, method: "POST" },
   ).then(normalizeDetail);
 }

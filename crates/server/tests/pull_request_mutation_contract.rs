@@ -238,6 +238,34 @@ fn git_dir_output(repo_path: &Path, args: &[&str]) -> String {
     String::from_utf8(output.stdout).expect("git stdout utf8")
 }
 
+fn git_dir_success(repo_path: &Path, args: &[&str]) -> bool {
+    Command::new("git")
+        .arg("--git-dir")
+        .arg(repo_path)
+        .args(args)
+        .output()
+        .expect("run git --git-dir")
+        .status
+        .success()
+}
+
+async fn count_project_pushed_branch(
+    db: &DatabaseConnection,
+    project_id: i64,
+    branch_name: &str,
+) -> u64 {
+    let backend = db.get_database_backend();
+    let rows = db
+        .query_all(Statement::from_sql_and_values(
+            backend,
+            "SELECT id FROM project_pushed_branch WHERE project_id = ? AND name = ?",
+            vec![project_id.into(), branch_name.to_string().into()],
+        ))
+        .await
+        .expect("count pushed branch rows");
+    rows.len() as u64
+}
+
 fn write_repo_file(repo_path: &Path, relative_path: &str, contents: &str) {
     let path = repo_path.join(relative_path);
     if let Some(parent) = path.parent() {
@@ -278,6 +306,7 @@ fn seed_bare_repo_with_branches(data_root: &Path, project_id: i64) {
     write_repo_file(&work_path, "DIRECT.md", "direct\n");
     run_git(&work_path, &["add", "DIRECT.md"]);
     run_git(&work_path, &["commit", "-m", "direct accept"]);
+    run_git(&work_path, &["checkout", "main"]);
     fs::create_dir_all(repo_path.parent().unwrap()).unwrap();
     clone_bare(&work_path, &repo_path);
     fs::remove_dir_all(work_path).unwrap();
@@ -742,6 +771,9 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert_eq!(accepted["conflict"], false);
     assert_ne!(accepted["mergedCommitIdFrom"], "");
     assert_ne!(accepted["mergedCommitIdTo"], "");
+    assert_eq!(accepted["sourceBranchExists"], true);
+    assert_eq!(accepted["permissions"]["canDeleteSourceBranch"], true);
+    assert_eq!(accepted["permissions"]["canRestoreSourceBranch"], false);
     assert_eq!(
         accepted["events"].as_array().unwrap().last().unwrap()["eventType"],
         "PULL_REQUEST_MERGED"
@@ -771,6 +803,86 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert!(merged_text.contains("pullRequest.event.message.MERGED"));
     assert!(merged_text
         .contains("/yona/owner/projectYobi/pullRequest/1|#1: Updated interaction parity"));
+
+    let forbidden_delete_source_branch = rest_json(
+        app.clone(),
+        Method::DELETE,
+        "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/source-branch",
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+        json!({}),
+    )
+    .await;
+    assert_eq!(
+        forbidden_delete_source_branch.status(),
+        StatusCode::FORBIDDEN
+    );
+
+    let deleted_source_branch = response_json(
+        rest_json(
+            app.clone(),
+            Method::DELETE,
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/source-branch",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({}),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(deleted_source_branch["state"], "merged");
+    assert_eq!(deleted_source_branch["sourceBranchExists"], false);
+    assert_eq!(
+        deleted_source_branch["permissions"]["canDeleteSourceBranch"],
+        false
+    );
+    assert_eq!(
+        deleted_source_branch["permissions"]["canRestoreSourceBranch"],
+        true
+    );
+    assert!(!git_dir_success(
+        &repo_path,
+        &["rev-parse", "--verify", "refs/heads/topic/pr"]
+    ));
+    assert_eq!(
+        count_project_pushed_branch(&db, project.id, "topic/pr").await,
+        0
+    );
+    assert_eq!(
+        count_rows(&db, "pull_request_event", "PULL_REQUEST_MERGED").await,
+        1
+    );
+
+    let restored_source_branch = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/source-branch",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({}),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(restored_source_branch["state"], "merged");
+    assert_eq!(restored_source_branch["sourceBranchExists"], true);
+    assert_eq!(
+        restored_source_branch["permissions"]["canDeleteSourceBranch"],
+        true
+    );
+    assert_eq!(
+        restored_source_branch["permissions"]["canRestoreSourceBranch"],
+        false
+    );
+    assert_eq!(
+        git_dir_output(&repo_path, &["show", "refs/heads/topic/pr:README.md"]),
+        "topic\n"
+    );
+    assert_eq!(
+        count_project_pushed_branch(&db, project.id, "topic/pr").await,
+        1
+    );
 
     let direct_created = response_json(
         rest_json(
@@ -828,6 +940,51 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert_eq!(
         count_rows(&db, "pull_request_event", "PULL_REQUEST_MERGED").await,
         2
+    );
+    assert_eq!(direct_detail["permissions"]["canDeleteSourceBranch"], true);
+    let direct_delete_source_branch = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri("/yona/owner/projectYobi/pullRequest/2/deletefrombranch")
+                .header(http::header::COOKIE, owner_cookie.as_str())
+                .header("x-csrf-token", owner_csrf.as_str())
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(direct_delete_source_branch.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        direct_delete_source_branch
+            .headers()
+            .get(http::header::LOCATION)
+            .unwrap(),
+        "/yona/owner/projectYobi/pullRequest/2"
+    );
+    assert!(!git_dir_success(
+        &repo_path,
+        &["rev-parse", "--verify", "refs/heads/topic/direct"]
+    ));
+
+    let direct_restore_source_branch = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/owner/projectYobi/pullRequest/2/restorefrombranch")
+                .header(http::header::COOKIE, owner_cookie.as_str())
+                .header("x-csrf-token", owner_csrf.as_str())
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(direct_restore_source_branch.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        git_dir_output(&repo_path, &["show", "refs/heads/topic/direct:DIRECT.md"]),
+        "direct\n"
     );
 
     create_project(

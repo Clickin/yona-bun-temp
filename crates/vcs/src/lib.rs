@@ -839,6 +839,64 @@ pub fn delete_branch(
     read_branch_list(repo_path)
 }
 
+pub fn restore_branch_from_merge(
+    source_repo_path: &Path,
+    target_repo_path: &Path,
+    branch_name: &str,
+    merge_commit_id: &str,
+) -> Result<String, VcsError> {
+    if !source_repo_path.exists() || !target_repo_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    let branch_name = normalize_branch_name(branch_name)?;
+    let merge_commit_id = merge_commit_id.trim();
+    if merge_commit_id.is_empty() || merge_commit_id.contains('\0') {
+        return Err(VcsError::NotFound);
+    }
+    let source_branches = list_branches(source_repo_path)?;
+    if branch_exists(&source_branches, &branch_name) {
+        return Err(VcsError::InvalidBranch);
+    }
+    let default_branch = default_branch(source_repo_path).unwrap_or_default();
+    if branch_name == default_branch {
+        return Err(VcsError::InvalidBranch);
+    }
+
+    let work_dir = TempWorkDir::create("restore-branch")?;
+    git_clone_repository(source_repo_path, work_dir.path())?;
+    git_worktree_output_with_path(
+        work_dir.path(),
+        &["remote", "add", "pull-request-target"],
+        target_repo_path,
+    )?;
+    git_worktree_output(
+        work_dir.path(),
+        &[
+            "fetch",
+            "pull-request-target",
+            "+refs/heads/*:refs/remotes/pull-request-target/*",
+        ],
+    )?;
+    let merge_spec = format!("{merge_commit_id}^{{commit}}");
+    git_worktree_output(work_dir.path(), &["cat-file", "-e", &merge_spec])?;
+    let source_parent_spec = format!("{merge_commit_id}^2");
+    let source_commit_id =
+        git_worktree_output(work_dir.path(), &["rev-parse", &source_parent_spec])?
+            .trim()
+            .to_string();
+    if source_commit_id.is_empty() {
+        return Err(VcsError::NotFound);
+    }
+    git_worktree_output(
+        work_dir.path(),
+        &["branch", &branch_name, &source_commit_id],
+    )?;
+    let push_ref = format!("refs/heads/{branch_name}:refs/heads/{branch_name}");
+    git_worktree_output(work_dir.path(), &["push", "origin", &push_ref])?;
+
+    Ok(source_commit_id)
+}
+
 pub fn merge_pull_request(
     source_repo_path: &Path,
     target_repo_path: &Path,

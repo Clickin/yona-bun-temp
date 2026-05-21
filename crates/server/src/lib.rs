@@ -376,6 +376,12 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let pull_request_accept_session_manager = session_manager.clone();
     let pull_request_accept_base_path = base_path.clone();
     let pull_request_accept_public_origin = public_origin.clone();
+    let pull_request_delete_source_branch_backend = route_backend.clone();
+    let pull_request_delete_source_branch_session_manager = session_manager.clone();
+    let pull_request_delete_source_branch_base_path = base_path.clone();
+    let pull_request_restore_source_branch_backend = route_backend.clone();
+    let pull_request_restore_source_branch_session_manager = session_manager.clone();
+    let pull_request_restore_source_branch_base_path = base_path.clone();
     let transfer_accept_backend = route_backend.clone();
     let transfer_accept_session_manager = session_manager.clone();
     let transfer_accept_base_path = base_path.clone();
@@ -1080,6 +1086,56 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             pull_request_accept_backend.clone(),
                             pull_request_accept_base_path.clone(),
                             pull_request_accept_public_origin.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/pullRequest/{pull_request_number}/deletefrombranch",
+            delete(
+                move |headers: HeaderMap,
+                      Path((owner, project, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    async move {
+                        direct_update_pull_request_source_branch(
+                            headers,
+                            owner,
+                            project,
+                            pull_request_number,
+                            PullRequestSourceBranchAction::Delete,
+                            pull_request_delete_source_branch_session_manager.clone(),
+                            pull_request_delete_source_branch_backend.clone(),
+                            pull_request_delete_source_branch_base_path.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/pullRequest/{pull_request_number}/restorefrombranch",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    async move {
+                        direct_update_pull_request_source_branch(
+                            headers,
+                            owner,
+                            project,
+                            pull_request_number,
+                            PullRequestSourceBranchAction::Restore,
+                            pull_request_restore_source_branch_session_manager.clone(),
+                            pull_request_restore_source_branch_backend.clone(),
+                            pull_request_restore_source_branch_base_path.clone(),
                         )
                         .await
                     }
@@ -4371,6 +4427,60 @@ async fn direct_accept_pull_request(
     }
 }
 
+#[derive(Clone, Copy)]
+enum PullRequestSourceBranchAction {
+    Delete,
+    Restore,
+}
+
+async fn direct_update_pull_request_source_branch(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    action: PullRequestSourceBranchAction,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let redirect_path = format!(
+        "/{}/{}/pullRequest/{}",
+        owner_name, project_name, pull_request_number
+    );
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    let result = match action {
+        PullRequestSourceBranchAction::Delete => {
+            rest_delete_pull_request_source_branch(
+                headers,
+                owner_name,
+                project_name,
+                pull_request_number,
+                service,
+            )
+            .await
+        }
+        PullRequestSourceBranchAction::Restore => {
+            rest_restore_pull_request_source_branch(
+                headers,
+                owner_name,
+                project_name,
+                pull_request_number,
+                service,
+            )
+            .await
+        }
+    };
+    match result {
+        Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
+        Err(error) => error.into_response(),
+    }
+}
+
 async fn direct_reset_site_user_password(
     headers: HeaderMap,
     login_id: String,
@@ -6925,11 +7035,20 @@ struct RestPullRequestFormOptionsResponse {
 #[serde(rename_all = "camelCase")]
 struct RestPullRequestPermissions {
     can_comment: bool,
+    can_delete_source_branch: bool,
     can_read: bool,
     can_read_changes: bool,
     can_review: bool,
+    can_restore_source_branch: bool,
     can_update: bool,
     can_update_state: bool,
+}
+
+#[derive(Clone, Copy, Default)]
+struct RestPullRequestSourceBranchState {
+    can_delete: bool,
+    can_restore: bool,
+    exists: bool,
 }
 
 #[derive(Clone, Serialize)]
@@ -6955,6 +7074,7 @@ struct RestPullRequestDetailResponse {
     pull_request_number: i64,
     receiver: RestPullRequestUser,
     reviewers: Vec<RestPullRequestUser>,
+    source_branch_exists: bool,
     state: String,
     threads: Vec<RestReviewThread>,
     title: String,
@@ -9066,6 +9186,51 @@ fn build_rest_pull_request_router(service: PilotServiceImpl) -> Router {
                     let service = service.clone();
                     async move {
                         rest_accept_pull_request(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/source-branch",
+            delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_delete_pull_request_source_branch(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_restore_pull_request_source_branch(
                             headers,
                             owner_name,
                             project_name,
@@ -15479,6 +15644,155 @@ async fn accept_pull_request_for_actor(
     }
 
     Ok((record, authorization))
+}
+
+async fn rest_delete_pull_request_source_branch(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let current = rest_pull_request_detail_response(
+        repository,
+        &owner_name,
+        &project_name,
+        pull_request_number,
+        Some(actor.id),
+        &service.base_path,
+    )
+    .await?;
+    if !current.permissions.can_delete_source_branch {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("pull request source branch delete is not allowed"),
+        ));
+    }
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let source_project = repository
+        .read_project_by_owner_and_name(&current.from_owner_name, &current.from_project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("source project not found"))?;
+    let source_repo_path = yona_rust_vcs::repository_path(&yona_data_root(), source_project.id);
+    yona_rust_vcs::delete_branch(&source_repo_path, &current.from_branch)
+        .map_err(code_browser_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    repository
+        .delete_project_pushed_branch(source_project.id, &current.from_branch)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let record = repository
+        .read_pull_request_detail(
+            &owner_name,
+            &project_name,
+            pull_request_number,
+            Some(actor.id),
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
+    Ok(Json(
+        rest_pull_request_detail_from_record_with_repository_issue_references(
+            repository,
+            record,
+            &authorization,
+            Some(actor.id),
+            &service.base_path,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
+    ))
+}
+
+async fn rest_restore_pull_request_source_branch(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let current = rest_pull_request_detail_response(
+        repository,
+        &owner_name,
+        &project_name,
+        pull_request_number,
+        Some(actor.id),
+        &service.base_path,
+    )
+    .await?;
+    if !current.permissions.can_restore_source_branch {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("pull request source branch restore is not allowed"),
+        ));
+    }
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let source_project = repository
+        .read_project_by_owner_and_name(&current.from_owner_name, &current.from_project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("source project not found"))?;
+    let source_repo_path = yona_rust_vcs::repository_path(&yona_data_root(), source_project.id);
+    let target_repo_path =
+        yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    yona_rust_vcs::restore_branch_from_merge(
+        &source_repo_path,
+        &target_repo_path,
+        &current.from_branch,
+        &current.merged_commit_id_to,
+    )
+    .map_err(code_browser_error)
+    .map_err(RestRouteError::from_connect_error)?;
+    repository
+        .upsert_project_pushed_branch(source_project.id, &current.from_branch)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let record = repository
+        .read_pull_request_detail(
+            &owner_name,
+            &project_name,
+            pull_request_number,
+            Some(actor.id),
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
+    Ok(Json(
+        rest_pull_request_detail_from_record_with_repository_issue_references(
+            repository,
+            record,
+            &authorization,
+            Some(actor.id),
+            &service.base_path,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
+    ))
 }
 
 async fn rest_set_pull_request_review(
@@ -27603,13 +27917,56 @@ async fn rest_pull_request_detail_from_record_with_repository_issue_references(
     let issue_references =
         pull_request_markdown_references_for_record(repository, &record, actor_id, base_path)
             .await?;
+    let source_branch_state =
+        rest_pull_request_source_branch_state(repository, &record, actor_id).await?;
     rest_pull_request_detail_from_record_with_issue_references(
         record,
         authorization,
         actor_id,
         base_path,
         &issue_references,
+        source_branch_state,
     )
+}
+
+async fn rest_pull_request_source_branch_state(
+    repository: &PilotRepository,
+    record: &persistence::PullRequestDetailRecord,
+    actor_id: Option<i64>,
+) -> Result<RestPullRequestSourceBranchState, ConnectError> {
+    let Some(source_project) = repository
+        .read_project_by_owner_and_name(&record.from_owner_name, &record.from_project_name)
+        .await
+        .map_err(internal_error)?
+    else {
+        return Ok(RestPullRequestSourceBranchState::default());
+    };
+    if !source_project.vcs.eq_ignore_ascii_case("GIT") {
+        return Ok(RestPullRequestSourceBranchState::default());
+    }
+
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), source_project.id);
+    let snapshot = yona_rust_vcs::read_branch_list(&repo_path).map_err(code_browser_error)?;
+    let branch = snapshot
+        .branches
+        .iter()
+        .find(|branch| branch.name == record.from_branch);
+    let exists = branch.is_some();
+    let is_default = branch.is_some_and(|branch| branch.is_default);
+    let viewer_is_contributor =
+        actor_id.is_some_and(|actor_id| actor_id == record.contributor.user_id);
+    let is_merged = record.state == "merged";
+    let can_delete = viewer_is_contributor && is_merged && exists && !is_default;
+    let can_restore = viewer_is_contributor
+        && is_merged
+        && !exists
+        && !record.merged_commit_id_to.trim().is_empty();
+
+    Ok(RestPullRequestSourceBranchState {
+        can_delete,
+        can_restore,
+        exists,
+    })
 }
 
 fn pull_request_markdown_texts(record: &persistence::PullRequestDetailRecord) -> Vec<&str> {
@@ -27649,6 +28006,7 @@ fn rest_pull_request_detail_from_record_with_issue_references(
     actor_id: Option<i64>,
     base_path: &str,
     issue_references: &[MarkdownIssueReference],
+    source_branch_state: RestPullRequestSourceBranchState,
 ) -> Result<RestPullRequestDetailResponse, ConnectError> {
     let viewer_can_project_update = actor_id.is_some() && project_update_allowed(authorization)?;
     let viewer_is_contributor =
@@ -27716,9 +28074,11 @@ fn rest_pull_request_detail_from_record_with_issue_references(
         owner_name: owner_name.clone(),
         permissions: RestPullRequestPermissions {
             can_comment: actor_id.is_some(),
+            can_delete_source_branch: source_branch_state.can_delete,
             can_read: true,
             can_read_changes: true,
             can_review,
+            can_restore_source_branch: source_branch_state.can_restore,
             can_update,
             can_update_state: can_update,
         },
@@ -27730,6 +28090,7 @@ fn rest_pull_request_detail_from_record_with_issue_references(
             .into_iter()
             .map(rest_pull_request_user_from_record)
             .collect(),
+        source_branch_exists: source_branch_state.exists,
         state: record.state,
         threads: record
             .threads

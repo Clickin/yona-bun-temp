@@ -442,6 +442,11 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain("review-form");
     expect(pullRequestViewsSource).toContain('id="btnAccept"');
     expect(pullRequestViewsSource).toContain('data-request-method="post"');
+    expect(pullRequestViewsSource).toContain("pull-request-source-branch");
+    expect(pullRequestViewsSource).toContain("pullRequest.delete.frombranch.message");
+    expect(pullRequestViewsSource).toContain("pullRequest.restore.frombranch.message");
+    expect(pullRequestViewsSource).toContain("deletefrombranch");
+    expect(pullRequestViewsSource).toContain("restorefrombranch");
 
     const detailRouteSource = fs.readFileSync(
       path.resolve(
@@ -453,6 +458,8 @@ describe("file-route parity harness", () => {
     expect(detailRouteSource).toContain("pullRequestDetailQueryOptions");
     expect(detailRouteSource).toContain("useMutation");
     expect(detailRouteSource).toContain("acceptPullRequestRest");
+    expect(detailRouteSource).toContain("deletePullRequestSourceBranchRest");
+    expect(detailRouteSource).toContain("restorePullRequestSourceBranchRest");
 
     const pullRequestApiSource = fs.readFileSync(
       path.resolve(__dirname, "api/pull-requests.ts"),
@@ -460,6 +467,9 @@ describe("file-route parity harness", () => {
     );
     expect(pullRequestApiSource).toContain("acceptPullRequestRest");
     expect(pullRequestApiSource).toContain('pullRequestPath(input, "/accept")');
+    expect(pullRequestApiSource).toContain("deletePullRequestSourceBranchRest");
+    expect(pullRequestApiSource).toContain("restorePullRequestSourceBranchRest");
+    expect(pullRequestApiSource).toContain('pullRequestPath(input, "/source-branch")');
   });
 
   it("requires project member management route to use real legacy anchors and mutations", () => {

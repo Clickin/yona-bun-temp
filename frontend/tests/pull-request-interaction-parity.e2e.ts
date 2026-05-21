@@ -64,9 +64,11 @@ function detail(overrides: Record<string, unknown> = {}) {
     ownerName: "admin",
     permissions: {
       canComment: true,
+      canDeleteSourceBranch: false,
       canRead: true,
       canReadChanges: true,
       canReview: true,
+      canRestoreSourceBranch: false,
       canUpdate: true,
       canUpdateState: true,
     },
@@ -74,6 +76,7 @@ function detail(overrides: Record<string, unknown> = {}) {
     pullRequestNumber: 9,
     receiver: { loginId: "reviewer", userId: 2, userLabel: "Reviewer" },
     reviewers: [],
+    sourceBranchExists: true,
     state: "open",
     threads: [baseThread],
     title: "Interaction parity",
@@ -292,7 +295,39 @@ test.beforeEach(async ({ page }) => {
           ],
           mergedCommitIdFrom: "base-main",
           mergedCommitIdTo: "merge-head",
+          permissions: {
+            ...pullRequest.permissions,
+            canDeleteSourceBranch: true,
+            canRestoreSourceBranch: false,
+          },
+          sourceBranchExists: true,
           state: "merged",
+        });
+        await route.fulfill({ body: JSON.stringify(pullRequest), headers: restJsonHeaders });
+        return;
+      }
+      if (url.pathname.endsWith("/source-branch") && method === "DELETE") {
+        pullRequest = detail({
+          ...pullRequest,
+          permissions: {
+            ...pullRequest.permissions,
+            canDeleteSourceBranch: false,
+            canRestoreSourceBranch: true,
+          },
+          sourceBranchExists: false,
+        });
+        await route.fulfill({ body: JSON.stringify(pullRequest), headers: restJsonHeaders });
+        return;
+      }
+      if (url.pathname.endsWith("/source-branch") && method === "POST") {
+        pullRequest = detail({
+          ...pullRequest,
+          permissions: {
+            ...pullRequest.permissions,
+            canDeleteSourceBranch: true,
+            canRestoreSourceBranch: false,
+          },
+          sourceBranchExists: true,
         });
         await route.fulfill({ body: JSON.stringify(pullRequest), headers: restJsonHeaders });
         return;
@@ -384,6 +419,19 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   );
   await page.locator("#btnAccept").click();
   await expect(page.locator(".board-header .pullRequest-stateInfo.merged")).toBeVisible();
+  const sourceBranchActions = page.locator(".pull-request-source-branch");
+  await expect(sourceBranchActions).toContainText("pullRequest.delete.frombranch.message");
+  await expect(sourceBranchActions.locator("[data-request-method='delete']")).toHaveAttribute(
+    "data-request-uri",
+    "/yona/admin/projectYobi/pullRequest/9/deletefrombranch",
+  );
+  await sourceBranchActions.getByRole("button", { name: "pullRequest.delete.branch" }).click();
+  await expect(sourceBranchActions).toContainText("pullRequest.restore.frombranch.message");
+  await expect(
+    sourceBranchActions.getByRole("link", { name: "pullRequest.restore.branch" }),
+  ).toHaveAttribute("href", "/yona/admin/projectYobi/pullRequest/9/restorefrombranch");
+  await sourceBranchActions.getByRole("link", { name: "pullRequest.restore.branch" }).click();
+  await expect(sourceBranchActions).toContainText("pullRequest.delete.frombranch.message");
   await expect(page.locator(".review-list-wrap").last()).toContainText("PULL_REQUEST_MERGED");
 
   await page.goto("/yona/admin/projectYobi/pullRequest/9/editform");

@@ -621,6 +621,68 @@ function PullRequestActionBar(props: {
   );
 }
 
+function PullRequestSourceBranchActions(props: {
+  onDeleteSourceBranch?: () => Promise<void>;
+  onRestoreSourceBranch?: () => Promise<void>;
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const pr = props.pullRequest;
+  if (
+    pr.state !== "merged" ||
+    (!pr.permissions.canDeleteSourceBranch && !pr.permissions.canRestoreSourceBranch)
+  ) {
+    return null;
+  }
+  const deleteHref = prHref(
+    props.runtimeConfig,
+    pr.ownerName,
+    pr.projectName,
+    pr.pullRequestNumber,
+    "deletefrombranch",
+  );
+  const restoreHref = prHref(
+    props.runtimeConfig,
+    pr.ownerName,
+    pr.projectName,
+    pr.pullRequestNumber,
+    "restorefrombranch",
+  );
+
+  return (
+    <section className="alert alert-info pull-request-source-branch">
+      <code>{pr.fromBranch}</code>{" "}
+      {pr.permissions.canDeleteSourceBranch
+        ? "pullRequest.delete.frombranch.message"
+        : "pullRequest.restore.frombranch.message"}
+      {pr.permissions.canDeleteSourceBranch ? (
+        <button
+          className="ybtn ybtn-danger ybtn-mini pull-right"
+          data-request-method="delete"
+          data-request-uri={deleteHref}
+          onClick={() => void props.onDeleteSourceBranch?.()}
+          type="button"
+        >
+          pullRequest.delete.branch
+        </button>
+      ) : null}
+      {pr.permissions.canRestoreSourceBranch ? (
+        <a
+          className="ybtn ybtn-info ybtn-mini pull-right"
+          data-request-method="post"
+          href={restoreHref}
+          onClick={(event) => {
+            event.preventDefault();
+            void props.onRestoreSourceBranch?.();
+          }}
+        >
+          pullRequest.restore.branch
+        </a>
+      ) : null}
+    </section>
+  );
+}
+
 export function ProjectPullRequestDetailPage(props: {
   csrfToken?: string;
   detail: ProjectDetailViewModel | null;
@@ -630,8 +692,10 @@ export function ProjectPullRequestDetailPage(props: {
   onAccept?: () => Promise<void>;
   onClose?: () => Promise<void>;
   onCommentSubmit?: (contentsMarkdown: string, attachmentIds?: number[]) => Promise<void>;
+  onDeleteSourceBranch?: () => Promise<void>;
   onOpen?: () => Promise<void>;
   onReview?: () => Promise<void>;
+  onRestoreSourceBranch?: () => Promise<void>;
   onThreadClose?: (threadId: number) => Promise<void>;
   onThreadOpen?: (threadId: number) => Promise<void>;
   onUnreview?: () => Promise<void>;
@@ -675,6 +739,12 @@ export function ProjectPullRequestDetailPage(props: {
               onUnreview={props.onUnreview}
             />
           </section>
+          <PullRequestSourceBranchActions
+            pullRequest={pr}
+            runtimeConfig={props.runtimeConfig}
+            onDeleteSourceBranch={props.onDeleteSourceBranch}
+            onRestoreSourceBranch={props.onRestoreSourceBranch}
+          />
           <section id="reviewers" className="review-list-wrap">
             <h2>Reviewers</h2>
             {pr.reviewers.length === 0 ? (
