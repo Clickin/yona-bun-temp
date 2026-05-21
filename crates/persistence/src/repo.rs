@@ -12070,6 +12070,10 @@ impl AppRepository {
             .collect::<HashSet<_>>();
         receivers.retain(|user_id| !pull_request_unwatchers.contains(user_id));
         receivers.retain(|user_id| !event_unwatchers.contains(user_id));
+        let pull_request_body = self
+            .read_text_column("pull_request", "body", pull_request_id)
+            .await?;
+        receivers.extend(self.mentioned_active_user_ids(&pull_request_body).await?);
         Ok(receivers)
     }
 

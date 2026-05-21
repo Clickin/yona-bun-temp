@@ -581,6 +581,7 @@ async fn pull_request_state_notifications_include_legacy_review_comment_watchers
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "notifyowner").await;
     let (commenter_csrf, commenter_cookie, commenter_id) =
         register_user(app.clone(), "notifycommenter").await;
+    let (_, _, mentioned_id) = register_user(app.clone(), "notifymentioned").await;
 
     create_project(
         app.clone(),
@@ -611,13 +612,18 @@ async fn pull_request_state_notifications_include_legacy_review_comment_watchers
                 "fromBranch": "topic/pr",
                 "toBranch": "main",
                 "title": "Notification watcher parity",
-                "bodyMarkdown": "Notification watcher body"
+                "bodyMarkdown": "Notification watcher body @notifymentioned"
             }),
         )
         .await,
     )
     .await;
     let pull_request_id = created["id"].as_i64().unwrap();
+    assert_eq!(
+        notification_receivers_for_event(&db, "NEW_PULL_REQUEST", "PULL_REQUEST", pull_request_id)
+            .await,
+        vec![mentioned_id]
+    );
 
     response_json(
         rest_json(
@@ -656,7 +662,7 @@ async fn pull_request_state_notifications_include_legacy_review_comment_watchers
             pull_request_id
         )
         .await,
-        vec![commenter_id]
+        vec![commenter_id, mentioned_id]
     );
 
     fs::remove_dir_all(data_root).unwrap();
