@@ -522,6 +522,7 @@ function PullRequestActionBar(props: {
   pullRequest: PullRequestDetailResponse;
   runtimeConfig: RuntimeConfig;
   viewerId?: number;
+  onAccept?: () => Promise<void>;
   onClose?: () => Promise<void>;
   onOpen?: () => Promise<void>;
   onReview?: () => Promise<void>;
@@ -531,6 +532,7 @@ function PullRequestActionBar(props: {
   const viewerReviewed = props.viewerId
     ? pr.reviewers.some((reviewer) => reviewer.userId === props.viewerId)
     : false;
+  const canAccept = pr.permissions.canUpdateState && pr.state === "open" && !pr.conflict;
   return (
     <div className="pull-request-actions">
       {pr.permissions.canUpdate ? (
@@ -582,9 +584,39 @@ function PullRequestActionBar(props: {
           </button>
         )
       ) : null}
-      <button className="ybtn" disabled type="button">
-        Merge deferred
-      </button>
+      {pr.permissions.canUpdateState ? (
+        canAccept ? (
+          <a
+            className="ybtn ybtn-success"
+            data-request-method="post"
+            href={prHref(
+              props.runtimeConfig,
+              pr.ownerName,
+              pr.projectName,
+              pr.pullRequestNumber,
+              "accept",
+            )}
+            id="btnAccept"
+            onClick={(event) => {
+              event.preventDefault();
+              void props.onAccept?.();
+            }}
+          >
+            Merge
+          </a>
+        ) : (
+          <button
+            className="ybtn ybtn-disabled"
+            data-placement="top"
+            data-toggle="tooltip"
+            disabled
+            title={pr.conflict ? "pullRequest.is.not.safe" : "pullRequest.merge.disabled"}
+            type="button"
+          >
+            Merge
+          </button>
+        )
+      ) : null}
     </div>
   );
 }
@@ -595,6 +627,7 @@ export function ProjectPullRequestDetailPage(props: {
   pullRequest: PullRequestDetailResponse | undefined;
   runtimeConfig: RuntimeConfig;
   viewerId?: number;
+  onAccept?: () => Promise<void>;
   onClose?: () => Promise<void>;
   onCommentSubmit?: (contentsMarkdown: string, attachmentIds?: number[]) => Promise<void>;
   onOpen?: () => Promise<void>;
@@ -636,6 +669,7 @@ export function ProjectPullRequestDetailPage(props: {
               runtimeConfig={props.runtimeConfig}
               viewerId={props.viewerId}
               onClose={props.onClose}
+              onAccept={props.onAccept}
               onOpen={props.onOpen}
               onReview={props.onReview}
               onUnreview={props.onUnreview}

@@ -5,6 +5,7 @@
 - Bounded exemplar only
 - Open, close, reopen authorization semantics
 - Create/edit form and mutation surface
+- Conflict-free merge accept surface
 - Review/unreview mutation surface
 - General PR review comment creation
 - Review-thread list/filter semantics plus open/close mutation
@@ -70,6 +71,23 @@
   bare `http://`/`https://` URL autolinks. Legacy issue-link title/state
   enrichment remains a Markdown renderer follow-up.
 
+## Merge Accept Rules
+
+- App runtime exposes `/api/v1/owners/:owner/projects/:project/pull-requests/:number/accept`
+  and the legacy direct `POST /:owner/:project/pullRequest/:number/accept` redirect route.
+- Accept requires CSRF, an authenticated user, readable project detail, and the
+  same detail permission projection as close/reopen (`canUpdateState`).
+- The VCS side uses the native executable wrapper decision: clone the target bare
+  repository to a temp worktree, fetch the source branch, run `git merge --no-ff`,
+  and push the target branch back to `YONA_DATA/repo/<target_project_id>.git`.
+- Successful conflict-free accept records `state = MERGED(6)`,
+  `merged_commit_id_from`, `merged_commit_id_to`, `last_commit_id`,
+  `PULL_REQUEST_MERGED`, notification rows, and the legacy PR merge webhook text
+  payload. Branch delete/restore is not implied by accept.
+- If the native merge detects a conflict during accept, the PR is marked conflict
+  and returned without a merge event/webhook; the legacy conflict-resolution help
+  UI remains a follow-up.
+
 ## Extracted Intent
 
 | Legacy source | Intent | Rust translation target |
@@ -78,6 +96,7 @@
 | `PullRequestAppTest.testCloseNotExistProject` and `testCloseNotExistPullRequest` | close rejects missing project or missing pull request with distinct error outcomes | `crates/server` error mapping backed by domain lookup result |
 | `PullRequestAppTest.testClosePullRequest` and `testClosePullRequestNotAllow` | authorized actors can close; unauthorized actors cannot mutate state | transition policy in `crates/domain` plus mutation contract test |
 | `PullRequestAppTest.testOpenPullRequest`, `testOpenPullRequestBadRequest`, and `testOpenRoute` | authorized reopen succeeds; already-open reopen is bad request | transition policy in `crates/domain` plus `crates/server` contract test |
+| `PullRequestAppTest.testAcceptAnonymous`, `PullRequestTest.updateMerge`, and `git/partial_info.scala.html` | accept is auth-gated, only acceptable open PRs show `#btnAccept`, and a conflict-free merge can be calculated by the repository layer | `/accept` REST/direct routes, native `git merge --no-ff` wrapper, `PULL_REQUEST_MERGED` persistence/webhook assertions |
 | `PullRequestApp.create`, `newPullRequestForm`, and `editform` | create/edit forms expose from/to project and branch controls while edit keeps branch/project selection immutable | `/api/v1/owners/:owner/projects/:project/pull-requests/*form-options`, frontend form route parity |
 | `PullRequestEventTest` | PR creation, state changes, review actions, comments, and thread state changes append legacy event rows | `pull_request_mutation_contract` event assertions |
 | `ReviewApp.review` and `unreview` | reviewers can mark and cancel review state when detail permissions allow it | `/review` and `/unreview` REST mutation contracts plus frontend action controls |
@@ -88,12 +107,12 @@
 
 ## Explicit Phase 4 Deferrals
 
-- merge acceptance and merge-conflict flow
+- merge conflict resolution/help UX
 - reviewer threshold and reviewer assignment lifecycle
 - ranged inline review comment create/edit/delete
 - diff composition and PR event timeline
 - source branch cleanup/restore after merge
-- PR merge/commit-changed VCS side effects, merge/commit-changed webhook delivery, and legacy external
+- PR commit-changed VCS side effects, commit-changed webhook delivery, and legacy external
   `/-_-api/v1/**` compatibility
 
 이 항목들은 bounded exemplar 밖의 `deferred` scope다.

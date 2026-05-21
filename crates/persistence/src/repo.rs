@@ -25,7 +25,7 @@ use crate::repo_types::{
     ProjectRecord, ProjectTransferRecord, ProjectTransferRequestInput, ProjectViewerRecord,
     ProjectWatcherListRecord, ProjectWatcherRecord, ProjectWebhookListRecord, ProjectWebhookRecord,
     PullRequestCommitRecord, PullRequestDetailRecord, PullRequestEventRecord,
-    PullRequestListFilter, PullRequestListItemRecord, PullRequestListRecord,
+    PullRequestListFilter, PullRequestListItemRecord, PullRequestListRecord, PullRequestMergeInput,
     PullRequestReviewInput, PullRequestStateInput, PullRequestThreadStateInput,
     PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
     ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
@@ -7404,6 +7404,75 @@ impl AppRepository {
             "PULL_REQUEST_STATE_CHANGED",
             &old_state,
             next_state,
+            &receiver_ids,
+        )
+        .await?;
+
+        self.pull_request_detail_from_model(updated, &project, Some(input.actor_id))
+            .await
+            .map(Some)
+    }
+
+    pub async fn merge_pull_request(
+        &self,
+        input: PullRequestMergeInput,
+    ) -> Result<Option<PullRequestDetailRecord>, DbErr> {
+        let Some((project, model)) = self
+            .read_project_pull_request_model(
+                &input.owner_name,
+                &input.project_name,
+                input.pull_request_number,
+            )
+            .await?
+        else {
+            return Ok(None);
+        };
+        let old_state = pull_request_state_from_raw(model.state, model.is_conflict);
+        let now = current_datetime();
+        let mut active = pull_request::ActiveModel::from(model.clone());
+        active.is_merging = Set(Some(0));
+        active.updated = Set(Some(now));
+
+        if input.conflict {
+            active.is_conflict = Set(Some(1));
+            let updated = active.update(&self.db).await?;
+            return self
+                .pull_request_detail_from_model(updated, &project, Some(input.actor_id))
+                .await
+                .map(Some);
+        }
+
+        active.state = Set(Some(6));
+        active.is_conflict = Set(Some(0));
+        active.received = Set(Some(now));
+        active.last_commit_id = Set(Some(input.merged_commit_id_to.clone()));
+        active.merged_commit_id_from = Set(Some(input.merged_commit_id_from.clone()));
+        active.merged_commit_id_to = Set(Some(input.merged_commit_id_to.clone()));
+        let updated = active.update(&self.db).await?;
+        self.create_pull_request_event(
+            updated.id,
+            &input.actor_login_id,
+            "PULL_REQUEST_MERGED",
+            &old_state,
+            "merged",
+        )
+        .await?;
+        let receiver_ids = self
+            .pull_request_notification_receiver_ids(
+                project.id,
+                updated.id,
+                updated.contributor_id,
+                updated.receiver_id,
+                "PULL_REQUEST_MERGED",
+            )
+            .await?;
+        self.create_notification_event_for_receivers(
+            input.actor_id,
+            "PULL_REQUEST",
+            &updated.id.to_string(),
+            "PULL_REQUEST_MERGED",
+            &old_state,
+            "merged",
             &receiver_ids,
         )
         .await?;

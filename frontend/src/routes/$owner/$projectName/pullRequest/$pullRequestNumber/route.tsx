@@ -2,6 +2,7 @@ import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Outlet, createFileRoute } from "@tanstack/react-router";
 import {
+  acceptPullRequestRest,
   closePullRequestRest,
   closePullRequestThreadRest,
   createPullRequestCommentRest,
@@ -86,6 +87,25 @@ function PullRequestDetailLeafRouteComponent() {
   const openMutation = useMutation({
     mutationFn: () => openPullRequestRest(runtimeConfig, csrfToken, scope),
     onError: mutationError("Reopen pull request failed."),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(
+        apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
+        updated,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
+  const acceptMutation = useMutation({
+    mutationFn: () => acceptPullRequestRest(runtimeConfig, csrfToken, scope),
+    onError: mutationError("Merge pull request failed."),
     onSuccess: async (updated) => {
       queryClient.setQueryData(
         apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
@@ -239,6 +259,9 @@ function PullRequestDetailLeafRouteComponent() {
       }}
       onOpen={async () => {
         await openMutation.mutateAsync();
+      }}
+      onAccept={async () => {
+        await acceptMutation.mutateAsync();
       }}
       onReview={async () => {
         await reviewMutation.mutateAsync();

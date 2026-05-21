@@ -372,6 +372,10 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let smart_http_session_manager = session_manager.clone();
     let smart_http_base_path = base_path.clone();
     let smart_http_public_origin = public_origin.clone();
+    let pull_request_accept_backend = route_backend.clone();
+    let pull_request_accept_session_manager = session_manager.clone();
+    let pull_request_accept_base_path = base_path.clone();
+    let pull_request_accept_public_origin = public_origin.clone();
     let transfer_accept_backend = route_backend.clone();
     let transfer_accept_session_manager = session_manager.clone();
     let transfer_accept_base_path = base_path.clone();
@@ -1051,6 +1055,31 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                             revision,
                             archive_code_session_manager.clone(),
                             archive_code_backend.clone(),
+                        )
+                        .await
+                    }
+                },
+            ),
+        )
+        .route(
+            "/{owner}/{project}/pullRequest/{pull_request_number}/accept",
+            post(
+                move |headers: HeaderMap,
+                      Path((owner, project, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    async move {
+                        direct_accept_pull_request(
+                            headers,
+                            owner,
+                            project,
+                            pull_request_number,
+                            pull_request_accept_session_manager.clone(),
+                            pull_request_accept_backend.clone(),
+                            pull_request_accept_base_path.clone(),
+                            pull_request_accept_public_origin.clone(),
                         )
                         .await
                     }
@@ -4308,6 +4337,40 @@ async fn direct_toggle_site_user_guest(
     }
 }
 
+async fn direct_accept_pull_request(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+    public_origin: String,
+) -> Response {
+    let redirect_path = format!(
+        "/{}/{}/pullRequest/{}",
+        owner_name, project_name, pull_request_number
+    );
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin,
+        session_manager,
+        backend,
+    };
+    match rest_accept_pull_request(
+        headers,
+        owner_name,
+        project_name,
+        pull_request_number,
+        service,
+    )
+    .await
+    {
+        Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
+        Err(error) => error.into_response(),
+    }
+}
+
 async fn direct_reset_site_user_password(
     headers: HeaderMap,
     login_id: String,
@@ -6884,6 +6947,8 @@ struct RestPullRequestDetailResponse {
     from_project_name: String,
     id: i64,
     is_watching: bool,
+    merged_commit_id_from: String,
+    merged_commit_id_to: String,
     owner_name: String,
     permissions: RestPullRequestPermissions,
     project_name: String,
@@ -8981,6 +9046,30 @@ fn build_rest_pull_request_router(service: PilotServiceImpl) -> Router {
                             project_name,
                             pull_request_number,
                             "open".to_string(),
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/accept",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_accept_pull_request(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
                             service,
                         )
                         .await
@@ -12110,6 +12199,7 @@ fn legacy_webhook_event_key<'a>(event_type: &'a str) -> &'a str {
         "NEW_ISSUE" => "notification.type.new.issue",
         "NEW_PULL_REQUEST" => "notification.type.new.pullrequest",
         "NEW_REVIEW_COMMENT" => "notification.type.new.simple.comment",
+        "PULL_REQUEST_MERGED" => "pullRequest.event.message.MERGED",
         _ => event_type,
     }
 }
@@ -15263,6 +15353,132 @@ async fn rest_update_pull_request_state(
         .await
         .map_err(RestRouteError::from_connect_error)?,
     ))
+}
+
+async fn rest_accept_pull_request(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let (record, authorization) = accept_pull_request_for_actor(
+        repository,
+        &actor,
+        owner_name,
+        project_name,
+        pull_request_number,
+        &service.public_origin,
+        &service.base_path,
+    )
+    .await?;
+    Ok(Json(
+        rest_pull_request_detail_from_record_with_repository_issue_references(
+            repository,
+            record,
+            &authorization,
+            Some(actor.id),
+            &service.base_path,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
+    ))
+}
+
+async fn accept_pull_request_for_actor(
+    repository: &PilotRepository,
+    actor: &persistence::AppUserRecord,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    public_origin: &str,
+    base_path: &str,
+) -> Result<
+    (
+        persistence::PullRequestDetailRecord,
+        persistence::ProjectAuthorizationRecord,
+    ),
+    RestRouteError,
+> {
+    let current = rest_pull_request_detail_response(
+        repository,
+        &owner_name,
+        &project_name,
+        pull_request_number,
+        Some(actor.id),
+        base_path,
+    )
+    .await?;
+    if !current.permissions.can_update_state {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("pull request merge is not allowed"),
+        ));
+    }
+    if current.conflict || current.state == "conflict" {
+        return Err(RestRouteError::bad_request("pull request has conflicts"));
+    }
+    if current.state != "open" {
+        return Err(RestRouteError::bad_request("pull request is not open"));
+    }
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let from_project = repository
+        .read_project_by_owner_and_name(&current.from_owner_name, &current.from_project_name)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("source project not found"))?;
+    let source_repo_path = yona_rust_vcs::repository_path(&yona_data_root(), from_project.id);
+    let target_repo_path =
+        yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let merge = yona_rust_vcs::merge_pull_request(
+        &source_repo_path,
+        &target_repo_path,
+        &current.from_branch,
+        &current.to_branch,
+    )
+    .map_err(code_browser_error)
+    .map_err(RestRouteError::from_connect_error)?;
+    let record = repository
+        .merge_pull_request(persistence::PullRequestMergeInput {
+            actor_id: actor.id,
+            actor_login_id: actor.login_id.clone(),
+            conflict: merge.conflict,
+            merged_commit_id_from: merge.target_commit_id_before,
+            merged_commit_id_to: merge.merged_commit_id,
+            owner_name,
+            project_name,
+            pull_request_number,
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
+    if !merge.conflict {
+        dispatch_pull_request_webhooks(
+            repository,
+            &record,
+            actor,
+            "PULL_REQUEST_MERGED",
+            &record.body_markdown,
+            None,
+            None,
+            public_origin,
+            base_path,
+        )
+        .await;
+    }
+
+    Ok((record, authorization))
 }
 
 async fn rest_set_pull_request_review(
@@ -27495,6 +27711,8 @@ fn rest_pull_request_detail_from_record_with_issue_references(
         from_project_name: record.from_project_name,
         id: record.id,
         is_watching: record.is_watching,
+        merged_commit_id_from: record.merged_commit_id_from,
+        merged_commit_id_to: record.merged_commit_id_to,
         owner_name: owner_name.clone(),
         permissions: RestPullRequestPermissions {
             can_comment: actor_id.is_some(),

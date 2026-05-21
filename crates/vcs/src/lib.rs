@@ -1,3 +1,4 @@
+use std::ffi::OsString;
 use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -210,6 +211,14 @@ pub struct PullRequestDiffCommitRecord {
 pub struct PullRequestChangedFileRecord {
     pub path: String,
     pub patch: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestMergeResult {
+    pub conflict: bool,
+    pub from_commit_id: String,
+    pub merged_commit_id: String,
+    pub target_commit_id_before: String,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -830,6 +839,87 @@ pub fn delete_branch(
     read_branch_list(repo_path)
 }
 
+pub fn merge_pull_request(
+    source_repo_path: &Path,
+    target_repo_path: &Path,
+    from_branch: &str,
+    to_branch: &str,
+) -> Result<PullRequestMergeResult, VcsError> {
+    if !source_repo_path.exists() || !target_repo_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    let from_branch = normalize_branch_name(from_branch)?;
+    let to_branch = normalize_branch_name(to_branch)?;
+    let source_branches = list_branches(source_repo_path)?;
+    let target_branches = list_branches(target_repo_path)?;
+    if !branch_exists(&source_branches, &from_branch)
+        || !branch_exists(&target_branches, &to_branch)
+    {
+        return Err(VcsError::NotFound);
+    }
+
+    let target_ref = format!("refs/heads/{to_branch}");
+    let source_ref = format!("refs/heads/{from_branch}");
+    let target_commit_id_before = git_output(target_repo_path, &["rev-parse", &target_ref])?
+        .trim()
+        .to_string();
+    let from_commit_id = git_output(source_repo_path, &["rev-parse", &source_ref])?
+        .trim()
+        .to_string();
+
+    let work_dir = TempWorkDir::create("merge")?;
+    git_clone_repository(target_repo_path, work_dir.path())?;
+    git_worktree_output(work_dir.path(), &["checkout", &to_branch])?;
+    git_worktree_output(
+        work_dir.path(),
+        &["config", "user.email", "yona@example.invalid"],
+    )?;
+    git_worktree_output(work_dir.path(), &["config", "user.name", "Yona"])?;
+    git_worktree_output_with_path(
+        work_dir.path(),
+        &["remote", "add", "pull-request-source"],
+        source_repo_path,
+    )?;
+    git_worktree_output(
+        work_dir.path(),
+        &[
+            "fetch",
+            "pull-request-source",
+            &format!("+{source_ref}:refs/remotes/pull-request-source/{from_branch}"),
+        ],
+    )?;
+    let merge_target = format!("refs/remotes/pull-request-source/{from_branch}");
+    match git_worktree_output(
+        work_dir.path(),
+        &["merge", "--no-ff", "--no-edit", &merge_target],
+    ) {
+        Ok(_) => {}
+        Err(VcsError::GitFailed(message)) if is_merge_conflict_output(&message) => {
+            let _ = git_worktree_output(work_dir.path(), &["merge", "--abort"]);
+            return Ok(PullRequestMergeResult {
+                conflict: true,
+                from_commit_id,
+                merged_commit_id: String::new(),
+                target_commit_id_before,
+            });
+        }
+        Err(error) => return Err(error),
+    }
+
+    let merged_commit_id = git_worktree_output(work_dir.path(), &["rev-parse", "HEAD"])?
+        .trim()
+        .to_string();
+    let push_ref = format!("HEAD:{target_ref}");
+    git_worktree_output(work_dir.path(), &["push", "origin", &push_ref])?;
+
+    Ok(PullRequestMergeResult {
+        conflict: false,
+        from_commit_id,
+        merged_commit_id,
+        target_commit_id_before,
+    })
+}
+
 pub fn read_pull_request_diff(
     repo_path: &Path,
     from_branch: &str,
@@ -1445,6 +1535,53 @@ fn git_output(repo_path: &Path, args: &[&str]) -> Result<String, VcsError> {
     Ok(String::from_utf8_lossy(&bytes).to_string())
 }
 
+fn git_clone_repository(source_repo_path: &Path, work_tree_path: &Path) -> Result<(), VcsError> {
+    let output = Command::new("git")
+        .arg("clone")
+        .arg(source_repo_path)
+        .arg(work_tree_path)
+        .output()
+        .map_err(|_| VcsError::GitUnavailable)?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(VcsError::GitFailed(git_error_text(&output)))
+    }
+}
+
+fn git_worktree_output(work_tree_path: &Path, args: &[&str]) -> Result<String, VcsError> {
+    let args = args.iter().map(OsString::from).collect::<Vec<_>>();
+    let bytes = git_worktree_bytes(work_tree_path, args)?;
+    Ok(String::from_utf8_lossy(&bytes).to_string())
+}
+
+fn git_worktree_output_with_path(
+    work_tree_path: &Path,
+    args: &[&str],
+    path_arg: &Path,
+) -> Result<String, VcsError> {
+    let mut args = args.iter().map(OsString::from).collect::<Vec<_>>();
+    args.push(path_arg.as_os_str().to_os_string());
+    let bytes = git_worktree_bytes(work_tree_path, args)?;
+    Ok(String::from_utf8_lossy(&bytes).to_string())
+}
+
+fn git_worktree_bytes(
+    work_tree_path: &Path,
+    args: impl IntoIterator<Item = OsString>,
+) -> Result<Vec<u8>, VcsError> {
+    let args = args.into_iter().collect::<Vec<_>>();
+    let mut command = Command::new("git");
+    command
+        .arg("-C")
+        .arg(work_tree_path)
+        .args(&args)
+        .stdin(Stdio::null())
+        .stderr(Stdio::piped())
+        .stdout(Stdio::piped());
+    command_bytes(command, Duration::from_secs(30))
+}
+
 fn git_bytes(repo_path: &Path, args: &[&str]) -> Result<Vec<u8>, VcsError> {
     let mut command = Command::new("git");
     command
@@ -1454,12 +1591,16 @@ fn git_bytes(repo_path: &Path, args: &[&str]) -> Result<Vec<u8>, VcsError> {
         .stdin(Stdio::null())
         .stderr(Stdio::piped())
         .stdout(Stdio::piped());
+    command_bytes(command, Duration::from_secs(5))
+}
+
+fn command_bytes(mut command: Command, timeout: Duration) -> Result<Vec<u8>, VcsError> {
     let mut child = command.spawn().map_err(|_| VcsError::GitUnavailable)?;
     let start = Instant::now();
     loop {
         match child.try_wait().map_err(|_| VcsError::GitUnavailable)? {
             Some(_) => break,
-            None if start.elapsed() > Duration::from_secs(5) => {
+            None if start.elapsed() > timeout => {
                 let _ = child.kill();
                 let _ = child.wait();
                 return Err(VcsError::GitTimedOut);
@@ -1473,7 +1614,7 @@ fn git_bytes(repo_path: &Path, args: &[&str]) -> Result<Vec<u8>, VcsError> {
     if output.status.success() {
         return Ok(output.stdout);
     }
-    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let stderr = git_error_text(&output);
     if stderr.contains("Not a valid object name")
         || stderr.contains("ambiguous argument")
         || stderr.contains("pathspec")
@@ -1483,6 +1624,46 @@ fn git_bytes(repo_path: &Path, args: &[&str]) -> Result<Vec<u8>, VcsError> {
         Err(VcsError::NotFound)
     } else {
         Err(VcsError::GitFailed(stderr))
+    }
+}
+
+fn git_error_text(output: &std::process::Output) -> String {
+    let mut message = String::from_utf8_lossy(&output.stderr).to_string();
+    if !output.stdout.is_empty() {
+        message.push_str(&String::from_utf8_lossy(&output.stdout));
+    }
+    message
+}
+
+fn is_merge_conflict_output(message: &str) -> bool {
+    message.contains("CONFLICT") || message.contains("Automatic merge failed")
+}
+
+struct TempWorkDir {
+    path: PathBuf,
+}
+
+impl TempWorkDir {
+    fn create(label: &str) -> Result<Self, VcsError> {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|error| VcsError::FilesystemFailed(error.to_string()))?
+            .as_nanos();
+        let path =
+            std::env::temp_dir().join(format!("yona-vcs-{label}-{}-{nanos}", std::process::id()));
+        std::fs::create_dir_all(&path)
+            .map_err(|error| VcsError::FilesystemFailed(error.to_string()))?;
+        Ok(Self { path })
+    }
+
+    fn path(&self) -> &Path {
+        &self.path
+    }
+}
+
+impl Drop for TempWorkDir {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.path);
     }
 }
 

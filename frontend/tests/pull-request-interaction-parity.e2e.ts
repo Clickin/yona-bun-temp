@@ -59,6 +59,8 @@ function detail(overrides: Record<string, unknown> = {}) {
     fromProjectName: "projectYobi",
     id: 9,
     isWatching: false,
+    mergedCommitIdFrom: "",
+    mergedCommitIdTo: "",
     ownerName: "admin",
     permissions: {
       canComment: true,
@@ -274,6 +276,27 @@ test.beforeEach(async ({ page }) => {
         await route.fulfill({ body: JSON.stringify(pullRequest), headers: restJsonHeaders });
         return;
       }
+      if (url.pathname.endsWith("/accept")) {
+        pullRequest = detail({
+          ...pullRequest,
+          events: [
+            ...pullRequest.events,
+            {
+              createdLabel: "2026-05-05",
+              eventType: "PULL_REQUEST_MERGED",
+              id: 11,
+              newValue: "merged",
+              oldValue: "open",
+              senderLoginId: "reviewer",
+            },
+          ],
+          mergedCommitIdFrom: "base-main",
+          mergedCommitIdTo: "merge-head",
+          state: "merged",
+        });
+        await route.fulfill({ body: JSON.stringify(pullRequest), headers: restJsonHeaders });
+        return;
+      }
       if (method === "PATCH") {
         pullRequest = detail({
           ...pullRequest,
@@ -354,6 +377,14 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   await expect(page.locator(".board-header .pullRequest-stateInfo.closed")).toBeVisible();
   await page.getByRole("button", { name: "Reopen" }).click();
   await expect(page.locator(".board-header .pullRequest-stateInfo.open")).toBeVisible();
+  await expect(page.locator("#btnAccept")).toHaveAttribute("data-request-method", "post");
+  await expect(page.locator("#btnAccept")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/pullRequest/9/accept",
+  );
+  await page.locator("#btnAccept").click();
+  await expect(page.locator(".board-header .pullRequest-stateInfo.merged")).toBeVisible();
+  await expect(page.locator(".review-list-wrap").last()).toContainText("PULL_REQUEST_MERGED");
 
   await page.goto("/yona/admin/projectYobi/pullRequest/9/editform");
   await expect(page.locator("#fromProjectId")).toBeDisabled();

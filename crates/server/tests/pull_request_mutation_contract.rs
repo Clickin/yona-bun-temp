@@ -221,6 +221,23 @@ fn run_git(repo_path: &Path, args: &[&str]) {
     assert!(status.success(), "git {:?} failed", args);
 }
 
+fn git_dir_output(repo_path: &Path, args: &[&str]) -> String {
+    let output = Command::new("git")
+        .arg("--git-dir")
+        .arg(repo_path)
+        .args(args)
+        .output()
+        .expect("run git --git-dir");
+    assert!(
+        output.status.success(),
+        "git --git-dir {:?} {:?} failed: {}",
+        repo_path,
+        args,
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8(output.stdout).expect("git stdout utf8")
+}
+
 fn write_repo_file(repo_path: &Path, relative_path: &str, contents: &str) {
     let path = repo_path.join(relative_path);
     if let Some(parent) = path.parent() {
@@ -256,6 +273,11 @@ fn seed_bare_repo_with_branches(data_root: &Path, project_id: i64) {
     write_repo_file(&work_path, "README.md", "topic\n");
     run_git(&work_path, &["add", "README.md"]);
     run_git(&work_path, &["commit", "-m", "topic"]);
+    run_git(&work_path, &["checkout", "main"]);
+    run_git(&work_path, &["checkout", "-b", "topic/direct"]);
+    write_repo_file(&work_path, "DIRECT.md", "direct\n");
+    run_git(&work_path, &["add", "DIRECT.md"]);
+    run_git(&work_path, &["commit", "-m", "direct accept"]);
     fs::create_dir_all(repo_path.parent().unwrap()).unwrap();
     clone_bare(&work_path, &repo_path);
     fs::remove_dir_all(work_path).unwrap();
@@ -692,6 +714,121 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         2
     );
     assert_eq!(snapshot_test_webhook_outbox().len(), 4);
+
+    let forbidden_accept = rest_json(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/accept",
+        Some(&guest_cookie),
+        Some(&guest_csrf),
+        json!({}),
+    )
+    .await;
+    assert_eq!(forbidden_accept.status(), StatusCode::FORBIDDEN);
+
+    let accepted = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/accept",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({}),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(accepted["state"], "merged");
+    assert_eq!(accepted["conflict"], false);
+    assert_ne!(accepted["mergedCommitIdFrom"], "");
+    assert_ne!(accepted["mergedCommitIdTo"], "");
+    assert_eq!(
+        accepted["events"].as_array().unwrap().last().unwrap()["eventType"],
+        "PULL_REQUEST_MERGED"
+    );
+    assert_eq!(
+        count_rows(&db, "pull_request_event", "PULL_REQUEST_MERGED").await,
+        1
+    );
+    let repo_path = data_root.join("repo").join(format!("{}.git", project.id));
+    let merged_head = git_dir_output(&repo_path, &["rev-parse", "refs/heads/main"])
+        .trim()
+        .to_string();
+    assert_eq!(
+        accepted["mergedCommitIdTo"].as_str().unwrap_or_default(),
+        merged_head
+    );
+    assert_eq!(
+        git_dir_output(&repo_path, &["show", "refs/heads/main:README.md"]),
+        "topic\n"
+    );
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 5);
+    assert_eq!(deliveries[4].event_type, "PULL_REQUEST_MERGED");
+    let merged_payload: Value =
+        serde_json::from_str(&deliveries[4].body).expect("merged webhook payload");
+    let merged_text = merged_payload["text"].as_str().unwrap_or_default();
+    assert!(merged_text.contains("pullRequest.event.message.MERGED"));
+    assert!(merged_text
+        .contains("/yona/owner/projectYobi/pullRequest/1|#1: Updated interaction parity"));
+
+    let direct_created = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "fromProjectId": project.id,
+                "toProjectId": project.id,
+                "fromBranch": "topic/direct",
+                "toBranch": "main",
+                "title": "Direct accept parity",
+                "bodyMarkdown": "Direct accept body",
+                "attachmentIds": []
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(direct_created["pullRequestNumber"], 2);
+    let direct_accept = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/owner/projectYobi/pullRequest/2/accept")
+                .header(http::header::COOKIE, owner_cookie.as_str())
+                .header("x-csrf-token", owner_csrf.as_str())
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(direct_accept.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        direct_accept.headers().get(http::header::LOCATION).unwrap(),
+        "/yona/owner/projectYobi/pullRequest/2"
+    );
+    let direct_detail = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/2",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(direct_detail["state"], "merged");
+    assert_eq!(
+        git_dir_output(&repo_path, &["show", "refs/heads/main:DIRECT.md"]),
+        "direct\n"
+    );
+    assert_eq!(
+        count_rows(&db, "pull_request_event", "PULL_REQUEST_MERGED").await,
+        2
+    );
 
     create_project(
         app.clone(),

@@ -131,6 +131,8 @@ export type PullRequestDetailResponse = {
   fromProjectName: string;
   id: number;
   isWatching: boolean;
+  mergedCommitIdFrom: string;
+  mergedCommitIdTo: string;
   ownerName: string;
   permissions: PullRequestPermissions;
   projectName: string;
@@ -379,6 +381,8 @@ function normalizeDetail(response: Partial<PullRequestDetailResponse>): PullRequ
     fromProjectName: response.fromProjectName ?? "",
     id: response.id ?? 0,
     isWatching: response.isWatching ?? false,
+    mergedCommitIdFrom: response.mergedCommitIdFrom ?? "",
+    mergedCommitIdTo: response.mergedCommitIdTo ?? "",
     ownerName: response.ownerName ?? "",
     permissions: {
       canComment: response.permissions?.canComment ?? false,
@@ -647,6 +651,19 @@ export function openPullRequestRest(
   return restFetch<Partial<PullRequestDetailResponse>>(
     runtimeConfig,
     pullRequestPath(input, "/open"),
+    { csrfToken, fetchImpl, method: "POST" },
+  ).then(normalizeDetail);
+}
+
+export function acceptPullRequestRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestScopeInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestDetailResponse> {
+  return restFetch<Partial<PullRequestDetailResponse>>(
+    runtimeConfig,
+    pullRequestPath(input, "/accept"),
     { csrfToken, fetchImpl, method: "POST" },
   ).then(normalizeDetail);
 }

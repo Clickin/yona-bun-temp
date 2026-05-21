@@ -92,6 +92,8 @@ const pullRequestDetail = {
   fromProjectName: "projectYobi",
   id: 3,
   isWatching: false,
+  mergedCommitIdFrom: "",
+  mergedCommitIdTo: "",
   ownerName: "admin",
   permissions: {
     canComment: true,

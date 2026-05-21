@@ -440,6 +440,8 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain("comment-thread-wrap");
     expect(pullRequestViewsSource).toContain("thread-actrow");
     expect(pullRequestViewsSource).toContain("review-form");
+    expect(pullRequestViewsSource).toContain('id="btnAccept"');
+    expect(pullRequestViewsSource).toContain('data-request-method="post"');
 
     const detailRouteSource = fs.readFileSync(
       path.resolve(
@@ -450,6 +452,14 @@ describe("file-route parity harness", () => {
     );
     expect(detailRouteSource).toContain("pullRequestDetailQueryOptions");
     expect(detailRouteSource).toContain("useMutation");
+    expect(detailRouteSource).toContain("acceptPullRequestRest");
+
+    const pullRequestApiSource = fs.readFileSync(
+      path.resolve(__dirname, "api/pull-requests.ts"),
+      "utf8",
+    );
+    expect(pullRequestApiSource).toContain("acceptPullRequestRest");
+    expect(pullRequestApiSource).toContain('pullRequestPath(input, "/accept")');
   });
 
   it("requires project member management route to use real legacy anchors and mutations", () => {

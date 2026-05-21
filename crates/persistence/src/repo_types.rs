@@ -1209,6 +1209,18 @@ pub struct PullRequestStateInput {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestMergeInput {
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub conflict: bool,
+    pub merged_commit_id_from: String,
+    pub merged_commit_id_to: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub pull_request_number: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PullRequestReviewInput {
     pub actor_id: i64,
     pub actor_login_id: String,

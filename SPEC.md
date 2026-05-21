@@ -793,11 +793,15 @@ PR 생성/수정 form, 생성/수정 mutation, close/reopen, review/unreview, �
 review thread open/close mutation을 추가했다. 후속 fork/clone slice는 `/api/v1/owners/:owner/projects/:project/fork-options`
 와 `/fork` mutation, legacy `/:owner/:project/newFork` frontend shell, native `git clone --bare`
 wrapper를 추가해 개인/조직 owner 대상 프로젝트 fork와 `original_project_id` 기록을 복원했다.
+후속 merge accept slice는 `/api/v1/owners/:owner/projects/:project/pull-requests/:number/accept`
+및 legacy `/:owner/:project/pullRequest/:number/accept`를 추가하고, native `git merge --no-ff`
+wrapper로 conflict-free PR을 target bare repository에 병합한 뒤 `state = MERGED(6)`,
+`merged_commit_id_from/to`, `PULL_REQUEST_MERGED` event/webhook을 기록한다.
 `/api/v1/owners/:owner/projects/:project/pull-requests`,
 `/:number`, `/:number/changes`, `/reviews`, `/api/v1/organizations/:organization/pull-requests`
 가 project READ + code-accessible-member-only 정책을 통과한 viewer에게만 열리며, mutation은
-CSRF + authenticated session + detail permission projection을 요구한다. Merge accept/conflict 처리,
-from branch delete/restore, PR merge/commit-changed VCS side effects, remaining merge/commit-changed webhook delivery, legacy external `/-_-api/v1/**`
+CSRF + authenticated session + detail permission projection을 요구한다. Conflict resolution UI,
+from branch delete/restore, PR commit-changed VCS side effects, remaining commit-changed webhook delivery, legacy external `/-_-api/v1/**`
 compatibility는 이번 app runtime batch에서 제외한다.
 
 | 기능                       | Legacy 동작                          | 현재 상태 | Phase |
@@ -806,13 +810,13 @@ compatibility는 이번 app runtime batch에서 제외한다.
 | PR 생성                    | from/to 브랜치 선택, 제목/본문       | Phase 4B 구현 | 4     |
 | PR 상세                    | 커밋 목록, 변경 파일, 댓글/타임라인  | Phase 4A read + Phase 4B interaction 구현 | 4     |
 | PR diff 보기               | 파일별 unified diff, 인라인 코멘트   | Phase 4A read-only diff 보기 구현; inline comment mutation은 gap | 4     |
-| PR 상태 관리               | open → merged / closed, 재열기       | close/reopen Phase 4B 구현; merge는 gap | 4     |
-| Merge 실행                 | fast-forward / merge commit / squash | gap       | 4     |
-| Merge 충돌 처리            | 충돌 시 알림, 수동 해결 안내         | gap       | 4     |
+| PR 상태 관리               | open → merged / closed, 재열기       | close/reopen + conflict-free merge accept 구현 | 4     |
+| Merge 실행                 | fast-forward / merge commit / squash | native `git merge --no-ff` happy path 구현; squash/strategy 선택은 gap | 4     |
+| Merge 충돌 처리            | 충돌 시 알림, 수동 해결 안내         | VCS conflict flag 기록 partial; legacy 안내/해결 UX는 gap | 4     |
 | 리뷰 승인/철회             | 리뷰어가 승인/철회                   | Phase 4B 구현 | 4     |
 | 코드 리뷰 댓글             | 특정 라인에 인라인 댓글              | 일반 PR review comment Phase 4B 구현; ranged inline create/edit/delete는 gap | 4     |
 | 리뷰 스레드                | 인라인 댓글 스레드 open/close        | Phase 4B open/close mutation 구현 | 4     |
-| Fork & PR                  | 프로젝트 fork → PR 워크플로우        | fork form/clone 구현; PR merge lifecycle은 gap | 4     |
+| Fork & PR                  | 프로젝트 fork → PR 워크플로우        | fork form/clone + conflict-free PR merge accept 구현 | 4     |
 | from 브랜치 삭제           | merge 후 소스 브랜치 삭제            | gap       | 4     |
 | 리뷰어 지정                | PR에 리뷰어 배정                     | gap       | 4     |
 
@@ -925,9 +929,9 @@ DELETE /:owner/:project/webhooks/:id  → 웹훅 삭제
 
 - [x] 웹훅 생성/삭제: payload URL, secret, webhook type, gitPush 선택을 legacy `/webhooks` form/list shell과 app runtime REST CRUD로 제공한다
 - [x] Issue/comment non-JSON payload fan-out: `NEW_ISSUE`와 `NEW_COMMENT`가 legacy `Webhook.sendRequestToPayloadUrl`의 text payload shape, `Content-Type: application/json`, `User-Agent: Yobi-Hookshot`, and `Authorization: token <secret> ` header를 유지하고 `JSON` webhooks를 push-only로 제외한다.
-- [x] Pull request/review/comment non-JSON payload fan-out: `NEW_PULL_REQUEST`, `PULL_REQUEST_REVIEW_STATE_CHANGED`, and `NEW_REVIEW_COMMENT` use the legacy PR link/text shape, token secret header, and JSON-webhook exclusion.
+- [x] Pull request/review/comment/merge non-JSON payload fan-out: `NEW_PULL_REQUEST`, `PULL_REQUEST_REVIEW_STATE_CHANGED`, `NEW_REVIEW_COMMENT`, and `PULL_REQUEST_MERGED` use the legacy PR link/text shape, token secret header, and JSON-webhook exclusion.
 - [x] Push JSON payload: legacy `Webhook.sendRequestToPayloadUrl(commits, refNames, sender)` 포맷과 호환
-- [~] Remaining pull request webhook events: merge (`PULL_REQUEST_MERGED`) and commit-changed remain VCS lifecycle follow-up scope; plain close/reopen did not call project webhooks in observed legacy code.
+- [~] Remaining pull request webhook events: commit-changed remains VCS lifecycle follow-up scope; plain close/reopen did not call project webhooks in observed legacy code.
 - [ ] HTTPS production delivery hardening and delivery history/retry behavior
 - [ ] HMAC-style signature compatibility is not present in observed legacy `Webhook.java`; only add if external integration evidence requires it.
 
@@ -1323,7 +1327,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, 일반 PR comment, thread open/close, fork/clone. merge/ranged inline review CRUD/branch cleanup은 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, mail queue staging |
-| 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment non-JSON fan-out plus git-push JSON payloads; PR merge/commit-changed delivery, history, and hardening remain gaps |
+| 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment/merge non-JSON fan-out plus git-push JSON payloads; PR commit-changed delivery, history, and hardening remain gaps |
 | 관리자            | ❌ 미구현         |                                                                  |
 | 마크다운          | 🔶 기본 구현      | Issue/post/milestone/PR/code comment sanitized HTML projection plus `@user`, `#123`, `owner/project#123`, bare `http(s)`/`ftp`/`www`/email autolinks, readable issue title/state metadata, soft line breaks, safe inline images, disabled task-list checkboxes, fenced-code token highlighting, code-browser Markdown local image path rewrite, project-home Git README local image/normal-link rewrite, and legacy `POST /markdown/:owner/:project` preview rendering |
 | REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1` legacy external API는 app scope에서 미지원이며 별도 migrator/export/import deliverable로 분리 |
@@ -1532,12 +1536,12 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Board: posting list/detail/create/update/delete/comment flows
 - Label follow-up: legacy external label/project API parity for the separate migrator/export/import scope
 - Milestone follow-up: migration export and search milestone result type
-- Code follow-up: multi-line ranged code-comment selection polish, inline code-comment edit, SVN executable repository/serve integration, PR merge/commit-changed VCS lifecycle integration
-- PullRequest follow-up: merge/conflict acceptance, ranged inline review comment edit/delete, reviewer assignment/threshold lifecycle, branch cleanup/restore
+- Code follow-up: multi-line ranged code-comment selection polish, inline code-comment edit, SVN executable repository/serve integration, PR commit-changed VCS lifecycle integration
+- PullRequest follow-up: merge conflict resolution UX, ranged inline review comment edit/delete, reviewer assignment/threshold lifecycle, branch cleanup/restore
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: read state, SMTP scheduler/delivery, draft-time merge, recipient limit, and full mail notification parity
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope
-- Webhook follow-up: PR merge/commit-changed delivery, HTTPS production delivery hardening, optional signature compatibility if external evidence requires it, and delivery history/retry behavior
+- Webhook follow-up: PR commit-changed delivery, HTTPS production delivery hardening, optional signature compatibility if external evidence requires it, and delivery history/retry behavior
 - Admin: users/projects/site-admin/account-lock/test-mail surfaces
 - Markdown follow-up: full legacy/GFM extension parity, remaining autolink edge cases if legacy evidence requires them, full Highlight.js-equivalent language coverage, and checklist progress-bar integration polish
 
