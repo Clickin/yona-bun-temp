@@ -29,14 +29,15 @@ use crate::repo_types::{
     PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
     ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
     SearchRepositoryInput, SearchResultRecord, SearchScope, SiteIssueListRecord,
-    SitePostingListRecord, SiteUserDeleteResult, SiteUserListFilter, SiteUserListRecord,
-    SiteUserRecord, ToggleFavoriteIssueResult, ToggleFavoriteProjectResult,
-    UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput,
-    UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
-    UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestInput,
-    UserIssueCandidateRecord, UserIssueListFilter, UserStatisticsRecord,
-    WatchedProjectNotificationsRecord, WorkspaceEmailRecord, WorkspaceIssueListItemRecord,
-    WorkspaceMemberProjectRecord, WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
+    SiteNoAvatarUserRecord, SitePostingListRecord, SiteUserAvatarFromAttachmentResult,
+    SiteUserDeleteResult, SiteUserListFilter, SiteUserListRecord, SiteUserRecord,
+    ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateIssueCommentInput,
+    UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput,
+    UpdatePostingInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
+    UpdateProjectLabelInput, UpdatePullRequestInput, UserIssueCandidateRecord, UserIssueListFilter,
+    UserStatisticsRecord, WatchedProjectNotificationsRecord, WorkspaceEmailRecord,
+    WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
+    WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
 use crate::{
@@ -933,6 +934,44 @@ impl AppRepository {
             total_pages: usize_to_u32_saturating(total_pages),
             users,
         })
+    }
+
+    /// Lists active users without a promoted avatar attachment for the legacy
+    /// site-admin JSON avatar repair route.
+    ///
+    /// # Errors
+    ///
+    /// Returns a database error when user or attachment rows cannot be read.
+    pub async fn list_site_no_avatar_users(&self) -> Result<Vec<SiteNoAvatarUserRecord>, DbErr> {
+        let avatar_user_ids = attachment::Entity::find()
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(USER_AVATAR_ATTACHMENT_CONTAINER.to_string())),
+            )
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|attachment| attachment.container_id)
+            .collect::<HashSet<_>>();
+
+        let mut users = n4user::Entity::find()
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter(n4user_is_active)
+            .filter(|user| {
+                normalize_optional(user.login_id.as_deref()).as_deref()
+                    != Some(LEGACY_ANONYMOUS_LOGIN_ID)
+            })
+            .filter(|user| !avatar_user_ids.contains(&user.id))
+            .map(|user| SiteNoAvatarUserRecord {
+                email: user.email.unwrap_or_default(),
+                login_id: user.login_id.unwrap_or_default(),
+                name: user.name.unwrap_or_default(),
+            })
+            .collect::<Vec<_>>();
+        users.sort_by(|left, right| left.login_id.cmp(&right.login_id));
+        Ok(users)
     }
 
     /// Lists active user email addresses for the legacy site-admin mass-mail surface.
@@ -8371,6 +8410,58 @@ impl AppRepository {
         }))
     }
 
+    /// Moves an existing attachment into the avatar resource for the user with
+    /// the given email address, matching the legacy site-admin repair route.
+    ///
+    /// # Errors
+    ///
+    /// Returns a database error when attachment, user, or avatar rows cannot be
+    /// read or updated.
+    pub async fn set_user_avatar_from_attachment_by_email(
+        &self,
+        email_address: &str,
+        attachment_id: i64,
+    ) -> Result<SiteUserAvatarFromAttachmentResult, DbErr> {
+        let Some(attachment_model) = attachment::Entity::find_by_id(attachment_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(SiteUserAvatarFromAttachmentResult::AttachmentNotFound);
+        };
+        let Some(user) = self.find_user_model_by_email(email_address).await? else {
+            return Ok(SiteUserAvatarFromAttachmentResult::UserNotFound);
+        };
+        let mime_type = attachment_model.mime_type.clone().unwrap_or_default();
+        let mime_family = mime_type
+            .split('/')
+            .next()
+            .unwrap_or_default()
+            .to_ascii_lowercase();
+        let is_anonymous = normalize_optional(user.login_id.as_deref()).as_deref()
+            == Some(LEGACY_ANONYMOUS_LOGIN_ID);
+        if mime_family != "image" || is_anonymous {
+            return Ok(SiteUserAvatarFromAttachmentResult::Ignored);
+        }
+
+        let txn = self.db.begin().await?;
+        attachment::Entity::delete_many()
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(USER_AVATAR_ATTACHMENT_CONTAINER.to_string())),
+            )
+            .filter(attachment::Column::ContainerId.eq(user.id))
+            .filter(attachment::Column::Id.ne(attachment_model.id))
+            .exec(&txn)
+            .await?;
+        let mut active = attachment::ActiveModel::from(attachment_model);
+        active.container_type = Set(Some(USER_AVATAR_ATTACHMENT_CONTAINER.to_string()));
+        active.container_id = Set(user.id);
+        active.update(&txn).await?;
+        txn.commit().await?;
+
+        Ok(SiteUserAvatarFromAttachmentResult::Applied)
+    }
+
     pub async fn read_project_by_id(
         &self,
         project_id: i64,
@@ -8883,6 +8974,21 @@ impl AppRepository {
         let users = n4user::Entity::find().all(&self.db).await?;
         Ok(users.into_iter().find(|user| {
             normalize_optional(user.login_id.as_deref()).as_deref() == Some(normalized.as_str())
+        }))
+    }
+
+    async fn find_user_model_by_email(
+        &self,
+        email_address: &str,
+    ) -> Result<Option<n4user::Model>, DbErr> {
+        let normalized = normalize_identity(email_address);
+        if normalized.is_empty() {
+            return Ok(None);
+        }
+
+        let users = n4user::Entity::find().all(&self.db).await?;
+        Ok(users.into_iter().find(|user| {
+            normalize_optional(user.email.as_deref()).as_deref() == Some(normalized.as_str())
         }))
     }
 

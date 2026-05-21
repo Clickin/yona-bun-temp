@@ -975,6 +975,8 @@ POST  /sites/mailList          → 대량 메일 발송
 GET   /sites/diagnostic        → 시스템 진단
 GET   /sites/update            → 업데이트 확인
 GET   /sites/data              → 데이터 관리
+GET   /sites/noAvatarUsers     → avatar 미설정 active 사용자 JSON
+POST  /sites/setAttachmentToUserAvatar → 첨부 파일을 사용자 avatar로 지정
 POST  /sites/import            → 데이터 임포트
 GET   /sites/export            → 데이터 익스포트
 ```
@@ -983,7 +985,7 @@ GET   /sites/export            → 데이터 익스포트
 
 | 기능                   | Legacy 동작                        | 현재 상태 | Phase |
 | ---------------------- | ---------------------------------- | --------- | ----- |
-| 사용자 목록/관리       | 목록, 검색, 관리자/잠금/게스트 토글, 비밀번호 재설정, 사용자 삭제 | 🔶 부분 구현(`/sites/userList`, `/api/v1/site/users`; other `/sites/*` follow-up) | 6     |
+| 사용자 목록/관리       | 목록, 검색, 관리자/잠금/게스트 토글, 비밀번호 재설정, 사용자 삭제, no-avatar 사용자 JSON/보정 | 🔶 부분 구현(`/sites/userList`, `/sites/noAvatarUsers`, `/sites/setAttachmentToUserAvatar`, `/api/v1/site/users`, `/api/v1/site/no-avatar-users`; remaining direct legacy management aliases follow-up) | 6     |
 | 프로젝트 목록/관리     | 목록, 검색, 삭제                   | ✅ 구현(`/sites/projectList`, `/api/v1/site/projects`) | 6     |
 | 게시글 목록            | 전체 게시글 읽기 목록              | ✅ 구현(`/sites/postList`, `/api/v1/site/posts`) | 6     |
 | 이슈 목록              | 전체 이슈 읽기 목록                | ✅ 구현(`/sites/issueList`, `/api/v1/site/issues`) | 6     |
@@ -998,6 +1000,7 @@ GET   /sites/export            → 데이터 익스포트
 - [x] 사용자 목록 REST: site admin 전용 `/api/v1/site/users`, 검색, 페이지네이션, 관리자 역할 토글, 계정 잠금/해제, 게스트 모드 토글, 비밀번호 재설정, 사용자 삭제(`/api/v1/site/users/:loginId` DELETE)
 - [x] 사용자 목록 UI core: legacy `/sites/userList` shell, state tabs, 검색, 페이지네이션, 관리자 역할 토글, 계정 잠금/해제, 게스트 모드 토글, 비밀번호 재설정, 사용자 삭제 modal/action
 - [x] 사용자 삭제: legacy only-manager guard, project membership cleanup, deleted-state projection
+- [x] No-avatar 사용자 보정: site admin 전용 `/api/v1/site/no-avatar-users`, `/api/v1/site/users/avatar-from-attachment`, legacy direct `/sites/noAvatarUsers`, `/sites/setAttachmentToUserAvatar` JSON routes preserve active-user/no-avatar filtering, `{loginId,name,email}` payload, `avatarFileId`/`email` body, and image attachment promotion semantics
 - [x] 프로젝트 목록: 검색, 페이지네이션, 프로젝트 삭제
 - [x] 게시글 목록: site admin 전용 `/api/v1/site/posts`, 30-item pagination, legacy `/sites/postList` shell/sidebar/list/link anchors
 - [x] 이슈 목록: site admin 전용 `/api/v1/site/issues`, `open`/`closed` tabs, 30-item pagination, legacy `/sites/issueList` shell/sidebar/list/link anchors

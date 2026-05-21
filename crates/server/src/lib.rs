@@ -2,6 +2,7 @@ pub mod persistence;
 pub mod runtime_config;
 pub mod session;
 
+use axum::body::Bytes;
 use axum::extract::{Form, Multipart, Query, RawQuery, Request};
 use axum::http::HeaderMap;
 use axum::middleware::{from_fn, Next};
@@ -301,6 +302,10 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let markdown_render_backend = route_backend.clone();
     let markdown_render_session_manager = session_manager.clone();
     let markdown_render_base_path = base_path.clone();
+    let site_no_avatar_backend = route_backend.clone();
+    let site_no_avatar_session_manager = session_manager.clone();
+    let site_set_avatar_backend = route_backend.clone();
+    let site_set_avatar_session_manager = session_manager.clone();
     let rest_router = build_rest_router(pilot_service.clone());
 
     let mut base_router = Router::new()
@@ -428,6 +433,33 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         id,
                         file_delete_session_manager.clone(),
                         file_delete_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/noAvatarUsers",
+            get(move |headers: HeaderMap| {
+                async move {
+                    direct_read_site_no_avatar_users(
+                        headers,
+                        site_no_avatar_session_manager.clone(),
+                        site_no_avatar_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/setAttachmentToUserAvatar",
+            post(move |headers: HeaderMap, body: Bytes| {
+                async move {
+                    direct_set_attachment_to_user_avatar(
+                        headers,
+                        body,
+                        site_set_avatar_session_manager.clone(),
+                        site_set_avatar_backend.clone(),
                     )
                     .await
                 }
@@ -1711,6 +1743,48 @@ async fn direct_confirm_workspace_email(
     }
 }
 
+async fn direct_read_site_no_avatar_users(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_read_site_no_avatar_users(headers, service).await {
+        Ok(Json(payload)) => Json(payload).into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_set_attachment_to_user_avatar(
+    headers: HeaderMap,
+    body: Bytes,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let Ok(body) = serde_json::from_slice::<RestSiteAvatarFromAttachmentBody>(&body) else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "message": "Expecting Json data" })),
+        )
+            .into_response();
+    };
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_set_site_user_avatar_from_attachment(headers, body, service).await {
+        Ok(Json(payload)) => Json(payload).into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
 fn form_value<'a>(form: &'a HashMap<String, String>, keys: &[&str]) -> &'a str {
     keys.iter()
         .find_map(|key| form.get(*key).map(String::as_str))
@@ -2684,8 +2758,36 @@ struct RestSiteUserListResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RestSiteNoAvatarUserItem {
+    email: String,
+    login_id: String,
+    name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteNoAvatarUsersResponse {
+    users: Vec<RestSiteNoAvatarUserItem>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RestSiteUserMutationResponse {
     user: RestSiteUserItem,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteAvatarFromAttachmentBody {
+    avatar_file_id: i64,
+    email: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteLegacyOkResponse {
+    message: String,
+    status: u16,
 }
 
 #[derive(Serialize)]
@@ -4240,6 +4342,28 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap, Query(query): Query<RestSiteUsersQuery>| {
                     let service = service.clone();
                     async move { rest_read_site_users(headers, query, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/no-avatar-users",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_read_site_no_avatar_users(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/users/avatar-from-attachment",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap, Json(body): Json<RestSiteAvatarFromAttachmentBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_set_site_user_avatar_from_attachment(headers, body, service).await
+                    }
                 }
             }),
         )
@@ -7433,6 +7557,55 @@ async fn rest_read_site_users(
         .map_err(|error| RestRouteError::internal(error.to_string()))?;
 
     Ok(Json(rest_site_user_list_from_record(record)))
+}
+
+async fn rest_read_site_no_avatar_users(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteNoAvatarUsersResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
+    let users = repository
+        .list_site_no_avatar_users()
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+
+    Ok(Json(RestSiteNoAvatarUsersResponse {
+        users: users
+            .into_iter()
+            .map(rest_site_no_avatar_user_from_record)
+            .collect(),
+    }))
+}
+
+async fn rest_set_site_user_avatar_from_attachment(
+    headers: HeaderMap,
+    body: RestSiteAvatarFromAttachmentBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteLegacyOkResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    if body.avatar_file_id <= 0 {
+        return Err(RestRouteError::bad_request("avatarFileId is required"));
+    }
+    if body.email.trim().is_empty() {
+        return Err(RestRouteError::bad_request("email is required"));
+    }
+
+    match repository
+        .set_user_avatar_from_attachment_by_email(&body.email, body.avatar_file_id)
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+    {
+        persistence::SiteUserAvatarFromAttachmentResult::Applied
+        | persistence::SiteUserAvatarFromAttachmentResult::Ignored => {
+            Ok(Json(rest_site_legacy_ok_response()))
+        }
+        persistence::SiteUserAvatarFromAttachmentResult::AttachmentNotFound => {
+            Err(RestRouteError::not_found("attachment not found"))
+        }
+        persistence::SiteUserAvatarFromAttachmentResult::UserNotFound => {
+            Err(RestRouteError::not_found("user not found"))
+        }
+    }
 }
 
 async fn rest_toggle_site_user_admin(
@@ -11307,6 +11480,23 @@ fn rest_site_user_list_from_record(
             .into_iter()
             .map(rest_site_user_from_record)
             .collect(),
+    }
+}
+
+fn rest_site_no_avatar_user_from_record(
+    record: persistence::SiteNoAvatarUserRecord,
+) -> RestSiteNoAvatarUserItem {
+    RestSiteNoAvatarUserItem {
+        email: record.email,
+        login_id: record.login_id,
+        name: record.name,
+    }
+}
+
+fn rest_site_legacy_ok_response() -> RestSiteLegacyOkResponse {
+    RestSiteLegacyOkResponse {
+        message: "OK".to_string(),
+        status: 200,
     }
 }
 

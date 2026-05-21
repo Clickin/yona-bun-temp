@@ -10,7 +10,7 @@ use std::sync::{Mutex, OnceLock};
 use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
-    project_user, site_admin, AppRepository, CreateIssueInput, CreatePostingInput,
+    attachment, project_user, site_admin, AppRepository, CreateIssueInput, CreatePostingInput,
     IssueMutationInput, PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
@@ -215,6 +215,29 @@ async fn rest_json(
         .unwrap()
 }
 
+async fn rest_raw_post(
+    app: axum::Router,
+    uri: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    content_type: &str,
+    body: &str,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(Method::POST)
+        .uri(uri)
+        .header(http::header::CONTENT_TYPE, content_type);
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+    app.oneshot(builder.body(Body::from(body.to_string())).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn rest_delete(
     app: axum::Router,
     uri: &str,
@@ -246,6 +269,30 @@ async fn mark_site_admin(db: &DatabaseConnection, user_id: i64) {
     .expect("site admin insert");
 }
 
+async fn insert_attachment(
+    db: &DatabaseConnection,
+    container_type: &str,
+    container_id: i64,
+    owner_login_id: &str,
+    name: &str,
+    mime_type: &str,
+) -> attachment::Model {
+    attachment::ActiveModel {
+        id: NotSet,
+        name: Set(Some(name.to_string())),
+        hash: Set(Some(format!("{container_type}-{container_id}-{name}"))),
+        container_type: Set(Some(container_type.to_string())),
+        mime_type: Set(Some(mime_type.to_string())),
+        size: Set(Some(256)),
+        container_id: Set(container_id),
+        created_date: Set(None),
+        owner_login_id: Set(Some(owner_login_id.to_string())),
+    }
+    .insert(db)
+    .await
+    .expect("attachment insert")
+}
+
 fn user<'a>(payload: &'a Value, login_id: &str) -> &'a Value {
     payload["users"]
         .as_array()
@@ -262,6 +309,135 @@ fn login_ids(payload: &Value) -> Vec<String> {
         .iter()
         .map(|user| user["loginId"].as_str().unwrap().to_string())
         .collect()
+}
+
+#[tokio::test]
+async fn site_admin_no_avatar_json_routes_follow_legacy_contract() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (_plain_csrf, plain_cookie, _plain_id) = register_user(app.clone(), "plain").await;
+    let (_avatar_csrf, _avatar_cookie, avatar_id) = register_user(app.clone(), "withavatar").await;
+    let (_locked_csrf, _locked_cookie, _locked_id) = register_user(app.clone(), "locked").await;
+    mark_site_admin(&db, admin_id).await;
+
+    insert_attachment(
+        &db,
+        "USER_AVATAR",
+        avatar_id,
+        "withavatar",
+        "avatar.png",
+        "image/png",
+    )
+    .await;
+    repo.toggle_site_user_account_lock("locked")
+        .await
+        .expect("lock user")
+        .expect("locked user");
+
+    let unauthenticated = rest_get(app.clone(), "/yona/api/v1/site/no-avatar-users", None).await;
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let forbidden = rest_get(
+        app.clone(),
+        "/yona/api/v1/site/no-avatar-users",
+        Some(&plain_cookie),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let payload = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/site/no-avatar-users",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    let ids = login_ids(&payload);
+    assert!(ids.contains(&"plain".to_string()));
+    assert!(!ids.contains(&"withavatar".to_string()));
+    assert!(!ids.contains(&"locked".to_string()));
+    let plain = user(&payload, "plain");
+    assert_eq!(plain["loginId"], "plain");
+    assert_eq!(plain["name"], "plain");
+    assert_eq!(plain["email"], "plain@example.com");
+    assert!(plain.get("emailAddress").is_none());
+
+    let legacy_payload = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/sites/noAvatarUsers",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(login_ids(&legacy_payload), ids);
+
+    let bad_json = rest_raw_post(
+        app.clone(),
+        "/yona/sites/setAttachmentToUserAvatar",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "text/plain",
+        "not-json",
+    )
+    .await;
+    assert_eq!(bad_json.status(), StatusCode::BAD_REQUEST);
+    let bad_json_payload: Value = serde_json::from_str(&response_text(bad_json).await).unwrap();
+    assert_eq!(bad_json_payload["message"], "Expecting Json data");
+
+    let uploaded_by_admin = insert_attachment(
+        &db,
+        "USER",
+        admin_id,
+        "siteboss",
+        "selected.png",
+        "image/png",
+    )
+    .await;
+    let promoted = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/site/users/avatar-from-attachment",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+            json!({
+                "avatarFileId": uploaded_by_admin.id,
+                "email": "plain@example.com"
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(promoted["status"], 200);
+    assert_eq!(promoted["message"], "OK");
+
+    let moved_attachment = repo
+        .read_attachment_by_id(uploaded_by_admin.id)
+        .await
+        .expect("read promoted attachment")
+        .expect("promoted attachment");
+    let plain_user = repo
+        .find_user_by_login_id("plain")
+        .await
+        .expect("read plain user")
+        .expect("plain user");
+    assert_eq!(moved_attachment.container_type, "USER_AVATAR");
+    assert_eq!(moved_attachment.container_id, plain_user.id);
+
+    let after_promote = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/site/no-avatar-users",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert!(!login_ids(&after_promote).contains(&"plain".to_string()));
 }
 
 #[tokio::test]

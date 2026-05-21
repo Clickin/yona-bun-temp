@@ -45,10 +45,25 @@ pub struct SiteUserListRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SiteNoAvatarUserRecord {
+    pub email: String,
+    pub login_id: String,
+    pub name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SiteUserDeleteResult {
     Deleted(SiteUserRecord),
     NotFound,
     OnlyManager,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SiteUserAvatarFromAttachmentResult {
+    Applied,
+    AttachmentNotFound,
+    Ignored,
+    UserNotFound,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
