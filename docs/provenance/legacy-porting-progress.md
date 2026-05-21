@@ -70,6 +70,7 @@ Interpretation:
 - [x] Legacy login failure message keys
 - [x] Signup
 - [x] Signup duplicate login/email rejection
+- [x] Direct legacy logout routes (`/users/logout`, `/logout`)
 - [x] Password reset
 - [x] Email verification
 - [x] Profile update basics

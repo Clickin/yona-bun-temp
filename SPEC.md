@@ -260,6 +260,7 @@ GET   /resetPassword            → 비밀번호 재설정 폼
 POST  /resetPassword            → 비밀번호 재설정 처리
 GET   /verify/:loginId/:code    → 이메일 인증 확인
 GET   /logout                   → 로그아웃
+GET   /users/logout             → 로그아웃
 GET   /authenticate/:provider   → OAuth 시작
 ```
 
@@ -269,7 +270,7 @@ GET   /authenticate/:provider   → OAuth 시작
 | ---------------------------- | ------------------------------------------------------------------- | --------- | ----- |
 | 로그인 (ID/Password)         | `UserApp.login()` → bcrypt 검증 → 세션 생성 → `redirectUrl`로 이동  | ✅ 구현   | 1     |
 | 회원가입                     | `UserApp.newUser()` → ID/email 중복검사 → 생성 → 선택적 이메일 인증 | ✅ 구현   | 1     |
-| 로그아웃                     | 세션 파기                                                           | ✅ 구현   | 1     |
+| 로그아웃                     | 세션 파기 후 Referer redirect                                      | ✅ direct `/logout`, `/users/logout` 구현 | 1     |
 | 비밀번호 찾기 (이메일 발송)  | verification code 생성 → 이메일 발송 → 토큰 링크                    | ✅ 구현   | 1     |
 | 비밀번호 재설정              | 토큰 검증 → 새 비밀번호 설정                                        | ✅ 구현   | 1     |
 | 이메일 인증                  | verification code 확인 → 사용자 활성화                              | ✅ 구현   | 1     |
@@ -1398,7 +1399,8 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/lostPassword`                    | GET/POST | `POST /lostPassword` direct           | `lostPassword/`                               | implemented        |
 | `/resetPassword`                   | GET/POST | `POST /resetPassword` direct          | `resetPassword/`                              | implemented        |
 | `/verify/:loginId/:code`           | GET      | `POST /api/v1/auth/verify`            | `verify/$loginId/$code`                       | implemented        |
-| `/logout`                          | GET      | `POST /api/v1/auth/sign-out`          | —                                             | implemented        |
+| `/logout`                          | GET      | direct GET logout + `POST /api/v1/auth/sign-out` | —                                             | implemented        |
+| `/users/logout`                    | GET      | direct GET logout                     | —                                             | implemented        |
 | `/me`                              | GET      | SPA                                   | `me/`                                         | implemented        |
 | `/:user`                           | GET      | `GET /api/v1/users/:loginId/profile`; `GET /api/v1/users/:loginId/statistics` | `$user/`                                      | implemented        |
 | `/user/editform`                   | GET      | SPA                                   | `user/editform/`                              | implemented        |

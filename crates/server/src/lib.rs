@@ -219,6 +219,10 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     };
     let route_backend = backend.clone();
     let browser_runtime = BrowserRuntimeConfig::from_base_path(&base_path);
+    let direct_logout_session_manager = session_manager.clone();
+    let direct_logout_base_path = base_path.clone();
+    let direct_user_logout_session_manager = session_manager.clone();
+    let direct_user_logout_base_path = base_path.clone();
     let lost_password_session_manager = session_manager.clone();
     let lost_password_backend = route_backend.clone();
     let lost_password_base_path = base_path.clone();
@@ -340,6 +344,32 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
         .route(
             "/api/v1/{*rest_path}",
             any(|| async { rest_not_found_response() }),
+        )
+        .route(
+            "/logout",
+            get(move |headers: HeaderMap| {
+                async move {
+                    direct_legacy_logout(
+                        headers,
+                        direct_logout_session_manager.clone(),
+                        direct_logout_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/users/logout",
+            get(move |headers: HeaderMap| {
+                async move {
+                    direct_legacy_logout(
+                        headers,
+                        direct_user_logout_session_manager.clone(),
+                        direct_user_logout_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
         )
         .route(
             "/lostPassword",
@@ -1978,6 +2008,29 @@ async fn direct_update_project_overview(
         Ok(_) => Json(serde_json::json!({ "overview": overview })).into_response(),
         Err(error) => error.into_response(),
     }
+}
+
+async fn direct_legacy_logout(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    base_path: String,
+) -> Response {
+    let redirect_target = headers
+        .get(http::header::REFERER)
+        .and_then(|value| value.to_str().ok())
+        .filter(|value| !value.trim().is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| base_path_href(&base_path, "/"));
+    let previous_token = session_manager
+        .read_session_from_headers(&headers)
+        .map(|session| session.token);
+    let anonymous_session = session_manager.create_anonymous_session(previous_token.as_deref());
+
+    let mut ctx = Context::new(headers);
+    attach_session_headers(&mut ctx, &session_manager, &anonymous_session);
+    let mut response = Redirect::to(&redirect_target).into_response();
+    append_response_headers(response.headers_mut(), &ctx.response_headers);
+    response
 }
 
 async fn direct_toggle_site_admin_role(

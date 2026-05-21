@@ -427,6 +427,99 @@ async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
 }
 
 #[tokio::test]
+async fn direct_legacy_logout_routes_clear_session_and_redirect_to_referer() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+
+    let (app, _, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/auth/register")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let logout = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/users/logout")
+                .header(http::header::COOKIE, &cookie_header)
+                .header(http::header::REFERER, "/yona/me")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(logout.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        logout
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/me")
+    );
+    let logout_cookie_header = set_cookie_headers(&logout)
+        .iter()
+        .map(|value| value.split(';').next().unwrap().to_string())
+        .collect::<Vec<_>>()
+        .join("; ");
+    assert!(!logout_cookie_header.is_empty());
+
+    let current = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/session")
+                .header(http::header::COOKIE, &logout_cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(current.status(), StatusCode::OK);
+    let current_json = response_text(current).await;
+    assert!(current_json.contains("\"isAnonymous\":true"));
+
+    let oauth_logout = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/logout")
+                .header(http::header::COOKIE, &logout_cookie_header)
+                .header(http::header::REFERER, "/yona/projects")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(oauth_logout.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        oauth_logout
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/projects")
+    );
+}
+
+#[tokio::test]
 async fn rest_verify_user_confirms_pending_signup() {
     let _guard = auth_env_lock().lock().unwrap();
     clear_test_outbox();
