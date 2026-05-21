@@ -231,6 +231,12 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let lost_password_public_origin = public_origin.clone();
     let reset_password_backend = route_backend.clone();
     let reset_password_base_path = base_path.clone();
+    let delete_email_session_manager = session_manager.clone();
+    let delete_email_backend = route_backend.clone();
+    let delete_email_base_path = base_path.clone();
+    let set_main_email_session_manager = session_manager.clone();
+    let set_main_email_backend = route_backend.clone();
+    let set_main_email_base_path = base_path.clone();
     let send_validation_session_manager = session_manager.clone();
     let send_validation_backend = route_backend.clone();
     let send_validation_base_path = base_path.clone();
@@ -418,6 +424,36 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         form,
                         reset_password_backend.clone(),
                         reset_password_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/user/email/delete/{email_id}",
+            delete(move |headers: HeaderMap, Path(email_id): Path<String>| {
+                async move {
+                    direct_delete_workspace_email(
+                        headers,
+                        email_id,
+                        delete_email_session_manager.clone(),
+                        delete_email_backend.clone(),
+                        delete_email_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/user/email/setAsMain/{email_id}",
+            put(move |headers: HeaderMap, Path(email_id): Path<String>| {
+                async move {
+                    direct_set_main_workspace_email(
+                        headers,
+                        email_id,
+                        set_main_email_session_manager.clone(),
+                        set_main_email_backend.clone(),
+                        set_main_email_base_path.clone(),
                     )
                     .await
                 }
@@ -1796,6 +1832,44 @@ async fn direct_reset_password(
     };
 
     Redirect::to(&base_path_href(&base_path, &redirect_path)).into_response()
+}
+
+async fn direct_delete_workspace_email(
+    headers: HeaderMap,
+    email_id: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_delete_workspace_email(headers, email_id, service).await {
+        Ok(_) => redirect_to(&base_path, "/user/editform"),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_set_main_workspace_email(
+    headers: HeaderMap,
+    email_id: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_set_main_workspace_email(headers, email_id, service).await {
+        Ok(_) => redirect_to(&base_path, "/user/editform"),
+        Err(error) => error.into_response(),
+    }
 }
 
 async fn direct_send_workspace_email_validation(

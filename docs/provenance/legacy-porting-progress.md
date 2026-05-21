@@ -93,7 +93,7 @@ Interpretation:
 - [x] Recent project list basics
 - [x] Favorite project list basics
 - [x] User settings legacy paths under `/user/editform`
-- [x] Email management
+- [x] Email management, including direct delete/set-main routes
 - [x] Password settings
 - [x] Token settings
 - [x] Avatar upload/crop/display

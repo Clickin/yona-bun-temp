@@ -1572,6 +1572,121 @@ async fn verify_user_activates_pending_account_and_rejects_invalid_or_expired_li
 }
 
 #[tokio::test]
+async fn direct_legacy_email_delete_and_set_main_routes_redirect_and_mutate_email_state() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
+    std::env::remove_var("YONA_AUTH_EMAIL_VERIFICATION_ENABLED");
+    let (app, repository, db) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+
+    let register = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/_pilot/RegisterWithPassword")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from("{\"loginId\":\"door\",\"name\":\"Door\",\"emailAddress\":\"door@example.com\",\"password\":\"doorpass1\",\"retypedPassword\":\"doorpass1\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(register.status(), StatusCode::OK);
+
+    let user = repository
+        .find_user_by_identifier("door")
+        .await
+        .unwrap()
+        .expect("registered user");
+    repository
+        .add_workspace_email_for_user(user.id, "alt@example.com")
+        .await
+        .expect("alt email");
+    let alt_email = email::Entity::find()
+        .filter(email::Column::UserId.eq(Some(user.id)))
+        .filter(email::Column::Email.eq(Some("alt@example.com".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("alt email row");
+    let mut alt_email_active = email::ActiveModel::from(
+        email::Entity::find_by_id(alt_email.id)
+            .one(&db)
+            .await
+            .unwrap()
+            .expect("alt email row"),
+    );
+    alt_email_active.valid = Set(Some(1));
+    alt_email_active.update(&db).await.unwrap();
+
+    let set_main = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri(format!("/yona/user/email/setAsMain/{}", alt_email.id))
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(set_main.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        set_main.headers().get(http::header::LOCATION).unwrap(),
+        "/yona/user/editform"
+    );
+
+    let updated_user = repository
+        .find_user_by_identifier("door")
+        .await
+        .unwrap()
+        .expect("updated user");
+    assert_eq!(updated_user.email_address, "alt@example.com");
+    assert!(email::Entity::find_by_id(alt_email.id)
+        .one(&db)
+        .await
+        .unwrap()
+        .is_none());
+    let old_main_email = email::Entity::find()
+        .filter(email::Column::UserId.eq(Some(user.id)))
+        .filter(email::Column::Email.eq(Some("door@example.com".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("old main email row");
+
+    let delete_old_main = app
+        .oneshot(
+            Request::builder()
+                .method(Method::DELETE)
+                .uri(format!("/yona/user/email/delete/{}", old_main_email.id))
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(delete_old_main.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        delete_old_main
+            .headers()
+            .get(http::header::LOCATION)
+            .unwrap(),
+        "/yona/user/editform"
+    );
+    assert!(email::Entity::find_by_id(old_main_email.id)
+        .one(&db)
+        .await
+        .unwrap()
+        .is_none());
+}
+
+#[tokio::test]
 async fn workspace_settings_mutations_round_trip_through_workspace_overview() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");
