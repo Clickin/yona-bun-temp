@@ -12024,6 +12024,21 @@ impl AppRepository {
             push_unique_user_id(&mut receivers, &mut seen, Some(user_id));
         }
 
+        if let Some(project) = self.read_project_by_id(project_id).await? {
+            for user_id in self
+                .pull_request_review_comment_author_ids(pull_request_id)
+                .await?
+            {
+                self.push_readable_pull_request_watcher_id(
+                    &project,
+                    &mut receivers,
+                    &mut seen,
+                    Some(user_id),
+                )
+                .await?;
+            }
+        }
+
         for user_id in self
             .active_watch_user_ids("PROJECT", &project_id.to_string())
             .await?

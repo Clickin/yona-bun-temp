@@ -321,7 +321,7 @@ Interpretation:
 - [x] Project watch toggle basics
 - [x] Notification event list and legacy `/notification` + `/notifications` route shell parity
 - [~] Issue event notifications
-- [ ] PR/review notifications
+- [~] PR/review notifications: PR state-change receivers now include review comment authors via legacy watcher participation; full mail/delivery parity remains
 - [ ] Email notification fan-out parity
 - [ ] BCC mode
 - [~] Notification interval batching queue/drain helper

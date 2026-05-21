@@ -210,6 +210,36 @@ async fn count_rows(db: &DatabaseConnection, table: &str, event_type: &str) -> u
     rows.len() as u64
 }
 
+async fn notification_receivers_for_event(
+    db: &DatabaseConnection,
+    event_type: &str,
+    resource_type: &str,
+    resource_id: i64,
+) -> Vec<i64> {
+    let backend = db.get_database_backend();
+    let rows = db
+        .query_all(Statement::from_sql_and_values(
+            backend,
+            r#"
+            SELECT neu.n4user_id AS n4user_id
+            FROM notification_event ne
+            JOIN notification_event_n4user neu ON neu.notification_event_id = ne.id
+            WHERE ne.event_type = ? AND ne.resource_type = ? AND ne.resource_id = ?
+            ORDER BY neu.n4user_id
+            "#,
+            vec![
+                event_type.to_string().into(),
+                resource_type.to_string().into(),
+                resource_id.to_string().into(),
+            ],
+        ))
+        .await
+        .expect("notification receivers");
+    rows.into_iter()
+        .map(|row| row.try_get("", "n4user_id").expect("receiver id"))
+        .collect()
+}
+
 fn temp_path(label: &str) -> PathBuf {
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -535,6 +565,99 @@ async fn pull_request_watcher_projection_matches_legacy_get_watchers() {
     )
     .await;
     assert_eq!(private_detail["watcherCount"], 1);
+
+    fs::remove_dir_all(data_root).unwrap();
+}
+
+#[tokio::test]
+async fn pull_request_state_notifications_include_legacy_review_comment_watchers() {
+    let _yona_data_guard = lock_yona_data_tests().await;
+    let data_root = temp_path("notification-watchers-data");
+    fs::create_dir_all(&data_root).unwrap();
+    std::env::set_var("YONA_DATA", &data_root);
+    clear_test_webhook_outbox();
+
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "notifyowner").await;
+    let (commenter_csrf, commenter_cookie, commenter_id) =
+        register_user(app.clone(), "notifycommenter").await;
+
+    create_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "notifyowner",
+        "notifyProject",
+        "public",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("notifyowner", "notifyProject")
+        .await
+        .unwrap()
+        .expect("project");
+    seed_bare_repo_with_branches(&data_root, project.id);
+
+    let created = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/notifyowner/projects/notifyProject/pull-requests",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "fromProjectId": project.id,
+                "toProjectId": project.id,
+                "fromBranch": "topic/pr",
+                "toBranch": "main",
+                "title": "Notification watcher parity",
+                "bodyMarkdown": "Notification watcher body"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let pull_request_id = created["id"].as_i64().unwrap();
+
+    response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/notifyowner/projects/notifyProject/pull-requests/1/comments",
+            Some(&commenter_cookie),
+            Some(&commenter_csrf),
+            json!({
+                "contentsMarkdown": "Comment author participates in PR watcher set",
+                "commitId": "topic-head"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    response_json(
+        rest_json(
+            app,
+            Method::POST,
+            "/yona/api/v1/owners/notifyowner/projects/notifyProject/pull-requests/1/close",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({}),
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(
+        notification_receivers_for_event(
+            &db,
+            "PULL_REQUEST_STATE_CHANGED",
+            "PULL_REQUEST",
+            pull_request_id
+        )
+        .await,
+        vec![commenter_id]
+    );
 
     fs::remove_dir_all(data_root).unwrap();
 }

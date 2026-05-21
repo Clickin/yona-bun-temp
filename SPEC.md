@@ -811,6 +811,8 @@ thread를 생성하고 권한 있는 review comment edit/delete를 지원한다.
 후속 PR watcher projection slice는 legacy `PullRequestTest.getWatchers_*` 의미에 맞춰 contributor,
 명시 PR watcher, target project watcher, review comment author를 detail `watcherCount`/`isWatching`에
 반영하고, PR-level unwatch 및 project READ 권한 필터를 적용한다.
+같은 legacy `getWatchers` 수신자 의미를 PR state/change notification receiver에도 일부 반영해,
+review comment author가 이후 PR state change 알림 수신자에 포함된다.
 `/api/v1/owners/:owner/projects/:project/pull-requests`,
 `/:number`, `/:number/changes`, `/reviews`, `/api/v1/organizations/:organization/pull-requests`
 가 project READ + code-accessible-member-only 정책을 통과한 viewer에게만 열리며, mutation은
@@ -1340,7 +1342,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 라벨/마일스톤     | ✅ 구현           | 라벨/카테고리 관리, 마일스톤 CRUD/state 구현                     |
 | 코드 브라우저     | 🔶 Phase 3L 구현  | Git 폴더/파일 보기, 브랜치 선택기, raw/open/image 파일 표면, archive download, syntax/line-number 표시, commit history/detail diff/compare, commit comments/thread lifecycle, branch list/latest PR/default/delete, project create 시 bare Git repository provisioning, Smart HTTP transport, push post-receive records |
 | Git Smart HTTP    | 🔶 Phase 3L 구현 | `git http-backend` wrapper로 clone/pull upload-pack 및 인증/권한이 적용된 receive-pack transport를 구현하고, receive-pack 후 `NEW_COMMIT` notification, pushed-branch metadata, push JSON webhook outbox를 기록한다 |
-| PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, required/lacking reviewer projection, PR watcher projection, 일반 PR comment, thread open/close, fork/clone, conflict-free merge, conflict 표시/merge 비활성화 안내, source branch cleanup/restore, PR commit-changed event/webhook, side-aware single-line ranged inline review CRUD. in-app conflict resolution/multi-line review polish는 gap |
+| PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, required/lacking reviewer projection, PR watcher projection, PR watcher-derived state notification receiver, 일반 PR comment, thread open/close, fork/clone, conflict-free merge, conflict 표시/merge 비활성화 안내, source branch cleanup/restore, PR commit-changed event/webhook, side-aware single-line ranged inline review CRUD. in-app conflict resolution/multi-line review polish는 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, mail queue staging |
 | 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment/merge/commit-changed non-JSON fan-out plus git-push JSON payloads; delivery history and hardening remain gaps |
