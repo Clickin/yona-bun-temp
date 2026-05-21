@@ -1244,7 +1244,9 @@ pub struct CreatePullRequestCommentInput {
     pub prev_commit_id: Option<String>,
     pub project_name: String,
     pub pull_request_number: i64,
+    pub end_side: Option<String>,
     pub start_line: Option<i32>,
+    pub start_side: Option<String>,
     pub thread_id: Option<i64>,
 }
 
@@ -1352,10 +1354,12 @@ pub struct ReviewThreadRecord {
     pub commit_id: String,
     pub created_label: String,
     pub end_line: Option<i32>,
+    pub end_side: Option<String>,
     pub id: i64,
     pub path: String,
     pub prev_commit_id: String,
     pub start_line: Option<i32>,
+    pub start_side: Option<String>,
     pub state: String,
 }
 

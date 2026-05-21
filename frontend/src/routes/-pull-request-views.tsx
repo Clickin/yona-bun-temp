@@ -187,9 +187,11 @@ type PullRequestInlineCommentSubmitInput = {
   commitId?: string;
   contentsMarkdown: string;
   endLine: number;
+  endSide: "A" | "B";
   path: string;
   prevCommitId?: string;
   startLine: number;
+  startSide: "A" | "B";
 };
 
 function pullRequestQueryString(query: PullRequestListQuery, category: PullRequestListCategory) {
@@ -1152,9 +1154,12 @@ export function PullRequestChangesPage(props: {
   const [inlineAttachmentIds, setInlineAttachmentIds] = React.useState<number[]>([]);
   const canComment = pr?.permissions.canComment === true;
 
-  function inlineThreadsForLine(path: string, line: number) {
+  function inlineThreadsForLine(path: string, line: number, side: "A" | "B") {
     return threads.filter(
-      (thread) => thread.path === path && (thread.endLine ?? thread.startLine) === line,
+      (thread) =>
+        thread.path === path &&
+        (thread.endLine ?? thread.startLine) === line &&
+        ((thread.endSide ?? thread.startSide) || "B") === side,
     );
   }
 
@@ -1179,9 +1184,11 @@ export function PullRequestChangesPage(props: {
       commitId: pr.mergedCommitIdTo,
       contentsMarkdown,
       endLine: inlineDraft.line,
+      endSide: inlineDraft.side,
       path: inlineDraft.path,
       prevCommitId: pr.mergedCommitIdFrom,
       startLine: inlineDraft.line,
+      startSide: inlineDraft.side,
     });
     setInlineAttachmentIds([]);
     setInlineCommentText("");
@@ -1219,9 +1226,9 @@ export function PullRequestChangesPage(props: {
             {diffLines.map((line) => {
               const lineSide = line.kind === "remove" ? "A" : "B";
               const lineThreads =
-                line.commentLine === undefined || line.kind === "remove"
+                line.commentLine === undefined
                   ? []
-                  : inlineThreadsForLine(file.path, line.commentLine);
+                  : inlineThreadsForLine(file.path, line.commentLine, lineSide);
               const isInlineDraftOpen =
                 inlineDraft?.path === file.path &&
                 inlineDraft.line === line.commentLine &&
@@ -1235,7 +1242,7 @@ export function PullRequestChangesPage(props: {
                     data-type={diffLineClass(line.kind)}
                   >
                     <td className="linenum">
-                      {line.commentLine !== undefined && line.kind !== "remove" && canComment ? (
+                      {line.commentLine !== undefined && canComment ? (
                         <button
                           aria-label={`Comment on ${file.path}:${line.commentLine}`}
                           className="btn-transparent line-comment-trigger"

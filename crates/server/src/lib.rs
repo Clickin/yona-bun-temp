@@ -6876,9 +6876,11 @@ struct RestPullRequestCommentBody {
     commit_id: Option<String>,
     contents_markdown: String,
     end_line: Option<i32>,
+    end_side: Option<String>,
     path: Option<String>,
     prev_commit_id: Option<String>,
     start_line: Option<i32>,
+    start_side: Option<String>,
     thread_id: Option<i64>,
 }
 
@@ -6934,10 +6936,12 @@ struct RestReviewThread {
     commit_id: String,
     created_label: String,
     end_line: Option<i32>,
+    end_side: Option<String>,
     id: i64,
     path: String,
     prev_commit_id: String,
     start_line: Option<i32>,
+    start_side: Option<String>,
     state: String,
 }
 
@@ -15969,12 +15973,14 @@ async fn rest_create_pull_request_comment(
             commit_id: body.commit_id,
             contents_markdown: body.contents_markdown,
             end_line: body.end_line,
+            end_side: body.end_side,
             owner_name,
             path: body.path,
             prev_commit_id: body.prev_commit_id,
             project_name,
             pull_request_number,
             start_line: body.start_line,
+            start_side: body.start_side,
             thread_id: body.thread_id,
         })
         .await
@@ -27998,10 +28004,12 @@ fn rest_review_thread_from_record(
         commit_id: record.commit_id,
         created_label: record.created_label,
         end_line: record.end_line,
+        end_side: record.end_side,
         id: record.id,
         path: record.path,
         prev_commit_id: record.prev_commit_id,
         start_line: record.start_line,
+        start_side: record.start_side,
         state: record.state,
     }
 }
@@ -28027,10 +28035,12 @@ fn rest_pull_request_thread_from_record(
         commit_id: record.commit_id,
         created_label: record.created_label,
         end_line: record.end_line,
+        end_side: record.end_side,
         id: record.id,
         path: record.path,
         prev_commit_id: record.prev_commit_id,
         start_line: record.start_line,
+        start_side: record.start_side,
         state: record.state,
     }
 }
@@ -28056,10 +28066,12 @@ fn rest_commit_thread_from_record(
         commit_id: record.commit_id,
         created_label: record.created_label,
         end_line: record.end_line,
+        end_side: record.end_side,
         id: record.id,
         path: record.path,
         prev_commit_id: record.prev_commit_id,
         start_line: record.start_line,
+        start_side: record.start_side,
         state: record.state,
     }
 }

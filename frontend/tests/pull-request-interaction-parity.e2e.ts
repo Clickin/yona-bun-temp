@@ -299,9 +299,11 @@ test.beforeEach(async ({ page }) => {
           contentsMarkdown?: string;
           commitId?: string;
           endLine?: number;
+          endSide?: string;
           path?: string;
           prevCommitId?: string;
           startLine?: number;
+          startSide?: string;
         };
         if (body.path) {
           pullRequest = detail({
@@ -328,10 +330,12 @@ test.beforeEach(async ({ page }) => {
                 commitId: body.commitId ?? "",
                 createdLabel: "2026-05-04",
                 endLine: body.endLine ?? 1,
+                endSide: body.endSide ?? "B",
                 id: 17,
                 path: body.path,
                 prevCommitId: body.prevCommitId ?? "",
                 startLine: body.startLine ?? 1,
+                startSide: body.startSide ?? "B",
                 state: "open",
               },
             ],
@@ -517,7 +521,8 @@ test("covers create/edit forms and PR interaction actions without placeholders",
 
   await page.goto("/yona/admin/projectYobi/pullRequest/9/changes");
   await expect(page.locator(".diff-file[data-file-path='src/lib.rs']")).toBeVisible();
-  await page.getByRole("button", { name: "Comment on src/lib.rs:1" }).first().click();
+  await expect(page.locator("tr.remove .line-comment-trigger")).toBeVisible();
+  await page.locator("tr.remove .line-comment-trigger").click();
   await expect(page.locator(".inline-review-form")).toBeVisible();
   const inlineReviewRequest = page.waitForRequest(
     (request) => request.url().endsWith("/pull-requests/9/comments") && request.method() === "POST",
@@ -528,17 +533,21 @@ test("covers create/edit forms and PR interaction actions without placeholders",
     commitId?: string;
     contentsMarkdown?: string;
     endLine?: number;
+    endSide?: string;
     path?: string;
     prevCommitId?: string;
     startLine?: number;
+    startSide?: string;
   };
   expect(submittedInlineReview).toMatchObject({
     commitId: "abcdef123456",
     contentsMarkdown: "Inline review body",
     endLine: 1,
+    endSide: "A",
     path: "src/lib.rs",
     prevCommitId: "base",
     startLine: 1,
+    startSide: "A",
   });
   await expect(page.locator("#comment-18")).toContainText("Inline review body");
   await expect(page.locator("#comment-18 [data-request-method='delete']")).toHaveAttribute(

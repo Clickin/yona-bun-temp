@@ -73,13 +73,12 @@
   bare `http://`/`https://` URL autolinks. Legacy issue-link title/state
   enrichment remains a Markdown renderer follow-up.
 - PR changes now renders line-numbered unified diff rows and allows add/context
-  lines to create a single-line ranged review thread by submitting
-  `path/startLine/endLine`, `commitId`, and `prevCommitId` to the app runtime
-  PR comment mutation. Authorized review comments expose edit/delete controls;
-  delete removes the last comment's thread like legacy `ReviewComment` deletion
-  tests. Deleted-line side awareness and multi-line selection polish remain
-  follow-up scope because the current app DTO intentionally carries no diff side
-  field.
+  and deleted lines to create a side-aware single-line ranged review thread by
+  submitting `path/startLine/endLine`, `startSide/endSide`, `commitId`, and
+  `prevCommitId` to the app runtime PR comment mutation. Authorized review
+  comments expose edit/delete controls; delete removes the last comment's thread
+  like legacy `ReviewComment` deletion tests. Multi-line selection polish remains
+  follow-up scope.
 
 ## Merge Accept Rules
 
@@ -128,7 +127,7 @@
 | `PullRequestEventTest` | PR creation, state changes, review actions, comments, and thread state changes append legacy event rows | `pull_request_mutation_contract` event assertions |
 | `ReviewApp.review` and `unreview` | reviewers can mark and cancel review state when detail permissions allow it | `/review` and `/unreview` REST mutation contracts plus frontend action controls |
 | `PullRequestApp.newComment` and `CommentThreadApp.open/close` | authenticated readable PR users can add a general review comment; thread owners/reviewers/updaters can close/open threads | review comment and thread state REST mutations plus Playwright interaction smoke |
-| `git/viewChanges.scala.html`, `partial_diff_comment_on_line.scala.html`, `ReviewCommentTest.update`, and `ReviewCommentTest.deleteLastReviewComment` | PR changes can create and edit line-attached review comments, and deleting the last review comment removes the backing thread | PR changes line form, `path/startLine/endLine` REST comment body, PR comment PATCH/DELETE mutations, and mutation/Playwright assertions |
+| `git/viewChanges.scala.html`, `partial_diff_comment_on_line.scala.html`, `ReviewCommentTest.update`, and `ReviewCommentTest.deleteLastReviewComment` | PR changes can create and edit side-aware line-attached review comments, and deleting the last review comment removes the backing thread | PR changes line form, `path/startLine/endLine/startSide/endSide` REST comment body, PR comment PATCH/DELETE mutations, and mutation/Playwright assertions |
 | `PullRequestApp.newFork`, `fork`, and `git/fork.scala.html` | readable Git projects expose a legacy fork form, validate the selected owner/project name/scope, record fork origin, and clone the source bare repository | `/api/v1/owners/:owner/projects/:project/fork-options`, `/fork`, native `git clone --bare` wrapper, and `newFork` route parity |
 | `ReviewThreadAppTest.projectNotFound` and `projectForbidden` | review-thread listing respects project existence and project visibility before returning data | query authorization in `crates/server` plus frontend route test |
 | `ReviewSearchConditionTest.*` | review-thread list/filter semantics cover text, commit id, path, author, participant, and thread state filtering | query contract in `proto`, domain query service in `crates/domain`, list UI in `frontend` |
@@ -137,7 +136,7 @@
 
 - merge conflict resolution/help UX
 - reviewer threshold and reviewer assignment lifecycle
-- deleted-line side awareness and multi-line ranged inline review selection polish
+- multi-line ranged inline review selection polish
 - diff composition and PR event timeline
 - PR commit-changed VCS side effects, commit-changed webhook delivery, and legacy external
   `/-_-api/v1/**` compatibility

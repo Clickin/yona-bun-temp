@@ -802,10 +802,10 @@ wrapper로 conflict-free PR을 target bare repository에 병합한 뒤 `state = 
 `DELETE`/`POST /api/v1/owners/:owner/projects/:project/pull-requests/:number/source-branch`
 및 legacy `deletefrombranch`/`restorefrombranch` redirect route로 contributor가 non-default
 from branch를 삭제하거나 merge commit의 source parent에서 복구할 수 있게 한다.
-후속 ranged inline review slice는 PR changes diff에서 single-line add/context 라인의
-`path/startLine/endLine`, `commitId`, `prevCommitId`를 제출해 inline review thread를 생성하고
-권한 있는 review comment edit/delete를 지원한다. Legacy side-aware deleted-line comment와
-multi-line selection polish는 남은 gap이다.
+후속 ranged inline review slice는 PR changes diff에서 single-line add/context/deleted 라인의
+`path/startLine/endLine`, `startSide/endSide`, `commitId`, `prevCommitId`를 제출해 inline review
+thread를 생성하고 권한 있는 review comment edit/delete를 지원한다. Multi-line selection polish는
+남은 gap이다.
 `/api/v1/owners/:owner/projects/:project/pull-requests`,
 `/:number`, `/:number/changes`, `/reviews`, `/api/v1/organizations/:organization/pull-requests`
 가 project READ + code-accessible-member-only 정책을 통과한 viewer에게만 열리며, mutation은
@@ -818,12 +818,12 @@ compatibility는 이번 app runtime batch에서 제외한다.
 | PR 목록 (open/closed/sent) | 탭으로 분류, 필터, 페이지네이션      | Phase 4A read-only 구현 | 4     |
 | PR 생성                    | from/to 브랜치 선택, 제목/본문       | Phase 4B 구현 | 4     |
 | PR 상세                    | 커밋 목록, 변경 파일, 댓글/타임라인  | Phase 4A read + Phase 4B interaction 구현 | 4     |
-| PR diff 보기               | 파일별 unified diff, 인라인 코멘트   | diff read + single-line ranged inline create/edit/delete 구현; side-aware deleted-line/multi-line은 gap | 4     |
+| PR diff 보기               | 파일별 unified diff, 인라인 코멘트   | diff read + side-aware single-line ranged inline create/edit/delete 구현; multi-line은 gap | 4     |
 | PR 상태 관리               | open → merged / closed, 재열기       | close/reopen + conflict-free merge accept 구현 | 4     |
 | Merge 실행                 | fast-forward / merge commit / squash | native `git merge --no-ff` happy path 구현; squash/strategy 선택은 gap | 4     |
 | Merge 충돌 처리            | 충돌 시 알림, 수동 해결 안내         | VCS conflict flag 기록 partial; legacy 안내/해결 UX는 gap | 4     |
 | 리뷰 승인/철회             | 리뷰어가 승인/철회                   | Phase 4B 구현 | 4     |
-| 코드 리뷰 댓글             | 특정 라인에 인라인 댓글              | 일반 PR review comment + single-line ranged inline create/edit/delete 구현; side-aware deleted-line/multi-line selection은 gap | 4     |
+| 코드 리뷰 댓글             | 특정 라인에 인라인 댓글              | 일반 PR review comment + side-aware single-line ranged inline create/edit/delete 구현; multi-line selection은 gap | 4     |
 | 리뷰 스레드                | 인라인 댓글 스레드 open/close        | Phase 4B open/close mutation 구현 | 4     |
 | Fork & PR                  | 프로젝트 fork → PR 워크플로우        | fork form/clone + conflict-free PR merge accept 구현 | 4     |
 | from 브랜치 삭제/복구      | merge 후 소스 브랜치 삭제/복구       | native Git wrapper 구현 | 4     |
@@ -835,7 +835,7 @@ compatibility는 이번 app runtime batch에서 제외한다.
 - [~] PR 상세: Conversation (댓글+이벤트 타임라인) / Changes (diff) 탭 구조 — legacy 동일
 - [x] PR 생성/수정 form: legacy class/id anchor와 from/to project/branch 표시, edit form branch/project disabled
 - [x] PR interaction: close/reopen, review/unreview, 일반 PR comment, review thread open/close
-- [~] 인라인 코드 리뷰: diff 뷰에서 add/context 라인 클릭 → 댓글 입력 → 스레드 생성/edit/delete 구현; deleted-line side와 multi-line selection은 gap
+- [~] 인라인 코드 리뷰: diff 뷰에서 add/context/deleted 라인 클릭 → 댓글 입력 → 스레드 생성/edit/delete 구현; multi-line selection은 gap
 - [~] 리뷰 스레드: open/close 상태 전환 구현; resolve/outdated 표시는 gap
 - [ ] Merge: 충돌 없으면 merge 버튼 활성화, 충돌 시 비활성화 + 안내
 - [x] Fork: 프로젝트 fork 시 동일 이름의 개인/조직 프로젝트 생성, bare repo 복제
@@ -1333,7 +1333,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 라벨/마일스톤     | ✅ 구현           | 라벨/카테고리 관리, 마일스톤 CRUD/state 구현                     |
 | 코드 브라우저     | 🔶 Phase 3L 구현  | Git 폴더/파일 보기, 브랜치 선택기, raw/open/image 파일 표면, archive download, syntax/line-number 표시, commit history/detail diff/compare, commit comments/thread lifecycle, branch list/latest PR/default/delete, project create 시 bare Git repository provisioning, Smart HTTP transport, push post-receive records |
 | Git Smart HTTP    | 🔶 Phase 3L 구현 | `git http-backend` wrapper로 clone/pull upload-pack 및 인증/권한이 적용된 receive-pack transport를 구현하고, receive-pack 후 `NEW_COMMIT` notification, pushed-branch metadata, push JSON webhook outbox를 기록한다 |
-| PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, 일반 PR comment, thread open/close, fork/clone, conflict-free merge, source branch cleanup/restore. conflict UX/ranged inline review CRUD은 gap |
+| PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, 일반 PR comment, thread open/close, fork/clone, conflict-free merge, source branch cleanup/restore, side-aware single-line ranged inline review CRUD. conflict UX/multi-line review polish는 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, mail queue staging |
 | 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment/merge non-JSON fan-out plus git-push JSON payloads; PR commit-changed delivery, history, and hardening remain gaps |
@@ -1546,7 +1546,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Label follow-up: legacy external label/project API parity for the separate migrator/export/import scope
 - Milestone follow-up: migration export and search milestone result type
 - Code follow-up: multi-line ranged code-comment selection polish, inline code-comment edit, SVN executable repository/serve integration, PR commit-changed VCS lifecycle integration
-- PullRequest follow-up: merge conflict resolution UX, ranged inline review comment edit/delete, reviewer assignment/threshold lifecycle
+- PullRequest follow-up: merge conflict resolution UX, multi-line inline review selection polish, reviewer assignment/threshold lifecycle
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: read state, SMTP scheduler/delivery, draft-time merge, recipient limit, and full mail notification parity
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope

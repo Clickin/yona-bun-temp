@@ -673,7 +673,9 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
                 "commitId": "topic-head",
                 "prevCommitId": "base-head",
                 "path": "src/lib.rs",
+                "startSide": "A",
                 "startLine": 2,
+                "endSide": "A",
                 "endLine": 4
             }),
         )
@@ -688,7 +690,9 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         .expect("ranged thread");
     assert_eq!(ranged_thread["commitId"], "topic-head");
     assert_eq!(ranged_thread["prevCommitId"], "base-head");
+    assert_eq!(ranged_thread["startSide"], "A");
     assert_eq!(ranged_thread["startLine"], 2);
+    assert_eq!(ranged_thread["endSide"], "A");
     assert_eq!(ranged_thread["endLine"], 4);
     assert_eq!(
         ranged_thread["comments"][0]["contentsMarkdown"],

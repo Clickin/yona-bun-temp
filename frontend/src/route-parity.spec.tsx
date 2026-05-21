@@ -487,7 +487,9 @@ describe("file-route parity harness", () => {
     expect(pullRequestApiSource).toContain("deletePullRequestCommentRest");
     expect(pullRequestApiSource).toContain("updatePullRequestCommentRest");
     expect(pullRequestApiSource).toContain("prevCommitId");
+    expect(pullRequestApiSource).toContain("startSide");
     expect(pullRequestApiSource).toContain("startLine");
+    expect(pullRequestApiSource).toContain("endSide");
     expect(pullRequestApiSource).toContain("endLine");
     expect(pullRequestApiSource).toContain("deletePullRequestSourceBranchRest");
     expect(pullRequestApiSource).toContain("restorePullRequestSourceBranchRest");

@@ -105,10 +105,12 @@ export type ReviewThread = {
   commitId: string;
   createdLabel: string;
   endLine?: number;
+  endSide?: string;
   id: number;
   path: string;
   prevCommitId: string;
   startLine?: number;
+  startSide?: string;
   state: string;
 };
 
@@ -215,9 +217,11 @@ export type PullRequestCommentInput = PullRequestScopeInput & {
   commitId?: string;
   contentsMarkdown: string;
   endLine?: number;
+  endSide?: string;
   path?: string;
   prevCommitId?: string;
   startLine?: number;
+  startSide?: string;
   threadId?: number;
 };
 
@@ -374,10 +378,12 @@ function normalizeThread(thread: Partial<ReviewThread>): ReviewThread {
     commitId: thread.commitId ?? "",
     createdLabel: thread.createdLabel ?? "",
     endLine: thread.endLine,
+    endSide: thread.endSide,
     id: thread.id ?? 0,
     path: thread.path ?? "",
     prevCommitId: thread.prevCommitId ?? "",
     startLine: thread.startLine,
+    startSide: thread.startSide,
     state: thread.state ?? "open",
   };
 }
@@ -514,9 +520,11 @@ function commentPullRequestBody(input: PullRequestCommentInput) {
     commitId: input.commitId,
     contentsMarkdown: input.contentsMarkdown,
     endLine: input.endLine,
+    endSide: input.endSide,
     path: input.path,
     prevCommitId: input.prevCommitId,
     startLine: input.startLine,
+    startSide: input.startSide,
     threadId: input.threadId,
   };
 }

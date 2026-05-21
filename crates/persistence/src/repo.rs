@@ -690,6 +690,14 @@ fn review_thread_state(value: Option<&str>) -> String {
     }
 }
 
+fn review_thread_side(value: Option<&str>) -> Option<String> {
+    match value.map(str::trim).filter(|side| !side.is_empty()) {
+        Some(side) if side.eq_ignore_ascii_case("a") => Some("A".to_string()),
+        Some(side) if side.eq_ignore_ascii_case("b") => Some("B".to_string()),
+        _ => None,
+    }
+}
+
 fn review_thread_open_condition() -> Condition {
     Condition::any()
         .add(comment_thread::Column::State.is_null())
@@ -7598,6 +7606,8 @@ impl AppRepository {
                 .map(str::trim)
                 .filter(|value| !value.is_empty())
                 .map(ToOwned::to_owned);
+            let start_side = review_thread_side(input.start_side.as_deref());
+            let end_side = review_thread_side(input.end_side.as_deref());
             let is_ranged =
                 path.is_some() || input.start_line.is_some() || input.end_line.is_some();
             comment_thread::ActiveModel {
@@ -7617,10 +7627,10 @@ impl AppRepository {
                 prev_commit_id: Set(prev_commit_id),
                 commit_id: Set(commit_id),
                 path: Set(path),
-                start_side: Set(None),
+                start_side: Set(start_side),
                 start_line: Set(input.start_line),
                 start_column: Set(None),
-                end_side: Set(None),
+                end_side: Set(end_side),
                 end_line: Set(input.end_line),
                 end_column: Set(None),
             }
@@ -9974,10 +9984,12 @@ impl AppRepository {
             commit_id: row.commit_id.unwrap_or_default(),
             created_label: format_workspace_date_label(row.created_date),
             end_line: row.end_line,
+            end_side: row.end_side,
             id: row.id,
             path: row.path.unwrap_or_default(),
             prev_commit_id: row.prev_commit_id.unwrap_or_default(),
             start_line: row.start_line,
+            start_side: row.start_side,
             state: review_thread_state(row.state.as_deref()),
         })
     }
