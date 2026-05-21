@@ -302,6 +302,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let markdown_render_backend = route_backend.clone();
     let markdown_render_session_manager = session_manager.clone();
     let markdown_render_base_path = base_path.clone();
+    let project_overview_update_backend = route_backend.clone();
+    let project_overview_update_session_manager = session_manager.clone();
     let site_no_avatar_backend = route_backend.clone();
     let site_no_avatar_session_manager = session_manager.clone();
     let site_set_avatar_backend = route_backend.clone();
@@ -572,6 +574,22 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         site_delete_project_session_manager.clone(),
                         site_delete_project_backend.clone(),
                         site_delete_project_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{owner}/{project}",
+            put(move |headers: HeaderMap, Path((owner, project)): Path<(String, String)>, body: Bytes| {
+                async move {
+                    direct_update_project_overview(
+                        headers,
+                        owner,
+                        project,
+                        body,
+                        project_overview_update_session_manager.clone(),
+                        project_overview_update_backend.clone(),
                     )
                     .await
                 }
@@ -1936,6 +1954,30 @@ fn direct_site_mail_list_body(body: &[u8]) -> RestSiteMailListBody {
         }
     }
     parsed
+}
+
+async fn direct_update_project_overview(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    body: Bytes,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let Ok(body) = serde_json::from_slice::<RestProjectOverviewBody>(&body) else {
+        return RestRouteError::bad_request("overview is required").into_response();
+    };
+    let overview = body.overview.trim().to_string();
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_update_project_overview(headers, owner_name, project_name, body, service).await {
+        Ok(_) => Json(serde_json::json!({ "overview": overview })).into_response(),
+        Err(error) => error.into_response(),
+    }
 }
 
 async fn direct_toggle_site_admin_role(

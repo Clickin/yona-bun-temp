@@ -1325,6 +1325,7 @@ async fn update_project_overview_returns_refreshed_project_container() {
     .await;
 
     let response = app
+        .clone()
         .oneshot(
             Request::builder()
                 .method(Method::POST)
@@ -1352,6 +1353,41 @@ async fn update_project_overview_returns_refreshed_project_container() {
     )
     .unwrap();
     assert!(json.contains("\"overview\":\"After overview update\""));
+
+    let direct_response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PUT)
+                .uri("/yona/admin/projectYobi")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from("{\"overview\":\"Direct overview update\"}"))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(direct_response.status(), StatusCode::OK);
+    let direct_json: serde_json::Value =
+        serde_json::from_str(&response_json(direct_response).await).expect("overview json");
+    assert_eq!(direct_json["overview"], "Direct overview update");
+
+    let container = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/owners/admin/projects/projectYobi/container")
+                .header(http::header::COOKIE, &admin_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(container.status(), StatusCode::OK);
+    let container_json: serde_json::Value =
+        serde_json::from_str(&response_json(container).await).expect("container json");
+    assert_eq!(container_json["overview"], "Direct overview update");
 }
 
 #[tokio::test]

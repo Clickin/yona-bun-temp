@@ -127,7 +127,7 @@ Interpretation:
 - [x] Read project settings
 - [x] Read project container/header data
 - [x] Update project settings
-- [x] Update project overview
+- [x] Update project overview (`PUT /:owner/:project` direct legacy route plus `/api/v1` overview REST)
 - [x] Public/protected/private read authorization
 - [x] Site-admin project read/update authorization bypass
 - [x] Public project directory fixed 10-item `pageNum` pagination
@@ -150,7 +150,7 @@ Interpretation:
 - [x] Project home dashboard open issue counts by assignee
 - [x] Project home history issue/post/pull-request activity rows
 - [x] Project home history commit activity rows
-- [~] Project home overview edit-flow polish and remaining minor composition details
+- [x] Project home overview edit-flow direct route and response shape
 
 ## Issues
 
