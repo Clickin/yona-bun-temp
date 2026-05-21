@@ -23,7 +23,7 @@ use sea_orm::entity::prelude::DateTime;
 use serde::{Deserialize, Deserializer, Serialize};
 use session::{SessionConfig, SessionManager};
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     path::{Path as StdPath, PathBuf},
     sync::{Mutex, OnceLock},
     vec,
@@ -5146,6 +5146,8 @@ async fn direct_render_markdown(
     backend: PilotBackend,
     base_path: String,
 ) -> Response {
+    let markdown = body.body.as_deref().unwrap_or_default();
+    let mut issue_references = Vec::new();
     if let PilotBackend::Repository(repository) = &backend {
         let actor_id = session_manager
             .read_session_from_headers(&headers)
@@ -5155,14 +5157,28 @@ async fn direct_render_markdown(
         {
             return direct_status_from_connect_error(error).into_response();
         }
+        match markdown_issue_references_for_markdowns(
+            repository,
+            actor_id,
+            &base_path,
+            &owner_name,
+            &project_name,
+            &[markdown],
+        )
+        .await
+        {
+            Ok(references) => issue_references = references,
+            Err(error) => return direct_status_from_connect_error(error).into_response(),
+        }
     }
 
     let _legacy_breaks = body.breaks.unwrap_or(true);
-    let html = render_project_markdown_html(
-        body.body.as_deref().unwrap_or_default(),
+    let html = render_project_markdown_html_with_issue_references(
+        markdown,
         &base_path,
         &owner_name,
         &project_name,
+        &issue_references,
     );
     let mut response = html.into_response();
     response.headers_mut().insert(
@@ -13094,11 +13110,14 @@ async fn rest_refreshed_issue_detail(
     let access = read_issue_access(repository, owner_name, project_name, issue_number, actor_id)
         .await
         .map_err(RestRouteError::from_connect_error)?;
-    Ok(issue_detail_response_from_access(
+    issue_detail_response_from_access_with_repository_issue_references(
+        repository,
         &access,
         actor_id,
         &service.base_path,
-    ))
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)
 }
 
 async fn rest_list_project_labels(
@@ -13863,11 +13882,7 @@ async fn rest_update_commit_discussion_thread_state(
         record,
         Some(actor.id),
         can_moderate,
-        MarkdownLinkContext {
-            base_path: &service.base_path,
-            owner_name: &owner_name,
-            project_name: &project_name,
-        },
+        MarkdownLinkContext::new(&service.base_path, &owner_name, &project_name),
     )))
 }
 
@@ -15062,11 +15077,7 @@ async fn rest_update_pull_request_thread_state(
         .ok_or_else(|| RestRouteError::not_found("review thread not found"))?;
     Ok(Json(rest_review_thread_from_record(
         record,
-        MarkdownLinkContext {
-            base_path: &service.base_path,
-            owner_name: &owner_name,
-            project_name: &project_name,
-        },
+        MarkdownLinkContext::new(&service.base_path, &owner_name, &project_name),
     )))
 }
 
@@ -15199,11 +15210,7 @@ async fn rest_list_project_reviews(
             .map(|thread| {
                 rest_review_thread_from_record(
                     thread,
-                    MarkdownLinkContext {
-                        base_path: &service.base_path,
-                        owner_name: &owner_name,
-                        project_name: &project_name,
-                    },
+                    MarkdownLinkContext::new(&service.base_path, &owner_name, &project_name),
                 )
             })
             .collect(),
@@ -16658,9 +16665,13 @@ async fn rest_read_issue_detail(
     )
     .await
     .map_err(RestRouteError::from_connect_error)?;
-    Ok(Json(issue_detail_response_from_access(
-        &access, actor_id, &base_path,
-    )))
+    Ok(Json(
+        issue_detail_response_from_access_with_repository_issue_references(
+            repository, &access, actor_id, &base_path,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
+    ))
 }
 
 fn rest_issue_assignable_users_response(
@@ -17044,13 +17055,18 @@ async fn rest_update_issue_state(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
-    Ok(Json(issue_detail_response_from_record(
-        &issue,
-        true,
-        true,
-        session.user_id,
-        &base_path,
-    )))
+    Ok(Json(
+        issue_detail_response_from_record_with_repository_issue_references(
+            repository,
+            &issue,
+            true,
+            true,
+            session.user_id,
+            &base_path,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
+    ))
 }
 
 async fn rest_create_issue(
@@ -17105,13 +17121,18 @@ async fn rest_create_issue(
         &base_path,
     )
     .await;
-    Ok(Json(issue_detail_response_from_record(
-        &issue,
-        true,
-        true,
-        session.user_id,
-        &base_path,
-    )))
+    Ok(Json(
+        issue_detail_response_from_record_with_repository_issue_references(
+            repository,
+            &issue,
+            true,
+            true,
+            session.user_id,
+            &base_path,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
+    ))
 }
 
 async fn rest_update_issue(
@@ -17166,13 +17187,18 @@ async fn rest_update_issue(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
-    Ok(Json(issue_detail_response_from_record(
-        &issue,
-        true,
-        true,
-        session.user_id,
-        &base_path,
-    )))
+    Ok(Json(
+        issue_detail_response_from_record_with_repository_issue_references(
+            repository,
+            &issue,
+            true,
+            true,
+            session.user_id,
+            &base_path,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
+    ))
 }
 
 async fn rest_delete_issue(
@@ -17299,13 +17325,18 @@ async fn rest_create_issue_comment(
         &base_path,
     )
     .await;
-    Ok(Json(issue_detail_response_from_record(
-        &issue,
-        true,
-        true,
-        session.user_id,
-        &base_path,
-    )))
+    Ok(Json(
+        issue_detail_response_from_record_with_repository_issue_references(
+            repository,
+            &issue,
+            true,
+            true,
+            session.user_id,
+            &base_path,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
+    ))
 }
 
 async fn rest_update_issue_comment(
@@ -17368,15 +17399,22 @@ async fn rest_update_issue_comment(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
-    Ok(Json(issue_detail_response_from_record_with_sharer_flags(
-        &issue,
-        access.viewer_can_manage(),
-        access.viewer_can_comment(),
-        access.share_status.direct,
-        access.share_status.inherited_from_parent,
-        session.user_id,
-        &base_path,
-    )))
+    let issue_references =
+        issue_markdown_references_for_record(repository, &issue, session.user_id, &base_path)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(
+        issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+            &issue,
+            access.viewer_can_manage(),
+            access.viewer_can_comment(),
+            access.share_status.direct,
+            access.share_status.inherited_from_parent,
+            session.user_id,
+            &base_path,
+            &issue_references,
+        ),
+    ))
 }
 
 async fn rest_delete_issue_comment(
@@ -17427,15 +17465,22 @@ async fn rest_delete_issue_comment(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
-    Ok(Json(issue_detail_response_from_record_with_sharer_flags(
-        &issue,
-        access.viewer_can_manage(),
-        access.viewer_can_comment(),
-        access.share_status.direct,
-        access.share_status.inherited_from_parent,
-        session.user_id,
-        &base_path,
-    )))
+    let issue_references =
+        issue_markdown_references_for_record(repository, &issue, session.user_id, &base_path)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(
+        issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+            &issue,
+            access.viewer_can_manage(),
+            access.viewer_can_comment(),
+            access.share_status.direct,
+            access.share_status.inherited_from_parent,
+            session.user_id,
+            &base_path,
+            &issue_references,
+        ),
+    ))
 }
 
 async fn rest_mass_update_issues(
@@ -17476,7 +17521,7 @@ async fn rest_mass_update_issues(
             ));
         }
     }
-    let items = repository
+    let updated_issues = repository
         .mass_update_issues(
             persistence::MassUpdateIssuesInput {
                 add_label_ids: body.add_label_ids,
@@ -17495,12 +17540,22 @@ async fn rest_mass_update_issues(
         )
         .await
         .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?
-        .into_iter()
-        .map(|issue| {
-            issue_detail_response_from_record(&issue, true, true, session.user_id, &base_path)
-        })
-        .collect();
+        .map_err(RestRouteError::from_connect_error)?;
+    let mut items = Vec::with_capacity(updated_issues.len());
+    for issue in updated_issues {
+        items.push(
+            issue_detail_response_from_record_with_repository_issue_references(
+                repository,
+                &issue,
+                true,
+                true,
+                session.user_id,
+                &base_path,
+            )
+            .await
+            .map_err(RestRouteError::from_connect_error)?,
+        );
+    }
     Ok(Json(MassUpdateIssuesResponse {
         items,
         ..Default::default()
@@ -19539,6 +19594,41 @@ struct MarkdownLinkContext<'a> {
     base_path: &'a str,
     owner_name: &'a str,
     project_name: &'a str,
+    issue_references: &'a [MarkdownIssueReference],
+}
+
+impl<'a> MarkdownLinkContext<'a> {
+    fn new(base_path: &'a str, owner_name: &'a str, project_name: &'a str) -> Self {
+        Self {
+            base_path,
+            owner_name,
+            project_name,
+            issue_references: &[],
+        }
+    }
+
+    fn with_issue_references(
+        base_path: &'a str,
+        owner_name: &'a str,
+        project_name: &'a str,
+        issue_references: &'a [MarkdownIssueReference],
+    ) -> Self {
+        Self {
+            base_path,
+            owner_name,
+            project_name,
+            issue_references,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct MarkdownIssueReference {
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    state: String,
+    title: String,
 }
 
 fn render_project_markdown_html(
@@ -19549,11 +19639,29 @@ fn render_project_markdown_html(
 ) -> String {
     render_markdown_html_with_context(
         markdown,
-        Some(MarkdownLinkContext {
+        Some(MarkdownLinkContext::new(
             base_path,
             owner_name,
             project_name,
-        }),
+        )),
+    )
+}
+
+fn render_project_markdown_html_with_issue_references(
+    markdown: &str,
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    issue_references: &[MarkdownIssueReference],
+) -> String {
+    render_markdown_html_with_context(
+        markdown,
+        Some(MarkdownLinkContext::with_issue_references(
+            base_path,
+            owner_name,
+            project_name,
+            issue_references,
+        )),
     )
 }
 
@@ -20426,6 +20534,32 @@ fn markdown_path_issue_link(
     index: usize,
     context: MarkdownLinkContext<'_>,
 ) -> Option<(usize, String)> {
+    let reference = markdown_path_issue_reference(text, index)?;
+    Some((
+        reference.length,
+        markdown_issue_anchor(
+            context,
+            reference.owner_name,
+            reference.project_name,
+            reference.issue_number,
+            reference.label,
+        ),
+    ))
+}
+
+#[derive(Clone, Copy)]
+struct MarkdownIssueReferenceMatch<'a> {
+    length: usize,
+    owner_name: &'a str,
+    project_name: &'a str,
+    issue_number: &'a str,
+    label: &'a str,
+}
+
+fn markdown_path_issue_reference(
+    text: &str,
+    index: usize,
+) -> Option<MarkdownIssueReferenceMatch<'_>> {
     if !markdown_ref_left_boundary(text, index) {
         return None;
     }
@@ -20447,16 +20581,13 @@ fn markdown_path_issue_link(
     if !markdown_ref_right_boundary(text, index + length) {
         return None;
     }
-    Some((
+    Some(MarkdownIssueReferenceMatch {
         length,
-        markdown_issue_anchor(
-            context.base_path,
-            owner_name,
-            project_name,
-            digits,
-            &text[index..index + length],
-        ),
-    ))
+        owner_name,
+        project_name,
+        issue_number: digits,
+        label: &text[index..index + length],
+    })
 }
 
 fn markdown_same_project_issue_link(
@@ -20464,6 +20595,24 @@ fn markdown_same_project_issue_link(
     index: usize,
     context: MarkdownLinkContext<'_>,
 ) -> Option<(usize, String)> {
+    let reference = markdown_same_project_issue_reference(text, index, context)?;
+    Some((
+        reference.length,
+        markdown_issue_anchor(
+            context,
+            reference.owner_name,
+            reference.project_name,
+            reference.issue_number,
+            reference.label,
+        ),
+    ))
+}
+
+fn markdown_same_project_issue_reference<'a>(
+    text: &'a str,
+    index: usize,
+    context: MarkdownLinkContext<'a>,
+) -> Option<MarkdownIssueReferenceMatch<'a>> {
     if !text[index..].starts_with('#') || !markdown_ref_left_boundary(text, index) {
         return None;
     }
@@ -20472,16 +20621,13 @@ fn markdown_same_project_issue_link(
     if !markdown_ref_right_boundary(text, index + length) {
         return None;
     }
-    Some((
+    Some(MarkdownIssueReferenceMatch {
         length,
-        markdown_issue_anchor(
-            context.base_path,
-            context.owner_name,
-            context.project_name,
-            digits,
-            &text[index..index + length],
-        ),
-    ))
+        owner_name: context.owner_name,
+        project_name: context.project_name,
+        issue_number: digits,
+        label: &text[index..index + length],
+    })
 }
 
 fn markdown_user_link(
@@ -20509,21 +20655,154 @@ fn markdown_user_link(
 }
 
 fn markdown_issue_anchor(
-    base_path: &str,
+    context: MarkdownLinkContext<'_>,
     owner_name: &str,
     project_name: &str,
     issue_number: &str,
     label: &str,
 ) -> String {
     let href = base_path_href(
-        base_path,
+        context.base_path,
         &format!("/{owner_name}/{project_name}/issue/{issue_number}"),
     );
+    let issue_attributes = markdown_issue_reference_attributes(
+        context.issue_references,
+        owner_name,
+        project_name,
+        issue_number,
+    );
     format!(
-        "<a href=\"{}\" class=\"issueLink\">{}</a>",
+        "<a href=\"{}\" class=\"issueLink\"{}>{}</a>",
         escape_html_attr(&href),
+        issue_attributes,
         escape_html_text(label)
     )
+}
+
+fn markdown_issue_reference_attributes(
+    references: &[MarkdownIssueReference],
+    owner_name: &str,
+    project_name: &str,
+    issue_number: &str,
+) -> String {
+    let Ok(issue_number) = issue_number.parse::<i64>() else {
+        return String::new();
+    };
+    let Some(reference) = references.iter().find(|reference| {
+        reference.owner_name == owner_name
+            && reference.project_name == project_name
+            && reference.issue_number == issue_number
+    }) else {
+        return String::new();
+    };
+
+    format!(
+        " title=\"{}\" data-issue-state=\"{}\"",
+        escape_html_attr(&reference.title),
+        escape_html_attr(&reference.state)
+    )
+}
+
+fn collect_markdown_issue_reference_keys(
+    markdown: &str,
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    keys: &mut HashMap<(String, String), HashSet<i64>>,
+) {
+    let context = MarkdownLinkContext::new(base_path, owner_name, project_name);
+    let mut index = 0;
+    while index < markdown.len() {
+        let reference = markdown_path_issue_reference(markdown, index)
+            .or_else(|| markdown_same_project_issue_reference(markdown, index, context));
+        if let Some(reference) = reference {
+            if let Ok(issue_number) = reference.issue_number.parse::<i64>() {
+                if issue_number > 0 {
+                    keys.entry((
+                        reference.owner_name.to_string(),
+                        reference.project_name.to_string(),
+                    ))
+                    .or_default()
+                    .insert(issue_number);
+                }
+            }
+            index += reference.length;
+            continue;
+        }
+
+        let ch = markdown[index..]
+            .chars()
+            .next()
+            .expect("valid char boundary");
+        index += ch.len_utf8();
+    }
+}
+
+async fn markdown_issue_references_for_markdowns(
+    repository: &PilotRepository,
+    actor_id: Option<i64>,
+    base_path: &str,
+    owner_name: &str,
+    project_name: &str,
+    markdowns: &[&str],
+) -> Result<Vec<MarkdownIssueReference>, ConnectError> {
+    let mut keys = HashMap::<(String, String), HashSet<i64>>::new();
+    for markdown in markdowns {
+        collect_markdown_issue_reference_keys(
+            markdown,
+            base_path,
+            owner_name,
+            project_name,
+            &mut keys,
+        );
+    }
+
+    let mut references = Vec::new();
+    for ((reference_owner, reference_project), numbers) in keys {
+        match require_project_read(repository, &reference_owner, &reference_project, actor_id).await
+        {
+            Ok(_) => {}
+            Err(error)
+                if matches!(
+                    error.code,
+                    ErrorCode::NotFound | ErrorCode::PermissionDenied
+                ) =>
+            {
+                continue;
+            }
+            Err(error) => return Err(error),
+        }
+
+        let mut numbers = numbers.into_iter().collect::<Vec<_>>();
+        numbers.sort_unstable();
+        let records = repository
+            .list_project_issue_references_by_numbers(
+                &reference_owner,
+                &reference_project,
+                &numbers,
+            )
+            .await
+            .map_err(internal_error)?;
+        references.extend(records.into_iter().map(|record| MarkdownIssueReference {
+            owner_name: reference_owner.clone(),
+            project_name: reference_project.clone(),
+            issue_number: record.issue_number,
+            state: record.state,
+            title: record.title,
+        }));
+    }
+    references.sort_by(|left, right| {
+        left.owner_name
+            .cmp(&right.owner_name)
+            .then_with(|| left.project_name.cmp(&right.project_name))
+            .then_with(|| left.issue_number.cmp(&right.issue_number))
+    });
+    references.dedup_by(|left, right| {
+        left.owner_name == right.owner_name
+            && left.project_name == right.project_name
+            && left.issue_number == right.issue_number
+    });
+    Ok(references)
 }
 
 fn markdown_digits_prefix(text: &str) -> Option<&str> {
@@ -20668,6 +20947,7 @@ fn issue_comment_from_record(
     base_path: &str,
     owner_name: &str,
     project_name: &str,
+    issue_references: &[MarkdownIssueReference],
 ) -> IssueComment {
     let viewer_is_author = viewer_id.is_some() && viewer_id == record.author_id;
     IssueComment {
@@ -20678,11 +20958,12 @@ fn issue_comment_from_record(
             .collect(),
         author_label: record.author_label.clone(),
         author_login_id: record.author_login_id.clone(),
-        contents_html: render_project_markdown_html(
+        contents_html: render_project_markdown_html_with_issue_references(
             &record.contents_markdown,
             base_path,
             owner_name,
             project_name,
+            issue_references,
         ),
         contents_markdown: record.contents_markdown.clone(),
         created_label: record.created_label.clone(),
@@ -20719,6 +21000,7 @@ fn issue_timeline_item_from_record(
     base_path: &str,
     owner_name: &str,
     project_name: &str,
+    issue_references: &[MarkdownIssueReference],
 ) -> IssueTimelineItem {
     match record {
         persistence::IssueTimelineItemRecord::Comment(comment) => IssueTimelineItem {
@@ -20729,6 +21011,7 @@ fn issue_timeline_item_from_record(
                 base_path,
                 owner_name,
                 project_name,
+                issue_references,
             ))
             .into(),
             created_label: comment.created_label.clone(),
@@ -21473,6 +21756,30 @@ fn issue_detail_response_from_record(
     )
 }
 
+async fn issue_detail_response_from_record_with_repository_issue_references(
+    repository: &PilotRepository,
+    issue: &persistence::IssueRecord,
+    viewer_can_manage: bool,
+    viewer_can_comment: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+) -> Result<ReadIssueDetailResponse, ConnectError> {
+    let issue_references =
+        issue_markdown_references_for_record(repository, issue, viewer_id, base_path).await?;
+    Ok(
+        issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+            issue,
+            viewer_can_manage,
+            viewer_can_comment,
+            false,
+            false,
+            viewer_id,
+            base_path,
+            &issue_references,
+        ),
+    )
+}
+
 fn issue_detail_response_from_access(
     access: &IssueAccessContext,
     viewer_id: Option<i64>,
@@ -21489,6 +21796,29 @@ fn issue_detail_response_from_access(
     )
 }
 
+async fn issue_detail_response_from_access_with_repository_issue_references(
+    repository: &PilotRepository,
+    access: &IssueAccessContext,
+    viewer_id: Option<i64>,
+    base_path: &str,
+) -> Result<ReadIssueDetailResponse, ConnectError> {
+    let issue_references =
+        issue_markdown_references_for_record(repository, &access.issue, viewer_id, base_path)
+            .await?;
+    Ok(
+        issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+            &access.issue,
+            access.viewer_can_manage(),
+            access.viewer_can_comment(),
+            access.share_status.direct,
+            access.share_status.inherited_from_parent,
+            viewer_id,
+            base_path,
+            &issue_references,
+        ),
+    )
+}
+
 fn issue_detail_response_from_record_with_sharer_flags(
     issue: &persistence::IssueRecord,
     viewer_can_manage: bool,
@@ -21497,6 +21827,64 @@ fn issue_detail_response_from_record_with_sharer_flags(
     viewer_has_inherited_share: bool,
     viewer_id: Option<i64>,
     base_path: &str,
+) -> ReadIssueDetailResponse {
+    let current_issue_reference = MarkdownIssueReference {
+        owner_name: issue.owner_name.clone(),
+        project_name: issue.project_name.clone(),
+        issue_number: issue.issue_number,
+        state: issue.state.clone(),
+        title: issue.title.clone(),
+    };
+    issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+        issue,
+        viewer_can_manage,
+        viewer_can_comment,
+        viewer_is_direct_sharer,
+        viewer_has_inherited_share,
+        viewer_id,
+        base_path,
+        std::slice::from_ref(&current_issue_reference),
+    )
+}
+
+fn issue_markdown_texts(issue: &persistence::IssueRecord) -> Vec<&str> {
+    let mut markdowns = Vec::with_capacity(1 + issue.comments.len());
+    markdowns.push(issue.body_markdown.as_str());
+    markdowns.extend(
+        issue
+            .comments
+            .iter()
+            .map(|comment| comment.contents_markdown.as_str()),
+    );
+    markdowns
+}
+
+async fn issue_markdown_references_for_record(
+    repository: &PilotRepository,
+    issue: &persistence::IssueRecord,
+    viewer_id: Option<i64>,
+    base_path: &str,
+) -> Result<Vec<MarkdownIssueReference>, ConnectError> {
+    markdown_issue_references_for_markdowns(
+        repository,
+        viewer_id,
+        base_path,
+        &issue.owner_name,
+        &issue.project_name,
+        &issue_markdown_texts(issue),
+    )
+    .await
+}
+
+fn issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+    issue: &persistence::IssueRecord,
+    viewer_can_manage: bool,
+    viewer_can_comment: bool,
+    viewer_is_direct_sharer: bool,
+    viewer_has_inherited_share: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+    issue_references: &[MarkdownIssueReference],
 ) -> ReadIssueDetailResponse {
     ReadIssueDetailResponse {
         assignee_label: issue.assignee_label.clone(),
@@ -21508,11 +21896,12 @@ fn issue_detail_response_from_record_with_sharer_flags(
             .collect(),
         author_label: issue.author_label.clone(),
         author_login_id: issue.author_login_id.clone(),
-        body_html: render_project_markdown_html(
+        body_html: render_project_markdown_html_with_issue_references(
             &issue.body_markdown,
             base_path,
             &issue.owner_name,
             &issue.project_name,
+            issue_references,
         ),
         body_markdown: issue.body_markdown.clone(),
         comment_count: issue.comment_count,
@@ -21527,6 +21916,7 @@ fn issue_detail_response_from_record_with_sharer_flags(
                     base_path,
                     &issue.owner_name,
                     &issue.project_name,
+                    issue_references,
                 )
             })
             .collect(),
@@ -21552,6 +21942,7 @@ fn issue_detail_response_from_record_with_sharer_flags(
                     base_path,
                     &issue.owner_name,
                     &issue.project_name,
+                    issue_references,
                 )
             })
             .collect(),
@@ -25139,6 +25530,13 @@ impl PilotServiceImpl {
         )
         .await?;
         let can_manage = access.viewer_can_manage();
+        let current_issue_reference = MarkdownIssueReference {
+            owner_name: access.issue.owner_name.clone(),
+            project_name: access.issue.project_name.clone(),
+            issue_number: access.issue.issue_number,
+            state: access.issue.state.clone(),
+            title: access.issue.title.clone(),
+        };
         Ok((
             ListIssueTimelineResponse {
                 items: access
@@ -25153,6 +25551,7 @@ impl PilotServiceImpl {
                             &self.base_path,
                             &access.issue.owner_name,
                             &access.issue.project_name,
+                            std::slice::from_ref(&current_issue_reference),
                         )
                     })
                     .collect(),
@@ -26345,11 +26744,7 @@ fn rest_pull_request_detail_from_record(
             || viewer_is_reviewer);
     let owner_name = record.owner_name.clone();
     let project_name = record.project_name.clone();
-    let markdown_context = MarkdownLinkContext {
-        base_path,
-        owner_name: &owner_name,
-        project_name: &project_name,
-    };
+    let markdown_context = MarkdownLinkContext::new(base_path, &owner_name, &project_name);
 
     Ok(RestPullRequestDetailResponse {
         body_html: render_project_markdown_html(
@@ -26670,11 +27065,11 @@ fn code_commit_detail_response_from_snapshot(
     base_path: &str,
 ) -> RestCodeCommitDetailResponse {
     let can_moderate = actor_id.is_some() && project_update_allowed(authorization).unwrap_or(false);
-    let markdown_context = MarkdownLinkContext {
+    let markdown_context = MarkdownLinkContext::new(
         base_path,
-        owner_name: &authorization.project.owner_name,
-        project_name: &authorization.project.project_name,
-    };
+        &authorization.project.owner_name,
+        &authorization.project.project_name,
+    );
     RestCodeCommitDetailResponse {
         branches: snapshot
             .branches

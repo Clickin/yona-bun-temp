@@ -192,6 +192,14 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     );
     assert!(body_html.contains("class=\"issueLink\""), "{body_html}");
     assert!(
+        body_html.contains("title=\"Markdown issue\""),
+        "{body_html}"
+    );
+    assert!(
+        body_html.contains("data-issue-state=\"open\""),
+        "{body_html}"
+    );
+    assert!(
         body_html.contains("href=\"https://example.com/docs?x=1\""),
         "{body_html}"
     );

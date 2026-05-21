@@ -381,8 +381,9 @@ Interpretation:
 - [x] Code-browser Markdown files render with legacy `.codebrowser-markdown` and rewrite local `./...` image paths to the project file route
 - [x] Project-home Git README fallback renders with the legacy readme body wrapper and rewrites local images/normal links to project file/code routes
 - [x] Legacy `POST /markdown/:owner/:project` preview renderer returns raw sanitized project-context HTML
+- [x] Readable issue references expose title/state metadata on legacy preview and issue body/comment render paths
 - [ ] Full legacy/GFM extension parity
-- [~] Legacy issue-link title/state enrichment
+- [~] Saved post/milestone/PR/code-comment issue-link title/state enrichment
 - [~] Remaining legacy autolink edge-case parity if evidence requires it
 - [~] Full Highlight.js-equivalent language coverage for Markdown code blocks
 - [~] Task checklist progress-bar integration polish

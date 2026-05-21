@@ -2408,6 +2408,43 @@ impl AppRepository {
         })
     }
 
+    pub async fn list_project_issue_references_by_numbers(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_numbers: &[i64],
+    ) -> Result<Vec<ProjectIssueReferenceRecord>, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(owner_name, project_name)
+            .await?
+        else {
+            return Ok(Vec::new());
+        };
+        let mut numbers = issue_numbers
+            .iter()
+            .copied()
+            .filter(|number| *number > 0)
+            .collect::<Vec<_>>();
+        numbers.sort_unstable();
+        numbers.dedup();
+        if numbers.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let mut models = issue::Entity::find()
+            .filter(issue::Column::ProjectId.eq(Some(project.id)))
+            .filter(issue::Column::Number.is_in(numbers.into_iter().map(Some)))
+            .all(&self.db)
+            .await?;
+        models.sort_by(|left, right| {
+            left.number
+                .unwrap_or_default()
+                .cmp(&right.number.unwrap_or_default())
+        });
+
+        Ok(models.iter().map(project_issue_reference_record).collect())
+    }
+
     pub async fn add_issue_sharer(
         &self,
         issue_id: i64,

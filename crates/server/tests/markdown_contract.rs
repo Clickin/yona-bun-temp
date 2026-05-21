@@ -128,11 +128,41 @@ async fn create_project(app: axum::Router, cookie_header: &str, csrf: &str) {
     assert_eq!(response.status(), StatusCode::OK);
 }
 
+async fn create_issue(app: axum::Router, cookie_header: &str, csrf: &str, title: &str) {
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/projects/owner/projectYobi/issues")
+                .header(http::header::COOKIE, cookie_header)
+                .header("x-csrf-token", csrf)
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .body(Body::from(
+                    json!({
+                        "title": title,
+                        "bodyMarkdown": "target issue"
+                    })
+                    .to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+}
+
 #[tokio::test]
 async fn legacy_markdown_renderer_route_returns_project_context_html() {
     let app = build_app_with_repository().await;
     let (csrf, cookie_header) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie_header, &csrf).await;
+    create_issue(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "Markdown preview target",
+    )
+    .await;
 
     let response = app
         .oneshot(
@@ -143,7 +173,7 @@ async fn legacy_markdown_renderer_route_returns_project_context_html() {
                 .header(http::header::CONTENT_TYPE, "application/json")
                 .body(Body::from(
                     json!({
-                        "body": "Hello @owner #1 http://example.com\n<script>alert(1)</script>",
+                        "body": "Hello @owner #1 owner/projectYobi#1 http://example.com\n<script>alert(1)</script>",
                         "breaks": true
                     })
                     .to_string(),
@@ -172,7 +202,11 @@ async fn legacy_markdown_renderer_route_returns_project_context_html() {
         "{html}"
     );
     assert!(
-        html.contains(r#"href="/yona/owner/projectYobi/issue/1" class="issueLink">#1</a>"#),
+        html.contains(r#"href="/yona/owner/projectYobi/issue/1" class="issueLink" title="Markdown preview target" data-issue-state="open">#1</a>"#),
+        "{html}"
+    );
+    assert!(
+        html.contains(r#"href="/yona/owner/projectYobi/issue/1" class="issueLink" title="Markdown preview target" data-issue-state="open">owner/projectYobi#1</a>"#),
         "{html}"
     );
     assert!(
