@@ -1276,6 +1276,47 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     .await;
     assert_eq!(forbidden_accept.status(), StatusCode::FORBIDDEN);
 
+    let under_reviewed_accept = rest_json(
+        app.clone(),
+        Method::POST,
+        "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/accept",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        json!({}),
+    )
+    .await;
+    assert_eq!(under_reviewed_accept.status(), StatusCode::BAD_REQUEST);
+    let under_reviewed_accept_text = response_text(under_reviewed_accept).await;
+    assert!(
+        under_reviewed_accept_text.contains("pullRequest.not.enough.review.point"),
+        "{under_reviewed_accept_text}"
+    );
+    assert_eq!(
+        count_rows(&db, "pull_request_event", "PULL_REQUEST_MERGED").await,
+        0
+    );
+    assert_eq!(snapshot_test_webhook_outbox().len(), 5);
+
+    let reviewed_for_merge = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/review",
+            Some(&reviewer_cookie),
+            Some(&reviewer_csrf),
+            json!({}),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(reviewed_for_merge["reviewed"], true);
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 6);
+    assert_eq!(
+        deliveries[5].event_type,
+        "PULL_REQUEST_REVIEW_STATE_CHANGED"
+    );
+
     let accepted = response_json(
         rest_json(
             app.clone(),
@@ -1316,10 +1357,10 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         "topic\n"
     );
     let deliveries = snapshot_test_webhook_outbox();
-    assert_eq!(deliveries.len(), 6);
-    assert_eq!(deliveries[5].event_type, "PULL_REQUEST_MERGED");
+    assert_eq!(deliveries.len(), 7);
+    assert_eq!(deliveries[6].event_type, "PULL_REQUEST_MERGED");
     let merged_payload: Value =
-        serde_json::from_str(&deliveries[5].body).expect("merged webhook payload");
+        serde_json::from_str(&deliveries[6].body).expect("merged webhook payload");
     let merged_text = merged_payload["text"].as_str().unwrap_or_default();
     assert!(merged_text.contains("pullRequest.event.message.MERGED"));
     assert!(merged_text
@@ -1426,6 +1467,19 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     )
     .await;
     assert_eq!(direct_created["pullRequestNumber"], 2);
+    let direct_reviewed = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/2/review",
+            Some(&reviewer_cookie),
+            Some(&reviewer_csrf),
+            json!({}),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(direct_reviewed["reviewed"], true);
     let direct_accept = app
         .clone()
         .oneshot(
@@ -1529,6 +1583,19 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     )
     .await;
     assert_eq!(conflict_created["pullRequestNumber"], 3);
+    let conflict_reviewed = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/3/review",
+            Some(&reviewer_cookie),
+            Some(&reviewer_csrf),
+            json!({}),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(conflict_reviewed["reviewed"], true);
     let webhook_count_before_conflict_accept = snapshot_test_webhook_outbox().len();
     let conflict_accept = response_json(
         rest_json(

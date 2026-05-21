@@ -15722,6 +15722,11 @@ async fn accept_pull_request_for_actor(
     if current.state != "open" {
         return Err(RestRouteError::bad_request("pull request is not open"));
     }
+    if current.required_reviewer_count > 0 && !current.reviewed {
+        return Err(RestRouteError::bad_request(
+            "pullRequest.not.enough.review.point",
+        ));
+    }
     let authorization =
         rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
             .await?;

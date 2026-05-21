@@ -647,7 +647,14 @@ function PullRequestActionBar(props: {
   const viewerReviewed = props.viewerId
     ? pr.reviewers.some((reviewer) => reviewer.userId === props.viewerId)
     : false;
-  const canAccept = pr.permissions.canUpdateState && pr.state === "open" && !pr.conflict;
+  const reviewSatisfied = pr.requiredReviewerCount === 0 || pr.reviewed;
+  const canAccept =
+    pr.permissions.canUpdateState && pr.state === "open" && !pr.conflict && reviewSatisfied;
+  const disabledMergeTitle = pr.conflict
+    ? "pullRequest.is.not.safe"
+    : reviewSatisfied
+      ? "pullRequest.merge.disabled"
+      : "pullRequest.not.enough.review.point";
   return (
     <div className="pull-request-actions">
       {pr.permissions.canUpdate ? (
@@ -726,7 +733,7 @@ function PullRequestActionBar(props: {
               data-placement="top"
               data-toggle="tooltip"
               disabled
-              title={pr.conflict ? "pullRequest.is.not.safe" : "pullRequest.merge.disabled"}
+              title={disabledMergeTitle}
               type="button"
             >
               Merge

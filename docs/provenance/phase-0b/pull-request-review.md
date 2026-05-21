@@ -102,6 +102,9 @@
   and the legacy direct `POST /:owner/:project/pullRequest/:number/accept` redirect route.
 - Accept requires CSRF, an authenticated user, readable project detail, and the
   same detail permission projection as close/reopen (`canUpdateState`).
+- Accept follows legacy `PullRequestApp.accept`: when the target project uses
+  reviewer count and the PR is not reviewed, the request returns bad request
+  `pullRequest.not.enough.review.point` before invoking the native Git merge.
 - The VCS side uses the native executable wrapper decision: clone the target bare
   repository to a temp worktree, fetch the source branch, run `git merge --no-ff`,
   and push the target branch back to `YONA_DATA/repo/<target_project_id>.git`.
@@ -137,7 +140,7 @@
 | `PullRequestAppTest.testCloseNotExistProject` and `testCloseNotExistPullRequest` | close rejects missing project or missing pull request with distinct error outcomes | `crates/server` error mapping backed by domain lookup result |
 | `PullRequestAppTest.testClosePullRequest` and `testClosePullRequestNotAllow` | authorized actors can close; unauthorized actors cannot mutate state | transition policy in `crates/domain` plus mutation contract test |
 | `PullRequestAppTest.testOpenPullRequest`, `testOpenPullRequestBadRequest`, and `testOpenRoute` | authorized reopen succeeds; already-open reopen is bad request | transition policy in `crates/domain` plus `crates/server` contract test |
-| `PullRequestAppTest.testAcceptAnonymous`, `PullRequestTest.updateMerge`, and `git/partial_info.scala.html` | accept is auth-gated, only acceptable open PRs show `#btnAccept`, and a conflict-free merge can be calculated by the repository layer | `/accept` REST/direct routes, native `git merge --no-ff` wrapper, `PULL_REQUEST_MERGED` persistence/webhook assertions |
+| `PullRequestAppTest.testAcceptAnonymous`, `PullRequestApp.accept`, `PullRequestTest.updateMerge`, and `git/partial_info.scala.html` | accept is auth-gated, reviewer-threshold-gated, only acceptable open PRs show `#btnAccept`, and a conflict-free merge can be calculated by the repository layer | `/accept` REST/direct routes, native `git merge --no-ff` wrapper, `PULL_REQUEST_MERGED` persistence/webhook assertions, and `pullRequest.not.enough.review.point` rejection |
 | `git/partial_state.scala.html` and legacy `deletefrombranch`/`restorefrombranch` routes | merged PR contributors can delete the source branch or restore it from merge state while non-contributors do not see the action | REST `DELETE`/`POST /source-branch`, legacy direct redirects, VCS branch delete/restore helpers, and frontend `.pull-request-source-branch` anchors |
 | `PullRequestApp.create`, `newPullRequestForm`, and `editform` | create/edit forms expose from/to project and branch controls while edit keeps branch/project selection immutable | `/api/v1/owners/:owner/projects/:project/pull-requests/*form-options`, frontend form route parity |
 | `PullRequestEventTest` | PR creation, state changes, review actions, comments, and thread state changes append legacy event rows | `pull_request_mutation_contract` event assertions |
