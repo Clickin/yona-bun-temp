@@ -331,9 +331,9 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
 | 기능                                        | Legacy 동작                                | 현재 상태    | Phase |
 | ------------------------------------------- | ------------------------------------------ | ------------ | ----- |
 | Workspace 대시보드                          | 이슈/PR/프로젝트 목록, 최근 방문, 즐겨찾기 | ✅ 구현      | 1     |
-| 프로필 편집 (이름, 아바타)                  | 이름 변경, 아바타 업로드/크롭              | ✅ 구현      | 1     |
+| 프로필 편집 (이름, 아바타)                  | 이름 변경, 아바타 업로드/크롭              | ✅ 구현, direct `/user/edit` 포함 | 1     |
 | 비밀번호 변경                               | 기존 비밀번호 확인 → 새 비밀번호 설정      | ✅ 구현, direct `/user/resetPassword` 포함 | 1     |
-| 이메일 관리 (추가/삭제/인증/주 이메일 설정) | 복수 이메일, 인증 흐름                     | ✅ 구현      | 1     |
+| 이메일 관리 (추가/삭제/인증/주 이메일 설정) | 복수 이메일, 인증 흐름                     | ✅ 구현, direct `/user/email` 포함 | 1     |
 | API 토큰 관리                               | 토큰 재생성                                | ✅ 구현      | 1     |
 | 기본 랜딩 페이지 설정                       | 로그인 후 이동할 기본 경로                 | ✅ 구현, direct `/user/defultLoginPage` 포함 | 1     |
 | 방문 기록 초기화                            | 최근 방문 프로젝트 목록 리셋               | ✅ 구현, direct `/user/resetVisitedList` 포함 | 1     |
@@ -347,7 +347,7 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
 - [x] `/:user` 공개 프로필은 legacy `user/view.scala.html`의 사용자 카드, Issues / Pull Requests / Projects 탭, 프로젝트 리스트 class anchor를 유지하고 공개 READ 가능한 프로젝트만 노출한다
 - [x] `GET /api/v1/users/:loginId/statistics`는 legacy `UserApi.statistics`의 `issue`, `posting`, `assignedIssue`, `issueComment`, `postingComment`, `issueVoter`, `issueCommentVoter` count 필드를 app-runtime REST로 제공한다
 - [ ] 프로필 편집에서 아바타 업로드 시 `/files` 엔드포인트로 멀티파트 업로드 후 크롭이 동작한다
-- [x] 복수 이메일 추가/삭제/인증/주 이메일 설정이 모두 동작하고 legacy direct email mutation routes가 `/user/editform` redirect를 반환한다
+- [x] 프로필 수정과 복수 이메일 추가/삭제/인증/주 이메일 설정이 모두 동작하고 legacy direct profile/email mutation routes가 `/user/editform` redirect를 반환한다
 - [ ] 프로젝트별 알림 토글이 legacy의 `NEW_COMMENT` 기본 off 동작을 따른다
 - [ ] API 토큰 재생성이 동작하고 새 토큰이 표시된다
 
@@ -1409,9 +1409,11 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/me`                              | GET      | SPA                                   | `me/`                                         | implemented        |
 | `/:user`                           | GET      | `GET /api/v1/users/:loginId/profile`; `GET /api/v1/users/:loginId/statistics` | `$user/`                                      | implemented        |
 | `/user/editform`                   | GET      | SPA                                   | `user/editform/`                              | implemented        |
+| `/user/edit`                       | POST     | direct workspace profile mutation     | `user/editform`                               | implemented        |
 | `/user/resetVisitedList`           | POST     | direct workspace visited reset        | `user/editform`                               | implemented        |
 | `/user/defultLoginPage`            | POST     | direct default landing JSON mutation  | workspace pages                               | implemented        |
 | `/user/resetPassword`              | POST     | direct workspace password change      | `user/editform/password`                      | implemented        |
+| `/user/email`                      | POST     | direct workspace email mutation       | `user/editform/emails`                        | implemented        |
 | `/user/email/delete/:id`           | DELETE   | direct workspace email mutation       | `user/editform/emails`                        | implemented        |
 | `/user/email/setAsMain/:id`        | PUT      | direct workspace email mutation       | `user/editform/emails`                        | implemented        |
 | `/projects`                        | GET      | `GET /api/v1/projects`                | `projects/`                                   | implemented        |

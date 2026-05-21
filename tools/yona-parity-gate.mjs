@@ -330,6 +330,7 @@ const DOMAIN_BUCKETS = [
     implementationPatterns: [
       /^frontend\/.*\/me/i,
       /^frontend\/src\/api\/workspace\.ts$/i,
+      /^frontend\/src\/routes\/-workspace-settings-view\.tsx$/i,
       /^crates\/(?:domain|persistence|server)\/.*(workspace|default-landing|favorite|recent)/i,
     ],
     testKeywords: ["workspace", "default-landing", "favorite", "recent", "me"],

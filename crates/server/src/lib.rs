@@ -236,9 +236,15 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let reset_visited_base_path = base_path.clone();
     let default_login_page_session_manager = session_manager.clone();
     let default_login_page_backend = route_backend.clone();
+    let update_profile_session_manager = session_manager.clone();
+    let update_profile_backend = route_backend.clone();
+    let update_profile_base_path = base_path.clone();
     let change_user_password_session_manager = session_manager.clone();
     let change_user_password_backend = route_backend.clone();
     let change_user_password_base_path = base_path.clone();
+    let add_workspace_email_session_manager = session_manager.clone();
+    let add_workspace_email_backend = route_backend.clone();
+    let add_workspace_email_base_path = base_path.clone();
     let delete_email_session_manager = session_manager.clone();
     let delete_email_backend = route_backend.clone();
     let delete_email_base_path = base_path.clone();
@@ -466,6 +472,21 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             }),
         )
         .route(
+            "/user/edit",
+            post(move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_update_user_profile(
+                        headers,
+                        form,
+                        update_profile_session_manager.clone(),
+                        update_profile_backend.clone(),
+                        update_profile_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
             "/user/resetPassword",
             post(move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| {
                 async move {
@@ -475,6 +496,21 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         change_user_password_session_manager.clone(),
                         change_user_password_backend.clone(),
                         change_user_password_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/user/email",
+            post(move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_add_workspace_email(
+                        headers,
+                        form,
+                        add_workspace_email_session_manager.clone(),
+                        add_workspace_email_backend.clone(),
+                        add_workspace_email_base_path.clone(),
                     )
                     .await
                 }
@@ -1965,6 +2001,50 @@ async fn direct_set_default_login_page(
     }
 }
 
+fn headers_with_form_csrf(mut headers: HeaderMap, form: &HashMap<String, String>) -> HeaderMap {
+    if headers.contains_key("x-csrf-token") {
+        return headers;
+    }
+    let Some(csrf_token) = form.get("csrfToken").map(|value| value.trim()) else {
+        return headers;
+    };
+    if csrf_token.is_empty() {
+        return headers;
+    }
+    if let Ok(value) = HeaderValue::from_str(csrf_token) {
+        headers.insert("x-csrf-token", value);
+    }
+    headers
+}
+
+async fn direct_update_user_profile(
+    headers: HeaderMap,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let body = RestUpdateProfileBody {
+        avatar_attachment_id: form
+            .get("avatarAttachmentId")
+            .or_else(|| form.get("avatarId"))
+            .cloned()
+            .unwrap_or_default(),
+        email: form.get("email").cloned().unwrap_or_default(),
+        name: form.get("name").cloned().unwrap_or_default(),
+    };
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_update_profile(headers_with_form_csrf(headers, &form), body, service).await {
+        Ok(_) => redirect_to(&base_path, "/user/editform"),
+        Err(error) => error.into_response(),
+    }
+}
+
 async fn direct_change_user_password(
     headers: HeaderMap,
     form: HashMap<String, String>,
@@ -1998,6 +2078,28 @@ async fn direct_change_user_password(
             }
             response
         }
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_add_workspace_email(
+    headers: HeaderMap,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let body = RestWorkspaceEmailBody {
+        email: form.get("email").cloned().unwrap_or_default(),
+    };
+    let service = PilotServiceImpl {
+        base_path: base_path.clone(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_add_workspace_email(headers_with_form_csrf(headers, &form), body, service).await {
+        Ok(_) => redirect_to(&base_path, "/user/editform"),
         Err(error) => error.into_response(),
     }
 }

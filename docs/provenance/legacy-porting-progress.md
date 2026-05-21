@@ -74,7 +74,7 @@ Interpretation:
 - [x] Direct legacy logout routes (`/users/logout`, `/logout`)
 - [x] Password reset
 - [x] Email verification
-- [x] Profile update basics
+- [x] Profile update basics, including direct `/user/edit` route
 - [x] API token reset
 - [x] Auth UI capability flags
 - [x] Admin signup approval
@@ -94,7 +94,7 @@ Interpretation:
 - [x] Favorite project list basics
 - [x] User settings legacy paths under `/user/editform`
 - [x] Default landing direct route (`/user/defultLoginPage`)
-- [x] Email management, including direct delete/set-main routes
+- [x] Email management, including direct add/delete/set-main routes
 - [x] Password settings, including direct reset route
 - [x] Token settings
 - [x] Avatar upload/crop/display

@@ -290,6 +290,7 @@ export function WorkspaceSettingsPage(props: {
               props.onUpdateProfile?.(buildProfileUpdateInput(formData, avatarAttachmentId));
             }}
           >
+            <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
             <input name="avatarAttachmentId" type="hidden" value={avatarAttachmentId} />
             <label>
               <span>Login ID</span>
@@ -521,6 +522,7 @@ export function WorkspaceSettingsPage(props: {
               props.onAddWorkspaceEmail?.(String(formData.get("email") ?? ""));
             }}
           >
+            <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
             <label>
               <span>Email</span>
               <input name="email" placeholder="New email" type="email" />
