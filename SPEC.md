@@ -934,6 +934,7 @@ DELETE /:owner/:project/webhooks/:id  → 웹훅 삭제
 
 ```
 POST  /files                  → 파일 업로드
+GET   /files                  → 파일 목록(JSON, containerType/containerId)
 GET   /files/:id              → 파일 다운로드
 GET   /files/:id/?            → 파일 다운로드 (legacy trailing-slash alias)
 DELETE /files/:id             → 파일 삭제
@@ -946,6 +947,7 @@ POST  /files/:id/?            → legacy `_method=delete` 파일 삭제 (trailin
 | 기능           | Legacy 동작                       | 현재 상태 | Phase |
 | -------------- | --------------------------------- | --------- | ----- |
 | 파일 업로드    | multipart form-data               | ✅ 구현   | 1     |
+| 파일 목록      | `attachments`/`tempFiles` JSON    | ✅ 구현   | 1     |
 | 파일 다운로드  | content-disposition               | ✅ 구현   | 1     |
 | 파일 삭제      | 작성자 또는 관리자                | ✅ 구현(업로드 작성자/site admin) | 2     |
 | Container type | 이슈/게시판/PR/프로젝트 등에 연결 | 🔶 부분 구현(legacy enum명: issue/board/PR/milestone) | 2     |
@@ -956,6 +958,7 @@ POST  /files/:id/?            → legacy `_method=delete` 파일 삭제 (trailin
 #### 검수 기준
 
 - [x] 업로드: multipart POST → 파일 저장 → ID 반환
+- [x] 목록: legacy `GET /files?containerType=&containerId=` returns `{attachments,tempFiles}` with `id/name/url/size/mimeType` for `yobi.Files` / `yobi.Attachments`
 - [x] 다운로드: `GET /files/:id` → 원본 파일명 + MIME type + content
 - [x] 삭제: `DELETE /files/:id` 또는 legacy `POST /files/:id` → 업로드 작성자 또는 site admin만 삭제 가능
 - [x] Legacy trailing-slash attachment aliases `GET /files/:id/` and `POST /files/:id/` reuse the same download/delete behavior
@@ -1468,6 +1471,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/organizations/:name/issues`      | GET      | `GET /api/v1/organizations/:name/issues` | `organizations/$organizationName/issues`      | implemented        |
 | `/organizations/:name/boards`      | GET      | `GET /api/v1/organizations/:name/boards` | `organizations/$organizationName/boards`      | implemented (core) |
 | `/search`                          | GET      | `GET /api/v1/search`                 | `search/`                                     | implemented        |
+| `/files`                           | GET      | `GET /files` direct                  | —                                             | implemented        |
 | `/files`                           | POST     | `POST /files` direct                  | —                                             | implemented        |
 | `/files/:id`                       | GET      | `GET /files/:id` direct               | —                                             | implemented        |
 | `/files/:id`                       | POST/DELETE | `POST/DELETE /files/:id` direct    | —                                             | implemented        |

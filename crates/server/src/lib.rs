@@ -278,6 +278,9 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let file_session_manager = session_manager.clone();
     let file_backend = route_backend.clone();
     let file_base_path = base_path.clone();
+    let file_list_session_manager = session_manager.clone();
+    let file_list_backend = route_backend.clone();
+    let file_list_base_path = base_path.clone();
     let file_read_session_manager = session_manager.clone();
     let file_read_backend = route_backend.clone();
     let file_read_trailing_session_manager = session_manager.clone();
@@ -684,7 +687,19 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
         )
         .route(
             "/files",
-            post(move |headers: HeaderMap, multipart: Multipart| {
+            get(move |headers: HeaderMap, Query(query): Query<AttachmentListQuery>| {
+                async move {
+                    list_uploaded_files(
+                        headers,
+                        query,
+                        file_list_session_manager.clone(),
+                        file_list_backend.clone(),
+                        file_list_base_path.clone(),
+                    )
+                    .await
+                }
+            })
+            .post(move |headers: HeaderMap, multipart: Multipart| {
                 async move {
                     upload_file(
                         headers,
@@ -17638,6 +17653,100 @@ struct UploadFileResponse {
     name: String,
     size: i64,
     url: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct AttachmentListQuery {
+    container_id: Option<String>,
+    container_type: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AttachmentListResponse {
+    attachments: Vec<UploadFileResponse>,
+    temp_files: Vec<UploadFileResponse>,
+}
+
+fn attachment_upload_response(
+    attachment: persistence::AttachmentRecord,
+    base_path: &str,
+) -> UploadFileResponse {
+    UploadFileResponse {
+        id: attachment.id,
+        mime_type: attachment.mime_type,
+        name: attachment.name,
+        size: attachment.size,
+        url: base_path_href(base_path, &format!("/files/{}", attachment.id)),
+    }
+}
+
+async fn list_uploaded_files(
+    headers: HeaderMap,
+    query: AttachmentListQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
+    let Some(actor_id) = session.user_id else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
+    let PilotBackend::Repository(repository) = &backend else {
+        return StatusCode::NOT_IMPLEMENTED.into_response();
+    };
+    let Ok(Some(actor)) = repository.find_user_by_id(actor_id).await else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
+
+    let container_type = query.container_type.unwrap_or_default();
+    let container_id = query
+        .container_id
+        .as_deref()
+        .and_then(|value| value.parse::<i64>().ok());
+    let attachments = if !container_type.trim().is_empty() {
+        if let Some(container_id) = container_id {
+            match repository
+                .list_attachments_by_container(container_type.trim(), container_id)
+                .await
+            {
+                Ok(attachments) => attachments,
+                Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+            }
+        } else {
+            Vec::new()
+        }
+    } else {
+        Vec::new()
+    };
+    let temp_files = if container_id.is_none() {
+        match repository
+            .list_attachments_by_container("USER", actor.id)
+            .await
+        {
+            Ok(files) => files
+                .into_iter()
+                .filter(|record| record.container_type == "USER" && record.container_id == actor.id)
+                .filter(|record| record.owner_login_id == actor.login_id)
+                .map(|record| attachment_upload_response(record, &base_path))
+                .collect(),
+            Err(_) => return StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        }
+    } else {
+        Vec::new()
+    };
+
+    Json(AttachmentListResponse {
+        attachments: attachments
+            .into_iter()
+            .map(|record| attachment_upload_response(record, &base_path))
+            .collect(),
+        temp_files,
+    })
+    .into_response()
 }
 
 async fn upload_file(

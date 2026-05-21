@@ -339,6 +339,7 @@ Interpretation:
 ## Attachments / Files
 
 - [x] File upload endpoint
+- [x] File list endpoint for `yobi.Files` / `yobi.Attachments` (`GET /files?containerType=&containerId=` → `attachments` / `tempFiles`)
 - [x] File download endpoint, including legacy `GET /files/:id/` alias
 - [x] Avatar attachment flow
 - [~] Issue attachment binding

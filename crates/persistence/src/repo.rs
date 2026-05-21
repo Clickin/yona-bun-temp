@@ -8308,6 +8308,37 @@ impl AppRepository {
         }))
     }
 
+    pub async fn list_attachments_by_container(
+        &self,
+        container_type: &str,
+        container_id: i64,
+    ) -> Result<Vec<AttachmentRecord>, DbErr> {
+        Ok(attachment::Entity::find()
+            .filter(
+                attachment::Column::ContainerType.is_in(
+                    attachment_container_aliases(container_type)
+                        .into_iter()
+                        .map(Some),
+                ),
+            )
+            .filter(attachment::Column::ContainerId.eq(container_id))
+            .order_by_asc(attachment::Column::Id)
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|model| AttachmentRecord {
+                container_id: model.container_id,
+                container_type: model.container_type.unwrap_or_default(),
+                hash: model.hash.unwrap_or_default(),
+                id: model.id,
+                mime_type: model.mime_type.unwrap_or_default(),
+                name: model.name.unwrap_or_default(),
+                owner_login_id: model.owner_login_id.unwrap_or_default(),
+                size: model.size.unwrap_or_default(),
+            })
+            .collect())
+    }
+
     pub async fn list_user_attachments(
         &self,
         owner_login_id: &str,

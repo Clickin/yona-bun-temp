@@ -671,6 +671,50 @@ async fn attachment_binding_uses_legacy_container_type_names() {
         "issue-body-attachment.png",
     )
     .await;
+    let issue_temp_file_list = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/files?containerType=ISSUE_POST")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(issue_temp_file_list.status(), StatusCode::OK);
+    let issue_temp_file_list_body = issue_temp_file_list
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    let issue_temp_file_list_json: serde_json::Value =
+        serde_json::from_slice(&issue_temp_file_list_body).unwrap();
+    assert_eq!(
+        issue_temp_file_list_json["attachments"]
+            .as_array()
+            .unwrap()
+            .len(),
+        0
+    );
+    assert_eq!(
+        issue_temp_file_list_json["tempFiles"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    assert_eq!(
+        issue_temp_file_list_json["tempFiles"][0]["id"],
+        issue_file_id
+    );
+    assert_eq!(
+        issue_temp_file_list_json["tempFiles"][0]["url"],
+        format!("/yona/files/{issue_file_id}")
+    );
+
     let issue = repository
         .create_issue(CreateIssueInput {
             actor_display_name: "owner".to_string(),
@@ -706,6 +750,71 @@ async fn attachment_binding_uses_legacy_container_type_names() {
         .expect("issue file");
     assert_eq!(issue_file.container_type, "ISSUE_POST");
     assert_eq!(issue_file.container_id, issue.id);
+
+    let anonymous_issue_file_list = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!(
+                    "/yona/files?containerType=ISSUE_POST&containerId={}",
+                    issue.id
+                ))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(anonymous_issue_file_list.status(), StatusCode::UNAUTHORIZED);
+
+    let issue_file_list = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!(
+                    "/yona/files?containerType=ISSUE_POST&containerId={}",
+                    issue.id
+                ))
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(issue_file_list.status(), StatusCode::OK);
+    let issue_file_list_body = issue_file_list
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    let issue_file_list_json: serde_json::Value =
+        serde_json::from_slice(&issue_file_list_body).unwrap();
+    assert_eq!(
+        issue_file_list_json["attachments"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    assert_eq!(
+        issue_file_list_json["tempFiles"].as_array().unwrap().len(),
+        0
+    );
+    assert_eq!(issue_file_list_json["attachments"][0]["id"], issue_file_id);
+    assert_eq!(
+        issue_file_list_json["attachments"][0]["url"],
+        format!("/yona/files/{issue_file_id}")
+    );
+    assert_eq!(
+        issue_file_list_json["attachments"][0]["mimeType"],
+        "image/png"
+    );
+    assert_eq!(
+        issue_file_list_json["attachments"][0]["name"],
+        "issue-body-attachment.png"
+    );
 
     let issue_comment_file_id = upload_image_file(
         app.clone(),
