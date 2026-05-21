@@ -350,7 +350,7 @@ Interpretation:
 ## Site Admin
 
 - [x] User list/manage/search (`/sites/userList` core UI + `/api/v1/site/users`)
-- [x] Admin/guest/account-lock/password-reset/delete actions (`/sites/userList` action controls, `/sites/toggleSiteAdminRole/:loginId`, `/sites/toggleAccountLock`, `/sites/toggleGuestMode`, `/sites/user/delete:id`, and `/api/v1/site/users/:loginId*`)
+- [x] Admin/guest/account-lock/password-reset/delete actions (`/sites/userList` action controls, `/sites/toggleSiteAdminRole/:loginId`, `/sites/toggleAccountLock`, `/sites/toggleGuestMode`, `POST /:user`, `/sites/user/delete:id`, and `/api/v1/site/users/:loginId*`)
 - [x] Project list/manage/delete (`/sites/projectList` + `/api/v1/site/projects`)
 - [x] Site-wide posting list (`/sites/postList` + `/api/v1/site/posts`)
 - [x] Site-wide issue list (`/sites/issueList` + `/api/v1/site/issues`)

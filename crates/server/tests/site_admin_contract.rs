@@ -481,6 +481,43 @@ async fn site_admin_direct_mutation_aliases_follow_legacy_routes() {
     .await;
     assert_eq!(forbidden_toggle.status(), StatusCode::FORBIDDEN);
 
+    let forbidden_legacy_reset = rest_post(
+        app.clone(),
+        "/yona/member",
+        Some(&member_cookie),
+        Some(&member_csrf),
+    )
+    .await;
+    assert_eq!(forbidden_legacy_reset.status(), StatusCode::FORBIDDEN);
+
+    let legacy_reset = response_json(
+        rest_post(
+            app.clone(),
+            "/yona/member",
+            Some(&admin_cookie),
+            Some(&admin_csrf),
+        )
+        .await,
+    )
+    .await;
+    let legacy_new_password = legacy_reset["newPassword"]
+        .as_str()
+        .expect("legacy reset password");
+    assert_eq!(legacy_reset["isSuccess"], true);
+    assert_eq!(legacy_reset["loginId"], "member");
+    assert_eq!(legacy_reset["name"], "member");
+    assert_eq!(legacy_new_password.len(), 6);
+    let member_after_legacy_reset = repo
+        .find_user_by_login_id("member")
+        .await
+        .expect("read legacy reset member")
+        .expect("legacy reset member");
+    assert!(bcrypt::verify(
+        legacy_new_password,
+        &member_after_legacy_reset.password_hash
+    )
+    .expect("bcrypt verify legacy reset"));
+
     let promoted = rest_post(
         app.clone(),
         "/yona/sites/toggleSiteAdminRole/member",

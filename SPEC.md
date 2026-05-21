@@ -313,6 +313,7 @@ GET   /authenticate/:provider   → OAuth 시작
 
 ```
 GET   /:user                    → 사용자 프로필 (본인이면 Workspace)
+POST  /:user                    → site manager 비밀번호 재설정 JSON
 GET   /user/editform            → 프로필 편집 폼
 POST  /user/editform/token_reset → API 토큰 재생성
 POST  /user/edit                → 프로필 수정
@@ -974,6 +975,7 @@ GET   /sites/issueList         → 이슈 목록
 POST  /sites/toggleSiteAdminRole/:loginId → 관리자 역할 토글
 POST  /sites/toggleAccountLock → 계정 잠금/해제
 POST  /sites/toggleGuestMode   → 게스트 모드 토글
+POST  /:user                   → site manager 비밀번호 재설정 JSON
 DELETE /sites/user/delete:id    → 사용자 삭제
 DELETE /sites/project/delete/:id → 프로젝트 삭제
 GET   /sites/mail              → 메일 설정
@@ -992,7 +994,7 @@ GET   /sites/export            → 데이터 익스포트
 
 | 기능                   | Legacy 동작                        | 현재 상태 | Phase |
 | ---------------------- | ---------------------------------- | --------- | ----- |
-| 사용자 목록/관리       | 목록, 검색, 관리자/잠금/게스트 토글, 비밀번호 재설정, 사용자 삭제, no-avatar 사용자 JSON/보정 | ✅ 구현(`/sites/userList`, `/sites/toggleSiteAdminRole/:loginId`, `/sites/toggleAccountLock`, `/sites/toggleGuestMode`, `/sites/user/delete:id`, `/sites/noAvatarUsers`, `/sites/setAttachmentToUserAvatar`, `/api/v1/site/users`, `/api/v1/site/no-avatar-users`) | 6     |
+| 사용자 목록/관리       | 목록, 검색, 관리자/잠금/게스트 토글, 비밀번호 재설정, 사용자 삭제, no-avatar 사용자 JSON/보정 | ✅ 구현(`/sites/userList`, `/sites/toggleSiteAdminRole/:loginId`, `/sites/toggleAccountLock`, `/sites/toggleGuestMode`, `POST /:user`, `/sites/user/delete:id`, `/sites/noAvatarUsers`, `/sites/setAttachmentToUserAvatar`, `/api/v1/site/users`, `/api/v1/site/no-avatar-users`) | 6     |
 | 프로젝트 목록/관리     | 목록, 검색, 삭제                   | ✅ 구현(`/sites/projectList`, `/sites/project/delete/:id`, `/api/v1/site/projects`) | 6     |
 | 게시글 목록            | 전체 게시글 읽기 목록              | ✅ 구현(`/sites/postList`, `/api/v1/site/posts`) | 6     |
 | 이슈 목록              | 전체 이슈 읽기 목록                | ✅ 구현(`/sites/issueList`, `/api/v1/site/issues`) | 6     |
@@ -1006,7 +1008,7 @@ GET   /sites/export            → 데이터 익스포트
 - [ ] 관리자 화면: `/sites/*` 경로, site_admin 역할만 접근 가능
 - [x] 사용자 목록 REST: site admin 전용 `/api/v1/site/users`, 검색, 페이지네이션, 관리자 역할 토글, 계정 잠금/해제, 게스트 모드 토글, 비밀번호 재설정, 사용자 삭제(`/api/v1/site/users/:loginId` DELETE)
 - [x] 사용자 목록 UI core: legacy `/sites/userList` shell, state tabs, 검색, 페이지네이션, 관리자 역할 토글, 계정 잠금/해제, 게스트 모드 토글, 비밀번호 재설정, 사용자 삭제 modal/action
-- [x] 사용자 관리 direct aliases: legacy `/sites/toggleSiteAdminRole/:loginId`, `/sites/toggleAccountLock?loginId=&state=&query=`, `/sites/toggleGuestMode?loginId=&state=&query=`, `/sites/user/delete:id`, and `/sites/project/delete/:id` preserve site-admin/CSRF gates, state/query redirect targets, only-manager delete guard, and project deletion redirect
+- [x] 사용자 관리 direct aliases: legacy `/sites/toggleSiteAdminRole/:loginId`, `/sites/toggleAccountLock?loginId=&state=&query=`, `/sites/toggleGuestMode?loginId=&state=&query=`, `POST /:user`, `/sites/user/delete:id`, and `/sites/project/delete/:id` preserve site-admin/CSRF gates, state/query redirect targets, site-manager password reset JSON, only-manager delete guard, and project deletion redirect
 - [x] 사용자 삭제: legacy only-manager guard, project membership cleanup, deleted-state projection
 - [x] No-avatar 사용자 보정: site admin 전용 `/api/v1/site/no-avatar-users`, `/api/v1/site/users/avatar-from-attachment`, legacy direct `/sites/noAvatarUsers`, `/sites/setAttachmentToUserAvatar` JSON routes preserve active-user/no-avatar filtering, `{loginId,name,email}` payload, `avatarFileId`/`email` body, and image attachment promotion semantics
 - [x] 프로젝트 목록: 검색, 페이지네이션, 프로젝트 삭제
@@ -1411,6 +1413,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/users/logout`                    | GET      | direct GET logout                     | —                                             | implemented        |
 | `/me`                              | GET      | SPA                                   | `me/`                                         | implemented        |
 | `/:user`                           | GET      | `GET /api/v1/users/:loginId/profile`; `GET /api/v1/users/:loginId/statistics` | `$user/`                                      | implemented        |
+| `/:user`                           | POST     | `POST /api/v1/site/users/:loginId/password/reset` | `sites/$pageName` action modal                | implemented        |
 | `/user/editform`                   | GET      | SPA                                   | `user/editform/`                              | implemented        |
 | `/user/editform/token_reset`       | POST     | direct workspace API token reset      | `user/editform/token`                         | implemented        |
 | `/user/edit`                       | POST     | direct workspace profile mutation     | `user/editform`                               | implemented        |

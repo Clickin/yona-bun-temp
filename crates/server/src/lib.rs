@@ -362,6 +362,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let site_delete_user_backend = route_backend.clone();
     let site_delete_user_session_manager = session_manager.clone();
     let site_delete_user_base_path = base_path.clone();
+    let site_reset_user_password_backend = route_backend.clone();
+    let site_reset_user_password_session_manager = session_manager.clone();
     let site_delete_project_backend = route_backend.clone();
     let site_delete_project_session_manager = session_manager.clone();
     let site_delete_project_base_path = base_path.clone();
@@ -830,6 +832,20 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         site_delete_project_session_manager.clone(),
                         site_delete_project_backend.clone(),
                         site_delete_project_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/{login_id}",
+            post(move |headers: HeaderMap, Path(login_id): Path<String>| {
+                async move {
+                    direct_reset_site_user_password(
+                        headers,
+                        login_id,
+                        site_reset_user_password_session_manager.clone(),
+                        site_reset_user_password_backend.clone(),
                     )
                     .await
                 }
@@ -2880,6 +2896,24 @@ async fn direct_toggle_site_user_guest(
     };
     match rest_toggle_site_user_guest(headers, login_id, service).await {
         Ok(Json(_)) => redirect_to(&base_path, &redirect_path),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_reset_site_user_password(
+    headers: HeaderMap,
+    login_id: String,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_reset_site_user_password(headers, login_id, service).await {
+        Ok(Json(payload)) => Json(payload).into_response(),
         Err(error) => error.into_response(),
     }
 }
