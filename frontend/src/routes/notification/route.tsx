@@ -12,9 +12,13 @@ export const Route = createFileRoute("/notification")({
   component: NotificationRouteComponent,
 });
 
-function NotificationRouteComponent() {
+export function NotificationRouteComponent({
+  routePath = "/notification",
+}: {
+  routePath?: string;
+}) {
   const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
-  const canRender = useRequireAuthenticatedRoute("/notification");
+  const canRender = useRequireAuthenticatedRoute(routePath);
   const [size, setSize] = React.useState(NOTIFICATION_PAGE_SIZE);
   const [expandedMessages, setExpandedMessages] = React.useState<ReadonlySet<string>>(
     () => new Set(),

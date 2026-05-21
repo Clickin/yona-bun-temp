@@ -77,6 +77,7 @@
 ## Mail Configuration Note
 
 - Site-admin mail options and outbound SMTP delivery now accept `YONA_SMTP_HOST`, `YONA_SMTP_PORT`, `YONA_SMTP_USER`, and `YONA_SMTP_PASSWORD` as aliases for the existing `SMTP_*` names. `smtp.ssl` semantics and full notification mail batching remain delivery-hardening follow-up scope.
+- Notification route parity now includes both the legacy `/notification` inbox shell and `/notifications` full-page alias on the same Rust/React TanStack Query view; read-state/full SMTP batching remains tracked as follow-up scope.
 
 ## Current Frontend Smoke Stabilization Note
 

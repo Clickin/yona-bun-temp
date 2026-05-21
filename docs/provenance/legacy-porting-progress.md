@@ -309,7 +309,7 @@ Interpretation:
 - [~] Legacy `YONA_SMTP_*` environment aliases for mail configuration and delivery
 - [x] Project notification settings basics
 - [x] Project watch toggle basics
-- [x] Notification event list
+- [x] Notification event list and legacy `/notification` + `/notifications` route shell parity
 - [~] Issue event notifications
 - [ ] PR/review notifications
 - [ ] Email notification fan-out parity

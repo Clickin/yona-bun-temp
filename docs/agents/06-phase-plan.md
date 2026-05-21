@@ -109,7 +109,7 @@
 - Phase 5G partial: Project change VCS route parity mounts `/:owner/:project/changeVCS`, preserves the legacy `project/change_vcs.scala.html` checkbox/modal anchors, and exposes `/api/v1/owners/:owner/projects/:project/change-vcs` for UPDATE-gated `vcs` metadata toggle, README posting flag clear, and ID-based repository storage reset. SVN executable-backed repository/serve behavior remains VCS lifecycle follow-up scope.
 - Remaining board follow-ups: Git-backed README commit/sync, issue template edit, online code file edit, and legacy external `/-_-api/v1/**` compatibility for migrator scope.
 - Remaining search follow-ups: full-text/index-backed search, ranking beyond legacy sort, async indexing, and legacy external `/-_-api/v1/**` search compatibility only if the separate migrator/export scope requires it.
-- notifications
+- Notifications partial: inbox/list parity now keeps the legacy `/notification` shell and full-page `/notifications` alias on the same TanStack Query-backed view; read-state/full SMTP batching, draft-time merge, recipient limits, and mailbox/reply threading remain follow-ups.
 - integrations follow-ups: push JSON webhook payload delivery, PR merge/commit-changed delivery, HTTPS production delivery hardening, optional signature compatibility if external evidence requires it, and delivery history/retry behavior
 
 ## Phase 6: 관리자 기능과 하드닝
