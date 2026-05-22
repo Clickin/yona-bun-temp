@@ -29,6 +29,41 @@ pub struct OutboundMail {
     pub to: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EmailAddressWithDetail {
+    detail: String,
+    domain: String,
+    user: String,
+}
+
+impl EmailAddressWithDetail {
+    pub fn new(value: &str) -> Self {
+        let (local_part, domain) = value.trim().split_once('@').unwrap_or((value.trim(), ""));
+        let (user, detail) = local_part.split_once('+').unwrap_or((local_part, ""));
+        Self {
+            detail: detail.to_string(),
+            domain: domain.to_string(),
+            user: user.to_string(),
+        }
+    }
+
+    pub fn user(&self) -> &str {
+        &self.user
+    }
+
+    pub fn domain(&self) -> &str {
+        &self.domain
+    }
+
+    pub fn detail(&self) -> &str {
+        &self.detail
+    }
+
+    pub fn equals_except_details(&self, other: &Self) -> bool {
+        self.user == other.user && self.domain == other.domain
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SmtpDeliveryConfig {
     pub default_port: u16,

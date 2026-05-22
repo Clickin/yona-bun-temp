@@ -316,7 +316,7 @@ Interpretation:
 ## Notifications / Mail
 
 - [x] SMTP/integration infrastructure basics
-- [~] Legacy `YONA_SMTP_*` environment aliases for mail configuration and delivery
+- [x] Legacy `YONA_SMTP_*` environment aliases for mail configuration and delivery
 - [x] Project notification settings basics
 - [x] Project watch toggle basics
 - [x] Notification event list and legacy `/notification` + `/notifications` route shell parity
@@ -330,6 +330,7 @@ Interpretation:
 - [x] Issue comment `original_email` / `data-via-email` marker parity
 - [x] Board comment `original_email` / `data-via-email` marker parity
 - [x] Code discussion and PR review comment `original_email` / `data-via-email` marker parity
+- [x] Mailbox plus-address detail parser parity
 - [ ] Mailbox/reply threading parity
 
 ## Webhooks
