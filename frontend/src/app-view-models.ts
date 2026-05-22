@@ -570,7 +570,9 @@ export function toProjectIssueDetailView(
     bodyMarkdown: response.bodyMarkdown,
     commentCount: response.commentCount,
     comments: response.comments.map((comment) => ({
+      authorAvatarUrl: comment.authorAvatarUrl,
       authorLabel: comment.authorLabel,
+      authorLoginId: comment.authorLoginId,
       contentsHtml: comment.contentsHtml,
       contentsMarkdown: comment.contentsMarkdown,
       createdLabel: comment.createdLabel,
@@ -610,7 +612,9 @@ export function toProjectIssueDetailView(
     timeline: response.timeline.map((item) => ({
       comment: item.comment
         ? {
+            authorAvatarUrl: item.comment.authorAvatarUrl,
             authorLabel: item.comment.authorLabel,
+            authorLoginId: item.comment.authorLoginId,
             contentsHtml: item.comment.contentsHtml,
             contentsMarkdown: item.comment.contentsMarkdown,
             createdLabel: item.comment.createdLabel,

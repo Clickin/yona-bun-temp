@@ -3696,6 +3696,11 @@ export type IssueComment = Message<"yona.pilot.v1.IssueComment"> & {
    * @generated from field: bool via_email = 13;
    */
   viaEmail: boolean;
+
+  /**
+   * @generated from field: string author_avatar_url = 14;
+   */
+  authorAvatarUrl: string;
 };
 
 /**

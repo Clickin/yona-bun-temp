@@ -11797,6 +11797,29 @@ impl AppRepository {
         row: issue_comment::Model,
         viewer_id: Option<i64>,
     ) -> Result<IssueCommentRecord, DbErr> {
+        let author_id = row.author_id;
+        let author_login_id = row.author_login_id.unwrap_or_default();
+        let author_label = row.author_name.unwrap_or_default();
+        let author_email_address = if let Some(author_id) = author_id {
+            n4user::Entity::find_by_id(author_id)
+                .one(&self.db)
+                .await?
+                .and_then(|user| user.email)
+                .unwrap_or_default()
+        } else {
+            String::new()
+        };
+        let author_email_address = if author_email_address.is_empty() && !author_login_id.is_empty()
+        {
+            n4user::Entity::find()
+                .filter(n4user::Column::LoginId.eq(Some(normalize_identity(&author_login_id))))
+                .one(&self.db)
+                .await?
+                .and_then(|user| user.email)
+                .unwrap_or_default()
+        } else {
+            author_email_address
+        };
         let voters = self.list_issue_comment_voters(row.id).await?;
         let viewer_has_voted = viewer_id
             .is_some_and(|viewer_id| voters.iter().any(|voter| voter.user_id == viewer_id));
@@ -11813,9 +11836,10 @@ impl AppRepository {
             attachments: self
                 .list_issue_attachments(ISSUE_COMMENT_ATTACHMENT_CONTAINER, row.id)
                 .await?,
-            author_id: row.author_id,
-            author_label: row.author_name.unwrap_or_default(),
-            author_login_id: row.author_login_id.unwrap_or_default(),
+            author_email_address,
+            author_id,
+            author_label,
+            author_login_id,
             contents_markdown: self
                 .read_text_column("issue_comment", "contents", row.id)
                 .await?,

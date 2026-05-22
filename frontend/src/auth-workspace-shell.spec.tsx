@@ -805,11 +805,14 @@ describe("auth and workspace views", () => {
   it("renders issue comment agreement count, voters, and agree action", () => {
     const html = renderIssueDetailPage(
       {
+        commentCount: 1,
         viewerCanComment: true,
         timeline: [
           {
             comment: {
+              authorAvatarUrl: "https://cdn.yona/avatar-owner.png",
               authorLabel: "Owner User",
+              authorLoginId: "owner",
               contentsHtml: "<p>Useful comment</p>",
               contentsMarkdown: "Useful comment",
               createdLabel: "now",
@@ -840,6 +843,14 @@ describe("auth and workspace views", () => {
       },
     );
 
+    expect(html).toContain('class="board-comment-wrap"');
+    expect(html).toContain('class="comments"');
+    expect(html).toContain('class="comment-avatar"');
+    expect(html).toContain('class="avatar-wrap"');
+    expect(html).toContain('src="https://cdn.yona/avatar-owner.png"');
+    expect(html).toContain('href="/yona/owner"');
+    expect(html).toContain('class="comment_author"');
+    expect(html).toContain('class="ago"');
     expect(html).toContain("2 Agreements");
     expect(html).toContain("Guest User");
     expect(html).toContain("comment-vote");
@@ -855,7 +866,9 @@ describe("auth and workspace views", () => {
         timeline: [
           {
             comment: {
+              authorAvatarUrl: "https://cdn.yona/avatar-owner.png",
               authorLabel: "Owner User",
+              authorLoginId: "owner",
               contentsHtml: "<p>Already agreed</p>",
               contentsMarkdown: "Already agreed",
               createdLabel: "now",

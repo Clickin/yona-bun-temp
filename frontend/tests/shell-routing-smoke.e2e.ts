@@ -385,8 +385,24 @@ test.beforeEach(async ({ page }) => {
         authorLabel: "Nori",
         bodyHtml: "<p>Issue body</p>",
         bodyMarkdown: "Issue body",
-        commentCount: 0,
-        comments: [],
+        commentCount: 1,
+        comments: [
+          {
+            attachments: [],
+            authorAvatarUrl: "/avatars/nori.png",
+            authorLabel: "Nori",
+            authorLoginId: "nori",
+            contentsHtml: "<p>First issue comment</p>",
+            contentsMarkdown: "First issue comment",
+            createdLabel: "now",
+            id: 55,
+            viewerCanDelete: false,
+            viewerCanUpdate: false,
+            viewerHasVoted: false,
+            voterCount: 0,
+            voters: [],
+          },
+        ],
         hasVoted: false,
         historyHtml: "<p>Changed issue title from old value</p>",
         historyMarkdown: "Changed issue title from old value",
@@ -399,7 +415,29 @@ test.beforeEach(async ({ page }) => {
         projectName: "projectYobi",
         sharers: [],
         state: "open",
-        timeline: [],
+        timeline: [
+          {
+            comment: {
+              attachments: [],
+              authorAvatarUrl: "/avatars/nori.png",
+              authorLabel: "Nori",
+              authorLoginId: "nori",
+              contentsHtml: "<p>First issue comment</p>",
+              contentsMarkdown: "First issue comment",
+              createdLabel: "now",
+              id: 55,
+              viewerCanDelete: false,
+              viewerCanUpdate: false,
+              viewerHasVoted: false,
+              voterCount: 0,
+              voters: [],
+            },
+            createdLabel: "now",
+            eventType: "",
+            id: 55,
+            kind: "comment",
+          },
+        ],
         title: "Pilot issue",
         viewerCanComment: true,
         viewerCanDelete: false,
@@ -953,6 +991,18 @@ test("project issue routes render data-backed issue list filters and detail scre
   await expect(page.locator("#-yona-posting-history")).toContainText(
     "Changed issue title from old value",
   );
+  await expect(page.locator("#comments.board-comment-wrap")).toBeVisible();
+  await expect(page.locator("#comments .comment-header .num")).toHaveText("1");
+  await expect(page.locator("#comment-55 .comment-avatar a.avatar-wrap")).toHaveAttribute(
+    "href",
+    "/yona/nori",
+  );
+  await expect(page.locator("#comment-55 .comment-avatar img")).toHaveAttribute(
+    "src",
+    "/avatars/nori.png",
+  );
+  await expect(page.locator("#comment-55 .comment_author")).toContainText("Nori");
+  await expect(page.locator("#comment-55 .comment-body")).toContainText("First issue comment");
 });
 
 test("project issue comment editor inserts pasted and dropped image uploads", async ({ page }) => {
@@ -1006,7 +1056,9 @@ test("project issue comment editor inserts pasted and dropped image uploads", as
           {
             comment: {
               attachments: [],
+              authorAvatarUrl: "/avatars/nori.png",
               authorLabel: "Nori",
+              authorLoginId: "nori",
               contentsHtml: "<p>uploaded images</p>",
               contentsMarkdown: submittedComment?.contentsMarkdown ?? "",
               createdLabel: "now",
@@ -1067,7 +1119,7 @@ test("project issue comment editor inserts pasted and dropped image uploads", as
   });
   await expect(editor).toHaveValue("![paste.png](/yona/files/901) ![drop.png](/yona/files/902) ");
 
-  await page.getByRole("button", { name: "Comment" }).click();
+  await page.getByRole("button", { exact: true, name: "Comment" }).click();
 
   expect(uploadedHeaders).toEqual(["csrf-123", "csrf-123"]);
   expect(submittedComment).toEqual({

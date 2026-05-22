@@ -305,7 +305,9 @@ export interface ProjectIssueDetailViewModel {
   bodyMarkdown: string;
   commentCount: number;
   comments: Array<{
+    authorAvatarUrl: string;
     authorLabel: string;
+    authorLoginId: string;
     contentsHtml: string;
     contentsMarkdown: string;
     createdLabel: string;
@@ -331,7 +333,9 @@ export interface ProjectIssueDetailViewModel {
   state: string;
   timeline: Array<{
     comment?: {
+      authorAvatarUrl: string;
       authorLabel: string;
+      authorLoginId: string;
       contentsHtml: string;
       contentsMarkdown: string;
       createdLabel: string;

@@ -19,6 +19,10 @@ import type {
 } from "./-view-models";
 import { prefixBasePath } from "../runtime-config";
 
+type IssueTimelineCommentViewModel = NonNullable<
+  ProjectIssueDetailViewModel["timeline"][number]["comment"]
+>;
+
 function fallbackProjectDetail(): ProjectDetailViewModel {
   return {
     enrollmentRequested: false,
@@ -59,6 +63,33 @@ function PostingHistoryModal(props: { historyHtml?: string; linkLabel: string })
         </div>
       </div>
     </div>
+  );
+}
+
+function IssueCommentAvatar(props: {
+  basePath: string;
+  className?: string;
+  comment: IssueTimelineCommentViewModel;
+}) {
+  const authorLoginId = props.comment.authorLoginId.trim();
+  const authorLabel = props.comment.authorLabel || authorLoginId || "anonymous";
+  const href = authorLoginId ? prefixBasePath(props.basePath, `/${authorLoginId}`) : "#";
+  const fallbackLabel = authorLabel.slice(0, 1).toUpperCase() || "?";
+
+  return (
+    <a
+      className={props.className ?? "avatar-wrap"}
+      data-placement="top"
+      data-toggle="tooltip"
+      href={href}
+      title={authorLoginId || authorLabel}
+    >
+      {props.comment.authorAvatarUrl ? (
+        <img alt={authorLabel} height={32} src={props.comment.authorAvatarUrl} width={32} />
+      ) : (
+        <span>{fallbackLabel}</span>
+      )}
+    </a>
   );
 }
 
@@ -348,82 +379,135 @@ export function ProjectIssueDetailPage(props: {
           </a>
         ))}
       </section>
-      <section id="comments">
-        <h2>Comments</h2>
-        {(issue?.timeline ?? []).map((item) => (
-          <article key={`${item.kind}-${item.id}`}>
-            {item.kind === "comment" && item.comment ? (
-              <>
-                <p>{`${item.comment.authorLabel} ${item.comment.createdLabel}`}</p>
-                <div
-                  className="comment-body markdown-wrap"
-                  data-via-email={item.comment.viaEmail ? "true" : undefined}
-                  dangerouslySetInnerHTML={{ __html: item.comment.contentsHtml }}
-                />
-                <div className="comment-vote-row">
-                  {item.comment.voterCount > 0 ? (
-                    <span className="comment-vote-count">
-                      {commentAgreementLabel(item.comment.voterCount)}
-                    </span>
-                  ) : null}
-                  {item.comment.voters.map((voter) => (
-                    <span className="comment-voter" key={voter.userId} title={voter.userLabel}>
-                      {voter.avatarUrl ? (
-                        <img alt={`${voter.userLabel} avatar`} src={voter.avatarUrl} />
-                      ) : null}
-                      <span>{voter.userLabel || voter.loginId}</span>
-                    </span>
-                  ))}
-                  {issue?.viewerCanComment && props.onCommentVoteToggle ? (
-                    <button
-                      aria-label={
-                        item.comment.viewerHasVoted
-                          ? "Withdraw comment agreement"
-                          : "Agree with comment"
-                      }
-                      className="comment-vote btn-transparent-with-fontsize-lineheight"
-                      onClick={() =>
-                        void props.onCommentVoteToggle?.(
-                          item.comment!.id,
-                          item.comment!.viewerHasVoted,
-                        )
-                      }
-                      title={item.comment.viewerHasVoted ? "Withdraw" : "Agree"}
-                      type="button"
-                    >
-                      <span
-                        className={`yobicon-hearts ${
-                          item.comment.viewerHasVoted ? "vote-heart-on" : "vote-heart-off"
-                        }`}
-                      />
-                    </button>
-                  ) : null}
-                </div>
-                {item.comment.viewerCanUpdate && props.onCommentUpdate ? (
-                  <IssueCommentEditForm
-                    commentId={item.comment.id}
-                    csrfToken={props.csrfToken}
-                    getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
-                    initialContents={item.comment.contentsMarkdown}
-                    onSearchMentionUsers={props.onSearchMentionUsers}
-                    onSubmit={props.onCommentUpdate}
-                    runtimeConfig={props.runtimeConfig}
-                  />
-                ) : null}
-                {item.comment.viewerCanDelete && props.onCommentDelete ? (
-                  <button
-                    onClick={() => void props.onCommentDelete?.(item.comment!.id)}
-                    type="button"
+      <section className="board-comment-wrap" id="comments">
+        <div id="timeline">
+          <div className="timeline-list">
+            <div className="comment-header">
+              <i></i>
+              <strong>common.comment</strong>{" "}
+              <strong className="num">{issue?.commentCount ?? 0}</strong>
+            </div>
+            <hr className="nm" />
+            <ul className="comments">
+              {(issue?.timeline ?? []).map((item) => {
+                if (item.kind !== "comment" || !item.comment) {
+                  return (
+                    <li className="event" key={`${item.kind}-${item.id}`}>
+                      <p>{`${item.eventType} ${item.createdLabel}`}</p>
+                    </li>
+                  );
+                }
+
+                const comment = item.comment;
+                const authorLoginId = comment.authorLoginId || comment.authorLabel;
+
+                return (
+                  <li
+                    className="comment"
+                    id={`comment-${comment.id}`}
+                    key={`${item.kind}-${item.id}`}
                   >
-                    Delete comment
-                  </button>
-                ) : null}
-              </>
-            ) : (
-              <p>{`${item.eventType} ${item.createdLabel}`}</p>
-            )}
-          </article>
-        ))}
+                    <div className="comment-avatar">
+                      <IssueCommentAvatar
+                        basePath={props.runtimeConfig.basePath}
+                        comment={comment}
+                      />
+                    </div>
+                    <div className="media-body">
+                      <div className="meta-info">
+                        <span className="comment_author">
+                          <span className="resp-comment-avatar">
+                            <IssueCommentAvatar
+                              basePath={props.runtimeConfig.basePath}
+                              comment={comment}
+                            />
+                          </span>
+                          <a
+                            data-placement="top"
+                            data-toggle="tooltip"
+                            href={
+                              authorLoginId
+                                ? prefixBasePath(props.runtimeConfig.basePath, `/${authorLoginId}`)
+                                : "#"
+                            }
+                            title={comment.authorLoginId || comment.authorLabel}
+                          >
+                            <strong>{comment.authorLabel || comment.authorLoginId}</strong>
+                          </a>
+                        </span>
+                        <span className="ago">{comment.createdLabel}</span>
+                      </div>
+                      <div
+                        className="comment-body markdown-wrap"
+                        data-via-email={comment.viaEmail ? "true" : undefined}
+                        dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
+                      />
+                      <div className="comment-vote-row">
+                        {comment.voterCount > 0 ? (
+                          <span className="comment-vote-count">
+                            {commentAgreementLabel(comment.voterCount)}
+                          </span>
+                        ) : null}
+                        {comment.voters.map((voter) => (
+                          <span
+                            className="comment-voter"
+                            key={voter.userId}
+                            title={voter.userLabel}
+                          >
+                            {voter.avatarUrl ? (
+                              <img alt={`${voter.userLabel} avatar`} src={voter.avatarUrl} />
+                            ) : null}
+                            <span>{voter.userLabel || voter.loginId}</span>
+                          </span>
+                        ))}
+                        {issue?.viewerCanComment && props.onCommentVoteToggle ? (
+                          <button
+                            aria-label={
+                              comment.viewerHasVoted
+                                ? "Withdraw comment agreement"
+                                : "Agree with comment"
+                            }
+                            className="comment-vote btn-transparent-with-fontsize-lineheight"
+                            onClick={() =>
+                              void props.onCommentVoteToggle?.(comment.id, comment.viewerHasVoted)
+                            }
+                            title={comment.viewerHasVoted ? "Withdraw" : "Agree"}
+                            type="button"
+                          >
+                            <span
+                              className={`yobicon-hearts ${
+                                comment.viewerHasVoted ? "vote-heart-on" : "vote-heart-off"
+                              }`}
+                            />
+                          </button>
+                        ) : null}
+                      </div>
+                      {comment.viewerCanUpdate && props.onCommentUpdate ? (
+                        <IssueCommentEditForm
+                          commentId={comment.id}
+                          csrfToken={props.csrfToken}
+                          getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
+                          initialContents={comment.contentsMarkdown}
+                          onSearchMentionUsers={props.onSearchMentionUsers}
+                          onSubmit={props.onCommentUpdate}
+                          runtimeConfig={props.runtimeConfig}
+                        />
+                      ) : null}
+                      {comment.viewerCanDelete && props.onCommentDelete ? (
+                        <button
+                          onClick={() => void props.onCommentDelete?.(comment.id)}
+                          type="button"
+                        >
+                          Delete comment
+                        </button>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
         {issue?.viewerCanComment && props.onCommentSubmit ? (
           <IssueCommentForm
             csrfToken={props.csrfToken}

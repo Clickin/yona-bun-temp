@@ -264,6 +264,18 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     .await;
     assert_eq!(commented["comments"].as_array().unwrap().len(), 1);
     assert_eq!(commented["timeline"].as_array().unwrap().len(), 1);
+    let author_avatar_url = commented["comments"][0]["authorAvatarUrl"]
+        .as_str()
+        .expect("issue comment author avatar url");
+    assert!(
+        author_avatar_url.starts_with("https://www.gravatar.com/avatar/")
+            && author_avatar_url.ends_with("?s=256&d=identicon"),
+        "{author_avatar_url}"
+    );
+    assert_eq!(
+        commented["timeline"][0]["comment"]["authorAvatarUrl"],
+        commented["comments"][0]["authorAvatarUrl"]
+    );
     assert!(commented["comments"][0]["contentsHtml"]
         .as_str()
         .unwrap()

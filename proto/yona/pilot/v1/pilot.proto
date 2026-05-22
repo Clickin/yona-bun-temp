@@ -873,6 +873,7 @@ message IssueComment {
   bool viewer_has_voted = 11;
   repeated IssueCommentVoter voters = 12;
   bool via_email = 13;
+  string author_avatar_url = 14;
 }
 
 message IssueCommentVoter {

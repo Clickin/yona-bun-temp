@@ -23087,6 +23087,7 @@ fn issue_comment_from_record(
             .map(|attachment| issue_attachment_from_record(attachment, base_path))
             .collect(),
         author_label: record.author_label.clone(),
+        author_avatar_url: gravatar_url(&record.author_email_address),
         author_login_id: record.author_login_id.clone(),
         contents_html: render_project_markdown_html_with_issue_references(
             &record.contents_markdown,
