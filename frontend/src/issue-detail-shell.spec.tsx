@@ -44,6 +44,29 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain("Watchers: 3");
     expect(html).toContain('class="label issue-label list-label active"');
   });
+
+  it("renders the legacy delete confirmation modal shell for deletable issues", () => {
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          viewerCanDelete: true,
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+        onDeleteIssue={async () => undefined}
+      />,
+    );
+
+    expect(html).toContain('href="#deleteConfirm"');
+    expect(html).toContain('data-toggle="modal"');
+    expect(html).toContain('id="deleteConfirm"');
+    expect(html).toContain('class="modal hide fade"');
+    expect(html).toContain("issue.delete");
+    expect(html).toContain("post.delete.confirm");
+    expect(html).toContain('class="ybtn ybtn-danger"');
+    expect(html).toContain('data-request-method="delete"');
+  });
 });
 
 const projectDetail: ProjectDetailViewModel = {

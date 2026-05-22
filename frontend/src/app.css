@@ -623,6 +623,70 @@ h1 {
   border-radius: 3px;
 }
 
+.issue-detail-page .ybtn-danger {
+  color: #b13427;
+  border-color: #d98c82;
+}
+
+.issue-detail-page .modal.hide {
+  display: none;
+}
+
+.issue-detail-page .modal {
+  position: fixed;
+  top: 18%;
+  left: 50%;
+  z-index: 1000;
+  width: min(480px, calc(100vw - 32px));
+  color: #333;
+  background: #fff;
+  border: 1px solid #999;
+  border-radius: 4px;
+  box-shadow: 0 3px 12px rgb(0 0 0 / 24%);
+  transform: translateX(-50%);
+}
+
+.issue-detail-page .modal-header,
+.issue-detail-page .modal-body,
+.issue-detail-page .modal-footer {
+  padding: 12px 16px;
+}
+
+.issue-detail-page .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #ddd;
+}
+
+.issue-detail-page .modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.issue-detail-page .modal-header .close {
+  padding: 0;
+  font-size: 20px;
+  line-height: 20px;
+  color: #777;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.issue-detail-page .modal-body p {
+  margin: 0;
+}
+
+.issue-detail-page .modal-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  background: #f7f7f7;
+  border-top: 1px solid #ddd;
+}
+
 @media (max-width: 720px) {
   .issue-detail-page .board-body.row-fluid {
     display: block;

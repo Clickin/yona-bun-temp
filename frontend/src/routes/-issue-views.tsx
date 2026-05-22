@@ -278,6 +278,7 @@ export function ProjectIssueDetailPage(props: {
   const issue = props.issue;
   const onDeleteIssue = props.onDeleteIssue;
   const onStateChange = props.onStateChange;
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
   const issueAuthorLoginId = issue?.authorLoginId ?? "";
   const issueAuthorLabel = issue?.authorLabel || issueAuthorLoginId || "Unknown";
   const issueAuthorHref = issueAuthorLoginId
@@ -438,15 +439,23 @@ export function ProjectIssueDetailPage(props: {
                   </button>
                 ) : null}
                 {issue?.viewerCanDelete && onDeleteIssue ? (
-                  <button
-                    className="icon btn-transparent-with-fontsize-lineheight ml6"
-                    onClick={() => void onDeleteIssue()}
-                    title="button.delete"
-                    type="button"
+                  <a
+                    data-toggle="modal"
+                    href="#deleteConfirm"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      setDeleteConfirmOpen(true);
+                    }}
                   >
-                    <i className="yobicon-trash"></i>
-                    Delete
-                  </button>
+                    <button
+                      className="icon btn-transparent-with-fontsize-lineheight ml6"
+                      title="button.delete"
+                      type="button"
+                    >
+                      <i className="yobicon-trash"></i>
+                      Delete
+                    </button>
+                  </a>
                 ) : null}
               </span>
             </div>
@@ -656,6 +665,37 @@ export function ProjectIssueDetailPage(props: {
             ) : null}
           </aside>
         </div>
+        {issue?.viewerCanDelete && onDeleteIssue ? (
+          <div
+            aria-hidden={deleteConfirmOpen ? "false" : "true"}
+            className={`modal hide fade${deleteConfirmOpen ? " in" : ""}`}
+            id="deleteConfirm"
+            style={deleteConfirmOpen ? { display: "block" } : undefined}
+          >
+            <div className="modal-header">
+              <button className="close" onClick={() => setDeleteConfirmOpen(false)} type="button">
+                x
+              </button>
+              <h3>issue.delete</h3>
+            </div>
+            <div className="modal-body">
+              <p>post.delete.confirm</p>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="ybtn ybtn-danger"
+                data-request-method="delete"
+                onClick={() => void onDeleteIssue()}
+                type="button"
+              >
+                button.yes
+              </button>
+              <button className="ybtn" onClick={() => setDeleteConfirmOpen(false)} type="button">
+                button.no
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </main>
   );

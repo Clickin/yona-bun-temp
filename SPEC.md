@@ -550,7 +550,7 @@ POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → le
 - [x] Legacy direct issue comment form aliases: `POST /:owner/:project/issue/:number/comments`, `POST /:owner/:project/issue/:number/comments/:commentId`, and `DELETE /:owner/:project/issue/:number/comment/:commentId/delete` reuse the `/api/v1` comment contract and redirect back to the legacy issue anchor
 - [ ] 타임라인: 상태 변경/담당자 변경/라벨 변경 이벤트가 댓글과 인터리빙되어 시간순 표시
 - [ ] Mass Update: 체크박스로 다중 선택 → 상태/담당자/마일스톤 일괄 변경 (legacy `IssueMassUpdate` 동일)
-- [ ] 이슈 삭제: 작성자 또는 프로젝트 관리자만 가능
+- [ ] 이슈 삭제: 작성자 또는 프로젝트 관리자만 가능; detail 화면은 legacy `issue/view.scala.html`처럼 `#deleteConfirm.modal.hide.fade`, `data-toggle="modal"`, `issue.delete`, `post.delete.confirm`, and `data-request-method="delete"` confirmation shell을 거친다.
 - [ ] 이슈 공유: 직접 공유된 사용자는 비공개/제한 이슈와 댓글을 읽고 해당 이슈에 댓글 작성 가능, parent issue 공유는 child issue 읽기만 허용
 - [ ] 이슈 공유 검색은 읽기 ACL을 재사용하고, active user와 public project 후보를 typed target으로 반환하며, 실제 공유 추가/삭제시에만 `ISSUE_SHARER_CHANGED` 타임라인/notification/mail queue row side effect를 남긴다
 - [ ] @멘션은 이슈 본문과 댓글에서 `@user`, `@org`, `@owner/project`를 해석하고 신규 활성 사용자 mention만 기존 이슈/댓글 이벤트 타입으로 알림 row를 만든다
