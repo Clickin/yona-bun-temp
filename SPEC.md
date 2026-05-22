@@ -146,6 +146,7 @@ legacy Yona 사용자가 기존 설정을 최소한의 변환으로 새 실행�
 | `notification.bymail.enabled`              | `YONA_NOTIFICATION_MAIL_ENABLED`                    |                              |
 | `application.notification.bymail.interval` | `YONA_NOTIFICATION_MAIL_INTERVAL`                   |                              |
 | `application.notification.bymail.hideAddress` | `YONA_NOTIFICATION_MAIL_HIDE_ADDRESS`            | notification mail BCC mode   |
+| `application.notification.bymail.recipientLimit` | `YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT`      | notification mail recipient partitioning |
 | `application.maxFileSize`                  | `YONA_MAX_FILE_SIZE`                                |                              |
 | `project.default.scope.when.create`        | `YONA_PROJECT_DEFAULT_SCOPE`                        | public/protected/private     |
 | `project.creation.default.menus`           | `YONA_PROJECT_DEFAULT_MENUS`                        | issue, milestone, board 등   |
@@ -907,20 +908,20 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 타입 토글
 | 기능                 | Legacy 동작                                       | 현재 상태                | Phase |
 | -------------------- | ------------------------------------------------- | ------------------------ | ----- |
 | 알림 목록            | 시간역순 알림 이벤트 목록                         | ✅ Phase 2N 기본 구현    | 5     |
-| 이메일 알림          | 이벤트 발생 시 이메일 발송                        | 🔶 due-row outbound fan-out helper + allowed-domain/BCC 구현; scheduler/full format gap | 5     |
+| 이메일 알림          | 이벤트 발생 시 이메일 발송                        | 🔶 due-row outbound fan-out helper + allowed-domain/BCC/recipientLimit 구현; scheduler/full format gap | 5     |
 | 프로젝트별 알림 설정 | NEW_ISSUE, NEW_POSTING, NEW_COMMENT 등 토글       | ✅ 기본 구현             | 1     |
 | Watch/Unwatch        | 리소스(이슈/프로젝트) 감시                        | ✅ 프로젝트 토글 구현    | 1     |
 | 알림 이벤트 타입     | 이슈 생성, 댓글, 상태변경, PR 생성/merge, 리뷰 등 | 🔶 핵심 list projection 구현 | 5     |
 | BCC 모드             | 수신자 간 이메일 주소 비공개                      | ✅ `YONA_NOTIFICATION_MAIL_HIDE_ADDRESS` 기본 true | 5     |
 | 알림 간격            | `notification.bymail.interval` 배치 발송          | gap (due-row drain helper만 구현) | 5     |
 | Draft-time 머징      | 30초 내 연속 편집 알림 병합                       | ✅ notification event/mail queue merge 구현 | 5     |
-| 수신자 제한          | `recipientLimit` 설정                             | gap                      | 5     |
+| 수신자 제한          | `recipientLimit` 설정                             | ✅ BCC partition 기본 구현 | 5     |
 
 #### 검수 기준
 
 - [x] 알림 목록: legacy `/notification` 화면과 `/notifications` full-page alias가 `page-wrap-outer`, `page-wrap`, `content-container`, `main-stream`, `activity-streams notification-wrap`, `notification-stream`, `data-toggle="learnmore"`, empty, and More anchors 표시
 - [x] 알림 목록 event projection: legacy `partial_notifications.scala.html` icon class와 `NotificationEvent.getMessage`의 PR state/review/thread message key를 core issue/post/PR/review/commit notification에 반영한다
-- [~] 이메일 알림: due `notification_mail` row를 outbound mail로 fan-out하고 queue row를 삭제하는 helper가 있으며, legacy `application.allowed.sending.mail.domains` / `YONA_ALLOWED_MAIL_DOMAINS` 도메인 필터와 기본 BCC hide-address mode를 적용한다. 자동 scheduler와 full legacy mail template은 gap이다
+- [~] 이메일 알림: due `notification_mail` row를 outbound mail로 fan-out하고 queue row를 삭제하는 helper가 있으며, legacy `application.allowed.sending.mail.domains` / `YONA_ALLOWED_MAIL_DOMAINS` 도메인 필터, 기본 BCC hide-address mode, and `application.notification.bymail.recipientLimit` / `YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT` partitioning을 적용한다. 자동 scheduler와 full legacy mail template은 gap이다
 - [x] 이메일 알림 준비: notification event 생성 시 `notification_mail` queue row를 만들고 due row drain helper가 created ASC로 event id를 반환한 뒤 queue row를 삭제한다
 - [x] 알림 토글: 프로젝트별 이벤트 타입(NEW_ISSUE, NEW_POSTING, NEW_COMMENT 등) on/off
 - [ ] 알림 이메일: legacy 메일 포맷(제목, 본문, 링크)과 동일
@@ -1350,7 +1351,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | Git Smart HTTP    | 🔶 Phase 3L 구현 | `git http-backend` wrapper로 clone/pull upload-pack 및 인증/권한이 적용된 receive-pack transport를 구현하고, receive-pack 후 `NEW_COMMIT` notification, pushed-branch metadata, push JSON webhook outbox를 기록한다 |
 | PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, required/lacking reviewer projection, project default reviewer threshold settings, review-threshold-gated accept, PR watcher projection/watch-unwatch, PR watcher/body-mention-derived notification receiver, 일반 PR comment, thread open/close, fork/clone, conflict-free merge, conflict 표시/merge 비활성화 안내, source branch cleanup/restore, PR commit-changed event/webhook, side-aware single-line ranged inline review CRUD. in-app conflict resolution/multi-line review polish는 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
-| 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, core event icon/message projection, single/mass-update issue state-change receiver fan-out, mail queue staging, due-row outbound fan-out helper, allowed-domain mail receiver filtering, BCC hide-address mode |
+| 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, core event icon/message projection, single/mass-update issue state-change receiver fan-out, mail queue staging, due-row outbound fan-out helper, allowed-domain mail receiver filtering, BCC hide-address mode, recipientLimit partitioning |
 | 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment/merge/commit-changed non-JSON fan-out plus git-push JSON payloads; delivery history and hardening remain gaps |
 | 관리자            | ❌ 미구현         |                                                                  |
 | 마크다운          | 🔶 기본 구현      | Issue/post/milestone/PR/code comment sanitized HTML projection plus `@user`, `#123`, `owner/project#123`, bare `http(s)`/`ftp`/`www`/email autolinks, readable issue title/state metadata, soft line breaks, safe inline images, disabled task-list checkboxes, fenced-code token highlighting, code-browser Markdown local image path rewrite, project-home Git README local image/normal-link rewrite, and legacy `POST /markdown/:owner/:project` preview rendering |
@@ -1563,7 +1564,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Code follow-up: multi-line ranged code-comment selection polish, inline code-comment edit, SVN executable repository/serve integration
 - PullRequest follow-up: in-app merge conflict resolution workflow and multi-line inline review selection polish
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
-- Notification: SMTP scheduler/delivery, recipient limit, and full mail notification template parity
+- Notification: SMTP scheduler/delivery, language grouping, and full mail notification template parity
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope
 - Webhook follow-up: HTTPS production delivery hardening, optional signature compatibility if external evidence requires it, and delivery history/retry behavior
 - Admin: users/projects/site-admin/account-lock/test-mail surfaces

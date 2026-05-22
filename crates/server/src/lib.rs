@@ -2766,6 +2766,24 @@ fn notification_mail_hide_addresses() -> bool {
         .unwrap_or(true)
 }
 
+fn notification_mail_recipient_limit() -> Option<usize> {
+    std::env::var("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT")
+        .ok()
+        .and_then(|value| value.trim().parse::<usize>().ok())
+        .filter(|limit| *limit > 0)
+}
+
+fn notification_mail_partial_recipient_size(hide_addresses: bool, recipient_count: usize) -> usize {
+    let Some(limit) = notification_mail_recipient_limit() else {
+        return recipient_count;
+    };
+    if hide_addresses {
+        limit.saturating_sub(1)
+    } else {
+        limit
+    }
+}
+
 fn notification_mail_content(
     item: &persistence::NotificationItemRecord,
     target_url: &str,
@@ -2818,21 +2836,27 @@ pub async fn deliver_due_notification_mails(
             if bcc.is_empty() {
                 continue;
             }
+            let partial_recipient_size = notification_mail_partial_recipient_size(true, bcc.len());
+            if partial_recipient_size == 0 {
+                continue;
+            }
             let target_url = if item.target_path.is_empty() {
                 String::new()
             } else {
                 absolute_app_url(&public_origin, base_path, &item.target_path)
             };
             let (subject, body) = notification_mail_content(&item, &target_url);
-            deliver(OutboundMail {
-                bcc,
-                body,
-                from: default_smtp_from(),
-                subject,
-                to: default_smtp_from(),
-            })
-            .map_err(|error| error.to_string())?;
-            delivered += 1;
+            for recipient_chunk in bcc.chunks(partial_recipient_size) {
+                deliver(OutboundMail {
+                    bcc: recipient_chunk.to_vec(),
+                    body: body.clone(),
+                    from: default_smtp_from(),
+                    subject: subject.clone(),
+                    to: default_smtp_from(),
+                })
+                .map_err(|error| error.to_string())?;
+                delivered += 1;
+            }
         }
         return Ok(delivered);
     }
