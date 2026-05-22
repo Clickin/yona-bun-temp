@@ -25,7 +25,10 @@ use session::{SessionConfig, SessionManager};
 use std::{
     collections::{HashMap, HashSet},
     path::{Path as StdPath, PathBuf},
-    sync::{Mutex, OnceLock},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Mutex, OnceLock,
+    },
     time::{Duration, SystemTime},
     vec,
 };
@@ -58,6 +61,8 @@ pub mod generated {
 pub mod embedded_assets {
     include!(concat!(env!("OUT_DIR"), "/_embedded_assets.rs"));
 }
+
+static SITE_UPDATE_NOTIFICATION_WATCHED: AtomicBool = AtomicBool::new(true);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum ErrorCode {
@@ -399,6 +404,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let site_set_avatar_session_manager = session_manager.clone();
     let site_mail_list_backend = route_backend.clone();
     let site_mail_list_session_manager = session_manager.clone();
+    let site_unwatch_update_backend = route_backend.clone();
+    let site_unwatch_update_session_manager = session_manager.clone();
     let site_toggle_admin_backend = route_backend.clone();
     let site_toggle_admin_session_manager = session_manager.clone();
     let site_toggle_admin_base_path = base_path.clone();
@@ -854,6 +861,19 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         body,
                         site_mail_list_session_manager.clone(),
                         site_mail_list_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/unwatchUpdate",
+            post(move |headers: HeaderMap| {
+                async move {
+                    direct_unwatch_site_update(
+                        headers,
+                        site_unwatch_update_session_manager.clone(),
+                        site_unwatch_update_backend.clone(),
                     )
                     .await
                 }
@@ -4449,6 +4469,26 @@ async fn direct_read_site_mail_list(
     };
     match rest_read_site_mail_list(headers, body, service).await {
         Ok(Json(payload)) => Json(payload.recipients).into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
+async fn direct_unwatch_site_update(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_require_site_admin_repository(&service, &headers, true).await {
+        Ok(_) => {
+            SITE_UPDATE_NOTIFICATION_WATCHED.store(false, Ordering::SeqCst);
+            StatusCode::OK.into_response()
+        }
         Err(error) => error.into_response(),
     }
 }

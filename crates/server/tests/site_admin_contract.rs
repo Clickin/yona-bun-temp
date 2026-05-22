@@ -623,6 +623,45 @@ async fn site_admin_direct_mutation_aliases_follow_legacy_routes() {
 }
 
 #[tokio::test]
+async fn site_admin_unwatch_update_alias_follows_legacy_route() {
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let unauthenticated = rest_post(app.clone(), "/yona/sites/unwatchUpdate", None, None).await;
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let forbidden = rest_post(
+        app.clone(),
+        "/yona/sites/unwatchUpdate",
+        Some(&member_cookie),
+        Some(&member_csrf),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let missing_csrf = rest_post(
+        app.clone(),
+        "/yona/sites/unwatchUpdate",
+        Some(&admin_cookie),
+        None,
+    )
+    .await;
+    assert_eq!(missing_csrf.status(), StatusCode::FORBIDDEN);
+
+    let hidden = rest_post(
+        app,
+        "/yona/sites/unwatchUpdate",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+    )
+    .await;
+    assert_eq!(hidden.status(), StatusCode::OK);
+    assert_eq!(response_text(hidden).await, "");
+}
+
+#[tokio::test]
 async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     let (app, repo, db) = build_app_with_repository().await;
     let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;

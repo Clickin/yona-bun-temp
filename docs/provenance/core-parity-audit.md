@@ -93,6 +93,9 @@
   `/user/editform` views instead of crashing before parity assertions run.
 - The root runtime error banner is route-bootstrap support for visible in-page
   API errors; it does not change legacy route ownership or close a parity row.
+- Site admin update parity now includes the direct legacy `POST /sites/unwatchUpdate`
+  alias. It is site-admin/CSRF-gated and lowers the in-process update notification
+  watch flag, while live version refresh/download remains deferred.
 - `DESIGN.md` records the legacy Yona view/LESS source order for future frontend
   styling work and is a guardrail, not a new product surface.
 

@@ -1033,6 +1033,7 @@ POST  /sites/mail              → 테스트 메일 발송
 POST  /sites/mailList          → 대량 메일 발송
 GET   /sites/diagnostic        → 시스템 진단
 GET   /sites/update            → 업데이트 확인
+POST  /sites/unwatchUpdate     → 업데이트 알림 숨김
 GET   /sites/data              → 데이터 관리
 GET   /sites/noAvatarUsers     → avatar 미설정 active 사용자 JSON
 POST  /sites/setAttachmentToUserAvatar → 첨부 파일을 사용자 avatar로 지정
@@ -1066,7 +1067,7 @@ GET   /sites/export            → 데이터 익스포트
 - [x] 이슈 목록: site admin 전용 `/api/v1/site/issues`, `open`/`closed` tabs, 30-item pagination, legacy `/sites/issueList` shell/sidebar/list/link anchors
 - [x] 시스템 진단: site admin 전용 `/api/v1/site/diagnostics`, legacy `/sites/diagnostic` shell/sidebar/title area, no-error message, error count, and `<pre>` error rows
 - [x] 메일 테스트/대량 메일: site admin 전용 `/api/v1/site/mail`, `/api/v1/site/mail/test`, `/api/v1/site/mail-list`, legacy `/sites/mail` form shell, `/sites/massmail` recipient lookup/mailto shell, and direct `/sites/mailList` form-urlencoded JSON-array recipient resolver
-- [x] 업데이트 화면 shell: `/sites/update` is site-admin-gated and preserves the legacy `site/update.scala.html` sidebar/title/no-update shell; live version refresh/download remains deferred
+- [x] 업데이트 화면 shell: `/sites/update` is site-admin-gated and preserves the legacy `site/update.scala.html` sidebar/title/no-update shell; direct legacy `POST /sites/unwatchUpdate` is site-admin/CSRF-gated and hides the in-process update notification flag; live version refresh/download remains deferred
 - [x] 데이터 관리 화면 shell: `/sites/data` is site-admin-gated and preserves the legacy `site/data.scala.html` title, warning list, export anchor, multipart import form, and `name="data"` file input; live import/export execution remains deferred
 
 ---
@@ -1536,6 +1537,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/sites/issueList`                  | GET      | `GET /api/v1/site/issues`             | `sites/$pageName`                             | implemented        |
 | `/sites/mailList`                   | POST     | `POST /api/v1/site/mail-list`         | `sites/$pageName` massmail action             | implemented        |
 | `/sites/diagnostic`                 | GET      | `GET /api/v1/site/diagnostics`        | `sites/$pageName`                             | implemented        |
+| `/sites/unwatchUpdate`              | POST     | in-process update notification flag   | direct route                                  | implemented        |
 | `/sites/*`                         | GET      | —                                     | `sites/$pageName` placeholders                | remaining gap      |
 | `/-_-api/v1/*`                     | Various  | —                                     | —                                             | unsupported in app; migrator/deferred |
 | `/svn/*`                           | Various  | —                                     | —                                             | deferred           |
