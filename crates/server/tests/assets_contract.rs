@@ -832,6 +832,7 @@ async fn attachment_binding_uses_legacy_container_type_names() {
             contents_markdown: "issue comment body".to_string(),
             issue_number: issue.issue_number,
             owner_name: "owner".to_string(),
+            parent_comment_id: None,
             project_name: "projectYobi".to_string(),
         })
         .await

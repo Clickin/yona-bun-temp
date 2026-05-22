@@ -682,14 +682,19 @@ describe("auth and workspace views", () => {
           viewerCanUpdate: true,
         }}
         getIssueReferencesQueryOptions={getIssueReferencesQueryOptions}
+        initialBodyMarkdown="Source comment body"
         mode="create"
         onSearchAssignableUsers={async () => ({ items: [], total: 0, truncated: false })}
         onSubmit={async () => undefined}
+        referCommentId="55"
         runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
       />,
     );
     expect(createHtml).toContain('name="assigneeLoginId"');
     expect(createHtml).toContain('name="body"');
+    expect(createHtml).toContain('name="referCommentId"');
+    expect(createHtml).toContain('value="55"');
+    expect(createHtml).toContain("Source comment body");
     expect(createHtml).toContain('placeholder="Assignee"');
     expect(createHtml).not.toContain("Searching…");
 

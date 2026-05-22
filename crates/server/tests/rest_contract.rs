@@ -1632,6 +1632,7 @@ async fn rest_user_statistics_counts_legacy_activity_rows() {
             contents_markdown: "owner issue comment".to_string(),
             issue_number: authored_issue.issue_number,
             owner_name: "owner".to_string(),
+            parent_comment_id: None,
             project_name: "statsYobi".to_string(),
         })
         .await

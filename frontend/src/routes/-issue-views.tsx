@@ -1956,6 +1956,7 @@ export function ProjectIssueFormPage(props: {
   csrfToken?: string;
   detail: ProjectDetailViewModel | null;
   getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
+  initialBodyMarkdown?: string;
   initialIssue?: ProjectIssueDetailViewModel | null;
   mode: "create" | "edit";
   onSearchAssignableUsers?: (query: string) => Promise<IssueAssignableUsersResponse>;
@@ -1964,11 +1965,14 @@ export function ProjectIssueFormPage(props: {
     context: IssueMentionUserSearchContext,
   ) => Promise<IssueMentionUsersResponse>;
   onSubmit: (input: ProjectIssueFormSubmitInput) => Promise<void>;
+  referCommentId?: string;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
   const [title, setTitle] = React.useState(props.initialIssue?.title ?? "");
-  const [bodyMarkdown, setBodyMarkdown] = React.useState(props.initialIssue?.bodyMarkdown ?? "");
+  const [bodyMarkdown, setBodyMarkdown] = React.useState(
+    props.initialIssue?.bodyMarkdown ?? props.initialBodyMarkdown ?? "",
+  );
   const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
   const [assigneeLoginId, setAssigneeLoginId] = React.useState(
     props.initialIssue?.assigneeLoginId ?? "",
@@ -1977,13 +1981,14 @@ export function ProjectIssueFormPage(props: {
 
   React.useEffect(() => {
     setTitle(props.initialIssue?.title ?? "");
-    setBodyMarkdown(props.initialIssue?.bodyMarkdown ?? "");
+    setBodyMarkdown(props.initialIssue?.bodyMarkdown ?? props.initialBodyMarkdown ?? "");
     setAttachmentIds([]);
     setAssigneeLoginId(props.initialIssue?.assigneeLoginId ?? "");
   }, [
     props.initialIssue?.assigneeLoginId,
     props.initialIssue?.bodyMarkdown,
     props.initialIssue?.title,
+    props.initialBodyMarkdown,
   ]);
 
   const selectAssigneeSuggestion = (suggestion: IssueAssignableUserItem) => {
@@ -2013,6 +2018,7 @@ export function ProjectIssueFormPage(props: {
           void props.onSubmit(input).finally(() => setSubmitting(false));
         }}
       >
+        <input name="referCommentId" type="hidden" value={props.referCommentId ?? ""} />
         <input
           name="title"
           onChange={(event) => setTitle(event.currentTarget.value)}

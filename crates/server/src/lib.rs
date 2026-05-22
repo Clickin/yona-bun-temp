@@ -8640,6 +8640,32 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/user/issues/new-options",
+            get({
+                let session_manager = session_manager.clone();
+                let backend = backend.clone();
+                let base_path = base_path.clone();
+                let public_origin = public_origin.clone();
+                move |headers: HeaderMap, Query(query): Query<RestDirectIssueFormQuery>| {
+                    let session_manager = session_manager.clone();
+                    let backend = backend.clone();
+                    let base_path = base_path.clone();
+                    let public_origin = public_origin.clone();
+                    async move {
+                        rest_read_direct_issue_form_options(
+                            headers,
+                            query,
+                            session_manager,
+                            backend,
+                            base_path,
+                            public_origin,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
             "/user/issues",
             get({
                 let session_manager = session_manager.clone();
@@ -17474,6 +17500,31 @@ struct RestUserIssuesQuery {
 
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+struct RestDirectIssueFormQuery {
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_i64_from_string_or_number"
+    )]
+    comment_id: Option<i64>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestDirectIssueFormProject {
+    owner_name: String,
+    project_name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestDirectIssueFormOptionsResponse {
+    body_markdown: String,
+    refer_comment_id: String,
+    selected_project: RestDirectIssueFormProject,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 struct RestIssueMutationBody {
     assignee_login_id: String,
     #[serde(
@@ -17492,6 +17543,11 @@ struct RestIssueMutationBody {
         deserialize_with = "deserialize_optional_i64_from_string_or_number"
     )]
     milestone_id: Option<i64>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_i64_from_string_or_number"
+    )]
+    refer_comment_id: Option<i64>,
     title: String,
 }
 
@@ -18744,6 +18800,107 @@ async fn rest_list_user_issues(
     }))
 }
 
+async fn rest_read_direct_issue_form_options(
+    headers: HeaderMap,
+    query: RestDirectIssueFormQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+    public_origin: String,
+) -> Result<Json<RestDirectIssueFormOptionsResponse>, RestRouteError> {
+    let session =
+        require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
+    let PilotBackend::Repository(repository) = &backend else {
+        return Err(RestRouteError::not_implemented(
+            "direct issue form requires repository backend",
+        ));
+    };
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let selected_project = repository
+        .list_recent_projects_for_user(actor.id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .into_iter()
+        .next()
+        .ok_or_else(|| RestRouteError::not_found("project.is.empty"))?;
+    require_project_read(
+        repository,
+        &selected_project.owner_name,
+        &selected_project.project_name,
+        session.user_id,
+    )
+    .await
+    .map_err(RestRouteError::from_connect_error)?;
+
+    let mut body_markdown = String::new();
+    let mut refer_comment_id = String::new();
+    if let Some(comment_id) = query.comment_id.filter(|comment_id| *comment_id > 0) {
+        let origin = repository
+            .read_issue_comment_origin(comment_id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+            .ok_or_else(|| RestRouteError::not_found("issue comment not found"))?;
+        require_project_read(
+            repository,
+            &origin.owner_name,
+            &origin.project_name,
+            session.user_id,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+        body_markdown =
+            direct_issue_body_markdown_from_comment(&origin, &public_origin, &base_path);
+        refer_comment_id = origin.comment_id.to_string();
+    }
+
+    Ok(Json(RestDirectIssueFormOptionsResponse {
+        body_markdown,
+        refer_comment_id,
+        selected_project: RestDirectIssueFormProject {
+            owner_name: selected_project.owner_name,
+            project_name: selected_project.project_name,
+        },
+    }))
+}
+
+fn issue_comment_path(origin: &persistence::IssueCommentOriginRecord) -> String {
+    format!(
+        "/{}/{}/issue/{}#comment-{}",
+        origin.owner_name, origin.project_name, origin.issue_number, origin.comment_id
+    )
+}
+
+fn direct_issue_body_markdown_from_comment(
+    origin: &persistence::IssueCommentOriginRecord,
+    public_origin: &str,
+    base_path: &str,
+) -> String {
+    let source_url = absolute_app_url(public_origin, base_path, &issue_comment_path(origin));
+    format!(
+        "{}\n\n_Originally posted by @{} in {}_",
+        origin.contents_markdown, origin.author_login_id, source_url
+    )
+}
+
+fn derived_issue_comment_markdown(
+    issue: &persistence::IssueRecord,
+    public_origin: &str,
+    base_path: &str,
+) -> String {
+    let path = format!(
+        "/{}/{}/issue/{}",
+        issue.owner_name, issue.project_name, issue.issue_number
+    );
+    format!(
+        "issue.derived:{}",
+        absolute_app_url(public_origin, base_path, &path)
+    )
+}
+
 async fn rest_read_issue_detail(
     headers: HeaderMap,
     owner_name: String,
@@ -19215,6 +19372,27 @@ async fn rest_create_issue(
     require_project_read(repository, &owner_name, &project_name, session.user_id)
         .await
         .map_err(RestRouteError::from_connect_error)?;
+    let refer_comment_id = body.refer_comment_id.filter(|comment_id| *comment_id > 0);
+    let refer_comment_origin = match refer_comment_id {
+        Some(comment_id) => {
+            let origin = repository
+                .read_issue_comment_origin(comment_id)
+                .await
+                .map_err(internal_error)
+                .map_err(RestRouteError::from_connect_error)?
+                .ok_or_else(|| RestRouteError::not_found("issue comment not found"))?;
+            require_project_read(
+                repository,
+                &origin.owner_name,
+                &origin.project_name,
+                session.user_id,
+            )
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
+            Some(origin)
+        }
+        None => None,
+    };
     let issue = repository
         .create_issue(persistence::CreateIssueInput {
             actor_display_name: actor.display_name.clone(),
@@ -19228,6 +19406,28 @@ async fn rest_create_issue(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    if let (Some(origin), Some(parent_comment_id)) = (refer_comment_origin, refer_comment_id) {
+        repository
+            .create_issue_comment(persistence::CreateIssueCommentInput {
+                actor_display_name: actor.display_name.clone(),
+                actor_id: actor.id,
+                actor_login_id: actor.login_id.clone(),
+                attachment_ids: Vec::new(),
+                contents_markdown: derived_issue_comment_markdown(
+                    &issue,
+                    &public_origin,
+                    &base_path,
+                ),
+                issue_number: origin.issue_number,
+                owner_name: origin.owner_name,
+                parent_comment_id: Some(parent_comment_id),
+                project_name: origin.project_name,
+            })
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+            .ok_or_else(|| RestRouteError::not_found("source issue not found"))?;
+    }
     dispatch_issue_webhooks(
         repository,
         &issue,
@@ -19419,6 +19619,7 @@ async fn rest_create_issue_comment(
             contents_markdown: body.contents_markdown.clone(),
             issue_number,
             owner_name,
+            parent_comment_id: None,
             project_name,
         })
         .await
@@ -27667,6 +27868,7 @@ impl PilotServiceImpl {
                 contents_markdown: request.contents_markdown.to_string(),
                 issue_number: request.issue_number,
                 owner_name: request.owner_name.to_string(),
+                parent_comment_id: None,
                 project_name: request.project_name.to_string(),
             })
             .await

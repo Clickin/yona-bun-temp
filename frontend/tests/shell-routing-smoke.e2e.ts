@@ -1106,6 +1106,76 @@ test("project issue routes render data-backed issue list filters and detail scre
   );
 });
 
+test("project issue routes render direct issue form from comment for authenticated users", async ({
+  page,
+}) => {
+  let directIssueCreateBody: null | {
+    bodyMarkdown?: string;
+    referCommentId?: string;
+    title?: string;
+  } = null;
+
+  await page.route(apiV1Route("/session"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        defaultLandingPath: "/me",
+        emailAddress: "nori@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "nori",
+        userLabel: "Nori",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(/\/api\/v1\/user\/issues\/new-options\?commentId=55$/, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        bodyMarkdown:
+          "First issue comment\n\n_Originally posted by @nori in http://localhost:3001/yona/admin/projectYobi/issue/1#comment-55_",
+        referCommentId: "55",
+        selectedProject: {
+          ownerName: "admin",
+          projectName: "projectYobi",
+        },
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(/\/api\/v1\/projects\/admin\/projectYobi\/issues$/, async (route) => {
+    directIssueCreateBody = route.request().postDataJSON() as {
+      bodyMarkdown?: string;
+      referCommentId?: string;
+      title?: string;
+    };
+    await route.fulfill({
+      body: JSON.stringify({
+        issueNumber: "2",
+        ownerName: "admin",
+        projectName: "projectYobi",
+        title: directIssueCreateBody.title ?? "Derived issue",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/user/issues/new?commentId=55");
+  await expect(page.getByRole("heading", { name: "New Issue" })).toBeVisible();
+  await expect(page.locator('input[name="referCommentId"]')).toHaveValue("55");
+  await expect(page.locator('textarea[name="body"]')).toHaveValue(/First issue comment/);
+  await expect(page.locator('textarea[name="body"]')).toHaveValue(/Originally posted by @nori/);
+  await page.locator('input[name="title"]').fill("Derived issue");
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect.poll(() => directIssueCreateBody?.referCommentId).toBe("55");
+  expect(directIssueCreateBody?.title).toBe("Derived issue");
+  expect(directIssueCreateBody?.bodyMarkdown).toContain("First issue comment");
+  await expect(page).toHaveURL(/\/yona\/admin\/projectYobi\/issue\/2$/);
+});
+
 test("project issue comment editor inserts pasted and dropped image uploads", async ({ page }) => {
   const uploadedHeaders: string[] = [];
   const uploadedNames: string[] = [];

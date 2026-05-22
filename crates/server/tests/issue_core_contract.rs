@@ -686,3 +686,141 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
     .await;
     assert_eq!(mass_updated["items"][0]["state"], "closed");
 }
+
+#[tokio::test]
+async fn issue_core_contract_restores_direct_issue_from_comment_flow() {
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "overview": "Direct issue parity",
+                "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/workspace/recent-projects",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi"
+            })),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Source issue",
+                "bodyMarkdown": "source body"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let commented = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/comments",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "contentsMarkdown": "Source comment body"
+            })),
+        )
+        .await,
+    )
+    .await;
+    let comment_id = commented["comments"][0]["id"].as_str().unwrap().to_string();
+
+    let options = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("/yona/api/v1/user/issues/new-options?commentId={comment_id}"),
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(options["selectedProject"]["ownerName"], "owner");
+    assert_eq!(options["selectedProject"]["projectName"], "projectYobi");
+    assert_eq!(options["referCommentId"], comment_id);
+    let body_markdown = options["bodyMarkdown"].as_str().unwrap();
+    assert!(
+        body_markdown.contains("Source comment body"),
+        "{body_markdown}"
+    );
+    assert!(
+        body_markdown.contains(&format!(
+            "_Originally posted by @owner in http://localhost:3001/yona/owner/projectYobi/issue/1#comment-{comment_id}_"
+        )),
+        "{body_markdown}"
+    );
+
+    let created = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Derived issue",
+                "bodyMarkdown": body_markdown,
+                "referCommentId": comment_id
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(created["issueNumber"], "2");
+
+    let source = response_json(
+        rest(
+            app,
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(source["commentCount"], 2);
+    assert!(
+        source["comments"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|comment| {
+                comment["contentsMarkdown"]
+                    == "issue.derived:http://localhost:3001/yona/owner/projectYobi/issue/2"
+            }),
+        "{source}"
+    );
+}

@@ -232,6 +232,15 @@ export interface UserIssueListOptions {
   state?: string;
 }
 
+export type DirectIssueFormOptionsResponse = {
+  bodyMarkdown: string;
+  referCommentId: string;
+  selectedProject: {
+    ownerName: string;
+    projectName: string;
+  };
+};
+
 export interface CodeBrowserOptions {
   branch?: string;
   path?: string;
@@ -452,17 +461,21 @@ function projectIssueDetailRestPath(
   return `${projectIssuesRestPath(ownerName, projectName)}/${String(issueNumber)}`;
 }
 
-function issueMutationRestBody(
-  input:
-    | MessageInitShape<typeof CreateIssueRequestSchema>
-    | MessageInitShape<typeof UpdateIssueRequestSchema>,
-) {
+type IssueMutationRestInput = (
+  | MessageInitShape<typeof CreateIssueRequestSchema>
+  | MessageInitShape<typeof UpdateIssueRequestSchema>
+) & {
+  referCommentId?: bigint | number | string | null;
+};
+
+function issueMutationRestBody(input: IssueMutationRestInput) {
   return {
     assigneeLoginId: input.assigneeLoginId ?? "",
     attachmentIds: input.attachmentIds ?? [],
     bodyMarkdown: input.bodyMarkdown ?? "",
     labelIds: input.labelIds ?? [],
     milestoneId: input.milestoneId && input.milestoneId !== 0n ? input.milestoneId : undefined,
+    referCommentId: input.referCommentId ?? undefined,
     title: input.title ?? "",
   };
 }
@@ -570,6 +583,26 @@ export async function readIssueDetail(
   );
 }
 
+export async function readDirectIssueFormOptions(
+  runtimeConfig: RuntimeConfig,
+  input: { commentId?: bigint | number | string | null } = {},
+  fetchImpl: typeof fetch = fetch,
+): Promise<DirectIssueFormOptionsResponse> {
+  const response = await restFetch<DirectIssueFormOptionsResponse>(
+    runtimeConfig,
+    `/user/issues/new-options${issueQueryString({ commentId: input.commentId })}`,
+    { fetchImpl },
+  );
+  return {
+    bodyMarkdown: response.bodyMarkdown ?? "",
+    referCommentId: response.referCommentId ?? "",
+    selectedProject: {
+      ownerName: response.selectedProject?.ownerName ?? "",
+      projectName: response.selectedProject?.projectName ?? "",
+    },
+  };
+}
+
 export async function updateIssueState(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
@@ -591,7 +624,9 @@ export async function updateIssueState(
 export async function createIssue(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,
-  input: MessageInitShape<typeof CreateIssueRequestSchema>,
+  input: MessageInitShape<typeof CreateIssueRequestSchema> & {
+    referCommentId?: bigint | number | string | null;
+  },
   fetchImpl: typeof fetch = fetch,
 ): Promise<ReadIssueDetailResponse> {
   return restFetch<ReadIssueDetailResponse>(

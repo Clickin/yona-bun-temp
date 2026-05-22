@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute } from "@tanstack/react-router";
 import { listUserIssues } from "../../../auth-workspace-client";
 import { useAppRuntime } from "../../../app-runtime-context";
 import { toUserIssueListView } from "../../../app-view-models";
@@ -11,6 +11,14 @@ export const Route = createFileRoute("/user/issues")({
 });
 
 function UserIssuesRouteComponent() {
+  if (window.location.pathname.endsWith("/new")) {
+    return <Outlet />;
+  }
+
+  return <UserIssuesLeafRouteComponent />;
+}
+
+function UserIssuesLeafRouteComponent() {
   const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/user/issues");
   const [issueList, setIssueList] = React.useState<ReturnType<typeof toUserIssueListView> | null>(

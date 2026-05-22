@@ -31,6 +31,7 @@ import {
   readAuthUiCapabilities,
   readCodeBrowser,
   readCurrentSession,
+  readDirectIssueFormOptions,
   readIssueDetail,
   readOrganizationAdmin,
   readOrganizationContainer,
@@ -1515,6 +1516,36 @@ describe("issue REST clients", () => {
     }
   });
 
+  it("reads legacy direct issue form options from the REST user issue endpoint", async () => {
+    const fetchMock = vi.fn(async () =>
+      okJsonResponse({
+        bodyMarkdown:
+          "Source comment\n\n_Originally posted by @owner in http://localhost/yona/owner/project/issue/1#comment-55_",
+        referCommentId: "55",
+        selectedProject: {
+          ownerName: "owner",
+          projectName: "projectYobi",
+        },
+      }),
+    );
+
+    const options = await readDirectIssueFormOptions(
+      runtimeConfig,
+      { commentId: 55n },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(options.selectedProject).toEqual({
+      ownerName: "owner",
+      projectName: "projectYobi",
+    });
+    expect(options.referCommentId).toBe("55");
+    expect(options.bodyMarkdown).toContain("Source comment");
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    expect(calls[0]![0]).toBe("/yona/api/v1/user/issues/new-options?commentId=55");
+    expect(calls[0]![1].credentials).toBe("same-origin");
+  });
+
   it("sends issue mutation payloads to REST endpoints with csrf and bigint-safe JSON", async () => {
     const fetchMock = vi.fn(async () =>
       okJsonResponse({
@@ -1533,6 +1564,7 @@ describe("issue REST clients", () => {
         milestoneId: 3n,
         ownerName: "owner",
         projectName: "projectYobi",
+        referCommentId: "55",
         title: "New issue",
       },
       fetchMock as unknown as typeof fetch,
@@ -1610,6 +1642,7 @@ describe("issue REST clients", () => {
       bodyMarkdown: "body",
       labelIds: ["7"],
       milestoneId: "3",
+      referCommentId: "55",
       title: "New issue",
     });
 

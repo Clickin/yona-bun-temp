@@ -572,6 +572,16 @@ pub struct IssueCommentRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IssueCommentOriginRecord {
+    pub author_login_id: String,
+    pub comment_id: i64,
+    pub contents_markdown: String,
+    pub issue_number: i64,
+    pub owner_name: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IssueCommentVoterRecord {
     pub email_address: String,
     pub login_id: String,
@@ -642,6 +652,7 @@ pub struct CreateIssueCommentInput {
     pub contents_markdown: String,
     pub issue_number: i64,
     pub owner_name: String,
+    pub parent_comment_id: Option<i64>,
     pub project_name: String,
 }
 

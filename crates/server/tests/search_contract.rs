@@ -304,6 +304,7 @@ async fn seed_search_rows(
         contents_markdown: "Needle issue comment".to_string(),
         issue_number: issue.issue_number,
         owner_name: "owner".to_string(),
+        parent_comment_id: None,
         project_name: "projectYobi".to_string(),
     })
     .await

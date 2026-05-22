@@ -8,10 +8,10 @@ use crate::repo_types::{
     CreatePullRequestInput, CreatePullRequestResult, CreateReviewCommentViaEmailInput,
     CreateUserInput, CreateWebhookThreadInput, DeleteAttachmentResult,
     DeleteCommitDiscussionCommentInput, DeletePullRequestCommentInput, IssueAssignableUserRecord,
-    IssueAssignableUserSearchRecord, IssueAttachmentRecord, IssueCommentRecord,
-    IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter,
-    IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueMutationInput,
-    IssueRecord, IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord,
+    IssueAssignableUserSearchRecord, IssueAttachmentRecord, IssueCommentOriginRecord,
+    IssueCommentRecord, IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord,
+    IssueListFilter, IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord,
+    IssueMutationInput, IssueRecord, IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord,
     MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
     NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
     NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
@@ -2228,6 +2228,48 @@ impl AppRepository {
         }
     }
 
+    pub async fn read_issue_comment_origin(
+        &self,
+        comment_id: i64,
+    ) -> Result<Option<IssueCommentOriginRecord>, DbErr> {
+        let Some(comment) = issue_comment::Entity::find_by_id(comment_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(issue_id) = comment.issue_id else {
+            return Ok(None);
+        };
+        let Some(issue_model) = issue::Entity::find_by_id(issue_id).one(&self.db).await? else {
+            return Ok(None);
+        };
+        let Some(project_id) = issue_model.project_id else {
+            return Ok(None);
+        };
+        let Some(project_model) = project::Entity::find_by_id(project_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(project_record) = self.project_record_from_model(project_model).await? else {
+            return Ok(None);
+        };
+        let contents_markdown = self
+            .read_text_column("issue_comment", "contents", comment.id)
+            .await?;
+
+        Ok(Some(IssueCommentOriginRecord {
+            author_login_id: comment.author_login_id.unwrap_or_default(),
+            comment_id: comment.id,
+            contents_markdown,
+            issue_number: issue_model.number.unwrap_or_default(),
+            owner_name: project_record.owner_name,
+            project_name: project_record.project_name,
+        }))
+    }
+
     pub async fn read_issue_share_status(
         &self,
         issue_id: i64,
@@ -3478,7 +3520,7 @@ impl AppRepository {
             author_name: Set(Some(input.actor_display_name)),
             issue_id: Set(Some(issue_model.id)),
             project_id: Set(project_record.id),
-            parent_comment_id: Set(None),
+            parent_comment_id: Set(input.parent_comment_id),
         }
         .insert(&self.db)
         .await?;
@@ -3524,6 +3566,7 @@ impl AppRepository {
                 contents_markdown: input.contents_markdown.clone(),
                 issue_number: input.issue_number,
                 owner_name: input.owner_name.clone(),
+                parent_comment_id: None,
                 project_name: input.project_name.clone(),
             })
             .await?;
