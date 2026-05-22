@@ -1058,6 +1058,14 @@ test("project issue routes render data-backed issue list filters and detail scre
     "href",
     "/yona/user/issues/new?commentId=55",
   );
+  await expect(page.locator("#comment-55 .comment-vote")).toHaveAttribute(
+    "data-request-type",
+    "comment-vote",
+  );
+  await expect(page.locator("#comment-55 .comment-vote")).toHaveAttribute(
+    "data-request-uri",
+    "/yona/admin/projectYobi/issue/1/comment/55/vote",
+  );
   await expect(page.locator("#comment-body-55 .comment-body")).toHaveAttribute(
     "data-allowed-update",
     "true",

@@ -507,6 +507,14 @@ export function ProjectIssueDetailPage(props: {
                         detail.projectName,
                         `issue/${issueNumber}/comment/${comment.id}/delete`,
                       );
+                      const commentVoteUri = buildProjectHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        `issue/${issueNumber}/comment/${comment.id}/${
+                          comment.viewerHasVoted ? "unvote" : "vote"
+                        }`,
+                      );
                       const newIssueByCommentHref = `${prefixBasePath(
                         props.runtimeConfig.basePath,
                         "/user/issues/new",
@@ -598,13 +606,19 @@ export function ProjectIssueDetailPage(props: {
                                           : "Agree with comment"
                                       }
                                       className="comment-vote btn-transparent-with-fontsize-lineheight"
+                                      data-request-type="comment-vote"
+                                      data-request-uri={commentVoteUri}
                                       onClick={() =>
                                         void props.onCommentVoteToggle?.(
                                           comment.id,
                                           comment.viewerHasVoted,
                                         )
                                       }
-                                      title={comment.viewerHasVoted ? "Withdraw" : "Agree"}
+                                      title={
+                                        comment.viewerHasVoted
+                                          ? "common.comment.unvote"
+                                          : "common.comment.vote"
+                                      }
                                       type="button"
                                     >
                                       <span

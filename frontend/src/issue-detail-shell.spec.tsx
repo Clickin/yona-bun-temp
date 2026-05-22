@@ -75,6 +75,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
         issue={{
           ...issueDetail,
           commentCount: 1,
+          viewerCanComment: true,
           timeline: [
             {
               comment: {
@@ -103,6 +104,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
         }}
         runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
         onCommentDelete={async () => undefined}
+        onCommentVoteToggle={async () => undefined}
       />,
     );
 
@@ -113,6 +115,9 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="act-row pull-right"');
     expect(html).toContain('class="new-issue-by"');
     expect(html).toContain('href="/yona/user/issues/new?commentId=55"');
+    expect(html).toContain('data-request-type="comment-vote"');
+    expect(html).toContain('data-request-uri="/yona/owner/projectYobi/issue/1/comment/55/vote"');
+    expect(html).toContain('title="common.comment.vote"');
     expect(html).toContain('id="comment-body-55"');
     expect(html).toContain('data-allowed-update="false"');
     expect(html).toContain('data-toggle="comment-delete"');
