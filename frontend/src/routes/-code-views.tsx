@@ -55,6 +55,7 @@ export interface CodeReviewCommentViewModel {
   createdLabel: string;
   id: number;
   threadId: number;
+  viaEmail: boolean;
 }
 
 export interface CodeReviewThreadViewModel {
@@ -1351,6 +1352,7 @@ function CommitDiscussionThread(props: {
               </div>
               <div
                 className="comment-body markdown-wrap"
+                data-via-email={comment.viaEmail ? "true" : undefined}
                 dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
               ></div>
             </div>

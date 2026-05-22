@@ -111,11 +111,16 @@ describe("file-route parity harness", () => {
       path.resolve(__dirname, "routes/$owner/$projectName/commits/-code-history-route.tsx"),
       "utf8",
     );
+    const codeViewsSource = fs.readFileSync(
+      path.resolve(__dirname, "routes/-code-views.tsx"),
+      "utf8",
+    );
 
     expect(commitsRouteSource).not.toContain("PlaceholderPage");
     expect(commitsRouteSource).toContain("Outlet");
     expect(commitsIndexRouteSource).toContain("CodeHistoryRouteView");
     expect(commitsRouteHelperSource).toContain("readCodeHistory");
+    expect(codeViewsSource).toContain("data-via-email");
     const routeTreeSource = fs.readFileSync(path.resolve(__dirname, "routeTree.gen.ts"), "utf8");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/commits/'");
     expect(routeTreeSource).toContain("fullPath: '/$owner/$projectName/commits/$branch'");
@@ -452,6 +457,7 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain('id="status"');
     expect(pullRequestViewsSource).toContain('id="__commits"');
     expect(pullRequestViewsSource).toContain("comment-thread-wrap");
+    expect(pullRequestViewsSource).toContain("data-via-email");
     expect(pullRequestViewsSource).toContain("thread-actrow");
     expect(pullRequestViewsSource).toContain("review-form");
     expect(pullRequestViewsSource).toContain("inline-review-form");

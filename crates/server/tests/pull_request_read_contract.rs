@@ -9,8 +9,8 @@ use serde_json::json;
 use std::time::{Duration, SystemTime};
 use tower::ServiceExt;
 use yona_rust_persistence::{
-    comment_thread, pull_request, pull_request_commit, pull_request_event, pull_request_reviewers,
-    review_comment, watch, AppRepository,
+    comment_thread, original_email, pull_request, pull_request_commit, pull_request_event,
+    pull_request_reviewers, review_comment, watch, AppRepository,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -400,6 +400,16 @@ async fn seed_pull_request_detail_rows(
         "Review comment body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`",
     )
     .await;
+    original_email::ActiveModel {
+        id: NotSet,
+        message_id: Set(Some("<pr-review-comment-1@example.com>".to_string())),
+        resource_type: Set(Some("REVIEW_COMMENT".to_string())),
+        resource_id: Set(Some(comment.id.to_string())),
+        handled_date: Set(None),
+    }
+    .insert(db)
+    .await
+    .unwrap();
 
     watch::ActiveModel {
         id: NotSet,
@@ -676,6 +686,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         detail["threads"][0]["comments"][0]["contentsMarkdown"],
         "Review comment body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
     );
+    assert_eq!(detail["threads"][0]["comments"][0]["viaEmail"], true);
     let comment_html = detail["threads"][0]["comments"][0]["contentsHtml"]
         .as_str()
         .unwrap();
@@ -716,6 +727,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     assert_eq!(changes["commits"].as_array().unwrap().len(), 0);
     assert_eq!(changes["files"].as_array().unwrap().len(), 0);
     assert_eq!(changes["threads"][0]["path"], "src/lib.rs");
+    assert_eq!(changes["threads"][0]["comments"][0]["viaEmail"], true);
 
     let older_thread_with_newer_comment = comment_thread::ActiveModel {
         dtype: Set("ReviewThread".to_string()),
@@ -759,6 +771,16 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         "Newest update comment",
     )
     .await;
+    original_email::ActiveModel {
+        id: NotSet,
+        message_id: Set(Some("<pr-review-comment-newest@example.com>".to_string())),
+        resource_type: Set(Some("REVIEW_COMMENT".to_string())),
+        resource_id: Set(Some(newer_comment.id.to_string())),
+        handled_date: Set(None),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
 
     let reviews = response_json(
         rest_get(
@@ -778,6 +800,7 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
         reviews["items"][0]["comments"][0]["authorLoginId"],
         "reviewer"
     );
+    assert_eq!(reviews["items"][0]["comments"][0]["viaEmail"], true);
 
     comment_thread::ActiveModel {
         dtype: Set("ReviewThread".to_string()),

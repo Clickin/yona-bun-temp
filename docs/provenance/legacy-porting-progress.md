@@ -329,6 +329,7 @@ Interpretation:
 - [x] Recipient limit
 - [x] Issue comment `original_email` / `data-via-email` marker parity
 - [x] Board comment `original_email` / `data-via-email` marker parity
+- [x] Code discussion and PR review comment `original_email` / `data-via-email` marker parity
 - [ ] Mailbox/reply threading parity
 
 ## Webhooks

@@ -95,6 +95,7 @@ export type ReviewComment = {
   createdLabel: string;
   id: number;
   threadId: number;
+  viaEmail: boolean;
 };
 
 export type ReviewThread = {
@@ -377,6 +378,7 @@ function normalizeThread(thread: Partial<ReviewThread>): ReviewThread {
       createdLabel: comment.createdLabel ?? "",
       id: comment.id ?? 0,
       threadId: comment.threadId ?? 0,
+      viaEmail: comment.viaEmail ?? false,
     })),
     commitId: thread.commitId ?? "",
     createdLabel: thread.createdLabel ?? "",

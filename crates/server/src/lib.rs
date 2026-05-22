@@ -7298,6 +7298,7 @@ struct RestReviewComment {
     created_label: String,
     id: i64,
     thread_id: i64,
+    via_email: bool,
 }
 
 #[derive(Clone, Serialize)]
@@ -28576,6 +28577,7 @@ fn rest_review_comment_from_record_with_permissions(
         created_label: record.created_label,
         id: record.id,
         thread_id: record.thread_id,
+        via_email: record.via_email,
     }
 }
 

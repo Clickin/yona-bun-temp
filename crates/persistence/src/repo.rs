@@ -10365,6 +10365,15 @@ impl AppRepository {
         let latest_comment_created = rows.iter().filter_map(|row| row.created_date).max();
         let mut comments = Vec::new();
         for row in rows {
+            let via_email = original_email::Entity::find()
+                .filter(
+                    original_email::Column::ResourceType
+                        .eq(Some(REVIEW_COMMENT_ATTACHMENT_CONTAINER.to_string())),
+                )
+                .filter(original_email::Column::ResourceId.eq(Some(row.id.to_string())))
+                .one(&self.db)
+                .await?
+                .is_some();
             comments.push(ReviewCommentRecord {
                 author_id: row.author_id,
                 author_label: row.author_name.unwrap_or_default(),
@@ -10375,6 +10384,7 @@ impl AppRepository {
                 created_label: format_workspace_date_label(row.created_date),
                 id: row.id,
                 thread_id,
+                via_email,
             });
         }
         Ok((comments, latest_comment_created))

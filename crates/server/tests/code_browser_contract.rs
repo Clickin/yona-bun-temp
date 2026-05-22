@@ -1,7 +1,9 @@
 use axum::body::Body;
 use http::{HeaderMap, Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
-use sea_orm::{ConnectionTrait, Database, DatabaseConnection, Statement};
+use sea_orm::{
+    ActiveModelTrait, ConnectionTrait, Database, DatabaseConnection, NotSet, Set, Statement,
+};
 use serde_json::json;
 use std::fs;
 use std::path::Path;
@@ -9,7 +11,7 @@ use std::process::Command;
 use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tower::ServiceExt;
-use yona_rust_persistence::AppRepository;
+use yona_rust_persistence::{original_email, AppRepository};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
@@ -888,6 +890,25 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
     );
     assert_eq!(created["threads"][0]["comments"][0]["canDelete"], true);
     let thread_id = created["threads"][0]["id"].as_i64().unwrap();
+    let comment_id = created["threads"][0]["comments"][0]["id"].as_i64().unwrap();
+
+    original_email::ActiveModel {
+        id: NotSet,
+        message_id: Set(Some("<commit-comment-1@example.com>".to_string())),
+        resource_type: Set(Some("REVIEW_COMMENT".to_string())),
+        resource_id: Set(Some(comment_id.to_string())),
+        handled_date: Set(None),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+
+    let via_email_detail =
+        response_json(rest_get(app.clone(), &detail_path, Some(&cookie)).await).await;
+    assert_eq!(
+        via_email_detail["threads"][0]["comments"][0]["viaEmail"],
+        true
+    );
 
     let replied = response_json(
         rest_post_json(

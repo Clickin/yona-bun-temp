@@ -1155,7 +1155,11 @@ function ReviewThreadItem(props: {
               </button>
             </form>
           ) : (
-            <div dangerouslySetInnerHTML={{ __html: comment.contentsHtml }} />
+            <div
+              className="comment-body markdown-wrap"
+              data-via-email={comment.viaEmail ? "true" : undefined}
+              dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
+            />
           )}
         </div>
       ))}

@@ -13,6 +13,7 @@ export type CodeReviewComment = {
   createdLabel: string;
   id: number;
   threadId: number;
+  viaEmail: boolean;
 };
 
 export type CodeReviewThread = {
@@ -96,6 +97,7 @@ function normalizeComment(comment: Partial<CodeReviewComment>): CodeReviewCommen
     createdLabel: comment.createdLabel ?? "",
     id: comment.id ?? 0,
     threadId: comment.threadId ?? 0,
+    viaEmail: comment.viaEmail ?? false,
   };
 }
 

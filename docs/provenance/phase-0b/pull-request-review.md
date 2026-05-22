@@ -77,6 +77,9 @@
   for sanitized `@username`, same-project `#123`, `owner/project#123`, and
   bare `http://`/`https://` URL autolinks. Legacy issue-link title/state
   enrichment remains a Markdown renderer follow-up.
+- PR review comments backed by legacy `original_email` rows now expose
+  `viaEmail` in detail/changes/review-list REST responses and render
+  `data-via-email` on the review comment body.
 - PR changes now renders line-numbered unified diff rows and allows add/context
   and deleted lines to create a side-aware single-line ranged review thread by
   submitting `path/startLine/endLine`, `startSide/endSide`, `commitId`, and

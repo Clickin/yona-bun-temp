@@ -1382,6 +1382,7 @@ pub struct ReviewCommentRecord {
     pub created_label: String,
     pub id: i64,
     pub thread_id: i64,
+    pub via_email: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
