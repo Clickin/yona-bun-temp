@@ -280,6 +280,7 @@ export function ProjectIssueDetailPage(props: {
   const onStateChange = props.onStateChange;
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
   const [commentDeleteTargetId, setCommentDeleteTargetId] = React.useState<number | null>(null);
+  const [editingCommentIds, setEditingCommentIds] = React.useState<Set<number>>(() => new Set());
   const issueAuthorLoginId = issue?.authorLoginId ?? "";
   const issueAuthorLabel = issue?.authorLabel || issueAuthorLoginId || "Unknown";
   const issueAuthorHref = issueAuthorLoginId
@@ -493,6 +494,23 @@ export function ProjectIssueDetailPage(props: {
 
                       const comment = item.comment;
                       const authorLoginId = comment.authorLoginId || comment.authorLabel;
+                      const commentEditAction = buildProjectHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        `issue/${issueNumber}/comments/${comment.id}`,
+                      );
+                      const commentIsEditing = editingCommentIds.has(comment.id);
+                      const commentDeleteUri = buildProjectHref(
+                        props.runtimeConfig,
+                        detail.ownerName,
+                        detail.projectName,
+                        `issue/${issueNumber}/comment/${comment.id}/delete`,
+                      );
+                      const newIssueByCommentHref = `${prefixBasePath(
+                        props.runtimeConfig.basePath,
+                        "/user/issues/new",
+                      )}?commentId=${comment.id}`;
 
                       return (
                         <li
@@ -547,8 +565,117 @@ export function ProjectIssueDetailPage(props: {
                                   [Link]
                                 </a>
                               </span>
+                              <span className="act-row pull-right">
+                                <span className="new-issue-by">
+                                  <a href={newIssueByCommentHref}>issue.menu.new.by</a>
+                                </span>
+                                <span className="comment-vote-row">
+                                  {comment.voterCount > 0 ? (
+                                    <span className="comment-vote-count">
+                                      {commentAgreementLabel(comment.voterCount)}
+                                    </span>
+                                  ) : null}
+                                  {comment.voters.map((voter) => (
+                                    <span
+                                      className="comment-voter"
+                                      key={voter.userId}
+                                      title={voter.userLabel}
+                                    >
+                                      {voter.avatarUrl ? (
+                                        <img
+                                          alt={`${voter.userLabel} avatar`}
+                                          src={voter.avatarUrl}
+                                        />
+                                      ) : null}
+                                      <span>{voter.userLabel || voter.loginId}</span>
+                                    </span>
+                                  ))}
+                                  {issue?.viewerCanComment && props.onCommentVoteToggle ? (
+                                    <button
+                                      aria-label={
+                                        comment.viewerHasVoted
+                                          ? "Withdraw comment agreement"
+                                          : "Agree with comment"
+                                      }
+                                      className="comment-vote btn-transparent-with-fontsize-lineheight"
+                                      onClick={() =>
+                                        void props.onCommentVoteToggle?.(
+                                          comment.id,
+                                          comment.viewerHasVoted,
+                                        )
+                                      }
+                                      title={comment.viewerHasVoted ? "Withdraw" : "Agree"}
+                                      type="button"
+                                    >
+                                      <span
+                                        className={`yobicon-hearts ${
+                                          comment.viewerHasVoted
+                                            ? "vote-heart-on"
+                                            : "vote-heart-off"
+                                        }`}
+                                      />
+                                    </button>
+                                  ) : null}
+                                </span>
+                                {comment.viewerCanUpdate && props.onCommentUpdate ? (
+                                  <button
+                                    className="btn-transparent-with-fontsize-lineheight ml10"
+                                    data-comment-id={comment.id}
+                                    data-toggle="comment-edit"
+                                    onClick={() =>
+                                      setEditingCommentIds((current) => {
+                                        const next = new Set(current);
+                                        next.add(comment.id);
+                                        return next;
+                                      })
+                                    }
+                                    title="common.comment.edit"
+                                    type="button"
+                                  >
+                                    <i className="yobicon-edit-2"></i>
+                                  </button>
+                                ) : null}
+                                {comment.viewerCanDelete && props.onCommentDelete ? (
+                                  <button
+                                    className="btn-transparent-with-fontsize-lineheight ml6"
+                                    data-request-uri={commentDeleteUri}
+                                    data-toggle="comment-delete"
+                                    onClick={() => setCommentDeleteTargetId(comment.id)}
+                                    title="common.comment.delete"
+                                    type="button"
+                                  >
+                                    <i className="yobicon-trash"></i>
+                                  </button>
+                                ) : null}
+                              </span>
                             </div>
-                            <div id={`comment-body-${comment.id}`}>
+                            {comment.viewerCanUpdate &&
+                            props.onCommentUpdate &&
+                            commentIsEditing ? (
+                              <IssueCommentEditForm
+                                action={commentEditAction}
+                                commentId={comment.id}
+                                csrfToken={props.csrfToken}
+                                getIssueReferencesQueryOptions={
+                                  props.getIssueReferencesQueryOptions
+                                }
+                                initialContents={comment.contentsMarkdown}
+                                onCancel={() =>
+                                  setEditingCommentIds((current) => {
+                                    const next = new Set(current);
+                                    next.delete(comment.id);
+                                    return next;
+                                  })
+                                }
+                                onSearchMentionUsers={props.onSearchMentionUsers}
+                                onSubmit={props.onCommentUpdate}
+                                runtimeConfig={props.runtimeConfig}
+                              />
+                            ) : null}
+                            <div
+                              id={`comment-body-${comment.id}`}
+                              style={commentIsEditing ? { display: "none" } : undefined}
+                            >
                               <div
                                 className="comment-body markdown-wrap"
                                 data-allowed-update={String(comment.viewerCanUpdate)}
@@ -556,85 +683,6 @@ export function ProjectIssueDetailPage(props: {
                                 dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
                               />
                             </div>
-                            <div className="comment-vote-row">
-                              {comment.voterCount > 0 ? (
-                                <span className="comment-vote-count">
-                                  {commentAgreementLabel(comment.voterCount)}
-                                </span>
-                              ) : null}
-                              {comment.voters.map((voter) => (
-                                <span
-                                  className="comment-voter"
-                                  key={voter.userId}
-                                  title={voter.userLabel}
-                                >
-                                  {voter.avatarUrl ? (
-                                    <img alt={`${voter.userLabel} avatar`} src={voter.avatarUrl} />
-                                  ) : null}
-                                  <span>{voter.userLabel || voter.loginId}</span>
-                                </span>
-                              ))}
-                              {issue?.viewerCanComment && props.onCommentVoteToggle ? (
-                                <button
-                                  aria-label={
-                                    comment.viewerHasVoted
-                                      ? "Withdraw comment agreement"
-                                      : "Agree with comment"
-                                  }
-                                  className="comment-vote btn-transparent-with-fontsize-lineheight"
-                                  onClick={() =>
-                                    void props.onCommentVoteToggle?.(
-                                      comment.id,
-                                      comment.viewerHasVoted,
-                                    )
-                                  }
-                                  title={comment.viewerHasVoted ? "Withdraw" : "Agree"}
-                                  type="button"
-                                >
-                                  <span
-                                    className={`yobicon-hearts ${
-                                      comment.viewerHasVoted ? "vote-heart-on" : "vote-heart-off"
-                                    }`}
-                                  />
-                                </button>
-                              ) : null}
-                            </div>
-                            {comment.viewerCanUpdate && props.onCommentUpdate ? (
-                              <IssueCommentEditForm
-                                action={buildProjectHref(
-                                  props.runtimeConfig,
-                                  detail.ownerName,
-                                  detail.projectName,
-                                  `issue/${issueNumber}/comments/${comment.id}`,
-                                )}
-                                commentId={comment.id}
-                                csrfToken={props.csrfToken}
-                                getIssueReferencesQueryOptions={
-                                  props.getIssueReferencesQueryOptions
-                                }
-                                initialContents={comment.contentsMarkdown}
-                                onSearchMentionUsers={props.onSearchMentionUsers}
-                                onSubmit={props.onCommentUpdate}
-                                runtimeConfig={props.runtimeConfig}
-                              />
-                            ) : null}
-                            {comment.viewerCanDelete && props.onCommentDelete ? (
-                              <button
-                                className="btn-transparent-with-fontsize-lineheight ml6"
-                                data-request-uri={buildProjectHref(
-                                  props.runtimeConfig,
-                                  detail.ownerName,
-                                  detail.projectName,
-                                  `issue/${issueNumber}/comment/${comment.id}/delete`,
-                                )}
-                                data-toggle="comment-delete"
-                                onClick={() => setCommentDeleteTargetId(comment.id)}
-                                title="common.comment.delete"
-                                type="button"
-                              >
-                                <i className="yobicon-trash"></i>
-                              </button>
-                            ) : null}
                           </div>
                         </li>
                       );
@@ -1808,6 +1856,7 @@ function IssueCommentEditForm(props: {
   csrfToken?: string;
   getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
   initialContents: string;
+  onCancel: () => void;
   onSearchMentionUsers?: (
     query: string,
     context: IssueMentionUserSearchContext,
@@ -1819,23 +1868,8 @@ function IssueCommentEditForm(props: {
   ) => Promise<void>;
   runtimeConfig: RuntimeConfig;
 }) {
-  const [editing, setEditing] = React.useState(false);
   const [contentsMarkdown, setContentsMarkdown] = React.useState(props.initialContents);
   const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
-  if (!editing) {
-    return (
-      <button
-        className="btn-transparent-with-fontsize-lineheight ml10"
-        data-comment-id={props.commentId}
-        data-toggle="comment-edit"
-        onClick={() => setEditing(true)}
-        title="common.comment.edit"
-        type="button"
-      >
-        <i className="yobicon-edit-2"></i>
-      </button>
-    );
-  }
   return (
     <div className="comment-update-form" id={`comment-editform-${props.commentId}`}>
       <form
@@ -1850,7 +1884,7 @@ function IssueCommentEditForm(props: {
           }
           void props.onSubmit(props.commentId, nextContents, attachmentIds).then(() => {
             setAttachmentIds([]);
-            setEditing(false);
+            props.onCancel();
           });
         }}
       >
@@ -1875,7 +1909,7 @@ function IssueCommentEditForm(props: {
               <button
                 className="ybtn ybtn-cancel"
                 data-comment-id={props.commentId}
-                onClick={() => setEditing(false)}
+                onClick={props.onCancel}
                 type="button"
               >
                 button.cancel

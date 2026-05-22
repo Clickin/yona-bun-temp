@@ -1053,6 +1053,11 @@ test("project issue routes render data-backed issue list filters and detail scre
     "display",
     "none",
   );
+  await expect(page.locator("#comment-55 .act-row.pull-right")).toBeVisible();
+  await expect(page.locator("#comment-55 .new-issue-by a")).toHaveAttribute(
+    "href",
+    "/yona/user/issues/new?commentId=55",
+  );
   await expect(page.locator("#comment-body-55 .comment-body")).toHaveAttribute(
     "data-allowed-update",
     "true",
@@ -1073,6 +1078,7 @@ test("project issue routes render data-backed issue list filters and detail scre
     "55",
   );
   await expect(page.locator("#comment-editform-55 .ybtn-info")).toContainText("button.save");
+  await expect(page.locator("#comment-body-55")).toHaveCSS("display", "none");
   await expect(page.locator('#comment-55 [data-toggle="comment-delete"]')).toHaveAttribute(
     "data-request-uri",
     "/yona/admin/projectYobi/issue/1/comment/55/delete",
