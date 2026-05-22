@@ -608,6 +608,18 @@ pub struct CreateIssueInput {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateIssueViaEmailInput {
+    pub actor_display_name: String,
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub body_markdown: String,
+    pub message_id: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub title: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpdateIssueInput {
     pub actor_login_id: String,
     pub issue_number: i64,
@@ -624,6 +636,18 @@ pub struct CreateIssueCommentInput {
     pub attachment_ids: Vec<i64>,
     pub contents_markdown: String,
     pub issue_number: i64,
+    pub owner_name: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateIssueCommentViaEmailInput {
+    pub actor_display_name: String,
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub contents_markdown: String,
+    pub issue_number: i64,
+    pub message_id: String,
     pub owner_name: String,
     pub project_name: String,
 }
@@ -1287,6 +1311,16 @@ pub struct CreatePullRequestCommentInput {
     pub start_line: Option<i32>,
     pub start_side: Option<String>,
     pub thread_id: Option<i64>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateReviewCommentViaEmailInput {
+    pub actor_display_name: String,
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub contents_markdown: String,
+    pub message_id: String,
+    pub thread_id: i64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

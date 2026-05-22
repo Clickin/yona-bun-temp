@@ -1,15 +1,16 @@
 use crate::repo_types::{
     AppUserInput, AppUserRecord, AttachmentRecord, BranchPullRequestRecord,
     CommitDiscussionThreadStateInput, CopyProjectLabelsResult, CreateCommitDiscussionCommentInput,
-    CreateForkProjectInput, CreateIssueCommentInput, CreateIssueInput, CreateOrganizationInput,
-    CreatePostingCommentInput, CreatePostingInput, CreateProjectInput,
-    CreateProjectLabelCategoryInput, CreateProjectLabelInput, CreateProjectWebhookInput,
-    CreatePullRequestCommentInput, CreatePullRequestInput, CreatePullRequestResult,
+    CreateForkProjectInput, CreateIssueCommentInput, CreateIssueCommentViaEmailInput,
+    CreateIssueInput, CreateIssueViaEmailInput, CreateOrganizationInput, CreatePostingCommentInput,
+    CreatePostingInput, CreateProjectInput, CreateProjectLabelCategoryInput,
+    CreateProjectLabelInput, CreateProjectWebhookInput, CreatePullRequestCommentInput,
+    CreatePullRequestInput, CreatePullRequestResult, CreateReviewCommentViaEmailInput,
     CreateUserInput, DeleteAttachmentResult, DeleteCommitDiscussionCommentInput,
     DeletePullRequestCommentInput, IssueAssignableUserRecord, IssueAssignableUserSearchRecord,
     IssueAttachmentRecord, IssueCommentRecord, IssueCommentVoterRecord, IssueLabelCategoryRecord,
     IssueLabelRecord, IssueListFilter, IssueMentionUserRecord, IssueMentionUserSearchRecord,
-    IssueMilestoneRecord, IssueRecord, IssueShareStatus, IssueSharerRecord,
+    IssueMilestoneRecord, IssueMutationInput, IssueRecord, IssueShareStatus, IssueSharerRecord,
     IssueTimelineItemRecord, MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter,
     MilestoneMutationInput, NotificationActorRecord, NotificationItemRecord,
     NotificationListRecord, NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
@@ -3239,6 +3240,36 @@ impl AppRepository {
             .map(Some)
     }
 
+    pub async fn create_issue_via_email(
+        &self,
+        input: CreateIssueViaEmailInput,
+    ) -> Result<Option<IssueRecord>, DbErr> {
+        let issue = self
+            .create_issue(CreateIssueInput {
+                actor_display_name: input.actor_display_name,
+                actor_id: input.actor_id,
+                actor_login_id: input.actor_login_id,
+                owner_name: input.owner_name,
+                project_name: input.project_name,
+                values: IssueMutationInput {
+                    assignee_login_id: None,
+                    attachment_ids: Vec::new(),
+                    body_markdown: input.body_markdown,
+                    label_ids: Vec::new(),
+                    milestone_id: None,
+                    title: input.title,
+                },
+            })
+            .await?;
+        if let Some(issue) = issue {
+            self.record_original_email(ISSUE_ATTACHMENT_CONTAINER, issue.id, &input.message_id)
+                .await?;
+            Ok(Some(issue))
+        } else {
+            Ok(None)
+        }
+    }
+
     pub async fn update_issue(
         &self,
         input: UpdateIssueInput,
@@ -3431,6 +3462,46 @@ impl AppRepository {
         )
         .await?;
         self.recount_issue_comments(issue_model.id).await?;
+        self.read_issue_detail(&input.owner_name, &input.project_name, input.issue_number)
+            .await
+    }
+
+    pub async fn create_issue_comment_via_email(
+        &self,
+        input: CreateIssueCommentViaEmailInput,
+    ) -> Result<Option<IssueRecord>, DbErr> {
+        let issue = self
+            .create_issue_comment(CreateIssueCommentInput {
+                actor_display_name: input.actor_display_name,
+                actor_id: input.actor_id,
+                actor_login_id: input.actor_login_id,
+                attachment_ids: Vec::new(),
+                contents_markdown: input.contents_markdown.clone(),
+                issue_number: input.issue_number,
+                owner_name: input.owner_name.clone(),
+                project_name: input.project_name.clone(),
+            })
+            .await?;
+        let Some(issue) = issue else {
+            return Ok(None);
+        };
+        let Some(comment) = issue
+            .comments
+            .iter()
+            .filter(|comment| {
+                comment.author_id == Some(input.actor_id)
+                    && comment.contents_markdown == input.contents_markdown
+            })
+            .max_by_key(|comment| comment.id)
+        else {
+            return Ok(Some(issue));
+        };
+        self.record_original_email(
+            ISSUE_COMMENT_ATTACHMENT_CONTAINER,
+            comment.id,
+            &input.message_id,
+        )
+        .await?;
         self.read_issue_detail(&input.owner_name, &input.project_name, input.issue_number)
             .await
     }
@@ -8201,6 +8272,65 @@ impl AppRepository {
         };
         let comments = self.list_review_comments(thread.id).await?;
         self.review_thread_record(thread, comments).await.map(Some)
+    }
+
+    pub async fn create_review_comment_via_email(
+        &self,
+        input: CreateReviewCommentViaEmailInput,
+    ) -> Result<Option<ReviewThreadRecord>, DbErr> {
+        let Some(thread) = comment_thread::Entity::find_by_id(input.thread_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let created = review_comment::ActiveModel {
+            id: NotSet,
+            created_date: Set(Some(current_datetime())),
+            author_id: Set(Some(input.actor_id)),
+            author_login_id: Set(Some(input.actor_login_id)),
+            author_name: Set(Some(input.actor_display_name)),
+            thread_id: Set(Some(thread.id)),
+        }
+        .insert(&self.db)
+        .await?;
+        self.write_text_column(
+            "review_comment",
+            "contents",
+            created.id,
+            &input.contents_markdown,
+        )
+        .await?;
+        self.record_original_email(
+            REVIEW_COMMENT_ATTACHMENT_CONTAINER,
+            created.id,
+            &input.message_id,
+        )
+        .await?;
+        let comments = self.list_review_comments(thread.id).await?;
+        self.review_thread_record(thread, comments).await.map(Some)
+    }
+
+    async fn record_original_email(
+        &self,
+        resource_type: &str,
+        resource_id: i64,
+        message_id: &str,
+    ) -> Result<(), DbErr> {
+        let message_id = message_id.trim();
+        if message_id.is_empty() {
+            return Ok(());
+        }
+        original_email::ActiveModel {
+            id: NotSet,
+            message_id: Set(Some(message_id.to_string())),
+            resource_type: Set(Some(resource_type.to_string())),
+            resource_id: Set(Some(resource_id.to_string())),
+            handled_date: Set(None),
+        }
+        .insert(&self.db)
+        .await?;
+        Ok(())
     }
 
     pub async fn update_commit_discussion_thread_state(

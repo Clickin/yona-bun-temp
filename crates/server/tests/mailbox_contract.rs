@@ -1,0 +1,164 @@
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
+    Set,
+};
+use yona_rust_persistence::{
+    comment_thread, original_email, AppRepository, CreateIssueCommentViaEmailInput,
+    CreateIssueViaEmailInput, CreateProjectInput, CreateReviewCommentViaEmailInput,
+    CreateUserInput,
+};
+use yona_rust_pilot_migration::Migrator;
+
+async fn build_repository() -> (AppRepository, DatabaseConnection) {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("sqlite connection");
+    Migrator::fresh(&db).await.expect("fresh migration");
+    (AppRepository::new(db.clone()), db)
+}
+
+async fn original_email_exists(
+    db: &DatabaseConnection,
+    resource_type: &str,
+    resource_id: i64,
+    message_id: &str,
+) -> bool {
+    original_email::Entity::find()
+        .filter(original_email::Column::ResourceType.eq(Some(resource_type.to_string())))
+        .filter(original_email::Column::ResourceId.eq(Some(resource_id.to_string())))
+        .filter(original_email::Column::MessageId.eq(Some(message_id.to_string())))
+        .one(db)
+        .await
+        .unwrap()
+        .is_some()
+}
+
+#[tokio::test]
+async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_resources() {
+    let (repo, db) = build_repository().await;
+    let member = repo
+        .create_user(CreateUserInput {
+            display_name: "Mailbox Member".to_string(),
+            email_address: "member@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "member".to_string(),
+            password_hash: "pw".to_string(),
+        })
+        .await
+        .unwrap();
+    let project = repo
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "yobi".to_string(),
+            overview: None,
+            project_name: "projectYobi".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+
+    let issue = repo
+        .create_issue_via_email(CreateIssueViaEmailInput {
+            actor_display_name: member.display_name.clone(),
+            actor_id: member.id,
+            actor_login_id: member.login_id.clone(),
+            body_markdown: "body".to_string(),
+            message_id: "<message-id@domain>".to_string(),
+            owner_name: "yobi".to_string(),
+            project_name: "projectYobi".to_string(),
+            title: "title".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("issue via email");
+    assert_eq!(issue.author_id, Some(member.id));
+    assert_eq!(issue.title, "title");
+    assert_eq!(issue.body_markdown, "body");
+    assert!(original_email_exists(&db, "ISSUE_POST", issue.id, "<message-id@domain>").await);
+
+    let issue_with_comment = repo
+        .create_issue_comment_via_email(CreateIssueCommentViaEmailInput {
+            actor_display_name: member.display_name.clone(),
+            actor_id: member.id,
+            actor_login_id: member.login_id.clone(),
+            contents_markdown: "comment body".to_string(),
+            issue_number: issue.issue_number,
+            message_id: "<message-id-2@domain>".to_string(),
+            owner_name: "yobi".to_string(),
+            project_name: "projectYobi".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("issue comment via email");
+    let issue_comment = issue_with_comment
+        .comments
+        .iter()
+        .find(|comment| comment.contents_markdown == "comment body")
+        .expect("created issue comment");
+    assert_eq!(issue_comment.author_id, Some(member.id));
+    assert!(issue_comment.via_email);
+    assert!(
+        original_email_exists(
+            &db,
+            "ISSUE_COMMENT",
+            issue_comment.id,
+            "<message-id-2@domain>"
+        )
+        .await
+    );
+
+    let thread = comment_thread::ActiveModel {
+        dtype: Set("NonRangedCodeCommentThread".to_string()),
+        id: NotSet,
+        author_id: Set(Some(member.id)),
+        author_login_id: Set(Some(member.login_id.clone())),
+        author_name: Set(Some(member.display_name.clone())),
+        state: Set(Some("open".to_string())),
+        created_date: Set(None),
+        pull_request_id: Set(None),
+        project_id: Set(Some(project.id)),
+        prev_commit_id: Set(None),
+        commit_id: Set(Some("123321".to_string())),
+        path: Set(None),
+        start_side: Set(None),
+        start_line: Set(None),
+        start_column: Set(None),
+        end_side: Set(None),
+        end_line: Set(None),
+        end_column: Set(None),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+
+    let review_thread = repo
+        .create_review_comment_via_email(CreateReviewCommentViaEmailInput {
+            actor_display_name: member.display_name.clone(),
+            actor_id: member.id,
+            actor_login_id: member.login_id.clone(),
+            contents_markdown: "review body".to_string(),
+            message_id: "<message-id-3@domain>".to_string(),
+            thread_id: thread.id,
+        })
+        .await
+        .unwrap()
+        .expect("review comment via email");
+    let review_comment = review_thread
+        .comments
+        .iter()
+        .find(|comment| comment.contents_markdown == "review body")
+        .expect("created review comment");
+    assert_eq!(review_comment.author_id, Some(member.id));
+    assert_eq!(review_comment.thread_id, thread.id);
+    assert!(review_comment.via_email);
+    assert!(
+        original_email_exists(
+            &db,
+            "REVIEW_COMMENT",
+            review_comment.id,
+            "<message-id-3@domain>"
+        )
+        .await
+    );
+}
