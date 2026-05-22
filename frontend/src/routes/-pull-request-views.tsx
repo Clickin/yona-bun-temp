@@ -68,6 +68,31 @@ function pullRequestApiHref(
   }${suffix}`;
 }
 
+type PullRequestCommitViewModel = PullRequestChangesResponse["commits"][number];
+
+function pullRequestChangesCommitHref(
+  runtimeConfig: RuntimeConfig,
+  pullRequest: PullRequestDetailResponse,
+  commitId?: string,
+) {
+  const changesHref = prHref(
+    runtimeConfig,
+    pullRequest.ownerName,
+    pullRequest.projectName,
+    pullRequest.pullRequestNumber,
+    "changes",
+  );
+  return commitId ? `${changesHref}?commitId=${encodeURIComponent(commitId)}` : changesHref;
+}
+
+function pullRequestCommitTitle(commit: PullRequestCommitViewModel) {
+  return (commit.commitMessage || "").split("\n")[0] || commit.commitId;
+}
+
+function isOutdatedPullRequestCommit(commit: PullRequestCommitViewModel) {
+  return commit.state.trim().toUpperCase() === "PRIOR";
+}
+
 function diffAnchorId(path: string) {
   return path.replace(/[/.]/g, "-");
 }
@@ -1465,14 +1490,53 @@ export function PullRequestChangesPage(props: {
           {pr?.conflict ? "Conflict" : (pr?.state ?? "")}
         </div>
         {props.changes?.commits.length ? (
-          <ul className="unstyled">
-            {props.changes.commits.map((commit) => (
-              <li key={commit.commitId}>
-                <span>{commit.commitShortId || commit.commitId}</span>
-                <span>{` ${commit.commitMessage}`}</span>
+          <div className="btn-group auto mb10" id="commits">
+            <button className="btn dropdown-toggle auto" data-toggle="dropdown" type="button">
+              <span className="d-label">pullRequest.changes.all</span>
+              <span className="d-caret">
+                <span className="caret"></span>
+              </span>
+            </button>
+            <ul className="dropdown-menu">
+              <li data-value="All">
+                <a href={pr ? pullRequestChangesCommitHref(props.runtimeConfig, pr) : "#"}>
+                  pullRequest.changes.all
+                </a>
               </li>
-            ))}
-          </ul>
+              <li className="divider"></li>
+              {props.changes.commits.map((commit) => {
+                const outdated = isOutdatedPullRequestCommit(commit);
+                return (
+                  <li
+                    className={outdated ? "outdated" : undefined}
+                    data-value={commit.commitId}
+                    key={commit.commitId}
+                  >
+                    <a
+                      href={
+                        pr
+                          ? pullRequestChangesCommitHref(props.runtimeConfig, pr, commit.commitId)
+                          : "#"
+                      }
+                    >
+                      <strong className="blue-txt mr10 commit-hash">
+                        {commit.commitShortId || commit.commitId}
+                      </strong>
+                      <span>
+                        {pullRequestCommitTitle(commit)}
+                        {outdated ? (
+                          <>
+                            {" "}
+                            <span className="outdated-label">review.outdated</span>
+                          </>
+                        ) : null}
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         ) : (
           <div className="warning-none">No commit metadata is available.</div>
         )}

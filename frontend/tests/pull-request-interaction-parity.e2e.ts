@@ -235,7 +235,15 @@ test.beforeEach(async ({ page }) => {
                 commitId: "abcdef123456",
                 commitMessage: "Change src/lib.rs",
                 commitShortId: "abcdef1",
-                state: "open",
+                state: "CURRENT",
+              },
+              {
+                authorDateLabel: "2026-05-02",
+                authorEmail: "reviewer@example.com",
+                commitId: "123456abcdef",
+                commitMessage: "Superseded src/lib.rs",
+                commitShortId: "123456a",
+                state: "PRIOR",
               },
             ],
             files: [
@@ -716,6 +724,20 @@ test("creates a multi-line inline review from selected diff text", async ({ page
     startLine: 1,
     startSide: "B",
   });
+});
+
+test("renders outdated pull request commits with legacy commit dropdown markers", async ({
+  page,
+}) => {
+  await page.goto("/yona/admin/projectYobi/pullRequest/9/changes");
+
+  const commitPicker = page.locator("#commits");
+  await expect(commitPicker).toBeVisible();
+  await expect(commitPicker.locator(".commit-hash", { hasText: "abcdef1" })).toBeVisible();
+
+  const outdatedCommit = commitPicker.locator("li.outdated", { hasText: "123456a" });
+  await expect(outdatedCommit).toBeVisible();
+  await expect(outdatedCommit.locator(".outdated-label")).toHaveText("review.outdated");
 });
 
 test("shows legacy conflict guidance and disables merge accept for conflicted pull requests", async ({
