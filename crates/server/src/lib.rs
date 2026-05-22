@@ -19059,6 +19059,7 @@ async fn rest_mass_update_issues(
                 remove_label_ids: body.remove_label_ids,
                 state: (!body.state.trim().is_empty()).then(|| body.state.trim().to_string()),
             },
+            actor.id,
             &actor.login_id,
         )
         .await
@@ -27432,6 +27433,7 @@ impl PilotServiceImpl {
                     state: (!request.state.trim().is_empty())
                         .then(|| request.state.trim().to_string()),
                 },
+                actor.id,
                 &actor.login_id,
             )
             .await

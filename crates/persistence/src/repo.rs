@@ -4286,6 +4286,7 @@ impl AppRepository {
     pub async fn mass_update_issues(
         &self,
         input: MassUpdateIssuesInput,
+        actor_id: i64,
         actor_login_id: &str,
     ) -> Result<Vec<IssueRecord>, DbErr> {
         let mut targets = Vec::new();
@@ -4317,14 +4318,18 @@ impl AppRepository {
             targets.push((project_record, model, next_assignee_id));
         }
 
+        let requested_state = input
+            .state
+            .as_deref()
+            .map(normalize_identity)
+            .filter(|value| !value.is_empty());
+        let mut state_changes = Vec::new();
         let txn = self.db.begin().await?;
-        for (_project_record, model, next_assignee_id) in &targets {
+        for (project_record, model, next_assignee_id) in &targets {
+            let previous_state = issue_state_from_raw(model.state);
+            let was_draft = model.is_draft.unwrap_or_default() != 0;
             let mut active = issue::ActiveModel::from(model.clone());
-            if let Some(state) = input
-                .state
-                .as_deref()
-                .filter(|value| !value.trim().is_empty())
-            {
+            if let Some(state) = requested_state.as_deref() {
                 active.state = Set(Some(issue_state_to_raw(state)));
             }
             if input.assignee_update {
@@ -4334,15 +4339,15 @@ impl AppRepository {
                 active.milestone_id = Set(input.milestone_id.filter(|value| *value > 0));
             }
             active.updated_date = Set(Some(current_datetime()));
-            let model = active.update(&txn).await?;
+            let updated_model = active.update(&txn).await?;
             for label_id in &input.add_label_ids {
-                if issue_issue_label::Entity::find_by_id((model.id, *label_id))
+                if issue_issue_label::Entity::find_by_id((updated_model.id, *label_id))
                     .one(&txn)
                     .await?
                     .is_none()
                 {
                     issue_issue_label::ActiveModel {
-                        issue_id: Set(model.id),
+                        issue_id: Set(updated_model.id),
                         issue_label_id: Set(*label_id),
                     }
                     .insert(&txn)
@@ -4350,39 +4355,46 @@ impl AppRepository {
                 }
             }
             for label_id in &input.remove_label_ids {
-                issue_issue_label::Entity::delete_by_id((model.id, *label_id))
+                issue_issue_label::Entity::delete_by_id((updated_model.id, *label_id))
                     .exec(&txn)
                     .await?;
             }
-            if let Some(state) = input
-                .state
-                .as_deref()
-                .filter(|value| !value.trim().is_empty())
-            {
-                let created = issue_event::ActiveModel {
-                    id: NotSet,
-                    created: Set(Some(current_datetime())),
-                    sender_login_id: Set(empty_to_none(Some(actor_login_id.to_string()))),
-                    sender_email: Set(None),
-                    issue_id: Set(Some(model.id)),
-                    event_type: Set(Some("ISSUE_STATE_CHANGED".to_string())),
+            if let Some(state) = requested_state.as_deref() {
+                if previous_state != state && !was_draft {
+                    state_changes.push((
+                        project_record.clone(),
+                        updated_model.clone(),
+                        previous_state,
+                        state.to_string(),
+                    ));
                 }
-                .insert(&txn)
-                .await?;
-                let backend = txn.get_database_backend();
-                let placeholders = sql_placeholders(backend, 2);
-                txn.execute(Statement::from_sql_and_values(
-                    backend,
-                    format!(
-                        "UPDATE issue_event SET new_value = {} WHERE id = {}",
-                        placeholders[0], placeholders[1]
-                    ),
-                    vec![state.to_string().into(), created.id.into()],
-                ))
-                .await?;
             }
         }
         txn.commit().await?;
+
+        for (project_record, model, old_state, new_state) in state_changes {
+            self.create_issue_event(
+                model.id,
+                actor_login_id,
+                "ISSUE_STATE_CHANGED",
+                &old_state,
+                &new_state,
+            )
+            .await?;
+            let receiver_ids = self
+                .issue_notification_receiver_ids(&project_record, &model, "ISSUE_STATE_CHANGED")
+                .await?;
+            self.create_notification_event_for_receivers(
+                actor_id,
+                "issue",
+                &model.id.to_string(),
+                "ISSUE_STATE_CHANGED",
+                &old_state,
+                &new_state,
+                &receiver_ids,
+            )
+            .await?;
+        }
 
         let mut updated = Vec::new();
         for issue_number in input.issue_numbers {

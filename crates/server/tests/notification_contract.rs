@@ -303,6 +303,110 @@ async fn notification_contract_stages_issue_state_change_rows_for_watchers() {
 }
 
 #[tokio::test]
+async fn notification_contract_stages_mass_update_issue_state_rows_for_watchers() {
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (watcher_csrf, watcher_cookie, _) = register_user(app.clone(), "watcher").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Mass state issue A",
+    )
+    .await;
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Mass state issue B",
+    )
+    .await;
+
+    for issue_number in [1, 2] {
+        response_json(
+            rest(
+                app.clone(),
+                Method::POST,
+                &format!(
+                    "/yona/api/v1/owners/owner/projects/projectYobi/issues/{issue_number}/watch"
+                ),
+                Some(&watcher_cookie),
+                Some(&watcher_csrf),
+                None,
+            )
+            .await,
+        )
+        .await;
+    }
+
+    let updated = response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/mass-update",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "issueNumbers": ["1", "2"],
+                "state": "closed"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(updated["items"].as_array().unwrap().len(), 2);
+    assert!(updated["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|item| item["state"] == "closed"));
+
+    let payload = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/notifications?from=0&size=5",
+            Some(&watcher_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(payload["total"], 2);
+    let items = payload["items"].as_array().unwrap();
+    let target_titles = items
+        .iter()
+        .map(|item| item["targetTitle"].as_str().unwrap())
+        .collect::<std::collections::HashSet<_>>();
+    assert_eq!(
+        target_titles,
+        std::collections::HashSet::from(["Mass state issue A", "Mass state issue B"])
+    );
+    assert!(items.iter().all(|item| {
+        item["eventType"] == "ISSUE_STATE_CHANGED"
+            && item["actor"]["loginId"] == "owner"
+            && item["message"] == "notification.issue.closed"
+            && item["typeIcon"] == "list-alt closed"
+    }));
+
+    let notification_count = notification_event::Entity::find()
+        .filter(notification_event::Column::EventType.eq(Some("ISSUE_STATE_CHANGED".to_string())))
+        .count(&db)
+        .await
+        .unwrap();
+    assert_eq!(notification_count, 2);
+
+    let mail_count = notification_mail::Entity::find().count(&db).await.unwrap();
+    assert_eq!(mail_count, 2);
+
+    let issue_event_count = issue_event::Entity::find()
+        .filter(issue_event::Column::EventType.eq(Some("ISSUE_STATE_CHANGED".to_string())))
+        .count(&db)
+        .await
+        .unwrap();
+    assert_eq!(issue_event_count, 2);
+}
+
+#[tokio::test]
 async fn notification_contract_lists_current_user_notifications_with_paging() {
     let (app, _repo, _db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
