@@ -118,6 +118,52 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('data-request-method="delete"');
   });
 
+  it("renders the legacy comment edit trigger shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          commentCount: 1,
+          timeline: [
+            {
+              comment: {
+                authorAvatarUrl: "https://cdn.yona/avatar-commenter.png",
+                authorLabel: "Commenter",
+                authorLoginId: "commenter",
+                contentsHtml: "<p>Comment body</p>",
+                contentsMarkdown: "Comment body",
+                createdLabel: "now",
+                id: 56,
+                viewerCanDelete: false,
+                viewerCanUpdate: true,
+                viewerHasVoted: false,
+                voterCount: 0,
+                voters: [],
+              },
+              createdLabel: "now",
+              eventType: "",
+              id: 56,
+              kind: "comment",
+              newValue: "",
+              oldValue: "",
+              senderLoginId: "",
+            },
+          ],
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+        onCommentUpdate={async () => undefined}
+      />,
+    );
+
+    expect(html).toContain('id="comment-56"');
+    expect(html).toContain('data-toggle="comment-edit"');
+    expect(html).toContain('data-comment-id="56"');
+    expect(html).toContain('title="common.comment.edit"');
+    expect(html).toContain('class="btn-transparent-with-fontsize-lineheight ml10"');
+    expect(html).toContain('class="yobicon-edit-2"');
+  });
+
   it("renders legacy event timeline anchors and hides body-change events", () => {
     const html = renderToStaticMarkup(
       <ProjectIssueDetailPage

@@ -583,6 +583,12 @@ export function ProjectIssueDetailPage(props: {
                             </div>
                             {comment.viewerCanUpdate && props.onCommentUpdate ? (
                               <IssueCommentEditForm
+                                action={buildProjectHref(
+                                  props.runtimeConfig,
+                                  detail.ownerName,
+                                  detail.projectName,
+                                  `issue/${issueNumber}/comments/${comment.id}`,
+                                )}
                                 commentId={comment.id}
                                 csrfToken={props.csrfToken}
                                 getIssueReferencesQueryOptions={
@@ -1779,6 +1785,7 @@ function IssueCommentForm(props: {
 }
 
 function IssueCommentEditForm(props: {
+  action: string;
   commentId: number;
   csrfToken?: string;
   getIssueReferencesQueryOptions?: IssueReferenceQueryOptionsFactory;
@@ -1799,43 +1806,83 @@ function IssueCommentEditForm(props: {
   const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
   if (!editing) {
     return (
-      <button onClick={() => setEditing(true)} type="button">
-        Edit comment
+      <button
+        className="btn-transparent-with-fontsize-lineheight ml10"
+        data-comment-id={props.commentId}
+        data-toggle="comment-edit"
+        onClick={() => setEditing(true)}
+        title="common.comment.edit"
+        type="button"
+      >
+        <i className="yobicon-edit-2"></i>
       </button>
     );
   }
   return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        const nextContents = contentsMarkdown.trim();
-        if (!nextContents) {
-          return;
-        }
-        void props.onSubmit(props.commentId, nextContents, attachmentIds).then(() => {
-          setAttachmentIds([]);
-          setEditing(false);
-        });
-      }}
-    >
-      <IssueMentionTextarea
-        context="issue-comment"
-        csrfToken={props.csrfToken}
-        getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
-        onAttachmentUpload={(attachment) =>
-          setAttachmentIds((current) => [...current, attachment.id])
-        }
-        onChange={setContentsMarkdown}
-        onSearchMentionUsers={props.onSearchMentionUsers}
-        placeholder="Leave a comment"
-        runtimeConfig={props.runtimeConfig}
-        value={contentsMarkdown}
-      />
-      <button type="submit">Save comment</button>
-      <button onClick={() => setEditing(false)} type="button">
-        Cancel
-      </button>
-    </form>
+    <div className="comment-update-form" id={`comment-editform-${props.commentId}`}>
+      <form
+        action={props.action}
+        encType="multipart/form-data"
+        method="post"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const nextContents = contentsMarkdown.trim();
+          if (!nextContents) {
+            return;
+          }
+          void props.onSubmit(props.commentId, nextContents, attachmentIds).then(() => {
+            setAttachmentIds([]);
+            setEditing(false);
+          });
+        }}
+      >
+        <input name="id" type="hidden" defaultValue={props.commentId} />
+        <div className="write-comment-box">
+          <div className="write-comment-wrap">
+            <IssueMentionTextarea
+              context="issue-comment"
+              csrfToken={props.csrfToken}
+              getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
+              name="contents"
+              onAttachmentUpload={(attachment) =>
+                setAttachmentIds((current) => [...current, attachment.id])
+              }
+              onChange={setContentsMarkdown}
+              onSearchMentionUsers={props.onSearchMentionUsers}
+              placeholder="Leave a comment"
+              runtimeConfig={props.runtimeConfig}
+              value={contentsMarkdown}
+            />
+            <div className="right-txt comment-update-button upload-button-line">
+              <button
+                className="ybtn ybtn-cancel"
+                data-comment-id={props.commentId}
+                onClick={() => setEditing(false)}
+                type="button"
+              >
+                button.cancel
+              </button>
+              <button className="ybtn ybtn-info" type="submit">
+                button.save
+              </button>
+            </div>
+          </div>
+          <input
+            className="temporaryUploadFiles"
+            name="temporaryUploadFiles"
+            type="hidden"
+            defaultValue=""
+          />
+          <div className={`preview-${props.commentId}`}></div>
+          <div className="attachment-files"></div>
+          <div
+            data-resourceid={props.commentId}
+            data-resourcetype="ISSUE_COMMENT"
+            id={`upload-${props.commentId}`}
+          ></div>
+        </div>
+      </form>
+    </div>
   );
 }
 

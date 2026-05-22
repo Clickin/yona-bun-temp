@@ -400,7 +400,7 @@ test.beforeEach(async ({ page }) => {
             createdLabel: "now",
             id: 55,
             viewerCanDelete: true,
-            viewerCanUpdate: false,
+            viewerCanUpdate: true,
             viewerHasVoted: false,
             voterCount: 0,
             voters: [],
@@ -439,7 +439,7 @@ test.beforeEach(async ({ page }) => {
               createdLabel: "now",
               id: 55,
               viewerCanDelete: true,
-              viewerCanUpdate: false,
+              viewerCanUpdate: true,
               viewerHasVoted: false,
               voterCount: 0,
               voters: [],
@@ -1047,6 +1047,21 @@ test("project issue routes render data-backed issue list filters and detail scre
   );
   await expect(page.locator("#comment-55 .comment_author")).toContainText("Nori");
   await expect(page.locator("#comment-55 .comment-body")).toContainText("First issue comment");
+  await expect(page.locator('#comment-55 [data-toggle="comment-edit"]')).toHaveAttribute(
+    "data-comment-id",
+    "55",
+  );
+  await page.locator('#comment-55 [data-toggle="comment-edit"]').click();
+  await expect(page.locator("#comment-editform-55.comment-update-form")).toBeVisible();
+  await expect(page.locator("#comment-editform-55 form")).toHaveAttribute(
+    "action",
+    "/yona/admin/projectYobi/issue/1/comments/55",
+  );
+  await expect(page.locator("#comment-editform-55 .ybtn-cancel")).toHaveAttribute(
+    "data-comment-id",
+    "55",
+  );
+  await expect(page.locator("#comment-editform-55 .ybtn-info")).toContainText("button.save");
   await expect(page.locator('#comment-55 [data-toggle="comment-delete"]')).toHaveAttribute(
     "data-request-uri",
     "/yona/admin/projectYobi/issue/1/comment/55/delete",
