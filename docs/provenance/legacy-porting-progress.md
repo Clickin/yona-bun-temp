@@ -325,7 +325,7 @@ Interpretation:
 - [ ] Email notification fan-out parity
 - [ ] BCC mode
 - [~] Notification interval batching queue/drain helper
-- [ ] Draft-time merge
+- [x] Draft-time merge
 - [ ] Recipient limit
 - [ ] Mailbox/reply threading parity
 

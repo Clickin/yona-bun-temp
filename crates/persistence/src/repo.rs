@@ -370,6 +370,7 @@ const WORKSPACE_NOTIFICATION_TYPES: &[(&str, &str)] = &[
 
 const PASSWORD_RESET_VERIFICATION_PREFIX: &str = "password-reset:";
 const SIGNUP_VERIFICATION_PREFIX: &str = "signup:";
+const NOTIFICATION_DRAFT_TIME_IN_MILLIS: i64 = 30_000;
 const USER_ATTACHMENT_CONTAINER: &str = "USER";
 const USER_AVATAR_ATTACHMENT_CONTAINER: &str = "USER_AVATAR";
 const ISSUE_ATTACHMENT_CONTAINER: &str = "ISSUE_POST";
@@ -534,6 +535,17 @@ fn notification_mail_is_due(created: Option<DateTime>, now: DateTime, delay_ms: 
         return false;
     };
     now.signed_duration_since(created).num_milliseconds() >= delay_ms.max(0)
+}
+
+fn notification_event_uses_draft_merge(event_type: &str) -> bool {
+    !matches!(
+        event_type,
+        "ISSUE_SHARER_CHANGED"
+            | "MEMBER_ENROLL_REQUEST"
+            | "MEMBER_ENROLL_ACCEPT"
+            | "ORGANIZATION_MEMBER_ENROLL_REQUEST"
+            | "ORGANIZATION_MEMBER_ENROLL_ACCEPT"
+    )
 }
 
 fn random_workspace_token() -> String {
@@ -11966,19 +11978,47 @@ impl AppRepository {
             return Ok(());
         }
 
+        let now = current_datetime();
+        let mut old_value_to_write = old_value.to_string();
+        if notification_event_uses_draft_merge(event_type) {
+            if let Some(previous) = self
+                .recent_mergeable_notification_event(
+                    sender_id,
+                    resource_type,
+                    resource_id,
+                    event_type,
+                    now,
+                )
+                .await?
+            {
+                old_value_to_write = self
+                    .read_text_column("notification_event", "old_value", previous.id)
+                    .await?;
+                self.delete_notification_event_rows(previous.id).await?;
+                if old_value_to_write == new_value {
+                    return Ok(());
+                }
+            }
+        }
+
         let created = notification_event::ActiveModel {
             id: NotSet,
             title: Set(None),
             sender_id: Set(Some(sender_id)),
-            created: Set(Some(current_datetime())),
+            created: Set(Some(now)),
             resource_type: Set(Some(resource_type.to_string())),
             resource_id: Set(Some(resource_id.to_string())),
             event_type: Set(Some(event_type.to_string())),
         }
         .insert(&self.db)
         .await?;
-        self.write_text_column("notification_event", "old_value", created.id, old_value)
-            .await?;
+        self.write_text_column(
+            "notification_event",
+            "old_value",
+            created.id,
+            &old_value_to_write,
+        )
+        .await?;
         self.write_text_column("notification_event", "new_value", created.id, new_value)
             .await?;
         notification_mail::ActiveModel {
@@ -11997,6 +12037,45 @@ impl AppRepository {
             .await?;
         }
 
+        Ok(())
+    }
+
+    async fn recent_mergeable_notification_event(
+        &self,
+        sender_id: i64,
+        resource_type: &str,
+        resource_id: &str,
+        event_type: &str,
+        now: DateTime,
+    ) -> Result<Option<notification_event::Model>, DbErr> {
+        let events = notification_event::Entity::find()
+            .filter(notification_event::Column::SenderId.eq(Some(sender_id)))
+            .filter(notification_event::Column::ResourceType.eq(Some(resource_type.to_string())))
+            .filter(notification_event::Column::ResourceId.eq(Some(resource_id.to_string())))
+            .filter(notification_event::Column::EventType.eq(Some(event_type.to_string())))
+            .order_by_desc(notification_event::Column::Id)
+            .all(&self.db)
+            .await?;
+        Ok(events.into_iter().find(|event| {
+            event.created.is_some_and(|created| {
+                now.signed_duration_since(created).num_milliseconds()
+                    < NOTIFICATION_DRAFT_TIME_IN_MILLIS
+            })
+        }))
+    }
+
+    async fn delete_notification_event_rows(&self, event_id: i64) -> Result<(), DbErr> {
+        notification_event_n4user::Entity::delete_many()
+            .filter(notification_event_n4user::Column::NotificationEventId.eq(event_id))
+            .exec(&self.db)
+            .await?;
+        notification_mail::Entity::delete_many()
+            .filter(notification_mail::Column::NotificationEventId.eq(Some(event_id)))
+            .exec(&self.db)
+            .await?;
+        notification_event::Entity::delete_by_id(event_id)
+            .exec(&self.db)
+            .await?;
         Ok(())
     }
 

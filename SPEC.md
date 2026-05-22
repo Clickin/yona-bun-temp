@@ -912,7 +912,7 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 타입 토글
 | 알림 이벤트 타입     | 이슈 생성, 댓글, 상태변경, PR 생성/merge, 리뷰 등 | 🔶 핵심 list projection 구현 | 5     |
 | BCC 모드             | 수신자 간 이메일 주소 비공개                      | gap                      | 5     |
 | 알림 간격            | `notification.bymail.interval` 배치 발송          | gap (due-row drain helper만 구현) | 5     |
-| Draft-time 머징      | 30초 내 연속 편집 알림 병합                       | gap                      | 5     |
+| Draft-time 머징      | 30초 내 연속 편집 알림 병합                       | ✅ notification event/mail queue merge 구현 | 5     |
 | 수신자 제한          | `recipientLimit` 설정                             | gap                      | 5     |
 
 #### 검수 기준
@@ -1562,7 +1562,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Code follow-up: multi-line ranged code-comment selection polish, inline code-comment edit, SVN executable repository/serve integration
 - PullRequest follow-up: in-app merge conflict resolution workflow and multi-line inline review selection polish
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
-- Notification: SMTP scheduler/delivery, draft-time merge, recipient limit, and full mail notification parity
+- Notification: SMTP scheduler/delivery, recipient limit, and full mail notification parity
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope
 - Webhook follow-up: HTTPS production delivery hardening, optional signature compatibility if external evidence requires it, and delivery history/retry behavior
 - Admin: users/projects/site-admin/account-lock/test-mail surfaces

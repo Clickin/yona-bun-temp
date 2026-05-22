@@ -6,7 +6,9 @@ use sea_orm::{
 };
 use serde_json::json;
 use tower::ServiceExt;
-use yona_rust_persistence::{issue_event, notification_event, notification_mail, AppRepository};
+use yona_rust_persistence::{
+    issue_event, notification_event, notification_event_n4user, notification_mail, AppRepository,
+};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
@@ -190,6 +192,32 @@ async fn create_issue(app: axum::Router, cookie: &str, csrf: &str, title: &str) 
                 "projectName": "projectYobi",
                 "title": title,
                 "bodyMarkdown": "body"
+            }),
+        )
+        .await,
+    )
+    .await;
+}
+
+async fn update_issue_body(
+    app: axum::Router,
+    cookie: &str,
+    csrf: &str,
+    title: &str,
+    body_markdown: &str,
+) {
+    response_json(
+        rpc(
+            app,
+            "UpdateIssue",
+            Some(cookie),
+            Some(csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1",
+                "title": title,
+                "bodyMarkdown": body_markdown
             }),
         )
         .await,
@@ -472,5 +500,97 @@ async fn notification_contract_stages_mail_rows_and_drains_due_events() {
     assert_eq!(
         notification_mail::Entity::find().count(&db).await.unwrap(),
         0
+    );
+}
+
+#[tokio::test]
+async fn notification_contract_merges_same_sender_resource_events_within_draft_time() {
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_, guest_cookie, guest_id) = register_user(app.clone(), "guest").await;
+    let (_, other_cookie, other_id) = register_user(app.clone(), "other").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(app.clone(), &owner_cookie, &owner_csrf, "Draft merge issue").await;
+
+    update_issue_body(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Draft merge issue",
+        "first edit @guest",
+    )
+    .await;
+    update_issue_body(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Draft merge issue",
+        "second edit @other",
+    )
+    .await;
+
+    let event = notification_event::Entity::find()
+        .filter(notification_event::Column::EventType.eq(Some("ISSUE_BODY_CHANGED".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("merged issue body event");
+    assert_eq!(
+        notification_event::Entity::find()
+            .filter(
+                notification_event::Column::EventType.eq(Some("ISSUE_BODY_CHANGED".to_string()))
+            )
+            .count(&db)
+            .await
+            .unwrap(),
+        1
+    );
+    assert_eq!(
+        notification_event_n4user::Entity::find_by_id((event.id, guest_id))
+            .one(&db)
+            .await
+            .unwrap(),
+        None
+    );
+    assert!(
+        notification_event_n4user::Entity::find_by_id((event.id, other_id))
+            .one(&db)
+            .await
+            .unwrap()
+            .is_some()
+    );
+    assert_eq!(
+        notification_mail::Entity::find().count(&db).await.unwrap(),
+        1
+    );
+
+    let guest_notifications = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/notifications?from=0&size=5",
+            Some(&guest_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(guest_notifications["total"], 0);
+
+    let other_notifications = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/notifications?from=0&size=5",
+            Some(&other_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(other_notifications["total"], 1);
+    assert_eq!(
+        other_notifications["items"][0]["eventType"],
+        "ISSUE_BODY_CHANGED"
+    );
+    assert_eq!(
+        other_notifications["items"][0]["message"],
+        "Issue body changed"
     );
 }
