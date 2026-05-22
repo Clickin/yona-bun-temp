@@ -2752,6 +2752,37 @@ fn notification_mail_recipient_allowed(email: &str) -> bool {
         .any(|allowed| allowed == domain)
 }
 
+fn notification_mail_hide_addresses() -> bool {
+    std::env::var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS")
+        .ok()
+        .and_then(|value| {
+            let normalized = value.trim().to_ascii_lowercase();
+            match normalized.as_str() {
+                "false" | "0" | "no" | "off" => Some(false),
+                "true" | "1" | "yes" | "on" => Some(true),
+                _ => None,
+            }
+        })
+        .unwrap_or(true)
+}
+
+fn notification_mail_content(
+    item: &persistence::NotificationItemRecord,
+    target_url: &str,
+) -> (String, String) {
+    let subject = if item.target_title.is_empty() {
+        item.message.clone()
+    } else {
+        item.target_title.clone()
+    };
+    let body = if target_url.is_empty() {
+        format!("{}\n\n{}", item.message, item.target_title)
+    } else {
+        format!("{}\n\n{}\n{}", item.message, item.target_title, target_url)
+    };
+    (subject, body)
+}
+
 pub async fn deliver_due_notification_mails(
     repository: &PilotRepository,
     now: DateTime,
@@ -2764,33 +2795,56 @@ pub async fn deliver_due_notification_mails(
         .drain_due_notification_mail_deliveries(now, delay_ms)
         .await
         .map_err(|error| error.to_string())?;
+    let deliveries: Vec<_> = deliveries
+        .into_iter()
+        .filter(|delivery| notification_mail_recipient_allowed(&delivery.recipient_email))
+        .collect();
     let mut delivered = 0;
-    for delivery in deliveries {
-        if !notification_mail_recipient_allowed(&delivery.recipient_email) {
-            continue;
+    if notification_mail_hide_addresses() {
+        let mut grouped: Vec<(persistence::NotificationItemRecord, Vec<String>)> = Vec::new();
+        for delivery in deliveries {
+            if let Some((_, recipients)) = grouped
+                .iter_mut()
+                .find(|(item, _)| item.id == delivery.item.id)
+            {
+                recipients.push(delivery.recipient_email);
+            } else {
+                grouped.push((delivery.item, vec![delivery.recipient_email]));
+            }
         }
+        for (item, mut bcc) in grouped {
+            bcc.sort();
+            bcc.dedup();
+            if bcc.is_empty() {
+                continue;
+            }
+            let target_url = if item.target_path.is_empty() {
+                String::new()
+            } else {
+                absolute_app_url(&public_origin, base_path, &item.target_path)
+            };
+            let (subject, body) = notification_mail_content(&item, &target_url);
+            deliver(OutboundMail {
+                bcc,
+                body,
+                from: default_smtp_from(),
+                subject,
+                to: default_smtp_from(),
+            })
+            .map_err(|error| error.to_string())?;
+            delivered += 1;
+        }
+        return Ok(delivered);
+    }
+    for delivery in deliveries {
         let target_url = if delivery.item.target_path.is_empty() {
             String::new()
         } else {
             absolute_app_url(&public_origin, base_path, &delivery.item.target_path)
         };
-        let subject = if delivery.item.target_title.is_empty() {
-            delivery.item.message.clone()
-        } else {
-            delivery.item.target_title.clone()
-        };
-        let body = if target_url.is_empty() {
-            format!(
-                "{}\n\n{}",
-                delivery.item.message, delivery.item.target_title
-            )
-        } else {
-            format!(
-                "{}\n\n{}\n{}",
-                delivery.item.message, delivery.item.target_title, target_url
-            )
-        };
+        let (subject, body) = notification_mail_content(&delivery.item, &target_url);
         deliver(OutboundMail {
+            bcc: Vec::new(),
             body,
             from: default_smtp_from(),
             subject,
@@ -3055,6 +3109,7 @@ fn send_signup_verification_mail(
         &format!("/verify/{login_id}/{verification_code}"),
     );
     deliver(OutboundMail {
+        bcc: Vec::new(),
         body: format!("User verification\n\nClick this link to verify email:\n{verify_url}\n"),
         from: default_smtp_from(),
         subject: "New Sign-up Confirm".to_string(),
@@ -3075,6 +3130,7 @@ fn send_password_reset_mail(
         &format!("/resetPassword?s={verification_code}"),
     );
     deliver(OutboundMail {
+        bcc: Vec::new(),
         body: format!("Copy the following URL and paste it to browser's URL bar\n\n{reset_url}"),
         from: default_smtp_from(),
         subject: format!("[{}] Password reset request", configured_site_name()),
@@ -3096,6 +3152,7 @@ fn send_workspace_email_validation_mail(
         &format!("/user/email/confirm/{email_id}/{token}"),
     );
     deliver(OutboundMail {
+        bcc: Vec::new(),
         body: format!("Validation email\n\nConfirm this email address:\n{confirm_url}\n"),
         from: default_smtp_from(),
         subject: "Validation email".to_string(),
@@ -3157,6 +3214,7 @@ async fn send_project_transfer_request_mail(
     );
     for to in recipients.into_iter().filter(|to| !to.trim().is_empty()) {
         let _ = deliver(OutboundMail {
+            bcc: Vec::new(),
             body: body.clone(),
             from: default_smtp_from(),
             subject: subject.clone(),
@@ -11193,6 +11251,7 @@ async fn rest_send_site_test_mail(
     let subject = required_site_mail_field(body.subject, "subject")?;
     let body = required_site_mail_field(body.body, "body")?;
     deliver(OutboundMail {
+        bcc: Vec::new(),
         body,
         from,
         subject,

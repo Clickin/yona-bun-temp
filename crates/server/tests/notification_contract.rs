@@ -520,6 +520,7 @@ async fn notification_contract_stages_mail_rows_and_drains_due_events() {
 async fn notification_contract_delivers_due_mail_rows_to_receivers() {
     let _guard = notification_mail_env_lock().lock().unwrap();
     std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
+    std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "false");
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
@@ -592,12 +593,14 @@ async fn notification_contract_delivers_due_mail_rows_to_receivers() {
         .body
         .contains("https://yona.example/yona/owner/projectYobi/issue/1"));
     clear_test_outbox();
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
 }
 
 #[tokio::test]
 async fn notification_contract_filters_due_mail_receivers_by_allowed_domains() {
     let _guard = notification_mail_env_lock().lock().unwrap();
     std::env::set_var("YONA_ALLOWED_MAIL_DOMAINS", "allowed.example.com");
+    std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "false");
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
@@ -677,12 +680,14 @@ async fn notification_contract_filters_due_mail_receivers_by_allowed_domains() {
     assert_eq!(outbox[0].to, "allowed@allowed.example.com");
     clear_test_outbox();
     std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
 }
 
 #[tokio::test]
 async fn notification_contract_skips_due_mail_when_resource_no_longer_exists() {
     let _guard = notification_mail_env_lock().lock().unwrap();
     std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (_, _, owner_id) = register_user(app.clone(), "owner").await;
@@ -732,6 +737,88 @@ async fn notification_contract_skips_due_mail_when_resource_no_longer_exists() {
     );
     assert!(snapshot_test_outbox().is_empty());
     clear_test_outbox();
+}
+
+#[tokio::test]
+async fn notification_contract_hides_recipient_addresses_in_bcc_mode() {
+    let _guard = notification_mail_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
+    std::env::set_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS", "true");
+    std::env::set_var("SMTP_FROM", "notifications@yona.local");
+    clear_test_outbox();
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (watcher_csrf, watcher_cookie, _) = register_user(app.clone(), "watcher").await;
+    let (observer_csrf, observer_cookie, _) = register_user(app.clone(), "observer").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Hidden recipient watched issue",
+    )
+    .await;
+    for (cookie, csrf) in [
+        (watcher_cookie.as_str(), watcher_csrf.as_str()),
+        (observer_cookie.as_str(), observer_csrf.as_str()),
+    ] {
+        response_json(
+            rest(
+                app.clone(),
+                Method::POST,
+                "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/watch",
+                Some(cookie),
+                Some(csrf),
+                None,
+            )
+            .await,
+        )
+        .await;
+    }
+    response_json(
+        rest(
+            app,
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/state",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({ "state": "closed" })),
+        )
+        .await,
+    )
+    .await;
+
+    let event = notification_event::Entity::find()
+        .filter(notification_event::Column::EventType.eq(Some("ISSUE_STATE_CHANGED".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("state change event");
+
+    let delivered = deliver_due_notification_mails(
+        &repo,
+        event.created.expect("event created"),
+        0,
+        "https://yona.example",
+        "/yona",
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(delivered, 1);
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].to, "notifications@yona.local");
+    assert_eq!(
+        outbox[0].bcc,
+        vec![
+            "observer@example.com".to_string(),
+            "watcher@example.com".to_string()
+        ]
+    );
+    clear_test_outbox();
+    std::env::remove_var("SMTP_FROM");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
 }
 
 #[tokio::test]

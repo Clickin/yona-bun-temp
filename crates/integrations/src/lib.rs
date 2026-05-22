@@ -13,6 +13,7 @@ pub const CRATE_OWNER: &str = "integrations";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MailDeliveryRecord {
+    pub bcc: Vec<String>,
     pub body: String,
     pub from: String,
     pub subject: String,
@@ -21,6 +22,7 @@ pub struct MailDeliveryRecord {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OutboundMail {
+    pub bcc: Vec<String>,
     pub body: String,
     pub from: String,
     pub subject: String,
@@ -97,6 +99,7 @@ pub fn webhook_http_delivery_enabled() -> bool {
 pub fn deliver(mail: OutboundMail) -> Result<(), String> {
     if !smtp_enabled() {
         test_outbox().lock().unwrap().push(MailDeliveryRecord {
+            bcc: mail.bcc,
             body: mail.body,
             from: mail.from,
             subject: mail.subject,
@@ -105,7 +108,7 @@ pub fn deliver(mail: OutboundMail) -> Result<(), String> {
         return Ok(());
     }
 
-    let email = Message::builder()
+    let mut builder = Message::builder()
         .from(
             mail.from
                 .parse()
@@ -114,7 +117,14 @@ pub fn deliver(mail: OutboundMail) -> Result<(), String> {
         .to(mail
             .to
             .parse()
-            .map_err(|error| format!("invalid to address: {error}"))?)
+            .map_err(|error| format!("invalid to address: {error}"))?);
+    for bcc in mail.bcc {
+        builder = builder.bcc(
+            bcc.parse()
+                .map_err(|error| format!("invalid bcc address: {error}"))?,
+        );
+    }
+    let email = builder
         .subject(mail.subject)
         .body(mail.body)
         .map_err(|error| format!("invalid mail message: {error}"))?;
