@@ -6,7 +6,7 @@ use sea_orm::{
 };
 use serde_json::json;
 use tower::ServiceExt;
-use yona_rust_persistence::{notification_event, notification_mail, AppRepository};
+use yona_rust_persistence::{issue_event, notification_event, notification_mail, AppRepository};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
@@ -106,6 +106,30 @@ async fn rest_get(app: axum::Router, uri: &str, cookie_header: Option<&str>) -> 
         .unwrap()
 }
 
+async fn rest(
+    app: axum::Router,
+    method: Method,
+    uri: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    payload: Option<serde_json::Value>,
+) -> Response<Body> {
+    let mut builder = Request::builder().method(method).uri(uri);
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+    let body = if let Some(payload) = payload {
+        builder = builder.header(http::header::CONTENT_TYPE, "application/json");
+        Body::from(payload.to_string())
+    } else {
+        Body::empty()
+    };
+    app.oneshot(builder.body(body).unwrap()).await.unwrap()
+}
+
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i64) {
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let response = rpc(
@@ -190,6 +214,92 @@ async fn share_issue(app: axum::Router, cookie: &str, csrf: &str, login_id: &str
         .await,
     )
     .await;
+}
+
+#[tokio::test]
+async fn notification_contract_stages_issue_state_change_rows_for_watchers() {
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (watcher_csrf, watcher_cookie, _) = register_user(app.clone(), "watcher").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "State change watched issue",
+    )
+    .await;
+
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/watch",
+            Some(&watcher_cookie),
+            Some(&watcher_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+
+    let updated = response_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/state",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({ "state": "closed" })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(updated["state"], "closed");
+
+    let payload = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/notifications?from=0&size=5",
+            Some(&watcher_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(payload["total"], 1);
+    let items = payload["items"].as_array().unwrap();
+    assert_eq!(items.len(), 1);
+    assert_eq!(items[0]["eventType"], "ISSUE_STATE_CHANGED");
+    assert_eq!(items[0]["actor"]["loginId"], "owner");
+    assert_eq!(items[0]["message"], "notification.issue.closed");
+    assert_eq!(items[0]["targetHref"], "/yona/owner/projectYobi/issue/1");
+    assert_eq!(items[0]["targetTitle"], "State change watched issue");
+    assert_eq!(items[0]["typeIcon"], "list-alt closed");
+
+    let event = notification_event::Entity::find()
+        .filter(notification_event::Column::EventType.eq(Some("ISSUE_STATE_CHANGED".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("notification event");
+    assert_eq!(event.resource_type.as_deref(), Some("issue"));
+    assert_eq!(event.resource_id.as_deref(), Some("1"));
+
+    let mail_count = notification_mail::Entity::find()
+        .filter(notification_mail::Column::NotificationEventId.eq(Some(event.id)))
+        .count(&db)
+        .await
+        .unwrap();
+    assert_eq!(mail_count, 1);
+
+    let issue_event = issue_event::Entity::find()
+        .filter(issue_event::Column::IssueId.eq(Some(1)))
+        .filter(issue_event::Column::EventType.eq(Some("ISSUE_STATE_CHANGED".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("issue event");
+    assert_eq!(issue_event.sender_login_id.as_deref(), Some("owner"));
 }
 
 #[tokio::test]

@@ -3074,30 +3074,84 @@ impl AppRepository {
         issue_number: i64,
         state: &str,
     ) -> Result<Option<IssueRecord>, DbErr> {
-        let Some(project_record) = self
-            .read_project_by_owner_and_name(owner_name, project_name)
+        self.update_issue_state_for_actor(owner_name, project_name, issue_number, state, None, "")
+            .await
+    }
+
+    pub async fn update_issue_state_as_actor(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        state: &str,
+        actor_id: i64,
+        actor_login_id: &str,
+    ) -> Result<Option<IssueRecord>, DbErr> {
+        self.update_issue_state_for_actor(
+            owner_name,
+            project_name,
+            issue_number,
+            state,
+            Some(actor_id),
+            actor_login_id,
+        )
+        .await
+    }
+
+    async fn update_issue_state_for_actor(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        state: &str,
+        actor_id: Option<i64>,
+        actor_login_id: &str,
+    ) -> Result<Option<IssueRecord>, DbErr> {
+        let Some((project_record, model)) = self
+            .read_project_issue_model(owner_name, project_name, issue_number)
             .await?
         else {
             return Ok(None);
         };
-
-        let update_result = issue::Entity::update_many()
-            .col_expr(
-                issue::Column::State,
-                Expr::value(Some(issue_state_to_raw(state))),
+        let old_state = issue_state_from_raw(model.state);
+        let new_state = normalize_identity(state);
+        let mut active = issue::ActiveModel::from(model);
+        active.state = Set(Some(issue_state_to_raw(&new_state)));
+        active.updated_date = Set(Some(current_datetime()));
+        let updated = active.update(&self.db).await?;
+        if old_state != new_state && !actor_login_id.trim().is_empty() {
+            self.create_issue_event(
+                updated.id,
+                actor_login_id,
+                "ISSUE_STATE_CHANGED",
+                &old_state,
+                &new_state,
             )
-            .filter(issue::Column::ProjectId.eq(Some(project_record.id)))
-            .filter(issue::Column::Number.eq(Some(issue_number)))
-            .exec(&self.db)
-            .await?
-            .rows_affected;
-
-        if update_result == 0 {
-            return Ok(None);
+            .await?;
+            if let Some(actor_id) = actor_id {
+                let receiver_ids = self
+                    .issue_notification_receiver_ids(
+                        &project_record,
+                        &updated,
+                        "ISSUE_STATE_CHANGED",
+                    )
+                    .await?;
+                self.create_notification_event_for_receivers(
+                    actor_id,
+                    "issue",
+                    &updated.id.to_string(),
+                    "ISSUE_STATE_CHANGED",
+                    &old_state,
+                    &new_state,
+                    &receiver_ids,
+                )
+                .await?;
+            }
         }
 
-        self.read_issue_detail(owner_name, project_name, issue_number)
+        self.issue_record_from_model(updated, &project_record, None)
             .await
+            .map(Some)
     }
 
     pub async fn create_issue(
@@ -12133,6 +12187,164 @@ impl AppRepository {
             .into_iter()
             .collect::<HashSet<_>>();
         receivers.retain(|user_id| !posting_unwatchers.contains(user_id));
+        receivers.retain(|user_id| !event_unwatchers.contains(user_id));
+        Ok(receivers)
+    }
+
+    async fn push_issue_notification_receiver_id(
+        &self,
+        project: &ProjectRecord,
+        issue: &issue::Model,
+        assignee_user_id: Option<i64>,
+        direct_sharer_ids: &HashSet<i64>,
+        user_ids: &mut Vec<i64>,
+        seen: &mut HashSet<i64>,
+        user_id: Option<i64>,
+    ) -> Result<(), DbErr> {
+        let Some(user_id) = user_id else {
+            return Ok(());
+        };
+        if seen.contains(&user_id) {
+            return Ok(());
+        }
+        if !self
+            .find_user_model_by_id(user_id)
+            .await?
+            .is_some_and(|user| n4user_is_active(&user))
+        {
+            return Ok(());
+        }
+        let has_issue_access = issue.author_id == Some(user_id)
+            || assignee_user_id == Some(user_id)
+            || direct_sharer_ids.contains(&user_id);
+        if !has_issue_access
+            && !self
+                .search_project_visible_for_actor(project, Some(user_id))
+                .await?
+        {
+            return Ok(());
+        }
+        seen.insert(user_id);
+        user_ids.push(user_id);
+        Ok(())
+    }
+
+    async fn issue_notification_receiver_ids(
+        &self,
+        project: &ProjectRecord,
+        issue: &issue::Model,
+        event_type: &str,
+    ) -> Result<Vec<i64>, DbErr> {
+        let mut receivers = Vec::new();
+        let mut seen = HashSet::new();
+        let assignee_user_id = self
+            .search_issue_assignee_user_id(issue.assignee_id)
+            .await?;
+        let direct_sharer_ids = issue_sharer::Entity::find()
+            .filter(issue_sharer::Column::IssueId.eq(Some(issue.id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .filter_map(|row| row.user_id)
+            .collect::<HashSet<_>>();
+
+        self.push_issue_notification_receiver_id(
+            project,
+            issue,
+            assignee_user_id,
+            &direct_sharer_ids,
+            &mut receivers,
+            &mut seen,
+            issue.author_id,
+        )
+        .await?;
+        self.push_issue_notification_receiver_id(
+            project,
+            issue,
+            assignee_user_id,
+            &direct_sharer_ids,
+            &mut receivers,
+            &mut seen,
+            assignee_user_id,
+        )
+        .await?;
+        for user_id in direct_sharer_ids.iter().copied() {
+            self.push_issue_notification_receiver_id(
+                project,
+                issue,
+                assignee_user_id,
+                &direct_sharer_ids,
+                &mut receivers,
+                &mut seen,
+                Some(user_id),
+            )
+            .await?;
+        }
+
+        for user_id in self
+            .active_watch_user_ids("ISSUE", &issue.id.to_string())
+            .await?
+        {
+            self.push_issue_notification_receiver_id(
+                project,
+                issue,
+                assignee_user_id,
+                &direct_sharer_ids,
+                &mut receivers,
+                &mut seen,
+                Some(user_id),
+            )
+            .await?;
+        }
+
+        for user_id in self
+            .active_watch_user_ids("PROJECT", &project.id.to_string())
+            .await?
+        {
+            if self
+                .project_notification_enabled_for_user(user_id, project.id, event_type)
+                .await?
+            {
+                self.push_issue_notification_receiver_id(
+                    project,
+                    issue,
+                    assignee_user_id,
+                    &direct_sharer_ids,
+                    &mut receivers,
+                    &mut seen,
+                    Some(user_id),
+                )
+                .await?;
+            }
+        }
+
+        for user_id in self
+            .explicit_project_notification_user_ids(project.id, event_type, true)
+            .await?
+        {
+            self.push_issue_notification_receiver_id(
+                project,
+                issue,
+                assignee_user_id,
+                &direct_sharer_ids,
+                &mut receivers,
+                &mut seen,
+                Some(user_id),
+            )
+            .await?;
+        }
+
+        let issue_unwatchers = self
+            .active_unwatch_user_ids("ISSUE", &issue.id.to_string())
+            .await?
+            .into_iter()
+            .collect::<HashSet<_>>();
+        let event_unwatchers = self
+            .explicit_project_notification_user_ids(project.id, event_type, false)
+            .await?
+            .into_iter()
+            .collect::<HashSet<_>>();
+        receivers.retain(|user_id| !issue_unwatchers.contains(user_id));
         receivers.retain(|user_id| !event_unwatchers.contains(user_id));
         Ok(receivers)
     }

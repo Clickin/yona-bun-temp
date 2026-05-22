@@ -18566,7 +18566,14 @@ async fn rest_update_issue_state(
         ));
     }
     let issue = repository
-        .update_issue_state(&owner_name, &project_name, issue_number, &state)
+        .update_issue_state_as_actor(
+            &owner_name,
+            &project_name,
+            issue_number,
+            &state,
+            actor.id,
+            &actor.login_id,
+        )
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
@@ -26756,11 +26763,13 @@ impl PilotServiceImpl {
                 ));
             }
             let issue = repository
-                .update_issue_state(
+                .update_issue_state_as_actor(
                     request.owner_name,
                     request.project_name,
                     request.issue_number,
                     request.state,
+                    actor.id,
+                    &actor.login_id,
                 )
                 .await
                 .map_err(internal_error)?;

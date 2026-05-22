@@ -3,7 +3,7 @@
 ## Scope
 
 - Phase 2A issue core parity slice
-- Issue list/detail/create/edit/delete, comments, comment vote, state mutation, watch/vote/favorite/assignee, issue detail assignee autocomplete/search, mass update, Markdown rendering, issue/comment attachment binding, issue body/comment image paste/drop upload, core Issue Sharer read/comment authorization, sharable-user search, project-target issue sharer mutation, direct sharer row-level timeline/notification/mail queue side effects, issue/comment `@user`/`@org`/`@owner/project` mention indexing/search/notification semantics, issue reference `#issue` autocomplete, and `/user/issues` personal issue aggregation now have Rust canonical coverage.
+- Issue list/detail/create/edit/delete, comments, comment vote, state mutation, watch/vote/favorite/assignee, issue detail assignee autocomplete/search, mass update, Markdown rendering, issue/comment attachment binding, issue body/comment image paste/drop upload, core Issue Sharer read/comment authorization, sharable-user search, project-target issue sharer mutation, direct sharer row-level timeline/notification/mail queue side effects, issue state-change timeline/notification/mail queue side effects, issue/comment `@user`/`@org`/`@owner/project` mention indexing/search/notification semantics, issue reference `#issue` autocomplete, and `/user/issues` personal issue aggregation now have Rust canonical coverage.
 - Label/category and milestone management screens are now covered by Phase 2B/2C provenance. Phase 2A issue core only owns issue CRUD and issue-linked label/milestone consumption.
 
 ## Legacy Sources
@@ -107,7 +107,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 - Rust implements the screen lookup through `GET /api/v1/owners/:owner/projects/:project/issue-references?query=` with project read ACL, anonymous public-project reads, private/protected 403s, 404 for missing projects, and readable fork-origin search with current-fork fallback when the origin is not readable.
 - The REST response stays frontend-local (`issueNumber`, `title`, `state`, `total`, `truncated`) rather than adding proto/ConnectRPC codegen. Nonblank results sort exact issue number first, then number-prefix matches, then title matches, with latest issue recency as the tie-breaker.
 - Create/edit/detail/comment textareas now support insertion-only `#${issueNumber}` autocomplete using the same 300ms debounce boundary as `@` mention suggestions. The Rust Markdown projection now auto-links `@username`, same-project `#123`, `owner/project#123`, and bare `http://`/`https://` URLs, renders safe inline images after sanitization, renders task-list checkboxes as sanitized disabled inputs, and emits basic syntax-token spans for fenced code blocks. Readable issue references in legacy preview and saved issue/post/milestone/PR/code-comment render paths now add legacy title/state metadata through `title` and `data-issue-state`; unreadable or missing references stay plain `issueLink` anchors.
-- Phase 2N adds notification inbox/list, notification mail queue staging/drain, and public project-target sharer mutation. Legacy external `/-_-api/v1` issue API compatibility is not an app follow-up; it is deferred to a separate migrator/export/import deliverable.
+- Phase 2N adds notification inbox/list, notification mail queue staging/drain, public project-target sharer mutation, and `ISSUE_STATE_CHANGED` receiver fan-out for issue close/reopen. Legacy external `/-_-api/v1` issue API compatibility is not an app follow-up; it is deferred to a separate migrator/export/import deliverable.
 
 ## Issue Markdown Attachment Upload Translation Rule
 
@@ -208,12 +208,12 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | Legacy notification source  | `yona-original/app/controllers/NotificationApp.java`, `yona-original/app/views/index/notifications.scala.html`, `yona-original/app/views/index/partial_notifications.scala.html`, `yona-original/app/models/NotificationEvent.java`, `yona-original/app/models/NotificationMail.java` |
 | Legacy sharer source        | `yona-original/app/controllers/api/IssueApi.java#findSharableUsers`, `#updateSharer`, `yona-original/public/javascripts/service/yona.issue.Sharer.js` |
-| REST contract               | `/api/v1/notifications`, `/api/v1/owners/:owner/projects/:project/issues/:number/sharable-users`, `/api/v1/owners/:owner/projects/:project/issues/:number/sharers`, `crates/server/tests/notification_contract.rs`, `crates/server/tests/issue_sharer_contract.rs` |
+| REST contract               | `/api/v1/notifications`, `/api/v1/projects/:owner/:project/issues/:number/state`, `/api/v1/owners/:owner/projects/:project/issues/:number/sharable-users`, `/api/v1/owners/:owner/projects/:project/issues/:number/sharers`, `crates/server/tests/notification_contract.rs`, `crates/server/tests/issue_sharer_contract.rs` |
 | Backend behavior            | `crates/persistence/src/repo.rs`, `crates/persistence/src/repo_types.rs`, `crates/server/src/lib.rs`                                        |
 | UI route surface            | `frontend/src/routes/notification/route.tsx`, `frontend/src/api/notifications.ts`, `frontend/src/api/issue-meta.ts`, `frontend/src/routes/-issue-views.tsx` |
 | Regression tests            | `cargo test -p yona-rust-pilot-server --test notification_contract --test issue_sharer_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts route-parity.spec.tsx` |
 
-Notification list projection follows the legacy `NotificationEvent.getMessage` direct-value cases for issue/post/comment create/update events, while the inbox shell and paging remain backed by `/api/v1/notifications`.
+Notification list projection follows the legacy `NotificationEvent.getMessage` direct-value cases for issue/post/comment create/update events and the legacy issue close/reopen message keys for `ISSUE_STATE_CHANGED`, while the inbox shell and paging remain backed by `/api/v1/notifications`.
 
 ## Remaining Phase 2 Follow-ups
 
