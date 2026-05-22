@@ -213,9 +213,11 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 | UI route surface            | `frontend/src/routes/notification/route.tsx`, `frontend/src/api/notifications.ts`, `frontend/src/api/issue-meta.ts`, `frontend/src/routes/-issue-views.tsx` |
 | Regression tests            | `cargo test -p yona-rust-pilot-server --test notification_contract --test issue_sharer_contract`; `pnpm --dir frontend test -- auth-workspace-client.spec.ts route-parity.spec.tsx` |
 
+Notification list projection follows the legacy `NotificationEvent.getMessage` direct-value cases for issue/post/comment create/update events, while the inbox shell and paging remain backed by `/api/v1/notifications`.
+
 ## Remaining Phase 2 Follow-ups
 
-- Notification read-state and full SMTP batching parity.
+- Full SMTP batching parity.
 - Group sharer mutation only if legacy issue-sharer evidence requires it.
 - Legacy external `/-_-api/v1` issue API parity is deferred to a separate migrator/export/import deliverable, not the app server.
 

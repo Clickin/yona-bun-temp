@@ -430,13 +430,18 @@ fn notification_message(event_type: &str, old_value: &str, new_value: &str) -> S
         "ISSUE_SHARER_CHANGED" if !old_value.trim().is_empty() => {
             "Issue sharing state is changed".to_string()
         }
-        "NEW_ISSUE" => "New issue added".to_string(),
-        "NEW_COMMENT" => "New comment on post or issue added".to_string(),
-        "ISSUE_BODY_CHANGED" => "Issue body changed".to_string(),
-        "COMMENT_UPDATED" => "Comment updated".to_string(),
-        "NEW_PULL_REQUEST" | "NEW_REVIEW_COMMENT" if !new_value.trim().is_empty() => {
+        "ISSUE_STATE_CHANGED" => issue_state_notification_message(new_value),
+        "NEW_ISSUE" | "NEW_POSTING" | "NEW_PULL_REQUEST" | "NEW_COMMIT" | "COMMENT_UPDATED"
+            if !new_value.trim().is_empty() =>
+        {
             new_value.to_string()
         }
+        "NEW_COMMENT" if !new_value.is_empty() || !old_value.is_empty() => {
+            format!("{new_value}{old_value}")
+        }
+        "ISSUE_BODY_CHANGED" => "Issue body changed".to_string(),
+        "COMMENT_UPDATED" => "COMMENT_UPDATED".to_string(),
+        "NEW_REVIEW_COMMENT" if !new_value.trim().is_empty() => new_value.to_string(),
         "PULL_REQUEST_STATE_CHANGED" | "PULL_REQUEST_MERGED" => {
             pull_request_state_notification_message(new_value)
         }
@@ -454,10 +459,16 @@ fn notification_message(event_type: &str, old_value: &str, new_value: &str) -> S
                 "notification.reviewthread.reopened".to_string()
             }
         }
-        "PULL_REQUEST_COMMIT_CHANGED" | "NEW_COMMIT" if !new_value.trim().is_empty() => {
-            new_value.to_string()
-        }
+        "PULL_REQUEST_COMMIT_CHANGED" if !new_value.trim().is_empty() => new_value.to_string(),
         _ => event_type.to_string(),
+    }
+}
+
+fn issue_state_notification_message(new_value: &str) -> String {
+    if normalize_identity(new_value) == "closed" {
+        "notification.issue.closed".to_string()
+    } else {
+        "notification.issue.reopened".to_string()
     }
 }
 

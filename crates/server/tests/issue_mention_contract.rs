@@ -539,8 +539,8 @@ async fn issue_mention_contract_indexes_issue_body_mentions_and_notifies_new_act
 async fn issue_mention_contract_indexes_comment_mentions_and_replaces_them_on_update() {
     let (app, _repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
-    let (_, _, guest_id) = register_user(app.clone(), "guest").await;
-    let (_, _, other_id) = register_user(app.clone(), "other").await;
+    let (_, guest_cookie, guest_id) = register_user(app.clone(), "guest").await;
+    let (_, other_cookie, other_id) = register_user(app.clone(), "other").await;
     create_project(
         app.clone(),
         &owner_cookie,
@@ -582,6 +582,20 @@ async fn issue_mention_contract_indexes_comment_mentions_and_replaces_them_on_up
         mentioned_user_ids(&db, "issue_comment", comment_id).await,
         vec![guest_id]
     );
+    let guest_notifications = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/notifications?from=0&size=5",
+            Some(&guest_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(guest_notifications["total"], 1);
+    assert_eq!(guest_notifications["items"][0]["eventType"], "NEW_COMMENT");
+    assert_eq!(guest_notifications["items"][0]["message"], "hello @guest");
+    assert_eq!(guest_notifications["items"][0]["typeIcon"], "comment2");
 
     let guest_mentioned = response_json(
         rpc(
@@ -642,5 +656,25 @@ async fn issue_mention_contract_indexes_comment_mentions_and_replaces_them_on_up
             .await
             .unwrap(),
         1
+    );
+    let other_notifications = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/notifications?from=0&size=5",
+            Some(&other_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(other_notifications["total"], 1);
+    assert_eq!(
+        other_notifications["items"][0]["eventType"],
+        "COMMENT_UPDATED"
+    );
+    assert_eq!(other_notifications["items"][0]["message"], "hello @other");
+    assert_eq!(
+        other_notifications["items"][0]["typeIcon"],
+        "ellipsis-horizontal"
     );
 }

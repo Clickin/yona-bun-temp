@@ -609,6 +609,11 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     assert_eq!(notifications["total"], 1);
     assert_eq!(notifications["items"][0]["eventType"], "NEW_POSTING");
     assert_eq!(
+        notifications["items"][0]["message"],
+        "# README\n@guest should see this board notification #1 owner/projectYobi#1"
+    );
+    assert_eq!(notifications["items"][0]["typeIcon"], "edit2");
+    assert_eq!(
         notifications["items"][0]["targetHref"],
         "/yona/owner/projectYobi/post/1"
     );

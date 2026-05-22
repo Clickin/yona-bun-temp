@@ -320,7 +320,7 @@ Interpretation:
 - [x] Project notification settings basics
 - [x] Project watch toggle basics
 - [x] Notification event list and legacy `/notification` + `/notifications` route shell parity
-- [~] Issue event notifications
+- [~] Issue/post/comment event notifications: mention/direct notification rows exist and list messages follow legacy `NotificationEvent.getMessage` direct payload projection; full mail/delivery parity remains
 - [~] PR/review notifications: PR receivers now include review comment authors via legacy watcher participation and active users mentioned in the PR body, and list projection uses legacy PR state/review/thread message keys/icons; full mail/delivery parity remains
 - [ ] Email notification fan-out parity
 - [ ] BCC mode
