@@ -3394,6 +3394,11 @@ export type ReadIssueDetailResponse = Message<"yona.pilot.v1.ReadIssueDetailResp
    * @generated from field: bool is_favorited = 30;
    */
   isFavorited: boolean;
+
+  /**
+   * @generated from field: string author_avatar_url = 31;
+   */
+  authorAvatarUrl: string;
 };
 
 /**

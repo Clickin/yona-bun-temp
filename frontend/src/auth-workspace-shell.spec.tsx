@@ -802,6 +802,18 @@ describe("auth and workspace views", () => {
     expect(html).toContain('aria-label="Unfavorite issue"');
   });
 
+  it("renders legacy issue author info with avatar", () => {
+    const html = renderIssueDetailPage({});
+
+    expect(html).toContain('class="author-info"');
+    expect(html).toContain('class="usf-group"');
+    expect(html).toContain('class="avatar-wrap smaller"');
+    expect(html).toContain('src="https://cdn.yona/avatar-owner.png"');
+    expect(html).toContain('class="name"');
+    expect(html).toContain('class="loginid"');
+    expect(html).toContain("@</strong>owner");
+  });
+
   it("renders issue comment agreement count, voters, and agree action", () => {
     const html = renderIssueDetailPage(
       {
@@ -954,7 +966,9 @@ function renderIssueDetailPage(
     assigneeLabel: "",
     assigneeLoginId: "",
     attachments: [],
+    authorAvatarUrl: "https://cdn.yona/avatar-owner.png",
     authorLabel: "Owner User",
+    authorLoginId: "owner",
     bodyHtml: "<p>Body</p>",
     bodyMarkdown: "Body",
     commentCount: 0,

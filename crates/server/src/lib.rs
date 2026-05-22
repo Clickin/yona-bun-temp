@@ -24161,6 +24161,7 @@ fn issue_detail_response_from_record_with_sharer_flags_and_issue_references(
             .iter()
             .map(|attachment| issue_attachment_from_record(attachment, base_path))
             .collect(),
+        author_avatar_url: gravatar_url(&issue.author_email_address),
         author_label: issue.author_label.clone(),
         author_login_id: issue.author_login_id.clone(),
         body_html: render_project_markdown_html_with_issue_references(

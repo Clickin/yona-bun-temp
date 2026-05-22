@@ -247,6 +247,14 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     )
     .await;
     assert_eq!(detail["title"], "Markdown issue");
+    let issue_author_avatar_url = detail["authorAvatarUrl"]
+        .as_str()
+        .expect("issue detail author avatar url");
+    assert!(
+        issue_author_avatar_url.starts_with("https://www.gravatar.com/avatar/")
+            && issue_author_avatar_url.ends_with("?s=256&d=identicon"),
+        "{issue_author_avatar_url}"
+    );
 
     let commented = response_json(
         rest(

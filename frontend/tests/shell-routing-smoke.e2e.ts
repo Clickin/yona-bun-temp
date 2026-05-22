@@ -382,7 +382,9 @@ test.beforeEach(async ({ page }) => {
         assigneeLabel: "",
         assigneeLoginId: "",
         attachments: [],
+        authorAvatarUrl: "/avatars/nori.png",
         authorLabel: "Nori",
+        authorLoginId: "nori",
         bodyHtml: "<p>Issue body</p>",
         bodyMarkdown: "Issue body",
         commentCount: 1,
@@ -991,6 +993,13 @@ test("project issue routes render data-backed issue list filters and detail scre
   await expect(page.locator("#-yona-posting-history")).toContainText(
     "Changed issue title from old value",
   );
+  await expect(page.locator(".author-info a.usf-group")).toHaveAttribute("href", "/yona/nori");
+  await expect(page.locator(".author-info .avatar-wrap.smaller img")).toHaveAttribute(
+    "src",
+    "/avatars/nori.png",
+  );
+  await expect(page.locator(".author-info .name")).toContainText("Nori");
+  await expect(page.locator(".author-info .loginid")).toContainText("@nori");
   await expect(page.locator("#comments.board-comment-wrap")).toBeVisible();
   await expect(page.locator("#comments .comment-header .num")).toHaveText("1");
   await expect(page.locator("#comment-55 .comment-avatar a.avatar-wrap")).toHaveAttribute(
@@ -1037,7 +1046,9 @@ test("project issue comment editor inserts pasted and dropped image uploads", as
         assigneeLabel: "",
         assigneeLoginId: "",
         attachments: [],
+        authorAvatarUrl: "/avatars/nori.png",
         authorLabel: "Nori",
+        authorLoginId: "nori",
         bodyHtml: "<p>Issue body</p>",
         bodyMarkdown: "Issue body",
         commentCount: 1,

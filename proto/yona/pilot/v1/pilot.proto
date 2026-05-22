@@ -811,6 +811,7 @@ message ReadIssueDetailResponse {
   bool viewer_has_inherited_share = 28;
   bool viewer_can_manage_sharers = 29;
   bool is_favorited = 30;
+  string author_avatar_url = 31;
 }
 
 message IssueSharer {

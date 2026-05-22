@@ -10369,6 +10369,12 @@ impl AppRepository {
         project: &ProjectRecord,
         viewer_id: Option<i64>,
     ) -> Result<IssueRecord, DbErr> {
+        let author_id = model.author_id;
+        let author_login_id = model.author_login_id.unwrap_or_default();
+        let author_label = model.author_name.unwrap_or_default();
+        let author_email_address = self
+            .user_email_for_id_or_login(author_id, &author_login_id)
+            .await?;
         let (assignee_login_id, assignee_label) =
             self.issue_assignee_summary(model.assignee_id).await?;
         let (milestone_id, milestone_title) =
@@ -10402,9 +10408,10 @@ impl AppRepository {
             assignee_label,
             assignee_login_id,
             attachments,
-            author_id: model.author_id,
-            author_label: model.author_name.unwrap_or_default(),
-            author_login_id: model.author_login_id.unwrap_or_default(),
+            author_email_address,
+            author_id,
+            author_label,
+            author_login_id,
             body_markdown: self.read_text_column("issue", "body", model.id).await?,
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
             comments,
@@ -11800,26 +11807,9 @@ impl AppRepository {
         let author_id = row.author_id;
         let author_login_id = row.author_login_id.unwrap_or_default();
         let author_label = row.author_name.unwrap_or_default();
-        let author_email_address = if let Some(author_id) = author_id {
-            n4user::Entity::find_by_id(author_id)
-                .one(&self.db)
-                .await?
-                .and_then(|user| user.email)
-                .unwrap_or_default()
-        } else {
-            String::new()
-        };
-        let author_email_address = if author_email_address.is_empty() && !author_login_id.is_empty()
-        {
-            n4user::Entity::find()
-                .filter(n4user::Column::LoginId.eq(Some(normalize_identity(&author_login_id))))
-                .one(&self.db)
-                .await?
-                .and_then(|user| user.email)
-                .unwrap_or_default()
-        } else {
-            author_email_address
-        };
+        let author_email_address = self
+            .user_email_for_id_or_login(author_id, &author_login_id)
+            .await?;
         let voters = self.list_issue_comment_voters(row.id).await?;
         let viewer_has_voted = viewer_id
             .is_some_and(|viewer_id| voters.iter().any(|voter| voter.user_id == viewer_id));
@@ -11926,6 +11916,31 @@ impl AppRepository {
         let _ = viewer_id;
         items.sort_by_key(|(created, id, _)| (*created, *id));
         Ok(items.into_iter().map(|(_, _, item)| item).collect())
+    }
+
+    async fn user_email_for_id_or_login(
+        &self,
+        user_id: Option<i64>,
+        login_id: &str,
+    ) -> Result<String, DbErr> {
+        let email_address = if let Some(user_id) = user_id {
+            n4user::Entity::find_by_id(user_id)
+                .one(&self.db)
+                .await?
+                .and_then(|user| user.email)
+                .unwrap_or_default()
+        } else {
+            String::new()
+        };
+        if !email_address.is_empty() || login_id.trim().is_empty() {
+            return Ok(email_address);
+        }
+        Ok(n4user::Entity::find()
+            .filter(n4user::Column::LoginId.eq(Some(normalize_identity(login_id))))
+            .one(&self.db)
+            .await?
+            .and_then(|user| user.email)
+            .unwrap_or_default())
     }
 
     async fn list_issue_attachments(

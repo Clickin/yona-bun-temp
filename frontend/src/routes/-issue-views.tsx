@@ -278,6 +278,11 @@ export function ProjectIssueDetailPage(props: {
   const issue = props.issue;
   const onDeleteIssue = props.onDeleteIssue;
   const onStateChange = props.onStateChange;
+  const issueAuthorLoginId = issue?.authorLoginId ?? "";
+  const issueAuthorLabel = issue?.authorLabel || issueAuthorLoginId || "Unknown";
+  const issueAuthorHref = issueAuthorLoginId
+    ? prefixBasePath(props.runtimeConfig.basePath, `/${issueAuthorLoginId}`)
+    : "#";
 
   return (
     <main className="app-shell">
@@ -304,7 +309,23 @@ export function ProjectIssueDetailPage(props: {
       <section>
         <p>{issue ? `#${issue.issueNumber}` : ""}</p>
         <p>{issue?.state ?? ""}</p>
-        <p>{`Author: ${issue?.authorLabel || "Unknown"}`}</p>
+        <div className="author-info">
+          <a className="usf-group" href={issueAuthorHref}>
+            <span className="avatar-wrap smaller">
+              {issue?.authorAvatarUrl ? (
+                <img alt={issueAuthorLabel} height={20} src={issue.authorAvatarUrl} width={20} />
+              ) : null}
+            </span>
+            <strong className="name">{issueAuthorLabel}</strong>
+            {issueAuthorLoginId ? (
+              <span className="loginid">
+                {" "}
+                <strong>@</strong>
+                {issueAuthorLoginId}
+              </span>
+            ) : null}
+          </a>
+        </div>
         <p>{`Assignee: ${issue?.assigneeLabel || "none"}`}</p>
         <p>{`Milestone: ${issue?.milestoneTitle || "none"}`}</p>
         <p>{`Watchers: ${issue?.watcherCount ?? 0}`}</p>

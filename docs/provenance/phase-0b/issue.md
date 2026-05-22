@@ -110,6 +110,10 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 - Create/edit/detail/comment textareas now support insertion-only `#${issueNumber}` autocomplete using the same 300ms debounce boundary as `@` mention suggestions. The Rust Markdown projection now auto-links `@username`, same-project `#123`, `owner/project#123`, and bare `http://`/`https://` URLs, renders safe inline images after sanitization, renders task-list checkboxes as sanitized disabled inputs, and emits basic syntax-token spans for fenced code blocks. Readable issue references in legacy preview and saved issue/post/milestone/PR/code-comment render paths now add legacy title/state metadata through `title` and `data-issue-state`; unreadable or missing references stay plain `issueLink` anchors.
 - Phase 2N adds notification inbox/list, notification mail queue staging/drain, public project-target sharer mutation, and `ISSUE_STATE_CHANGED` receiver fan-out for single and mass-update issue close/reopen. Legacy external `/-_-api/v1` issue API compatibility is not an app follow-up; it is deferred to a separate migrator/export/import deliverable.
 
+## Issue Detail Author Info Translation Rule
+
+- Legacy `issue/view.scala.html` renders the issue author inside `.author-info` as an `.usf-group` profile link with `.avatar-wrap.smaller`, `.name`, and `.loginid`, using `User.findByLoginId(issue.authorLoginId).avatarUrl(32)` for the 20x20 image. Rust projects `ReadIssueDetailResponse.authorAvatarUrl` from the author user row and renders the same anchors in the React issue detail page.
+
 ## Issue Markdown Attachment Upload Translation Rule
 
 - Legacy `yobi.Files` attaches `paste` and `drop` handlers to issue markdown textareas and uploads image files to the attachment endpoint, while `yobi.Attachments` inserts `![name](url)` for image MIME types and tracks temporary upload ids for form submission.

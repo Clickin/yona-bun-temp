@@ -300,7 +300,9 @@ export interface ProjectIssueDetailViewModel {
   assigneeLabel: string;
   assigneeLoginId: string;
   attachments: Array<{ id: number; name: string; url: string }>;
+  authorAvatarUrl: string;
   authorLabel: string;
+  authorLoginId: string;
   bodyHtml: string;
   bodyMarkdown: string;
   commentCount: number;
