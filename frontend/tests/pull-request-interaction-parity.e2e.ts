@@ -245,10 +245,7 @@ test.beforeEach(async ({ page }) => {
       const method = route.request().method();
       if (url.pathname.endsWith("/changes")) {
         const selectedCommitId = url.searchParams.get("commitId");
-        const changesThreads =
-          selectedCommitId === "123456abcdef"
-            ? [...pullRequest.threads, outdatedClosedThread]
-            : pullRequest.threads;
+        const changesThreads = [...pullRequest.threads, outdatedClosedThread];
         await route.fulfill({
           body: JSON.stringify({
             commits: [
@@ -772,6 +769,17 @@ test("renders selected outdated pull request commits with legacy change markers"
     page.locator("#reviewcards-closed .review-card.closed.outdated .outdated-label"),
   ).toHaveText("review.outdated");
   await expect(page.locator(".diff-body")).toContainText("new prior line");
+});
+
+test("excludes outdated review threads from current pull request changes inline diff", async ({
+  page,
+}) => {
+  await page.goto("/yona/admin/projectYobi/pullRequest/9/changes");
+
+  await expect(page.locator("#reviewcards-closed .review-card.closed.outdated")).toContainText(
+    "Outdated review",
+  );
+  await expect(page.locator(".diff-body .comment-thread-wrap.outdated")).toHaveCount(0);
 });
 
 test("shows legacy conflict guidance and disables merge accept for conflicted pull requests", async ({

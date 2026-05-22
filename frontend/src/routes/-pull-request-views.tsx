@@ -116,6 +116,24 @@ function isOutdatedReviewThread(thread: ReviewThread, pullRequest?: PullRequestD
   );
 }
 
+function isInlineReviewThreadForChanges(
+  thread: ReviewThread,
+  pullRequest: PullRequestDetailResponse | undefined,
+  selectedCommitId: string | undefined,
+) {
+  const selectedCommit = selectedCommitId?.trim() ?? "";
+  if (thread.path.trim() === "") {
+    return false;
+  }
+  if (selectedCommit !== "") {
+    return thread.commitId.trim() === selectedCommit;
+  }
+  if (thread.prevCommitId.trim() === "") {
+    return false;
+  }
+  return !isOutdatedReviewThread(thread, pullRequest);
+}
+
 function diffAnchorId(path: string) {
   return path.replace(/[/.]/g, "-");
 }
@@ -1401,6 +1419,7 @@ export function PullRequestChangesPage(props: {
   function inlineThreadsForLine(path: string, line: number, side: "A" | "B") {
     return threads.filter(
       (thread) =>
+        isInlineReviewThreadForChanges(thread, pr, props.selectedCommitId) &&
         thread.path === path &&
         (thread.endLine ?? thread.startLine) === line &&
         ((thread.endSide ?? thread.startSide) || "B") === side,
