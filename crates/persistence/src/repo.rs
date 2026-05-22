@@ -12,15 +12,16 @@ use crate::repo_types::{
     IssueMilestoneRecord, IssueRecord, IssueShareStatus, IssueSharerRecord,
     IssueTimelineItemRecord, MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter,
     MilestoneMutationInput, NotificationActorRecord, NotificationItemRecord,
-    NotificationListRecord, OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
-    OrganizationIssueListFilter, OrganizationIssueListRecord, OrganizationIssueProjectOptionRecord,
-    OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationPostingListFilter,
-    OrganizationPostingListRecord, OrganizationPostingProjectOptionRecord, OrganizationRecord,
-    OrganizationViewerRecord, PostingCommentRecord, PostingListFilter, PostingRecord,
-    ProjectAuthorizationRecord, ProjectDashboardAssigneeRecord, ProjectDashboardLabelRecord,
-    ProjectEnrollmentRequestRecord, ProjectHomeHistoryItemRecord, ProjectIssueListItemRecord,
-    ProjectIssueListRecord, ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord,
-    ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
+    NotificationListRecord, NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
+    OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
+    OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
+    OrganizationMemberRecord, OrganizationPostingListFilter, OrganizationPostingListRecord,
+    OrganizationPostingProjectOptionRecord, OrganizationRecord, OrganizationViewerRecord,
+    PostingCommentRecord, PostingListFilter, PostingRecord, ProjectAuthorizationRecord,
+    ProjectDashboardAssigneeRecord, ProjectDashboardLabelRecord, ProjectEnrollmentRequestRecord,
+    ProjectHomeHistoryItemRecord, ProjectIssueListItemRecord, ProjectIssueListRecord,
+    ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord, ProjectListEntry,
+    ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
     ProjectMilestoneSummaryRecord, ProjectPostingListItemRecord, ProjectPostingListRecord,
     ProjectRecord, ProjectTransferRecord, ProjectTransferRequestInput, ProjectViewerRecord,
     ProjectWatcherListRecord, ProjectWatcherRecord, ProjectWebhookListRecord, ProjectWebhookRecord,
@@ -9730,6 +9731,80 @@ impl AppRepository {
                 .await?;
         }
         Ok(event_ids)
+    }
+
+    pub async fn drain_due_notification_mail_deliveries(
+        &self,
+        now: DateTime,
+        delay_ms: i64,
+    ) -> Result<Vec<NotificationMailDeliveryRecord>, DbErr> {
+        let mails = notification_mail::Entity::find().all(&self.db).await?;
+        let mut due = Vec::new();
+        for mail in mails {
+            let Some(event_id) = mail.notification_event_id else {
+                continue;
+            };
+            let Some(event) = notification_event::Entity::find_by_id(event_id)
+                .one(&self.db)
+                .await?
+            else {
+                continue;
+            };
+            let Some(created) = event.created else {
+                continue;
+            };
+            if notification_mail_is_due(Some(created), now, delay_ms) {
+                due.push((created, event.id, mail.id, event));
+            }
+        }
+        due.sort_by(|left, right| {
+            left.0
+                .cmp(&right.0)
+                .then_with(|| left.1.cmp(&right.1))
+                .then_with(|| left.2.cmp(&right.2))
+        });
+
+        let mut deliveries = Vec::new();
+        let mut mail_ids = Vec::new();
+        for (_, _, mail_id, event) in due {
+            mail_ids.push(mail_id);
+            let item = self.notification_item_record(event.clone()).await?;
+            if item.target_path.is_empty() {
+                continue;
+            }
+            let receivers = notification_event_n4user::Entity::find()
+                .filter(notification_event_n4user::Column::NotificationEventId.eq(event.id))
+                .all(&self.db)
+                .await?;
+            let mut recipients = Vec::new();
+            for receiver in receivers {
+                if let Some(user) = self.find_user_model_by_id(receiver.n4user_id).await? {
+                    let email = user.email.clone().unwrap_or_default().trim().to_string();
+                    if n4user_is_active(&user) && !email.is_empty() {
+                        recipients.push((user.login_id.unwrap_or_default(), email));
+                    }
+                }
+            }
+            recipients
+                .sort_by(|left, right| left.1.cmp(&right.1).then_with(|| left.0.cmp(&right.0)));
+            recipients.dedup_by(|left, right| left.1 == right.1);
+            for (recipient_login_id, recipient_email) in recipients {
+                deliveries.push(NotificationMailDeliveryRecord {
+                    item: item.clone(),
+                    recipient_email,
+                    recipient_login_id,
+                });
+            }
+        }
+
+        if !mail_ids.is_empty() {
+            notification_mail::Entity::delete_many()
+                .filter(notification_mail::Column::Id.is_in(mail_ids))
+                .exec(&self.db)
+                .await?;
+        }
+
+        Ok(deliveries)
     }
 
     pub async fn read_default_landing_path(&self, user_id: i64) -> Result<Option<String>, DbErr> {

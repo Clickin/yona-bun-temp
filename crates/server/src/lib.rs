@@ -2734,6 +2734,53 @@ fn default_smtp_from() -> String {
         .unwrap_or_else(|| "noreply@yona.local".to_string())
 }
 
+pub async fn deliver_due_notification_mails(
+    repository: &PilotRepository,
+    now: DateTime,
+    delay_ms: i64,
+    public_origin: &str,
+    base_path: &str,
+) -> Result<usize, String> {
+    let public_origin = default_public_origin(public_origin);
+    let deliveries = repository
+        .drain_due_notification_mail_deliveries(now, delay_ms)
+        .await
+        .map_err(|error| error.to_string())?;
+    let mut delivered = 0;
+    for delivery in deliveries {
+        let target_url = if delivery.item.target_path.is_empty() {
+            String::new()
+        } else {
+            absolute_app_url(&public_origin, base_path, &delivery.item.target_path)
+        };
+        let subject = if delivery.item.target_title.is_empty() {
+            delivery.item.message.clone()
+        } else {
+            delivery.item.target_title.clone()
+        };
+        let body = if target_url.is_empty() {
+            format!(
+                "{}\n\n{}",
+                delivery.item.message, delivery.item.target_title
+            )
+        } else {
+            format!(
+                "{}\n\n{}\n{}",
+                delivery.item.message, delivery.item.target_title, target_url
+            )
+        };
+        deliver(OutboundMail {
+            body,
+            from: default_smtp_from(),
+            subject,
+            to: delivery.recipient_email,
+        })
+        .map_err(|error| error.to_string())?;
+        delivered += 1;
+    }
+    Ok(delivered)
+}
+
 fn configured_site_name() -> String {
     std::env::var("YONA_SITE_NAME")
         .ok()

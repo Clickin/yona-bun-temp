@@ -1,16 +1,22 @@
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
+use sea_orm::entity::prelude::DateTimeUtc;
 use sea_orm::{
-    ColumnTrait, Database, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
+    ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet,
+    PaginatorTrait, QueryFilter, Set,
 };
 use serde_json::json;
+use std::time::SystemTime;
 use tower::ServiceExt;
+use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
     issue_event, notification_event, notification_event_n4user, notification_mail, AppRepository,
 };
 use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yona_rust_pilot_server::{
+    create_router_with_app_repository, deliver_due_notification_mails, RuntimeConfig,
+};
 
 mod rest_test_support;
 
@@ -501,6 +507,135 @@ async fn notification_contract_stages_mail_rows_and_drains_due_events() {
         notification_mail::Entity::find().count(&db).await.unwrap(),
         0
     );
+}
+
+#[tokio::test]
+async fn notification_contract_delivers_due_mail_rows_to_receivers() {
+    clear_test_outbox();
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (watcher_csrf, watcher_cookie, _) = register_user(app.clone(), "watcher").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Mail fan-out watched issue",
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/watch",
+            Some(&watcher_cookie),
+            Some(&watcher_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app,
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/state",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({ "state": "closed" })),
+        )
+        .await,
+    )
+    .await;
+
+    let event = notification_event::Entity::find()
+        .filter(notification_event::Column::EventType.eq(Some("ISSUE_STATE_CHANGED".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("state change event");
+    assert_eq!(
+        notification_mail::Entity::find().count(&db).await.unwrap(),
+        1
+    );
+
+    let delivered = deliver_due_notification_mails(
+        &repo,
+        event.created.expect("event created"),
+        0,
+        "https://yona.example",
+        "/yona",
+    )
+    .await
+    .unwrap();
+    assert_eq!(delivered, 1);
+    assert_eq!(
+        notification_mail::Entity::find().count(&db).await.unwrap(),
+        0
+    );
+
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].to, "watcher@example.com");
+    assert_eq!(outbox[0].subject, "Mail fan-out watched issue");
+    assert!(outbox[0].body.contains("notification.issue.closed"));
+    assert!(outbox[0]
+        .body
+        .contains("https://yona.example/yona/owner/projectYobi/issue/1"));
+    clear_test_outbox();
+}
+
+#[tokio::test]
+async fn notification_contract_skips_due_mail_when_resource_no_longer_exists() {
+    clear_test_outbox();
+    let (app, repo, db) = build_app_with_repository().await;
+    let (_, _, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, _, watcher_id) = register_user(app, "watcher").await;
+
+    let event = notification_event::ActiveModel {
+        id: NotSet,
+        title: Set(None),
+        sender_id: Set(Some(owner_id)),
+        created: Set(Some(DateTimeUtc::from(SystemTime::now()).naive_utc())),
+        resource_type: Set(Some("ISSUE".to_string())),
+        resource_id: Set(Some("999999".to_string())),
+        event_type: Set(Some("ISSUE_STATE_CHANGED".to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    notification_mail::ActiveModel {
+        id: NotSet,
+        notification_event_id: Set(Some(event.id)),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    notification_event_n4user::ActiveModel {
+        notification_event_id: Set(event.id),
+        n4user_id: Set(watcher_id),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+
+    let delivered = deliver_due_notification_mails(
+        &repo,
+        event.created.expect("event created"),
+        0,
+        "https://yona.example",
+        "/yona",
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(delivered, 0);
+    assert_eq!(
+        notification_mail::Entity::find().count(&db).await.unwrap(),
+        0
+    );
+    assert!(snapshot_test_outbox().is_empty());
+    clear_test_outbox();
 }
 
 #[tokio::test]

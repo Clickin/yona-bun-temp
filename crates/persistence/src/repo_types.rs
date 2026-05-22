@@ -210,6 +210,13 @@ pub struct NotificationListRecord {
     pub total: u32,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NotificationMailDeliveryRecord {
+    pub item: NotificationItemRecord,
+    pub recipient_email: String,
+    pub recipient_login_id: String,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct MentionSyncResult {
     pub mentioned_user_ids: Vec<i64>,
