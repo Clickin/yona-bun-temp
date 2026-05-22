@@ -82,10 +82,71 @@ type ParsedDiffLine = {
 };
 
 type InlineReviewDraft = {
-  line: number;
+  endLine: number;
+  endSide: "A" | "B";
   path: string;
-  side: "A" | "B";
+  startLine: number;
+  startSide: "A" | "B";
 };
+
+function closestDiffSelectionRow(node: Node, table: HTMLTableElement): HTMLTableRowElement | null {
+  const element = node instanceof Element ? node : node.parentElement;
+  const row = element?.closest<HTMLTableRowElement>("tr[data-line]");
+  return row && table.contains(row) ? row : null;
+}
+
+function diffRowLine(row: HTMLTableRowElement): number | null {
+  const line = Number.parseInt(row.dataset.line ?? "", 10);
+  return Number.isInteger(line) && line > 0 ? line : null;
+}
+
+function diffRowSide(row: HTMLTableRowElement): "A" | "B" | null {
+  return row.dataset.side === "A" || row.dataset.side === "B" ? row.dataset.side : null;
+}
+
+function rowHasCommentableCode(row: HTMLTableRowElement): boolean {
+  return row.dataset.line !== undefined && row.querySelector("td.code > pre") !== null;
+}
+
+function inlineDraftFromSelection(path: string, table: HTMLTableElement): InlineReviewDraft | null {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || selection.toString().trim().length === 0) {
+    return null;
+  }
+
+  const range = selection.getRangeAt(0);
+  const anchorRow = closestDiffSelectionRow(range.startContainer, table);
+  const focusRow = closestDiffSelectionRow(range.endContainer, table);
+  if (!anchorRow || !focusRow) {
+    return null;
+  }
+
+  const rows = Array.from(table.rows);
+  const anchorIndex = rows.indexOf(anchorRow);
+  const focusIndex = rows.indexOf(focusRow);
+  if (anchorIndex < 0 || focusIndex < 0) {
+    return null;
+  }
+
+  const startIndex = Math.min(anchorIndex, focusIndex);
+  const endIndex = Math.max(anchorIndex, focusIndex);
+  const selectedRows = rows.slice(startIndex, endIndex + 1);
+  if (!selectedRows.every(rowHasCommentableCode)) {
+    return null;
+  }
+
+  const startRow = rows[startIndex];
+  const endRow = rows[endIndex];
+  const startLine = diffRowLine(startRow);
+  const endLine = diffRowLine(endRow);
+  const startSide = diffRowSide(startRow);
+  const endSide = diffRowSide(endRow);
+  if (startLine === null || endLine === null || startSide === null || endSide === null) {
+    return null;
+  }
+
+  return { endLine, endSide, path, startLine, startSide };
+}
 
 function parseUnifiedDiffLines(patch: string): ParsedDiffLine[] {
   const lines = patch.replace(/\r\n/g, "\n").split("\n");
@@ -1201,13 +1262,32 @@ export function PullRequestChangesPage(props: {
   }
 
   function openInlineDraft(path: string, line: number, side: "A" | "B") {
+    const nextDraft = { endLine: line, endSide: side, path, startLine: line, startSide: side };
     setInlineDraft((current) =>
-      current?.path === path && current.line === line && current.side === side
+      current?.path === nextDraft.path &&
+      current.startLine === nextDraft.startLine &&
+      current.endLine === nextDraft.endLine &&
+      current.startSide === nextDraft.startSide &&
+      current.endSide === nextDraft.endSide
         ? null
-        : { line, path, side },
+        : nextDraft,
     );
     setInlineCommentText("");
     setInlineAttachmentIds([]);
+  }
+
+  function openInlineDraftFromSelection(path: string, table: HTMLTableElement) {
+    if (!canComment) {
+      return;
+    }
+    const selectedDraft = inlineDraftFromSelection(path, table);
+    if (!selectedDraft) {
+      return;
+    }
+    setInlineDraft(selectedDraft);
+    setInlineCommentText("");
+    setInlineAttachmentIds([]);
+    window.getSelection()?.removeAllRanges();
   }
 
   async function submitInlineComment(event: React.FormEvent<HTMLFormElement>) {
@@ -1220,12 +1300,12 @@ export function PullRequestChangesPage(props: {
       attachmentIds: inlineAttachmentIds,
       commitId: pr.mergedCommitIdTo,
       contentsMarkdown,
-      endLine: inlineDraft.line,
-      endSide: inlineDraft.side,
+      endLine: inlineDraft.endLine,
+      endSide: inlineDraft.endSide,
       path: inlineDraft.path,
       prevCommitId: pr.mergedCommitIdFrom,
-      startLine: inlineDraft.line,
-      startSide: inlineDraft.side,
+      startLine: inlineDraft.startLine,
+      startSide: inlineDraft.startSide,
     });
     setInlineAttachmentIds([]);
     setInlineCommentText("");
@@ -1258,7 +1338,10 @@ export function PullRequestChangesPage(props: {
         key={file.path}
       >
         <h2>{file.path}</h2>
-        <table className="diff-code diff-table">
+        <table
+          className="diff-code diff-table"
+          onMouseUp={(event) => openInlineDraftFromSelection(file.path, event.currentTarget)}
+        >
           <tbody>
             {diffLines.map((line) => {
               const lineSide = line.kind === "remove" ? "A" : "B";
@@ -1268,8 +1351,8 @@ export function PullRequestChangesPage(props: {
                   : inlineThreadsForLine(file.path, line.commentLine, lineSide);
               const isInlineDraftOpen =
                 inlineDraft?.path === file.path &&
-                inlineDraft.line === line.commentLine &&
-                inlineDraft.side === lineSide;
+                inlineDraft.endLine === line.commentLine &&
+                inlineDraft.endSide === lineSide;
               return (
                 <React.Fragment key={line.key}>
                   <tr
@@ -1304,8 +1387,15 @@ export function PullRequestChangesPage(props: {
                       <pre className="diff-partial-codeline">{line.text}</pre>
                     </td>
                   </tr>
-                  {isInlineDraftOpen && pr ? (
-                    <tr className="comments board-comment-wrap inline-comment-form-row">
+                  {isInlineDraftOpen && pr && inlineDraft ? (
+                    <tr
+                      className="comments board-comment-wrap inline-comment-form-row"
+                      data-range-endline={inlineDraft.endLine}
+                      data-range-endside={inlineDraft.endSide}
+                      data-range-path={inlineDraft.path}
+                      data-range-startline={inlineDraft.startLine}
+                      data-range-startside={inlineDraft.startSide}
+                    >
                       <td colSpan={3}>
                         <form
                           action={pullRequestApiHref(props.runtimeConfig, pr, "/comments")}
@@ -1316,12 +1406,12 @@ export function PullRequestChangesPage(props: {
                           <input name="commitId" type="hidden" value={pr.mergedCommitIdTo} />
                           <input name="prevCommitId" type="hidden" value={pr.mergedCommitIdFrom} />
                           <input name="path" type="hidden" value={file.path} />
-                          <input name="startLine" type="hidden" value={line.commentLine ?? ""} />
-                          <input name="endLine" type="hidden" value={line.commentLine ?? ""} />
+                          <input name="startLine" type="hidden" value={inlineDraft.startLine} />
+                          <input name="startSide" type="hidden" value={inlineDraft.startSide} />
+                          <input name="endLine" type="hidden" value={inlineDraft.endLine} />
+                          <input name="endSide" type="hidden" value={inlineDraft.endSide} />
                           <MarkdownAttachmentTextarea
-                            ariaLabel={`Pull request review comment on ${file.path}:${
-                              line.commentLine ?? ""
-                            }`}
+                            ariaLabel={`Pull request review comment on ${file.path}:${inlineDraft.startLine}-${inlineDraft.endLine}`}
                             csrfToken={props.csrfToken}
                             disabled={!canComment}
                             name="contentsMarkdown"

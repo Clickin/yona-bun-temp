@@ -672,6 +672,52 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   await expect(page.getByRole("heading", { name: "Updated interaction parity" })).toBeVisible();
 });
 
+test("creates a multi-line inline review from selected diff text", async ({ page }) => {
+  await page.goto("/yona/admin/projectYobi/pullRequest/9/changes");
+  await expect(page.locator(".diff-file[data-file-path='src/lib.rs']")).toBeVisible();
+
+  await page.evaluate(() => {
+    const firstLine = document.querySelector("tr.add .diff-partial-codeline")?.firstChild;
+    const lastLine = document.querySelector("tr.context .diff-partial-codeline")?.firstChild;
+    const diffTable = document.querySelector(".diff-table");
+    if (!firstLine || !lastLine || !diffTable) {
+      throw new Error("diff lines not found");
+    }
+
+    const range = document.createRange();
+    range.setStart(firstLine, 0);
+    range.setEnd(lastLine, lastLine.textContent?.length ?? 0);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    diffTable.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, button: 0 }));
+  });
+
+  await expect(page.locator(".inline-review-form")).toBeVisible();
+  await expect(page.locator(".inline-review-form input[name='startLine']")).toHaveValue("1");
+  await expect(page.locator(".inline-review-form input[name='endLine']")).toHaveValue("2");
+
+  const inlineReviewRequest = page.waitForRequest(
+    (request) => request.url().endsWith("/pull-requests/9/comments") && request.method() === "POST",
+  );
+  await page.locator(".inline-review-form textarea").fill("Multi-line review body");
+  await page.locator(".inline-review-form").getByRole("button", { name: "Comment" }).click();
+  const submittedInlineReview = (await inlineReviewRequest).postDataJSON() as {
+    contentsMarkdown?: string;
+    endLine?: number;
+    endSide?: string;
+    startLine?: number;
+    startSide?: string;
+  };
+  expect(submittedInlineReview).toMatchObject({
+    contentsMarkdown: "Multi-line review body",
+    endLine: 2,
+    endSide: "B",
+    startLine: 1,
+    startSide: "B",
+  });
+});
+
 test("shows legacy conflict guidance and disables merge accept for conflicted pull requests", async ({
   page,
 }) => {

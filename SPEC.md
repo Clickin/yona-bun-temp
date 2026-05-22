@@ -832,13 +832,13 @@ legacy external `/-_-api/v1/**` compatibility는 이번 app runtime batch에서 
 | PR 목록 (open/closed/sent) | 탭으로 분류, 필터, 페이지네이션      | Phase 4A read-only 구현 | 4     |
 | PR 생성                    | from/to 브랜치 선택, 제목/본문       | Phase 4B 구현 | 4     |
 | PR 상세                    | 커밋 목록, 변경 파일, 댓글/타임라인  | Phase 4A read + Phase 4B interaction 구현 | 4     |
-| PR diff 보기               | 파일별 unified diff, 인라인 코멘트   | diff read + side-aware single-line ranged inline create/edit/delete 구현; multi-line은 gap | 4     |
+| PR diff 보기               | 파일별 unified diff, 인라인 코멘트   | diff read + side-aware single/multi-line ranged inline create/edit/delete 구현 | 4     |
 | PR 상태 관리               | open → merged / closed, 재열기       | close/reopen + reviewer-threshold-gated conflict-free merge accept 구현 | 4     |
 | Merge 실행                 | fast-forward / merge commit / squash | reviewer threshold 통과 후 native `git merge --no-ff` happy path 구현; squash/strategy 선택은 gap | 4     |
 | Merge 충돌 처리            | 충돌 시 알림, 수동 해결 안내         | native merge conflict 감지, PR conflict 표시, merge 비활성화 + 안내 구현; in-app conflict resolution workflow는 gap | 4     |
 | 리뷰 승인/철회             | 리뷰어가 승인/철회                   | Phase 4B 구현 | 4     |
 | 리뷰 상태 카운트           | 필수 reviewer 수와 부족 reviewer 수 표시 | required/lacking/reviewed detail projection 구현 | 4     |
-| 코드 리뷰 댓글             | 특정 라인에 인라인 댓글              | 일반 PR review comment + side-aware single-line ranged inline create/edit/delete 구현; multi-line selection은 gap | 4     |
+| 코드 리뷰 댓글             | 특정 라인에 인라인 댓글              | 일반 PR review comment + side-aware single/multi-line ranged inline create/edit/delete 구현 | 4     |
 | 리뷰 스레드                | 인라인 댓글 스레드 open/close        | Phase 4B open/close mutation 구현 | 4     |
 | Fork & PR                  | 프로젝트 fork → PR 워크플로우        | fork form/clone + reviewer-threshold-gated conflict-free PR merge accept 구현 | 4     |
 | from 브랜치 삭제/복구      | merge 후 소스 브랜치 삭제/복구       | native Git wrapper 구현 | 4     |
@@ -852,7 +852,7 @@ legacy external `/-_-api/v1/**` compatibility는 이번 app runtime batch에서 
 - [x] PR 생성/수정 form: legacy class/id anchor와 from/to project/branch 표시, edit form branch/project disabled
 - [x] PR interaction: close/reopen, review/unreview, 일반 PR comment, review thread open/close
 - [x] PR review threshold projection: required/lacking/reviewed 상태를 detail payload와 reviewer status UI에 표시
-- [~] 인라인 코드 리뷰: diff 뷰에서 add/context/deleted 라인 클릭 → 댓글 입력 → 스레드 생성/edit/delete 구현; multi-line selection은 gap
+- [x] 인라인 코드 리뷰: diff 뷰에서 add/context/deleted 라인 클릭 또는 같은 파일 diff text 선택 → 댓글 입력 → side-aware single/multi-line 스레드 생성/edit/delete 구현
 - [~] 리뷰 스레드: open/close 상태 전환 구현; resolve/outdated 표시는 gap
 - [x] Merge: reviewer threshold를 만족하고 충돌 없으면 merge 버튼 활성화, 충돌/리뷰 부족 시 비활성화 + 안내
 - [x] Fork: 프로젝트 fork 시 동일 이름의 개인/조직 프로젝트 생성, bare repo 복제
@@ -1354,7 +1354,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 라벨/마일스톤     | ✅ 구현           | 라벨/카테고리 관리, 마일스톤 CRUD/state 구현                     |
 | 코드 브라우저     | 🔶 Phase 3L 구현  | Git 폴더/파일 보기, 브랜치 선택기, raw/open/image 파일 표면, archive download, syntax/line-number 표시, commit history/detail diff/compare, commit comments/thread lifecycle, branch list/latest PR/default/delete, project create 시 bare Git repository provisioning, Smart HTTP transport, push post-receive records |
 | Git Smart HTTP    | 🔶 Phase 3L 구현 | `git http-backend` wrapper로 clone/pull upload-pack 및 인증/권한이 적용된 receive-pack transport를 구현하고, receive-pack 후 `NEW_COMMIT` notification, pushed-branch metadata, push JSON webhook outbox를 기록한다 |
-| PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, required/lacking reviewer projection, project default reviewer threshold settings, review-threshold-gated accept, PR watcher projection/watch-unwatch, PR watcher/body-mention-derived notification receiver, 일반 PR comment, thread open/close, fork/clone, conflict-free merge, conflict 표시/merge 비활성화 안내, source branch cleanup/restore, PR commit-changed event/webhook, side-aware single-line ranged inline review CRUD. in-app conflict resolution/multi-line review polish는 gap |
+| PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, required/lacking reviewer projection, project default reviewer threshold settings, review-threshold-gated accept, PR watcher projection/watch-unwatch, PR watcher/body-mention-derived notification receiver, 일반 PR comment, thread open/close, fork/clone, conflict-free merge, conflict 표시/merge 비활성화 안내, source branch cleanup/restore, PR commit-changed event/webhook, side-aware single/multi-line ranged inline review CRUD. in-app conflict resolution은 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, core event icon/message projection, single/mass-update issue state-change receiver fan-out, mail queue staging, due-row outbound fan-out helper, allowed-domain mail receiver filtering, BCC hide-address mode, recipientLimit partitioning |
 | 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment/merge/commit-changed non-JSON fan-out, DETAIL_HANGOUT_CHAT thread name persistence/reuse, plus git-push JSON payloads; delivery history/retry and hardening remain gaps |
@@ -1569,7 +1569,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Label follow-up: legacy external label/project API parity for the separate migrator/export/import scope
 - Milestone follow-up: migration export and search milestone result type
 - Code follow-up: multi-line ranged code-comment selection polish, inline code-comment edit, SVN executable repository/serve integration
-- PullRequest follow-up: in-app merge conflict resolution workflow and multi-line inline review selection polish
+- PullRequest follow-up: in-app merge conflict resolution workflow
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: full mail notification template parity plus IMAP polling, sender extraction, MIME parsing, and mailbox/reply threading after issue/board/code/review comment `original_email` marker parity, mailbox plus-address parser parity, and DB-backed `CreationViaEmailTest` resource creation parity
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope
