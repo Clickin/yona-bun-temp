@@ -141,6 +141,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
     let _ = register_user(app.clone(), "reviewer").await;
+    let _ = register_user(app.clone(), "assigned").await;
 
     let project = rpc(
         app.clone(),
@@ -165,6 +166,7 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
             Some(&cookie),
             Some(&csrf),
             Some(json!({
+                "assigneeLoginId": "assigned",
                 "title": "Markdown issue",
                 "bodyMarkdown": "Hello **Yona** @reviewer #1 owner/projectYobi#1 https://example.com/docs?x=1\n\n![logo](https://example.com/logo.png \"Logo\") ![bad](javascript:alert(1))\n\n- [x] done\n- [ ] todo\n\n```rust\nfn main() {\n    let count = 1;\n}\n```\n\n`<script>alert(1)</script> @reviewer #1 https://example.com/code`"
             })),
@@ -254,6 +256,14 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         issue_author_avatar_url.starts_with("https://www.gravatar.com/avatar/")
             && issue_author_avatar_url.ends_with("?s=256&d=identicon"),
         "{issue_author_avatar_url}"
+    );
+    let issue_assignee_avatar_url = detail["assigneeAvatarUrl"]
+        .as_str()
+        .expect("issue detail assignee avatar url");
+    assert!(
+        issue_assignee_avatar_url.starts_with("https://www.gravatar.com/avatar/")
+            && issue_assignee_avatar_url.ends_with("?s=256&d=identicon"),
+        "{issue_assignee_avatar_url}"
     );
 
     let commented = response_json(

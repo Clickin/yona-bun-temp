@@ -3399,6 +3399,11 @@ export type ReadIssueDetailResponse = Message<"yona.pilot.v1.ReadIssueDetailResp
    * @generated from field: string author_avatar_url = 31;
    */
   authorAvatarUrl: string;
+
+  /**
+   * @generated from field: string assignee_avatar_url = 32;
+   */
+  assigneeAvatarUrl: string;
 };
 
 /**

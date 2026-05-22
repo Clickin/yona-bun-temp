@@ -558,6 +558,7 @@ export function toProjectIssueDetailView(
   response: IssueDetailResponseWithHistory,
 ): ProjectIssueDetailViewModel {
   return {
+    assigneeAvatarUrl: response.assigneeAvatarUrl,
     assigneeLabel: response.assigneeLabel,
     assigneeLoginId: response.assigneeLoginId,
     attachments: response.attachments.map((attachment) => ({

@@ -379,8 +379,9 @@ test.beforeEach(async ({ page }) => {
   await page.route(apiV1Route("/projects/admin/projectYobi/issues/1"), async (route) => {
     await route.fulfill({
       body: JSON.stringify({
-        assigneeLabel: "",
-        assigneeLoginId: "",
+        assigneeAvatarUrl: "/avatars/door.png",
+        assigneeLabel: "Door",
+        assigneeLoginId: "door",
         attachments: [],
         authorAvatarUrl: "/avatars/nori.png",
         authorLabel: "Nori",
@@ -1000,6 +1001,13 @@ test("project issue routes render data-backed issue list filters and detail scre
   );
   await expect(page.locator(".author-info .name")).toContainText("Nori");
   await expect(page.locator(".author-info .loginid")).toContainText("@nori");
+  await expect(page.locator(".assignee-info a.usf-group")).toHaveAttribute("href", "/yona/door");
+  await expect(page.locator(".assignee-info .avatar-wrap.smaller img")).toHaveAttribute(
+    "src",
+    "/avatars/door.png",
+  );
+  await expect(page.locator(".assignee-info .name")).toContainText("Door");
+  await expect(page.locator(".assignee-info .loginid")).toContainText("@door");
   await expect(page.locator("#comments.board-comment-wrap")).toBeVisible();
   await expect(page.locator("#comments .comment-header .num")).toHaveText("1");
   await expect(page.locator("#comment-55 .comment-avatar a.avatar-wrap")).toHaveAttribute(

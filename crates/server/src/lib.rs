@@ -24154,6 +24154,11 @@ fn issue_detail_response_from_record_with_sharer_flags_and_issue_references(
     issue_references: &[MarkdownIssueReference],
 ) -> ReadIssueDetailResponse {
     ReadIssueDetailResponse {
+        assignee_avatar_url: if issue.assignee_login_id.is_empty() {
+            String::new()
+        } else {
+            gravatar_url(&issue.assignee_email_address)
+        },
         assignee_label: issue.assignee_label.clone(),
         assignee_login_id: issue.assignee_login_id.clone(),
         attachments: issue

@@ -283,6 +283,11 @@ export function ProjectIssueDetailPage(props: {
   const issueAuthorHref = issueAuthorLoginId
     ? prefixBasePath(props.runtimeConfig.basePath, `/${issueAuthorLoginId}`)
     : "#";
+  const issueAssigneeLoginId = issue?.assigneeLoginId ?? "";
+  const issueAssigneeLabel = issue?.assigneeLabel || issueAssigneeLoginId || "issue.noAssignee";
+  const issueAssigneeHref = issueAssigneeLoginId
+    ? prefixBasePath(props.runtimeConfig.basePath, `/${issueAssigneeLoginId}`)
+    : "#";
 
   return (
     <main className="app-shell">
@@ -326,7 +331,30 @@ export function ProjectIssueDetailPage(props: {
             ) : null}
           </a>
         </div>
-        <p>{`Assignee: ${issue?.assigneeLabel || "none"}`}</p>
+        <div className="assignee-info">
+          {issueAssigneeLoginId ? (
+            <a className="usf-group" href={issueAssigneeHref}>
+              <span className="avatar-wrap smaller">
+                {issue?.assigneeAvatarUrl ? (
+                  <img
+                    alt={issueAssigneeLabel}
+                    height={20}
+                    src={issue.assigneeAvatarUrl}
+                    width={20}
+                  />
+                ) : null}
+              </span>
+              <strong className="name">{issueAssigneeLabel}</strong>
+              <span className="loginid">
+                {" "}
+                <strong>@</strong>
+                {issueAssigneeLoginId}
+              </span>
+            </a>
+          ) : (
+            <div>{issueAssigneeLabel}</div>
+          )}
+        </div>
         <p>{`Milestone: ${issue?.milestoneTitle || "none"}`}</p>
         <p>{`Watchers: ${issue?.watcherCount ?? 0}`}</p>
         <p>{`Voters: ${issue?.voterCount ?? 0}`}</p>

@@ -545,7 +545,7 @@ POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → le
 
 - [x] 이슈 목록 필터: state(open/closed), assignee, label, milestone — legacy `IssueApp.issues()` 파라미터 동일; `/issues` form now preserves query values and submits `labelIds`/`milestoneId` through `/api/v1/projects/:owner/:project/issues`
 - [ ] 이슈 번호: 프로젝트 내 자동 증가 (`#1`, `#2`, ...) — legacy `Issue.nextNumber()` 동일
-- [ ] 이슈 상세: 제목, 본문(마크다운 렌더링), 사이드바(담당자/마일스톤/라벨/감시자/투표수) — legacy `issue/view.scala.html` 레이아웃 동일; body history가 있으면 `.posting-history` 링크와 `#-yona-posting-history` modal을 렌더링하고, 작성자 영역은 `.author-info`, `.usf-group`, `.avatar-wrap.smaller`, `.name`, `.loginid` anchors와 author avatar URL을 유지한다.
+- [ ] 이슈 상세: 제목, 본문(마크다운 렌더링), 사이드바(담당자/마일스톤/라벨/감시자/투표수) — legacy `issue/view.scala.html` 레이아웃 동일; body history가 있으면 `.posting-history` 링크와 `#-yona-posting-history` modal을 렌더링하고, 작성자/담당자 영역은 `.author-info`, `.assignee-info`, `.usf-group`, `.avatar-wrap.smaller`, `.name`, `.loginid` anchors와 avatar URL을 유지한다.
 - [x] 댓글: 시간순 정렬, 작성자 아바타, 마크다운 렌더링 — REST comment/timeline projection now includes legacy-derived author avatar URLs, and issue detail renders the legacy `#comments.board-comment-wrap`, `.comment-header`, `.comments`, `.comment`, `.comment-avatar`, `.avatar-wrap`, `.media-body`, `.comment_author`, `.ago`, and `.comment-body` anchors.
 - [x] Legacy direct issue comment form aliases: `POST /:owner/:project/issue/:number/comments`, `POST /:owner/:project/issue/:number/comments/:commentId`, and `DELETE /:owner/:project/issue/:number/comment/:commentId/delete` reuse the `/api/v1` comment contract and redirect back to the legacy issue anchor
 - [ ] 타임라인: 상태 변경/담당자 변경/라벨 변경 이벤트가 댓글과 인터리빙되어 시간순 표시

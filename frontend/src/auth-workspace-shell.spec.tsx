@@ -814,6 +814,27 @@ describe("auth and workspace views", () => {
     expect(html).toContain("@</strong>owner");
   });
 
+  it("renders legacy issue assignee info with avatar", () => {
+    const html = renderIssueDetailPage({
+      assigneeAvatarUrl: "https://cdn.yona/avatar-door.png",
+      assigneeLabel: "Door User",
+      assigneeLoginId: "door",
+    });
+
+    expect(html).toContain('class="assignee-info"');
+    expect(html).toContain('href="/yona/door"');
+    expect(html).toContain('src="https://cdn.yona/avatar-door.png"');
+    expect(html).toContain("Door User");
+    expect(html).toContain("@</strong>door");
+  });
+
+  it("renders legacy issue no-assignee marker when unassigned", () => {
+    const html = renderIssueDetailPage({});
+
+    expect(html).toContain('class="assignee-info"');
+    expect(html).toContain("issue.noAssignee");
+  });
+
   it("renders issue comment agreement count, voters, and agree action", () => {
     const html = renderIssueDetailPage(
       {
@@ -963,6 +984,7 @@ function renderIssueDetailPage(
   extraProps: Record<string, unknown> = {},
 ) {
   const issue = {
+    assigneeAvatarUrl: "",
     assigneeLabel: "",
     assigneeLoginId: "",
     attachments: [],

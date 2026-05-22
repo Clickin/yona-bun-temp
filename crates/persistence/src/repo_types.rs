@@ -68,6 +68,9 @@ pub enum SiteUserAvatarFromAttachmentResult {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IssueRecord {
+    pub assignee_email_address: String,
+    pub assignee_label: String,
+    pub assignee_login_id: String,
     pub author_email_address: String,
     pub author_id: Option<i64>,
     pub author_label: String,
@@ -82,8 +85,6 @@ pub struct IssueRecord {
     pub project_name: String,
     pub state: String,
     pub title: String,
-    pub assignee_login_id: String,
-    pub assignee_label: String,
     pub updated_label: String,
     pub voter_count: u32,
     pub watcher_count: u32,

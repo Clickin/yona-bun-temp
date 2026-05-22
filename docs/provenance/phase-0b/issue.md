@@ -113,6 +113,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 ## Issue Detail Author Info Translation Rule
 
 - Legacy `issue/view.scala.html` renders the issue author inside `.author-info` as an `.usf-group` profile link with `.avatar-wrap.smaller`, `.name`, and `.loginid`, using `User.findByLoginId(issue.authorLoginId).avatarUrl(32)` for the 20x20 image. Rust projects `ReadIssueDetailResponse.authorAvatarUrl` from the author user row and renders the same anchors in the React issue detail page.
+- Legacy `issue/view.scala.html` renders assigned users with the same `.usf-group`, `.avatar-wrap.smaller`, `.name`, and `.loginid` anchor shape when the viewer cannot update assignment, while updateable assignment uses `partial_assignee.scala.html` data attributes for the select2 avatar. Rust projects `ReadIssueDetailResponse.assigneeAvatarUrl` from the assigned user row and renders a matching `.assignee-info` shell for assigned issues, falling back to the legacy no-assignee marker when unassigned.
 
 ## Issue Markdown Attachment Upload Translation Rule
 

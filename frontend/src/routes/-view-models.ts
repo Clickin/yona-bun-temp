@@ -297,6 +297,7 @@ export interface UserIssueListViewModel {
 }
 
 export interface ProjectIssueDetailViewModel {
+  assigneeAvatarUrl: string;
   assigneeLabel: string;
   assigneeLoginId: string;
   attachments: Array<{ id: number; name: string; url: string }>;

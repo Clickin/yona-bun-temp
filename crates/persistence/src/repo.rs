@@ -10377,6 +10377,7 @@ impl AppRepository {
             .await?;
         let (assignee_login_id, assignee_label) =
             self.issue_assignee_summary(model.assignee_id).await?;
+        let assignee_email_address = self.issue_assignee_email_address(model.assignee_id).await?;
         let (milestone_id, milestone_title) =
             self.issue_milestone_summary(model.milestone_id).await?;
         let labels = self.list_issue_labels(model.id).await?;
@@ -10407,6 +10408,7 @@ impl AppRepository {
         Ok(IssueRecord {
             assignee_label,
             assignee_login_id,
+            assignee_email_address,
             attachments,
             author_email_address,
             author_id,
@@ -11218,6 +11220,29 @@ impl AppRepository {
             user.login_id.unwrap_or_default(),
             user.name.unwrap_or_default(),
         ))
+    }
+
+    async fn issue_assignee_email_address(
+        &self,
+        assignee_id: Option<i64>,
+    ) -> Result<String, DbErr> {
+        let Some(assignee_id) = assignee_id else {
+            return Ok(String::new());
+        };
+        let Some(row) = assignee::Entity::find_by_id(assignee_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(String::new());
+        };
+        let Some(user_id) = row.user_id else {
+            return Ok(String::new());
+        };
+        Ok(n4user::Entity::find_by_id(user_id)
+            .one(&self.db)
+            .await?
+            .and_then(|user| user.email)
+            .unwrap_or_default())
     }
 
     async fn issue_milestone_summary(
