@@ -986,7 +986,19 @@ test("project issue routes render data-backed issue list filters and detail scre
   await page.goto("/yona/admin/projectYobi/issue/1");
   await expect(page.getByRole("heading", { name: "Pilot issue" })).toBeVisible();
   await expect(page.getByText("#1")).toBeVisible();
-  await expect(page.getByText("open")).toBeVisible();
+  await expect(
+    page.locator(".issue-detail-page.page-wrap-outer .project-page-wrap.board-view"),
+  ).toBeVisible();
+  await expect(page.locator(".board-header.issue .board-id")).toHaveText("#1");
+  await expect(
+    page.locator(".board-header.issue .pull-right.hide-in-mobile .badge-issue-open"),
+  ).toHaveText("open");
+  await expect(page.locator(".board-body.row-fluid .span9.span-left-pane")).toBeVisible();
+  await expect(page.locator(".board-body.row-fluid .span3.right-menu")).toBeVisible();
+  await expect(page.locator(".board-actrow.right-txt")).toBeVisible();
+  await expect(page.locator("#watch-button")).toHaveAttribute("data-watching", "false");
+  await expect(page.locator("#vote.vote-wrap")).toContainText("Voters: 0");
+  await expect(page.locator(".watcher-list")).toContainText("Watchers: 0");
   await expect(page.locator(".posting-history a")).toHaveAttribute(
     "href",
     "#-yona-posting-history",

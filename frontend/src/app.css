@@ -540,6 +540,99 @@ h1 {
   overflow-wrap: anywhere;
 }
 
+.issue-detail-page .board-header.issue {
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+.issue-detail-page .board-header .title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.issue-detail-page .board-header h1 {
+  margin: 0;
+}
+
+.issue-detail-page .board-id {
+  color: #777;
+  font-size: 18px;
+}
+
+.badge[class*="badge-issue-"] {
+  display: inline-block;
+  padding: 2px 7px;
+  color: #fff;
+  background: #777;
+  border-radius: 3px;
+}
+
+.badge.badge-issue-open {
+  background: #4b8f29;
+}
+
+.badge.badge-issue-closed {
+  background: #777;
+}
+
+.issue-detail-page .board-body.row-fluid {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin-top: 18px;
+}
+
+.issue-detail-page .span-left-pane {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.issue-detail-page .right-menu {
+  flex: 0 0 260px;
+}
+
+.issue-detail-page .board-actrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+
+.issue-detail-page .vote-wrap,
+.issue-detail-page .act-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.issue-detail-page .watcher-list,
+.issue-detail-page .issue-labels,
+.issue-detail-page .issue-info {
+  margin: 0 0 12px;
+}
+
+.issue-detail-page .issue-label {
+  display: inline-block;
+  margin: 0 4px 4px 0;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+@media (max-width: 720px) {
+  .issue-detail-page .board-body.row-fluid {
+    display: block;
+  }
+
+  .issue-detail-page .right-menu {
+    margin-top: 18px;
+  }
+}
+
 .board-actions {
   display: flex;
   flex-wrap: wrap;

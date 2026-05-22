@@ -288,285 +288,375 @@ export function ProjectIssueDetailPage(props: {
   const issueAssigneeHref = issueAssigneeLoginId
     ? prefixBasePath(props.runtimeConfig.basePath, `/${issueAssigneeLoginId}`)
     : "#";
+  const issueState = issue?.state ?? "";
+  const issueStateClass = issueState.toLowerCase();
+  const issueTitle = issue?.title ?? "Issue";
+  const issueNumberLabel = issue ? `#${issue.issueNumber}` : "";
+  const voteWrapClass = issue && issue.voterCount > 0 ? "vote-wrap voter-exists" : "vote-wrap";
 
   return (
-    <main className="app-shell">
+    <main className="app-shell issue-detail-page page-wrap-outer">
       <p className="eyebrow">Yona Rust Project</p>
-      <h1>
-        {issue?.title ?? "Issue"}
-        {issue && props.onFavoriteToggle ? (
-          <button
-            aria-label={issue.isFavorited ? "Unfavorite issue" : "Favorite issue"}
-            className="favorite-issue"
-            onClick={() => void props.onFavoriteToggle?.()}
-            type="button"
-          >
-            <span
-              className={`${issue.isFavorited ? "starred " : ""}star material-icons va-text-top`}
-            >
-              star
-            </span>
-          </button>
-        ) : null}
-      </h1>
       <p>{`${detail.ownerName}/${detail.projectName}`}</p>
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <section>
-        <p>{issue ? `#${issue.issueNumber}` : ""}</p>
-        <p>{issue?.state ?? ""}</p>
-        <div className="author-info">
-          <a className="usf-group" href={issueAuthorHref}>
-            <span className="avatar-wrap smaller">
-              {issue?.authorAvatarUrl ? (
-                <img alt={issueAuthorLabel} height={20} src={issue.authorAvatarUrl} width={20} />
-              ) : null}
-            </span>
-            <strong className="name">{issueAuthorLabel}</strong>
-            {issueAuthorLoginId ? (
-              <span className="loginid">
-                {" "}
-                <strong>@</strong>
-                {issueAuthorLoginId}
-              </span>
+      <div className="project-page-wrap board-view">
+        <header className="board-header issue">
+          <div className="pull-right mr10 mt10 hide-in-mobile">
+            {issueState ? (
+              <span className={`badge badge-issue-${issueStateClass}`}>{issueState}</span>
             ) : null}
-          </a>
-        </div>
-        <div className="assignee-info">
-          {issueAssigneeLoginId ? (
-            <a className="usf-group" href={issueAssigneeHref}>
-              <span className="avatar-wrap smaller">
-                {issue?.assigneeAvatarUrl ? (
-                  <img
-                    alt={issueAssigneeLabel}
-                    height={20}
-                    src={issue.assigneeAvatarUrl}
-                    width={20}
-                  />
+          </div>
+          <div className="title">
+            {issueNumberLabel ? <strong className="board-id">{issueNumberLabel}</strong> : null}
+            <h1>
+              {issueTitle}
+              {issue && props.onFavoriteToggle ? (
+                <button
+                  aria-label={issue.isFavorited ? "Unfavorite issue" : "Favorite issue"}
+                  className="favorite-issue"
+                  onClick={() => void props.onFavoriteToggle?.()}
+                  type="button"
+                >
+                  <span
+                    className={`${
+                      issue.isFavorited ? "starred " : ""
+                    }star material-icons va-text-top`}
+                  >
+                    star
+                  </span>
+                </button>
+              ) : null}
+            </h1>
+            {issueState ? (
+              <div className="pull-right hide show-in-mobile">
+                <span className={`badge badge-small badge-issue-${issueStateClass}`}>
+                  {issueState}
+                </span>
+              </div>
+            ) : null}
+          </div>
+          {issue ? (
+            <PostingHistoryModal historyHtml={issue.historyHtml} linkLabel="change.edited" />
+          ) : null}
+        </header>
+        <div className="board-body row-fluid">
+          <div className="span9 span-left-pane">
+            <div className="author-info">
+              <a className="usf-group" href={issueAuthorHref}>
+                <span className="avatar-wrap smaller">
+                  {issue?.authorAvatarUrl ? (
+                    <img
+                      alt={issueAuthorLabel}
+                      height={20}
+                      src={issue.authorAvatarUrl}
+                      width={20}
+                    />
+                  ) : null}
+                </span>
+                <strong className="name">{issueAuthorLabel}</strong>
+                {issueAuthorLoginId ? (
+                  <span className="loginid">
+                    {" "}
+                    <strong>@</strong>
+                    {issueAuthorLoginId}
+                  </span>
+                ) : null}
+              </a>
+            </div>
+            <div id={issue ? `issue-body-${issue.issueNumber}` : undefined}>
+              <div
+                className="content markdown-wrap"
+                data-allowed-update={issue ? String(issue.viewerCanUpdate) : undefined}
+                dangerouslySetInnerHTML={{ __html: issue?.bodyHtml ?? "" }}
+              />
+            </div>
+            <div className="attachments" id="attachments">
+              {(issue?.attachments ?? []).map((attachment) => (
+                <a href={attachment.url} key={attachment.id}>
+                  {attachment.name}
+                </a>
+              ))}
+            </div>
+            <div className="board-actrow right-txt">
+              <div className="pull-left">
+                {issue && props.onWatchToggle ? (
+                  <button
+                    className={`ybtn${issue.isWatching ? " ybtn-watching" : ""}`}
+                    data-watching={String(issue.isWatching)}
+                    id="watch-button"
+                    onClick={() => void props.onWatchToggle?.()}
+                    title="issue.watch.description"
+                    type="button"
+                  >
+                    {issue.isWatching ? "Unwatch" : "Watch"}
+                  </button>
+                ) : null}
+              </div>
+              {issue ? (
+                <div className={voteWrapClass} id="vote">
+                  {props.onVoteToggle ? (
+                    <button
+                      className={`ybtn${issue.hasVoted ? " ybtn-watching" : ""}`}
+                      data-request-method="post"
+                      data-toggle="tooltip"
+                      onClick={() => void props.onVoteToggle?.()}
+                      title={issue.hasVoted ? "issue.unvote.description" : "issue.vote.description"}
+                      type="button"
+                    >
+                      <span className="heart">
+                        <i className="yobicon-hearts"></i>
+                      </span>
+                      {issue.hasVoted ? "Unvote" : "Vote"}
+                    </button>
+                  ) : null}
+                  <span className="voter-count">{`Voters: ${issue.voterCount}`}</span>
+                </div>
+              ) : null}
+              <span className="act-row">
+                {issue?.viewerCanUpdate ? (
+                  <a
+                    className="icon btn-transparent-with-fontsize-lineheight ml10 pt5px"
+                    href={buildProjectHref(
+                      props.runtimeConfig,
+                      detail.ownerName,
+                      detail.projectName,
+                      `issue/${issue.issueNumber}/editform`,
+                    )}
+                    title="button.edit"
+                  >
+                    <i className="yobicon-edit-2"></i>
+                    Edit
+                  </a>
+                ) : null}
+                {issue?.viewerCanUpdate && onStateChange ? (
+                  <button
+                    className="ybtn"
+                    onClick={() => void onStateChange(issue.state === "open" ? "closed" : "open")}
+                    type="button"
+                  >
+                    {issue.state === "open" ? "Close" : "Reopen"}
+                  </button>
+                ) : null}
+                {issue?.viewerCanDelete && onDeleteIssue ? (
+                  <button
+                    className="icon btn-transparent-with-fontsize-lineheight ml6"
+                    onClick={() => void onDeleteIssue()}
+                    title="button.delete"
+                    type="button"
+                  >
+                    <i className="yobicon-trash"></i>
+                    Delete
+                  </button>
                 ) : null}
               </span>
-              <strong className="name">{issueAssigneeLabel}</strong>
-              <span className="loginid">
-                {" "}
-                <strong>@</strong>
-                {issueAssigneeLoginId}
-              </span>
-            </a>
-          ) : (
-            <div>{issueAssigneeLabel}</div>
-          )}
-        </div>
-        <p>{`Milestone: ${issue?.milestoneTitle || "none"}`}</p>
-        <p>{`Watchers: ${issue?.watcherCount ?? 0}`}</p>
-        <p>{`Voters: ${issue?.voterCount ?? 0}`}</p>
-        {issue?.labels.map((label) => (
-          <span key={label.id} style={{ backgroundColor: label.color || "#ddd" }}>
-            {label.name}
-          </span>
-        ))}
-        {issue ? (
-          <PostingHistoryModal historyHtml={issue.historyHtml} linkLabel="change.edited" />
-        ) : null}
-        {issue?.viewerCanUpdate ? (
-          <a
-            href={buildProjectHref(
-              props.runtimeConfig,
-              detail.ownerName,
-              detail.projectName,
-              `issue/${issue.issueNumber}/editform`,
-            )}
-          >
-            Edit
-          </a>
-        ) : null}
-        {issue?.viewerCanUpdate && onStateChange ? (
-          <button
-            onClick={() => void onStateChange(issue.state === "open" ? "closed" : "open")}
-            type="button"
-          >
-            {issue.state === "open" ? "Close" : "Reopen"}
-          </button>
-        ) : null}
-        {issue && props.onWatchToggle ? (
-          <button onClick={() => void props.onWatchToggle?.()} type="button">
-            {issue.isWatching ? "Unwatch" : "Watch"}
-          </button>
-        ) : null}
-        {issue && props.onVoteToggle ? (
-          <button onClick={() => void props.onVoteToggle?.()} type="button">
-            {issue.hasVoted ? "Unvote" : "Vote"}
-          </button>
-        ) : null}
-        {issue?.viewerCanUpdate && props.onAssign ? (
-          <IssueAssignForm
-            initialAssignee={issue.assigneeLoginId}
-            onSearchAssignableUsers={props.onSearchAssignableUsers}
-            onSubmit={props.onAssign}
-          />
-        ) : null}
-        {issue?.viewerCanDelete && onDeleteIssue ? (
-          <button onClick={() => void onDeleteIssue()} type="button">
-            Delete
-          </button>
-        ) : null}
-        {issue ? (
-          <IssueSharerPanel
-            issue={issue}
-            onSearchSharableUsers={props.onSearchSharableUsers}
-            onShareIssue={issue.viewerCanManageSharers ? props.onShareIssue : undefined}
-            onUnshareIssue={issue.viewerCanManageSharers ? props.onUnshareIssue : undefined}
-          />
-        ) : null}
-      </section>
-      <section>
-        <div
-          className="markdown-wrap"
-          dangerouslySetInnerHTML={{ __html: issue?.bodyHtml ?? "" }}
-        />
-        {(issue?.attachments ?? []).map((attachment) => (
-          <a href={attachment.url} key={attachment.id}>
-            {attachment.name}
-          </a>
-        ))}
-      </section>
-      <section className="board-comment-wrap" id="comments">
-        <div id="timeline">
-          <div className="timeline-list">
-            <div className="comment-header">
-              <i></i>
-              <strong>common.comment</strong>{" "}
-              <strong className="num">{issue?.commentCount ?? 0}</strong>
             </div>
-            <hr className="nm" />
-            <ul className="comments">
-              {(issue?.timeline ?? []).map((item) => {
-                if (item.kind !== "comment" || !item.comment) {
-                  return (
-                    <li className="event" key={`${item.kind}-${item.id}`}>
-                      <p>{`${item.eventType} ${item.createdLabel}`}</p>
-                    </li>
-                  );
-                }
+            <section className="board-comment-wrap" id="comments">
+              <div id="timeline">
+                <div className="timeline-list">
+                  <div className="comment-header">
+                    <i></i>
+                    <strong>common.comment</strong>{" "}
+                    <strong className="num">{issue?.commentCount ?? 0}</strong>
+                  </div>
+                  <hr className="nm" />
+                  <ul className="comments">
+                    {(issue?.timeline ?? []).map((item) => {
+                      if (item.kind !== "comment" || !item.comment) {
+                        return (
+                          <li className="event" key={`${item.kind}-${item.id}`}>
+                            <p>{`${item.eventType} ${item.createdLabel}`}</p>
+                          </li>
+                        );
+                      }
 
-                const comment = item.comment;
-                const authorLoginId = comment.authorLoginId || comment.authorLabel;
+                      const comment = item.comment;
+                      const authorLoginId = comment.authorLoginId || comment.authorLabel;
 
-                return (
-                  <li
-                    className="comment"
-                    id={`comment-${comment.id}`}
-                    key={`${item.kind}-${item.id}`}
-                  >
-                    <div className="comment-avatar">
-                      <IssueCommentAvatar
-                        basePath={props.runtimeConfig.basePath}
-                        comment={comment}
-                      />
-                    </div>
-                    <div className="media-body">
-                      <div className="meta-info">
-                        <span className="comment_author">
-                          <span className="resp-comment-avatar">
+                      return (
+                        <li
+                          className="comment"
+                          id={`comment-${comment.id}`}
+                          key={`${item.kind}-${item.id}`}
+                        >
+                          <div className="comment-avatar">
                             <IssueCommentAvatar
                               basePath={props.runtimeConfig.basePath}
                               comment={comment}
                             />
-                          </span>
-                          <a
-                            data-placement="top"
-                            data-toggle="tooltip"
-                            href={
-                              authorLoginId
-                                ? prefixBasePath(props.runtimeConfig.basePath, `/${authorLoginId}`)
-                                : "#"
-                            }
-                            title={comment.authorLoginId || comment.authorLabel}
-                          >
-                            <strong>{comment.authorLabel || comment.authorLoginId}</strong>
-                          </a>
-                        </span>
-                        <span className="ago">{comment.createdLabel}</span>
-                      </div>
-                      <div
-                        className="comment-body markdown-wrap"
-                        data-via-email={comment.viaEmail ? "true" : undefined}
-                        dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
-                      />
-                      <div className="comment-vote-row">
-                        {comment.voterCount > 0 ? (
-                          <span className="comment-vote-count">
-                            {commentAgreementLabel(comment.voterCount)}
-                          </span>
-                        ) : null}
-                        {comment.voters.map((voter) => (
-                          <span
-                            className="comment-voter"
-                            key={voter.userId}
-                            title={voter.userLabel}
-                          >
-                            {voter.avatarUrl ? (
-                              <img alt={`${voter.userLabel} avatar`} src={voter.avatarUrl} />
-                            ) : null}
-                            <span>{voter.userLabel || voter.loginId}</span>
-                          </span>
-                        ))}
-                        {issue?.viewerCanComment && props.onCommentVoteToggle ? (
-                          <button
-                            aria-label={
-                              comment.viewerHasVoted
-                                ? "Withdraw comment agreement"
-                                : "Agree with comment"
-                            }
-                            className="comment-vote btn-transparent-with-fontsize-lineheight"
-                            onClick={() =>
-                              void props.onCommentVoteToggle?.(comment.id, comment.viewerHasVoted)
-                            }
-                            title={comment.viewerHasVoted ? "Withdraw" : "Agree"}
-                            type="button"
-                          >
-                            <span
-                              className={`yobicon-hearts ${
-                                comment.viewerHasVoted ? "vote-heart-on" : "vote-heart-off"
-                              }`}
+                          </div>
+                          <div className="media-body">
+                            <div className="meta-info">
+                              <span className="comment_author">
+                                <span className="resp-comment-avatar">
+                                  <IssueCommentAvatar
+                                    basePath={props.runtimeConfig.basePath}
+                                    comment={comment}
+                                  />
+                                </span>
+                                <a
+                                  data-placement="top"
+                                  data-toggle="tooltip"
+                                  href={
+                                    authorLoginId
+                                      ? prefixBasePath(
+                                          props.runtimeConfig.basePath,
+                                          `/${authorLoginId}`,
+                                        )
+                                      : "#"
+                                  }
+                                  title={comment.authorLoginId || comment.authorLabel}
+                                >
+                                  <strong>{comment.authorLabel || comment.authorLoginId}</strong>
+                                </a>
+                              </span>
+                              <span className="ago">{comment.createdLabel}</span>
+                            </div>
+                            <div
+                              className="comment-body markdown-wrap"
+                              data-via-email={comment.viaEmail ? "true" : undefined}
+                              dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
                             />
-                          </button>
-                        ) : null}
-                      </div>
-                      {comment.viewerCanUpdate && props.onCommentUpdate ? (
-                        <IssueCommentEditForm
-                          commentId={comment.id}
-                          csrfToken={props.csrfToken}
-                          getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
-                          initialContents={comment.contentsMarkdown}
-                          onSearchMentionUsers={props.onSearchMentionUsers}
-                          onSubmit={props.onCommentUpdate}
-                          runtimeConfig={props.runtimeConfig}
-                        />
-                      ) : null}
-                      {comment.viewerCanDelete && props.onCommentDelete ? (
-                        <button
-                          onClick={() => void props.onCommentDelete?.(comment.id)}
-                          type="button"
-                        >
-                          Delete comment
-                        </button>
-                      ) : null}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                            <div className="comment-vote-row">
+                              {comment.voterCount > 0 ? (
+                                <span className="comment-vote-count">
+                                  {commentAgreementLabel(comment.voterCount)}
+                                </span>
+                              ) : null}
+                              {comment.voters.map((voter) => (
+                                <span
+                                  className="comment-voter"
+                                  key={voter.userId}
+                                  title={voter.userLabel}
+                                >
+                                  {voter.avatarUrl ? (
+                                    <img alt={`${voter.userLabel} avatar`} src={voter.avatarUrl} />
+                                  ) : null}
+                                  <span>{voter.userLabel || voter.loginId}</span>
+                                </span>
+                              ))}
+                              {issue?.viewerCanComment && props.onCommentVoteToggle ? (
+                                <button
+                                  aria-label={
+                                    comment.viewerHasVoted
+                                      ? "Withdraw comment agreement"
+                                      : "Agree with comment"
+                                  }
+                                  className="comment-vote btn-transparent-with-fontsize-lineheight"
+                                  onClick={() =>
+                                    void props.onCommentVoteToggle?.(
+                                      comment.id,
+                                      comment.viewerHasVoted,
+                                    )
+                                  }
+                                  title={comment.viewerHasVoted ? "Withdraw" : "Agree"}
+                                  type="button"
+                                >
+                                  <span
+                                    className={`yobicon-hearts ${
+                                      comment.viewerHasVoted ? "vote-heart-on" : "vote-heart-off"
+                                    }`}
+                                  />
+                                </button>
+                              ) : null}
+                            </div>
+                            {comment.viewerCanUpdate && props.onCommentUpdate ? (
+                              <IssueCommentEditForm
+                                commentId={comment.id}
+                                csrfToken={props.csrfToken}
+                                getIssueReferencesQueryOptions={
+                                  props.getIssueReferencesQueryOptions
+                                }
+                                initialContents={comment.contentsMarkdown}
+                                onSearchMentionUsers={props.onSearchMentionUsers}
+                                onSubmit={props.onCommentUpdate}
+                                runtimeConfig={props.runtimeConfig}
+                              />
+                            ) : null}
+                            {comment.viewerCanDelete && props.onCommentDelete ? (
+                              <button
+                                onClick={() => void props.onCommentDelete?.(comment.id)}
+                                type="button"
+                              >
+                                Delete comment
+                              </button>
+                            ) : null}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </div>
+              {issue?.viewerCanComment && props.onCommentSubmit ? (
+                <IssueCommentForm
+                  csrfToken={props.csrfToken}
+                  getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
+                  onSearchMentionUsers={props.onSearchMentionUsers}
+                  onSubmit={props.onCommentSubmit}
+                  runtimeConfig={props.runtimeConfig}
+                />
+              ) : null}
+            </section>
           </div>
+          <aside className="span3 right-menu">
+            <div className="assignee-info">
+              {issueAssigneeLoginId ? (
+                <a className="usf-group" href={issueAssigneeHref}>
+                  <span className="avatar-wrap smaller">
+                    {issue?.assigneeAvatarUrl ? (
+                      <img
+                        alt={issueAssigneeLabel}
+                        height={20}
+                        src={issue.assigneeAvatarUrl}
+                        width={20}
+                      />
+                    ) : null}
+                  </span>
+                  <strong className="name">{issueAssigneeLabel}</strong>
+                  <span className="loginid">
+                    {" "}
+                    <strong>@</strong>
+                    {issueAssigneeLoginId}
+                  </span>
+                </a>
+              ) : (
+                <div>{issueAssigneeLabel}</div>
+              )}
+            </div>
+            <dl className="issue-info">
+              <dt>issue.milestone</dt>
+              <dd>{issue?.milestoneTitle || "issue.noMilestone"}</dd>
+            </dl>
+            <div className="watcher-list">{`Watchers: ${issue?.watcherCount ?? 0}`}</div>
+            <div className="issue-labels">
+              {issue?.labels.map((label) => (
+                <span
+                  className="label issue-label list-label active"
+                  key={label.id}
+                  style={{ backgroundColor: label.color || "#ddd" }}
+                >
+                  {label.name}
+                </span>
+              ))}
+            </div>
+            {issue?.viewerCanUpdate && props.onAssign ? (
+              <IssueAssignForm
+                initialAssignee={issue.assigneeLoginId}
+                onSearchAssignableUsers={props.onSearchAssignableUsers}
+                onSubmit={props.onAssign}
+              />
+            ) : null}
+            {issue ? (
+              <IssueSharerPanel
+                issue={issue}
+                onSearchSharableUsers={props.onSearchSharableUsers}
+                onShareIssue={issue.viewerCanManageSharers ? props.onShareIssue : undefined}
+                onUnshareIssue={issue.viewerCanManageSharers ? props.onUnshareIssue : undefined}
+              />
+            ) : null}
+          </aside>
         </div>
-        {issue?.viewerCanComment && props.onCommentSubmit ? (
-          <IssueCommentForm
-            csrfToken={props.csrfToken}
-            getIssueReferencesQueryOptions={props.getIssueReferencesQueryOptions}
-            onSearchMentionUsers={props.onSearchMentionUsers}
-            onSubmit={props.onCommentSubmit}
-            runtimeConfig={props.runtimeConfig}
-          />
-        ) : null}
-      </section>
+      </div>
     </main>
   );
 }
