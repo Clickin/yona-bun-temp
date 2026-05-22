@@ -434,18 +434,87 @@ fn notification_message(event_type: &str, old_value: &str, new_value: &str) -> S
         "NEW_COMMENT" => "New comment on post or issue added".to_string(),
         "ISSUE_BODY_CHANGED" => "Issue body changed".to_string(),
         "COMMENT_UPDATED" => "Comment updated".to_string(),
+        "NEW_PULL_REQUEST" | "NEW_REVIEW_COMMENT" if !new_value.trim().is_empty() => {
+            new_value.to_string()
+        }
+        "PULL_REQUEST_STATE_CHANGED" | "PULL_REQUEST_MERGED" => {
+            pull_request_state_notification_message(new_value)
+        }
+        "PULL_REQUEST_REVIEW_STATE_CHANGED" => {
+            if normalize_identity(new_value) == "done" {
+                "notification.pullrequest.reviewed".to_string()
+            } else {
+                "notification.pullrequest.unreviewed".to_string()
+            }
+        }
+        "REVIEW_THREAD_STATE_CHANGED" => {
+            if normalize_identity(new_value) == "closed" {
+                "notification.reviewthread.closed".to_string()
+            } else {
+                "notification.reviewthread.reopened".to_string()
+            }
+        }
+        "PULL_REQUEST_COMMIT_CHANGED" | "NEW_COMMIT" if !new_value.trim().is_empty() => {
+            new_value.to_string()
+        }
         _ => event_type.to_string(),
     }
 }
 
 fn notification_type_icon(event_type: &str, state: &str) -> &'static str {
+    let normalized_state = normalize_identity(state);
     match event_type {
-        "NEW_COMMENT" => "comment2",
-        "NEW_ISSUE" | "ISSUE_STATE_CHANGED" if state == "closed" => "list-alt closed",
+        "NEW_COMMENT" | "NEW_REVIEW_COMMENT" | "REVIEW_THREAD_STATE_CHANGED" => "comment2",
+        "NEW_ISSUE" | "ISSUE_STATE_CHANGED" if normalized_state == "closed" => "list-alt closed",
         "NEW_ISSUE" | "ISSUE_STATE_CHANGED" => "list-alt",
         "ISSUE_ASSIGNEE_CHANGED" => "friends changed",
+        "NEW_POSTING" => "edit2",
+        "NEW_PULL_REQUEST"
+        | "PULL_REQUEST_COMMIT_CHANGED"
+        | "PULL_REQUEST_STATE_CHANGED"
+        | "PULL_REQUEST_MERGED"
+            if normalized_state == "closed" =>
+        {
+            "merge closed"
+        }
+        "NEW_PULL_REQUEST"
+        | "PULL_REQUEST_COMMIT_CHANGED"
+        | "PULL_REQUEST_STATE_CHANGED"
+        | "PULL_REQUEST_MERGED"
+            if normalized_state == "merged" =>
+        {
+            "merge merged"
+        }
+        "NEW_PULL_REQUEST"
+        | "PULL_REQUEST_COMMIT_CHANGED"
+        | "PULL_REQUEST_STATE_CHANGED"
+        | "PULL_REQUEST_MERGED" => "merge",
+        "MEMBER_ENROLL_REQUEST" | "ORGANIZATION_MEMBER_ENROLL_REQUEST"
+            if normalized_state == "accept" =>
+        {
+            "addfriend closed"
+        }
+        "MEMBER_ENROLL_REQUEST" | "ORGANIZATION_MEMBER_ENROLL_REQUEST"
+            if normalized_state == "cancel" =>
+        {
+            "addfriend rejected"
+        }
+        "MEMBER_ENROLL_REQUEST" | "ORGANIZATION_MEMBER_ENROLL_REQUEST" => "addfriend",
+        "NEW_COMMIT" => "push",
+        "PULL_REQUEST_REVIEW_STATE_CHANGED" => "preview changed",
         "ISSUE_BODY_CHANGED" | "COMMENT_UPDATED" => "ellipsis-horizontal",
         _ => "megaphone",
+    }
+}
+
+fn pull_request_state_notification_message(new_value: &str) -> String {
+    let state = normalize_identity(new_value);
+    if state == "open" {
+        "notification.pullrequest.reopened".to_string()
+    } else if state.is_empty() {
+        "notification.pullrequest".to_string()
+    } else {
+        format!("notification.pullrequest.{state}")
     }
 }
 

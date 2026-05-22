@@ -567,7 +567,7 @@ async fn pull_request_state_notifications_include_legacy_review_comment_watchers
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "notifyowner").await;
     let (commenter_csrf, commenter_cookie, commenter_id) =
         register_user(app.clone(), "notifycommenter").await;
-    let (_, _, mentioned_id) = register_user(app.clone(), "notifymentioned").await;
+    let (_, mentioned_cookie, mentioned_id) = register_user(app.clone(), "notifymentioned").await;
 
     create_project(
         app.clone(),
@@ -610,6 +610,25 @@ async fn pull_request_state_notifications_include_legacy_review_comment_watchers
             .await,
         vec![mentioned_id]
     );
+    let mentioned_notifications = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/notifications?from=0&size=5",
+            Some(&mentioned_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(mentioned_notifications["total"], 1);
+    assert_eq!(
+        mentioned_notifications["items"][0]["eventType"],
+        "NEW_PULL_REQUEST"
+    );
+    assert_eq!(
+        mentioned_notifications["items"][0]["message"],
+        "Notification watcher parity"
+    );
+    assert_eq!(mentioned_notifications["items"][0]["typeIcon"], "merge");
 
     response_json(
         rest_json(
@@ -629,7 +648,7 @@ async fn pull_request_state_notifications_include_legacy_review_comment_watchers
 
     response_json(
         rest_json(
-            app,
+            app.clone(),
             Method::POST,
             "/yona/api/v1/owners/notifyowner/projects/notifyProject/pull-requests/1/close",
             Some(&owner_cookie),
@@ -649,6 +668,29 @@ async fn pull_request_state_notifications_include_legacy_review_comment_watchers
         )
         .await,
         vec![commenter_id, mentioned_id]
+    );
+
+    let commenter_notifications = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/notifications?from=0&size=5",
+            Some(&commenter_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(commenter_notifications["total"], 1);
+    assert_eq!(
+        commenter_notifications["items"][0]["eventType"],
+        "PULL_REQUEST_STATE_CHANGED"
+    );
+    assert_eq!(
+        commenter_notifications["items"][0]["message"],
+        "notification.pullrequest.closed"
+    );
+    assert_eq!(
+        commenter_notifications["items"][0]["typeIcon"],
+        "merge closed"
     );
 
     fs::remove_dir_all(data_root).unwrap();

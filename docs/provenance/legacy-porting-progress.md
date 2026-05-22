@@ -16,7 +16,7 @@ Last updated: 2026-05-20
 Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace/public profile, organization/project ownership, issue-tracker core behavior, Git read/admin surfaces, PR/review interaction surfaces, and board/posting core app behavior.
-- The largest remaining gaps are still PR/review in-app conflict resolution workflow, ranged inline review multi-line selection polish, board/posting follow-ups, notification fan-out/read state, webhook delivery hardening/history, full-text/indexed search hardening, SVN executable-backed serve, and separate migrator/external API compatibility.
+- The largest remaining gaps are still PR/review in-app conflict resolution workflow, ranged inline review multi-line selection polish, board/posting follow-ups, notification fan-out/mail delivery, webhook delivery hardening/history, full-text/indexed search hardening, SVN executable-backed serve, and separate migrator/external API compatibility.
 - Percentages are approximate. Update them only when a slice lands with tests and provenance updates.
 
 ## Update Protocol
@@ -42,7 +42,7 @@ Interpretation:
 | Pull Request / Review                   | [~] Strong partial        | Phase 4A restores read surfaces, Phase 4B restores create/edit, close/reopen, review/unreview, general PR comments, and thread open/close, the fork/clone slice restores legacy `newFork` plus native bare-repo clone, merge/branch lifecycle slices restore reviewer-threshold-gated conflict-free accept plus source branch delete/restore, project settings restores default reviewer threshold lifecycle, PR detail projects required/lacking reviewer state and legacy watcher projection plus `#watch-button` watch/unwatch mutation, PR source pushes record commit-changed events/webhooks, and PR changes supports side-aware single-line ranged inline comment create/edit/delete; multi-line polish remains. Legacy generated routes expose no separate per-PR reviewer assignment endpoint beyond `ReviewApp.review`/`unreview`. |
 | Board / Posting                         | [~] Strong partial        | Project board CRUD/comment/watch/notice/README/label flows, read-only Git README fallback rendering, and organization board list exist over `/api/v1`; Git README write-back/sync, issue template/file edit, and legacy external API compatibility remain. |
 | Search                                  | [~] Strong partial        | Global/project/organization app search exists over `/api/v1` with all legacy result tabs, counts, snippets, pagination, and ACL filtering; full-text/indexed search and external API compatibility remain deferred. |
-| Notifications / Webhooks / Admin / External REST | [~] Partially implemented | Notification inbox/list with legacy route wrapper anchors, mail queue staging, site-admin mail test/mass-mail recipient lookup plus direct `/sites/mailList`, direct site-admin user/project mutation aliases, no-avatar user JSON/avatar repair, update shell, data management shell, webhook CRUD, issue/comment plus PR create/review/comment/merge/commit-changed webhook fan-out, and git-push JSON webhook fan-out exist while full SMTP batching, delivery history/hardening, live update check/download, and live admin data import/export remain gaps; `/-_-api/v1` compatibility is separate migrator scope. |
+| Notifications / Webhooks / Admin / External REST | [~] Partially implemented | Notification inbox/list with legacy route wrapper anchors and core event icon/message projection, mail queue staging, site-admin mail test/mass-mail recipient lookup plus direct `/sites/mailList`, direct site-admin user/project mutation aliases, no-avatar user JSON/avatar repair, update shell, data management shell, webhook CRUD, issue/comment plus PR create/review/comment/merge/commit-changed webhook fan-out, and git-push JSON webhook fan-out exist while full SMTP batching, delivery history/hardening, live update check/download, and live admin data import/export remain gaps; `/-_-api/v1` compatibility is separate migrator scope. |
 
 ## Foundation / Deployment / DB
 
@@ -321,7 +321,7 @@ Interpretation:
 - [x] Project watch toggle basics
 - [x] Notification event list and legacy `/notification` + `/notifications` route shell parity
 - [~] Issue event notifications
-- [~] PR/review notifications: PR receivers now include review comment authors via legacy watcher participation and active users mentioned in the PR body; full mail/delivery parity remains
+- [~] PR/review notifications: PR receivers now include review comment authors via legacy watcher participation and active users mentioned in the PR body, and list projection uses legacy PR state/review/thread message keys/icons; full mail/delivery parity remains
 - [ ] Email notification fan-out parity
 - [ ] BCC mode
 - [~] Notification interval batching queue/drain helper
@@ -335,7 +335,7 @@ Interpretation:
 - [~] Event payload generation
 - [~] Secret token header
 - [x] Issue event type
-- [~] Pull request event type
+- [x] Pull request event type list projection
 - [x] Comment event type
 - [x] Review event type
 - [ ] Delivery history/retry behavior
