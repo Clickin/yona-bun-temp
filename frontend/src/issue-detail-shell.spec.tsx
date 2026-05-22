@@ -110,6 +110,8 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="ago-date"');
     expect(html).toContain('class="ago" href="#comment-55"');
     expect(html).toContain('class="share-link" href="#comment-55"');
+    expect(html).toContain('id="comment-body-55"');
+    expect(html).toContain('data-allowed-update="false"');
     expect(html).toContain('data-toggle="comment-delete"');
     expect(html).toContain('data-request-uri="/yona/owner/projectYobi/issue/1/comment/55/delete"');
     expect(html).toContain('title="common.comment.delete"');

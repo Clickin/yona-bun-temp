@@ -1053,7 +1053,11 @@ test("project issue routes render data-backed issue list filters and detail scre
     "display",
     "none",
   );
-  await expect(page.locator("#comment-55 .comment-body")).toContainText("First issue comment");
+  await expect(page.locator("#comment-body-55 .comment-body")).toHaveAttribute(
+    "data-allowed-update",
+    "true",
+  );
+  await expect(page.locator("#comment-body-55 .comment-body")).toContainText("First issue comment");
   await expect(page.locator('#comment-55 [data-toggle="comment-edit"]')).toHaveAttribute(
     "data-comment-id",
     "55",

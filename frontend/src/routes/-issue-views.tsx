@@ -548,11 +548,14 @@ export function ProjectIssueDetailPage(props: {
                                 </a>
                               </span>
                             </div>
-                            <div
-                              className="comment-body markdown-wrap"
-                              data-via-email={comment.viaEmail ? "true" : undefined}
-                              dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
-                            />
+                            <div id={`comment-body-${comment.id}`}>
+                              <div
+                                className="comment-body markdown-wrap"
+                                data-allowed-update={String(comment.viewerCanUpdate)}
+                                data-via-email={comment.viaEmail ? "true" : undefined}
+                                dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
+                              />
+                            </div>
                             <div className="comment-vote-row">
                               {comment.voterCount > 0 ? (
                                 <span className="comment-vote-count">
