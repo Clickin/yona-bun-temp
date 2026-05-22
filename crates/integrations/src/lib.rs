@@ -1,5 +1,6 @@
 //! Canonical integrations ownership for outbound provider slices.
 
+use std::collections::VecDeque;
 use std::io::{Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::{Mutex, OnceLock};
@@ -86,6 +87,11 @@ pub struct WebhookDeliveryRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WebhookDeliveryOutcome {
+    pub response_body: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OutboundWebhook {
     pub body: String,
     pub event_type: String,
@@ -104,6 +110,11 @@ fn test_webhook_outbox() -> &'static Mutex<Vec<WebhookDeliveryRecord>> {
     OUTBOX.get_or_init(|| Mutex::new(Vec::new()))
 }
 
+fn test_webhook_responses() -> &'static Mutex<VecDeque<String>> {
+    static RESPONSES: OnceLock<Mutex<VecDeque<String>>> = OnceLock::new();
+    RESPONSES.get_or_init(|| Mutex::new(VecDeque::new()))
+}
+
 pub fn clear_test_outbox() {
     test_outbox().lock().unwrap().clear();
 }
@@ -114,10 +125,18 @@ pub fn snapshot_test_outbox() -> Vec<MailDeliveryRecord> {
 
 pub fn clear_test_webhook_outbox() {
     test_webhook_outbox().lock().unwrap().clear();
+    test_webhook_responses().lock().unwrap().clear();
 }
 
 pub fn snapshot_test_webhook_outbox() -> Vec<WebhookDeliveryRecord> {
     test_webhook_outbox().lock().unwrap().clone()
+}
+
+pub fn queue_test_webhook_response(response: impl ToString) {
+    test_webhook_responses()
+        .lock()
+        .unwrap()
+        .push_back(response.to_string());
 }
 
 pub fn smtp_enabled() -> bool {
@@ -202,7 +221,7 @@ pub fn deliver(mail: OutboundMail) -> Result<(), String> {
     Ok(())
 }
 
-pub fn deliver_webhook(webhook: OutboundWebhook) -> Result<(), String> {
+pub fn deliver_webhook(webhook: OutboundWebhook) -> Result<WebhookDeliveryOutcome, String> {
     let record = WebhookDeliveryRecord {
         body: webhook.body,
         event_type: webhook.event_type,
@@ -213,7 +232,9 @@ pub fn deliver_webhook(webhook: OutboundWebhook) -> Result<(), String> {
 
     if !webhook_http_delivery_enabled() {
         test_webhook_outbox().lock().unwrap().push(record);
-        return Ok(());
+        return Ok(WebhookDeliveryOutcome {
+            response_body: test_webhook_responses().lock().unwrap().pop_front(),
+        });
     }
 
     post_webhook_over_plain_http(&record)
@@ -239,7 +260,9 @@ fn webhook_headers(secret: &str) -> Vec<WebhookHeaderRecord> {
     headers
 }
 
-fn post_webhook_over_plain_http(record: &WebhookDeliveryRecord) -> Result<(), String> {
+fn post_webhook_over_plain_http(
+    record: &WebhookDeliveryRecord,
+) -> Result<WebhookDeliveryOutcome, String> {
     let parsed = parse_plain_http_url(&record.payload_url)?;
     let address = (parsed.host.as_str(), parsed.port)
         .to_socket_addrs()
@@ -276,10 +299,19 @@ fn post_webhook_over_plain_http(record: &WebhookDeliveryRecord) -> Result<(), St
         .map_err(|error| format!("webhook response read failed: {error}"))?;
     let status = response.lines().next().unwrap_or_default();
     if status.contains(" 2") {
-        Ok(())
+        Ok(WebhookDeliveryOutcome {
+            response_body: response_body_from_plain_http_response(&response),
+        })
     } else {
         Err(format!("webhook request failed: {status}"))
     }
+}
+
+fn response_body_from_plain_http_response(response: &str) -> Option<String> {
+    response
+        .split_once("\r\n\r\n")
+        .or_else(|| response.split_once("\n\n"))
+        .map(|(_, body)| body.to_string())
 }
 
 struct PlainHttpUrl {

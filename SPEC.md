@@ -950,6 +950,7 @@ DELETE /:owner/:project/webhooks/:id  → 웹훅 삭제
 | 이벤트 발송 | JSON payload를 설정된 URL로 POST         | 🔶 부분 구현 | 5     |
 | Secret 전달 | `Authorization: token <secret> ` 헤더    | 🔶 부분 구현 | 5     |
 | 이벤트 타입 | issue, pull_request, comment, review 등  | 🔶 부분 구현 | 5     |
+| Hangout Chat thread | `DETAIL_HANGOUT_CHAT` 응답의 `thread.name`을 resource별로 저장/재사용 | ✅ 구현 | 5 |
 | 실행 이력   | 발송 성공/실패 기록                      | gap       | 5     |
 
 #### 검수 기준
@@ -959,6 +960,7 @@ DELETE /:owner/:project/webhooks/:id  → 웹훅 삭제
 - [x] Pull request/review/comment/merge non-JSON payload fan-out: `NEW_PULL_REQUEST`, `PULL_REQUEST_REVIEW_STATE_CHANGED`, `NEW_REVIEW_COMMENT`, and `PULL_REQUEST_MERGED` use the legacy PR link/text shape, token secret header, and JSON-webhook exclusion.
 - [x] Push JSON payload: legacy `Webhook.sendRequestToPayloadUrl(commits, refNames, sender)` 포맷과 호환
 - [x] Pull request commit-changed fan-out: Smart HTTP pushes to open PR source branches persist `PULL_REQUEST_COMMIT_CHANGED` and dispatch the legacy non-JSON PR webhook shape; plain close/reopen did not call project webhooks in observed legacy code.
+- [x] DETAIL_HANGOUT_CHAT thread reuse: legacy `WebhookThread` semantics are mirrored for issue/comment and PR webhook fan-out by persisting the first successful response `thread.name` per webhook/resource and sending it on follow-up payloads.
 - [ ] HTTPS production delivery hardening and delivery history/retry behavior
 - [ ] HMAC-style signature compatibility is not present in observed legacy `Webhook.java`; only add if external integration evidence requires it.
 
@@ -1354,7 +1356,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, 조직 PR 목록, create/edit, close/reopen, review/unreview, required/lacking reviewer projection, project default reviewer threshold settings, review-threshold-gated accept, PR watcher projection/watch-unwatch, PR watcher/body-mention-derived notification receiver, 일반 PR comment, thread open/close, fork/clone, conflict-free merge, conflict 표시/merge 비활성화 안내, source branch cleanup/restore, PR commit-changed event/webhook, side-aware single-line ranged inline review CRUD. in-app conflict resolution/multi-line review polish는 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, core event icon/message projection, single/mass-update issue state-change receiver fan-out, mail queue staging, due-row outbound fan-out helper, allowed-domain mail receiver filtering, BCC hide-address mode, recipientLimit partitioning |
-| 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment/merge/commit-changed non-JSON fan-out plus git-push JSON payloads; delivery history and hardening remain gaps |
+| 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment/merge/commit-changed non-JSON fan-out, DETAIL_HANGOUT_CHAT thread name persistence/reuse, plus git-push JSON payloads; delivery history/retry and hardening remain gaps |
 | 관리자            | ❌ 미구현         |                                                                  |
 | 마크다운          | 🔶 기본 구현      | Issue/post/milestone/PR/code comment sanitized HTML projection plus `@user`, `#123`, `owner/project#123`, bare `http(s)`/`ftp`/`www`/email autolinks, readable issue title/state metadata, soft line breaks, safe inline images, disabled task-list checkboxes, fenced-code token highlighting, code-browser Markdown local image path rewrite, project-home Git README local image/normal-link rewrite, and legacy `POST /markdown/:owner/:project` preview rendering |
 | REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1` legacy external API는 app scope에서 미지원이며 별도 migrator/export/import deliverable로 분리 |

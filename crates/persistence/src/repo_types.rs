@@ -914,6 +914,16 @@ pub struct ProjectWebhookListRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WebhookThreadRecord {
+    pub created_at: Option<DateTime>,
+    pub id: i64,
+    pub resource_id: String,
+    pub resource_type: String,
+    pub thread_id: String,
+    pub webhook_id: i64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectTransferRecord {
     pub accepted: bool,
     pub confirm_key: String,
@@ -940,6 +950,14 @@ pub struct CreateProjectWebhookInput {
     pub project_id: i64,
     pub secret: String,
     pub webhook_type: i16,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateWebhookThreadInput {
+    pub resource_id: String,
+    pub resource_type: String,
+    pub thread_id: String,
+    pub webhook_id: i64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

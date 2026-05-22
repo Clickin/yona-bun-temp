@@ -63,8 +63,9 @@
 - Project webhooks now follow the observed legacy model for DB-backed PR
   interactions: `NEW_PULL_REQUEST`, `PULL_REQUEST_REVIEW_STATE_CHANGED`, and
   `NEW_REVIEW_COMMENT` fan out to non-JSON webhooks with the legacy PR link/text
-  shape. Plain close/reopen records PR state events but did not call project
-  webhooks in the observed legacy code.
+  shape, and `DETAIL_HANGOUT_CHAT` stores/reuses the legacy `WebhookThread`
+  `thread.name` per PR resource. Plain close/reopen records PR state events but
+  did not call project webhooks in the observed legacy code.
 - Smart HTTP receive-pack pushes to an open PR source branch now persist
   `pull_request_commit` rows, append a `PULL_REQUEST_COMMIT_CHANGED` PR event
   whose `newValue` is the comma-delimited commit-row id list, create matching

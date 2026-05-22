@@ -6,14 +6,15 @@ use crate::repo_types::{
     CreatePostingInput, CreateProjectInput, CreateProjectLabelCategoryInput,
     CreateProjectLabelInput, CreateProjectWebhookInput, CreatePullRequestCommentInput,
     CreatePullRequestInput, CreatePullRequestResult, CreateReviewCommentViaEmailInput,
-    CreateUserInput, DeleteAttachmentResult, DeleteCommitDiscussionCommentInput,
-    DeletePullRequestCommentInput, IssueAssignableUserRecord, IssueAssignableUserSearchRecord,
-    IssueAttachmentRecord, IssueCommentRecord, IssueCommentVoterRecord, IssueLabelCategoryRecord,
-    IssueLabelRecord, IssueListFilter, IssueMentionUserRecord, IssueMentionUserSearchRecord,
-    IssueMilestoneRecord, IssueMutationInput, IssueRecord, IssueShareStatus, IssueSharerRecord,
-    IssueTimelineItemRecord, MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter,
-    MilestoneMutationInput, NotificationActorRecord, NotificationItemRecord,
-    NotificationListRecord, NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
+    CreateUserInput, CreateWebhookThreadInput, DeleteAttachmentResult,
+    DeleteCommitDiscussionCommentInput, DeletePullRequestCommentInput, IssueAssignableUserRecord,
+    IssueAssignableUserSearchRecord, IssueAttachmentRecord, IssueCommentRecord,
+    IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter,
+    IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueMutationInput,
+    IssueRecord, IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord,
+    MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
+    NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
+    NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
     OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
     OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
     OrganizationMemberRecord, OrganizationPostingListFilter, OrganizationPostingListRecord,
@@ -40,8 +41,8 @@ use crate::repo_types::{
     UpdatePostingInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
     UpdateProjectLabelInput, UpdatePullRequestCommentInput, UpdatePullRequestInput,
     UserAttachmentListRecord, UserAttachmentRecord, UserIssueCandidateRecord, UserIssueListFilter,
-    UserStatisticsRecord, WatchedProjectNotificationsRecord, WorkspaceEmailRecord,
-    WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
+    UserStatisticsRecord, WatchedProjectNotificationsRecord, WebhookThreadRecord,
+    WorkspaceEmailRecord, WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
     WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
@@ -844,6 +845,17 @@ fn project_webhook_record_from_model(row: webhook::Model) -> ProjectWebhookRecor
         payload_url: row.payload_url.unwrap_or_default(),
         secret: row.secret.unwrap_or_default(),
         webhook_type: row.webhook_type.unwrap_or_default(),
+    }
+}
+
+fn webhook_thread_record_from_model(row: webhook_thread::Model) -> WebhookThreadRecord {
+    WebhookThreadRecord {
+        created_at: row.created_at,
+        id: row.id,
+        resource_id: row.resource_id.unwrap_or_default(),
+        resource_type: row.resource_type.unwrap_or_default(),
+        thread_id: row.thread_id.unwrap_or_default(),
+        webhook_id: row.webhook_id.unwrap_or_default(),
     }
 }
 
@@ -6268,6 +6280,38 @@ impl AppRepository {
         .insert(&self.db)
         .await?;
         self.list_project_webhooks(input.project_id).await
+    }
+
+    pub async fn read_webhook_thread(
+        &self,
+        webhook_id: i64,
+        resource_type: &str,
+        resource_id: &str,
+    ) -> Result<Option<WebhookThreadRecord>, DbErr> {
+        let row = webhook_thread::Entity::find()
+            .filter(webhook_thread::Column::WebhookId.eq(Some(webhook_id)))
+            .filter(webhook_thread::Column::ResourceType.eq(Some(resource_type.to_string())))
+            .filter(webhook_thread::Column::ResourceId.eq(Some(resource_id.to_string())))
+            .one(&self.db)
+            .await?;
+        Ok(row.map(webhook_thread_record_from_model))
+    }
+
+    pub async fn create_webhook_thread(
+        &self,
+        input: CreateWebhookThreadInput,
+    ) -> Result<WebhookThreadRecord, DbErr> {
+        let row = webhook_thread::ActiveModel {
+            created_at: Set(Some(current_datetime())),
+            resource_id: Set(Some(input.resource_id)),
+            resource_type: Set(Some(input.resource_type)),
+            thread_id: Set(Some(input.thread_id)),
+            webhook_id: Set(Some(input.webhook_id)),
+            ..Default::default()
+        }
+        .insert(&self.db)
+        .await?;
+        Ok(webhook_thread_record_from_model(row))
     }
 
     pub async fn delete_project_webhook(

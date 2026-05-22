@@ -6,8 +6,10 @@ use serde_json::{json, Value};
 use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tower::ServiceExt;
-use yona_rust_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
-use yona_rust_persistence::{webhook, AppRepository};
+use yona_rust_integrations::{
+    clear_test_webhook_outbox, queue_test_webhook_response, snapshot_test_webhook_outbox,
+};
+use yona_rust_persistence::{webhook, webhook_thread, AppRepository};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
@@ -267,6 +269,112 @@ async fn project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks() {
     assert!(commented_text.contains("notification.type.new.comment"));
     assert!(commented_text.contains("/yona/owner/projectYobi/issue/1#comment-"));
     assert!(commented_text.contains("|#1: First webhook issue"));
+}
+
+#[tokio::test]
+async fn project_webhooks_persist_hangout_thread_names_for_resource_followups() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    clear_test_webhook_outbox();
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf).await;
+
+    let created = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/hangout",
+                "secret": "",
+                "webhookType": "DETAIL_HANGOUT_CHAT",
+                "gitPush": false,
+            })),
+        )
+        .await,
+    )
+    .await;
+    let webhook_id = created["webhooks"][0]["id"].as_i64().expect("webhook id");
+
+    queue_test_webhook_response(json!({
+        "thread": {
+            "name": "spaces/AAAA/threads/issue-1"
+        }
+    }));
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "title": "Hangout threaded issue",
+                "bodyMarkdown": "Issue body for hangout thread",
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 1);
+    assert_eq!(deliveries[0].webhook_type, "DETAIL_HANGOUT_CHAT");
+    let created_payload: Value =
+        serde_json::from_str(&deliveries[0].body).expect("created hangout payload");
+    assert_eq!(created_payload["thread"], json!({}));
+
+    let rows = webhook_thread::Entity::find()
+        .all(&db)
+        .await
+        .expect("webhook thread rows");
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].webhook_id, Some(webhook_id));
+    assert_eq!(rows[0].resource_type.as_deref(), Some("ISSUE_POST"));
+    assert_eq!(
+        rows[0].thread_id.as_deref(),
+        Some("spaces/AAAA/threads/issue-1")
+    );
+    assert!(rows[0].created_at.is_some());
+
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/comments",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "contentsMarkdown": "Hangout follow-up",
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 2);
+    let commented_payload: Value =
+        serde_json::from_str(&deliveries[1].body).expect("comment hangout payload");
+    assert_eq!(
+        commented_payload["thread"],
+        json!({
+            "name": "spaces/AAAA/threads/issue-1"
+        })
+    );
+    assert_eq!(
+        webhook_thread::Entity::find()
+            .count(&db)
+            .await
+            .expect("webhook thread count"),
+        1
+    );
 }
 
 #[tokio::test]

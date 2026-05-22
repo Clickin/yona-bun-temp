@@ -38,7 +38,9 @@ use yona_rust_domain::{
     is_valid_project_name, normalize_default_landing_path, ProjectAccessFacts, ProjectOperation,
     ProjectScope, DEFAULT_LANDING_FALLBACK_PATH,
 };
-use yona_rust_integrations::{deliver, deliver_webhook, OutboundMail, OutboundWebhook};
+use yona_rust_integrations::{
+    deliver, deliver_webhook, OutboundMail, OutboundWebhook, WebhookDeliveryOutcome,
+};
 use yona_rust_search::SearchType;
 use yona_rust_vcs::{
     CodeBranchListSnapshot, CodeBrowserSnapshot, CodeCommitDetailSnapshot,
@@ -12878,11 +12880,73 @@ fn legacy_webhook_link(url: &str, label: &str, escape_label: bool) -> String {
     format!(" <{url}|{label}>")
 }
 
+fn legacy_hangout_thread_json(thread_name: Option<&str>) -> serde_json::Value {
+    match thread_name {
+        Some(name) if !name.trim().is_empty() => serde_json::json!({ "name": name }),
+        _ => serde_json::json!({}),
+    }
+}
+
+fn webhook_response_thread_name(response_body: &str) -> Option<String> {
+    let value: serde_json::Value = serde_json::from_str(response_body).ok()?;
+    match value.get("thread")?.get("name")? {
+        serde_json::Value::String(name) => Some(name.clone()),
+        serde_json::Value::Number(number) => Some(number.to_string()),
+        serde_json::Value::Bool(value) => Some(value.to_string()),
+        _ => None,
+    }
+}
+
+async fn read_existing_webhook_thread_name(
+    repository: &PilotRepository,
+    webhook_id: i64,
+    resource_type: &str,
+    resource_id: &str,
+) -> Option<String> {
+    repository
+        .read_webhook_thread(webhook_id, resource_type, resource_id)
+        .await
+        .ok()
+        .flatten()
+        .map(|record| record.thread_id)
+}
+
+async fn persist_hangout_webhook_thread_from_delivery(
+    repository: &PilotRepository,
+    webhook_id: i64,
+    resource_type: &str,
+    resource_id: &str,
+    existing_thread_name: Option<&str>,
+    delivery: Result<WebhookDeliveryOutcome, String>,
+) {
+    if existing_thread_name.is_some() {
+        return;
+    }
+    let Ok(outcome) = delivery else {
+        return;
+    };
+    let Some(response_body) = outcome.response_body else {
+        return;
+    };
+    let Some(thread_id) = webhook_response_thread_name(&response_body) else {
+        return;
+    };
+    let _ = repository
+        .create_webhook_thread(persistence::CreateWebhookThreadInput {
+            resource_id: resource_id.to_string(),
+            resource_type: resource_type.to_string(),
+            thread_id,
+            webhook_id,
+        })
+        .await;
+}
+
 fn issue_webhook_payload(
     webhook: &persistence::ProjectWebhookRecord,
     issue: &persistence::IssueRecord,
     request_message: &str,
     detail_markdown: &str,
+    thread_name: Option<&str>,
 ) -> String {
     match webhook.webhook_type {
         1 => {
@@ -12916,7 +12980,7 @@ fn issue_webhook_payload(
         }
         2 => serde_json::json!({
             "text": request_message,
-            "thread": {},
+            "thread": legacy_hangout_thread_json(thread_name),
         })
         .to_string(),
         _ => serde_json::json!({
@@ -12958,11 +13022,18 @@ async fn dispatch_issue_webhooks(
     }
     let url = absolute_app_url(public_origin, base_path, &path);
     let target_label = format!("#{}: {}", issue.issue_number, issue.title);
+    let resource_id = issue.id.to_string();
 
     for webhook in webhooks.webhooks {
         if webhook.webhook_type == 3 {
             continue;
         }
+        let thread_name = if webhook.webhook_type == 2 {
+            read_existing_webhook_thread_name(repository, webhook.id, "ISSUE_POST", &resource_id)
+                .await
+        } else {
+            None
+        };
         let webhook_type = project_webhook_type_label(webhook.webhook_type);
         let request_message = format!(
             "[{}] {} {}{}",
@@ -12971,14 +13042,31 @@ async fn dispatch_issue_webhooks(
             legacy_webhook_event_key(event_type),
             legacy_webhook_link(&url, &target_label, webhook.webhook_type == 1)
         );
-        let body = issue_webhook_payload(&webhook, issue, &request_message, detail_markdown);
-        let _ = deliver_webhook(OutboundWebhook {
+        let body = issue_webhook_payload(
+            &webhook,
+            issue,
+            &request_message,
+            detail_markdown,
+            thread_name.as_deref(),
+        );
+        let delivery = deliver_webhook(OutboundWebhook {
             body,
             event_type: event_type.to_string(),
-            payload_url: webhook.payload_url,
-            secret: webhook.secret,
+            payload_url: webhook.payload_url.clone(),
+            secret: webhook.secret.clone(),
             webhook_type,
         });
+        if webhook.webhook_type == 2 {
+            persist_hangout_webhook_thread_from_delivery(
+                repository,
+                webhook.id,
+                "ISSUE_POST",
+                &resource_id,
+                thread_name.as_deref(),
+                delivery,
+            )
+            .await;
+        }
     }
 }
 
@@ -12987,6 +13075,7 @@ fn pull_request_webhook_payload(
     pull_request: &persistence::PullRequestDetailRecord,
     request_message: &str,
     detail_markdown: &str,
+    thread_name: Option<&str>,
 ) -> String {
     match webhook.webhook_type {
         1 => serde_json::json!({
@@ -13016,7 +13105,7 @@ fn pull_request_webhook_payload(
         .to_string(),
         2 => serde_json::json!({
             "text": request_message,
-            "thread": {},
+            "thread": legacy_hangout_thread_json(thread_name),
         })
         .to_string(),
         _ => serde_json::json!({
@@ -13062,11 +13151,18 @@ async fn dispatch_pull_request_webhooks(
         "#{}: {}",
         pull_request.pull_request_number, pull_request.title
     );
+    let resource_id = pull_request.id.to_string();
 
     for webhook in webhooks.webhooks {
         if webhook.webhook_type == 3 {
             continue;
         }
+        let thread_name = if webhook.webhook_type == 2 {
+            read_existing_webhook_thread_name(repository, webhook.id, "PULL_REQUEST", &resource_id)
+                .await
+        } else {
+            None
+        };
         let webhook_type = project_webhook_type_label(webhook.webhook_type);
         let link = legacy_webhook_link(&url, &target_label, webhook.webhook_type == 1);
         let request_message = if event_type == "PULL_REQUEST_REVIEW_STATE_CHANGED" {
@@ -13086,15 +13182,31 @@ async fn dispatch_pull_request_webhooks(
                 link
             )
         };
-        let body =
-            pull_request_webhook_payload(&webhook, pull_request, &request_message, detail_markdown);
-        let _ = deliver_webhook(OutboundWebhook {
+        let body = pull_request_webhook_payload(
+            &webhook,
+            pull_request,
+            &request_message,
+            detail_markdown,
+            thread_name.as_deref(),
+        );
+        let delivery = deliver_webhook(OutboundWebhook {
             body,
             event_type: event_type.to_string(),
-            payload_url: webhook.payload_url,
-            secret: webhook.secret,
+            payload_url: webhook.payload_url.clone(),
+            secret: webhook.secret.clone(),
             webhook_type,
         });
+        if webhook.webhook_type == 2 {
+            persist_hangout_webhook_thread_from_delivery(
+                repository,
+                webhook.id,
+                "PULL_REQUEST",
+                &resource_id,
+                thread_name.as_deref(),
+                delivery,
+            )
+            .await;
+        }
     }
 }
 

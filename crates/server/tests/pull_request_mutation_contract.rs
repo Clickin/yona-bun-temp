@@ -1,7 +1,9 @@
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
-use sea_orm::{ConnectionTrait, Database, DatabaseConnection, Statement};
+use sea_orm::{
+    ConnectionTrait, Database, DatabaseConnection, EntityTrait, PaginatorTrait, Statement,
+};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -9,8 +11,10 @@ use std::process::Command;
 use std::sync::OnceLock;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tower::ServiceExt;
-use yona_rust_integrations::{clear_test_webhook_outbox, snapshot_test_webhook_outbox};
-use yona_rust_persistence::AppRepository;
+use yona_rust_integrations::{
+    clear_test_webhook_outbox, queue_test_webhook_response, snapshot_test_webhook_outbox,
+};
+use yona_rust_persistence::{webhook_thread, AppRepository};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
@@ -691,6 +695,139 @@ async fn pull_request_state_notifications_include_legacy_review_comment_watchers
     assert_eq!(
         commenter_notifications["items"][0]["typeIcon"],
         "merge closed"
+    );
+
+    fs::remove_dir_all(data_root).unwrap();
+}
+
+#[tokio::test]
+async fn pull_request_hangout_webhooks_persist_thread_names_for_followups() {
+    let _yona_data_guard = lock_yona_data_tests().await;
+    let data_root = temp_path("hangout-webhook-data");
+    fs::create_dir_all(&data_root).unwrap();
+    std::env::set_var("YONA_DATA", &data_root);
+    clear_test_webhook_outbox();
+
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "hangoutowner").await;
+    create_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "hangoutowner",
+        "hangoutProject",
+        "public",
+    )
+    .await;
+    let project = repo
+        .read_project_by_owner_and_name("hangoutowner", "hangoutProject")
+        .await
+        .unwrap()
+        .expect("project");
+    seed_bare_repo_with_branches(&data_root, project.id);
+
+    let created_webhook = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/hangoutowner/projects/hangoutProject/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "payloadUrl": "https://hooks.example/pr-hangout",
+                "secret": "",
+                "webhookType": "DETAIL_HANGOUT_CHAT",
+                "gitPush": false,
+            }),
+        )
+        .await,
+    )
+    .await;
+    let webhook_id = created_webhook["webhooks"][0]["id"]
+        .as_i64()
+        .expect("webhook id");
+
+    queue_test_webhook_response(json!({
+        "thread": {
+            "name": "spaces/BBBB/threads/pr-1"
+        }
+    }));
+    let created = response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/hangoutowner/projects/hangoutProject/pull-requests",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "fromProjectId": project.id,
+                "toProjectId": project.id,
+                "fromBranch": "topic/pr",
+                "toBranch": "main",
+                "title": "Hangout PR thread",
+                "bodyMarkdown": "Create PR body"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let pull_request_id = created["id"].as_i64().expect("pull request id");
+    let pull_request_id_text = pull_request_id.to_string();
+
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 1);
+    assert_eq!(deliveries[0].webhook_type, "DETAIL_HANGOUT_CHAT");
+    let created_payload: Value =
+        serde_json::from_str(&deliveries[0].body).expect("created PR hangout payload");
+    assert_eq!(created_payload["thread"], json!({}));
+
+    let rows = webhook_thread::Entity::find()
+        .all(&db)
+        .await
+        .expect("webhook thread rows");
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].webhook_id, Some(webhook_id));
+    assert_eq!(rows[0].resource_type.as_deref(), Some("PULL_REQUEST"));
+    assert_eq!(
+        rows[0].resource_id.as_deref(),
+        Some(pull_request_id_text.as_str())
+    );
+    assert_eq!(
+        rows[0].thread_id.as_deref(),
+        Some("spaces/BBBB/threads/pr-1")
+    );
+
+    response_json(
+        rest_json(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/hangoutowner/projects/hangoutProject/pull-requests/1/comments",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "contentsMarkdown": "Hangout PR follow-up"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    let deliveries = snapshot_test_webhook_outbox();
+    assert_eq!(deliveries.len(), 2);
+    let commented_payload: Value =
+        serde_json::from_str(&deliveries[1].body).expect("comment PR hangout payload");
+    assert_eq!(
+        commented_payload["thread"],
+        json!({
+            "name": "spaces/BBBB/threads/pr-1"
+        })
+    );
+    assert_eq!(
+        webhook_thread::Entity::find()
+            .count(&db)
+            .await
+            .expect("webhook thread count"),
+        1
     );
 
     fs::remove_dir_all(data_root).unwrap();
