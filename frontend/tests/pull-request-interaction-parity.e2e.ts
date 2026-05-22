@@ -46,6 +46,24 @@ const baseThread = {
   state: "open",
 };
 
+const outdatedClosedThread = {
+  ...baseThread,
+  comments: [
+    {
+      ...baseThread.comments[0],
+      contentsHtml: "<p>Outdated review</p>",
+      contentsMarkdown: "Outdated review",
+      id: 19,
+      threadId: 11,
+    },
+  ],
+  commitId: "123456abcdef",
+  createdLabel: "2026-05-02",
+  id: 11,
+  prevCommitId: "oldbase",
+  state: "closed",
+};
+
 function detail(overrides: Record<string, unknown> = {}) {
   const reviewers =
     (overrides.reviewers as
@@ -227,6 +245,10 @@ test.beforeEach(async ({ page }) => {
       const method = route.request().method();
       if (url.pathname.endsWith("/changes")) {
         const selectedCommitId = url.searchParams.get("commitId");
+        const changesThreads =
+          selectedCommitId === "123456abcdef"
+            ? [...pullRequest.threads, outdatedClosedThread]
+            : pullRequest.threads;
         await route.fulfill({
           body: JSON.stringify({
             commits: [
@@ -256,8 +278,8 @@ test.beforeEach(async ({ page }) => {
                     : "@@ -1,2 +1,2 @@\n-old line\n+new line\n same line",
               },
             ],
-            pullRequest,
-            threads: pullRequest.threads,
+            pullRequest: detail({ ...pullRequest, threads: changesThreads }),
+            threads: changesThreads,
           }),
           headers: restJsonHeaders,
           status: 200,
@@ -742,6 +764,13 @@ test("renders selected outdated pull request commits with legacy change markers"
 
   await expect(commitPicker.locator("li.outdated")).toHaveCount(0);
   await expect(commitPicker.locator("li", { hasText: "abcdef1" })).toBeVisible();
+  await expect(page.locator("#reviewcards-open .review-card.open")).toContainText("Initial review");
+  await expect(page.locator("#reviewcards-closed .review-card.closed.outdated")).toContainText(
+    "Outdated review",
+  );
+  await expect(
+    page.locator("#reviewcards-closed .review-card.closed.outdated .outdated-label"),
+  ).toHaveText("review.outdated");
   await expect(page.locator(".diff-body")).toContainText("new prior line");
 });
 

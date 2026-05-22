@@ -101,6 +101,21 @@ function isSelectablePullRequestCommit(commit: PullRequestCommitViewModel) {
   return !isOutdatedPullRequestCommit(commit);
 }
 
+function reviewThreadStateClass(thread: ReviewThread) {
+  return thread.state.trim().toLowerCase() || "open";
+}
+
+function isOutdatedReviewThread(thread: ReviewThread, pullRequest?: PullRequestDetailResponse) {
+  const currentCommitId = pullRequest?.mergedCommitIdTo.trim() ?? "";
+  return (
+    thread.path.trim() !== "" &&
+    thread.prevCommitId.trim() !== "" &&
+    thread.commitId.trim() !== "" &&
+    currentCommitId !== "" &&
+    thread.commitId !== currentCommitId
+  );
+}
+
 function diffAnchorId(path: string) {
   return path.replace(/[/.]/g, "-");
 }
@@ -1133,6 +1148,9 @@ function ReviewThreadItem(props: {
   const [editingCommentId, setEditingCommentId] = React.useState<number | null>(null);
   const [editText, setEditText] = React.useState("");
   const [editAttachmentIds, setEditAttachmentIds] = React.useState<number[]>([]);
+  const threadState = reviewThreadStateClass(props.thread);
+  const isCodeThread = props.thread.path.trim() !== "";
+  const isOutdated = isOutdatedReviewThread(props.thread, props.pullRequest);
 
   function beginEdit(comment: ReviewThread["comments"][number]) {
     setEditingCommentId(comment.id);
@@ -1153,16 +1171,25 @@ function ReviewThreadItem(props: {
   }
 
   return (
-    <article className="review-card comment-thread-wrap" id={`thread-${props.thread.id}`}>
+    <article
+      className={`review-card comment-thread-wrap ${threadState}${threadState === "closed" && isCodeThread ? " fold" : ""}${isOutdated ? " outdated" : ""}`}
+      data-range-endline={props.thread.endLine}
+      data-range-endside={props.thread.endSide}
+      data-range-path={isCodeThread ? props.thread.path : undefined}
+      data-range-startline={props.thread.startLine}
+      data-range-startside={props.thread.startSide}
+      data-state={threadState}
+      data-toggle={isCodeThread ? "CodeCommentThread" : undefined}
+      id={`thread-${props.thread.id}`}
+    >
       <header>
         <strong>{props.thread.path || props.thread.commitId || "General review"}</strong>
         <span>{props.thread.startLine ? `:${props.thread.startLine}` : ""}</span>
-        <span className={`pullRequest-stateInfo state ${props.thread.state}`}>
-          {props.thread.state}
-        </span>
+        <span className={`badge pullRequest-stateInfo state ${threadState}`}>{threadState}</span>
+        {isOutdated ? <span className="outdated-label">review.outdated</span> : null}
       </header>
       <div className="thread-actrow">
-        {props.thread.state === "closed" ? (
+        {threadState === "closed" ? (
           <button
             className="ybtn"
             onClick={() => void props.onThreadOpen?.(props.thread.id)}
@@ -1258,6 +1285,84 @@ function ReviewThreadItem(props: {
         </div>
       ))}
     </article>
+  );
+}
+
+function ReviewThreadCards(props: {
+  pullRequest?: PullRequestDetailResponse;
+  threads: ReviewThread[];
+}) {
+  const openThreads = props.threads.filter((thread) => reviewThreadStateClass(thread) !== "closed");
+  const closedThreads = props.threads.filter(
+    (thread) => reviewThreadStateClass(thread) === "closed",
+  );
+  return (
+    <section className="review-wrap">
+      <ul className="nav nav-tabs">
+        <li className="active">
+          <a data-toggle="tab" href="#reviewcards-open">
+            {`issue.state.open ${openThreads.length}`}
+          </a>
+        </li>
+        <li>
+          <a data-toggle="tab" href="#reviewcards-closed">
+            {`issue.state.closed ${closedThreads.length}`}
+          </a>
+        </li>
+      </ul>
+      <div className="tab-content">
+        <div className="tab-pane active" id="reviewcards-open">
+          {openThreads.length === 0 ? (
+            <div className="warning-none">review.is.empty</div>
+          ) : (
+            openThreads.map((thread) => (
+              <ReviewThreadCard key={thread.id} pullRequest={props.pullRequest} thread={thread} />
+            ))
+          )}
+        </div>
+        <div className="tab-pane" id="reviewcards-closed">
+          {closedThreads.length === 0 ? (
+            <div className="warning-none">review.is.empty</div>
+          ) : (
+            closedThreads.map((thread) => (
+              <ReviewThreadCard key={thread.id} pullRequest={props.pullRequest} thread={thread} />
+            ))
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ReviewThreadCard(props: {
+  pullRequest?: PullRequestDetailResponse;
+  thread: ReviewThread;
+}) {
+  const threadState = reviewThreadStateClass(props.thread);
+  const isOutdated = isOutdatedReviewThread(props.thread, props.pullRequest);
+  const replyCount = Math.max(props.thread.comments.length - 1, 0);
+  const firstComment = props.thread.comments[0];
+  return (
+    <a
+      className={`review-card ${threadState}${isOutdated ? " outdated" : ""}`}
+      href={`#thread-${props.thread.id}`}
+    >
+      <p className="content">{firstComment?.contentsMarkdown ?? ""}</p>
+      <p className="info">
+        {replyCount > 0 ? (
+          <span className="comments pull-left">
+            <i className="yobicon-comments"></i> {replyCount}
+          </span>
+        ) : null}
+        {isOutdated ? <span className="outdated-label">review.outdated</span> : null}
+        <span className="date" title={props.thread.createdLabel}>
+          {props.thread.createdLabel}
+        </span>
+        <span className="avatar-wrap smaller ml5">
+          {props.thread.authorLabel || props.thread.authorLoginId}
+        </span>
+      </p>
+    </a>
   );
 }
 
@@ -1591,6 +1696,7 @@ export function PullRequestChangesPage(props: {
         ) : (
           <div className="warning-none">No changed file diff is available.</div>
         )}
+        <ReviewThreadCards pullRequest={pr} threads={threads} />
         {unrangedThreads.map(renderReviewThread)}
       </section>
     </main>

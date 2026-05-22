@@ -832,7 +832,7 @@ legacy external `/-_-api/v1/**` compatibility는 이번 app runtime batch에서 
 | PR 목록 (open/closed/sent) | 탭으로 분류, 필터, 페이지네이션      | Phase 4A read-only 구현 | 4     |
 | PR 생성                    | from/to 브랜치 선택, 제목/본문       | Phase 4B 구현 | 4     |
 | PR 상세                    | 커밋 목록, 변경 파일, 댓글/타임라인  | Phase 4A read + Phase 4B interaction 구현 | 4     |
-| PR diff 보기               | 파일별 unified diff, 인라인 코멘트   | diff read + specific commit changes route/filter + side-aware single/multi-line ranged inline create/edit/delete + PRIOR commit outdated marker 구현 | 4     |
+| PR diff 보기               | 파일별 unified diff, 인라인 코멘트   | diff read + specific commit changes route/filter + side-aware single/multi-line ranged inline create/edit/delete + PRIOR commit/review-card outdated marker 구현 | 4     |
 | PR 상태 관리               | open → merged / closed, 재열기       | close/reopen + reviewer-threshold-gated conflict-free merge accept 구현 | 4     |
 | Merge 실행                 | fast-forward / merge commit / squash | reviewer threshold 통과 후 native `git merge --no-ff` happy path 구현; squash/strategy 선택은 gap | 4     |
 | Merge 충돌 처리            | 충돌 시 알림, 수동 해결 안내         | native merge conflict 감지, PR conflict 표시, merge 비활성화 + 안내 구현; in-app conflict resolution workflow는 gap | 4     |
@@ -853,7 +853,7 @@ legacy external `/-_-api/v1/**` compatibility는 이번 app runtime batch에서 
 - [x] PR interaction: close/reopen, review/unreview, 일반 PR comment, review thread open/close
 - [x] PR review threshold projection: required/lacking/reviewed 상태를 detail payload와 reviewer status UI에 표시
 - [x] 인라인 코드 리뷰: diff 뷰에서 add/context/deleted 라인 클릭 또는 같은 파일 diff text 선택 → 댓글 입력 → side-aware single/multi-line 스레드 생성/edit/delete 구현
-- [~] 리뷰 스레드: open/close 상태 전환 구현; PR changes specific commit 선택과 PRIOR selected label의 outdated 표시는 구현, thread resolve/outdated workflow는 gap
+- [~] 리뷰 스레드: open/close 상태 전환 구현; PR changes specific commit 선택, PRIOR selected label, `#reviewcards-open`/`#reviewcards-closed` review card 탭, `.review-card.open|closed.outdated`, `.outdated-label` 표시는 구현; thread resolve/outdated backend filtering workflow는 gap
 - [x] Merge: reviewer threshold를 만족하고 충돌 없으면 merge 버튼 활성화, 충돌/리뷰 부족 시 비활성화 + 안내
 - [x] Fork: 프로젝트 fork 시 동일 이름의 개인/조직 프로젝트 생성, bare repo 복제
 
@@ -1354,7 +1354,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 라벨/마일스톤     | ✅ 구현           | 라벨/카테고리 관리, 마일스톤 CRUD/state 구현                     |
 | 코드 브라우저     | 🔶 Phase 3L 구현  | Git 폴더/파일 보기, 브랜치 선택기, raw/open/image 파일 표면, archive download, syntax/line-number 표시, commit history/detail diff/compare, commit comments/thread lifecycle, branch list/latest PR/default/delete, project create 시 bare Git repository provisioning, Smart HTTP transport, push post-receive records |
 | Git Smart HTTP    | 🔶 Phase 3L 구현 | `git http-backend` wrapper로 clone/pull upload-pack 및 인증/권한이 적용된 receive-pack transport를 구현하고, receive-pack 후 `NEW_COMMIT` notification, pushed-branch metadata, push JSON webhook outbox를 기록한다 |
-| PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, specific commit changes route/filter, 조직 PR 목록, create/edit, close/reopen, review/unreview, required/lacking reviewer projection, project default reviewer threshold settings, review-threshold-gated accept, PR watcher projection/watch-unwatch, PR watcher/body-mention-derived notification receiver, 일반 PR comment, thread open/close, fork/clone, conflict-free merge, conflict 표시/merge 비활성화 안내, source branch cleanup/restore, PR commit-changed event/webhook, PRIOR commit outdated marker, side-aware single/multi-line ranged inline review CRUD. in-app conflict resolution은 gap |
+| PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, specific commit changes route/filter, 조직 PR 목록, create/edit, close/reopen, review/unreview, required/lacking reviewer projection, project default reviewer threshold settings, review-threshold-gated accept, PR watcher projection/watch-unwatch, PR watcher/body-mention-derived notification receiver, 일반 PR comment, thread open/close, fork/clone, conflict-free merge, conflict 표시/merge 비활성화 안내, source branch cleanup/restore, PR commit-changed event/webhook, PRIOR commit/review-card outdated marker, side-aware single/multi-line ranged inline review CRUD. in-app conflict resolution은 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, core event icon/message projection, single/mass-update issue state-change receiver fan-out, mail queue staging, due-row outbound fan-out helper, allowed-domain mail receiver filtering, BCC hide-address mode, recipientLimit partitioning |
 | 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment/merge/commit-changed non-JSON fan-out, DETAIL_HANGOUT_CHAT thread name persistence/reuse, plus git-push JSON payloads; delivery history/retry and hardening remain gaps |
