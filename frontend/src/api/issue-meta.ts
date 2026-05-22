@@ -152,6 +152,7 @@ function normalizeIssueDetailResponse(response: ReadIssueDetailResponse): ReadIs
       viewerCanUpdate: comment.viewerCanUpdate ?? false,
       viewerHasVoted: comment.viewerHasVoted ?? false,
       voterCount: comment.voterCount ?? 0,
+      viaEmail: comment.viaEmail ?? false,
       attachments: comment.attachments ?? [],
       voters: comment.voters ?? [],
     })),
@@ -180,6 +181,7 @@ function normalizeIssueDetailResponse(response: ReadIssueDetailResponse): ReadIs
             viewerCanUpdate: item.comment.viewerCanUpdate ?? false,
             viewerHasVoted: item.comment.viewerHasVoted ?? false,
             voterCount: item.comment.voterCount ?? 0,
+            viaEmail: item.comment.viaEmail ?? false,
             attachments: item.comment.attachments ?? [],
             voters: item.comment.voters ?? [],
           }

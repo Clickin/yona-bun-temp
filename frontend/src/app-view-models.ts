@@ -574,6 +574,7 @@ export function toProjectIssueDetailView(
       viewerCanUpdate: comment.viewerCanUpdate,
       viewerHasVoted: comment.viewerHasVoted,
       voterCount: comment.voterCount,
+      viaEmail: comment.viaEmail,
       voters: comment.voters.map((voter) => ({
         avatarUrl: voter.avatarUrl,
         loginId: voter.loginId,
@@ -611,6 +612,7 @@ export function toProjectIssueDetailView(
             viewerCanUpdate: item.comment.viewerCanUpdate,
             viewerHasVoted: item.comment.viewerHasVoted,
             voterCount: item.comment.voterCount,
+            viaEmail: item.comment.viaEmail,
             voters: item.comment.voters.map((voter) => ({
               avatarUrl: voter.avatarUrl,
               loginId: voter.loginId,

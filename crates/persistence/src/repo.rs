@@ -49,8 +49,8 @@ use crate::{
     favorite_issue, favorite_organization, favorite_project, issue, issue_comment,
     issue_comment_voter, issue_event, issue_issue_label, issue_label, issue_label_category,
     issue_sharer, issue_voter, linked_account, mention, milestone, n4user, notification_event,
-    notification_event_n4user, notification_mail, organization, organization_user, posting,
-    posting_comment, posting_issue_label, project, project_label, project_menu_setting,
+    notification_event_n4user, notification_mail, organization, organization_user, original_email,
+    posting, posting_comment, posting_issue_label, project, project_label, project_menu_setting,
     project_pushed_branch, project_transfer, project_user, project_visitation, pull_request,
     pull_request_commit, pull_request_event, pull_request_reviewers, recent_issue, recent_project,
     review_comment, role, site_admin, unwatch, user_credential, user_enrolled_organization,
@@ -11501,6 +11501,15 @@ impl AppRepository {
         let voters = self.list_issue_comment_voters(row.id).await?;
         let viewer_has_voted = viewer_id
             .is_some_and(|viewer_id| voters.iter().any(|voter| voter.user_id == viewer_id));
+        let via_email = original_email::Entity::find()
+            .filter(
+                original_email::Column::ResourceType
+                    .eq(Some(ISSUE_COMMENT_ATTACHMENT_CONTAINER.to_string())),
+            )
+            .filter(original_email::Column::ResourceId.eq(Some(row.id.to_string())))
+            .one(&self.db)
+            .await?
+            .is_some();
         Ok(IssueCommentRecord {
             attachments: self
                 .list_issue_attachments(ISSUE_COMMENT_ATTACHMENT_CONTAINER, row.id)
@@ -11513,6 +11522,7 @@ impl AppRepository {
                 .await?,
             created_label: format_workspace_date_label(row.created_date),
             id: row.id,
+            via_email,
             viewer_has_voted,
             voter_count: voters.len() as u32,
             voters,

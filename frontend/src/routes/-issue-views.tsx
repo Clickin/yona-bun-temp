@@ -325,6 +325,7 @@ export function ProjectIssueDetailPage(props: {
                 <p>{`${item.comment.authorLabel} ${item.comment.createdLabel}`}</p>
                 <div
                   className="comment-body markdown-wrap"
+                  data-via-email={item.comment.viaEmail ? "true" : undefined}
                   dangerouslySetInnerHTML={{ __html: item.comment.contentsHtml }}
                 />
                 <div className="comment-vote-row">

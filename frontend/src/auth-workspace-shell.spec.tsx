@@ -818,6 +818,7 @@ describe("auth and workspace views", () => {
               viewerCanUpdate: false,
               viewerHasVoted: false,
               voterCount: 2,
+              viaEmail: true,
               voters: [
                 {
                   avatarUrl: "https://cdn.yona/avatar-guest.png",
@@ -842,6 +843,7 @@ describe("auth and workspace views", () => {
     expect(html).toContain("2 Agreements");
     expect(html).toContain("Guest User");
     expect(html).toContain("comment-vote");
+    expect(html).toContain('data-via-email="true"');
     expect(html).toContain('aria-label="Agree with comment"');
     expect(html).toContain("vote-heart-off");
   });

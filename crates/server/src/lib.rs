@@ -22790,6 +22790,7 @@ fn issue_comment_from_record(
         contents_markdown: record.contents_markdown.clone(),
         created_label: record.created_label.clone(),
         id: record.id,
+        via_email: record.via_email,
         viewer_can_delete: viewer_can_manage || viewer_is_author,
         viewer_can_update: viewer_can_manage || viewer_is_author,
         viewer_has_voted: record.viewer_has_voted,

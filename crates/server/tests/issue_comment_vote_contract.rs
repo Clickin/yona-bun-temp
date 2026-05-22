@@ -4,7 +4,7 @@ use http_body_util::BodyExt;
 use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, NotSet, Set};
 use serde_json::json;
 use tower::ServiceExt;
-use yona_rust_persistence::{issue, AppRepository};
+use yona_rust_persistence::{issue, original_email, AppRepository};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
@@ -346,6 +346,56 @@ async fn issue_comment_vote_contract_updates_projection_and_preserves_unvote_pol
     )
     .await;
     assert_eq!(not_voted.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn issue_comment_original_email_marker_is_returned_on_comment_projection() {
+    let (app, _, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(app.clone(), &owner_cookie, &owner_csrf, "Public issue").await;
+    let commented = create_comment(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        1,
+        "comment created through inbound mail",
+    )
+    .await;
+    let comment_id = commented["comments"][0]["id"]
+        .as_str()
+        .and_then(|value| value.parse::<i64>().ok())
+        .or_else(|| commented["comments"][0]["id"].as_i64())
+        .expect("comment id");
+    original_email::ActiveModel {
+        id: NotSet,
+        message_id: Set(Some("<issue-comment-1@example.com>".to_string())),
+        resource_type: Set(Some("ISSUE_COMMENT".to_string())),
+        resource_id: Set(Some(comment_id.to_string())),
+        handled_date: Set(None),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+
+    let detail = response_json(
+        rpc(
+            app.clone(),
+            "ReadIssueDetail",
+            Some(&owner_cookie),
+            None,
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "issueNumber": "1"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    assert!(json_bool(&detail["comments"][0], "viaEmail"));
+    assert!(json_bool(&detail["timeline"][0]["comment"], "viaEmail"));
 }
 
 #[tokio::test]

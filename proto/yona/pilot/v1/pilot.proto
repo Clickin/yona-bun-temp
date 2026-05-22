@@ -872,6 +872,7 @@ message IssueComment {
   uint32 voter_count = 10;
   bool viewer_has_voted = 11;
   repeated IssueCommentVoter voters = 12;
+  bool via_email = 13;
 }
 
 message IssueCommentVoter {

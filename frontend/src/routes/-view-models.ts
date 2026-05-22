@@ -314,6 +314,7 @@ export interface ProjectIssueDetailViewModel {
     viewerCanUpdate: boolean;
     viewerHasVoted: boolean;
     voterCount: number;
+    viaEmail?: boolean;
     voters: Array<{ avatarUrl: string; loginId: string; userId: number; userLabel: string }>;
   }>;
   hasVoted: boolean;
@@ -337,6 +338,7 @@ export interface ProjectIssueDetailViewModel {
       viewerCanUpdate: boolean;
       viewerHasVoted: boolean;
       voterCount: number;
+      viaEmail?: boolean;
       voters: Array<{ avatarUrl: string; loginId: string; userId: number; userLabel: string }>;
     };
     createdLabel: string;

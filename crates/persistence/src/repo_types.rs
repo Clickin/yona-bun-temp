@@ -559,6 +559,7 @@ pub struct IssueCommentRecord {
     pub contents_markdown: String,
     pub created_label: String,
     pub id: i64,
+    pub via_email: bool,
     pub viewer_has_voted: bool,
     pub voter_count: u32,
     pub voters: Vec<IssueCommentVoterRecord>,
