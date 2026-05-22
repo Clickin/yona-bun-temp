@@ -42,7 +42,6 @@ import {
   classifyConnectFailure,
   ForbiddenPage,
   NotFoundPage,
-  PlaceholderPage,
   useCurrentHref,
   useDocumentTitle,
   useRequireAuthenticatedRoute,
@@ -321,7 +320,7 @@ function SiteAdminRouteComponent() {
     );
   }
 
-  return <PlaceholderPage href={`/sites/${pageName}`} title="Site Admin" />;
+  return <NotFoundPage href={`/sites/${pageName}`} />;
 }
 
 function SiteDataRoute({

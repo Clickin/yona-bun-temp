@@ -372,6 +372,7 @@ Interpretation:
 - [x] Update shell and notification hide (`/sites/update` legacy sidebar/title/no-update surface; `POST /sites/unwatchUpdate`)
 - [x] Data management shell (`/sites/data` legacy warning/export/import surface)
 - [x] No-avatar user JSON/avatar repair (`/sites/noAvatarUsers`, `/sites/setAttachmentToUserAvatar`, `/api/v1/site/no-avatar-users`, `/api/v1/site/users/avatar-from-attachment`)
+- [x] Unknown `/sites/:pageName` fallback no longer renders a porting placeholder; legacy compiled routes have no catch-all site-admin page, so unmatched site pages close with the shared not-found shell
 - [ ] Data import/export (deferred)
 - [ ] Live update check/download (deferred)
 

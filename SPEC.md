@@ -1056,7 +1056,7 @@ GET   /sites/export            → 데이터 익스포트
 
 #### 검수 기준
 
-- [ ] 관리자 화면: `/sites/*` 경로, site_admin 역할만 접근 가능
+- [x] 등록된 관리자 화면: legacy compiled routes에 존재하는 `/sites/*` 관리자 경로는 site_admin 역할만 접근 가능하고, legacy에 없는 `/sites/:unknown`은 placeholder 없이 not-found shell로 닫힌다
 - [x] 사용자 목록 REST: site admin 전용 `/api/v1/site/users`, 검색, 페이지네이션, 관리자 역할 토글, 계정 잠금/해제, 게스트 모드 토글, 비밀번호 재설정, 사용자 삭제(`/api/v1/site/users/:loginId` DELETE)
 - [x] 사용자 목록 UI core: legacy `/sites/userList` shell, state tabs, 검색, 페이지네이션, 관리자 역할 토글, 계정 잠금/해제, 게스트 모드 토글, 비밀번호 재설정, 사용자 삭제 modal/action
 - [x] 사용자 관리 direct aliases: legacy `/sites/toggleSiteAdminRole/:loginId`, `/sites/toggleAccountLock?loginId=&state=&query=`, `/sites/toggleGuestMode?loginId=&state=&query=`, `POST /:user`, `/sites/user/delete:id`, and `/sites/project/delete/:id` preserve site-admin/CSRF gates, state/query redirect targets, site-manager password reset JSON, only-manager delete guard, and project deletion redirect
@@ -1538,7 +1538,7 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/sites/mailList`                   | POST     | `POST /api/v1/site/mail-list`         | `sites/$pageName` massmail action             | implemented        |
 | `/sites/diagnostic`                 | GET      | `GET /api/v1/site/diagnostics`        | `sites/$pageName`                             | implemented        |
 | `/sites/unwatchUpdate`              | POST     | in-process update notification flag   | direct route                                  | implemented        |
-| `/sites/*`                         | GET      | —                                     | `sites/$pageName` placeholders                | remaining gap      |
+| `/sites/*`                         | GET      | —                                     | `sites/$pageName` unknown fallback            | no legacy catch-all; not-found |
 | `/-_-api/v1/*`                     | Various  | —                                     | —                                             | unsupported in app; migrator/deferred |
 | `/svn/*`                           | Various  | —                                     | —                                             | deferred           |
 | `/authenticate/:provider`          | GET      | —                                     | —                                             | deferred           |
