@@ -1316,36 +1316,41 @@ function ReviewThreadCards(props: {
   );
   return (
     <section className="review-wrap">
-      <ul className="nav nav-tabs">
-        <li className="active">
-          <a data-toggle="tab" href="#reviewcards-open">
-            {`issue.state.open ${openThreads.length}`}
-          </a>
-        </li>
-        <li>
-          <a data-toggle="tab" href="#reviewcards-closed">
-            {`issue.state.closed ${closedThreads.length}`}
-          </a>
-        </li>
-      </ul>
-      <div className="tab-content">
-        <div className="tab-pane active" id="reviewcards-open">
-          {openThreads.length === 0 ? (
-            <div className="warning-none">review.is.empty</div>
-          ) : (
-            openThreads.map((thread) => (
-              <ReviewThreadCard key={thread.id} pullRequest={props.pullRequest} thread={thread} />
-            ))
-          )}
-        </div>
-        <div className="tab-pane" id="reviewcards-closed">
-          {closedThreads.length === 0 ? (
-            <div className="warning-none">review.is.empty</div>
-          ) : (
-            closedThreads.map((thread) => (
-              <ReviewThreadCard key={thread.id} pullRequest={props.pullRequest} thread={thread} />
-            ))
-          )}
+      <div className="review-container">
+        <button className="ybtn ybtn-default btn-hide-reviewcards" type="button">
+          <i className="yobicon-maximize"></i>
+        </button>
+        <ul className="nav nav-tabs">
+          <li className="active">
+            <a data-toggle="tab" href="#reviewcards-open">
+              {`issue.state.open ${openThreads.length}`}
+            </a>
+          </li>
+          <li>
+            <a data-toggle="tab" href="#reviewcards-closed">
+              {`issue.state.closed ${closedThreads.length}`}
+            </a>
+          </li>
+        </ul>
+        <div className="tab-content review-list">
+          <div className="tab-pane active" id="reviewcards-open">
+            {openThreads.length === 0 ? (
+              <div className="warning-none">review.is.empty</div>
+            ) : (
+              openThreads.map((thread) => (
+                <ReviewThreadCard key={thread.id} pullRequest={props.pullRequest} thread={thread} />
+              ))
+            )}
+          </div>
+          <div className="tab-pane" id="reviewcards-closed">
+            {closedThreads.length === 0 ? (
+              <div className="warning-none">review.is.empty</div>
+            ) : (
+              closedThreads.map((thread) => (
+                <ReviewThreadCard key={thread.id} pullRequest={props.pullRequest} thread={thread} />
+              ))
+            )}
+          </div>
         </div>
       </div>
     </section>
@@ -1629,6 +1634,11 @@ export function PullRequestChangesPage(props: {
         >
           {pr?.conflict ? "Conflict" : (pr?.state ?? "")}
         </div>
+        {threads.length > 0 ? (
+          <button className="ybtn ybtn-default btn-show-reviewcards" type="button">
+            <i className="yobicon-restore"></i>
+          </button>
+        ) : null}
         {commits.length ? (
           <div className="btn-group auto mb10" id="commits">
             <button className="btn dropdown-toggle auto" data-toggle="dropdown" type="button">

@@ -762,9 +762,12 @@ test("renders selected outdated pull request commits with legacy change markers"
   await expect(commitPicker.locator("li.outdated")).toHaveCount(0);
   await expect(commitPicker.locator("li", { hasText: "abcdef1" })).toBeVisible();
   await expect(page.locator("#reviewcards-open .review-card.open")).toContainText("Initial review");
+  await expect(page.locator(".codediff-wrap .btn-show-reviewcards")).toBeVisible();
+  await expect(page.locator(".review-wrap .review-container .btn-hide-reviewcards")).toBeVisible();
   await expect(page.locator("#reviewcards-closed .review-card.closed.outdated")).toContainText(
     "Outdated review",
   );
+  await expect(page.locator(".review-wrap .review-list #reviewcards-closed")).toBeVisible();
   await expect(
     page.locator("#reviewcards-closed .review-card.closed.outdated .outdated-label"),
   ).toHaveText("review.outdated");
