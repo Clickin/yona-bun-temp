@@ -19,13 +19,14 @@ use http_body_util::BodyExt;
 use md5::{Digest, Md5};
 use pulldown_cmark::{html, CowStr, Event, Options, Parser};
 use runtime_config::normalize_base_path;
-use sea_orm::entity::prelude::DateTime;
+use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
 use serde::{Deserialize, Deserializer, Serialize};
 use session::{SessionConfig, SessionManager};
 use std::{
     collections::{HashMap, HashSet},
     path::{Path as StdPath, PathBuf},
     sync::{Mutex, OnceLock},
+    time::{Duration, SystemTime},
     vec,
 };
 
@@ -2766,6 +2767,88 @@ fn notification_mail_hide_addresses() -> bool {
         .unwrap_or(true)
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NotificationMailSchedulerConfig {
+    pub enabled: bool,
+    pub initial_delay_ms: u64,
+    pub interval_ms: u64,
+    pub delay_ms: i64,
+}
+
+impl Default for NotificationMailSchedulerConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            initial_delay_ms: 5_000,
+            interval_ms: 60_000,
+            delay_ms: 180_000,
+        }
+    }
+}
+
+pub fn notification_mail_scheduler_config_from_env() -> NotificationMailSchedulerConfig {
+    let defaults = NotificationMailSchedulerConfig::default();
+    NotificationMailSchedulerConfig {
+        enabled: notification_mail_scheduler_enabled(),
+        initial_delay_ms: notification_mail_duration_ms_env(
+            "YONA_NOTIFICATION_MAIL_INITIAL_DELAY",
+            defaults.initial_delay_ms,
+        ),
+        interval_ms: notification_mail_duration_ms_env(
+            "YONA_NOTIFICATION_MAIL_INTERVAL",
+            defaults.interval_ms,
+        )
+        .max(1),
+        delay_ms: notification_mail_duration_ms_env(
+            "YONA_NOTIFICATION_MAIL_DELAY",
+            defaults.delay_ms as u64,
+        )
+        .min(i64::MAX as u64) as i64,
+    }
+}
+
+fn notification_mail_scheduler_enabled() -> bool {
+    std::env::var("YONA_NOTIFICATION_MAIL_ENABLED")
+        .ok()
+        .map(|value| {
+            !matches!(
+                value.trim().to_ascii_lowercase().as_str(),
+                "0" | "false" | "no" | "off"
+            )
+        })
+        .unwrap_or(true)
+}
+
+fn notification_mail_duration_ms_env(name: &str, default_ms: u64) -> u64 {
+    std::env::var(name)
+        .ok()
+        .and_then(|value| parse_legacy_duration_ms(&value))
+        .unwrap_or(default_ms)
+}
+
+fn parse_legacy_duration_ms(value: &str) -> Option<u64> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let (number, multiplier) = if let Some(number) = trimmed.strip_suffix("ms") {
+        (number.trim(), 1)
+    } else if let Some(number) = trimmed.strip_suffix('s') {
+        (number.trim(), 1_000)
+    } else if let Some(number) = trimmed.strip_suffix('m') {
+        (number.trim(), 60_000)
+    } else if let Some(number) = trimmed.strip_suffix('h') {
+        (number.trim(), 3_600_000)
+    } else {
+        (trimmed, 1)
+    };
+
+    number
+        .parse::<u64>()
+        .ok()
+        .and_then(|amount| amount.checked_mul(multiplier))
+}
+
 fn notification_mail_recipient_limit() -> Option<usize> {
     std::env::var("YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT")
         .ok()
@@ -2878,6 +2961,56 @@ pub async fn deliver_due_notification_mails(
         delivered += 1;
     }
     Ok(delivered)
+}
+
+pub async fn deliver_notification_mail_scheduler_tick(
+    repository: &PilotRepository,
+    config: &NotificationMailSchedulerConfig,
+    public_origin: &str,
+    base_path: &str,
+) -> Result<usize, String> {
+    if !config.enabled {
+        return Ok(0);
+    }
+    deliver_due_notification_mails(
+        repository,
+        DateTimeUtc::from(SystemTime::now()).naive_utc(),
+        config.delay_ms,
+        public_origin,
+        base_path,
+    )
+    .await
+}
+
+pub fn spawn_notification_mail_scheduler(
+    repository: PilotRepository,
+    public_origin: impl Into<String>,
+    base_path: impl Into<String>,
+    config: NotificationMailSchedulerConfig,
+) -> Option<tokio::task::JoinHandle<()>> {
+    if !config.enabled {
+        return None;
+    }
+    let public_origin = public_origin.into();
+    let base_path = base_path.into();
+    Some(tokio::spawn(async move {
+        if config.initial_delay_ms > 0 {
+            tokio::time::sleep(Duration::from_millis(config.initial_delay_ms)).await;
+        }
+        loop {
+            if let Err(error) = deliver_notification_mail_scheduler_tick(
+                &repository,
+                &config,
+                &public_origin,
+                &base_path,
+            )
+            .await
+            {
+                tracing::warn!(%error, "notification mail scheduler tick failed");
+            }
+            tokio::time::sleep(Duration::from_millis(config.interval_ms)).await;
+        }
+    }))
 }
 
 fn configured_site_name() -> String {

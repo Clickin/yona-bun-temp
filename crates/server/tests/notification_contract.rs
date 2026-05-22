@@ -17,7 +17,9 @@ use yona_rust_persistence::{
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
-    create_router_with_app_repository, deliver_due_notification_mails, RuntimeConfig,
+    create_router_with_app_repository, deliver_due_notification_mails,
+    deliver_notification_mail_scheduler_tick, notification_mail_scheduler_config_from_env,
+    NotificationMailSchedulerConfig, RuntimeConfig,
 };
 
 mod rest_test_support;
@@ -514,6 +516,124 @@ async fn notification_contract_stages_mail_rows_and_drains_due_events() {
         notification_mail::Entity::find().count(&db).await.unwrap(),
         0
     );
+}
+
+#[tokio::test]
+async fn notification_contract_scheduler_config_and_tick_follow_legacy_defaults() {
+    let _guard = notification_mail_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_ENABLED");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_INITIAL_DELAY");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_INTERVAL");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_DELAY");
+    clear_test_outbox();
+
+    let defaults = notification_mail_scheduler_config_from_env();
+    assert_eq!(
+        defaults,
+        NotificationMailSchedulerConfig {
+            enabled: true,
+            initial_delay_ms: 5_000,
+            interval_ms: 60_000,
+            delay_ms: 180_000,
+        }
+    );
+
+    std::env::set_var("YONA_NOTIFICATION_MAIL_ENABLED", "false");
+    std::env::set_var("YONA_NOTIFICATION_MAIL_INITIAL_DELAY", "2s");
+    std::env::set_var("YONA_NOTIFICATION_MAIL_INTERVAL", "750ms");
+    std::env::set_var("YONA_NOTIFICATION_MAIL_DELAY", "0");
+    let disabled_config = notification_mail_scheduler_config_from_env();
+    assert_eq!(
+        disabled_config,
+        NotificationMailSchedulerConfig {
+            enabled: false,
+            initial_delay_ms: 2_000,
+            interval_ms: 750,
+            delay_ms: 0,
+        }
+    );
+
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (watcher_csrf, watcher_cookie, _) = register_user(app.clone(), "watcher").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Scheduled mail watched issue",
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/watch",
+            Some(&watcher_cookie),
+            Some(&watcher_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app,
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/state",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({ "state": "closed" })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        notification_mail::Entity::find().count(&db).await.unwrap(),
+        1
+    );
+
+    let delivered = deliver_notification_mail_scheduler_tick(
+        &repo,
+        &disabled_config,
+        "https://yona.example",
+        "/yona",
+    )
+    .await
+    .unwrap();
+    assert_eq!(delivered, 0);
+    assert_eq!(
+        notification_mail::Entity::find().count(&db).await.unwrap(),
+        1
+    );
+
+    let enabled_config = NotificationMailSchedulerConfig {
+        enabled: true,
+        initial_delay_ms: 2_000,
+        interval_ms: 750,
+        delay_ms: 0,
+    };
+    let delivered = deliver_notification_mail_scheduler_tick(
+        &repo,
+        &enabled_config,
+        "https://yona.example",
+        "/yona",
+    )
+    .await
+    .unwrap();
+    assert_eq!(delivered, 1);
+    assert_eq!(
+        notification_mail::Entity::find().count(&db).await.unwrap(),
+        0
+    );
+    assert_eq!(snapshot_test_outbox().len(), 1);
+    clear_test_outbox();
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_ENABLED");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_INITIAL_DELAY");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_INTERVAL");
+    std::env::remove_var("YONA_NOTIFICATION_MAIL_DELAY");
 }
 
 #[tokio::test]

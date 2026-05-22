@@ -4,7 +4,8 @@ use yona_rust_pilot_server::persistence::PilotRepository;
 use yona_rust_pilot_server::runtime_config::load_startup_config_from_env;
 use yona_rust_pilot_server::{
     create_router_with_repository, create_router_with_repository_and_embedded_assets,
-    create_router_with_repository_and_filesystem_assets, RuntimeConfig,
+    create_router_with_repository_and_filesystem_assets,
+    notification_mail_scheduler_config_from_env, spawn_notification_mail_scheduler, RuntimeConfig,
 };
 
 #[tokio::main]
@@ -22,6 +23,12 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let repository = PilotRepository::new(db);
+    let _notification_mail_scheduler = spawn_notification_mail_scheduler(
+        repository.clone(),
+        config.public_origin.clone(),
+        config.base_path.clone(),
+        notification_mail_scheduler_config_from_env(),
+    );
     let app = if startup.use_embedded_assets {
         create_router_with_repository_and_embedded_assets(config, repository)
     } else if let Some(asset_root) = startup.asset_root {
