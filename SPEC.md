@@ -359,7 +359,7 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
 - [x] `/user/files`는 legacy `userFiles` 화면의 `nav-tabs`, 검색 폼, `.attachment-files` 목록, preview/download/location/date anchors를 유지하고 `/api/v1/workspace/files`로 현재 사용자의 첨부 파일을 검색/페이지네이션한다
 - [ ] 프로필 편집에서 아바타 업로드 시 `/files` 엔드포인트로 멀티파트 업로드 후 크롭이 동작한다
 - [x] 프로필 수정과 복수 이메일 추가/삭제/인증/주 이메일 설정이 모두 동작하고 legacy direct profile/email mutation routes가 `/user/editform` redirect를 반환한다
-- [ ] 프로젝트별 알림 토글이 legacy의 `NEW_COMMENT` 기본 off 동작을 따른다
+- [x] 프로젝트별 알림 토글이 legacy의 `NEW_COMMENT` 기본 off 동작을 따른다
 - [x] API 토큰 재생성이 동작하고 새 토큰이 표시된다
 
 ---
@@ -407,11 +407,11 @@ GET   /organizations/:name/search                 → 조직 내 검색
 
 #### 검수 기준
 
-- [ ] 조직 이름 유효성: 영숫자, 대시, 밑줄, 마침표만 허용. 공백 불가. 길이 제한.
+- [x] 조직 이름 유효성: 영숫자, 대시, 밑줄, 마침표만 허용. 공백 불가. 길이 제한.
 - [ ] 조직 홈에서 소속 프로젝트가 legacy와 동일한 카드/리스트 형태로 표시된다
 - [ ] 멤버 정렬: org admin → org member → login_id ASC → 대기 요청 순 (legacy 동작)
-- [ ] 삭제 시 프로젝트가 존재하면 삭제 불가 (legacy guard 동작)
-- [ ] 가입 요청은 인증된 사용자이면서 현재 멤버가 아닌 경우에만 가능
+- [x] 삭제 시 프로젝트가 존재하면 삭제 불가 (legacy guard 동작)
+- [x] 가입 요청은 인증된 사용자이면서 현재 멤버가 아닌 경우에만 가능
 
 ---
 
