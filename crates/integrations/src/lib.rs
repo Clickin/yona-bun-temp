@@ -29,6 +29,12 @@ pub struct OutboundMail {
     pub to: String,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SmtpDeliveryConfig {
+    pub default_port: u16,
+    pub ssl_enabled: Option<bool>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WebhookHeaderRecord {
     pub name: String,
@@ -96,6 +102,14 @@ pub fn webhook_http_delivery_enabled() -> bool {
     read_bool_env("WEBHOOK_HTTP_DELIVERY_ENABLED")
 }
 
+pub fn smtp_delivery_config_from_env() -> SmtpDeliveryConfig {
+    let ssl_enabled = smtp_ssl_enabled_from_env();
+    SmtpDeliveryConfig {
+        default_port: smtp_default_port(ssl_enabled),
+        ssl_enabled,
+    }
+}
+
 pub fn deliver(mail: OutboundMail) -> Result<(), String> {
     if !smtp_enabled() {
         test_outbox().lock().unwrap().push(MailDeliveryRecord {
@@ -131,12 +145,16 @@ pub fn deliver(mail: OutboundMail) -> Result<(), String> {
 
     let host = configured_env_value(&["SMTP_HOST", "YONA_SMTP_HOST"])
         .ok_or_else(|| "SMTP_HOST is required.".to_string())?;
+    let smtp_config = smtp_delivery_config_from_env();
     let port = configured_env_value(&["SMTP_PORT", "YONA_SMTP_PORT"])
         .and_then(|value| value.parse::<u16>().ok())
-        .unwrap_or(587);
-    let mut builder = SmtpTransport::relay(&host)
-        .map_err(|error| format!("smtp relay configuration failed: {error}"))?
-        .port(port);
+        .unwrap_or(smtp_config.default_port);
+    let mut builder = match smtp_config.ssl_enabled {
+        Some(false) => SmtpTransport::builder_dangerous(&host),
+        Some(true) | None => SmtpTransport::relay(&host)
+            .map_err(|error| format!("smtp relay configuration failed: {error}"))?,
+    }
+    .port(port);
     let user = configured_env_value(&["SMTP_USER", "YONA_SMTP_USER"]);
     let pass = configured_env_value(&["SMTP_PASS", "YONA_SMTP_PASSWORD"]);
     if let (Some(user), Some(pass)) = (user, pass) {
@@ -264,11 +282,25 @@ fn parse_plain_http_url(value: &str) -> Result<PlainHttpUrl, String> {
 
 fn read_bool_env(name: &str) -> bool {
     std::env::var(name)
-        .map(|value| {
-            matches!(
-                value.trim().to_ascii_lowercase().as_str(),
-                "1" | "true" | "yes" | "on"
-            )
-        })
+        .map(|value| parse_bool_env_value(&value))
         .unwrap_or(false)
+}
+
+fn smtp_ssl_enabled_from_env() -> Option<bool> {
+    configured_env_value(&["SMTP_SSL", "YONA_SMTP_SSL"]).map(|value| parse_bool_env_value(&value))
+}
+
+fn smtp_default_port(ssl_enabled: Option<bool>) -> u16 {
+    match ssl_enabled {
+        Some(true) => 465,
+        Some(false) => 25,
+        None => 587,
+    }
+}
+
+fn parse_bool_env_value(value: &str) -> bool {
+    matches!(
+        value.trim().to_ascii_lowercase().as_str(),
+        "1" | "true" | "yes" | "on"
+    )
 }

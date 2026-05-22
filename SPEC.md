@@ -161,7 +161,7 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 - `YONA_AUTH_SOCIAL_LOGIN_ONLY`: 설정은 파싱하고 auth UI capability에 반영한다. Social-login-only UI gating은 수행할 수 있지만, OAuth provider 로그인 플로우는 deferred다. provider가 없거나 미지원이면 조용히 무시하지 말고 warning/unsupported state를 노출한다.
 - `YONA_LANGS`: 설정은 파싱하고 browser runtime config의 `supportedLanguages`로 보존한다. 1차 PoC에서는 legacy copy parity를 우선하며 동적 i18n runtime 전환은 deferred다.
 - `YONA_PROJECT_DEFAULT_MENUS`: 설정은 프로젝트 생성 시 `project_menu_setting` 기본 row와 create-form checkbox 기본값에 반영한다. settings 화면은 legacy menu checkbox mutation으로 `project_menu_setting`을 갱신한다.
-- `YONA_SMTP_HOST`, `YONA_SMTP_PORT`, `YONA_SMTP_USER`, `YONA_SMTP_PASSWORD`: Rust mail 설정/발송 경로에서 기존 `SMTP_*` 이름과 함께 인식한다. `smtp.ssl`의 정확한 delivery semantics와 notification batching은 mail delivery follow-up이다.
+- `YONA_SMTP_HOST`, `YONA_SMTP_PORT`, `YONA_SMTP_SSL`, `YONA_SMTP_USER`, `YONA_SMTP_PASSWORD`: Rust mail 설정/발송 경로에서 기존 `SMTP_*` 이름과 함께 인식한다. `YONA_SMTP_SSL=true`는 legacy `smtp.ssl=true`처럼 SMTPS wrapper transport를 사용하고, 명시적 false는 plain SMTP transport를 사용한다. notification template parity와 mailbox/reply threading은 mail delivery follow-up이다.
 - deferred 기능과 연결된 설정은 명시된 no-op/fallback/warning 동작 없이 조용히 무시하면 안 된다.
 
 ---
