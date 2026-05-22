@@ -169,6 +169,9 @@ function normalizeIssueDetailResponse(response: ReadIssueDetailResponse): ReadIs
       eventType: item.eventType ?? "",
       id: item.id ?? "0",
       kind: item.kind ?? "",
+      newValue: item.newValue ?? "",
+      oldValue: item.oldValue ?? "",
+      senderLoginId: item.senderLoginId ?? "",
       comment: item.comment
         ? {
             ...item.comment,

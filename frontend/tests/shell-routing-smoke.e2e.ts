@@ -420,6 +420,15 @@ test.beforeEach(async ({ page }) => {
         state: "open",
         timeline: [
           {
+            createdLabel: "1 minute ago",
+            eventType: "ISSUE_STATE_CHANGED",
+            id: 54,
+            kind: "event",
+            newValue: "closed",
+            oldValue: "open",
+            senderLoginId: "nori",
+          },
+          {
             comment: {
               attachments: [],
               authorAvatarUrl: "/avatars/nori.png",
@@ -439,6 +448,9 @@ test.beforeEach(async ({ page }) => {
             eventType: "",
             id: 55,
             kind: "comment",
+            newValue: "",
+            oldValue: "",
+            senderLoginId: "",
           },
         ],
         title: "Pilot issue",
@@ -999,6 +1011,9 @@ test("project issue routes render data-backed issue list filters and detail scre
   await expect(page.locator("#watch-button")).toHaveAttribute("data-watching", "false");
   await expect(page.locator("#vote.vote-wrap")).toContainText("Voters: 0");
   await expect(page.locator(".watcher-list")).toContainText("Watchers: 0");
+  await expect(page.locator("#event-54 .state.closed")).toContainText("issue.state.closed");
+  await expect(page.locator('#event-54 .date a[href="#event-54"]')).toContainText("1 minute ago");
+  await expect(page.locator("#event-54 .user-link")).toHaveAttribute("href", "/yona/nori");
   await expect(page.locator(".posting-history a")).toHaveAttribute(
     "href",
     "#-yona-posting-history",

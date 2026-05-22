@@ -687,6 +687,52 @@ h1 {
   border-top: 1px solid #ddd;
 }
 
+.issue-detail-page .comments .event {
+  position: relative;
+  padding: 10px 0;
+  color: #666;
+  border-bottom: 1px solid #eee;
+}
+
+.issue-detail-page .comments .event .state {
+  display: inline-block;
+  min-width: 70px;
+  margin-right: 8px;
+  padding: 2px 6px;
+  color: #fff;
+  text-align: center;
+  background: #777;
+  border-radius: 3px;
+}
+
+.issue-detail-page .comments .event .state.open {
+  background: #4b8f29;
+}
+
+.issue-detail-page .comments .event .state.closed {
+  background: #777;
+}
+
+.issue-detail-page .comments .event .state.changed,
+.issue-detail-page .comments .event .state.milestone-changed {
+  background: #67809f;
+}
+
+.issue-detail-page .comments .event .state.sharer-added,
+.issue-detail-page .comments .event .state.label-added {
+  background: #4b8f29;
+}
+
+.issue-detail-page .comments .event .state.sharer-deleted,
+.issue-detail-page .comments .event .state.label-deleted {
+  background: #b13427;
+}
+
+.issue-detail-page .comments .event .date {
+  float: right;
+  color: #999;
+}
+
 @media (max-width: 720px) {
   .issue-detail-page .board-body.row-fluid {
     display: block;

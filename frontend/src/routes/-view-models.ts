@@ -354,6 +354,9 @@ export interface ProjectIssueDetailViewModel {
     eventType: string;
     id: number;
     kind: string;
+    newValue: string;
+    oldValue: string;
+    senderLoginId: string;
   }>;
   title: string;
   viewerCanComment: boolean;

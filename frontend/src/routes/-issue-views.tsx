@@ -472,9 +472,11 @@ export function ProjectIssueDetailPage(props: {
                     {(issue?.timeline ?? []).map((item) => {
                       if (item.kind !== "comment" || !item.comment) {
                         return (
-                          <li className="event" key={`${item.kind}-${item.id}`}>
-                            <p>{`${item.eventType} ${item.createdLabel}`}</p>
-                          </li>
+                          <IssueTimelineEvent
+                            basePath={props.runtimeConfig.basePath}
+                            item={item}
+                            key={`${item.kind}-${item.id}`}
+                          />
                         );
                       }
 
@@ -699,6 +701,113 @@ export function ProjectIssueDetailPage(props: {
       </div>
     </main>
   );
+}
+
+type IssueTimelineEventItem = ProjectIssueDetailViewModel["timeline"][number];
+
+function IssueTimelineEvent(props: { basePath: string; item: IssueTimelineEventItem }) {
+  const item = props.item;
+  if (item.eventType === "ISSUE_BODY_CHANGED") {
+    return null;
+  }
+
+  const eventState = issueEventState(item);
+  const senderHref = item.senderLoginId
+    ? prefixBasePath(props.basePath, `/${item.senderLoginId}`)
+    : "#";
+
+  return (
+    <li className="event" id={`event-${item.id}`}>
+      <span className={eventState.className}>{eventState.label}</span>{" "}
+      <span className="event-message">
+        {issueEventMessageKey(item)}{" "}
+        {item.senderLoginId ? (
+          <a className="user-link" href={senderHref}>
+            {item.senderLoginId}
+          </a>
+        ) : null}
+      </span>
+      <span className="date">
+        <a href={`#event-${item.id}`}>{item.createdLabel}</a>
+      </span>
+    </li>
+  );
+}
+
+function issueEventState(item: IssueTimelineEventItem): { className: string; label: string } {
+  switch (item.eventType) {
+    case "ISSUE_STATE_CHANGED":
+      return {
+        className: `state ${item.newValue}`,
+        label: item.newValue ? `issue.state.${item.newValue}` : "issue.state",
+      };
+    case "ISSUE_ASSIGNEE_CHANGED":
+      return { className: "state changed", label: "issue.state.assigned" };
+    case "ISSUE_MILESTONE_CHANGED":
+      return { className: "state milestone-changed", label: "issue.update.milestone.id" };
+    case "ISSUE_REFERRED_FROM_COMMIT":
+    case "ISSUE_MOVED":
+    case "ISSUE_REFERRED_FROM_PULL_REQUEST":
+      return { className: "state changed", label: issueEventMessageKey(item) };
+    case "ISSUE_SHARER_CHANGED":
+      return issueAddDeleteState(item, "sharer-added", "sharer-deleted", "issue.sharer");
+    case "ISSUE_LABEL_CHANGED":
+      return issueAddDeleteState(
+        item,
+        "label-added",
+        "label-deleted",
+        issueIsAddingEvent(item)
+          ? "issue.event.label.added.title"
+          : "issue.event.label.deleted.title",
+      );
+    default:
+      return { className: "state changed", label: item.eventType };
+  }
+}
+
+function issueAddDeleteState(
+  item: IssueTimelineEventItem,
+  addClassName: string,
+  deleteClassName: string,
+  label: string,
+): { className: string; label: string } {
+  if (issueIsAddingEvent(item)) {
+    return { className: `state ${addClassName}`, label };
+  }
+  if (issueIsDeletingEvent(item)) {
+    return { className: `state ${deleteClassName}`, label };
+  }
+  return { className: "state", label: "" };
+}
+
+function issueIsAddingEvent(item: IssueTimelineEventItem): boolean {
+  return item.oldValue.trim() === "" && item.newValue.trim() !== "";
+}
+
+function issueIsDeletingEvent(item: IssueTimelineEventItem): boolean {
+  return item.newValue.trim() === "" && item.oldValue.trim() !== "";
+}
+
+function issueEventMessageKey(item: IssueTimelineEventItem): string {
+  switch (item.eventType) {
+    case "ISSUE_STATE_CHANGED":
+      return item.newValue ? `issue.event.${item.newValue}` : "ISSUE_STATE_CHANGED";
+    case "ISSUE_ASSIGNEE_CHANGED":
+      return item.newValue ? "issue.event.assigned" : "issue.event.unassigned";
+    case "ISSUE_MILESTONE_CHANGED":
+      return "issue.event.milestone.changed";
+    case "ISSUE_REFERRED_FROM_COMMIT":
+    case "ISSUE_REFERRED_FROM_PULL_REQUEST":
+      return "issue.event.referred";
+    case "ISSUE_MOVED":
+      return "issue.event.moved";
+    case "ISSUE_SHARER_CHANGED":
+      return issueIsAddingEvent(item) ? "issue.event.sharer.added" : "issue.event.sharer.deleted";
+    case "ISSUE_LABEL_CHANGED":
+      return issueIsAddingEvent(item) ? "issue.event.label.added" : "issue.event.label.deleted";
+    default:
+      return item.newValue ? `${item.newValue} by` : item.eventType;
+  }
 }
 
 function commentAgreementLabel(count: number): string {

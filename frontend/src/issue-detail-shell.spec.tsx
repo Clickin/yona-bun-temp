@@ -67,6 +67,57 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="ybtn ybtn-danger"');
     expect(html).toContain('data-request-method="delete"');
   });
+
+  it("renders legacy event timeline anchors and hides body-change events", () => {
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          timeline: [
+            {
+              createdLabel: "1 minute ago",
+              eventType: "ISSUE_STATE_CHANGED",
+              id: 17,
+              kind: "event",
+              newValue: "closed",
+              oldValue: "open",
+              senderLoginId: "owner",
+            },
+            {
+              createdLabel: "now",
+              eventType: "ISSUE_LABEL_CHANGED",
+              id: 18,
+              kind: "event",
+              newValue: "bug",
+              oldValue: "",
+              senderLoginId: "owner",
+            },
+            {
+              createdLabel: "now",
+              eventType: "ISSUE_BODY_CHANGED",
+              id: 19,
+              kind: "event",
+              newValue: "new body",
+              oldValue: "old body",
+              senderLoginId: "owner",
+            },
+          ],
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+
+    expect(html).toContain('class="event" id="event-17"');
+    expect(html).toContain('class="state closed"');
+    expect(html).toContain("issue.event.closed");
+    expect(html).toContain('href="/yona/owner"');
+    expect(html).toContain('class="date"><a href="#event-17">1 minute ago</a></span>');
+    expect(html).toContain('class="event" id="event-18"');
+    expect(html).toContain('class="state label-added"');
+    expect(html).toContain("issue.event.label.added");
+    expect(html).not.toContain('id="event-19"');
+  });
 });
 
 const projectDetail: ProjectDetailViewModel = {
