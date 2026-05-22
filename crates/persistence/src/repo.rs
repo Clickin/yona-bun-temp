@@ -11477,6 +11477,15 @@ impl AppRepository {
         &self,
         row: posting_comment::Model,
     ) -> Result<PostingCommentRecord, DbErr> {
+        let via_email = original_email::Entity::find()
+            .filter(
+                original_email::Column::ResourceType
+                    .eq(Some(BOARD_COMMENT_ATTACHMENT_CONTAINER.to_string())),
+            )
+            .filter(original_email::Column::ResourceId.eq(Some(row.id.to_string())))
+            .one(&self.db)
+            .await?
+            .is_some();
         Ok(PostingCommentRecord {
             attachments: self
                 .list_issue_attachments(BOARD_COMMENT_ATTACHMENT_CONTAINER, row.id)
@@ -11490,6 +11499,7 @@ impl AppRepository {
             created_label: format_workspace_date_label(row.created_date),
             id: row.id,
             parent_comment_id: row.parent_comment_id,
+            via_email,
         })
     }
 

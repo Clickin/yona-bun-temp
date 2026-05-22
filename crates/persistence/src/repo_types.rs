@@ -129,6 +129,7 @@ pub struct PostingCommentRecord {
     pub created_label: String,
     pub id: i64,
     pub parent_comment_id: Option<i64>,
+    pub via_email: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -29,6 +29,7 @@ export type BoardPostComment = {
   createdLabel: string;
   id: string;
   parentCommentId: string;
+  viaEmail: boolean;
 };
 
 export type BoardPostListItem = {
@@ -302,6 +303,7 @@ function normalizePostDetail(response: Partial<BoardPostDetail>): BoardPostDetai
       createdLabel: comment.createdLabel ?? "",
       id: comment.id ?? "",
       parentCommentId: comment.parentCommentId ?? "",
+      viaEmail: comment.viaEmail ?? false,
     })),
     id: response.id ?? "",
     isWatching: response.isWatching ?? false,

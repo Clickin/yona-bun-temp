@@ -4,12 +4,12 @@ use std::sync::Arc;
 use axum::body::Body;
 use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
-use sea_orm::Database;
+use sea_orm::{ActiveModelTrait, Database, DatabaseConnection, NotSet, Set};
 use serde_json::json;
 use tokio::sync::Barrier;
 use tower::ServiceExt;
 use yona_rust_persistence::{
-    AppRepository, CreateOrganizationInput, CreatePostingInput, CreateProjectInput,
+    original_email, AppRepository, CreateOrganizationInput, CreatePostingInput, CreateProjectInput,
     PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
@@ -17,12 +17,12 @@ use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;
 
-async fn build_app_with_repository() -> (axum::Router, AppRepository) {
+async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
         .expect("sqlite connection");
     Migrator::fresh(&db).await.expect("fresh migration");
-    let app_repo = AppRepository::new(db);
+    let app_repo = AppRepository::new(db.clone());
     let app = create_router_with_app_repository(
         RuntimeConfig {
             base_path: "/yona".to_string(),
@@ -31,7 +31,7 @@ async fn build_app_with_repository() -> (axum::Router, AppRepository) {
         app_repo.clone(),
     );
 
-    (app, app_repo)
+    (app, app_repo, db)
 }
 
 async fn bootstrap(app: axum::Router) -> (String, String) {
@@ -199,7 +199,7 @@ async fn create_label(app: axum::Router, cookie: &str, csrf: &str) -> String {
 
 #[tokio::test]
 async fn board_contract_manages_project_posts_comments_watch_and_notifications() {
-    let (app, _) = build_app_with_repository().await;
+    let (app, _, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
     let (_, guest_cookie, _) = register_user(app.clone(), "guest").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
@@ -380,6 +380,30 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
         .contains("title=\"Board linked issue\""));
 
     let comment_id = commented["comments"][0]["id"].as_str().unwrap();
+    original_email::ActiveModel {
+        id: NotSet,
+        message_id: Set(Some("<board-comment-1@example.com>".to_string())),
+        resource_type: Set(Some("NONISSUE_COMMENT".to_string())),
+        resource_id: Set(Some(comment_id.to_string())),
+        handled_date: Set(None),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    let via_email_detail = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/posts/1",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(via_email_detail["comments"][0]["viaEmail"], true);
+
     let edited_comment = ok_json(
         rest(
             app.clone(),
@@ -622,7 +646,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
 
 #[tokio::test]
 async fn board_contract_preserves_legacy_acl_for_project_group_and_public_users() {
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
     let (public_csrf, public_cookie, public_id) = register_user(app.clone(), "public").await;
@@ -843,7 +867,7 @@ async fn board_contract_preserves_legacy_acl_for_project_group_and_public_users(
 
 #[tokio::test]
 async fn board_contract_allocates_unique_post_numbers_under_concurrent_create() {
-    let (app, repo) = build_app_with_repository().await;
+    let (app, repo, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf).await;
     let task_count = 24;

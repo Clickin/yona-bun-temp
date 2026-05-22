@@ -923,7 +923,7 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 타입 토글
 
 - [x] 알림 목록: legacy `/notification` 화면과 `/notifications` full-page alias가 `page-wrap-outer`, `page-wrap`, `content-container`, `main-stream`, `activity-streams notification-wrap`, `notification-stream`, `data-toggle="learnmore"`, empty, and More anchors 표시
 - [x] 알림 목록 event projection: legacy `partial_notifications.scala.html` icon class와 `NotificationEvent.getMessage`의 PR state/review/thread message key를 core issue/post/PR/review/commit notification에 반영한다
-- [~] 이메일 알림: startup scheduler가 legacy 기본값(`notification.bymail.enabled` true, initdelay 5000ms, interval 60000ms, delay 180000ms)과 `YONA_NOTIFICATION_MAIL_*` override를 적용해 due `notification_mail` row를 outbound mail로 fan-out하고 queue row를 삭제한다. legacy `application.allowed.sending.mail.domains` / `YONA_ALLOWED_MAIL_DOMAINS` 도메인 필터, 기본 BCC hide-address mode, `application.notification.bymail.recipientLimit` / `YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT` partitioning, and preferred-language receiver grouping도 적용한다. inbound `original_email` issue-comment marker는 issue detail/timeline API와 legacy `data-via-email` comment body anchor에 노출한다. full legacy mail template과 board/code/review via-email marker는 gap이다
+- [~] 이메일 알림: startup scheduler가 legacy 기본값(`notification.bymail.enabled` true, initdelay 5000ms, interval 60000ms, delay 180000ms)과 `YONA_NOTIFICATION_MAIL_*` override를 적용해 due `notification_mail` row를 outbound mail로 fan-out하고 queue row를 삭제한다. legacy `application.allowed.sending.mail.domains` / `YONA_ALLOWED_MAIL_DOMAINS` 도메인 필터, 기본 BCC hide-address mode, `application.notification.bymail.recipientLimit` / `YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT` partitioning, and preferred-language receiver grouping도 적용한다. inbound `original_email` issue/board comment markers는 issue detail/timeline 및 board post detail API와 legacy `data-via-email` comment body anchor에 노출한다. full legacy mail template과 code/review via-email marker는 gap이다
 - [x] 이메일 알림 준비: notification event 생성 시 `notification_mail` queue row를 만들고 due row drain helper가 created ASC로 event id를 반환한 뒤 queue row를 삭제한다
 - [x] 알림 토글: 프로젝트별 이벤트 타입(NEW_ISSUE, NEW_POSTING, NEW_COMMENT 등) on/off
 - [ ] 알림 이메일: legacy 메일 포맷(제목, 본문, 링크)과 동일
@@ -1567,7 +1567,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Code follow-up: multi-line ranged code-comment selection polish, inline code-comment edit, SVN executable repository/serve integration
 - PullRequest follow-up: in-app merge conflict resolution workflow and multi-line inline review selection polish
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
-- Notification: full mail notification template parity, mailbox/reply threading, and board/code/review via-email markers after issue-comment `original_email` marker parity
+- Notification: full mail notification template parity, mailbox/reply threading, and code/review via-email markers after issue/board comment `original_email` marker parity
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope
 - Webhook follow-up: HTTPS production delivery hardening, optional signature compatibility if external evidence requires it, and delivery history/retry behavior
 - Admin: users/projects/site-admin/account-lock/test-mail surfaces

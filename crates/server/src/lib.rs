@@ -6328,6 +6328,7 @@ struct RestPostComment {
     created_label: String,
     id: String,
     parent_comment_id: String,
+    via_email: bool,
 }
 
 #[derive(Serialize)]
@@ -23475,6 +23476,7 @@ fn rest_post_comment_from_record(
         created_label: comment.created_label.clone(),
         id: comment.id.to_string(),
         parent_comment_id: optional_i64_string(comment.parent_comment_id),
+        via_email: comment.via_email,
     }
 }
 

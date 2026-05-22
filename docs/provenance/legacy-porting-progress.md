@@ -328,6 +328,7 @@ Interpretation:
 - [x] Draft-time merge
 - [x] Recipient limit
 - [x] Issue comment `original_email` / `data-via-email` marker parity
+- [x] Board comment `original_email` / `data-via-email` marker parity
 - [ ] Mailbox/reply threading parity
 
 ## Webhooks

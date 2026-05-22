@@ -320,7 +320,20 @@ describe("file-route parity harness", () => {
           authorId: "1",
           bodyHtml: "<p>body</p>",
           bodyMarkdown: "body",
-          comments: [],
+          comments: [
+            {
+              attachments: [],
+              authorId: "1",
+              authorLabel: "Owner User",
+              authorLoginId: "owner",
+              contentsHtml: "<p>via mail</p>",
+              contentsMarkdown: "via mail",
+              createdLabel: "now",
+              id: "9",
+              parentCommentId: "",
+              viaEmail: true,
+            },
+          ],
           id: "16",
           isWatching: false,
           permissions: {
@@ -339,6 +352,7 @@ describe("file-route parity harness", () => {
     );
     expect(detailHtml).not.toContain(">Watch<");
     expect(detailHtml).not.toContain("Leave a comment");
+    expect(detailHtml).toContain('data-via-email="true"');
 
     const orgHtml = renderToStaticMarkup(
       <OrganizationBoardListPage
