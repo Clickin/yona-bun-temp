@@ -214,6 +214,7 @@ pub struct NotificationListRecord {
 pub struct NotificationMailDeliveryRecord {
     pub item: NotificationItemRecord,
     pub recipient_email: String,
+    pub recipient_language: String,
     pub recipient_login_id: String,
 }
 

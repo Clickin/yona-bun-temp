@@ -2902,18 +2902,22 @@ pub async fn deliver_due_notification_mails(
         .collect();
     let mut delivered = 0;
     if notification_mail_hide_addresses() {
-        let mut grouped: Vec<(persistence::NotificationItemRecord, Vec<String>)> = Vec::new();
+        let mut grouped: Vec<(persistence::NotificationItemRecord, String, Vec<String>)> =
+            Vec::new();
         for delivery in deliveries {
-            if let Some((_, recipients)) = grouped
-                .iter_mut()
-                .find(|(item, _)| item.id == delivery.item.id)
-            {
+            if let Some((_, _, recipients)) = grouped.iter_mut().find(|(item, language, _)| {
+                item.id == delivery.item.id && *language == delivery.recipient_language
+            }) {
                 recipients.push(delivery.recipient_email);
             } else {
-                grouped.push((delivery.item, vec![delivery.recipient_email]));
+                grouped.push((
+                    delivery.item,
+                    delivery.recipient_language,
+                    vec![delivery.recipient_email],
+                ));
             }
         }
-        for (item, mut bcc) in grouped {
+        for (item, _, mut bcc) in grouped {
             bcc.sort();
             bcc.dedup();
             if bcc.is_empty() {

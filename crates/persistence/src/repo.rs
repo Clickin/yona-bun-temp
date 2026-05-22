@@ -9780,18 +9780,24 @@ impl AppRepository {
             for receiver in receivers {
                 if let Some(user) = self.find_user_model_by_id(receiver.n4user_id).await? {
                     let email = user.email.clone().unwrap_or_default().trim().to_string();
+                    let language = user.lang.clone().unwrap_or_default().trim().to_string();
                     if n4user_is_active(&user) && !email.is_empty() {
-                        recipients.push((user.login_id.unwrap_or_default(), email));
+                        recipients.push((user.login_id.unwrap_or_default(), email, language));
                     }
                 }
             }
-            recipients
-                .sort_by(|left, right| left.1.cmp(&right.1).then_with(|| left.0.cmp(&right.0)));
+            recipients.sort_by(|left, right| {
+                left.1
+                    .cmp(&right.1)
+                    .then_with(|| left.0.cmp(&right.0))
+                    .then_with(|| left.2.cmp(&right.2))
+            });
             recipients.dedup_by(|left, right| left.1 == right.1);
-            for (recipient_login_id, recipient_email) in recipients {
+            for (recipient_login_id, recipient_email, recipient_language) in recipients {
                 deliveries.push(NotificationMailDeliveryRecord {
                     item: item.clone(),
                     recipient_email,
+                    recipient_language,
                     recipient_login_id,
                 });
             }
