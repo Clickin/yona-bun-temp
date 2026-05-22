@@ -20,10 +20,16 @@ export const apiQueryKeys = {
         "issue-references",
         { query: input.query },
       ] as const,
-    pullRequestChanges: (ownerName: string, projectName: string, pullRequestNumber: number) =>
+    pullRequestChanges: (
+      ownerName: string,
+      projectName: string,
+      pullRequestNumber: number,
+      input: { commitId?: string } = {},
+    ) =>
       [
         ...apiQueryKeys.project.pullRequestDetail(ownerName, projectName, pullRequestNumber),
         "changes",
+        { commitId: input.commitId ?? "" },
       ] as const,
     pullRequestDetail: (ownerName: string, projectName: string, pullRequestNumber: number) =>
       [

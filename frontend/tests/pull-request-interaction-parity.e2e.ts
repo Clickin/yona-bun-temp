@@ -226,6 +226,7 @@ test.beforeEach(async ({ page }) => {
       const url = new URL(route.request().url());
       const method = route.request().method();
       if (url.pathname.endsWith("/changes")) {
+        const selectedCommitId = url.searchParams.get("commitId");
         await route.fulfill({
           body: JSON.stringify({
             commits: [
@@ -249,7 +250,10 @@ test.beforeEach(async ({ page }) => {
             files: [
               {
                 path: "src/lib.rs",
-                patch: "@@ -1,2 +1,2 @@\n-old line\n+new line\n same line",
+                patch:
+                  selectedCommitId === "123456abcdef"
+                    ? "@@ -1,2 +1,2 @@\n-old prior line\n+new prior line\n same line"
+                    : "@@ -1,2 +1,2 @@\n-old line\n+new line\n same line",
               },
             ],
             pullRequest,
@@ -726,18 +730,19 @@ test("creates a multi-line inline review from selected diff text", async ({ page
   });
 });
 
-test("renders outdated pull request commits with legacy commit dropdown markers", async ({
+test("renders selected outdated pull request commits with legacy change markers", async ({
   page,
 }) => {
-  await page.goto("/yona/admin/projectYobi/pullRequest/9/changes");
+  await page.goto("/yona/admin/projectYobi/pullRequest/9/changes/123456abcdef");
 
   const commitPicker = page.locator("#commits");
   await expect(commitPicker).toBeVisible();
-  await expect(commitPicker.locator(".commit-hash", { hasText: "abcdef1" })).toBeVisible();
+  await expect(commitPicker.locator(".d-label .commit-hash")).toHaveText("123456a");
+  await expect(commitPicker.locator(".d-label .outdated-label")).toHaveText("review.outdated");
 
-  const outdatedCommit = commitPicker.locator("li.outdated", { hasText: "123456a" });
-  await expect(outdatedCommit).toBeVisible();
-  await expect(outdatedCommit.locator(".outdated-label")).toHaveText("review.outdated");
+  await expect(commitPicker.locator("li.outdated")).toHaveCount(0);
+  await expect(commitPicker.locator("li", { hasText: "abcdef1" })).toBeVisible();
+  await expect(page.locator(".diff-body")).toContainText("new prior line");
 });
 
 test("shows legacy conflict guidance and disables merge accept for conflicted pull requests", async ({

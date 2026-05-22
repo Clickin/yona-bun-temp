@@ -7262,6 +7262,12 @@ struct RestPullRequestFormQuery {
     to_project_id: i64,
 }
 
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestPullRequestChangesQuery {
+    commit_id: String,
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RestPullRequestCreateBody {
@@ -9928,6 +9934,7 @@ fn build_rest_pull_request_router(service: PilotServiceImpl) -> Router {
             get({
                 let service = service.clone();
                 move |headers: HeaderMap,
+                      Query(query): Query<RestPullRequestChangesQuery>,
                       Path((owner_name, project_name, pull_request_number)): Path<(
                     String,
                     String,
@@ -9940,6 +9947,7 @@ fn build_rest_pull_request_router(service: PilotServiceImpl) -> Router {
                             owner_name,
                             project_name,
                             pull_request_number,
+                            query,
                             service,
                         )
                         .await
@@ -17109,6 +17117,7 @@ async fn rest_read_pull_request_changes(
     owner_name: String,
     project_name: String,
     pull_request_number: i64,
+    query: RestPullRequestChangesQuery,
     service: PilotServiceImpl,
 ) -> Result<Json<RestPullRequestChangesResponse>, RestRouteError> {
     let repository = rest_repository(&service)?;
@@ -17148,19 +17157,49 @@ async fn rest_read_pull_request_changes(
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)?
     };
+    let selected_commit_id = query.commit_id.trim();
+    let known_commit_state_by_id: HashMap<String, String> = detail
+        .commits
+        .iter()
+        .map(|commit| (commit.commit_id.clone(), commit.state.clone()))
+        .collect();
     let (commits, files) = if diff.no_head {
         (Vec::new(), Vec::new())
     } else {
-        (
-            diff.commits
-                .into_iter()
-                .map(rest_pull_request_commit_from_vcs_record)
-                .collect(),
+        let commits: Vec<RestPullRequestCommit> = diff
+            .commits
+            .into_iter()
+            .map(|record| {
+                rest_pull_request_commit_from_vcs_record_with_state(
+                    record,
+                    &known_commit_state_by_id,
+                )
+            })
+            .collect();
+        let files = if selected_commit_id.is_empty() {
             diff.files
                 .into_iter()
                 .map(rest_pull_request_changed_file_from_vcs_record)
-                .collect(),
-        )
+                .collect()
+        } else if detail
+            .commits
+            .iter()
+            .any(|commit| commit.commit_id == selected_commit_id)
+            || commits
+                .iter()
+                .any(|commit| commit.commit_id == selected_commit_id)
+        {
+            yona_rust_vcs::read_commit_detail(&repo_path, selected_commit_id, None, "")
+                .map_err(code_browser_error)
+                .map_err(RestRouteError::from_connect_error)?
+                .files
+                .into_iter()
+                .map(rest_pull_request_changed_file_from_code_commit_record)
+                .collect()
+        } else {
+            return Err(RestRouteError::not_found("pull request commit not found"));
+        };
+        (commits, files)
     };
     Ok(Json(RestPullRequestChangesResponse {
         commits,
@@ -28966,16 +29005,31 @@ fn rest_pull_request_commit_from_record(
     }
 }
 
-fn rest_pull_request_commit_from_vcs_record(
+fn rest_pull_request_commit_from_vcs_record_with_state(
     record: yona_rust_vcs::PullRequestDiffCommitRecord,
+    known_commit_state_by_id: &HashMap<String, String>,
 ) -> RestPullRequestCommit {
+    let state = known_commit_state_by_id
+        .get(&record.commit_id)
+        .filter(|state| !state.trim().is_empty())
+        .cloned()
+        .unwrap_or_else(|| "CURRENT".to_string());
     RestPullRequestCommit {
         author_date_label: record.author_date_label,
         author_email: record.author_email,
         commit_id: record.commit_id,
         commit_message: record.commit_message,
         commit_short_id: record.commit_short_id,
-        state: String::new(),
+        state,
+    }
+}
+
+fn rest_pull_request_changed_file_from_code_commit_record(
+    record: CodeCommitFileDiffRecord,
+) -> RestPullRequestChangedFile {
+    RestPullRequestChangedFile {
+        path: record.path,
+        patch: record.patch,
     }
 }
 

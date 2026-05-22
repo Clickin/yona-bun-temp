@@ -1002,6 +1002,54 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert!(created_text.contains("[projectYobi] owner"));
     assert!(created_text.contains("notification.type.new.pullrequest"));
     assert!(created_text.contains("/yona/owner/projectYobi/pullRequest/1|#1: Interaction parity"));
+    let repo_path = data_root.join("repo").join(format!("{}.git", project.id));
+    let base_commit_id = git_dir_output(&repo_path, &["rev-parse", "refs/heads/main"])
+        .trim()
+        .to_string();
+    let head_commit_id = git_dir_output(&repo_path, &["rev-parse", "refs/heads/topic/pr"])
+        .trim()
+        .to_string();
+    db.execute(Statement::from_sql_and_values(
+        db.get_database_backend(),
+        "UPDATE pull_request SET merged_commit_id_from = ?, merged_commit_id_to = ? WHERE id = ?",
+        vec![
+            base_commit_id.into(),
+            head_commit_id.into(),
+            created["id"].as_i64().unwrap().into(),
+        ],
+    ))
+    .await
+    .expect("seed PR diff endpoints");
+    let all_changes = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/changes",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(all_changes["commits"][0]["state"], "CURRENT");
+    let created_commit_id = all_changes["commits"][0]["commitId"]
+        .as_str()
+        .expect("created PR changes commit id")
+        .to_string();
+    let specific_change = response_json(
+        rest_get(
+            app.clone(),
+            &format!(
+                "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/1/changes?commitId={created_commit_id}"
+            ),
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(specific_change["commits"][0]["state"], "CURRENT");
+    assert!(specific_change["files"][0]["patch"]
+        .as_str()
+        .unwrap()
+        .contains("+topic"));
 
     let duplicate = response_json(
         rest_json(

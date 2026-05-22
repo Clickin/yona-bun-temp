@@ -29,6 +29,34 @@ export const Route = createFileRoute("/$owner/$projectName/pullRequest/$pullRequ
 
 function PullRequestChangesRouteComponent() {
   const { owner, projectName, pullRequestNumber } = Route.useParams();
+  const selectedCommitId = selectedCommitIdFromPath(window.location.pathname, pullRequestNumber);
+  return (
+    <PullRequestChangesRouteContent
+      owner={owner}
+      projectName={projectName}
+      pullRequestNumber={pullRequestNumber}
+      selectedCommitId={selectedCommitId}
+    />
+  );
+}
+
+function selectedCommitIdFromPath(pathname: string, pullRequestNumber: string) {
+  const marker = `/pullRequest/${pullRequestNumber}/changes/`;
+  const markerIndex = pathname.indexOf(marker);
+  if (markerIndex < 0) {
+    return undefined;
+  }
+  const encoded = pathname.slice(markerIndex + marker.length).split("/")[0] ?? "";
+  return encoded ? decodeURIComponent(encoded) : undefined;
+}
+
+export function PullRequestChangesRouteContent(props: {
+  owner: string;
+  projectName: string;
+  pullRequestNumber: string;
+  selectedCommitId?: string;
+}) {
+  const { owner, projectName, pullRequestNumber, selectedCommitId } = props;
   const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
   const parsedNumber = Number(pullRequestNumber);
@@ -42,6 +70,7 @@ function PullRequestChangesRouteComponent() {
     owner,
     projectName,
     parsedNumber,
+    { commitId: selectedCommitId },
   );
   const containerQuery = useQuery({
     queryFn: () => readProjectContainer(runtimeConfig, owner, projectName),
@@ -52,6 +81,7 @@ function PullRequestChangesRouteComponent() {
       ownerName: owner,
       projectName,
       pullRequestNumber: parsedNumber,
+      commitId: selectedCommitId,
     }),
   );
   const error = containerQuery.error ?? changesQuery.error;
@@ -240,6 +270,7 @@ function PullRequestChangesRouteComponent() {
       changes={changesQuery.data}
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       runtimeConfig={runtimeConfig}
+      selectedCommitId={selectedCommitId}
       onCommentDelete={async (commentId) => {
         await deleteCommentMutation.mutateAsync(commentId);
       }}

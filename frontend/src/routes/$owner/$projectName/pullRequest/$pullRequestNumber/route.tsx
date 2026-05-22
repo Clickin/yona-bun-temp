@@ -36,7 +36,9 @@ export const Route = createFileRoute("/$owner/$projectName/pullRequest/$pullRequ
 
 function PullRequestDetailRouteComponent() {
   const isChildRoute =
-    window.location.pathname.endsWith("/changes") || window.location.pathname.endsWith("/editform");
+    window.location.pathname.endsWith("/changes") ||
+    window.location.pathname.includes("/changes/") ||
+    window.location.pathname.endsWith("/editform");
 
   if (isChildRoute) {
     return <Outlet />;

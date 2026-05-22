@@ -82,15 +82,23 @@ function pullRequestChangesCommitHref(
     pullRequest.pullRequestNumber,
     "changes",
   );
-  return commitId ? `${changesHref}?commitId=${encodeURIComponent(commitId)}` : changesHref;
+  return commitId ? `${changesHref}/${encodeURIComponent(commitId)}` : changesHref;
 }
 
 function pullRequestCommitTitle(commit: PullRequestCommitViewModel) {
   return (commit.commitMessage || "").split("\n")[0] || commit.commitId;
 }
 
+function pullRequestCommitShortId(commitId: string) {
+  return commitId.slice(0, 7) || commitId;
+}
+
 function isOutdatedPullRequestCommit(commit: PullRequestCommitViewModel) {
   return commit.state.trim().toUpperCase() === "PRIOR";
+}
+
+function isSelectablePullRequestCommit(commit: PullRequestCommitViewModel) {
+  return !isOutdatedPullRequestCommit(commit);
 }
 
 function diffAnchorId(path: string) {
@@ -1258,6 +1266,7 @@ export function PullRequestChangesPage(props: {
   changes: PullRequestChangesResponse | undefined;
   detail: ProjectDetailViewModel | null;
   runtimeConfig: RuntimeConfig;
+  selectedCommitId?: string;
   onCommentDelete?: (commentId: number) => Promise<void>;
   onCommentUpdate?: (
     commentId: number,
@@ -1272,6 +1281,13 @@ export function PullRequestChangesPage(props: {
   const pr = props.changes?.pullRequest;
   const files = props.changes?.files ?? [];
   const threads = props.changes?.threads ?? [];
+  const commits = props.changes?.commits ?? [];
+  const selectedCommit = props.selectedCommitId
+    ? [...commits, ...(pr?.commits ?? [])].find(
+        (commit) => commit.commitId === props.selectedCommitId,
+      )
+    : undefined;
+  const selectableCommits = commits.filter(isSelectablePullRequestCommit);
   const [inlineDraft, setInlineDraft] = React.useState<InlineReviewDraft | null>(null);
   const [inlineCommentText, setInlineCommentText] = React.useState("");
   const [inlineAttachmentIds, setInlineAttachmentIds] = React.useState<number[]>([]);
@@ -1489,10 +1505,38 @@ export function PullRequestChangesPage(props: {
         >
           {pr?.conflict ? "Conflict" : (pr?.state ?? "")}
         </div>
-        {props.changes?.commits.length ? (
+        {commits.length ? (
           <div className="btn-group auto mb10" id="commits">
             <button className="btn dropdown-toggle auto" data-toggle="dropdown" type="button">
-              <span className="d-label">pullRequest.changes.all</span>
+              <span className="d-label">
+                {selectedCommit ? (
+                  <>
+                    <strong className="blue-txt mr10 commit-hash">
+                      {selectedCommit.commitShortId ||
+                        pullRequestCommitShortId(selectedCommit.commitId)}
+                    </strong>
+                    <span>
+                      {pullRequestCommitTitle(selectedCommit)}
+                      {isOutdatedPullRequestCommit(selectedCommit) ? (
+                        <>
+                          {" "}
+                          <span className="outdated-label">review.outdated</span>
+                        </>
+                      ) : null}
+                    </span>
+                  </>
+                ) : props.selectedCommitId ? (
+                  <>
+                    pullRequest.changes.all <span className="outdated-label">review.outdated</span>
+                    {" - "}
+                    <strong className="blue-txt mr10 commit-hash">
+                      {pullRequestCommitShortId(props.selectedCommitId)}
+                    </strong>
+                  </>
+                ) : (
+                  "pullRequest.changes.all"
+                )}
+              </span>
               <span className="d-caret">
                 <span className="caret"></span>
               </span>
@@ -1504,7 +1548,7 @@ export function PullRequestChangesPage(props: {
                 </a>
               </li>
               <li className="divider"></li>
-              {props.changes.commits.map((commit) => {
+              {selectableCommits.map((commit) => {
                 const outdated = isOutdatedPullRequestCommit(commit);
                 return (
                   <li

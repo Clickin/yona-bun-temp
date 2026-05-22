@@ -254,6 +254,10 @@ type PullRequestScopeInput = ProjectScopeInput & {
   pullRequestNumber: bigint | number;
 };
 
+type PullRequestChangesInput = PullRequestScopeInput & {
+  commitId?: string;
+};
+
 function toNumber(value: bigint | number): number {
   return Number(value);
 }
@@ -326,6 +330,15 @@ function pullRequestFormOptionsSearch(input: PullRequestFormOptionsQuery = {}): 
   }
   if (input.toBranch) {
     search.set("toBranch", input.toBranch);
+  }
+  const serialized = search.toString();
+  return serialized === "" ? "" : `?${serialized}`;
+}
+
+function pullRequestChangesSearch(input: PullRequestChangesInput): string {
+  const search = new URLSearchParams();
+  if (input.commitId) {
+    search.set("commitId", input.commitId);
   }
   const serialized = search.toString();
   return serialized === "" ? "" : `?${serialized}`;
@@ -613,12 +626,12 @@ export async function readPullRequestDetail(
 
 export async function readPullRequestChanges(
   runtimeConfig: RuntimeConfig,
-  input: PullRequestScopeInput,
+  input: PullRequestChangesInput,
   fetchImpl: typeof fetch = fetch,
 ): Promise<PullRequestChangesResponse> {
   const payload = await restFetch<Partial<PullRequestChangesResponse>>(
     runtimeConfig,
-    pullRequestPath(input, "/changes"),
+    `${pullRequestPath(input, "/changes")}${pullRequestChangesSearch(input)}`,
     { fetchImpl, method: "GET" },
   );
   return {
@@ -947,7 +960,7 @@ export function pullRequestDetailQueryOptions(
 
 export function pullRequestChangesQueryOptions(
   runtimeConfig: RuntimeConfig,
-  input: PullRequestScopeInput,
+  input: PullRequestChangesInput,
 ) {
   const pullRequestNumber = toNumber(input.pullRequestNumber);
   return queryOptions({
@@ -956,6 +969,7 @@ export function pullRequestChangesQueryOptions(
       input.ownerName,
       input.projectName,
       pullRequestNumber,
+      { commitId: input.commitId },
     ),
   });
 }
