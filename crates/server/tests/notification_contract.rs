@@ -7,11 +7,13 @@ use sea_orm::{
     PaginatorTrait, QueryFilter, Set,
 };
 use serde_json::json;
+use std::sync::{Mutex, OnceLock};
 use std::time::SystemTime;
 use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
-    issue_event, notification_event, notification_event_n4user, notification_mail, AppRepository,
+    issue_event, n4user, notification_event, notification_event_n4user, notification_mail,
+    AppRepository,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
@@ -19,6 +21,11 @@ use yona_rust_pilot_server::{
 };
 
 mod rest_test_support;
+
+fn notification_mail_env_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -511,6 +518,8 @@ async fn notification_contract_stages_mail_rows_and_drains_due_events() {
 
 #[tokio::test]
 async fn notification_contract_delivers_due_mail_rows_to_receivers() {
+    let _guard = notification_mail_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
@@ -586,7 +595,94 @@ async fn notification_contract_delivers_due_mail_rows_to_receivers() {
 }
 
 #[tokio::test]
+async fn notification_contract_filters_due_mail_receivers_by_allowed_domains() {
+    let _guard = notification_mail_env_lock().lock().unwrap();
+    std::env::set_var("YONA_ALLOWED_MAIL_DOMAINS", "allowed.example.com");
+    clear_test_outbox();
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (allowed_csrf, allowed_cookie, allowed_id) = register_user(app.clone(), "allowed").await;
+    let (blocked_csrf, blocked_cookie, _) = register_user(app.clone(), "blocked").await;
+    let allowed_user = n4user::Entity::find_by_id(allowed_id)
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("allowed user");
+    let mut allowed_user = n4user::ActiveModel::from(allowed_user);
+    allowed_user.email = Set(Some("allowed@allowed.example.com".to_string()));
+    allowed_user.update(&db).await.unwrap();
+
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "Allowed-domain watched issue",
+    )
+    .await;
+    for (cookie, csrf) in [
+        (allowed_cookie.as_str(), allowed_csrf.as_str()),
+        (blocked_cookie.as_str(), blocked_csrf.as_str()),
+    ] {
+        response_json(
+            rest(
+                app.clone(),
+                Method::POST,
+                "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/watch",
+                Some(cookie),
+                Some(csrf),
+                None,
+            )
+            .await,
+        )
+        .await;
+    }
+    response_json(
+        rest(
+            app,
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/1/state",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({ "state": "closed" })),
+        )
+        .await,
+    )
+    .await;
+
+    let event = notification_event::Entity::find()
+        .filter(notification_event::Column::EventType.eq(Some("ISSUE_STATE_CHANGED".to_string())))
+        .one(&db)
+        .await
+        .unwrap()
+        .expect("state change event");
+
+    let delivered = deliver_due_notification_mails(
+        &repo,
+        event.created.expect("event created"),
+        0,
+        "https://yona.example",
+        "/yona",
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(delivered, 1);
+    assert_eq!(
+        notification_mail::Entity::find().count(&db).await.unwrap(),
+        0
+    );
+    let outbox = snapshot_test_outbox();
+    assert_eq!(outbox.len(), 1);
+    assert_eq!(outbox[0].to, "allowed@allowed.example.com");
+    clear_test_outbox();
+    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
+}
+
+#[tokio::test]
 async fn notification_contract_skips_due_mail_when_resource_no_longer_exists() {
+    let _guard = notification_mail_env_lock().lock().unwrap();
+    std::env::remove_var("YONA_ALLOWED_MAIL_DOMAINS");
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (_, _, owner_id) = register_user(app.clone(), "owner").await;

@@ -2734,6 +2734,24 @@ fn default_smtp_from() -> String {
         .unwrap_or_else(|| "noreply@yona.local".to_string())
 }
 
+fn notification_mail_recipient_allowed(email: &str) -> bool {
+    let raw_domains = std::env::var("YONA_ALLOWED_MAIL_DOMAINS").unwrap_or_default();
+    if raw_domains.trim().is_empty() {
+        return true;
+    }
+    let Some((_, domain)) = email.rsplit_once('@') else {
+        return false;
+    };
+    if domain.is_empty() {
+        return false;
+    }
+    let domain = domain.to_ascii_lowercase();
+    raw_domains
+        .split(',')
+        .map(|allowed| allowed.trim().to_ascii_lowercase())
+        .any(|allowed| allowed == domain)
+}
+
 pub async fn deliver_due_notification_mails(
     repository: &PilotRepository,
     now: DateTime,
@@ -2748,6 +2766,9 @@ pub async fn deliver_due_notification_mails(
         .map_err(|error| error.to_string())?;
     let mut delivered = 0;
     for delivery in deliveries {
+        if !notification_mail_recipient_allowed(&delivery.recipient_email) {
+            continue;
+        }
         let target_url = if delivery.item.target_path.is_empty() {
             String::new()
         } else {
