@@ -7,6 +7,7 @@ import {
   createCommitDiscussionCommentRest,
   deleteCommitDiscussionCommentRest,
   openCommitDiscussionThreadRest,
+  updateCommitDiscussionCommentRest,
   type CodeCommitDetailResponse,
 } from "../../../../../api/code-commits";
 import { apiQueryKeys } from "../../../../../api/query-keys";
@@ -110,6 +111,22 @@ function CodeCommitDetailRouteComponent() {
       await queryClient.invalidateQueries({ queryKey: detailQueryKey });
     },
   });
+  const updateCommentMutation = useMutation({
+    mutationFn: (input: {
+      attachmentIds?: number[];
+      commentId: number;
+      contentsMarkdown: string;
+    }) =>
+      updateCommitDiscussionCommentRest(runtimeConfig, csrfToken, {
+        ...scope,
+        ...input,
+      }),
+    onError: mutationError("Update commit comment failed."),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(detailQueryKey, updated);
+      await queryClient.invalidateQueries({ queryKey: detailQueryKey });
+    },
+  });
   const closeThreadMutation = useMutation({
     mutationFn: (threadId: number) =>
       closeCommitDiscussionThreadRest(runtimeConfig, csrfToken, { ...scope, threadId }),
@@ -164,6 +181,13 @@ function CodeCommitDetailRouteComponent() {
       }}
       onDeleteComment={async (commentId) => {
         await deleteCommentMutation.mutateAsync(commentId);
+      }}
+      onUpdateComment={async (commentId, contentsMarkdown, attachmentIds) => {
+        await updateCommentMutation.mutateAsync({
+          attachmentIds,
+          commentId,
+          contentsMarkdown,
+        });
       }}
       onOpenThread={async (threadId) => {
         await openThreadMutation.mutateAsync(threadId);

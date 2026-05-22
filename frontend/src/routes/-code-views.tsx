@@ -590,6 +590,11 @@ export function CodeCommitDetailPage(props: {
   onCreateComment?: (input: CommitDiscussionCommentSubmitInput) => Promise<void> | void;
   onDeleteComment?: (commentId: number) => Promise<void> | void;
   onOpenThread?: (threadId: number) => Promise<void> | void;
+  onUpdateComment?: (
+    commentId: number,
+    contentsMarkdown: string,
+    attachmentIds?: number[],
+  ) => Promise<void> | void;
   runtimeConfig: RuntimeConfig;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
@@ -661,6 +666,7 @@ export function CodeCommitDetailPage(props: {
                 onCreateComment={props.onCreateComment}
                 onDeleteComment={props.onDeleteComment}
                 onOpenThread={props.onOpenThread}
+                onUpdateComment={props.onUpdateComment}
               />
             )}
           </div>
@@ -978,6 +984,11 @@ function CodeCommitDiffView(props: {
   onCreateComment?: (input: CommitDiscussionCommentSubmitInput) => Promise<void> | void;
   onDeleteComment?: (commentId: number) => Promise<void> | void;
   onOpenThread?: (threadId: number) => Promise<void> | void;
+  onUpdateComment?: (
+    commentId: number,
+    contentsMarkdown: string,
+    attachmentIds?: number[],
+  ) => Promise<void> | void;
   runtimeConfig: RuntimeConfig;
 }) {
   const commitDetail = props.commitDetail;
@@ -1218,6 +1229,7 @@ function CodeCommitDiffView(props: {
                                       onCreateComment={props.onCreateComment}
                                       onDeleteComment={props.onDeleteComment}
                                       onOpenThread={props.onOpenThread}
+                                      onUpdateComment={props.onUpdateComment}
                                     />
                                   ))}
                                 </td>
@@ -1253,6 +1265,7 @@ function CodeCommitDiffView(props: {
                     onCreateComment={props.onCreateComment}
                     onDeleteComment={props.onDeleteComment}
                     onOpenThread={props.onOpenThread}
+                    onUpdateComment={props.onUpdateComment}
                   />
                 ))
               : null}
@@ -1349,15 +1362,41 @@ function CommitDiscussionThread(props: {
   onCreateComment?: (input: CommitDiscussionCommentSubmitInput) => Promise<void> | void;
   onDeleteComment?: (commentId: number) => Promise<void> | void;
   onOpenThread?: (threadId: number) => Promise<void> | void;
+  onUpdateComment?: (
+    commentId: number,
+    contentsMarkdown: string,
+    attachmentIds?: number[],
+  ) => Promise<void> | void;
   runtimeConfig: RuntimeConfig;
   thread: CodeReviewThreadViewModel;
 }) {
   const [replyText, setReplyText] = React.useState("");
   const [replyAttachmentIds, setReplyAttachmentIds] = React.useState<number[]>([]);
+  const [editingCommentId, setEditingCommentId] = React.useState<number | null>(null);
+  const [editText, setEditText] = React.useState("");
+  const [editAttachmentIds, setEditAttachmentIds] = React.useState<number[]>([]);
   const state = props.thread.state.toLowerCase() === "closed" ? "closed" : "open";
   const canComment = props.commitDetail.permissions.canComment;
   const stateSuffix = `/threads/${props.thread.id}/${state === "closed" ? "open" : "close"}`;
   const stateAction = commitDiscussionApiHref(props.runtimeConfig, props.commitDetail, stateSuffix);
+
+  function beginEdit(comment: CodeReviewCommentViewModel) {
+    setEditingCommentId(comment.id);
+    setEditText(comment.contentsMarkdown);
+    setEditAttachmentIds([]);
+  }
+
+  async function submitEdit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const contentsMarkdown = editText.trim();
+    if (!editingCommentId || !contentsMarkdown || !props.onUpdateComment) {
+      return;
+    }
+    await props.onUpdateComment(editingCommentId, contentsMarkdown, editAttachmentIds);
+    setEditingCommentId(null);
+    setEditText("");
+    setEditAttachmentIds([]);
+  }
 
   async function submitReply(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1409,6 +1448,21 @@ function CommitDiscussionThread(props: {
                 </span>
                 {comment.canDelete ? (
                   <span className="edit pull-right">
+                    {props.onUpdateComment ? (
+                      <button
+                        className="btn-transparent pull-right"
+                        data-request-method="patch"
+                        data-request-uri={commitDiscussionApiHref(
+                          props.runtimeConfig,
+                          props.commitDetail,
+                          `/comments/${comment.id}`,
+                        )}
+                        onClick={() => beginEdit(comment)}
+                        type="button"
+                      >
+                        Edit
+                      </button>
+                    ) : null}
                     <button
                       className="btn-transparent pull-right close"
                       data-request-method="delete"
@@ -1427,11 +1481,50 @@ function CommitDiscussionThread(props: {
                   </span>
                 ) : null}
               </div>
-              <div
-                className="comment-body markdown-wrap"
-                data-via-email={comment.viaEmail ? "true" : undefined}
-                dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
-              ></div>
+              {editingCommentId === comment.id ? (
+                <form
+                  action={commitDiscussionApiHref(
+                    props.runtimeConfig,
+                    props.commitDetail,
+                    `/comments/${comment.id}`,
+                  )}
+                  className="review-form review-comment-edit-form comment-update-form"
+                  id={`comment-editform-${comment.id}`}
+                  method="post"
+                  onSubmit={(event) => {
+                    void submitEdit(event);
+                  }}
+                >
+                  <input name="_method" type="hidden" value="patch" />
+                  <MarkdownAttachmentTextarea
+                    ariaLabel="Edit commit comment"
+                    csrfToken={props.csrfToken}
+                    name="contentsMarkdown"
+                    onAttachmentUpload={(attachment) =>
+                      setEditAttachmentIds((current) => [...current, attachment.id])
+                    }
+                    onChange={setEditText}
+                    runtimeConfig={props.runtimeConfig}
+                    value={editText}
+                  />
+                  <button className="ybtn ybtn-success ybtn-small" type="submit">
+                    Save
+                  </button>
+                  <button
+                    className="ybtn ybtn-small"
+                    onClick={() => setEditingCommentId(null)}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                </form>
+              ) : (
+                <div
+                  className="comment-body markdown-wrap"
+                  data-via-email={comment.viaEmail ? "true" : undefined}
+                  dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
+                ></div>
+              )}
             </div>
           </li>
         ))}

@@ -8769,6 +8769,31 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                         .await
                     }
                 }
+            })
+            .patch({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, commit_id, comment_id)): Path<(
+                    String,
+                    String,
+                    String,
+                    i64,
+                )>,
+                      Json(body): Json<RestCommitCommentBody>| {
+                    let service = service.clone();
+                    async move {
+                        rest_update_commit_discussion_comment(
+                            headers,
+                            owner_name,
+                            project_name,
+                            commit_id,
+                            comment_id,
+                            body,
+                            service,
+                        )
+                        .await
+                    }
+                }
             }),
         )
         .route(
@@ -15236,6 +15261,80 @@ async fn rest_update_commit_discussion_thread_state(
             &issue_references,
         ),
     )))
+}
+
+async fn rest_update_commit_discussion_comment(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    commit_id: String,
+    comment_id: i64,
+    body: RestCommitCommentBody,
+    service: PilotServiceImpl,
+) -> Result<Json<RestCodeCommitDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let query = RestCodeCommitDetailQuery::default();
+    let current = rest_code_commit_detail_response(
+        repository,
+        &authorization,
+        Some(actor.id),
+        &commit_id,
+        &query,
+        &service.base_path,
+    )
+    .await?;
+    let comment = current
+        .threads
+        .iter()
+        .flat_map(|thread| thread.comments.iter())
+        .find(|comment| comment.id == comment_id)
+        .ok_or_else(|| RestRouteError::not_found("commit comment not found"))?;
+    if !comment.can_delete {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("commit comment update is not allowed"),
+        ));
+    }
+    let contents_markdown = body.contents_markdown.trim().to_string();
+    if contents_markdown.is_empty() {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::invalid_argument("commit comment contents is required"),
+        ));
+    }
+    repository
+        .update_commit_discussion_comment(persistence::UpdateCommitDiscussionCommentInput {
+            actor_id: actor.id,
+            attachment_ids: body.attachment_ids,
+            comment_id,
+            commit_id: commit_id.clone(),
+            contents_markdown,
+            owner_name: owner_name.clone(),
+            project_name: project_name.clone(),
+        })
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("commit comment not found"))?;
+    Ok(Json(
+        rest_code_commit_detail_response(
+            repository,
+            &authorization,
+            Some(actor.id),
+            &commit_id,
+            &query,
+            &service.base_path,
+        )
+        .await?,
+    ))
 }
 
 async fn rest_delete_commit_discussion_comment(

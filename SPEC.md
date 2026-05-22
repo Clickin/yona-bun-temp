@@ -1002,7 +1002,7 @@ POST  /files/:id/?            → legacy `_method=delete` 파일 삭제 (trailin
 - [x] 다운로드: `GET /files/:id` → 원본 파일명 + MIME type + content
 - [x] 삭제: `DELETE /files/:id` 또는 legacy `POST /files/:id` → 업로드 작성자 또는 site admin만 삭제 가능
 - [x] Legacy trailing-slash attachment aliases `GET /files/:id/` and `POST /files/:id/` reuse the same download/delete behavior
-- [~] 마크다운 에디터에서 drag-and-drop 또는 클립보드 붙여넣기로 이미지 첨부 가능: 이슈 본문/댓글, 게시판 글/댓글, PR 생성/수정 본문, 일반 PR review comment, milestone 생성/수정 본문, non-ranged Git code comment/reply 에디터, inline ranged Git code-comment reply 에디터는 legacy처럼 이미지 업로드 후 `![name](url)` 삽입과 `attachmentIds` 제출을 지원한다. Git/PR diff same-file multi-line block selection은 구현됐고, inline code-comment edit은 Phase 3 follow-up이다.
+- [~] 마크다운 에디터에서 drag-and-drop 또는 클립보드 붙여넣기로 이미지 첨부 가능: 이슈 본문/댓글, 게시판 글/댓글, PR 생성/수정 본문, 일반 PR review comment, milestone 생성/수정 본문, non-ranged Git code comment/reply/edit 에디터, inline ranged Git code-comment reply/edit 에디터는 legacy처럼 이미지 업로드 후 `![name](url)` 삽입과 `attachmentIds` 제출을 지원한다. Git/PR diff same-file multi-line block selection과 inline code-comment edit은 구현됐다.
 - [x] `YONA_MAX_FILE_SIZE` 설정값 초과 시 업로드 거부
 - [x] MIME type은 legacy `Attachment.save` / `FileUtil.detectMediaType`처럼 multipart header만 신뢰하지 않고 업로드 바이트와 파일명으로 판별한다
 - [x] 다운로드 응답은 legacy `AttachmentApp.getFile`처럼 기본 `inline`, `?action=download` 요청은 `attachment` Content-Disposition과 RFC 2231 파일명을 반환한다
@@ -1568,7 +1568,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Board: posting list/detail/create/update/delete/comment flows
 - Label follow-up: legacy external label/project API parity for the separate migrator/export/import scope
 - Milestone follow-up: migration export and search milestone result type
-- Code follow-up: inline code-comment edit, SVN executable repository/serve integration
+- Code follow-up: SVN executable repository/serve integration
 - PullRequest follow-up: in-app merge conflict resolution workflow
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: full mail notification template parity plus IMAP polling, sender extraction, MIME parsing, and mailbox/reply threading after issue/board/code/review comment `original_email` marker parity, mailbox plus-address parser parity, and DB-backed `CreationViaEmailTest` resource creation parity

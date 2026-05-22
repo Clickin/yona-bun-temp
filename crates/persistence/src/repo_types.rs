@@ -1400,6 +1400,17 @@ pub struct CommitDiscussionThreadStateInput {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UpdateCommitDiscussionCommentInput {
+    pub actor_id: i64,
+    pub attachment_ids: Vec<i64>,
+    pub comment_id: i64,
+    pub commit_id: String,
+    pub contents_markdown: String,
+    pub owner_name: String,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DeleteCommitDiscussionCommentInput {
     pub actor_id: i64,
     pub comment_id: i64,

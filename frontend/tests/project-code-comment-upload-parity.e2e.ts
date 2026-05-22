@@ -490,6 +490,89 @@ test("commit diff line comment creates a ranged review thread", async ({ page })
   await expect(page.locator("#thread-31")).toContainText("Inline line note");
 });
 
+test("commit review comment edit form patches an existing discussion comment", async ({ page }) => {
+  const thread = {
+    authorId: 1,
+    authorLabel: "Admin",
+    authorLoginId: "admin",
+    comments: [
+      {
+        authorId: 1,
+        authorLabel: "Admin",
+        authorLoginId: "admin",
+        canDelete: true,
+        contentsHtml: "<p>Original commit note</p>",
+        contentsMarkdown: "Original commit note",
+        createdLabel: "2026-04-21",
+        id: 32,
+        threadId: 31,
+      },
+    ],
+    commitId,
+    createdLabel: "2026-04-21",
+    id: 31,
+    path: "",
+    prevCommitId: "",
+    state: "open",
+  };
+  let threads: unknown[] = [thread];
+
+  await page.route(apiV1Route(`/projects/admin/projectYobi/commit/${commitId}`), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(commitDetailPayload(threads)),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(
+    apiV1Route(`/projects/admin/projectYobi/commit/${commitId}/comments/32`),
+    async (route) => {
+      const body = (route.request().postDataJSON() ?? {}) as {
+        contentsMarkdown?: string;
+      };
+      threads = [
+        {
+          ...thread,
+          comments: [
+            {
+              ...thread.comments[0],
+              contentsHtml: `<p>${body.contentsMarkdown ?? ""}</p>`,
+              contentsMarkdown: body.contentsMarkdown ?? "",
+            },
+          ],
+        },
+      ];
+      await route.fulfill({
+        body: JSON.stringify(commitDetailPayload(threads)),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+
+  await page.goto(`/yona/admin/projectYobi/commit/${commitId}`);
+  await expect(page.locator("#comment-32")).toContainText("Original commit note");
+  await page.locator("#comment-32").getByRole("button", { name: "Edit" }).click();
+
+  const editForm = page.locator("#comment-32 .review-comment-edit-form");
+  await expect(editForm).toBeVisible();
+  await editForm.locator("textarea").fill("Updated commit note");
+
+  const updateRequest = page.waitForRequest(
+    (request) =>
+      request.url().endsWith(`/commit/${commitId}/comments/32`) && request.method() === "PATCH",
+  );
+  await editForm.getByRole("button", { name: "Save" }).click();
+  const submittedUpdate = (await updateRequest).postDataJSON() as {
+    contentsMarkdown?: string;
+  };
+
+  expect(submittedUpdate).toMatchObject({
+    contentsMarkdown: "Updated commit note",
+  });
+  await expect(page.locator("#comment-32")).toContainText("Updated commit note");
+});
+
 test("commit diff selected text creates a multi-line ranged review thread", async ({ page }) => {
   let threads: unknown[] = [];
 

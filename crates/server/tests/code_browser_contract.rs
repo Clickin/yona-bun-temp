@@ -137,6 +137,29 @@ async fn rest_post_json(
         .unwrap()
 }
 
+async fn rest_patch_json(
+    app: axum::Router,
+    path: &str,
+    cookie_header: Option<&str>,
+    csrf: Option<&str>,
+    payload: serde_json::Value,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(Method::PATCH)
+        .uri(format!("/yona/api/v1{path}"))
+        .header(http::header::CONTENT_TYPE, "application/json");
+    if let Some(cookie_header) = cookie_header {
+        builder = builder.header(http::header::COOKIE, cookie_header);
+    }
+    if let Some(csrf) = csrf {
+        builder = builder.header("x-csrf-token", csrf);
+    }
+
+    app.oneshot(builder.body(Body::from(payload.to_string())).unwrap())
+        .await
+        .unwrap()
+}
+
 async fn rest_delete_json(
     app: axum::Router,
     path: &str,
@@ -891,6 +914,29 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
     assert_eq!(created["threads"][0]["comments"][0]["canDelete"], true);
     let thread_id = created["threads"][0]["id"].as_i64().unwrap();
     let comment_id = created["threads"][0]["comments"][0]["id"].as_i64().unwrap();
+
+    let updated = response_json(
+        rest_patch_json(
+            app.clone(),
+            &format!("/projects/owner/projectYobi/commit/{commit_id}/comments/{comment_id}"),
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "contentsMarkdown": "Updated **commit** note",
+                "attachmentIds": []
+            }),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        updated["threads"][0]["comments"][0]["contentsMarkdown"],
+        "Updated **commit** note"
+    );
+    assert!(updated["threads"][0]["comments"][0]["contentsHtml"]
+        .as_str()
+        .unwrap()
+        .contains("<strong>commit</strong>"));
 
     original_email::ActiveModel {
         id: NotSet,

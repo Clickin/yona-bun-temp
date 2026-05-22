@@ -36,13 +36,14 @@ use crate::repo_types::{
     SearchRepositoryInput, SearchResultRecord, SearchScope, SiteIssueListRecord,
     SiteNoAvatarUserRecord, SitePostingListRecord, SiteUserAvatarFromAttachmentResult,
     SiteUserDeleteResult, SiteUserListFilter, SiteUserListRecord, SiteUserRecord,
-    ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateIssueCommentInput,
-    UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput,
-    UpdatePostingInput, UpdateProjectInput, UpdateProjectLabelCategoryInput,
-    UpdateProjectLabelInput, UpdatePullRequestCommentInput, UpdatePullRequestInput,
-    UserAttachmentListRecord, UserAttachmentRecord, UserIssueCandidateRecord, UserIssueListFilter,
-    UserStatisticsRecord, WatchedProjectNotificationsRecord, WebhookThreadRecord,
-    WorkspaceEmailRecord, WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
+    ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateCommitDiscussionCommentInput,
+    UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput,
+    UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
+    UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestCommentInput,
+    UpdatePullRequestInput, UserAttachmentListRecord, UserAttachmentRecord,
+    UserIssueCandidateRecord, UserIssueListFilter, UserStatisticsRecord,
+    WatchedProjectNotificationsRecord, WebhookThreadRecord, WorkspaceEmailRecord,
+    WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
     WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
     WorkspacePullRequestListItemRecord,
 };
@@ -8427,6 +8428,63 @@ impl AppRepository {
         .await?;
         let comments = self.list_review_comments(updated.id).await?;
         self.review_thread_record(updated, comments).await.map(Some)
+    }
+
+    pub async fn update_commit_discussion_comment(
+        &self,
+        input: UpdateCommitDiscussionCommentInput,
+    ) -> Result<Option<ReviewThreadRecord>, DbErr> {
+        let Some(project) = self
+            .read_project_by_owner_and_name(&input.owner_name, &input.project_name)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(comment) = review_comment::Entity::find_by_id(input.comment_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(thread_id) = comment.thread_id else {
+            return Ok(None);
+        };
+        let Some(thread) = comment_thread::Entity::find_by_id(thread_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        if thread.project_id != Some(project.id)
+            || thread.pull_request_id.is_some()
+            || thread.commit_id.as_deref() != Some(input.commit_id.as_str())
+        {
+            return Ok(None);
+        }
+        self.write_text_column(
+            "review_comment",
+            "contents",
+            input.comment_id,
+            &input.contents_markdown,
+        )
+        .await?;
+        self.sync_attachments(
+            REVIEW_COMMENT_ATTACHMENT_CONTAINER,
+            input.comment_id,
+            &input.attachment_ids,
+            Some(input.actor_id),
+        )
+        .await?;
+        let Some(updated_thread) = comment_thread::Entity::find_by_id(thread_id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let comments = self.list_review_comments(updated_thread.id).await?;
+        self.review_thread_record(updated_thread, comments)
+            .await
+            .map(Some)
     }
 
     pub async fn delete_commit_discussion_comment(

@@ -82,6 +82,12 @@ export type CommitDiscussionCommentDeleteInput = CommitDiscussionScopeInput & {
   commentId: number;
 };
 
+export type CommitDiscussionCommentUpdateInput = CommitDiscussionScopeInput & {
+  attachmentIds?: number[];
+  commentId: number;
+  contentsMarkdown: string;
+};
+
 export type CommitDiscussionThreadStateInput = CommitDiscussionScopeInput & {
   threadId: number;
 };
@@ -209,6 +215,27 @@ export function deleteCommitDiscussionCommentRest(
     runtimeConfig,
     commitPath(input, `/comments/${input.commentId}`),
     { csrfToken, fetchImpl, method: "DELETE" },
+  ).then(normalizeCommitDetail);
+}
+
+export function updateCommitDiscussionCommentRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: CommitDiscussionCommentUpdateInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<CodeCommitDetailResponse> {
+  return restFetch<Partial<CodeCommitDetailResponse>>(
+    runtimeConfig,
+    commitPath(input, `/comments/${input.commentId}`),
+    {
+      body: {
+        attachmentIds: input.attachmentIds ?? [],
+        contentsMarkdown: input.contentsMarkdown,
+      },
+      csrfToken,
+      fetchImpl,
+      method: "PATCH",
+    },
   ).then(normalizeCommitDetail);
 }
 
