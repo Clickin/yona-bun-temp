@@ -353,11 +353,11 @@ POST  /noti/toggle/:projectId/:notiType → 프로젝트별 알림 설정 토글
 
 #### 검수 기준
 
-- [ ] `/me` 화면에서 Issues / Pull Requests / Projects 탭이 legacy와 동일 구조로 표시된다
+- [x] `/me` 화면에서 Issues / Pull Requests / Projects 탭이 legacy와 동일 구조로 표시된다
 - [x] `/:user` 공개 프로필은 legacy `user/view.scala.html`의 사용자 카드, Issues / Pull Requests / Projects 탭, 프로젝트 리스트 class anchor를 유지하고 공개 READ 가능한 프로젝트만 노출한다
 - [x] `GET /api/v1/users/:loginId/statistics`는 legacy `UserApi.statistics`의 `issue`, `posting`, `assignedIssue`, `issueComment`, `postingComment`, `issueVoter`, `issueCommentVoter` count 필드를 app-runtime REST로 제공한다
 - [x] `/user/files`는 legacy `userFiles` 화면의 `nav-tabs`, 검색 폼, `.attachment-files` 목록, preview/download/location/date anchors를 유지하고 `/api/v1/workspace/files`로 현재 사용자의 첨부 파일을 검색/페이지네이션한다
-- [ ] 프로필 편집에서 아바타 업로드 시 `/files` 엔드포인트로 멀티파트 업로드 후 크롭이 동작한다
+- [x] 프로필 편집에서 아바타 업로드 시 `/files` 엔드포인트로 멀티파트 업로드 후 크롭이 동작한다
 - [x] 프로필 수정과 복수 이메일 추가/삭제/인증/주 이메일 설정이 모두 동작하고 legacy direct profile/email mutation routes가 `/user/editform` redirect를 반환한다
 - [x] 프로젝트별 알림 토글이 legacy의 `NEW_COMMENT` 기본 off 동작을 따른다
 - [x] API 토큰 재생성이 동작하고 새 토큰이 표시된다
