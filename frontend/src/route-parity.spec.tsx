@@ -339,6 +339,8 @@ describe("file-route parity harness", () => {
               viaEmail: true,
             },
           ],
+          historyHtml: "",
+          historyMarkdown: "",
           id: "16",
           isWatching: false,
           permissions: {

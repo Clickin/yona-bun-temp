@@ -53,6 +53,8 @@ export type BoardPostDetail = BoardPostListItem & {
   bodyHtml: string;
   bodyMarkdown: string;
   comments: BoardPostComment[];
+  historyHtml: string;
+  historyMarkdown: string;
   id: string;
   isWatching: boolean;
   permissions: BoardPostPermissions;
@@ -305,6 +307,8 @@ function normalizePostDetail(response: Partial<BoardPostDetail>): BoardPostDetai
       parentCommentId: comment.parentCommentId ?? "",
       viaEmail: comment.viaEmail ?? false,
     })),
+    historyHtml: response.historyHtml ?? "",
+    historyMarkdown: response.historyMarkdown ?? "",
     id: response.id ?? "",
     isWatching: response.isWatching ?? false,
     permissions: normalizePermissions(response),

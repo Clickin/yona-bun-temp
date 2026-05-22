@@ -388,6 +388,8 @@ test.beforeEach(async ({ page }) => {
         commentCount: 0,
         comments: [],
         hasVoted: false,
+        historyHtml: "<p>Changed issue title from old value</p>",
+        historyMarkdown: "Changed issue title from old value",
         isFavorited: false,
         isWatching: false,
         issueNumber: "1",
@@ -944,6 +946,13 @@ test("project issue routes render data-backed issue list filters and detail scre
   await expect(page.getByRole("heading", { name: "Pilot issue" })).toBeVisible();
   await expect(page.getByText("#1")).toBeVisible();
   await expect(page.getByText("open")).toBeVisible();
+  await expect(page.locator(".posting-history a")).toHaveAttribute(
+    "href",
+    "#-yona-posting-history",
+  );
+  await expect(page.locator("#-yona-posting-history")).toContainText(
+    "Changed issue title from old value",
+  );
 });
 
 test("project issue comment editor inserts pasted and dropped image uploads", async ({ page }) => {

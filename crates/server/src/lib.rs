@@ -6402,6 +6402,8 @@ struct RestPostDetailResponse {
     comment_count: u32,
     comments: Vec<RestPostComment>,
     created_label: String,
+    history_html: String,
+    history_markdown: String,
     id: String,
     is_watching: bool,
     labels: Vec<RestBoardLabel>,
@@ -6823,6 +6825,15 @@ struct RestProjectReadmeFile {
     body_html: String,
     body_markdown: String,
     name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueDetailResponse {
+    #[serde(flatten)]
+    detail: ReadIssueDetailResponse,
+    history_html: String,
+    history_markdown: String,
 }
 
 #[derive(Deserialize)]
@@ -14458,18 +14469,22 @@ async fn rest_refreshed_issue_detail(
     issue_number: i64,
     service: &PilotServiceImpl,
     fallback: ReadIssueDetailResponse,
-) -> Result<ReadIssueDetailResponse, RestRouteError> {
+) -> Result<RestIssueDetailResponse, RestRouteError> {
     let actor_id = service
         .session_manager
         .read_session_from_headers(headers)
         .and_then(|session| session.user_id);
     let PilotBackend::Repository(repository) = &service.backend else {
-        return Ok(fallback);
+        return Ok(RestIssueDetailResponse {
+            detail: fallback,
+            history_html: String::new(),
+            history_markdown: String::new(),
+        });
     };
     let access = read_issue_access(repository, owner_name, project_name, issue_number, actor_id)
         .await
         .map_err(RestRouteError::from_connect_error)?;
-    issue_detail_response_from_access_with_repository_issue_references(
+    rest_issue_detail_response_from_access_with_repository_issue_references(
         repository,
         &access,
         actor_id,
@@ -18737,7 +18752,7 @@ async fn rest_read_issue_detail(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
     if owner_name.trim().is_empty() || project_name.trim().is_empty() || issue_number <= 0 {
         return Err(RestRouteError::bad_request(
             "invalid pilot issue detail request",
@@ -18762,7 +18777,7 @@ async fn rest_read_issue_detail(
     .await
     .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(
-        issue_detail_response_from_access_with_repository_issue_references(
+        rest_issue_detail_response_from_access_with_repository_issue_references(
             repository, &access, actor_id, &base_path,
         )
         .await
@@ -19110,7 +19125,7 @@ async fn rest_update_issue_state(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
     require_valid_csrf(&session_manager, &headers, &session)
@@ -19159,7 +19174,7 @@ async fn rest_update_issue_state(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
     Ok(Json(
-        issue_detail_response_from_record_with_repository_issue_references(
+        rest_issue_detail_response_from_record_with_repository_issue_references(
             repository,
             &issue,
             true,
@@ -19181,7 +19196,7 @@ async fn rest_create_issue(
     backend: PilotBackend,
     base_path: String,
     public_origin: String,
-) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
     require_valid_csrf(&session_manager, &headers, &session)
@@ -19225,7 +19240,7 @@ async fn rest_create_issue(
     )
     .await;
     Ok(Json(
-        issue_detail_response_from_record_with_repository_issue_references(
+        rest_issue_detail_response_from_record_with_repository_issue_references(
             repository,
             &issue,
             true,
@@ -19247,7 +19262,7 @@ async fn rest_update_issue(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
     require_valid_csrf(&session_manager, &headers, &session)
@@ -19291,7 +19306,7 @@ async fn rest_update_issue(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
     Ok(Json(
-        issue_detail_response_from_record_with_repository_issue_references(
+        rest_issue_detail_response_from_record_with_repository_issue_references(
             repository,
             &issue,
             true,
@@ -19365,7 +19380,7 @@ async fn rest_create_issue_comment(
     backend: PilotBackend,
     base_path: String,
     public_origin: String,
-) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
     require_valid_csrf(&session_manager, &headers, &session)
@@ -19429,7 +19444,7 @@ async fn rest_create_issue_comment(
     )
     .await;
     Ok(Json(
-        issue_detail_response_from_record_with_repository_issue_references(
+        rest_issue_detail_response_from_record_with_repository_issue_references(
             repository,
             &issue,
             true,
@@ -19452,7 +19467,7 @@ async fn rest_update_issue_comment(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
     require_valid_csrf(&session_manager, &headers, &session)
@@ -19507,7 +19522,7 @@ async fn rest_update_issue_comment(
             .await
             .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(
-        issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+        rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
             &issue,
             access.viewer_can_manage(),
             access.viewer_can_comment(),
@@ -19529,7 +19544,7 @@ async fn rest_delete_issue_comment(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-) -> Result<Json<ReadIssueDetailResponse>, RestRouteError> {
+) -> Result<Json<RestIssueDetailResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
     require_valid_csrf(&session_manager, &headers, &session)
@@ -19573,7 +19588,7 @@ async fn rest_delete_issue_comment(
             .await
             .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(
-        issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+        rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
             &issue,
             access.viewer_can_manage(),
             access.viewer_can_comment(),
@@ -19728,6 +19743,7 @@ async fn direct_create_issue_comment(
     {
         Ok(Json(detail)) => {
             let fragment = detail
+                .detail
                 .comments
                 .iter()
                 .max_by_key(|comment| comment.id)
@@ -23893,6 +23909,14 @@ fn rest_post_detail_response_from_record_with_issue_references(
             })
             .collect(),
         created_label: posting.created_label.clone(),
+        history_html: render_project_markdown_html_with_issue_references(
+            &posting.history_markdown,
+            base_path,
+            &posting.owner_name,
+            &posting.project_name,
+            issue_references,
+        ),
+        history_markdown: posting.history_markdown.clone(),
         id: posting.id.to_string(),
         is_watching: posting.is_watching,
         labels: posting
@@ -23962,6 +23986,30 @@ async fn issue_detail_response_from_record_with_repository_issue_references(
     )
 }
 
+async fn rest_issue_detail_response_from_record_with_repository_issue_references(
+    repository: &PilotRepository,
+    issue: &persistence::IssueRecord,
+    viewer_can_manage: bool,
+    viewer_can_comment: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+) -> Result<RestIssueDetailResponse, ConnectError> {
+    let issue_references =
+        issue_markdown_references_for_record(repository, issue, viewer_id, base_path).await?;
+    Ok(
+        rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+            issue,
+            viewer_can_manage,
+            viewer_can_comment,
+            false,
+            false,
+            viewer_id,
+            base_path,
+            &issue_references,
+        ),
+    )
+}
+
 fn issue_detail_response_from_access(
     access: &IssueAccessContext,
     viewer_id: Option<i64>,
@@ -23978,17 +24026,17 @@ fn issue_detail_response_from_access(
     )
 }
 
-async fn issue_detail_response_from_access_with_repository_issue_references(
+async fn rest_issue_detail_response_from_access_with_repository_issue_references(
     repository: &PilotRepository,
     access: &IssueAccessContext,
     viewer_id: Option<i64>,
     base_path: &str,
-) -> Result<ReadIssueDetailResponse, ConnectError> {
+) -> Result<RestIssueDetailResponse, ConnectError> {
     let issue_references =
         issue_markdown_references_for_record(repository, &access.issue, viewer_id, base_path)
             .await?;
     Ok(
-        issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+        rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
             &access.issue,
             access.viewer_can_manage(),
             access.viewer_can_comment(),
@@ -24030,8 +24078,11 @@ fn issue_detail_response_from_record_with_sharer_flags(
 }
 
 fn issue_markdown_texts(issue: &persistence::IssueRecord) -> Vec<&str> {
-    let mut markdowns = Vec::with_capacity(1 + issue.comments.len());
+    let mut markdowns = Vec::with_capacity(2 + issue.comments.len());
     markdowns.push(issue.body_markdown.as_str());
+    if !issue.history_markdown.trim().is_empty() {
+        markdowns.push(issue.history_markdown.as_str());
+    }
     markdowns.extend(
         issue
             .comments
@@ -24056,6 +24107,39 @@ async fn issue_markdown_references_for_record(
         &issue_markdown_texts(issue),
     )
     .await
+}
+
+fn rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+    issue: &persistence::IssueRecord,
+    viewer_can_manage: bool,
+    viewer_can_comment: bool,
+    viewer_is_direct_sharer: bool,
+    viewer_has_inherited_share: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+    issue_references: &[MarkdownIssueReference],
+) -> RestIssueDetailResponse {
+    let detail = issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+        issue,
+        viewer_can_manage,
+        viewer_can_comment,
+        viewer_is_direct_sharer,
+        viewer_has_inherited_share,
+        viewer_id,
+        base_path,
+        issue_references,
+    );
+    RestIssueDetailResponse {
+        detail,
+        history_html: render_project_markdown_html_with_issue_references(
+            &issue.history_markdown,
+            base_path,
+            &issue.owner_name,
+            &issue.project_name,
+            issue_references,
+        ),
+        history_markdown: issue.history_markdown.clone(),
+    }
 }
 
 fn issue_detail_response_from_record_with_sharer_flags_and_issue_references(

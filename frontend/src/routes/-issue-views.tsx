@@ -33,6 +33,35 @@ function fallbackProjectDetail(): ProjectDetailViewModel {
   };
 }
 
+function PostingHistoryModal(props: { historyHtml?: string; linkLabel: string }) {
+  const historyHtml = props.historyHtml ?? "";
+  if (!historyHtml.trim()) {
+    return null;
+  }
+
+  return (
+    <div className="posting-history">
+      <a data-toggle="modal" href="#-yona-posting-history">
+        <span>{props.linkLabel}</span>
+      </a>
+      <div className="modal hide" id="-yona-posting-history">
+        <div className="modal-header">
+          <button className="close" data-dismiss="modal" type="button">
+            x
+          </button>
+          <h5 className="nm">change.history</h5>
+        </div>
+        <div className="modal-body" dangerouslySetInnerHTML={{ __html: historyHtml }} />
+        <div className="modal-footer">
+          <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" type="button">
+            button.confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ProjectIssueListPage(props: {
   detail: ProjectDetailViewModel | null;
   labels?: IssueListFilterLabel[];
@@ -254,6 +283,9 @@ export function ProjectIssueDetailPage(props: {
             {label.name}
           </span>
         ))}
+        {issue ? (
+          <PostingHistoryModal historyHtml={issue.historyHtml} linkLabel="change.edited" />
+        ) : null}
         {issue?.viewerCanUpdate ? (
           <a
             href={buildProjectHref(

@@ -545,7 +545,7 @@ POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → le
 
 - [x] 이슈 목록 필터: state(open/closed), assignee, label, milestone — legacy `IssueApp.issues()` 파라미터 동일; `/issues` form now preserves query values and submits `labelIds`/`milestoneId` through `/api/v1/projects/:owner/:project/issues`
 - [ ] 이슈 번호: 프로젝트 내 자동 증가 (`#1`, `#2`, ...) — legacy `Issue.nextNumber()` 동일
-- [ ] 이슈 상세: 제목, 본문(마크다운 렌더링), 사이드바(담당자/마일스톤/라벨/감시자/투표수) — legacy `issue/view.scala.html` 레이아웃 동일
+- [ ] 이슈 상세: 제목, 본문(마크다운 렌더링), 사이드바(담당자/마일스톤/라벨/감시자/투표수) — legacy `issue/view.scala.html` 레이아웃 동일; body history가 있으면 `.posting-history` 링크와 `#-yona-posting-history` modal을 렌더링한다.
 - [ ] 댓글: 시간순 정렬, 작성자 아바타, 마크다운 렌더링
 - [x] Legacy direct issue comment form aliases: `POST /:owner/:project/issue/:number/comments`, `POST /:owner/:project/issue/:number/comments/:commentId`, and `DELETE /:owner/:project/issue/:number/comment/:commentId/delete` reuse the `/api/v1` comment contract and redirect back to the legacy issue anchor
 - [ ] 타임라인: 상태 변경/담당자 변경/라벨 변경 이벤트가 댓글과 인터리빙되어 시간순 표시
@@ -598,6 +598,7 @@ DELETE /:owner/:project/post/:number/comment/:commentId/delete → 댓글 삭제
 - [x] 게시글 목록: 프로젝트 게시판은 일반 목록과 공지(`notice=true`) 목록을 분리해 공지 상단 고정을 유지한다.
 - [x] 게시글 번호: `project.last_posting_number`와 기존 max number를 함께 보며 프로젝트 내 자동 증가를 복구한다.
 - [x] 게시글 레이아웃: React route가 legacy class anchor(`post-list-wrap`, `notice-wrap`, `board-view`, `board-comment-wrap`, `board-labels`, `ybtn`)를 사용한다.
+- [x] 게시글 변경 이력: body history가 있으면 legacy `board/view.scala.html`처럼 `.posting-history` 링크와 `#-yona-posting-history` modal을 렌더링한다.
 - [x] 댓글: 시간순 정렬과 마크다운 렌더링을 제공한다.
 - [x] Legacy direct posting comment form aliases: `POST /:owner/:project/post/:number/comment`, `POST /:owner/:project/post/:number/comment/:commentId`, and `DELETE /:owner/:project/post/:number/comment/:commentId/delete` reuse the `/api/v1` comment contract and redirect back to the legacy post anchor
 - [x] 검증: `frontend/tests/board-posting-parity.e2e.ts`가 프로젝트/조직 board list, detail, comment CRUD, watch, create/edit/delete CSRF, filter/sort/label/project selector, placeholder 제거를 전용 Playwright surface로 검증한다.

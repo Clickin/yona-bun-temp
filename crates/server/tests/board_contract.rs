@@ -518,6 +518,14 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     .await;
     assert_eq!(updated["title"], "Updated README");
     assert_eq!(updated["bodyMarkdown"], "Updated body");
+    assert_eq!(
+        updated["historyMarkdown"],
+        "# README\n@guest should see this board notification #1 owner/projectYobi#1"
+    );
+    assert!(updated["historyHtml"]
+        .as_str()
+        .unwrap()
+        .contains("<h1>README</h1>"));
 
     let deleted_comment = ok_json(
         rest(

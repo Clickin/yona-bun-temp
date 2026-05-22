@@ -55,6 +55,8 @@ function boardDetail(overrides: Record<string, unknown> = {}) {
       },
     ],
     id: "100",
+    historyHtml: "<p>Changed title from old board post</p>",
+    historyMarkdown: "Changed title from old board post",
     isWatching: false,
     permissions: {
       canComment: true,
@@ -442,6 +444,13 @@ test("project board detail supports watch and comment create update delete", asy
   await expect(page.getByText("#1")).toBeVisible();
   await expect(page.getByText("Board body from markdown")).toBeVisible();
   await expect(page.locator(".board-view .board-label", { hasText: "guide" })).toBeVisible();
+  await expect(page.locator(".posting-history a")).toHaveAttribute(
+    "href",
+    "#-yona-posting-history",
+  );
+  await expect(page.locator("#-yona-posting-history")).toContainText(
+    "Changed title from old board post",
+  );
   await expect(page.locator(".board-comment-wrap")).toContainText("First board comment");
 
   const watchRequest = page.waitForRequest(

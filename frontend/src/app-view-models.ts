@@ -549,8 +549,13 @@ export function toOrganizationIssueListView(
   };
 }
 
+type IssueDetailResponseWithHistory = Awaited<ReturnType<typeof readIssueDetail>> & {
+  historyHtml?: string;
+  historyMarkdown?: string;
+};
+
 export function toProjectIssueDetailView(
-  response: Awaited<ReturnType<typeof readIssueDetail>>,
+  response: IssueDetailResponseWithHistory,
 ): ProjectIssueDetailViewModel {
   return {
     assigneeLabel: response.assigneeLabel,
@@ -583,6 +588,8 @@ export function toProjectIssueDetailView(
       })),
     })),
     hasVoted: response.hasVoted,
+    historyHtml: response.historyHtml ?? "",
+    historyMarkdown: response.historyMarkdown ?? "",
     isFavorited: response.isFavorited,
     isWatching: response.isWatching,
     issueNumber: Number(response.issueNumber),

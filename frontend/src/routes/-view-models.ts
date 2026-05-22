@@ -318,6 +318,8 @@ export interface ProjectIssueDetailViewModel {
     voters: Array<{ avatarUrl: string; loginId: string; userId: number; userLabel: string }>;
   }>;
   hasVoted: boolean;
+  historyHtml: string;
+  historyMarkdown: string;
   isFavorited: boolean;
   isWatching: boolean;
   issueNumber: number;

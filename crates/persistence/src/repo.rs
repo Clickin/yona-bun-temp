@@ -860,6 +860,25 @@ fn webhook_thread_record_from_model(row: webhook_thread::Model) -> WebhookThread
     }
 }
 
+fn append_posting_history(
+    existing_history: Option<&str>,
+    old_body: &str,
+    new_body: &str,
+) -> Option<String> {
+    let mut history = existing_history.unwrap_or_default().trim().to_string();
+    if old_body != new_body && !old_body.trim().is_empty() {
+        if !history.is_empty() {
+            history.push_str("\n\n---\n\n");
+        }
+        history.push_str(old_body);
+    }
+    if history.is_empty() {
+        None
+    } else {
+        Some(history)
+    }
+}
+
 fn project_transfer_record_from_model(
     row: project_transfer::Model,
 ) -> Option<ProjectTransferRecord> {
@@ -3300,6 +3319,11 @@ impl AppRepository {
         let old_assignee = model.assignee_id;
         let old_milestone = model.milestone_id;
         let old_body = self.read_text_column("issue", "body", model.id).await?;
+        let next_history = append_posting_history(
+            model.history.as_deref(),
+            &old_body,
+            &input.values.body_markdown,
+        );
         let actor_id = self
             .find_user_by_login_id(&input.actor_login_id)
             .await?
@@ -3310,9 +3334,17 @@ impl AppRepository {
         active.assignee_id = Set(assignee_id);
         active.milestone_id = Set(input.values.milestone_id.filter(|value| *value > 0));
         active.updated_date = Set(Some(current_datetime()));
-        let updated = active.update(&self.db).await?;
+        let mut updated = active.update(&self.db).await?;
         self.write_text_column("issue", "body", updated.id, &input.values.body_markdown)
             .await?;
+        self.write_text_column(
+            "issue",
+            "history",
+            updated.id,
+            next_history.as_deref().unwrap_or(""),
+        )
+        .await?;
+        updated.history = next_history;
         self.sync_mentions_and_notify(
             actor_id,
             "issue_post",
@@ -3963,15 +3995,28 @@ impl AppRepository {
             return Ok(None);
         };
         let old_body = self.read_text_column("posting", "body", model.id).await?;
+        let next_history = append_posting_history(
+            model.history.as_deref(),
+            &old_body,
+            &input.values.body_markdown,
+        );
         let mut active = posting::ActiveModel::from(model);
         active.title = Set(Some(input.values.title.trim().to_string()));
         active.updated_date = Set(Some(current_datetime()));
         active.updated_by_author_id = Set(Some(input.actor_id));
         active.notice = Set(Some(bool_to_i16(input.values.notice)));
         active.readme = Set(Some(bool_to_i16(input.values.readme)));
-        let updated = active.update(&self.db).await?;
+        let mut updated = active.update(&self.db).await?;
         self.write_text_column("posting", "body", updated.id, &input.values.body_markdown)
             .await?;
+        self.write_text_column(
+            "posting",
+            "history",
+            updated.id,
+            next_history.as_deref().unwrap_or(""),
+        )
+        .await?;
+        updated.history = next_history;
         if input.values.readme {
             self.clear_other_readme_postings(project_record.id, updated.id)
                 .await?;
@@ -10364,6 +10409,7 @@ impl AppRepository {
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
             comments,
             has_voted,
+            history_markdown: model.history.unwrap_or_default(),
             id: model.id,
             is_favorited,
             is_watching,
@@ -11443,6 +11489,7 @@ impl AppRepository {
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
             comments: self.list_posting_comments(model.id).await?,
             created_label: format_workspace_date_label(model.created_date),
+            history_markdown: model.history.unwrap_or_default(),
             id: model.id,
             is_watching,
             labels: self.list_posting_labels(model.id).await?,

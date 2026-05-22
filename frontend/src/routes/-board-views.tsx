@@ -49,6 +49,35 @@ function nextOrderDir(currentOrderBy: string, currentOrderDir: string, fieldName
   return currentOrderBy === fieldName && currentOrderDir === "desc" ? "asc" : "desc";
 }
 
+function PostingHistoryModal(props: { historyHtml?: string; linkLabel: string }) {
+  const historyHtml = props.historyHtml ?? "";
+  if (!historyHtml.trim()) {
+    return null;
+  }
+
+  return (
+    <div className="posting-history">
+      <a data-toggle="modal" href="#-yona-posting-history">
+        <span>{props.linkLabel}</span>
+      </a>
+      <div className="modal hide" id="-yona-posting-history">
+        <div className="modal-header">
+          <button className="close" data-dismiss="modal" type="button">
+            x
+          </button>
+          <h5 className="nm">change.history</h5>
+        </div>
+        <div className="modal-body" dangerouslySetInnerHTML={{ __html: historyHtml }} />
+        <div className="modal-footer">
+          <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" type="button">
+            button.confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BoardSortLinks(props: {
   basePathname: string;
   filter: string;
@@ -477,6 +506,7 @@ export function ProjectBoardDetailPage(props: {
             {postBadges(post)}
             {boardLabels(post.labels)}
           </div>
+          <PostingHistoryModal historyHtml={post.historyHtml} linkLabel="change.history" />
         </header>
         <div className="board-body" dangerouslySetInnerHTML={{ __html: post.bodyHtml }} />
         <div className="board-actions">

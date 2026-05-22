@@ -947,6 +947,8 @@ function renderIssueDetailPage(
     commentCount: 0,
     comments: [],
     hasVoted: false,
+    historyHtml: "",
+    historyMarkdown: "",
     isFavorited: false,
     isWatching: false,
     issueNumber: 1,

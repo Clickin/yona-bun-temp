@@ -92,6 +92,7 @@ pub struct IssueRecord {
     pub labels: Vec<IssueLabelRecord>,
     pub sharers: Vec<IssueSharerRecord>,
     pub comments: Vec<IssueCommentRecord>,
+    pub history_markdown: String,
     pub timeline: Vec<IssueTimelineItemRecord>,
     pub attachments: Vec<IssueAttachmentRecord>,
 }
@@ -107,6 +108,7 @@ pub struct PostingRecord {
     pub comments: Vec<PostingCommentRecord>,
     pub created_label: String,
     pub id: i64,
+    pub history_markdown: String,
     pub is_watching: bool,
     pub labels: Vec<IssueLabelRecord>,
     pub notice: bool,
