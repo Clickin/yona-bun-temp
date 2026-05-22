@@ -531,7 +531,22 @@ export function ProjectIssueDetailPage(props: {
                                   <strong>{comment.authorLabel || comment.authorLoginId}</strong>
                                 </a>
                               </span>
-                              <span className="ago">{comment.createdLabel}</span>
+                              <span className="ago-date">
+                                <a
+                                  className="ago"
+                                  href={`#comment-${comment.id}`}
+                                  title={comment.createdLabel}
+                                >
+                                  {comment.createdLabel}
+                                </a>
+                                <a
+                                  className="share-link"
+                                  href={`#comment-${comment.id}`}
+                                  style={{ display: "none" }}
+                                >
+                                  [Link]
+                                </a>
+                              </span>
                             </div>
                             <div
                               className="comment-body markdown-wrap"

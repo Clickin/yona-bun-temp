@@ -1046,6 +1046,13 @@ test("project issue routes render data-backed issue list filters and detail scre
     "/avatars/nori.png",
   );
   await expect(page.locator("#comment-55 .comment_author")).toContainText("Nori");
+  await expect(page.locator('#comment-55 .ago-date a.ago[href="#comment-55"]')).toContainText(
+    "now",
+  );
+  await expect(page.locator('#comment-55 .ago-date a.share-link[href="#comment-55"]')).toHaveCSS(
+    "display",
+    "none",
+  );
   await expect(page.locator("#comment-55 .comment-body")).toContainText("First issue comment");
   await expect(page.locator('#comment-55 [data-toggle="comment-edit"]')).toHaveAttribute(
     "data-comment-id",
