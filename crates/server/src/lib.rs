@@ -9390,6 +9390,53 @@ fn build_rest_pull_request_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/watch",
+            post({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_set_pull_request_watch(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            true,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            })
+            .delete({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name, pull_request_number)): Path<(
+                    String,
+                    String,
+                    i64,
+                )>| {
+                    let service = service.clone();
+                    async move {
+                        rest_set_pull_request_watch(
+                            headers,
+                            owner_name,
+                            project_name,
+                            pull_request_number,
+                            false,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
             "/owners/{owner_name}/projects/{project_name}/pull-requests/{pull_request_number}/comments",
             post({
                 let service = service.clone();
@@ -16075,6 +16122,71 @@ async fn rest_set_pull_request_review(
         &service.base_path,
     )
     .await;
+    Ok(Json(
+        rest_pull_request_detail_from_record_with_repository_issue_references(
+            repository,
+            record,
+            &authorization,
+            Some(actor.id),
+            &service.base_path,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
+    ))
+}
+
+async fn rest_set_pull_request_watch(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    pull_request_number: i64,
+    watching: bool,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestDetailResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, &headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let current = rest_pull_request_detail_response(
+        repository,
+        &owner_name,
+        &project_name,
+        pull_request_number,
+        Some(actor.id),
+        &service.base_path,
+    )
+    .await?;
+    let authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    if watching {
+        repository
+            .watch_pull_request(current.id, actor.id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?;
+    } else {
+        repository
+            .unwatch_pull_request(current.id, actor.id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?;
+    }
+    let record = repository
+        .read_pull_request_detail(
+            &owner_name,
+            &project_name,
+            pull_request_number,
+            Some(actor.id),
+        )
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("pull request not found"))?;
     Ok(Json(
         rest_pull_request_detail_from_record_with_repository_issue_references(
             repository,

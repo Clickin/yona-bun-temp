@@ -711,6 +711,32 @@ export function acceptPullRequestRest(
   ).then(normalizeDetail);
 }
 
+export function watchPullRequestRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestScopeInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestDetailResponse> {
+  return restFetch<Partial<PullRequestDetailResponse>>(
+    runtimeConfig,
+    pullRequestPath(input, "/watch"),
+    { csrfToken, fetchImpl, method: "POST" },
+  ).then(normalizeDetail);
+}
+
+export function unwatchPullRequestRest(
+  runtimeConfig: RuntimeConfig,
+  csrfToken: string,
+  input: PullRequestScopeInput,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestDetailResponse> {
+  return restFetch<Partial<PullRequestDetailResponse>>(
+    runtimeConfig,
+    pullRequestPath(input, "/watch"),
+    { csrfToken, fetchImpl, method: "DELETE" },
+  ).then(normalizeDetail);
+}
+
 export function deletePullRequestSourceBranchRest(
   runtimeConfig: RuntimeConfig,
   csrfToken: string,

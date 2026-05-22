@@ -15,6 +15,8 @@ import {
   restorePullRequestSourceBranchRest,
   unreviewPullRequestRest,
   updatePullRequestCommentRest,
+  unwatchPullRequestRest,
+  watchPullRequestRest,
 } from "../../../../../api/pull-requests";
 import { apiQueryKeys } from "../../../../../api/query-keys";
 import { readProjectContainer } from "../../../../../auth-workspace-client";
@@ -186,6 +188,44 @@ function PullRequestDetailLeafRouteComponent() {
   const unreviewMutation = useMutation({
     mutationFn: () => unreviewPullRequestRest(runtimeConfig, csrfToken, scope),
     onError: mutationError("Unreview pull request failed."),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(
+        apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
+        updated,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
+  const watchMutation = useMutation({
+    mutationFn: () => watchPullRequestRest(runtimeConfig, csrfToken, scope),
+    onError: mutationError("Watch pull request failed."),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(
+        apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
+        updated,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "pull-requests"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [...apiQueryKeys.project.base(owner, projectName), "reviews"],
+        }),
+        queryClient.invalidateQueries({ queryKey: apiQueryKeys.search.all() }),
+      ]);
+    },
+  });
+  const unwatchMutation = useMutation({
+    mutationFn: () => unwatchPullRequestRest(runtimeConfig, csrfToken, scope),
+    onError: mutationError("Unwatch pull request failed."),
     onSuccess: async (updated) => {
       queryClient.setQueryData(
         apiQueryKeys.project.pullRequestDetail(owner, projectName, parsedNumber),
@@ -383,6 +423,17 @@ function PullRequestDetailLeafRouteComponent() {
       onUnreview={async () => {
         await unreviewMutation.mutateAsync();
       }}
+      onWatchToggle={
+        currentSession
+          ? async () => {
+              if (pullRequestQuery.data?.isWatching) {
+                await unwatchMutation.mutateAsync();
+                return;
+              }
+              await watchMutation.mutateAsync();
+            }
+          : undefined
+      }
     />
   );
 }

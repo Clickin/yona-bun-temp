@@ -325,25 +325,6 @@ async fn insert_resource_watch(
     .expect("insert watch row");
 }
 
-async fn insert_resource_unwatch(
-    db: &DatabaseConnection,
-    user_id: i64,
-    resource_type: &str,
-    resource_id: i64,
-) {
-    db.execute(Statement::from_sql_and_values(
-        db.get_database_backend(),
-        "INSERT INTO unwatch (user_id, resource_type, resource_id) VALUES (?, ?, ?)",
-        vec![
-            user_id.into(),
-            resource_type.to_string().into(),
-            resource_id.to_string().into(),
-        ],
-    ))
-    .await
-    .expect("insert unwatch row");
-}
-
 fn write_repo_file(repo_path: &Path, relative_path: &str, contents: &str) {
     let path = repo_path.join(relative_path);
     if let Some(parent) = path.parent() {
@@ -406,9 +387,10 @@ async fn pull_request_watcher_projection_matches_legacy_get_watchers() {
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "watchowner").await;
     let (commenter_csrf, commenter_cookie, _) = register_user(app.clone(), "watchcommenter").await;
-    let (_, project_watcher_cookie, project_watcher_id) =
+    let (project_watcher_csrf, project_watcher_cookie, project_watcher_id) =
         register_user(app.clone(), "projectwatcher").await;
-    let (_, _, explicit_watcher_id) = register_user(app.clone(), "explicitwatcher").await;
+    let (explicit_watcher_csrf, explicit_watcher_cookie, _explicit_watcher_id) =
+        register_user(app.clone(), "explicitwatcher").await;
     let (_, _, private_outsider_id) = register_user(app.clone(), "privateoutsider").await;
 
     create_project(
@@ -446,7 +428,6 @@ async fn pull_request_watcher_projection_matches_legacy_get_watchers() {
         .await,
     )
     .await;
-    let pull_request_id = created["id"].as_i64().unwrap();
     assert_eq!(created["watcherCount"], 1);
     assert_eq!(created["isWatching"], true);
 
@@ -489,24 +470,29 @@ async fn pull_request_watcher_projection_matches_legacy_get_watchers() {
     .await;
     assert_eq!(commented["watcherCount"], 3);
 
-    insert_resource_watch(&db, explicit_watcher_id, "PULL_REQUEST", pull_request_id).await;
     let with_explicit_watcher = response_json(
-        rest_get(
+        rest_json(
             app.clone(),
-            "/yona/api/v1/owners/watchowner/projects/watchPublic/pull-requests/1",
-            Some(&owner_cookie),
+            Method::POST,
+            "/yona/api/v1/owners/watchowner/projects/watchPublic/pull-requests/1/watch",
+            Some(&explicit_watcher_cookie),
+            Some(&explicit_watcher_csrf),
+            json!({}),
         )
         .await,
     )
     .await;
     assert_eq!(with_explicit_watcher["watcherCount"], 4);
+    assert_eq!(with_explicit_watcher["isWatching"], true);
 
-    insert_resource_unwatch(&db, project_watcher_id, "PULL_REQUEST", pull_request_id).await;
     let after_unwatch = response_json(
-        rest_get(
+        rest_json(
             app.clone(),
-            "/yona/api/v1/owners/watchowner/projects/watchPublic/pull-requests/1",
+            Method::DELETE,
+            "/yona/api/v1/owners/watchowner/projects/watchPublic/pull-requests/1/watch",
             Some(&project_watcher_cookie),
+            Some(&project_watcher_csrf),
+            json!({}),
         )
         .await,
     )

@@ -642,6 +642,7 @@ function PullRequestActionBar(props: {
   onOpen?: () => Promise<void>;
   onReview?: () => Promise<void>;
   onUnreview?: () => Promise<void>;
+  onWatchToggle?: () => Promise<void>;
 }) {
   const pr = props.pullRequest;
   const viewerReviewed = props.viewerId
@@ -657,6 +658,18 @@ function PullRequestActionBar(props: {
       : "pullRequest.not.enough.review.point";
   return (
     <div className="pull-request-actions">
+      {props.onWatchToggle ? (
+        <button
+          className={`ybtn${pr.isWatching ? " ybtn-watching" : ""}`}
+          data-toggle="button"
+          data-watching={pr.isWatching ? "true" : "false"}
+          id="watch-button"
+          onClick={() => void props.onWatchToggle?.()}
+          type="button"
+        >
+          {pr.isWatching ? "project.unwatch" : "project.watch"}
+        </button>
+      ) : null}
       {pr.permissions.canUpdate ? (
         <a
           className="ybtn"
@@ -832,6 +845,7 @@ export function ProjectPullRequestDetailPage(props: {
   onThreadClose?: (threadId: number) => Promise<void>;
   onThreadOpen?: (threadId: number) => Promise<void>;
   onUnreview?: () => Promise<void>;
+  onWatchToggle?: () => Promise<void>;
 }) {
   const detail = props.detail ?? fallbackProjectDetail();
   const pr = props.pullRequest;
@@ -870,6 +884,7 @@ export function ProjectPullRequestDetailPage(props: {
               onOpen={props.onOpen}
               onReview={props.onReview}
               onUnreview={props.onUnreview}
+              onWatchToggle={props.onWatchToggle}
             />
           </section>
           <PullRequestSourceBranchActions

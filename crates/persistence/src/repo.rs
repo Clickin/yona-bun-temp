@@ -11502,21 +11502,63 @@ impl AppRepository {
             .contains(&user_id))
     }
 
-    async fn watch_pull_request(&self, pull_request_id: i64, user_id: i64) -> Result<(), DbErr> {
-        if self
+    pub async fn watch_pull_request(
+        &self,
+        pull_request_id: i64,
+        user_id: i64,
+    ) -> Result<(), DbErr> {
+        let resource_id = pull_request_id.to_string();
+        if !self
             .has_explicit_pull_request_watch(pull_request_id, user_id)
             .await?
         {
-            return Ok(());
+            watch::ActiveModel {
+                id: NotSet,
+                user_id: Set(Some(user_id)),
+                resource_type: Set(Some("PULL_REQUEST".to_string())),
+                resource_id: Set(Some(resource_id.clone())),
+            }
+            .insert(&self.db)
+            .await?;
         }
-        watch::ActiveModel {
-            id: NotSet,
-            user_id: Set(Some(user_id)),
-            resource_type: Set(Some("PULL_REQUEST".to_string())),
-            resource_id: Set(Some(pull_request_id.to_string())),
+        unwatch::Entity::delete_many()
+            .filter(unwatch::Column::UserId.eq(Some(user_id)))
+            .filter(unwatch::Column::ResourceType.eq(Some("PULL_REQUEST".to_string())))
+            .filter(unwatch::Column::ResourceId.eq(Some(resource_id)))
+            .exec(&self.db)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn unwatch_pull_request(
+        &self,
+        pull_request_id: i64,
+        user_id: i64,
+    ) -> Result<(), DbErr> {
+        let resource_id = pull_request_id.to_string();
+        if unwatch::Entity::find()
+            .filter(unwatch::Column::UserId.eq(Some(user_id)))
+            .filter(unwatch::Column::ResourceType.eq(Some("PULL_REQUEST".to_string())))
+            .filter(unwatch::Column::ResourceId.eq(Some(resource_id.clone())))
+            .one(&self.db)
+            .await?
+            .is_none()
+        {
+            unwatch::ActiveModel {
+                id: NotSet,
+                user_id: Set(Some(user_id)),
+                resource_type: Set(Some("PULL_REQUEST".to_string())),
+                resource_id: Set(Some(resource_id.clone())),
+            }
+            .insert(&self.db)
+            .await?;
         }
-        .insert(&self.db)
-        .await?;
+        watch::Entity::delete_many()
+            .filter(watch::Column::UserId.eq(Some(user_id)))
+            .filter(watch::Column::ResourceType.eq(Some("PULL_REQUEST".to_string())))
+            .filter(watch::Column::ResourceId.eq(Some(resource_id)))
+            .exec(&self.db)
+            .await?;
         Ok(())
     }
 

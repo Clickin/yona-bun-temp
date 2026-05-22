@@ -260,6 +260,28 @@ test.beforeEach(async ({ page }) => {
         });
         return;
       }
+      if (url.pathname.endsWith("/watch") && method === "POST") {
+        pullRequest = detail({
+          ...pullRequest,
+          isWatching: true,
+          watcherCount: pullRequest.isWatching
+            ? pullRequest.watcherCount
+            : pullRequest.watcherCount + 1,
+        });
+        await route.fulfill({ body: JSON.stringify(pullRequest), headers: restJsonHeaders });
+        return;
+      }
+      if (url.pathname.endsWith("/watch") && method === "DELETE") {
+        pullRequest = detail({
+          ...pullRequest,
+          isWatching: false,
+          watcherCount: pullRequest.isWatching
+            ? Math.max(pullRequest.watcherCount - 1, 0)
+            : pullRequest.watcherCount,
+        });
+        await route.fulfill({ body: JSON.stringify(pullRequest), headers: restJsonHeaders });
+        return;
+      }
       if (url.pathname.endsWith("/review")) {
         pullRequest = detail({
           ...pullRequest,
@@ -520,6 +542,13 @@ test("covers create/edit forms and PR interaction actions without placeholders",
     "pullRequest.review.lacking 1",
   );
   await expect(page.locator("#reviewers")).toContainText("pullRequest.reviewers.empty");
+  await expect(page.locator("#watch-button")).toHaveAttribute("data-watching", "false");
+  await page.locator("#watch-button").click();
+  await expect(page.locator("#watch-button")).toHaveAttribute("data-watching", "true");
+  await expect(page.locator(".board-header .infos")).toContainText("Watchers: 2");
+  await page.locator("#watch-button").click();
+  await expect(page.locator("#watch-button")).toHaveAttribute("data-watching", "false");
+  await expect(page.locator(".board-header .infos")).toContainText("Watchers: 1");
   await page.getByRole("button", { name: "Review" }).click();
   await expect(page.locator("#reviewers .reviewer-status.reviewed")).toContainText(
     "pullRequest.review.complete",
@@ -530,6 +559,10 @@ test("covers create/edit forms and PR interaction actions without placeholders",
     "pullRequest.review.lacking 1",
   );
   await expect(page.locator("#reviewers")).toContainText("pullRequest.reviewers.empty");
+  await page.getByRole("button", { name: "Review" }).click();
+  await expect(page.locator("#reviewers .reviewer-status.reviewed")).toContainText(
+    "pullRequest.review.complete",
+  );
 
   await page.locator(".review-form textarea").fill("New review comment");
   await page.getByRole("button", { name: "Comment" }).click();
