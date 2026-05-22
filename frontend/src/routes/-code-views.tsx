@@ -290,9 +290,64 @@ type ParsedDiffLine = {
 };
 
 type InlineCommentDraft = {
-  line: number;
+  endLine: number;
   path: string;
+  startLine: number;
 };
+
+function closestDiffSelectionRow(node: Node, table: HTMLTableElement): HTMLTableRowElement | null {
+  const element = node instanceof Element ? node : node.parentElement;
+  const row = element?.closest<HTMLTableRowElement>("tr[data-line]");
+  return row && table.contains(row) ? row : null;
+}
+
+function diffRowLine(row: HTMLTableRowElement): number | null {
+  const line = Number.parseInt(row.dataset.line ?? "", 10);
+  return Number.isInteger(line) && line > 0 ? line : null;
+}
+
+function rowHasCommentableCode(row: HTMLTableRowElement): boolean {
+  return row.dataset.line !== undefined && row.querySelector("td.code > pre") !== null;
+}
+
+function inlineCommentDraftFromSelection(
+  path: string,
+  table: HTMLTableElement,
+): InlineCommentDraft | null {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || selection.toString().trim().length === 0) {
+    return null;
+  }
+
+  const range = selection.getRangeAt(0);
+  const anchorRow = closestDiffSelectionRow(range.startContainer, table);
+  const focusRow = closestDiffSelectionRow(range.endContainer, table);
+  if (!anchorRow || !focusRow) {
+    return null;
+  }
+
+  const rows = Array.from(table.rows);
+  const anchorIndex = rows.indexOf(anchorRow);
+  const focusIndex = rows.indexOf(focusRow);
+  if (anchorIndex < 0 || focusIndex < 0) {
+    return null;
+  }
+
+  const startIndex = Math.min(anchorIndex, focusIndex);
+  const endIndex = Math.max(anchorIndex, focusIndex);
+  const selectedRows = rows.slice(startIndex, endIndex + 1);
+  if (!selectedRows.every(rowHasCommentableCode)) {
+    return null;
+  }
+
+  const startLine = diffRowLine(rows[startIndex]);
+  const endLine = diffRowLine(rows[endIndex]);
+  if (startLine === null || endLine === null) {
+    return null;
+  }
+
+  return { endLine, path, startLine };
+}
 
 function parseUnifiedDiffLines(patch: string): ParsedDiffLine[] {
   const lines = patch.replace(/\r\n/g, "\n").split("\n");
@@ -951,9 +1006,23 @@ function CodeCommitDiffView(props: {
   }
 
   function showInlineComment(path: string, line: number) {
-    setInlineComment({ line, path });
+    setInlineComment({ endLine: line, path, startLine: line });
     setInlineCommentText("");
     setInlineAttachmentIds([]);
+  }
+
+  function showInlineCommentFromSelection(path: string, table: HTMLTableElement) {
+    if (!canComment) {
+      return;
+    }
+    const selectedDraft = inlineCommentDraftFromSelection(path, table);
+    if (!selectedDraft) {
+      return;
+    }
+    setInlineComment(selectedDraft);
+    setInlineCommentText("");
+    setInlineAttachmentIds([]);
+    window.getSelection()?.removeAllRanges();
   }
 
   async function submitInlineComment(event: React.FormEvent<HTMLFormElement>) {
@@ -965,9 +1034,9 @@ function CodeCommitDiffView(props: {
     await props.onCreateComment({
       attachmentIds: inlineAttachmentIds,
       contentsMarkdown,
-      endLine: inlineComment.line,
+      endLine: inlineComment.endLine,
       path: inlineComment.path,
-      startLine: inlineComment.line,
+      startLine: inlineComment.startLine,
     });
     setInlineAttachmentIds([]);
     setInlineCommentText("");
@@ -1026,7 +1095,12 @@ function CodeCommitDiffView(props: {
                   key={file.path}
                 >
                   <h2>{file.path}</h2>
-                  <table className="diff-code diff-table">
+                  <table
+                    className="diff-code diff-table"
+                    onMouseUp={(event) =>
+                      showInlineCommentFromSelection(file.path, event.currentTarget)
+                    }
+                  >
                     <tbody>
                       {diffLines.map((line) => {
                         const lineThreads =
@@ -1035,7 +1109,7 @@ function CodeCommitDiffView(props: {
                             : rangedThreadsForLine(file.path, line.commentLine);
                         const isInlineFormOpen =
                           inlineComment?.path === file.path &&
-                          inlineComment.line === line.commentLine;
+                          inlineComment.endLine === line.commentLine;
                         return (
                           <React.Fragment key={line.key}>
                             <tr
@@ -1070,8 +1144,13 @@ function CodeCommitDiffView(props: {
                                 <pre className="diff-partial-codeline">{line.text}</pre>
                               </td>
                             </tr>
-                            {isInlineFormOpen && commitDetail ? (
-                              <tr className="comments board-comment-wrap inline-comment-form-row">
+                            {isInlineFormOpen && commitDetail && inlineComment ? (
+                              <tr
+                                className="comments board-comment-wrap inline-comment-form-row"
+                                data-range-endline={inlineComment.endLine}
+                                data-range-path={inlineComment.path}
+                                data-range-startline={inlineComment.startLine}
+                              >
                                 <td colSpan={3}>
                                   <form
                                     action={commitDiscussionApiHref(
@@ -1089,17 +1168,15 @@ function CodeCommitDiffView(props: {
                                     <input
                                       name="startLine"
                                       type="hidden"
-                                      value={line.commentLine ?? ""}
+                                      value={inlineComment.startLine}
                                     />
                                     <input
                                       name="endLine"
                                       type="hidden"
-                                      value={line.commentLine ?? ""}
+                                      value={inlineComment.endLine}
                                     />
                                     <MarkdownAttachmentTextarea
-                                      ariaLabel={`Code review comment on ${file.path}:${
-                                        line.commentLine ?? ""
-                                      }`}
+                                      ariaLabel={`Code review comment on ${file.path}:${inlineComment.startLine}-${inlineComment.endLine}`}
                                       csrfToken={props.csrfToken}
                                       disabled={!canComment}
                                       name="contentsMarkdown"

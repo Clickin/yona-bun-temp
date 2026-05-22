@@ -489,3 +489,108 @@ test("commit diff line comment creates a ranged review thread", async ({ page })
   await expect(page.locator("#thread-31")).toHaveAttribute("data-range-endline", "2");
   await expect(page.locator("#thread-31")).toContainText("Inline line note");
 });
+
+test("commit diff selected text creates a multi-line ranged review thread", async ({ page }) => {
+  let threads: unknown[] = [];
+
+  await page.route(apiV1Route(`/projects/admin/projectYobi/commit/${commitId}`), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify(commitDetailPayload(threads)),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(
+    apiV1Route(`/projects/admin/projectYobi/commit/${commitId}/comments`),
+    async (route) => {
+      const body = (route.request().postDataJSON() ?? {}) as {
+        contentsMarkdown?: string;
+        endLine?: number;
+        path?: string;
+        startLine?: number;
+      };
+      threads = [
+        {
+          authorId: 1,
+          authorLabel: "Admin",
+          authorLoginId: "admin",
+          comments: [
+            {
+              authorId: 1,
+              authorLabel: "Admin",
+              authorLoginId: "admin",
+              canDelete: true,
+              contentsHtml: `<p>${body.contentsMarkdown ?? ""}</p>`,
+              contentsMarkdown: body.contentsMarkdown ?? "",
+              createdLabel: "2026-04-21",
+              id: 32,
+              threadId: 31,
+            },
+          ],
+          commitId,
+          createdLabel: "2026-04-21",
+          endLine: body.endLine,
+          id: 31,
+          path: body.path,
+          prevCommitId: "",
+          startLine: body.startLine,
+          state: "open",
+        },
+      ];
+      await route.fulfill({
+        body: JSON.stringify(commitDetailPayload(threads)),
+        headers: restJsonHeaders,
+        status: 201,
+      });
+    },
+  );
+
+  await page.goto(`/yona/admin/projectYobi/commit/${commitId}`);
+  await expect(page.locator("tr.add .diff-partial-codeline")).toBeVisible();
+  await expect(page.locator("tr.context .diff-partial-codeline").last()).toBeVisible();
+  await page.evaluate(() => {
+    const firstLine = document.querySelector("tr.add .diff-partial-codeline")?.firstChild;
+    const contextLines = document.querySelectorAll("tr.context .diff-partial-codeline");
+    const lastLine = contextLines.item(contextLines.length - 1)?.firstChild;
+    const diffTable = document.querySelector(".diff-table");
+    if (!firstLine || !lastLine || !diffTable) {
+      throw new Error("diff lines not found");
+    }
+
+    const range = document.createRange();
+    range.setStart(firstLine, 0);
+    range.setEnd(lastLine, lastLine.textContent?.length ?? 0);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    diffTable.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, button: 0 }));
+  });
+
+  const inlineForm = page.locator(".code-review-form");
+  await expect(inlineForm).toBeVisible();
+  await expect(inlineForm.locator("input[name='startLine']")).toHaveValue("2");
+  await expect(inlineForm.locator("input[name='endLine']")).toHaveValue("3");
+  await inlineForm.locator("textarea").fill("Multi-line commit note");
+
+  const lineCommentRequest = page.waitForRequest(
+    (request) =>
+      request.url().endsWith(`/commit/${commitId}/comments`) && request.method() === "POST",
+  );
+  await inlineForm.getByRole("button", { name: "Comment" }).click();
+  const submittedLineComment = (await lineCommentRequest).postDataJSON() as {
+    contentsMarkdown?: string;
+    endLine?: number;
+    path?: string;
+    startLine?: number;
+  };
+
+  expect(submittedLineComment).toMatchObject({
+    contentsMarkdown: "Multi-line commit note",
+    endLine: 3,
+    path: "src/main.rs",
+    startLine: 2,
+  });
+  await expect(page.locator("#thread-31")).toHaveAttribute("data-range-startline", "2");
+  await expect(page.locator("#thread-31")).toHaveAttribute("data-range-endline", "3");
+  await expect(page.locator("#thread-31")).toContainText("Multi-line commit note");
+});
