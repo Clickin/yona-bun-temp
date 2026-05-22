@@ -1389,6 +1389,22 @@ function ReviewThreadCard(props: {
   );
 }
 
+function SelectedPullRequestCommitInfo(props: { commit: PullRequestCommitViewModel }) {
+  const authorLabel = props.commit.authorEmail || "Anonymous";
+  return (
+    <>
+      <p className="commitInfo">
+        <span className="avatar-wrap smaller">{authorLabel.slice(0, 1).toUpperCase()}</span>
+        <strong>{authorLabel}</strong>
+        <span className="ago" title={props.commit.authorDateLabel}>
+          {props.commit.authorDateLabel}
+        </span>
+      </p>
+      <pre className="commitMsg mt5">{props.commit.commitMessage}</pre>
+    </>
+  );
+}
+
 export function PullRequestChangesPage(props: {
   csrfToken?: string;
   changes: PullRequestChangesResponse | undefined;
@@ -1718,6 +1734,7 @@ export function PullRequestChangesPage(props: {
         ) : (
           <div className="warning-none">No commit metadata is available.</div>
         )}
+        {selectedCommit ? <SelectedPullRequestCommitInfo commit={selectedCommit} /> : null}
         {files.length ? (
           <div className="diffs-wrap">
             <div className="diff-body">{files.map(renderChangedFile)}</div>

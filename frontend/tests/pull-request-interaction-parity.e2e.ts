@@ -771,6 +771,9 @@ test("renders selected outdated pull request commits with legacy change markers"
   await expect(
     page.locator("#reviewcards-closed .review-card.closed.outdated .outdated-label"),
   ).toHaveText("review.outdated");
+  await expect(page.locator(".commitInfo")).toContainText("reviewer@example.com");
+  await expect(page.locator(".commitInfo .ago")).toHaveAttribute("title", "2026-05-02");
+  await expect(page.locator(".commitMsg.mt5")).toContainText("Superseded src/lib.rs");
   await expect(page.locator(".diff-body")).toContainText("new prior line");
 });
 
