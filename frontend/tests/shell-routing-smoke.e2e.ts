@@ -399,7 +399,7 @@ test.beforeEach(async ({ page }) => {
             contentsMarkdown: "First issue comment",
             createdLabel: "now",
             id: 55,
-            viewerCanDelete: false,
+            viewerCanDelete: true,
             viewerCanUpdate: false,
             viewerHasVoted: false,
             voterCount: 0,
@@ -438,7 +438,7 @@ test.beforeEach(async ({ page }) => {
               contentsMarkdown: "First issue comment",
               createdLabel: "now",
               id: 55,
-              viewerCanDelete: false,
+              viewerCanDelete: true,
               viewerCanUpdate: false,
               viewerHasVoted: false,
               voterCount: 0,
@@ -1047,6 +1047,23 @@ test("project issue routes render data-backed issue list filters and detail scre
   );
   await expect(page.locator("#comment-55 .comment_author")).toContainText("Nori");
   await expect(page.locator("#comment-55 .comment-body")).toContainText("First issue comment");
+  await expect(page.locator('#comment-55 [data-toggle="comment-delete"]')).toHaveAttribute(
+    "data-request-uri",
+    "/yona/admin/projectYobi/issue/1/comment/55/delete",
+  );
+  await page.locator('#comment-55 [data-toggle="comment-delete"]').click();
+  await expect(page.locator("#comment-delete-modal.modal.hide.fade.in")).toBeVisible();
+  await expect(page.locator("#comment-delete-modal")).toContainText(
+    "common.comment.delete.confirm",
+  );
+  await expect(page.locator("#comment-delete-confirm")).toHaveAttribute(
+    "data-request-method",
+    "delete",
+  );
+  await expect(page.locator("#comment-delete-confirm")).toHaveAttribute(
+    "data-request-uri",
+    "/yona/admin/projectYobi/issue/1/comment/55/delete",
+  );
 });
 
 test("project issue comment editor inserts pasted and dropped image uploads", async ({ page }) => {

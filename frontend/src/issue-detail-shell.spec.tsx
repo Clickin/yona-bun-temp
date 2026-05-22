@@ -68,6 +68,56 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('data-request-method="delete"');
   });
 
+  it("renders the legacy comment delete trigger and confirmation modal shell", () => {
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          commentCount: 1,
+          timeline: [
+            {
+              comment: {
+                authorAvatarUrl: "https://cdn.yona/avatar-commenter.png",
+                authorLabel: "Commenter",
+                authorLoginId: "commenter",
+                contentsHtml: "<p>Comment body</p>",
+                contentsMarkdown: "Comment body",
+                createdLabel: "now",
+                id: 55,
+                viewerCanDelete: true,
+                viewerCanUpdate: false,
+                viewerHasVoted: false,
+                voterCount: 0,
+                voters: [],
+              },
+              createdLabel: "now",
+              eventType: "",
+              id: 55,
+              kind: "comment",
+              newValue: "",
+              oldValue: "",
+              senderLoginId: "",
+            },
+          ],
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+        onCommentDelete={async () => undefined}
+      />,
+    );
+
+    expect(html).toContain('id="comment-55"');
+    expect(html).toContain('data-toggle="comment-delete"');
+    expect(html).toContain('data-request-uri="/yona/owner/projectYobi/issue/1/comment/55/delete"');
+    expect(html).toContain('title="common.comment.delete"');
+    expect(html).toContain('class="btn-transparent-with-fontsize-lineheight ml6"');
+    expect(html).toContain('id="comment-delete-modal"');
+    expect(html).toContain('class="modal hide fade"');
+    expect(html).toContain("common.comment.delete.confirm");
+    expect(html).toContain('id="comment-delete-confirm"');
+    expect(html).toContain('data-request-method="delete"');
+  });
+
   it("renders legacy event timeline anchors and hides body-change events", () => {
     const html = renderToStaticMarkup(
       <ProjectIssueDetailPage

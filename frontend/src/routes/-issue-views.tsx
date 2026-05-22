@@ -279,6 +279,7 @@ export function ProjectIssueDetailPage(props: {
   const onDeleteIssue = props.onDeleteIssue;
   const onStateChange = props.onStateChange;
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
+  const [commentDeleteTargetId, setCommentDeleteTargetId] = React.useState<number | null>(null);
   const issueAuthorLoginId = issue?.authorLoginId ?? "";
   const issueAuthorLabel = issue?.authorLabel || issueAuthorLoginId || "Unknown";
   const issueAuthorHref = issueAuthorLoginId
@@ -293,7 +294,17 @@ export function ProjectIssueDetailPage(props: {
   const issueStateClass = issueState.toLowerCase();
   const issueTitle = issue?.title ?? "Issue";
   const issueNumberLabel = issue ? `#${issue.issueNumber}` : "";
+  const issueNumber = issue?.issueNumber ?? 0;
   const voteWrapClass = issue && issue.voterCount > 0 ? "vote-wrap voter-exists" : "vote-wrap";
+  const commentDeleteRequestUri =
+    issue && commentDeleteTargetId !== null
+      ? buildProjectHref(
+          props.runtimeConfig,
+          detail.ownerName,
+          detail.projectName,
+          `issue/${issue.issueNumber}/comment/${commentDeleteTargetId}/delete`,
+        )
+      : undefined;
 
   return (
     <main className="app-shell issue-detail-page page-wrap-outer">
@@ -585,10 +596,19 @@ export function ProjectIssueDetailPage(props: {
                             ) : null}
                             {comment.viewerCanDelete && props.onCommentDelete ? (
                               <button
-                                onClick={() => void props.onCommentDelete?.(comment.id)}
+                                className="btn-transparent-with-fontsize-lineheight ml6"
+                                data-request-uri={buildProjectHref(
+                                  props.runtimeConfig,
+                                  detail.ownerName,
+                                  detail.projectName,
+                                  `issue/${issueNumber}/comment/${comment.id}/delete`,
+                                )}
+                                data-toggle="comment-delete"
+                                onClick={() => setCommentDeleteTargetId(comment.id)}
+                                title="common.comment.delete"
                                 type="button"
                               >
-                                Delete comment
+                                <i className="yobicon-trash"></i>
                               </button>
                             ) : null}
                           </div>
@@ -693,6 +713,56 @@ export function ProjectIssueDetailPage(props: {
                 button.yes
               </button>
               <button className="ybtn" onClick={() => setDeleteConfirmOpen(false)} type="button">
+                button.no
+              </button>
+            </div>
+          </div>
+        ) : null}
+        {issue ? (
+          <div
+            aria-hidden={commentDeleteTargetId === null ? "true" : "false"}
+            className={`modal hide fade${commentDeleteTargetId !== null ? " in" : ""}`}
+            id="comment-delete-modal"
+            style={commentDeleteTargetId !== null ? { display: "block" } : undefined}
+          >
+            <div className="modal-header">
+              <button
+                className="close"
+                data-dismiss="modal"
+                onClick={() => setCommentDeleteTargetId(null)}
+                type="button"
+              >
+                x
+              </button>
+              <h3>common.comment.delete</h3>
+            </div>
+            <div className="modal-body">
+              <p>common.comment.delete.confirm</p>
+            </div>
+            <div className="modal-footer">
+              <button
+                className="ybtn ybtn-danger"
+                data-request-method="delete"
+                data-request-uri={commentDeleteRequestUri}
+                id="comment-delete-confirm"
+                onClick={() => {
+                  if (commentDeleteTargetId === null || !props.onCommentDelete) {
+                    return;
+                  }
+                  const targetId = commentDeleteTargetId;
+                  setCommentDeleteTargetId(null);
+                  void props.onCommentDelete(targetId);
+                }}
+                type="button"
+              >
+                button.yes
+              </button>
+              <button
+                className="ybtn"
+                data-dismiss="modal"
+                onClick={() => setCommentDeleteTargetId(null)}
+                type="button"
+              >
                 button.no
               </button>
             </div>
