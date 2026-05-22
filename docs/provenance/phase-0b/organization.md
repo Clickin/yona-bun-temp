@@ -58,6 +58,7 @@
 ## Wave 2B Delivery Note
 
 - Wave 2B now covers organization create, public detail read, settings read/update, home CTA matrix, members admin view, deleteForm admin view, member add/edit/delete, enrollment accept/request/cancel, leave, and delete guards through `/api/v1/organizations/**`, `crates/server`, `crates/persistence`, and `frontend`.
+- The organization home route now keeps the legacy page/project shell anchors for the visible-project list and roster side pane: `.page-wrap-outer`, `.project-page-wrap`, `.project-home-header`, `.span-left-pane`, `.span-right-pane`, `.project-list-wrap`, and `.bubble-wrap.gray.organization-home`.
 - The members view now restores legacy ordering semantics: org admins first, org members second, login-id ascending within each group, and pending enrollment requests in a separate ascending block.
 - Direct entry semantics now match legacy intent on the mounted React routes: anonymous viewers redirect to login with return-path, authenticated forbidden viewers receive a forbidden shell, and missing organizations receive a not-found shell.
 - Phase 2F restores organization issue listing body parity with visible-project aggregation, core GET filters, state tabs, project selector, sort links, empty state, and pagination.

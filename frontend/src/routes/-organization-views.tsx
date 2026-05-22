@@ -132,11 +132,11 @@ function OrganizationMemberBubble(props: {
   title: string;
 }) {
   return (
-    <section>
+    <section className="organization-member-wrap">
       <h2>{props.title}</h2>
-      <ul>
+      <ul className="member-list unstyled">
         {props.members.map((member) => (
-          <li key={`${props.title}-${member.loginId}`}>
+          <li className="member-item" key={`${props.title}-${member.loginId}`}>
             {member.userLabel} @{member.loginId}
           </li>
         ))}
@@ -265,73 +265,91 @@ export function OrganizationDetailPage(props: {
     visibleProjects: [],
   };
 
+  const organizationHref = buildOrganizationHref(props.runtimeConfig, detail.organizationName);
+
   return (
-    <main className="app-shell">
-      <p className="eyebrow">Yona Rust Organization</p>
-      <h1>{detail.organizationName || "Organization"}</h1>
-      <OrganizationMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <OrganizationMembershipActions
-        detail={detail}
-        onCancelEnrollOrganization={props.onCancelEnrollOrganization}
-        onEnrollOrganization={props.onEnrollOrganization}
-        onLeaveOrganization={props.onLeaveOrganization}
-      />
-      <section>
-        <h2>Description</h2>
-        <p>{detail.description || "No description yet."}</p>
-      </section>
-      <section>
-        <form
-          action={buildOrganizationHref(props.runtimeConfig, detail.organizationName)}
-          method="get"
-        >
-          <label htmlFor="mylist-filter">Project filter</label>
-          <input id="mylist-filter" name="filter" placeholder="Type project name" type="text" />
-          <button type="submit">Search</button>
-        </form>
-        {detail.viewerCanCreateProject ? (
-          <a
-            href={prefixBasePath(
-              props.runtimeConfig.basePath,
-              `/projects/new?owner=${encodeURIComponent(detail.organizationName)}`,
-            )}
-          >
-            Create project
-          </a>
-        ) : null}
-      </section>
-      <section>
-        <h2>Projects</h2>
-        <ul>
-          {(detail.visibleProjects ?? []).map((project) => (
-            <li key={`${project.ownerName}/${project.projectName}`}>
-              <a
-                href={prefixBasePath(
-                  props.runtimeConfig.basePath,
-                  `/${project.ownerName}/${project.projectName}`,
-                )}
-              >
-                {project.projectName}
-              </a>
-              <p>{project.overview}</p>
-              <p>State: {project.projectScope}</p>
-              <p>{`Members: ${project.memberCount}`}</p>
-              <p>{`Watchers: ${project.watchCount}`}</p>
-              <p>{`Created ${project.createdLabel}`}</p>
-              <p>{`Last pushed ${project.lastPushedLabel}`}</p>
-              {project.originOwnerName && project.originProjectName ? (
-                <p>{`Original: ${project.originOwnerName} / ${project.originProjectName}`}</p>
+    <main className="app-shell organization-page page-wrap-outer">
+      <div className="project-page-wrap organization-home-wrap">
+        <p className="eyebrow">Yona Rust Organization</p>
+        <h1>{detail.organizationName || "Organization"}</h1>
+        <OrganizationMenu detail={detail} runtimeConfig={props.runtimeConfig} />
+        <div className="project-home-header row-fluid">
+          <div className="project-overview span9 span-hard-wrap">
+            <div className="project-description">
+              <h3>
+                <span className="markdown-wrap">{detail.description || "No description yet."}</span>
+              </h3>
+            </div>
+          </div>
+        </div>
+        <section className="organization-project-filter">
+          <form action={organizationHref} method="get">
+            <label htmlFor="mylist-filter">Project filter</label>
+            <input id="mylist-filter" name="filter" placeholder="Type project name" type="text" />
+            <button type="submit">Search</button>
+          </form>
+          {detail.viewerCanCreateProject ? (
+            <a
+              className="ybtn ybtn-success"
+              href={prefixBasePath(
+                props.runtimeConfig.basePath,
+                `/projects/new?owner=${encodeURIComponent(detail.organizationName)}`,
+              )}
+            >
+              Create project
+            </a>
+          ) : null}
+        </section>
+        <div className="row-fluid organization-home-body">
+          <div className="span9 span-left-pane">
+            <section>
+              <h2>Projects</h2>
+              <ul className="project-list-wrap organization-project-list">
+                {(detail.visibleProjects ?? []).map((project) => (
+                  <li
+                    className="listitem organization-project-card"
+                    key={`${project.ownerName}/${project.projectName}`}
+                  >
+                    <a
+                      href={prefixBasePath(
+                        props.runtimeConfig.basePath,
+                        `/${project.ownerName}/${project.projectName}`,
+                      )}
+                    >
+                      {project.projectName}
+                    </a>
+                    <p>{project.overview}</p>
+                    <p>State: {project.projectScope}</p>
+                    <p>{`Members: ${project.memberCount}`}</p>
+                    <p>{`Watchers: ${project.watchCount}`}</p>
+                    <p>{`Created ${project.createdLabel}`}</p>
+                    <p>{`Last pushed ${project.lastPushedLabel}`}</p>
+                    {project.originOwnerName && project.originProjectName ? (
+                      <p>{`Original: ${project.originOwnerName} / ${project.originProjectName}`}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+          <aside className="span3 span-right-pane">
+            <div className="bubble-wrap gray organization-home">
+              <OrganizationMembershipActions
+                detail={detail}
+                onCancelEnrollOrganization={props.onCancelEnrollOrganization}
+                onEnrollOrganization={props.onEnrollOrganization}
+                onLeaveOrganization={props.onLeaveOrganization}
+              />
+              {detail.adminMembers?.length ? (
+                <OrganizationMemberBubble members={detail.adminMembers} title="Group Manager" />
               ) : null}
-            </li>
-          ))}
-        </ul>
-      </section>
-      {detail.adminMembers?.length ? (
-        <OrganizationMemberBubble members={detail.adminMembers} title="Group Manager" />
-      ) : null}
-      {detail.memberMembers?.length ? (
-        <OrganizationMemberBubble members={detail.memberMembers} title="Group Member" />
-      ) : null}
+              {detail.memberMembers?.length ? (
+                <OrganizationMemberBubble members={detail.memberMembers} title="Group Member" />
+              ) : null}
+            </div>
+          </aside>
+        </div>
+      </div>
     </main>
   );
 }

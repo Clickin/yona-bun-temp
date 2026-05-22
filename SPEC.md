@@ -408,8 +408,8 @@ GET   /organizations/:name/search                 → 조직 내 검색
 #### 검수 기준
 
 - [x] 조직 이름 유효성: 영숫자, 대시, 밑줄, 마침표만 허용. 공백 불가. 길이 제한.
-- [ ] 조직 홈에서 소속 프로젝트가 legacy와 동일한 카드/리스트 형태로 표시된다
-- [ ] 멤버 정렬: org admin → org member → login_id ASC → 대기 요청 순 (legacy 동작)
+- [~] 조직 홈에서 소속 프로젝트가 legacy page/project wrapper, project-list, right-pane roster bubble anchor로 표시된다. 남은 세부 카드 시각 polish는 추적한다
+- [x] 멤버 정렬: org admin → org member → login_id ASC → 대기 요청 순 (legacy 동작)
 - [x] 삭제 시 프로젝트가 존재하면 삭제 불가 (legacy guard 동작)
 - [x] 가입 요청은 인증된 사용자이면서 현재 멤버가 아닌 경우에만 가능
 
