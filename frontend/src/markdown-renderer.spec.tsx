@@ -234,6 +234,25 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain('src="&lt;');
   });
 
+  it("unescapes inline link and image targets and titles like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          '[docs](https://example.com/a\\(b\\) "Read \\\"docs\\\"") ![logo](/files/logo\\(1\\).png "Logo \\\"title\\\"")'
+        }
+      />,
+    );
+
+    expect(html).toContain(
+      '<a href="https://example.com/a(b)" title="Read &quot;docs&quot;">docs</a>',
+    );
+    expect(html).toContain(
+      '<img alt="logo" src="/files/logo(1).png" title="Logo &quot;title&quot;"/>',
+    );
+    expect(html).not.toContain("\\(");
+    expect(html).not.toContain('\\"');
+  });
+
   it("renders reference-style links and images like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
