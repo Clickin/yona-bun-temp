@@ -469,13 +469,14 @@ type IssueMutationRestInput = (
 };
 
 function issueMutationRestBody(input: IssueMutationRestInput) {
+  const referCommentId = input.referCommentId ? input.referCommentId : undefined;
   return {
     assigneeLoginId: input.assigneeLoginId ?? "",
     attachmentIds: input.attachmentIds ?? [],
     bodyMarkdown: input.bodyMarkdown ?? "",
     labelIds: input.labelIds ?? [],
     milestoneId: input.milestoneId && input.milestoneId !== 0n ? input.milestoneId : undefined,
-    referCommentId: input.referCommentId ?? undefined,
+    referCommentId,
     title: input.title ?? "",
   };
 }
@@ -585,12 +586,15 @@ export async function readIssueDetail(
 
 export async function readDirectIssueFormOptions(
   runtimeConfig: RuntimeConfig,
-  input: { commentId?: bigint | number | string | null } = {},
+  input: { commentId?: bigint | number | string | null; mine?: boolean } = {},
   fetchImpl: typeof fetch = fetch,
 ): Promise<DirectIssueFormOptionsResponse> {
   const response = await restFetch<DirectIssueFormOptionsResponse>(
     runtimeConfig,
-    `/user/issues/new-options${issueQueryString({ commentId: input.commentId })}`,
+    `/user/issues/new-options${issueQueryString({
+      commentId: input.commentId,
+      mine: input.mine ? "true" : undefined,
+    })}`,
     { fetchImpl },
   );
   return {

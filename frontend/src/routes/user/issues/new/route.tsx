@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute } from "@tanstack/react-router";
 import {
   createIssue,
   readDirectIssueFormOptions,
@@ -24,8 +24,16 @@ export const Route = createFileRoute("/user/issues/new")({
 });
 
 function DirectIssueCreateRouteComponent() {
+  if (window.location.pathname.endsWith("/mine")) {
+    return <Outlet />;
+  }
+
+  return <DirectIssueCreateFormRouteComponent routeHref="/user/issues/new" />;
+}
+
+export function DirectIssueCreateFormRouteComponent(props: { mine?: boolean; routeHref: string }) {
   const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
-  const canRender = useRequireAuthenticatedRoute("/user/issues/new");
+  const canRender = useRequireAuthenticatedRoute(props.routeHref);
   const [options, setOptions] = React.useState<Awaited<
     ReturnType<typeof readDirectIssueFormOptions>
   > | null>(null);
@@ -49,6 +57,7 @@ function DirectIssueCreateRouteComponent() {
         const searchParams = new URLSearchParams(window.location.search);
         const nextOptions = await readDirectIssueFormOptions(runtimeConfig, {
           commentId: searchParams.get("commentId"),
+          mine: props.mine,
         });
         if (cancelled) {
           return;
@@ -77,7 +86,7 @@ function DirectIssueCreateRouteComponent() {
     return () => {
       cancelled = true;
     };
-  }, [canRender, runtimeConfig, setErrorMessage]);
+  }, [canRender, props.mine, runtimeConfig, setErrorMessage]);
 
   if (bootstrapping || !canRender) {
     return (
@@ -87,10 +96,10 @@ function DirectIssueCreateRouteComponent() {
     );
   }
   if (failureKind === "forbidden") {
-    return <ForbiddenPage href="/user/issues/new" />;
+    return <ForbiddenPage href={props.routeHref} />;
   }
   if (failureKind === "not-found") {
-    return <NotFoundPage href="/user/issues/new" />;
+    return <NotFoundPage href={props.routeHref} />;
   }
   if (!options) {
     return (

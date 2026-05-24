@@ -1176,6 +1176,111 @@ test("project issue routes render direct issue form from comment for authenticat
   await expect(page).toHaveURL(/\/yona\/admin\/projectYobi\/issue\/2$/);
 });
 
+test("project issue routes render direct my-issue form for authenticated users", async ({
+  page,
+}) => {
+  let directIssueCreateBody: null | {
+    bodyMarkdown?: string;
+    referCommentId?: string;
+    title?: string;
+  } = null;
+
+  await page.route(apiV1Route("/session"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        defaultLandingPath: "/me",
+        emailAddress: "nori@example.com",
+        isAnonymous: false,
+        isConfirmed: true,
+        isSiteAdmin: false,
+        loginId: "nori",
+        userLabel: "Nori",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(/\/api\/v1\/user\/issues\/new-options\?mine=true$/, async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        bodyMarkdown: "",
+        referCommentId: "",
+        selectedProject: {
+          ownerName: "nori",
+          projectName: "inbox",
+        },
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(apiV1Route("/owners/nori/projects/inbox/container"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        boardCount: 0,
+        cloneUrl: "https://example.com/nori/inbox.git",
+        codeMemberOnly: false,
+        defaultTab: "issues",
+        enrollmentRequested: false,
+        isFavorited: false,
+        isForked: false,
+        isWatching: false,
+        memberCount: 0,
+        members: [],
+        openIssueCount: 0,
+        openPullRequestCount: 0,
+        organizationName: "",
+        overview: "My issue inbox",
+        ownerName: "nori",
+        projectName: "inbox",
+        projectScope: "private",
+        reviewCount: 0,
+        showAdmin: false,
+        showBoard: true,
+        showCode: true,
+        showIssue: true,
+        showMilestone: true,
+        showPullRequest: true,
+        showReview: true,
+        viewerCanEnroll: false,
+        viewerCanUpdate: true,
+        viewerCanWatch: false,
+        watchCount: 0,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+  await page.route(/\/api\/v1\/projects\/nori\/inbox\/issues$/, async (route) => {
+    directIssueCreateBody = route.request().postDataJSON() as {
+      bodyMarkdown?: string;
+      referCommentId?: string;
+      title?: string;
+    };
+    await route.fulfill({
+      body: JSON.stringify({
+        issueNumber: "3",
+        ownerName: "nori",
+        projectName: "inbox",
+        title: directIssueCreateBody.title ?? "My issue",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/user/issues/new/mine");
+  await expect(page.getByRole("heading", { name: "New Issue" })).toBeVisible();
+  await expect(page.locator('input[name="referCommentId"]')).toHaveValue("");
+  await expect(page.locator('textarea[name="body"]')).toHaveValue("");
+  await page.locator('input[name="title"]').fill("My issue");
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect.poll(() => directIssueCreateBody?.referCommentId).toBeUndefined();
+  expect(directIssueCreateBody?.title).toBe("My issue");
+  expect(directIssueCreateBody?.bodyMarkdown).toBe("");
+  await expect(page).toHaveURL(/\/yona\/nori\/inbox\/issue\/3$/);
+});
+
 test("project issue comment editor inserts pasted and dropped image uploads", async ({ page }) => {
   const uploadedHeaders: string[] = [];
   const uploadedNames: string[] = [];

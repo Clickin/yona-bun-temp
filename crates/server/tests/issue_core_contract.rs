@@ -824,3 +824,141 @@ async fn issue_core_contract_restores_direct_issue_from_comment_flow() {
         "{source}"
     );
 }
+
+#[tokio::test]
+async fn issue_core_contract_restores_direct_my_issue_project_selection() {
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie, _) = register_user(app.clone(), "nori").await;
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "nori",
+                "projectName": "publicYobi",
+                "overview": "Public fallback",
+                "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let public_options = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/user/issues/new-options?mine=true",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(public_options["selectedProject"]["ownerName"], "nori");
+    assert_eq!(
+        public_options["selectedProject"]["projectName"],
+        "publicYobi"
+    );
+    assert_eq!(public_options["bodyMarkdown"], "");
+    assert_eq!(public_options["referCommentId"], "");
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "nori",
+                "projectName": "privateYobi",
+                "overview": "Private fallback",
+                "projectScope": "private"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let private_options = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/user/issues/new-options?mine=true",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        private_options["selectedProject"]["projectName"],
+        "privateYobi"
+    );
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "nori",
+                "projectName": "_private",
+                "overview": "Legacy private inbox",
+                "projectScope": "private"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let private_alias_options = response_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/user/issues/new-options?mine=true",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(
+        private_alias_options["selectedProject"]["projectName"],
+        "_private"
+    );
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "nori",
+                "projectName": "inbox",
+                "overview": "Legacy inbox",
+                "projectScope": "private"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let inbox_options = response_json(
+        rest(
+            app,
+            Method::GET,
+            "/yona/api/v1/user/issues/new-options?mine=true",
+            Some(&cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(inbox_options["selectedProject"]["projectName"], "inbox");
+}

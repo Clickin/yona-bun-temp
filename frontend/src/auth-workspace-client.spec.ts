@@ -1546,6 +1546,33 @@ describe("issue REST clients", () => {
     expect(calls[0]![1].credentials).toBe("same-origin");
   });
 
+  it("requests legacy direct my-issue form options with the mine selector", async () => {
+    const fetchMock = vi.fn(async () =>
+      okJsonResponse({
+        bodyMarkdown: "",
+        referCommentId: "",
+        selectedProject: {
+          ownerName: "nori",
+          projectName: "inbox",
+        },
+      }),
+    );
+
+    const options = await readDirectIssueFormOptions(
+      runtimeConfig,
+      { mine: true },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(options.selectedProject).toEqual({
+      ownerName: "nori",
+      projectName: "inbox",
+    });
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    expect(calls[0]![0]).toBe("/yona/api/v1/user/issues/new-options?mine=true");
+    expect(calls[0]![1].credentials).toBe("same-origin");
+  });
+
   it("sends issue mutation payloads to REST endpoints with csrf and bigint-safe JSON", async () => {
     const fetchMock = vi.fn(async () =>
       okJsonResponse({

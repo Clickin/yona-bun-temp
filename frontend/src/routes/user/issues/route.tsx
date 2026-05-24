@@ -11,7 +11,7 @@ export const Route = createFileRoute("/user/issues")({
 });
 
 function UserIssuesRouteComponent() {
-  if (window.location.pathname.endsWith("/new")) {
+  if (window.location.pathname.includes("/user/issues/new")) {
     return <Outlet />;
   }
 

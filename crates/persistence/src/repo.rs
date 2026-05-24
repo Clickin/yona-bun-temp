@@ -5237,6 +5237,60 @@ impl AppRepository {
             .is_some())
     }
 
+    pub async fn read_direct_my_issue_project(
+        &self,
+        login_id: &str,
+    ) -> Result<Option<ProjectRecord>, DbErr> {
+        let owner_name = normalize_identity(login_id);
+        if owner_name.is_empty() {
+            return Ok(None);
+        }
+
+        for project_name in ["inbox", "_private"] {
+            if let Some(project) = self
+                .read_project_by_owner_and_name(&owner_name, project_name)
+                .await?
+            {
+                return Ok(Some(project));
+            }
+        }
+
+        if let Some(project) = self
+            .read_latest_project_by_owner_and_scope(&owner_name, "private")
+            .await?
+        {
+            return Ok(Some(project));
+        }
+
+        self.read_latest_project_by_owner_and_scope(&owner_name, "public")
+            .await
+    }
+
+    async fn read_latest_project_by_owner_and_scope(
+        &self,
+        owner_name: &str,
+        project_scope: &str,
+    ) -> Result<Option<ProjectRecord>, DbErr> {
+        let owner_name = normalize_identity(owner_name);
+        let project_scope = normalize_identity(project_scope);
+        if owner_name.is_empty() || project_scope.is_empty() {
+            return Ok(None);
+        }
+
+        let row = project::Entity::find()
+            .filter(project::Column::Owner.eq(owner_name))
+            .filter(project::Column::ProjectScope.eq(project_scope))
+            .order_by_desc(project::Column::CreatedDate)
+            .order_by_desc(project::Column::Id)
+            .one(&self.db)
+            .await?;
+
+        match row {
+            Some(row) => self.project_record_from_model(row).await,
+            None => Ok(None),
+        }
+    }
+
     pub async fn create_organization(
         &self,
         input: CreateOrganizationInput,

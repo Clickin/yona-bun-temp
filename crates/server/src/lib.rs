@@ -17506,6 +17506,7 @@ struct RestDirectIssueFormQuery {
         deserialize_with = "deserialize_optional_i64_from_string_or_number"
     )]
     comment_id: Option<i64>,
+    mine: bool,
 }
 
 #[derive(Serialize)]
@@ -18818,14 +18819,26 @@ async fn rest_read_direct_issue_form_options(
     let actor = require_authenticated_user(repository, session.user_id)
         .await
         .map_err(RestRouteError::from_connect_error)?;
-    let selected_project = repository
-        .list_recent_projects_for_user(actor.id)
-        .await
-        .map_err(internal_error)
-        .map_err(RestRouteError::from_connect_error)?
-        .into_iter()
-        .next()
-        .ok_or_else(|| RestRouteError::not_found("project.is.empty"))?;
+    let selected_project = if query.mine {
+        repository
+            .read_direct_my_issue_project(&actor.login_id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+            .map(|project| persistence::ProjectListEntry {
+                owner_name: project.owner_name,
+                project_name: project.project_name,
+            })
+    } else {
+        repository
+            .list_recent_projects_for_user(actor.id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+            .into_iter()
+            .next()
+    }
+    .ok_or_else(|| RestRouteError::not_found("project.is.empty"))?;
     require_project_read(
         repository,
         &selected_project.owner_name,
