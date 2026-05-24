@@ -167,6 +167,21 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<td>b</td>");
   });
 
+  it("renders GFM table alignment like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={"| Left | Center | Right |\n| :--- | :---: | ---: |\n| L | C | R |"}
+      />,
+    );
+
+    expect(html).toContain('<th align="left">Left</th>');
+    expect(html).toContain('<th align="center">Center</th>');
+    expect(html).toContain('<th align="right">Right</th>');
+    expect(html).toContain('<td align="left">L</td>');
+    expect(html).toContain('<td align="center">C</td>');
+    expect(html).toContain('<td align="right">R</td>');
+  });
+
   it("renders basic smart lists like legacy marked", () => {
     const unorderedHtml = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- **first**\n- ~~second~~"} />,

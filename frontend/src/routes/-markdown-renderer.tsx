@@ -44,6 +44,7 @@ type MarkdownLineRecord = {
 };
 
 type MarkdownTableCell = {
+  align?: "center" | "left" | "right";
   key: string;
   text: string;
 };
@@ -338,6 +339,21 @@ function splitTableRow(line: string): string[] {
     .map((cell) => cell.replaceAll(protectedPipe, "|").trim());
 }
 
+function tableAlignment(separator: string): MarkdownTableCell["align"] {
+  const left = separator.startsWith(":");
+  const right = separator.endsWith(":");
+  if (left && right) {
+    return "center";
+  }
+  if (left) {
+    return "left";
+  }
+  if (right) {
+    return "right";
+  }
+  return undefined;
+}
+
 function parseMarkdownTable(lines: MarkdownLineRecord[]): MarkdownTableRecord | null {
   if (lines.length < 2) {
     return null;
@@ -351,6 +367,7 @@ function parseMarkdownTable(lines: MarkdownLineRecord[]): MarkdownTableRecord | 
     return null;
   }
   const headers = header.map((text, columnIndex) => ({
+    align: tableAlignment(separator[columnIndex] ?? ""),
     key: `${lines[0]?.key ?? "header"}-${columnIndex}-${text}`,
     text,
   }));
@@ -362,6 +379,7 @@ function parseMarkdownTable(lines: MarkdownLineRecord[]): MarkdownTableRecord | 
     }
     rows.push({
       cells: headers.map((headerCell, columnIndex) => ({
+        align: headerCell.align,
         key: `${line.key}-${headerCell.key}`,
         text: cells[columnIndex] ?? "",
       })),
@@ -535,7 +553,7 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
         <thead>
           <tr>
             {table.headers.map((header) => (
-              <th key={header.key}>
+              <th align={header.align} key={header.key}>
                 <MarkdownInline context={props.context} line={header.text} />
               </th>
             ))}
@@ -545,7 +563,7 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
           {table.rows.map((row) => (
             <tr key={row.key}>
               {row.cells.map((cell) => (
-                <td key={cell.key}>
+                <td align={cell.align} key={cell.key}>
                   <MarkdownInline context={props.context} line={cell.text} />
                 </td>
               ))}
