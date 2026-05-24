@@ -395,6 +395,7 @@ Interpretation:
 - [x] Basic smart-list rendering emits `<ul>` / `<ol>` on the project Markdown render path
 - [x] Basic blockquotes render as `<blockquote>` on the project Markdown render path
 - [x] Basic task checklist rendering with sanitized disabled checkboxes
+- [x] Horizontal rules render as `<hr>` on the project Markdown render path
 - [x] Basic safe inline image rendering on the project Markdown render path
 - [x] Basic fenced-code block rendering with language class preservation on the project Markdown render path
 - [x] Code-browser Markdown files render in React with legacy `.codebrowser-markdown` while the REST payload rewrites local `./...` image paths to the project file route as Markdown

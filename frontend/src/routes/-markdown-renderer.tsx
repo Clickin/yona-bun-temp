@@ -439,6 +439,9 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   const lines = markdownLines(props.block.text);
   const firstLine = lines[0]?.text ?? "";
   const secondLine = lines[1]?.text ?? "";
+  if (lines.length === 1 && /^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(firstLine)) {
+    return <hr />;
+  }
   if (lines.length === 2 && /^=+\s*$/.test(secondLine)) {
     return <MarkdownHeading context={props.context} level={1} text={firstLine.trim()} />;
   }
