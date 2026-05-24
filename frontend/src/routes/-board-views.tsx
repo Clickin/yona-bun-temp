@@ -8,6 +8,7 @@ import type {
 } from "../api/boards";
 import { uploadTemporaryAttachment, type UploadedAttachment } from "../api/attachments";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
+import { MarkdownRenderer } from "./-markdown-renderer";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
 import type { ProjectDetailViewModel } from "./-view-models";
 
@@ -508,7 +509,7 @@ export function ProjectBoardDetailPage(props: {
           </div>
           <PostingHistoryModal historyHtml={post.historyHtml} linkLabel="change.history" />
         </header>
-        <div className="board-body" dangerouslySetInnerHTML={{ __html: post.bodyHtml }} />
+        <MarkdownRenderer className="board-body markdown-wrap" markdown={post.bodyMarkdown} />
         <div className="board-actions">
           {post.permissions.canWatch ? (
             <button className="ybtn" onClick={props.onWatchToggle} type="button">
@@ -585,9 +586,10 @@ export function ProjectBoardDetailPage(props: {
                     </button>
                   </form>
                 ) : (
-                  <div
+                  <MarkdownRenderer
+                    className="comment-body markdown-wrap"
                     data-via-email={comment.viaEmail ? "true" : undefined}
-                    dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
+                    markdown={comment.contentsMarkdown}
                   />
                 )}
                 {post.permissions.canUpdate || props.viewerId === comment.authorId ? (

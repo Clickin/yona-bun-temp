@@ -918,7 +918,10 @@ export function ProjectDetailPage(props: {
                     props.readmePost ? (
                       <article className="board-view project-readme-post">
                         <h3>{props.readmePost.title || "README"}</h3>
-                        <div dangerouslySetInnerHTML={{ __html: props.readmePost.bodyHtml }} />
+                        <MarkdownRenderer
+                          className="readme-body markdown-wrap"
+                          markdown={props.readmePost.bodyMarkdown}
+                        />
                       </article>
                     ) : detail.readmeFile ? (
                       <article className="readme-wrap project-git-readme">

@@ -250,7 +250,7 @@ describe("api query keys", () => {
           authorId: "1",
           authorLabel: "Owner",
           authorLoginId: "owner",
-          bodyHtml: "<p>body</p>",
+          bodyHtml: "",
           bodyMarkdown: "body",
           commentCount: 0,
           comments: [],

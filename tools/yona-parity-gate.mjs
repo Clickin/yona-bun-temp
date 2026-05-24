@@ -128,6 +128,9 @@ const DOMAIN_BUCKETS = [
       "project-home",
       "wave2a",
       "container-parity",
+      "board",
+      "posting",
+      "route-parity",
     ],
     provenanceDocs: [
       "docs/provenance/phase-0b/issue.md",

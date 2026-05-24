@@ -23939,10 +23939,10 @@ fn rest_board_attachment_from_record(
 
 fn rest_post_comment_from_record(
     comment: &persistence::PostingCommentRecord,
-    base_path: &str,
-    owner_name: &str,
-    project_name: &str,
-    issue_references: &[MarkdownIssueReference],
+    _base_path: &str,
+    _owner_name: &str,
+    _project_name: &str,
+    _issue_references: &[MarkdownIssueReference],
 ) -> RestPostComment {
     RestPostComment {
         attachments: comment
@@ -23953,13 +23953,7 @@ fn rest_post_comment_from_record(
         author_id: optional_i64_string(comment.author_id),
         author_label: comment.author_label.clone(),
         author_login_id: comment.author_login_id.clone(),
-        contents_html: render_project_markdown_html_with_issue_references(
-            &comment.contents_markdown,
-            base_path,
-            owner_name,
-            project_name,
-            issue_references,
-        ),
+        contents_html: String::new(),
         contents_markdown: comment.contents_markdown.clone(),
         created_label: comment.created_label.clone(),
         id: comment.id.to_string(),
@@ -24067,13 +24061,7 @@ fn rest_post_detail_response_from_record_with_issue_references(
         author_id: optional_i64_string(posting.author_id),
         author_label: posting.author_label.clone(),
         author_login_id: posting.author_login_id.clone(),
-        body_html: render_project_markdown_html_with_issue_references(
-            &posting.body_markdown,
-            base_path,
-            &posting.owner_name,
-            &posting.project_name,
-            issue_references,
-        ),
+        body_html: String::new(),
         body_markdown: posting.body_markdown.clone(),
         comment_count: posting.comment_count,
         comments: posting

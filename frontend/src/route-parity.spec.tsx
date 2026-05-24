@@ -323,7 +323,7 @@ describe("file-route parity harness", () => {
           ...boardItem,
           attachments: [],
           authorId: "1",
-          bodyHtml: "<p>body</p>",
+          bodyHtml: "",
           bodyMarkdown: "body",
           comments: [
             {
@@ -331,7 +331,7 @@ describe("file-route parity harness", () => {
               authorId: "1",
               authorLabel: "Owner User",
               authorLoginId: "owner",
-              contentsHtml: "<p>via mail</p>",
+              contentsHtml: "",
               contentsMarkdown: "via mail",
               createdLabel: "now",
               id: "9",

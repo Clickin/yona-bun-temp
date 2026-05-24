@@ -124,14 +124,21 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord }) {
   );
 }
 
-export function MarkdownRenderer(props: { className?: string; id?: string; markdown: string }) {
+export function MarkdownRenderer(props: {
+  className?: string;
+  "data-via-email"?: string;
+  id?: string;
+  markdown: string;
+}) {
   const blocks = paragraphBlocks(props.markdown);
   if (blocks.length === 0) {
-    return <div className={props.className} id={props.id} />;
+    return (
+      <div className={props.className} data-via-email={props["data-via-email"]} id={props.id} />
+    );
   }
 
   return (
-    <div className={props.className} id={props.id}>
+    <div className={props.className} data-via-email={props["data-via-email"]} id={props.id}>
       {blocks.map((block) => (
         <MarkdownBlock block={block} key={block.key} />
       ))}

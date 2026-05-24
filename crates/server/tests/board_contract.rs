@@ -259,15 +259,10 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     assert_eq!(readme["postNumber"], "1");
     assert_eq!(readme["readme"], true);
     assert_eq!(readme["isWatching"], true);
-    assert!(readme["bodyHtml"]
-        .as_str()
-        .unwrap()
-        .contains("<h1>README</h1>"));
-    let readme_html = readme["bodyHtml"].as_str().unwrap();
-    assert!(
-        readme_html.contains("title=\"Board linked issue\"")
-            && readme_html.contains("data-issue-state=\"open\""),
-        "{readme_html}"
+    assert_eq!(readme["bodyHtml"], "");
+    assert_eq!(
+        readme["bodyMarkdown"],
+        "# README\n@guest should see this board notification #1 owner/projectYobi#1"
     );
 
     let notice = ok_json(
@@ -370,14 +365,11 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     .await;
     assert_eq!(commented["commentCount"], 1);
     assert_eq!(commented["comments"].as_array().unwrap().len(), 1);
-    assert!(commented["comments"][0]["contentsHtml"]
-        .as_str()
-        .unwrap()
-        .contains("<strong>comment</strong>"));
-    assert!(commented["comments"][0]["contentsHtml"]
-        .as_str()
-        .unwrap()
-        .contains("title=\"Board linked issue\""));
+    assert_eq!(commented["comments"][0]["contentsHtml"], "");
+    assert_eq!(
+        commented["comments"][0]["contentsMarkdown"],
+        "First **comment** #1"
+    );
 
     let comment_id = commented["comments"][0]["id"].as_str().unwrap();
     original_email::ActiveModel {

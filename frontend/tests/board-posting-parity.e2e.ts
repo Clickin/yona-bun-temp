@@ -39,7 +39,7 @@ function boardDetail(overrides: Record<string, unknown> = {}) {
     ...boardListItem(overrides),
     attachments: [],
     authorId: "11",
-    bodyHtml: "<p>Board body from markdown</p>",
+    bodyHtml: "",
     bodyMarkdown: "Board body from markdown",
     comments: [
       {
@@ -47,7 +47,7 @@ function boardDetail(overrides: Record<string, unknown> = {}) {
         authorId: "12",
         authorLabel: "Mona",
         authorLoginId: "mona",
-        contentsHtml: "<p>First board comment</p>",
+        contentsHtml: "",
         contentsMarkdown: "First board comment",
         createdLabel: "2026-05-03",
         id: "77",
@@ -183,7 +183,7 @@ test.beforeEach(async ({ page }) => {
 
   let boardPost = boardDetail();
   let createdPost = boardDetail({
-    bodyHtml: "<p>Created body</p>",
+    bodyHtml: "",
     bodyMarkdown: "Created body",
     commentCount: 0,
     comments: [],
@@ -199,7 +199,7 @@ test.beforeEach(async ({ page }) => {
     title: "Pinned maintenance note",
   });
   const readmePost = boardDetail({
-    bodyHtml: "<p>README from board DB</p>",
+    bodyHtml: "",
     bodyMarkdown: "README from board DB",
     commentCount: 0,
     comments: [],
@@ -220,7 +220,7 @@ test.beforeEach(async ({ page }) => {
         title?: string;
       };
       createdPost = boardDetail({
-        bodyHtml: `<p>${body.bodyMarkdown || "Created body"}</p>`,
+        bodyHtml: "",
         bodyMarkdown: body.bodyMarkdown || "",
         commentCount: 0,
         comments: [],
@@ -270,7 +270,7 @@ test.beforeEach(async ({ page }) => {
               authorId: "13",
               authorLabel: "Door",
               authorLoginId: "door",
-              contentsHtml: `<p>${body.contentsMarkdown || "Fresh comment"}</p>`,
+              contentsHtml: "",
               contentsMarkdown: body.contentsMarkdown || "",
               createdLabel: "2026-05-04",
               id: "88",
@@ -299,7 +299,7 @@ test.beforeEach(async ({ page }) => {
             comment.id === "77"
               ? {
                   ...comment,
-                  contentsHtml: `<p>${body.contentsMarkdown || "Edited board comment"}</p>`,
+                  contentsHtml: "",
                   contentsMarkdown: body.contentsMarkdown || "",
                 }
               : comment,
@@ -352,7 +352,7 @@ test.beforeEach(async ({ page }) => {
         };
         boardPost = boardDetail({
           ...boardPost,
-          bodyHtml: `<p>${body.bodyMarkdown || "Updated body"}</p>`,
+          bodyHtml: "",
           bodyMarkdown: body.bodyMarkdown || "",
           labels: body.labelIds?.length ? [boardLabel] : [],
           notice: body.notice ?? false,
