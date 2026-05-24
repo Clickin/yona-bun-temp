@@ -77,7 +77,8 @@
 - PR bodies and general review comments now render from Markdown source in
   React. REST `bodyHtml` and review-comment `contentsHtml` stay as empty
   app-runtime compatibility fields, while legacy issue-link title/state
-  enrichment remains a shared React Markdown renderer follow-up.
+  enrichment now flows through the shared React Markdown reference metadata
+  payload.
 - PR review comments backed by legacy `original_email` rows now expose
   `viaEmail` in detail/changes/review-list REST responses and render
   `data-via-email` on the review comment body.
