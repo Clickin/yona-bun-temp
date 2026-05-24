@@ -180,6 +180,21 @@ describe("MarkdownRenderer", () => {
     );
   });
 
+  it("renders single-quoted and parenthesized inline titles like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          "[docs](https://example.com/docs 'Read docs') ![logo](https://example.com/logo.png (Logo title))"
+        }
+      />,
+    );
+
+    expect(html).toContain('<a href="https://example.com/docs" title="Read docs">docs</a>');
+    expect(html).toContain(
+      '<img alt="logo" src="https://example.com/logo.png" title="Logo title"/>',
+    );
+  });
+
   it("renders reference-style links and images like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

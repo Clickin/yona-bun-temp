@@ -322,7 +322,7 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
   const parts: MarkdownInlinePart[] = [];
   let index = 0;
   const inlinePattern =
-    /\\([^\w\s])|(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)|(!?)\[([^\]]+)\]\[([^\]]*)\]|(!?)\[([^\]]+)\](?:\[\])?|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|`([^`\n]+)`|\*([^*\n]+)\*|_([^_\n]+)_/g;
+    /\\([^\w\s])|(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]*)\)))?\)|(!?)\[([^\]]+)\]\[([^\]]*)\]|(!?)\[([^\]]+)\](?:\[\])?|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|`([^`\n]+)`|\*([^*\n]+)\*|_([^_\n]+)_/g;
   for (const match of line.matchAll(inlinePattern)) {
     const start = match.index ?? 0;
     if (start > index) {
@@ -336,15 +336,15 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
         key: `link-${start}`,
         label: match[3] ?? "",
         target: match[4] ?? "",
-        title: match[5],
+        title: match[5] ?? match[6] ?? match[7],
       });
-    } else if (match[7] !== undefined || match[10] !== undefined) {
-      const label = match[7] ?? match[10] ?? "";
-      const referenceLabel = match[8] ? (match[8] ?? "") : label;
+    } else if (match[9] !== undefined || match[12] !== undefined) {
+      const label = match[9] ?? match[12] ?? "";
+      const referenceLabel = match[10] ? (match[10] ?? "") : label;
       const reference = context?.referenceMap?.get(normalizeReferenceLabel(referenceLabel));
       if (reference) {
         parts.push({
-          kind: (match[6] ?? match[9]) === "!" ? "image" : "link",
+          kind: (match[8] ?? match[11]) === "!" ? "image" : "link",
           key: `reference-${start}`,
           label,
           target: reference.target,
@@ -353,21 +353,21 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
       } else {
         parts.push({ kind: "text", key: `text-${start}`, value: match[0] ?? "" });
       }
-    } else if (match[11] !== undefined) {
-      parts.push({ kind: "strong", key: `strong-${start}`, value: match[11] ?? "" });
-    } else if (match[12] !== undefined) {
-      parts.push({ kind: "delete", key: `delete-${start}`, value: match[12] ?? "" });
     } else if (match[13] !== undefined) {
+      parts.push({ kind: "strong", key: `strong-${start}`, value: match[13] ?? "" });
+    } else if (match[14] !== undefined) {
+      parts.push({ kind: "delete", key: `delete-${start}`, value: match[14] ?? "" });
+    } else if (match[15] !== undefined) {
       parts.push({
         kind: "code",
         key: `code-${start}`,
-        value: normalizeCodeSpan(match[13] ?? ""),
+        value: normalizeCodeSpan(match[15] ?? ""),
       });
-    } else if (match[14] !== undefined || match[15] !== undefined) {
+    } else if (match[16] !== undefined || match[17] !== undefined) {
       parts.push({
         kind: "emphasis",
         key: `emphasis-${start}`,
-        value: match[14] ?? match[15] ?? "",
+        value: match[16] ?? match[17] ?? "",
       });
     } else {
       parts.push({ kind: "text", key: `text-${start}`, value: match[0] ?? "" });
