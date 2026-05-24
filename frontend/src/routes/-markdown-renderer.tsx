@@ -322,7 +322,7 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
   const parts: MarkdownInlinePart[] = [];
   let index = 0;
   const inlinePattern =
-    /\\([^\w\s])|(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]*)\)))?\)|(!?)\[([^\]]+)\]\[([^\]]*)\]|(!?)\[([^\]]+)\](?:\[\])?|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|``([^`\n]|[^`][\s\S]*?[^`])``|`([^`\n]+)`|\*([^*\n]+)\*|_([^_\n]+)_/g;
+    /\\([^\w\s])|(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]*)\)))?\)|(!?)\[([^\]]+)\]\[([^\]]*)\]|(!?)\[([^\]]+)\](?:\[\])?|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|(?<codeFence>`+)(?<codeText>[^`]|[^`][\s\S]*?[^`])\k<codeFence>(?!`)|\*([^*\n]+)\*|_([^_\n]+)_/g;
   for (const match of line.matchAll(inlinePattern)) {
     const start = match.index ?? 0;
     if (start > index) {
@@ -357,11 +357,11 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
       parts.push({ kind: "strong", key: `strong-${start}`, value: match[13] ?? "" });
     } else if (match[14] !== undefined) {
       parts.push({ kind: "delete", key: `delete-${start}`, value: match[14] ?? "" });
-    } else if (match[15] !== undefined || match[16] !== undefined) {
+    } else if (match.groups?.codeText !== undefined) {
       parts.push({
         kind: "code",
         key: `code-${start}`,
-        value: normalizeCodeSpan(match[15] ?? match[16] ?? ""),
+        value: normalizeCodeSpan(match.groups.codeText),
       });
     } else if (match[17] !== undefined || match[18] !== undefined) {
       parts.push({

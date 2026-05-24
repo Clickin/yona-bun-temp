@@ -1111,7 +1111,7 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 원�
 - [x] readable issue refs expose title/state metadata on project Markdown render paths
 - [x] inline Markdown links/images preserve legacy `title` attributes, including double-quoted, single-quoted, and parenthesized delimiters
 - [x] reference-style Markdown links/images resolve marked definitions without rendering definition lines
-- [x] inline code spans preserve marked single-space trimming semantics, including double-backtick delimiters for literal backticks
+- [x] inline code spans preserve marked matching backtick-run delimiters and single-space trimming semantics
 - [x] bare `http://`/`https://`, `ftp://`, `www.`, and email 자동 링크 변환
 - [x] angle-bracket URL/email autolinks strip brackets and preserve `mailto:` targets
 - [x] bare URL/email autolinks trim trailing punctuation outside the rendered link

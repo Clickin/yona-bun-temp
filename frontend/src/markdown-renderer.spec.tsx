@@ -155,14 +155,17 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<code>  spaced  </code>");
   });
 
-  it("renders double-backtick code spans like legacy marked", () => {
+  it("renders matching backtick-run code spans like legacy marked", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={"Keep `` `literal` `` beside `plain` text"} />,
+      <MarkdownRenderer
+        markdown={"Keep `` `literal` `` beside ``` ``literal`` ``` and `plain` text"}
+      />,
     );
 
     expect(html).toContain("<code>`literal`</code>");
+    expect(html).toContain("<code>``literal``</code>");
     expect(html).toContain("<code>plain</code>");
-    expect(html).not.toContain("``");
+    expect(html).not.toContain("```");
   });
 
   it("consumes legacy hard-break markers before line breaks", () => {
