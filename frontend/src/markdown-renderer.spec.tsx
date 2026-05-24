@@ -270,6 +270,27 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("[shortcut]:");
   });
 
+  it("unescapes reference-style link and image definitions like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          '[docs][guide] ![logo][asset]\n\n[guide]: https://example.com/a\\(b\\) "Read \\\"docs\\\""\n[asset]: /files/logo\\(1\\).png "Logo \\\"title\\\""'
+        }
+      />,
+    );
+
+    expect(html).toContain(
+      '<a href="https://example.com/a(b)" title="Read &quot;docs&quot;">docs</a>',
+    );
+    expect(html).toContain(
+      '<img alt="logo" src="/files/logo(1).png" title="Logo &quot;title&quot;"/>',
+    );
+    expect(html).not.toContain("\\(");
+    expect(html).not.toContain('\\"');
+    expect(html).not.toContain("[guide]:");
+    expect(html).not.toContain("[asset]:");
+  });
+
   it("renders angle-bracket autolinks like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown="See <https://example.com/docs> and <help@example.com>" />,

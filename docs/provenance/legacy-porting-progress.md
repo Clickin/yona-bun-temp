@@ -394,7 +394,7 @@ Interpretation:
 - [x] Legacy marked angle-bracket URL/email autolinks strip brackets and preserve `mailto:` targets
 - [x] Legacy marked bare URL/email autolinks trim trailing punctuation outside the rendered link
 - [x] Inline Markdown links and images preserve legacy marked angle-wrapped targets, escaped target/title punctuation, and `title` attributes, including double-quoted, single-quoted, and parenthesized delimiters
-- [x] Reference-style Markdown links and images resolve legacy marked definitions without rendering definition lines
+- [x] Reference-style Markdown links and images resolve legacy marked definitions without rendering definition lines, including escaped target/title punctuation
 - [x] Legacy marked-style soft line breaks render as `<br>` on the project Markdown render path
 - [x] Legacy hard-break markers (`\` or two trailing spaces before newline) are consumed before rendering `<br>`
 - [x] GFM strikethrough renders `~~deleted~~` as `<del>` on the project Markdown render path

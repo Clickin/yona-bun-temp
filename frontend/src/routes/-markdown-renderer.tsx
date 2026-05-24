@@ -139,14 +139,14 @@ function extractReferenceDefinitions(markdown: string) {
       continue;
     }
     const match =
-      /^ {0,3}\[([^\]]+)\]:\s*<?([^\s>]+)>?(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]*)\)))?\s*$/.exec(
+      /^ {0,3}\[([^\]]+)\]:\s*(<[^>\s]+>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_`{|}~]|[^\s>\\])+)(?:\s+(?:"((?:\\"|[^"\\])*)"|'((?:\\'|[^'\\])*)'|\(((?:\\\)|[^)\\])*)\)))?\s*$/.exec(
         line,
       );
     if (inFence || !match) {
       markdownLines.push(line);
       continue;
     }
-    const target = match[2] ?? "";
+    const target = normalizeInlineTarget(match[2] ?? "");
     if (!isSafeUrl(target)) {
       markdownLines.push(line);
       continue;
@@ -155,9 +155,10 @@ function extractReferenceDefinitions(markdown: string) {
     if (referenceMap.has(label)) {
       continue;
     }
+    const title = match[3] ?? match[4] ?? match[5];
     referenceMap.set(label, {
       target,
-      title: match[3] ?? match[4] ?? match[5],
+      title: title === undefined ? undefined : unescapeMarkdownPunctuation(title),
     });
   }
   return { markdown: markdownLines.join("\n"), referenceMap };
