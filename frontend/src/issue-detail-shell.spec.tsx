@@ -12,6 +12,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
         detail={projectDetail}
         issue={{
           ...issueDetail,
+          bodyMarkdown: "Body **markdown** with `React`",
           hasVoted: true,
           isWatching: true,
           labels: [{ color: "#f44336", id: 5, name: "bug" }],
@@ -43,6 +44,8 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="watcher-list"');
     expect(html).toContain("Watchers: 3");
     expect(html).toContain('class="label issue-label list-label active"');
+    expect(html).toContain("<strong>markdown</strong>");
+    expect(html).toContain("<code>React</code>");
   });
 
   it("renders the legacy delete confirmation modal shell for deletable issues", () => {
@@ -82,7 +85,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
                 authorAvatarUrl: "https://cdn.yona/avatar-commenter.png",
                 authorLabel: "Commenter",
                 authorLoginId: "commenter",
-                contentsHtml: "<p>Comment body</p>",
+                contentsHtml: "",
                 contentsMarkdown: "Comment body",
                 createdLabel: "now",
                 id: 55,
@@ -119,6 +122,8 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('data-request-uri="/yona/owner/projectYobi/issue/1/comment/55/vote"');
     expect(html).toContain('title="common.comment.vote"');
     expect(html).toContain('id="comment-body-55"');
+    expect(html).toContain('<div class="comment-body markdown-wrap"');
+    expect(html).toContain("<p>Comment body</p>");
     expect(html).toContain('data-allowed-update="false"');
     expect(html).toContain('data-toggle="comment-delete"');
     expect(html).toContain('data-request-uri="/yona/owner/projectYobi/issue/1/comment/55/delete"');
@@ -144,7 +149,7 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
                 authorAvatarUrl: "https://cdn.yona/avatar-commenter.png",
                 authorLabel: "Commenter",
                 authorLoginId: "commenter",
-                contentsHtml: "<p>Comment body</p>",
+                contentsHtml: "",
                 contentsMarkdown: "Comment body",
                 createdLabel: "now",
                 id: 56,
@@ -249,7 +254,7 @@ const issueDetail: ProjectIssueDetailViewModel = {
   authorAvatarUrl: "https://cdn.yona/avatar-owner.png",
   authorLabel: "Owner User",
   authorLoginId: "owner",
-  bodyHtml: "<p>Body</p>",
+  bodyHtml: "",
   bodyMarkdown: "Body",
   commentCount: 0,
   comments: [],

@@ -1110,7 +1110,7 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 → H
 - [x] safe inline image Markdown renders as sanitized `<img>`
 - [x] code-browser Markdown file rendering preserves legacy `.codebrowser-markdown`, returns rewritten Markdown instead of server-rendered HTML, and lets React render local `./...` image paths to `/:owner/:project/files/:branch/...`
 - [x] project-home Git README fallback preserves the legacy readme body wrapper, returns rewritten Markdown instead of server-rendered HTML, and lets React render local images to `/:owner/:project/files/:branch/...` plus normal local links to `/:owner/:project/code/:branch/...`
-- [x] board post detail, comments, and DB-backed README postings return Markdown source with empty HTML compatibility fields and render through the shared React Markdown renderer.
+- [x] issue detail bodies/comments, board post detail/comments, and DB-backed README postings return Markdown source with empty HTML compatibility fields and render through the shared React Markdown renderer.
 - [x] milestone detail descriptions return Markdown source with an empty HTML compatibility field and render through the shared React Markdown renderer.
 - [x] legacy `POST /markdown/:owner/:project` preview renderer returns raw project-context sanitized HTML
 - [x] soft line breaks render as `<br>` like legacy marked `breaks: true`
@@ -1364,7 +1364,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, core event icon/message projection, single/mass-update issue state-change receiver fan-out, mail queue staging, due-row outbound fan-out helper, allowed-domain mail receiver filtering, BCC hide-address mode, recipientLimit partitioning |
 | 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment/merge/commit-changed non-JSON fan-out, DETAIL_HANGOUT_CHAT thread name persistence/reuse, plus git-push JSON payloads; delivery history/retry and hardening remain gaps |
 | 관리자            | ❌ 미구현         |                                                                  |
-| 마크다운          | 🔶 기본 구현      | Issue/PR/code comment sanitized HTML projection plus `@user`, `#123`, `owner/project#123`, bare `http(s)`/`ftp`/`www`/email autolinks, readable issue title/state metadata, soft line breaks, safe inline images, disabled task-list checkboxes, fenced-code token highlighting, code-browser Markdown React-side rendering with local image path rewrite, project-home Git README React-side rendering with local image/normal-link rewrite, board post/comment/DB README posting React-side rendering, milestone detail React-side rendering, and legacy `POST /markdown/:owner/:project` preview rendering |
+| 마크다운          | 🔶 기본 구현      | PR/code-comment and issue history/preview sanitized HTML projection plus `@user`, `#123`, `owner/project#123`, bare `http(s)`/`ftp`/`www`/email autolinks, readable issue title/state metadata, soft line breaks, safe inline images, disabled task-list checkboxes, fenced-code token highlighting, code-browser Markdown React-side rendering with local image path rewrite, project-home Git README React-side rendering with local image/normal-link rewrite, issue body/comment React-side rendering, board post/comment/DB README posting React-side rendering, milestone detail React-side rendering, and legacy `POST /markdown/:owner/:project` preview rendering |
 | REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1` legacy external API는 app scope에서 미지원이며 별도 migrator/export/import deliverable로 분리 |
 | Frontend 라우트   | ✅ 구현           | legacy issueform/editform 포함                                   |
 | Frontend 테스트   | 🔶 부분           | API client, route parity, E2E smoke                              |
@@ -1582,6 +1582,6 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope
 - Webhook follow-up: HTTPS production delivery hardening, optional signature compatibility if external evidence requires it, and delivery history/retry behavior
 - Admin: users/projects/site-admin/account-lock/test-mail surfaces
-- Markdown follow-up: migrate remaining issue/PR/code-comment server-rendered Markdown surfaces to React-side rendering, restore readable issue-ref metadata in React-rendered milestone/board surfaces, full legacy/GFM extension parity, remaining autolink edge cases if legacy evidence requires them, full Highlight.js-equivalent language coverage, and checklist progress-bar integration polish
+- Markdown follow-up: migrate remaining PR/code-comment and issue history/preview server-rendered Markdown surfaces to React-side rendering, restore readable issue-ref metadata in React-rendered issue/milestone/board surfaces, full legacy/GFM extension parity, remaining autolink edge cases if legacy evidence requires them, full Highlight.js-equivalent language coverage, and checklist progress-bar integration polish
 
 ---

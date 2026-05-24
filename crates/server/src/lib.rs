@@ -23240,9 +23240,9 @@ fn issue_comment_from_record(
     viewer_can_manage: bool,
     viewer_id: Option<i64>,
     base_path: &str,
-    owner_name: &str,
-    project_name: &str,
-    issue_references: &[MarkdownIssueReference],
+    _owner_name: &str,
+    _project_name: &str,
+    _issue_references: &[MarkdownIssueReference],
 ) -> IssueComment {
     let viewer_is_author = viewer_id.is_some() && viewer_id == record.author_id;
     IssueComment {
@@ -23254,13 +23254,7 @@ fn issue_comment_from_record(
         author_label: record.author_label.clone(),
         author_avatar_url: gravatar_url(&record.author_email_address),
         author_login_id: record.author_login_id.clone(),
-        contents_html: render_project_markdown_html_with_issue_references(
-            &record.contents_markdown,
-            base_path,
-            owner_name,
-            project_name,
-            issue_references,
-        ),
+        contents_html: String::new(),
         contents_markdown: record.contents_markdown.clone(),
         created_label: record.created_label.clone(),
         id: record.id,
@@ -24204,17 +24198,10 @@ fn issue_detail_response_from_record_with_sharer_flags(
 }
 
 fn issue_markdown_texts(issue: &persistence::IssueRecord) -> Vec<&str> {
-    let mut markdowns = Vec::with_capacity(2 + issue.comments.len());
-    markdowns.push(issue.body_markdown.as_str());
+    let mut markdowns = Vec::with_capacity(1);
     if !issue.history_markdown.trim().is_empty() {
         markdowns.push(issue.history_markdown.as_str());
     }
-    markdowns.extend(
-        issue
-            .comments
-            .iter()
-            .map(|comment| comment.contents_markdown.as_str()),
-    );
     markdowns
 }
 
@@ -24294,13 +24281,7 @@ fn issue_detail_response_from_record_with_sharer_flags_and_issue_references(
         author_avatar_url: gravatar_url(&issue.author_email_address),
         author_label: issue.author_label.clone(),
         author_login_id: issue.author_login_id.clone(),
-        body_html: render_project_markdown_html_with_issue_references(
-            &issue.body_markdown,
-            base_path,
-            &issue.owner_name,
-            &issue.project_name,
-            issue_references,
-        ),
+        body_html: String::new(),
         body_markdown: issue.body_markdown.clone(),
         comment_count: issue.comment_count,
         comments: issue

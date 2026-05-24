@@ -177,64 +177,11 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
     assert_eq!(created["issueNumber"], "1");
     assert_eq!(created["state"], "open");
     assert_eq!(created["isWatching"], true);
-    assert!(created["bodyHtml"]
+    assert_eq!(created["bodyHtml"].as_str().unwrap_or(""), "");
+    assert!(created["bodyMarkdown"]
         .as_str()
         .unwrap()
-        .contains("<strong>Yona</strong>"));
-    assert!(!created["bodyHtml"].as_str().unwrap().contains("<script>"));
-    let body_html = created["bodyHtml"].as_str().unwrap();
-    assert!(body_html.contains("href=\"/yona/reviewer\""), "{body_html}");
-    assert!(
-        body_html.contains("class=\"no-text-decoration user-link\""),
-        "{body_html}"
-    );
-    assert!(
-        body_html.contains("href=\"/yona/owner/projectYobi/issue/1\""),
-        "{body_html}"
-    );
-    assert!(body_html.contains("class=\"issueLink\""), "{body_html}");
-    assert!(
-        body_html.contains("title=\"Markdown issue\""),
-        "{body_html}"
-    );
-    assert!(
-        body_html.contains("data-issue-state=\"open\""),
-        "{body_html}"
-    );
-    assert!(
-        body_html.contains("href=\"https://example.com/docs?x=1\""),
-        "{body_html}"
-    );
-    assert!(body_html.contains("<img"), "{body_html}");
-    assert!(
-        body_html.contains("src=\"https://example.com/logo.png\""),
-        "{body_html}"
-    );
-    assert!(body_html.contains("alt=\"logo\""), "{body_html}");
-    assert!(!body_html.contains("javascript:"), "{body_html}");
-    assert!(
-        body_html.contains("<input")
-            && body_html.contains("type=\"checkbox\"")
-            && body_html.contains("checked"),
-        "{body_html}"
-    );
-    assert!(
-        body_html.contains("disabled") && body_html.contains("todo"),
-        "{body_html}"
-    );
-    assert!(
-        body_html.contains("class=\"language-rust\"")
-            && body_html.contains("syntax-token syntax-keyword")
-            && body_html.contains(">fn</span>")
-            && body_html.contains(">let</span>"),
-        "{body_html}"
-    );
-    assert!(
-        body_html.contains(
-            "<code>&lt;script&gt;alert(1)&lt;/script&gt; @reviewer #1 https://example.com/code</code>"
-        ),
-        "{body_html}"
-    );
+        .contains("Hello **Yona** @reviewer #1"));
 
     let detail = response_json(
         rest(
@@ -294,10 +241,16 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
         commented["timeline"][0]["comment"]["authorAvatarUrl"],
         commented["comments"][0]["authorAvatarUrl"]
     );
-    assert!(commented["comments"][0]["contentsHtml"]
-        .as_str()
-        .unwrap()
-        .contains("https://example.com"));
+    assert_eq!(
+        commented["comments"][0]["contentsHtml"]
+            .as_str()
+            .unwrap_or(""),
+        ""
+    );
+    assert_eq!(
+        commented["comments"][0]["contentsMarkdown"],
+        "A [safe](https://example.com) comment"
+    );
 
     let direct_updated_comment = app
         .clone()

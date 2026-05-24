@@ -10,6 +10,7 @@ import type {
 } from "../api/issue-meta";
 import { uploadTemporaryAttachment, type UploadedAttachment } from "../api/attachments";
 import type { RuntimeConfig } from "../runtime-config";
+import { MarkdownRenderer } from "./-markdown-renderer";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
 import type {
   ProjectDetailViewModel,
@@ -377,10 +378,10 @@ export function ProjectIssueDetailPage(props: {
               </a>
             </div>
             <div id={issue ? `issue-body-${issue.issueNumber}` : undefined}>
-              <div
+              <MarkdownRenderer
                 className="content markdown-wrap"
                 data-allowed-update={issue ? String(issue.viewerCanUpdate) : undefined}
-                dangerouslySetInnerHTML={{ __html: issue?.bodyHtml ?? "" }}
+                markdown={issue?.bodyMarkdown ?? ""}
               />
             </div>
             <div className="attachments" id="attachments">
@@ -690,11 +691,11 @@ export function ProjectIssueDetailPage(props: {
                               id={`comment-body-${comment.id}`}
                               style={commentIsEditing ? { display: "none" } : undefined}
                             >
-                              <div
+                              <MarkdownRenderer
                                 className="comment-body markdown-wrap"
                                 data-allowed-update={String(comment.viewerCanUpdate)}
                                 data-via-email={comment.viaEmail ? "true" : undefined}
-                                dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
+                                markdown={comment.contentsMarkdown}
                               />
                             </div>
                           </div>
