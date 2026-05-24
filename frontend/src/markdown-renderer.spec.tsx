@@ -97,4 +97,15 @@ describe("MarkdownRenderer", () => {
     expect(orderedHtml).toContain("<li>first</li>");
     expect(orderedHtml).toContain("<li><code>second</code></li>");
   });
+
+  it("renders basic blockquotes like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"> **quoted**\n> with ~~style~~"} />,
+    );
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain("<p><strong>quoted</strong><br/>with ");
+    expect(html).not.toContain("<p>&gt;");
+    expect(html).toContain("<del>style</del>");
+  });
 });

@@ -66,6 +66,11 @@ type MarkdownListRecord = {
   ordered: boolean;
 };
 
+type MarkdownBlockquoteRecord = {
+  key: string;
+  text: string;
+};
+
 function isSafeUrl(value: string) {
   return (
     value.startsWith("/") ||
@@ -363,6 +368,21 @@ function parseMarkdownList(lines: MarkdownLineRecord[]): MarkdownListRecord | nu
   return null;
 }
 
+function parseMarkdownBlockquote(lines: MarkdownLineRecord[]): MarkdownBlockquoteRecord[] | null {
+  if (lines.length === 0) {
+    return null;
+  }
+  const quoteLines: MarkdownBlockquoteRecord[] = [];
+  for (const line of lines) {
+    const match = /^\s*>\s?(.*)$/.exec(line.text);
+    if (!match) {
+      return null;
+    }
+    quoteLines.push({ key: line.key, text: match[1] ?? "" });
+  }
+  return quoteLines;
+}
+
 function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownContext }) {
   const lines = markdownLines(props.block.text);
   const firstLine = lines[0]?.text ?? "";
@@ -401,6 +421,21 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
       </li>
     ));
     return list.ordered ? <ol>{children}</ol> : <ul>{children}</ul>;
+  }
+  const blockquote = parseMarkdownBlockquote(lines);
+  if (blockquote) {
+    return (
+      <blockquote>
+        <p>
+          {blockquote.map((line) => (
+            <React.Fragment key={line.key}>
+              {line.key === "line-0" ? null : <br />}
+              <MarkdownInline context={props.context} line={line.text} />
+            </React.Fragment>
+          ))}
+        </p>
+      </blockquote>
+    );
   }
   if (firstLine.startsWith("# ")) {
     return (
