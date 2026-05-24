@@ -187,6 +187,19 @@ function normalizeCodeSpan(value: string) {
   return text;
 }
 
+function normalizeCodeSpanNewlines(value: string) {
+  return value.replace(
+    /(?<codeFence>`+)(?<codeText>[^`]|[^`][\s\S]*?[^`])\k<codeFence>(?!`)/g,
+    (...args: unknown[]) => {
+      const match = args.at(-1) as { codeFence?: string; codeText?: string } | undefined;
+      if (!match?.codeFence || match.codeText === undefined) {
+        return String(args[0] ?? "");
+      }
+      return `${match.codeFence}${match.codeText.replace(/\n/g, " ")}${match.codeFence}`;
+    },
+  );
+}
+
 function markdownLineTextBeforeBreak(
   line: MarkdownLineRecord,
   index: number,
@@ -707,15 +720,18 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   }
   const blockquote = parseMarkdownBlockquote(lines);
   if (blockquote) {
+    const normalizedBlockquote = markdownLines(
+      normalizeCodeSpanNewlines(blockquote.map((line) => line.text).join("\n")),
+    );
     return (
       <blockquote>
         <p>
-          {blockquote.map((line, index) => (
+          {normalizedBlockquote.map((line, index) => (
             <React.Fragment key={line.key}>
               {line.key === "line-0" ? null : <br />}
               <MarkdownInline
                 context={props.context}
-                line={markdownLineTextBeforeBreak(line, index, blockquote)}
+                line={markdownLineTextBeforeBreak(line, index, normalizedBlockquote)}
               />
             </React.Fragment>
           ))}
@@ -733,14 +749,15 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
       />
     );
   }
+  const normalizedLines = markdownLines(normalizeCodeSpanNewlines(props.block.text));
   return (
     <p>
-      {lines.map((line, index) => (
+      {normalizedLines.map((line, index) => (
         <React.Fragment key={line.key}>
           {line.key === "line-0" ? null : <br />}
           <MarkdownInline
             context={props.context}
-            line={markdownLineTextBeforeBreak(line, index, lines)}
+            line={markdownLineTextBeforeBreak(line, index, normalizedLines)}
           />
         </React.Fragment>
       ))}

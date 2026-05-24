@@ -168,6 +168,17 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("```");
   });
 
+  it("normalizes newlines inside inline code spans like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"Keep ` line\nbreak ` beside\nplain text"} />,
+    );
+
+    expect(html).toContain("<code>line break</code>");
+    expect(html).toContain(" beside<br/>plain text");
+    expect(html).not.toContain("<code> line");
+    expect(html).not.toContain("break </code>");
+  });
+
   it("consumes legacy hard-break markers before line breaks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"Backslash\\\nnext\nTwo spaces  \nafter"} />,

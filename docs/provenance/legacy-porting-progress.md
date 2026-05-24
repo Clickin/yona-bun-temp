@@ -388,7 +388,7 @@ Interpretation:
 - [x] HTML sanitization on implemented render path
 - [x] Marked-style ATX/setext heading ids and `#` through `######` heading levels on the project Markdown render path
 - [x] Inline emphasis renders as `<em>` on the project Markdown render path
-- [x] Inline code spans preserve legacy marked matching backtick-run delimiters and single-space trimming semantics
+- [x] Inline code spans preserve legacy marked matching backtick-run delimiters, newline normalization, and single-space trimming semantics
 - [x] Basic project Markdown autolinks for `@username`, legacy `@owner/project` project mentions, same-project `#123`, legacy `owner#123`, and `owner/project#123` on issue/post/milestone bodies and comments, PR bodies/general review comments, Git non-ranged commit comments, and preview output
 - [x] Basic bare `http://`/`https://`, `ftp://`, `www.`, and email autolinks on the project Markdown render path
 - [x] Legacy marked angle-bracket URL/email autolinks strip brackets and preserve `mailto:` targets
