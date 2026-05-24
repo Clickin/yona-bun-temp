@@ -383,6 +383,36 @@ function parseMarkdownBlockquote(lines: MarkdownLineRecord[]): MarkdownBlockquot
   return quoteLines;
 }
 
+function slugifyHeadingId(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[`*_~[\]()]/g, "")
+    .replace(/[^a-z0-9가-힣._ -]+/g, "")
+    .replace(/\s+/g, "-");
+}
+
+function MarkdownHeading(props: { context?: MarkdownContext; level: number; text: string }) {
+  const id = slugifyHeadingId(props.text);
+  const children = <MarkdownInline context={props.context} line={props.text} />;
+  if (props.level === 1) {
+    return <h1 id={id}>{children}</h1>;
+  }
+  if (props.level === 2) {
+    return <h2 id={id}>{children}</h2>;
+  }
+  if (props.level === 3) {
+    return <h3 id={id}>{children}</h3>;
+  }
+  if (props.level === 4) {
+    return <h4 id={id}>{children}</h4>;
+  }
+  if (props.level === 5) {
+    return <h5 id={id}>{children}</h5>;
+  }
+  return <h6 id={id}>{children}</h6>;
+}
+
 function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownContext }) {
   const lines = markdownLines(props.block.text);
   const firstLine = lines[0]?.text ?? "";
@@ -437,18 +467,14 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
       </blockquote>
     );
   }
-  if (firstLine.startsWith("# ")) {
+  const headingMatch = /^(#{1,6})\s+(.+?)(?:\s+#+)?$/.exec(firstLine);
+  if (headingMatch) {
     return (
-      <h1>
-        <MarkdownInline context={props.context} line={firstLine.slice(2).trim()} />
-      </h1>
-    );
-  }
-  if (firstLine.startsWith("## ")) {
-    return (
-      <h2>
-        <MarkdownInline context={props.context} line={firstLine.slice(3).trim()} />
-      </h2>
+      <MarkdownHeading
+        context={props.context}
+        level={(headingMatch[1] ?? "").length}
+        text={(headingMatch[2] ?? "").trim()}
+      />
     );
   }
   return (

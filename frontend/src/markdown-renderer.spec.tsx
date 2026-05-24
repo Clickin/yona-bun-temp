@@ -33,6 +33,16 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('href="mailto:help@example.com"');
   });
 
+  it("renders legacy marked heading ids and levels", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"# Title\n\n### Third Heading\n\n###### Final Heading"} />,
+    );
+
+    expect(html).toContain('<h1 id="title">Title</h1>');
+    expect(html).toContain('<h3 id="third-heading">Third Heading</h3>');
+    expect(html).toContain('<h6 id="final-heading">Final Heading</h6>');
+  });
+
   it("renders legacy owner issue references and project mentions", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
