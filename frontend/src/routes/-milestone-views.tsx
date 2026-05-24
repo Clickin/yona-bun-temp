@@ -281,7 +281,14 @@ export function ProjectMilestoneDetailPage(props: {
           <MilestoneProgress percent={milestone.completionPercent} />
           {milestone.contentsMarkdown.trim() ? (
             <div className="milestone-desc">
-              <MarkdownRenderer className="markdown-wrap" markdown={milestone.contentsMarkdown} />
+              <MarkdownRenderer
+                className="markdown-wrap"
+                basePath={props.runtimeConfig.basePath}
+                issueReferences={milestone.issueReferences}
+                markdown={milestone.contentsMarkdown}
+                ownerName={detail.ownerName}
+                projectName={detail.projectName}
+              />
               <div className="attachments">
                 {milestone.attachments.map((attachment) => (
                   <a href={attachment.url} key={attachment.id}>

@@ -46,4 +46,4 @@
 - REST milestone API parity remains in the REST/API packet.
 - Migration export/import milestone flows remain in the migration/export packet.
 - Search `milestone` result type remains in the search packet.
-- React-rendered milestone issue-reference metadata (`title` / `data-issue-state`) remains in the shared Markdown renderer follow-up.
+- React-rendered milestone issue-reference metadata (`title` / `data-issue-state`) is supplied through the shared Markdown reference metadata payload.

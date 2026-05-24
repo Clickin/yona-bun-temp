@@ -326,7 +326,7 @@ describe("file-route parity harness", () => {
           attachments: [],
           authorId: "1",
           bodyHtml: "",
-          bodyMarkdown: "body",
+          bodyMarkdown: "body #1",
           comments: [
             {
               attachments: [],
@@ -344,6 +344,15 @@ describe("file-route parity harness", () => {
           historyHtml: "",
           historyMarkdown: "",
           id: "16",
+          issueReferences: [
+            {
+              issueNumber: 1,
+              ownerName: "owner",
+              projectName: "projectYobi",
+              state: "open",
+              title: "Referenced issue",
+            },
+          ],
           isWatching: false,
           permissions: {
             canComment: false,
@@ -362,6 +371,8 @@ describe("file-route parity harness", () => {
     expect(detailHtml).not.toContain(">Watch<");
     expect(detailHtml).not.toContain("Leave a comment");
     expect(detailHtml).toContain('data-via-email="true"');
+    expect(detailHtml).toContain('href="/yona/owner/projectYobi/issue/1"');
+    expect(detailHtml).toContain('data-issue-state="open"');
 
     const orgHtml = renderToStaticMarkup(
       <OrganizationBoardListPage
@@ -398,9 +409,18 @@ describe("file-route parity harness", () => {
           closedIssues: [],
           completionPercent: 0,
           contentsHtml: "",
-          contentsMarkdown: "Ship **parity** with `React`",
+          contentsMarkdown: "Ship **parity** with `React` #1",
           dueDateLabel: "",
           id: 7,
+          issueReferences: [
+            {
+              issueNumber: 1,
+              ownerName: "owner",
+              projectName: "projectYobi",
+              state: "closed",
+              title: "Milestone reference",
+            },
+          ],
           openIssueCount: 0,
           openIssues: [],
           state: "open",
@@ -416,6 +436,7 @@ describe("file-route parity harness", () => {
 
     expect(html).toContain('<div class="markdown-wrap"><p>Ship <strong>parity</strong> with ');
     expect(html).toContain("<code>React</code>");
+    expect(html).toContain('data-issue-state="closed"');
     expect(html).not.toContain("contentsHtml");
   });
 
@@ -426,7 +447,7 @@ describe("file-route parity harness", () => {
         detail={null}
         pullRequest={{
           bodyHtml: "",
-          bodyMarkdown: "Ship **PR** with `React`",
+          bodyMarkdown: "Ship **PR** with `React` #1",
           commits: [],
           conflict: false,
           contributor: { loginId: "owner", userId: 1, userLabel: "Owner User" },
@@ -436,6 +457,15 @@ describe("file-route parity harness", () => {
           fromOwnerName: "owner",
           fromProjectName: "projectYobi",
           id: 1,
+          issueReferences: [
+            {
+              issueNumber: 1,
+              ownerName: "owner",
+              projectName: "projectYobi",
+              state: "open",
+              title: "PR reference",
+            },
+          ],
           isWatching: false,
           lackingReviewerCount: 1,
           mergedCommitIdFrom: "",
@@ -471,9 +501,18 @@ describe("file-route parity harness", () => {
                   authorLoginId: "reviewer",
                   canDelete: false,
                   contentsHtml: "",
-                  contentsMarkdown: "Review **comment** with `React`",
+                  contentsMarkdown: "Review **comment** with `React` #2",
                   createdLabel: "now",
                   id: 8,
+                  issueReferences: [
+                    {
+                      issueNumber: 2,
+                      ownerName: "owner",
+                      projectName: "projectYobi",
+                      state: "closed",
+                      title: "Review reference",
+                    },
+                  ],
                   threadId: 7,
                   viaEmail: true,
                 },
@@ -497,6 +536,8 @@ describe("file-route parity harness", () => {
 
     expect(html).toContain('<div class="markdown-wrap"><p>Ship <strong>PR</strong> with ');
     expect(html).toContain("<code>React</code>");
+    expect(html).toContain('data-issue-state="open"');
+    expect(html).toContain('data-issue-state="closed"');
     expect(html).toContain('<div class="comment-body markdown-wrap" data-via-email="true"');
     expect(html).toContain("<p>Review <strong>comment</strong> with ");
     expect(html).not.toContain("bodyHtml");

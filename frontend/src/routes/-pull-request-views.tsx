@@ -1040,7 +1040,14 @@ export function ProjectPullRequestDetailPage(props: {
             )}
           </section>
           <section className="board-body">
-            <MarkdownRenderer className="markdown-wrap" markdown={pr.bodyMarkdown} />
+            <MarkdownRenderer
+              className="markdown-wrap"
+              basePath={props.runtimeConfig.basePath}
+              issueReferences={pr.issueReferences}
+              markdown={pr.bodyMarkdown}
+              ownerName={pr.ownerName}
+              projectName={pr.projectName}
+            />
           </section>
           <ReviewThreadSection
             csrfToken={props.csrfToken}
@@ -1297,8 +1304,12 @@ function ReviewThreadItem(props: {
           ) : (
             <MarkdownRenderer
               className="comment-body markdown-wrap"
+              basePath={props.runtimeConfig?.basePath}
               data-via-email={comment.viaEmail ? "true" : undefined}
+              issueReferences={comment.issueReferences}
               markdown={comment.contentsMarkdown}
+              ownerName={props.pullRequest?.ownerName}
+              projectName={props.pullRequest?.projectName}
             />
           )}
         </div>

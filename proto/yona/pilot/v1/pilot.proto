@@ -813,6 +813,15 @@ message ReadIssueDetailResponse {
   bool is_favorited = 30;
   string author_avatar_url = 31;
   string assignee_avatar_url = 32;
+  repeated IssueReferenceMetadata issue_references = 33;
+}
+
+message IssueReferenceMetadata {
+  string owner_name = 1;
+  string project_name = 2;
+  int64 issue_number = 3;
+  string state = 4;
+  string title = 5;
 }
 
 message IssueSharer {
@@ -851,6 +860,7 @@ message IssueMilestone {
   repeated ProjectIssueListItem closed_issues = 12;
   bool viewer_can_update = 13;
   bool viewer_can_delete = 14;
+  repeated IssueReferenceMetadata issue_references = 15;
 }
 
 message IssueAttachment {
@@ -876,6 +886,7 @@ message IssueComment {
   repeated IssueCommentVoter voters = 12;
   bool via_email = 13;
   string author_avatar_url = 14;
+  repeated IssueReferenceMetadata issue_references = 15;
 }
 
 message IssueCommentVoter {

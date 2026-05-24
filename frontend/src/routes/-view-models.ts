@@ -1,3 +1,5 @@
+import type { IssueReferenceMetadata } from "../api/issue-meta";
+
 export interface WorkspaceOverviewViewModel {
   apiToken?: string;
   defaultLandingPath: string;
@@ -315,6 +317,7 @@ export interface ProjectIssueDetailViewModel {
     contentsMarkdown: string;
     createdLabel: string;
     id: number;
+    issueReferences?: IssueReferenceMetadata[];
     viewerCanDelete: boolean;
     viewerCanUpdate: boolean;
     viewerHasVoted: boolean;
@@ -325,6 +328,7 @@ export interface ProjectIssueDetailViewModel {
   hasVoted: boolean;
   historyHtml: string;
   historyMarkdown: string;
+  issueReferences?: IssueReferenceMetadata[];
   isFavorited: boolean;
   isWatching: boolean;
   issueNumber: number;
@@ -343,6 +347,7 @@ export interface ProjectIssueDetailViewModel {
       contentsMarkdown: string;
       createdLabel: string;
       id: number;
+      issueReferences?: IssueReferenceMetadata[];
       viewerCanDelete: boolean;
       viewerCanUpdate: boolean;
       viewerHasVoted: boolean;
@@ -388,6 +393,7 @@ export interface ProjectMilestoneViewModel {
   contentsMarkdown: string;
   dueDateLabel: string;
   id: number;
+  issueReferences?: IssueReferenceMetadata[];
   openIssueCount: number;
   openIssues: ProjectMilestoneIssueViewModel[];
   state: string;

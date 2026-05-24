@@ -1,5 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
+import type { IssueReferenceMetadata } from "./issue-meta";
+import { normalizeIssueReferences } from "./issue-meta";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
 
@@ -12,6 +14,7 @@ export type CodeReviewComment = {
   contentsMarkdown: string;
   createdLabel: string;
   id: number;
+  issueReferences?: IssueReferenceMetadata[];
   threadId: number;
   viaEmail: boolean;
 };
@@ -45,6 +48,7 @@ export type CodeCommitDetailResponse = {
     shortMessage: string;
   } | null;
   files: Array<{ path: string; patch: string }>;
+  issueReferences?: IssueReferenceMetadata[];
   noHead: boolean;
   ownerName: string;
   parentCommit: { commitId: string; commitShortId: string } | null;
@@ -102,6 +106,7 @@ function normalizeComment(comment: Partial<CodeReviewComment>): CodeReviewCommen
     contentsMarkdown: comment.contentsMarkdown ?? "",
     createdLabel: comment.createdLabel ?? "",
     id: comment.id ?? 0,
+    issueReferences: normalizeIssueReferences(comment.issueReferences),
     threadId: comment.threadId ?? 0,
     viaEmail: comment.viaEmail ?? false,
   };
@@ -132,6 +137,7 @@ function normalizeCommitDetail(
     breadcrumbs: response.breadcrumbs ?? [],
     commit: response.commit ?? null,
     files: response.files ?? [],
+    issueReferences: normalizeIssueReferences(response.issueReferences),
     noHead: response.noHead ?? false,
     ownerName: response.ownerName ?? "",
     parentCommit: response.parentCommit ?? null,

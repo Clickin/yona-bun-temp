@@ -331,9 +331,18 @@ describe("project code browser routing", () => {
               authorLoginId: "owner",
               canDelete: true,
               contentsHtml: "",
-              contentsMarkdown: "First **commit** note",
+              contentsMarkdown: "First **commit** note #1",
               createdLabel: "2026-04-21",
               id: 11,
+              issueReferences: [
+                {
+                  issueNumber: 1,
+                  ownerName: "owner",
+                  projectName: "projectYobi",
+                  state: "open",
+                  title: "Commit reference",
+                },
+              ],
               threadId: 7,
               viaEmail: false,
             },
@@ -387,6 +396,8 @@ describe("project code browser routing", () => {
     expect(detailHtml).toContain('class="comment-thread-wrap open"');
     expect(detailHtml).toContain('id="comment-11"');
     expect(detailHtml).toContain("First <strong>commit</strong> note");
+    expect(detailHtml).toContain('href="/yona/owner/projectYobi/issue/1"');
+    expect(detailHtml).toContain('data-issue-state="open"');
     expect(detailHtml).toContain('class="comment-body markdown-wrap"');
     expect(detailHtml).toContain('data-request-method="delete"');
     expect(detailHtml).toContain(

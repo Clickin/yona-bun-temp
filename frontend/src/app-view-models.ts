@@ -38,6 +38,15 @@ import {
   listProjects,
   readWorkspaceOverview,
 } from "./auth-workspace-client";
+import type { IssueReferenceMetadata } from "./api/issue-meta";
+import { normalizeIssueReferences } from "./api/issue-meta";
+
+function issueReferencesFrom(value: unknown): IssueReferenceMetadata[] {
+  return normalizeIssueReferences(
+    (value as { issueReferences?: Partial<IssueReferenceMetadata>[] } | null | undefined)
+      ?.issueReferences,
+  );
+}
 
 export function toWorkspaceOverview(
   session: Awaited<ReturnType<typeof readCurrentSession>>,
@@ -580,6 +589,7 @@ export function toProjectIssueDetailView(
       contentsMarkdown: comment.contentsMarkdown,
       createdLabel: comment.createdLabel,
       id: Number(comment.id),
+      issueReferences: issueReferencesFrom(comment),
       viewerCanDelete: comment.viewerCanDelete,
       viewerCanUpdate: comment.viewerCanUpdate,
       viewerHasVoted: comment.viewerHasVoted,
@@ -595,6 +605,7 @@ export function toProjectIssueDetailView(
     hasVoted: response.hasVoted,
     historyHtml: response.historyHtml ?? "",
     historyMarkdown: response.historyMarkdown ?? "",
+    issueReferences: issueReferencesFrom(response),
     isFavorited: response.isFavorited,
     isWatching: response.isWatching,
     issueNumber: Number(response.issueNumber),
@@ -622,6 +633,7 @@ export function toProjectIssueDetailView(
             contentsMarkdown: item.comment.contentsMarkdown,
             createdLabel: item.comment.createdLabel,
             id: Number(item.comment.id),
+            issueReferences: issueReferencesFrom(item.comment),
             viewerCanDelete: item.comment.viewerCanDelete,
             viewerCanUpdate: item.comment.viewerCanUpdate,
             viewerHasVoted: item.comment.viewerHasVoted,
@@ -691,6 +703,7 @@ function toProjectMilestoneView(
     contentsMarkdown: milestone.contentsMarkdown,
     dueDateLabel: milestone.dueDateLabel,
     id: Number(milestone.id),
+    issueReferences: issueReferencesFrom(milestone),
     openIssueCount: milestone.openIssueCount,
     openIssues: milestone.openIssues.map(toProjectMilestoneIssueView),
     state: milestone.state,

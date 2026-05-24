@@ -85,6 +85,11 @@ export type ProjectIssueReferenceItem = {
   title: string;
 };
 
+export type IssueReferenceMetadata = ProjectIssueReferenceItem & {
+  ownerName: string;
+  projectName: string;
+};
+
 export type ProjectIssueReferencesResponse = {
   items: ProjectIssueReferenceItem[];
   total: number;
@@ -240,6 +245,18 @@ function normalizeProjectIssueReferencesResponse(
     total: response.total ?? items.length,
     truncated: response.truncated ?? false,
   };
+}
+
+export function normalizeIssueReferences(
+  references: Partial<IssueReferenceMetadata>[] | undefined,
+): IssueReferenceMetadata[] {
+  return (references ?? []).map((reference) => ({
+    issueNumber: reference.issueNumber ?? 0,
+    ownerName: reference.ownerName ?? "",
+    projectName: reference.projectName ?? "",
+    state: reference.state ?? "",
+    title: reference.title ?? "",
+  }));
 }
 
 export function watchIssueRest(

@@ -1,5 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
+import type { IssueReferenceMetadata } from "./issue-meta";
+import { normalizeIssueReferences } from "./issue-meta";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
 
@@ -28,6 +30,7 @@ export type BoardPostComment = {
   contentsMarkdown: string;
   createdLabel: string;
   id: string;
+  issueReferences?: IssueReferenceMetadata[];
   parentCommentId: string;
   viaEmail: boolean;
 };
@@ -56,6 +59,7 @@ export type BoardPostDetail = BoardPostListItem & {
   historyHtml: string;
   historyMarkdown: string;
   id: string;
+  issueReferences?: IssueReferenceMetadata[];
   isWatching: boolean;
   permissions: BoardPostPermissions;
   watcherCount: number;
@@ -304,12 +308,14 @@ function normalizePostDetail(response: Partial<BoardPostDetail>): BoardPostDetai
       contentsMarkdown: comment.contentsMarkdown ?? "",
       createdLabel: comment.createdLabel ?? "",
       id: comment.id ?? "",
+      issueReferences: normalizeIssueReferences(comment.issueReferences),
       parentCommentId: comment.parentCommentId ?? "",
       viaEmail: comment.viaEmail ?? false,
     })),
     historyHtml: response.historyHtml ?? "",
     historyMarkdown: response.historyMarkdown ?? "",
     id: response.id ?? "",
+    issueReferences: normalizeIssueReferences(response.issueReferences),
     isWatching: response.isWatching ?? false,
     permissions: normalizePermissions(response),
     watcherCount: response.watcherCount ?? 0,

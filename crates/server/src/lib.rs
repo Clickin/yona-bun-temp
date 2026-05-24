@@ -6468,6 +6468,7 @@ struct RestPostComment {
     contents_markdown: String,
     created_label: String,
     id: String,
+    issue_references: Vec<RestIssueReferenceMetadata>,
     parent_comment_id: String,
     via_email: bool,
 }
@@ -6504,6 +6505,7 @@ struct RestPostDetailResponse {
     history_html: String,
     history_markdown: String,
     id: String,
+    issue_references: Vec<RestIssueReferenceMetadata>,
     is_watching: bool,
     labels: Vec<RestBoardLabel>,
     notice: bool,
@@ -7245,6 +7247,7 @@ struct RestCodeCommitDetailResponse {
     breadcrumbs: Vec<RestCodeBreadcrumb>,
     commit: Option<RestCodeCommit>,
     files: Vec<RestCodeCommitFileDiff>,
+    issue_references: Vec<RestIssueReferenceMetadata>,
     no_head: bool,
     owner_name: String,
     parent_commit: Option<RestCodeCommitParent>,
@@ -7462,6 +7465,7 @@ struct RestReviewComment {
     contents_markdown: String,
     created_label: String,
     id: i64,
+    issue_references: Vec<RestIssueReferenceMetadata>,
     thread_id: i64,
     via_email: bool,
 }
@@ -7613,6 +7617,7 @@ struct RestPullRequestDetailResponse {
     from_owner_name: String,
     from_project_name: String,
     id: i64,
+    issue_references: Vec<RestIssueReferenceMetadata>,
     is_watching: bool,
     lacking_reviewer_count: u32,
     merged_commit_id_from: String,
@@ -15258,6 +15263,19 @@ async fn rest_code_commit_detail_response(
     if let Some(commit) = snapshot.commit.as_mut() {
         commit.comment_count = threads.len() as u32;
     }
+    let mut markdowns = Vec::new();
+    for thread in &threads {
+        markdowns.extend(
+            thread
+                .comments
+                .iter()
+                .map(|comment| comment.contents_markdown.as_str()),
+        );
+    }
+    let issue_references =
+        markdown_issue_references_for_project(repository, authorization, actor_id, &markdowns)
+            .await
+            .map_err(RestRouteError::from_connect_error)?;
 
     Ok(code_commit_detail_response_from_snapshot(
         authorization,
@@ -15265,7 +15283,7 @@ async fn rest_code_commit_detail_response(
         snapshot,
         threads,
         base_path,
-        &[],
+        &issue_references,
     ))
 }
 
@@ -15403,6 +15421,7 @@ async fn rest_update_commit_discussion_thread_state(
         record,
         Some(actor.id),
         can_moderate,
+        &[],
     )))
 }
 
@@ -20534,7 +20553,14 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
-        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
+        let mut milestone = issue_milestone_from_record_with_issue_references(
+            repository,
+            &authorization,
+            session.user_id,
+            &milestone,
+            &self.base_path,
+        )
+        .await?;
         milestone.viewer_can_update = true;
         milestone.viewer_can_delete = true;
         Ok((
@@ -21975,6 +22001,112 @@ struct MarkdownIssueReference {
     title: String,
 }
 
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestIssueReferenceMetadata {
+    owner_name: String,
+    project_name: String,
+    issue_number: i64,
+    state: String,
+    title: String,
+}
+
+fn issue_reference_metadata_from_resolved(
+    reference: &MarkdownIssueReference,
+) -> IssueReferenceMetadata {
+    IssueReferenceMetadata {
+        owner_name: reference.owner_name.clone(),
+        project_name: reference.project_name.clone(),
+        issue_number: reference.issue_number,
+        state: reference.state.clone(),
+        title: reference.title.clone(),
+        ..Default::default()
+    }
+}
+
+fn rest_issue_reference_metadata_from_resolved(
+    reference: &MarkdownIssueReference,
+) -> RestIssueReferenceMetadata {
+    RestIssueReferenceMetadata {
+        owner_name: reference.owner_name.clone(),
+        project_name: reference.project_name.clone(),
+        issue_number: reference.issue_number,
+        state: reference.state.clone(),
+        title: reference.title.clone(),
+    }
+}
+
+fn markdown_issue_numbers(markdown: &str) -> Vec<i64> {
+    let mut numbers = Vec::new();
+    let mut chars = markdown.char_indices().peekable();
+    while let Some((index, item)) = chars.next() {
+        if item != '#' {
+            continue;
+        }
+        if markdown[..index]
+            .chars()
+            .next_back()
+            .is_some_and(|previous| previous.is_ascii_alphanumeric() || previous == '_')
+        {
+            continue;
+        }
+        let mut digits = String::new();
+        while let Some((_, next)) = chars.peek().copied() {
+            if !next.is_ascii_digit() {
+                break;
+            }
+            digits.push(next);
+            chars.next();
+        }
+        if let Ok(number) = digits.parse::<i64>() {
+            if number > 0 {
+                numbers.push(number);
+            }
+        }
+    }
+    numbers.sort_unstable();
+    numbers.dedup();
+    numbers
+}
+
+async fn markdown_issue_references_for_project(
+    repository: &PilotRepository,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor_id: Option<i64>,
+    markdowns: &[&str],
+) -> Result<Vec<MarkdownIssueReference>, ConnectError> {
+    let mut issue_numbers = markdowns
+        .iter()
+        .flat_map(|markdown| markdown_issue_numbers(markdown))
+        .collect::<Vec<_>>();
+    issue_numbers.sort_unstable();
+    issue_numbers.dedup();
+    if issue_numbers.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let search_project =
+        resolve_issue_reference_search_project(repository, authorization, actor_id).await?;
+    let records = repository
+        .list_project_issue_references_by_numbers(
+            &search_project.owner_name,
+            &search_project.project_name,
+            &issue_numbers,
+        )
+        .await
+        .map_err(internal_error)?;
+    Ok(records
+        .into_iter()
+        .map(|record| MarkdownIssueReference {
+            owner_name: authorization.project.owner_name.clone(),
+            project_name: authorization.project.project_name.clone(),
+            issue_number: record.issue_number,
+            state: record.state,
+            title: record.title,
+        })
+        .collect())
+}
+
 fn rewrite_code_browser_markdown_image_links(
     markdown: &str,
     base_path: &str,
@@ -22211,7 +22343,7 @@ fn issue_comment_from_record(
     base_path: &str,
     _owner_name: &str,
     _project_name: &str,
-    _issue_references: &[MarkdownIssueReference],
+    issue_references: &[MarkdownIssueReference],
 ) -> IssueComment {
     let viewer_is_author = viewer_id.is_some() && viewer_id == record.author_id;
     IssueComment {
@@ -22227,6 +22359,10 @@ fn issue_comment_from_record(
         contents_markdown: record.contents_markdown.clone(),
         created_label: record.created_label.clone(),
         id: record.id,
+        issue_references: issue_references
+            .iter()
+            .map(issue_reference_metadata_from_resolved)
+            .collect(),
         via_email: record.via_email,
         viewer_can_delete: viewer_can_manage || viewer_is_author,
         viewer_can_update: viewer_can_manage || viewer_is_author,
@@ -22332,6 +22468,28 @@ fn issue_milestone_from_record(
         title: record.title.clone(),
         ..Default::default()
     }
+}
+
+async fn issue_milestone_from_record_with_issue_references(
+    repository: &PilotRepository,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    actor_id: Option<i64>,
+    record: &persistence::IssueMilestoneRecord,
+    base_path: &str,
+) -> Result<IssueMilestone, ConnectError> {
+    let issue_references = markdown_issue_references_for_project(
+        repository,
+        authorization,
+        actor_id,
+        &[record.contents_markdown.as_str()],
+    )
+    .await?;
+    let mut milestone = issue_milestone_from_record(record, base_path);
+    milestone.issue_references = issue_references
+        .iter()
+        .map(issue_reference_metadata_from_resolved)
+        .collect();
+    Ok(milestone)
 }
 
 fn issue_mutation_input_from_create(
@@ -22862,7 +23020,7 @@ fn rest_post_comment_from_record(
     _base_path: &str,
     _owner_name: &str,
     _project_name: &str,
-    _issue_references: &[MarkdownIssueReference],
+    issue_references: &[MarkdownIssueReference],
 ) -> RestPostComment {
     RestPostComment {
         attachments: comment
@@ -22877,6 +23035,10 @@ fn rest_post_comment_from_record(
         contents_markdown: comment.contents_markdown.clone(),
         created_label: comment.created_label.clone(),
         id: comment.id.to_string(),
+        issue_references: issue_references
+            .iter()
+            .map(rest_issue_reference_metadata_from_resolved)
+            .collect(),
         parent_comment_id: optional_i64_string(comment.parent_comment_id),
         via_email: comment.via_email,
     }
@@ -22906,9 +23068,9 @@ fn rest_post_list_item_from_record(
 }
 
 async fn rest_post_detail_response_from_record_with_repository_issue_references(
-    _repository: &PilotRepository,
+    repository: &PilotRepository,
     posting: &persistence::PostingRecord,
-    _actor_id: Option<i64>,
+    actor_id: Option<i64>,
     base_path: &str,
     viewer_can_create: bool,
     viewer_can_update: bool,
@@ -22917,6 +23079,26 @@ async fn rest_post_detail_response_from_record_with_repository_issue_references(
     viewer_can_set_notice: bool,
     viewer_can_watch: bool,
 ) -> Result<RestPostDetailResponse, ConnectError> {
+    let authorization = require_project_read(
+        repository,
+        &posting.owner_name,
+        &posting.project_name,
+        actor_id,
+    )
+    .await?;
+    let mut markdowns = vec![
+        posting.body_markdown.as_str(),
+        posting.history_markdown.as_str(),
+    ];
+    markdowns.extend(
+        posting
+            .comments
+            .iter()
+            .map(|comment| comment.contents_markdown.as_str()),
+    );
+    let issue_references =
+        markdown_issue_references_for_project(repository, &authorization, actor_id, &markdowns)
+            .await?;
     Ok(rest_post_detail_response_from_record_with_issue_references(
         posting,
         base_path,
@@ -22926,7 +23108,7 @@ async fn rest_post_detail_response_from_record_with_repository_issue_references(
         viewer_can_comment,
         viewer_can_set_notice,
         viewer_can_watch,
-        &[],
+        &issue_references,
     ))
 }
 
@@ -22970,6 +23152,10 @@ fn rest_post_detail_response_from_record_with_issue_references(
         history_html: String::new(),
         history_markdown: posting.history_markdown.clone(),
         id: posting.id.to_string(),
+        issue_references: issue_references
+            .iter()
+            .map(rest_issue_reference_metadata_from_resolved)
+            .collect(),
         is_watching: posting.is_watching,
         labels: posting
             .labels
@@ -23015,13 +23201,33 @@ fn issue_detail_response_from_record(
 }
 
 async fn issue_detail_response_from_record_with_repository_issue_references(
-    _repository: &PilotRepository,
+    repository: &PilotRepository,
     issue: &persistence::IssueRecord,
     viewer_can_manage: bool,
     viewer_can_comment: bool,
     viewer_id: Option<i64>,
     base_path: &str,
 ) -> Result<ReadIssueDetailResponse, ConnectError> {
+    let authorization = require_project_read(
+        repository,
+        &issue.owner_name,
+        &issue.project_name,
+        viewer_id,
+    )
+    .await?;
+    let mut markdowns = vec![
+        issue.body_markdown.as_str(),
+        issue.history_markdown.as_str(),
+    ];
+    markdowns.extend(
+        issue
+            .comments
+            .iter()
+            .map(|comment| comment.contents_markdown.as_str()),
+    );
+    let issue_references =
+        markdown_issue_references_for_project(repository, &authorization, viewer_id, &markdowns)
+            .await?;
     Ok(
         issue_detail_response_from_record_with_sharer_flags_and_issue_references(
             issue,
@@ -23031,19 +23237,39 @@ async fn issue_detail_response_from_record_with_repository_issue_references(
             false,
             viewer_id,
             base_path,
-            &[],
+            &issue_references,
         ),
     )
 }
 
 async fn rest_issue_detail_response_from_record_with_repository_issue_references(
-    _repository: &PilotRepository,
+    repository: &PilotRepository,
     issue: &persistence::IssueRecord,
     viewer_can_manage: bool,
     viewer_can_comment: bool,
     viewer_id: Option<i64>,
     base_path: &str,
 ) -> Result<RestIssueDetailResponse, ConnectError> {
+    let authorization = require_project_read(
+        repository,
+        &issue.owner_name,
+        &issue.project_name,
+        viewer_id,
+    )
+    .await?;
+    let mut markdowns = vec![
+        issue.body_markdown.as_str(),
+        issue.history_markdown.as_str(),
+    ];
+    markdowns.extend(
+        issue
+            .comments
+            .iter()
+            .map(|comment| comment.contents_markdown.as_str()),
+    );
+    let issue_references =
+        markdown_issue_references_for_project(repository, &authorization, viewer_id, &markdowns)
+            .await?;
     Ok(
         rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
             issue,
@@ -23053,7 +23279,7 @@ async fn rest_issue_detail_response_from_record_with_repository_issue_references
             false,
             viewer_id,
             base_path,
-            &[],
+            &issue_references,
         ),
     )
 }
@@ -23075,11 +23301,29 @@ fn issue_detail_response_from_access(
 }
 
 async fn rest_issue_detail_response_from_access_with_repository_issue_references(
-    _repository: &PilotRepository,
+    repository: &PilotRepository,
     access: &IssueAccessContext,
     viewer_id: Option<i64>,
     base_path: &str,
 ) -> Result<RestIssueDetailResponse, ConnectError> {
+    let mut markdowns = vec![
+        access.issue.body_markdown.as_str(),
+        access.issue.history_markdown.as_str(),
+    ];
+    markdowns.extend(
+        access
+            .issue
+            .comments
+            .iter()
+            .map(|comment| comment.contents_markdown.as_str()),
+    );
+    let issue_references = markdown_issue_references_for_project(
+        repository,
+        &access.authorization,
+        viewer_id,
+        &markdowns,
+    )
+    .await?;
     Ok(
         rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
             &access.issue,
@@ -23089,7 +23333,7 @@ async fn rest_issue_detail_response_from_access_with_repository_issue_references
             access.share_status.inherited_from_parent,
             viewer_id,
             base_path,
-            &[],
+            &issue_references,
         ),
     )
 }
@@ -23194,6 +23438,10 @@ fn issue_detail_response_from_record_with_sharer_flags_and_issue_references(
             })
             .collect(),
         has_voted: issue.has_voted,
+        issue_references: issue_references
+            .iter()
+            .map(issue_reference_metadata_from_resolved)
+            .collect(),
         is_favorited: issue.is_favorited,
         is_watching: issue.is_watching,
         issue_number: issue.issue_number,
@@ -27549,7 +27797,14 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
-        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
+        let mut milestone = issue_milestone_from_record_with_issue_references(
+            repository,
+            &authorization,
+            session.as_ref().and_then(|session| session.user_id),
+            &milestone,
+            &self.base_path,
+        )
+        .await?;
         milestone.viewer_can_update = viewer_can_update;
         milestone.viewer_can_delete = viewer_can_update;
         Ok((
@@ -27614,7 +27869,14 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
+        let mut milestone = issue_milestone_from_record_with_issue_references(
+            repository,
+            &authorization,
+            session.user_id,
+            &milestone,
+            &self.base_path,
+        )
+        .await?;
         milestone.viewer_can_update = true;
         milestone.viewer_can_delete = true;
         Ok((
@@ -27682,7 +27944,14 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
-        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
+        let mut milestone = issue_milestone_from_record_with_issue_references(
+            repository,
+            &authorization,
+            session.user_id,
+            &milestone,
+            &self.base_path,
+        )
+        .await?;
         milestone.viewer_can_update = true;
         milestone.viewer_can_delete = true;
         Ok((
@@ -27867,12 +28136,13 @@ fn rest_pull_request_list_from_record(
 }
 
 fn rest_review_comment_from_record(record: persistence::ReviewCommentRecord) -> RestReviewComment {
-    rest_review_comment_from_record_with_permissions(record, false)
+    rest_review_comment_from_record_with_permissions(record, false, &[])
 }
 
 fn rest_review_comment_from_record_with_permissions(
     record: persistence::ReviewCommentRecord,
     can_delete: bool,
+    issue_references: &[MarkdownIssueReference],
 ) -> RestReviewComment {
     RestReviewComment {
         author_id: record.author_id.unwrap_or_default(),
@@ -27883,6 +28153,10 @@ fn rest_review_comment_from_record_with_permissions(
         contents_markdown: record.contents_markdown,
         created_label: record.created_label,
         id: record.id,
+        issue_references: issue_references
+            .iter()
+            .map(rest_issue_reference_metadata_from_resolved)
+            .collect(),
         thread_id: record.thread_id,
         via_email: record.via_email,
     }
@@ -27915,6 +28189,7 @@ fn rest_pull_request_thread_from_record(
     record: persistence::ReviewThreadRecord,
     actor_id: Option<i64>,
     can_moderate: bool,
+    issue_references: &[MarkdownIssueReference],
 ) -> RestReviewThread {
     RestReviewThread {
         author_id: record.author_id.unwrap_or_default(),
@@ -27925,7 +28200,11 @@ fn rest_pull_request_thread_from_record(
             .into_iter()
             .map(|comment| {
                 let can_delete = can_moderate || comment.author_id == actor_id;
-                rest_review_comment_from_record_with_permissions(comment, can_delete)
+                rest_review_comment_from_record_with_permissions(
+                    comment,
+                    can_delete,
+                    issue_references,
+                )
             })
             .collect(),
         commit_id: record.commit_id,
@@ -27945,6 +28224,7 @@ fn rest_commit_thread_from_record(
     record: persistence::ReviewThreadRecord,
     actor_id: Option<i64>,
     can_moderate: bool,
+    issue_references: &[MarkdownIssueReference],
 ) -> RestReviewThread {
     RestReviewThread {
         author_id: record.author_id.unwrap_or_default(),
@@ -27955,7 +28235,11 @@ fn rest_commit_thread_from_record(
             .into_iter()
             .map(|comment| {
                 let can_delete = can_moderate || comment.author_id == actor_id;
-                rest_review_comment_from_record_with_permissions(comment, can_delete)
+                rest_review_comment_from_record_with_permissions(
+                    comment,
+                    can_delete,
+                    issue_references,
+                )
             })
             .collect(),
         commit_id: record.commit_id,
@@ -28030,12 +28314,24 @@ async fn rest_pull_request_detail_from_record_with_repository_issue_references(
 ) -> Result<RestPullRequestDetailResponse, ConnectError> {
     let source_branch_state =
         rest_pull_request_source_branch_state(repository, &record, actor_id).await?;
+    let mut markdowns = vec![record.body_markdown.as_str()];
+    for thread in &record.threads {
+        markdowns.extend(
+            thread
+                .comments
+                .iter()
+                .map(|comment| comment.contents_markdown.as_str()),
+        );
+    }
+    let issue_references =
+        markdown_issue_references_for_project(repository, authorization, actor_id, &markdowns)
+            .await?;
     rest_pull_request_detail_from_record_with_issue_references(
         record,
         authorization,
         actor_id,
         base_path,
-        &[],
+        &issue_references,
         source_branch_state,
     )
 }
@@ -28085,7 +28381,7 @@ fn rest_pull_request_detail_from_record_with_issue_references(
     authorization: &persistence::ProjectAuthorizationRecord,
     actor_id: Option<i64>,
     _base_path: &str,
-    _issue_references: &[MarkdownIssueReference],
+    issue_references: &[MarkdownIssueReference],
     source_branch_state: RestPullRequestSourceBranchState,
 ) -> Result<RestPullRequestDetailResponse, ConnectError> {
     let viewer_can_project_update = actor_id.is_some() && project_update_allowed(authorization)?;
@@ -28140,6 +28436,10 @@ fn rest_pull_request_detail_from_record_with_issue_references(
         from_owner_name: record.from_owner_name,
         from_project_name: record.from_project_name,
         id: record.id,
+        issue_references: issue_references
+            .iter()
+            .map(rest_issue_reference_metadata_from_resolved)
+            .collect(),
         is_watching: record.is_watching,
         lacking_reviewer_count: record.lacking_reviewer_count,
         merged_commit_id_from: record.merged_commit_id_from,
@@ -28171,7 +28471,12 @@ fn rest_pull_request_detail_from_record_with_issue_references(
             .threads
             .into_iter()
             .map(|thread| {
-                rest_pull_request_thread_from_record(thread, actor_id, can_moderate_review_comments)
+                rest_pull_request_thread_from_record(
+                    thread,
+                    actor_id,
+                    can_moderate_review_comments,
+                    issue_references,
+                )
             })
             .collect(),
         title: record.title,
@@ -28447,7 +28752,7 @@ fn code_commit_detail_response_from_snapshot(
     snapshot: CodeCommitDetailSnapshot,
     threads: Vec<persistence::ReviewThreadRecord>,
     _base_path: &str,
-    _issue_references: &[MarkdownIssueReference],
+    issue_references: &[MarkdownIssueReference],
 ) -> RestCodeCommitDetailResponse {
     let can_moderate = actor_id.is_some() && project_update_allowed(authorization).unwrap_or(false);
     RestCodeCommitDetailResponse {
@@ -28470,6 +28775,10 @@ fn code_commit_detail_response_from_snapshot(
             .into_iter()
             .map(code_commit_file_diff_to_rest)
             .collect(),
+        issue_references: issue_references
+            .iter()
+            .map(rest_issue_reference_metadata_from_resolved)
+            .collect(),
         no_head: snapshot.no_head,
         owner_name: authorization.project.owner_name.clone(),
         parent_commit: snapshot.parent_commit.map(code_commit_parent_to_rest),
@@ -28482,7 +28791,9 @@ fn code_commit_detail_response_from_snapshot(
         selected_branch: snapshot.selected_branch,
         threads: threads
             .into_iter()
-            .map(|thread| rest_commit_thread_from_record(thread, actor_id, can_moderate))
+            .map(|thread| {
+                rest_commit_thread_from_record(thread, actor_id, can_moderate, issue_references)
+            })
             .collect(),
     }
 }

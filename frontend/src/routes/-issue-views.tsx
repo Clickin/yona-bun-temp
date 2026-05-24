@@ -383,8 +383,12 @@ export function ProjectIssueDetailPage(props: {
             <div id={issue ? `issue-body-${issue.issueNumber}` : undefined}>
               <MarkdownRenderer
                 className="content markdown-wrap"
+                basePath={props.runtimeConfig.basePath}
                 data-allowed-update={issue ? String(issue.viewerCanUpdate) : undefined}
+                issueReferences={issue?.issueReferences}
                 markdown={issue?.bodyMarkdown ?? ""}
+                ownerName={detail.ownerName}
+                projectName={detail.projectName}
               />
             </div>
             <div className="attachments" id="attachments">
@@ -696,9 +700,13 @@ export function ProjectIssueDetailPage(props: {
                             >
                               <MarkdownRenderer
                                 className="comment-body markdown-wrap"
+                                basePath={props.runtimeConfig.basePath}
                                 data-allowed-update={String(comment.viewerCanUpdate)}
                                 data-via-email={comment.viaEmail ? "true" : undefined}
+                                issueReferences={comment.issueReferences}
                                 markdown={comment.contentsMarkdown}
+                                ownerName={detail.ownerName}
+                                projectName={detail.projectName}
                               />
                             </div>
                           </div>

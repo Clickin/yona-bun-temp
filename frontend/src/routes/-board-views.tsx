@@ -50,7 +50,14 @@ function nextOrderDir(currentOrderBy: string, currentOrderDir: string, fieldName
   return currentOrderBy === fieldName && currentOrderDir === "desc" ? "asc" : "desc";
 }
 
-function PostingHistoryModal(props: { historyMarkdown?: string; linkLabel: string }) {
+function PostingHistoryModal(props: {
+  historyMarkdown?: string;
+  issueReferences?: BoardPostDetail["issueReferences"];
+  linkLabel: string;
+  ownerName?: string;
+  basePath?: string;
+  projectName?: string;
+}) {
   const historyMarkdown = props.historyMarkdown ?? "";
   if (!historyMarkdown.trim()) {
     return null;
@@ -68,7 +75,14 @@ function PostingHistoryModal(props: { historyMarkdown?: string; linkLabel: strin
           </button>
           <h5 className="nm">change.history</h5>
         </div>
-        <MarkdownRenderer className="modal-body" markdown={historyMarkdown} />
+        <MarkdownRenderer
+          className="modal-body"
+          basePath={props.basePath}
+          issueReferences={props.issueReferences}
+          markdown={historyMarkdown}
+          ownerName={props.ownerName}
+          projectName={props.projectName}
+        />
         <div className="modal-footer">
           <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" type="button">
             button.confirm
@@ -507,9 +521,23 @@ export function ProjectBoardDetailPage(props: {
             {postBadges(post)}
             {boardLabels(post.labels)}
           </div>
-          <PostingHistoryModal historyMarkdown={post.historyMarkdown} linkLabel="change.history" />
+          <PostingHistoryModal
+            historyMarkdown={post.historyMarkdown}
+            basePath={props.runtimeConfig.basePath}
+            issueReferences={post.issueReferences}
+            linkLabel="change.history"
+            ownerName={post.ownerName}
+            projectName={post.projectName}
+          />
         </header>
-        <MarkdownRenderer className="board-body markdown-wrap" markdown={post.bodyMarkdown} />
+        <MarkdownRenderer
+          className="board-body markdown-wrap"
+          basePath={props.runtimeConfig.basePath}
+          issueReferences={post.issueReferences}
+          markdown={post.bodyMarkdown}
+          ownerName={post.ownerName}
+          projectName={post.projectName}
+        />
         <div className="board-actions">
           {post.permissions.canWatch ? (
             <button className="ybtn" onClick={props.onWatchToggle} type="button">
@@ -588,8 +616,12 @@ export function ProjectBoardDetailPage(props: {
                 ) : (
                   <MarkdownRenderer
                     className="comment-body markdown-wrap"
+                    basePath={props.runtimeConfig.basePath}
                     data-via-email={comment.viaEmail ? "true" : undefined}
+                    issueReferences={comment.issueReferences}
                     markdown={comment.contentsMarkdown}
+                    ownerName={post.ownerName}
+                    projectName={post.projectName}
                   />
                 )}
                 {post.permissions.canUpdate || props.viewerId === comment.authorId ? (
