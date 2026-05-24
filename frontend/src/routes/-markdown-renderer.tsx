@@ -18,6 +18,8 @@ type MarkdownLineRecord = {
 function isSafeUrl(value: string) {
   return (
     value.startsWith("/") ||
+    value.startsWith("./") ||
+    value.startsWith("../") ||
     value.startsWith("#") ||
     value.startsWith("http://") ||
     value.startsWith("https://") ||
@@ -122,14 +124,14 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord }) {
   );
 }
 
-export function MarkdownRenderer(props: { className?: string; markdown: string }) {
+export function MarkdownRenderer(props: { className?: string; id?: string; markdown: string }) {
   const blocks = paragraphBlocks(props.markdown);
   if (blocks.length === 0) {
-    return <div className={props.className} />;
+    return <div className={props.className} id={props.id} />;
   }
 
   return (
-    <div className={props.className}>
+    <div className={props.className} id={props.id}>
       {blocks.map((block) => (
         <MarkdownBlock block={block} key={block.key} />
       ))}

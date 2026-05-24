@@ -204,20 +204,21 @@ describe("project code browser routing", () => {
 
   it("renders markdown files with the legacy codebrowser markdown wrapper", () => {
     const markdownHtml = renderCodeFile({
-      html: '<h1>Hello Yona</h1><p><img src="/yona/owner/projectYobi/files/main/assets/logo.png"></p>',
+      html: "",
       isBinary: false,
       isTooLarge: false,
       mimeType: "text/markdown",
       name: "README.md",
       path: "README.md",
       size: 67,
-      text: "# Hello Yona\n\n![logo](./assets/logo.png)\n",
+      text: "# Hello Yona\n\n![logo](/yona/owner/projectYobi/files/main/assets/logo.png)\n\n[Guide](./docs/guide.md)\n",
     } as NonNullable<CodeBrowserViewModel["file"]>);
 
     expect(markdownHtml).toContain('id="codeVal"');
     expect(markdownHtml).toContain('class="markdown-wrap codebrowser-markdown"');
     expect(markdownHtml).toContain("<h1>Hello Yona</h1>");
     expect(markdownHtml).toContain('src="/yona/owner/projectYobi/files/main/assets/logo.png"');
+    expect(markdownHtml).toContain('href="./docs/guide.md"');
     expect(markdownHtml).not.toContain('id="showCode"');
   });
 

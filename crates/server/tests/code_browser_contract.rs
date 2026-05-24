@@ -670,17 +670,20 @@ async fn rest_code_browser_renders_markdown_file_with_legacy_local_image_links()
     .await;
 
     assert_eq!(file["file"]["name"], "README.md");
-    let html = file["file"]["html"]
-        .as_str()
-        .expect("rendered markdown html");
-    assert!(html.contains("<h1>Hello Yona</h1>"), "{html}");
+    assert_eq!(
+        file["file"]["html"].as_str().expect("markdown html"),
+        "",
+        "code-browser Markdown files must leave rendering to React"
+    );
+    let markdown = file["file"]["text"].as_str().expect("markdown text");
+    assert!(markdown.contains("# Hello Yona"), "{markdown}");
     assert!(
-        html.contains(r#"src="/yona/owner/projectYobi/files/main/assets/logo.png""#),
-        "{html}"
+        markdown.contains(r#"![logo](/yona/owner/projectYobi/files/main/assets/logo.png)"#),
+        "{markdown}"
     );
     assert!(
-        html.contains(r#"href="./docs/guide.md""#),
-        "code-browser markdown should only rewrite local images like legacy renderFileInCodeBrowser: {html}"
+        markdown.contains("[Guide](./docs/guide.md)"),
+        "code-browser markdown should only rewrite local images like legacy renderFileInCodeBrowser: {markdown}"
     );
 }
 

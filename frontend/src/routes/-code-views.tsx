@@ -1,8 +1,11 @@
 import * as React from "react";
 import type { RuntimeConfig } from "../runtime-config";
 import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
+import { MarkdownRenderer } from "./-markdown-renderer";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
 import type { CodeBrowserViewModel, ProjectDetailViewModel } from "./-view-models";
+
+const MARKDOWN_CODE_EXTENSIONS = new Set(["markdown", "mdown", "mkdn", "mkd", "md", "mdwn"]);
 
 export interface CodeHistoryViewModel {
   branches: Array<{ name: string }>;
@@ -184,6 +187,11 @@ function codeArchiveHref(
     projectName,
     `code/${encodeURIComponent(branch)}/download`,
   );
+}
+
+function codeFileIsMarkdown(file: NonNullable<CodeBrowserViewModel["file"]>) {
+  const extension = file.path.split(".").pop()?.toLowerCase() ?? "";
+  return MARKDOWN_CODE_EXTENSIONS.has(extension);
 }
 
 function branchSetDefaultHref(
@@ -1946,14 +1954,14 @@ function CodeFileView(props: {
       </div>
     );
   }
-  if (props.file.html) {
+  if (codeFileIsMarkdown(props.file)) {
     return (
       <div className="file-wrap" data-type="file">
         <CodeFileHeader file={props.file} openHref={openHref} rawHref={rawHref} showRaw={true} />
-        <div
+        <MarkdownRenderer
           className="markdown-wrap codebrowser-markdown"
-          dangerouslySetInnerHTML={{ __html: props.file.html }}
           id="codeVal"
+          markdown={props.file.text}
         />
       </div>
     );

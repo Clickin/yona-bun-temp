@@ -22009,23 +22009,6 @@ fn render_project_markdown_html_with_issue_references(
     )
 }
 
-fn render_code_browser_markdown_file_html(
-    markdown: &str,
-    base_path: &str,
-    owner_name: &str,
-    project_name: &str,
-    branch: &str,
-) -> String {
-    let rewritten = rewrite_code_browser_markdown_image_links(
-        markdown,
-        base_path,
-        owner_name,
-        project_name,
-        branch,
-    );
-    render_project_markdown_html(&rewritten, base_path, owner_name, project_name)
-}
-
 fn rewrite_code_browser_markdown_image_links(
     markdown: &str,
     base_path: &str,
@@ -29661,16 +29644,19 @@ fn code_file_to_rest(
     project_name: &str,
     branch: &str,
 ) -> RestCodeFile {
-    let html = if code_file_is_renderable_markdown(&file) {
-        render_code_browser_markdown_file_html(
-            &file.text,
-            base_path,
-            owner_name,
-            project_name,
-            branch,
+    let (html, text) = if code_file_is_renderable_markdown(&file) {
+        (
+            String::new(),
+            rewrite_code_browser_markdown_image_links(
+                &file.text,
+                base_path,
+                owner_name,
+                project_name,
+                branch,
+            ),
         )
     } else {
-        String::new()
+        (String::new(), file.text)
     };
     RestCodeFile {
         html,
@@ -29680,7 +29666,7 @@ fn code_file_to_rest(
         name: file.name,
         path: file.path,
         size: file.size,
-        text: file.text,
+        text,
     }
 }
 
