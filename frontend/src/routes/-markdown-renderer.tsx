@@ -161,6 +161,24 @@ function issueReferenceFor(
   return context?.issueReferenceMap?.get(`${ownerName}/${projectName}#${issueNumber}`);
 }
 
+function splitBareAutolinkToken(token: string) {
+  let label = token;
+  let suffix = "";
+  while (/[?!.,:;*_~)]$/.test(label)) {
+    const last = label.at(-1) ?? "";
+    if (last === ")") {
+      const openCount = (label.match(/\(/g) ?? []).length;
+      const closeCount = (label.match(/\)/g) ?? []).length;
+      if (openCount >= closeCount) {
+        break;
+      }
+    }
+    suffix = last + suffix;
+    label = label.slice(0, -1);
+  }
+  return { label, suffix };
+}
+
 function parseTextWithAutolinks(
   text: string,
   keyPrefix: string,
@@ -262,12 +280,16 @@ function parseTextWithAutolinks(
         parts.push({ kind: "text", key, value: token });
       }
     } else {
-      const target = token.startsWith("www.")
-        ? `http://${token}`
-        : /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(token)
-          ? `mailto:${token}`
-          : token;
-      parts.push({ kind: "link", key, label: token, target });
+      const { label, suffix } = splitBareAutolinkToken(token);
+      const target = label.startsWith("www.")
+        ? `http://${label}`
+        : /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(label)
+          ? `mailto:${label}`
+          : label;
+      parts.push({ kind: "link", key, label, target });
+      if (suffix) {
+        parts.push({ kind: "text", key: `${key}-suffix`, value: suffix });
+      }
     }
     index = tokenStart + token.length;
   }

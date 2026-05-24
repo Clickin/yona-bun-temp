@@ -189,6 +189,17 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("&lt;help@example.com&gt;");
   });
 
+  it("trims trailing punctuation from bare URLs like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown="See (https://example.com/docs), then https://example.com/end." />,
+    );
+
+    expect(html).toContain('(<a href="https://example.com/docs">https://example.com/docs</a>),');
+    expect(html).toContain('<a href="https://example.com/end">https://example.com/end</a>.');
+    expect(html).not.toContain('href="https://example.com/docs),"');
+    expect(html).not.toContain('href="https://example.com/end."');
+  });
+
   it("renders basic GFM pipe tables like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"| Name | State |\n| --- | --- |\n| #1 | ~~closed~~ |"} />,
