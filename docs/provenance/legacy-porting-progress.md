@@ -395,7 +395,7 @@ Interpretation:
 - [x] Basic GFM pipe tables render as `<table>` on the project Markdown render path
 - [x] Basic smart-list rendering emits `<ul>` / `<ol>` on the project Markdown render path
 - [x] Basic blockquotes render as `<blockquote>` on the project Markdown render path
-- [x] Basic task checklist rendering with sanitized disabled checkboxes
+- [x] Basic task checklist rendering with sanitized disabled checkbox inputs
 - [x] Horizontal rules render as `<hr>` on the project Markdown render path
 - [x] Basic safe inline image rendering on the project Markdown render path
 - [x] Basic fenced-code block rendering with language class preservation on the project Markdown render path

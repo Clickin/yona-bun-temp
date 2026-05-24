@@ -147,6 +147,21 @@ describe("MarkdownRenderer", () => {
     expect(orderedHtml).toContain("<li><code>second</code></li>");
   });
 
+  it("renders task-list checkboxes like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"- [ ] open\n- [x] **done**\n- [X] done upper"} />,
+    );
+
+    expect(html).toContain("<ul>");
+    expect(html).toContain('<input disabled="" readOnly="" type="checkbox"/> open');
+    expect(html).toContain(
+      '<input disabled="" readOnly="" type="checkbox" checked=""/> <strong>done</strong>',
+    );
+    expect(html).toContain(
+      '<input disabled="" readOnly="" type="checkbox" checked=""/> done upper',
+    );
+  });
+
   it("renders basic blockquotes like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"> **quoted**\n> with ~~style~~"} />,

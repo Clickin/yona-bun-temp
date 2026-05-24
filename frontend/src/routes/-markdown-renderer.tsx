@@ -58,7 +58,9 @@ type MarkdownTableRecord = {
 };
 
 type MarkdownListItem = {
+  checked?: boolean;
   key: string;
+  task: boolean;
   text: string;
 };
 
@@ -364,12 +366,12 @@ function parseMarkdownList(lines: MarkdownLineRecord[]): MarkdownListRecord | nu
   for (const line of lines) {
     const unorderedMatch = /^\s*[-*+]\s+(.+)$/.exec(line.text);
     if (unorderedMatch) {
-      unorderedItems.push({ key: line.key, text: unorderedMatch[1] ?? "" });
+      unorderedItems.push(parseMarkdownListItem(line.key, unorderedMatch[1] ?? ""));
       continue;
     }
     const orderedMatch = /^\s*\d+[.)]\s+(.+)$/.exec(line.text);
     if (orderedMatch) {
-      orderedItems.push({ key: line.key, text: orderedMatch[1] ?? "" });
+      orderedItems.push(parseMarkdownListItem(line.key, orderedMatch[1] ?? ""));
       continue;
     }
     return null;
@@ -381,6 +383,19 @@ function parseMarkdownList(lines: MarkdownLineRecord[]): MarkdownListRecord | nu
     return { items: orderedItems, ordered: true };
   }
   return null;
+}
+
+function parseMarkdownListItem(key: string, rawText: string): MarkdownListItem {
+  const taskMatch = /^\[([ xX])\]\s+(.*)$/.exec(rawText);
+  if (!taskMatch) {
+    return { key, task: false, text: rawText };
+  }
+  return {
+    checked: (taskMatch[1] ?? "").toLowerCase() === "x",
+    key,
+    task: true,
+    text: taskMatch[2] ?? "",
+  };
 }
 
 function parseMarkdownBlockquote(lines: MarkdownLineRecord[]): MarkdownBlockquoteRecord[] | null {
@@ -497,6 +512,8 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   if (list) {
     const children = list.items.map((item) => (
       <li key={item.key}>
+        {item.task ? <input checked={item.checked} disabled readOnly type="checkbox" /> : null}
+        {item.task ? " " : null}
         <MarkdownInline context={props.context} line={item.text} />
       </li>
     ));
