@@ -550,7 +550,7 @@ POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → le
 - [x] 댓글: 시간순 정렬, 작성자 아바타, 마크다운 렌더링 — REST comment/timeline projection now includes legacy-derived author avatar URLs, and issue detail renders the legacy `#comments.board-comment-wrap`, `.comment-header`, `.comments`, `.comment`, `.comment-avatar`, `.avatar-wrap`, `.media-body`, `.comment_author`, `.ago-date`, `.ago`, `.share-link`, `.act-row.pull-right`, `.new-issue-by`, `#comment-body-*`, and `.comment-body` anchors. Comment vote/unvote controls preserve legacy `data-request-type="comment-vote"` and direct vote/unvote `data-request-uri` anchors; updateable comments use `[data-toggle="comment-edit"]`, `data-comment-id`, and `#comment-editform-*` / `.comment-update-form`; deletable comments use `[data-toggle="comment-delete"]`, `data-request-uri`, and common `#comment-delete-modal` / `#comment-delete-confirm` confirmation shell before invoking the existing mutations. The `.new-issue-by` anchor now lands on `/user/issues/new?commentId=:id`, loads the legacy direct issue form options from recent-project state, pre-fills the body with the source comment attribution, posts `referCommentId`, and creates the legacy derived-issue comment on the source issue. The direct my-issue form `/user/issues/new/mine` uses the legacy `IssueApp.newDirectMyIssueForm` target priority: `inbox`, `_private`, latest private project, then latest public project.
 - [x] Legacy direct issue comment form aliases: `POST /:owner/:project/issue/:number/comments`, `POST /:owner/:project/issue/:number/comments/:commentId`, and `DELETE /:owner/:project/issue/:number/comment/:commentId/delete` reuse the `/api/v1` comment contract and redirect back to the legacy issue anchor
 - [ ] 타임라인: 상태 변경/담당자 변경/라벨 변경 이벤트가 댓글과 인터리빙되어 시간순 표시; React detail event rows preserve legacy `partial_event_timeline.scala.html` anchors including `li.event#event-*`, `.state`, `.date a[href="#event-*"]`, `.user-link`, add/delete state classes, and hidden `ISSUE_BODY_CHANGED` rows.
-- [ ] Mass Update: 체크박스로 다중 선택 → 상태/담당자/마일스톤 일괄 변경 (legacy `IssueMassUpdate` 동일)
+- [x] Mass Update: 체크박스로 다중 선택 → 상태/담당자/마일스톤 일괄 변경 (legacy `IssueMassUpdate` 동일); `/api/v1/projects/:owner/:project/issues/mass-update` and direct `POST /:owner/:project/issues` preserve the legacy bulk mutation surface with state-change timeline/notification/mail fan-out
 - [ ] 이슈 삭제: 작성자 또는 프로젝트 관리자만 가능; detail 화면은 legacy `issue/view.scala.html`처럼 `#deleteConfirm.modal.hide.fade`, `data-toggle="modal"`, `issue.delete`, `post.delete.confirm`, and `data-request-method="delete"` confirmation shell을 거친다.
 - [ ] 이슈 공유: 직접 공유된 사용자는 비공개/제한 이슈와 댓글을 읽고 해당 이슈에 댓글 작성 가능, parent issue 공유는 child issue 읽기만 허용
 - [ ] 이슈 공유 검색은 읽기 ACL을 재사용하고, active user와 public project 후보를 typed target으로 반환하며, 실제 공유 추가/삭제시에만 `ISSUE_SHARER_CHANGED` 타임라인/notification/mail queue row side effect를 남긴다
@@ -637,10 +637,10 @@ GET   /categories                          → 전역 카테고리
 
 #### 검수 기준
 
-- [ ] 라벨 생성 시 이름, 색상(hex), 카테고리 지정 가능
-- [ ] 라벨 색상이 legacy와 동일하게 배경색 + 텍스트색으로 표시
-- [ ] 이슈 필터에서 라벨 선택 시 해당 라벨이 붙은 이슈만 필터링
-- [ ] 카테고리별 라벨 그룹핑이 legacy `labelsform` 화면과 동일
+- [x] 라벨 생성 시 이름, 색상(hex), 카테고리 지정 가능
+- [x] 라벨 색상이 legacy와 동일하게 배경색 + 텍스트색으로 표시
+- [x] 이슈 필터에서 라벨 선택 시 해당 라벨이 붙은 이슈만 필터링
+- [x] 카테고리별 라벨 그룹핑이 legacy `labelsform` 화면과 동일
 - [x] `copyLabels`가 읽기 가능한 source 프로젝트의 라벨을 update 가능한 target 프로젝트로 복사하고 중복 라벨을 재사용한다
 
 ---

@@ -11,7 +11,7 @@ Last updated: 2026-05-25
 | --------------------------------------- | -------: | ----------------------------------------------------------------------------------------------------------------------------- |
 | Full legacy Yona parity                 |     ~50% | Weighted by legacy product capability, including VCS, PR/review, board, search, notifications, webhooks, admin, and separate migrator/external API compatibility. |
 | Current first-priority conversion scope |     ~58% | Same as above, but excluding explicitly deferred second-priority items such as SVN, LDAP, import/export tooling, and legacy external API compatibility. |
-| Mechanical SPEC row count               |     ~49% | Phase -1 moved implemented application flows to `/api/v1` REST and removed runtime RPC; Phase 3L closes Git browser/history/compare/branch-admin/provisioning/Smart HTTP transport and push post-receive rows, Phase 4B closes PR interaction rows, the fork/clone slice closes native bare-repo fork creation, Phase 5B closes board/posting core rows, Phase 5C closes app search rows, and project webhook CRUD, transfer request/accept/mail, legacy project statistics shell, public `/:user` profile route, user statistics counts, plus site-admin mail/mass-mail are now implemented while many product rows remain gaps. |
+| Mechanical SPEC row count               |     ~49% | Phase -1 moved implemented application flows to `/api/v1` REST and removed runtime RPC; Phase 3L closes Git browser/history/compare/branch-admin/provisioning/Smart HTTP transport and push post-receive rows, Phase 3N mounts the SVN auth/DAV boundary, Phase 4B closes PR interaction rows, the fork/clone slice closes native bare-repo fork creation, Phase 5B closes board/posting core rows, Phase 5C closes app search rows, and project webhook CRUD, transfer request/accept/mail, legacy project statistics shell, public `/:user` profile route, user statistics counts, plus site-admin mail/mass-mail are now implemented while many product rows remain gaps. |
 
 Interpretation:
 
@@ -275,7 +275,7 @@ Interpretation:
 - [x] Smart HTTP clone/pull
 - [x] Smart HTTP push transport
 - [x] Basic Auth/token auth for Git HTTP
-- [ ] Post-receive hooks/events
+- [x] Post-receive hooks/events
 - [~] SVN support: storage lifecycle and `/svn/$path` auth/DAV boundary implemented; executable WebDAV bridge deferred
 
 ## Pull Request / Review
