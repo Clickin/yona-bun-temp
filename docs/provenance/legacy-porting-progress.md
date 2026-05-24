@@ -396,6 +396,7 @@ Interpretation:
 - [x] Inline Markdown links and images preserve legacy marked `title` attributes
 - [x] Reference-style Markdown links and images resolve legacy marked definitions without rendering definition lines
 - [x] Legacy marked-style soft line breaks render as `<br>` on the project Markdown render path
+- [x] Legacy hard-break markers (`\` or two trailing spaces before newline) are consumed before rendering `<br>`
 - [x] GFM strikethrough renders `~~deleted~~` as `<del>` on the project Markdown render path
 - [x] Basic GFM pipe tables render as `<table>` on the project Markdown render path, including escaped `\|` pipes inside cells and left/center/right alignment attributes
 - [x] Basic smart-list rendering emits `<ul>` / `<ol>` on the project Markdown render path

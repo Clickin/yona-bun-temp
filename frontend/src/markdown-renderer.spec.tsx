@@ -155,6 +155,16 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<code>  spaced  </code>");
   });
 
+  it("consumes legacy hard-break markers before line breaks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"Backslash\\\nnext\nTwo spaces  \nafter"} />,
+    );
+
+    expect(html).toContain("<p>Backslash<br/>next<br/>Two spaces<br/>after</p>");
+    expect(html).not.toContain("Backslash\\");
+    expect(html).not.toContain("Two spaces  <br/>");
+  });
+
   it("renders inline link and image titles like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

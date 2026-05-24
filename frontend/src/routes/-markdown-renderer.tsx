@@ -187,6 +187,17 @@ function normalizeCodeSpan(value: string) {
   return text;
 }
 
+function markdownLineTextBeforeBreak(
+  line: MarkdownLineRecord,
+  index: number,
+  lines: MarkdownLineRecord[],
+) {
+  if (index >= lines.length - 1) {
+    return line.text;
+  }
+  return line.text.replace(/(?: {2,}|\\)$/, "");
+}
+
 function parseTextWithAutolinks(
   text: string,
   keyPrefix: string,
@@ -699,10 +710,13 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
     return (
       <blockquote>
         <p>
-          {blockquote.map((line) => (
+          {blockquote.map((line, index) => (
             <React.Fragment key={line.key}>
               {line.key === "line-0" ? null : <br />}
-              <MarkdownInline context={props.context} line={line.text} />
+              <MarkdownInline
+                context={props.context}
+                line={markdownLineTextBeforeBreak(line, index, blockquote)}
+              />
             </React.Fragment>
           ))}
         </p>
@@ -721,10 +735,13 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   }
   return (
     <p>
-      {lines.map((line) => (
+      {lines.map((line, index) => (
         <React.Fragment key={line.key}>
           {line.key === "line-0" ? null : <br />}
-          <MarkdownInline context={props.context} line={line.text} />
+          <MarkdownInline
+            context={props.context}
+            line={markdownLineTextBeforeBreak(line, index, lines)}
+          />
         </React.Fragment>
       ))}
     </p>
