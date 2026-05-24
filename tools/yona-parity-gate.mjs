@@ -478,6 +478,11 @@ const DOMAIN_BUCKETS = [
   },
 ];
 
+const MARKDOWN_SURFACE_OPT_IN_PATTERNS = [
+  /^frontend\/src\/routes\/-board-views\.tsx$/i,
+  /^frontend\/src\/routes\/-issue-views\.tsx$/i,
+];
+
 function normalizePath(inputPath) {
   return inputPath.replaceAll("\\", "/").replace(/^\.\/+/, "");
 }
@@ -496,6 +501,18 @@ function isNonImplementationFile(filePath) {
 
 function isImplementationFile(filePath) {
   return !isNonImplementationFile(filePath);
+}
+
+function isMarkdownSurfaceOptIn(filePath, changedFiles) {
+  if (!matchesAnyPattern(filePath, MARKDOWN_SURFACE_OPT_IN_PATTERNS)) {
+    return false;
+  }
+
+  return changedFiles.some((changedFile) =>
+    /^frontend\/src\/(?:markdown-renderer\.spec\.tsx|routes\/-markdown-renderer\.tsx)$/i.test(
+      changedFile,
+    ),
+  );
 }
 
 function hasLegacyRoot(repoRoot) {
@@ -536,6 +553,16 @@ function matchesKeyword(filePath, keywords) {
 }
 
 function classifyCapability(filePath, changedFiles = []) {
+  const markdownBucket = DOMAIN_BUCKETS.find((bucket) => bucket.id === "project-markdown-rendering");
+  if (
+    markdownBucket &&
+    isMarkdownSurfaceOptIn(filePath, changedFiles) &&
+    capabilityHasTestEvidence(markdownBucket, changedFiles) &&
+    capabilityHasProvenanceEvidence(markdownBucket, changedFiles)
+  ) {
+    return markdownBucket;
+  }
+
   for (const slice of PARITY_SLICES) {
     if (matchesAnyPattern(filePath, slice.implementationPatterns)) {
       return slice;

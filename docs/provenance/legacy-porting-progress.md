@@ -406,7 +406,7 @@ Interpretation:
 - [ ] Full legacy/GFM extension parity
 - [~] Remaining legacy autolink edge-case parity if evidence requires it; `MarkdownAppTest` owner-scoped issue refs and project mentions are covered
 - [~] Full Highlight.js-equivalent language coverage for Markdown code blocks
-- [~] Task checklist progress-bar integration polish
+- [x] Task checklist progress-bar integration for issue/board Markdown surfaces
 
 ## REST API Compatibility
 

@@ -537,6 +537,7 @@ export function ProjectBoardDetailPage(props: {
           markdown={post.bodyMarkdown}
           ownerName={post.ownerName}
           projectName={post.projectName}
+          showTasklistBar
         />
         <div className="board-actions">
           {post.permissions.canWatch ? (
@@ -622,6 +623,7 @@ export function ProjectBoardDetailPage(props: {
                     markdown={comment.contentsMarkdown}
                     ownerName={post.ownerName}
                     projectName={post.projectName}
+                    showTasklistBar
                   />
                 )}
                 {post.permissions.canUpdate || props.viewerId === comment.authorId ? (

@@ -237,6 +237,23 @@ test("maps PR and code Markdown renderer changes with focused evidence", () => {
   );
 });
 
+test("maps Markdown tasklist surface opt-ins to the renderer capability", () => {
+  const result = runGate([
+    "frontend/src/routes/-markdown-renderer.tsx",
+    "frontend/src/routes/-board-views.tsx",
+    "frontend/src/routes/-issue-views.tsx",
+    "frontend/src/markdown-renderer.spec.tsx",
+    "docs/provenance/legacy-porting-progress.md",
+  ]);
+
+  assert.equal(result.verdict, "pass");
+  assert.equal(shouldBlockForStrictGate(result), false);
+  assert.deepEqual(
+    result.capabilities.map((entry) => entry.id),
+    ["project-markdown-rendering"],
+  );
+});
+
 test("maps shared frontend query keys to the API query boundary", () => {
   const result = runGate([
     "frontend/src/api/query-keys.ts",

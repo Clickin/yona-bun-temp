@@ -389,6 +389,7 @@ export function ProjectIssueDetailPage(props: {
                 markdown={issue?.bodyMarkdown ?? ""}
                 ownerName={detail.ownerName}
                 projectName={detail.projectName}
+                showTasklistBar
               />
             </div>
             <div className="attachments" id="attachments">
@@ -707,6 +708,7 @@ export function ProjectIssueDetailPage(props: {
                                 markdown={comment.contentsMarkdown}
                                 ownerName={detail.ownerName}
                                 projectName={detail.projectName}
+                                showTasklistBar
                               />
                             </div>
                           </div>

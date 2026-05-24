@@ -162,6 +162,51 @@ h1 {
   border-radius: 3px;
 }
 
+.tasklist {
+  display: none;
+  padding: 10px 20px 0;
+  box-shadow: none;
+  filter: none;
+}
+
+.tasklist.task-show {
+  display: block;
+}
+
+.tasklist .task-title {
+  font-weight: 500;
+}
+
+.tasklist .task-title .done-counter {
+  margin-left: 5px;
+}
+
+.tasklist .task-progress {
+  background-color: #d4d4d4;
+}
+
+.tasklist .task-progress .bar {
+  height: 2px;
+  transition: 0.2s;
+}
+
+.tasklist .task-progress .red {
+  background-color: red;
+}
+
+.tasklist .task-progress .green {
+  background-color: #8bc34a;
+}
+
+.task-list-item {
+  list-style: none;
+}
+
+.task-list-item-checkbox {
+  margin: 0 0.2em 0.25em -1.6em;
+  vertical-align: middle;
+}
+
 .notification-page .activity-streams {
   margin: 0;
 }

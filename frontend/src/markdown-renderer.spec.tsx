@@ -153,13 +153,41 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain("<ul>");
-    expect(html).toContain('<input disabled="" readOnly="" type="checkbox"/> open');
+    expect(html).toContain('class="task-list-item"');
     expect(html).toContain(
-      '<input disabled="" readOnly="" type="checkbox" checked=""/> <strong>done</strong>',
+      '<input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> open',
     );
     expect(html).toContain(
-      '<input disabled="" readOnly="" type="checkbox" checked=""/> done upper',
+      '<input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox" checked=""/> <strong>done</strong>',
     );
+    expect(html).toContain(
+      '<input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox" checked=""/> done upper',
+    );
+  });
+
+  it("renders the legacy tasklist progress bar when enabled", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        className="content markdown-wrap"
+        markdown={"- [ ] open\n- [x] **done**\n- [X] done upper"}
+        showTasklistBar
+      />,
+    );
+
+    expect(html).toContain('class="tasklist task-show"');
+    expect(html).toContain('class="task-title" style="width:66.66666666666666%"');
+    expect(html).toContain('Tasks<span class="done-counter">(2/3)</span>');
+    expect(html).toContain('class="bar red" style="width:66.66666666666666%" title="Tasklist"');
+    expect(html).toContain('<div class="content markdown-wrap"><ul>');
+  });
+
+  it("renders a complete tasklist progress bar as green like legacy", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"- [x] done\n- [X] done upper"} showTasklistBar />,
+    );
+
+    expect(html).toContain('Tasks<span class="done-counter">(2/2)</span>');
+    expect(html).toContain('class="bar green" style="width:100%" title="Tasklist"');
   });
 
   it("renders basic blockquotes like legacy marked", () => {

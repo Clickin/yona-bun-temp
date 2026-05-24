@@ -69,6 +69,12 @@ type MarkdownListRecord = {
   ordered: boolean;
 };
 
+type MarkdownTaskStats = {
+  checked: number;
+  percentage: number;
+  total: number;
+};
+
 type MarkdownBlockquoteRecord = {
   key: string;
   text: string;
@@ -398,6 +404,39 @@ function parseMarkdownListItem(key: string, rawText: string): MarkdownListItem {
   };
 }
 
+function markdownTaskStats(markdown: string): MarkdownTaskStats | null {
+  let checked = 0;
+  let total = 0;
+  for (const match of markdown.matchAll(/^[ ]*[-+*]\s+\[([ xX]?)\][ ]?.+$/gm)) {
+    total += 1;
+    if ((match[1] ?? "").toLowerCase() === "x") {
+      checked += 1;
+    }
+  }
+  if (total === 0) {
+    return null;
+  }
+  return { checked, percentage: (checked / total) * 100, total };
+}
+
+function MarkdownTasklistBar(props: { stats: MarkdownTaskStats }) {
+  const complete = props.stats.percentage === 100;
+  return (
+    <div className="tasklist task-show">
+      <div className="task-title" style={{ width: `${props.stats.percentage}%` }}>
+        Tasks<span className="done-counter">{`(${props.stats.checked}/${props.stats.total})`}</span>
+      </div>
+      <div className="task-progress">
+        <div
+          className={`bar ${complete ? "green" : "red"}`}
+          style={{ width: `${props.stats.percentage}%` }}
+          title="Tasklist"
+        />
+      </div>
+    </div>
+  );
+}
+
 function parseMarkdownBlockquote(lines: MarkdownLineRecord[]): MarkdownBlockquoteRecord[] | null {
   if (lines.length === 0) {
     return null;
@@ -511,8 +550,16 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   const list = parseMarkdownList(lines);
   if (list) {
     const children = list.items.map((item) => (
-      <li key={item.key}>
-        {item.task ? <input checked={item.checked} disabled readOnly type="checkbox" /> : null}
+      <li className={item.task ? "task-list-item" : undefined} key={item.key}>
+        {item.task ? (
+          <input
+            checked={item.checked}
+            className="task-list-item-checkbox"
+            disabled
+            readOnly
+            type="checkbox"
+          />
+        ) : null}
         {item.task ? " " : null}
         <MarkdownInline context={props.context} line={item.text} />
       </li>
@@ -566,8 +613,10 @@ export function MarkdownRenderer(props: {
   markdown: string;
   ownerName?: string;
   projectName?: string;
+  showTasklistBar?: boolean;
 }) {
   const blocks = paragraphBlocks(props.markdown);
+  const taskStats = props.showTasklistBar ? markdownTaskStats(props.markdown) : null;
   const issueReferenceMap = new Map(
     (props.issueReferences ?? []).map((reference) => [
       `${reference.ownerName}/${reference.projectName}#${reference.issueNumber}`,
@@ -592,15 +641,18 @@ export function MarkdownRenderer(props: {
   }
 
   return (
-    <div
-      className={props.className}
-      data-allowed-update={props["data-allowed-update"]}
-      data-via-email={props["data-via-email"]}
-      id={props.id}
-    >
-      {blocks.map((block) => (
-        <MarkdownBlock block={block} context={context} key={block.key} />
-      ))}
-    </div>
+    <>
+      {taskStats ? <MarkdownTasklistBar stats={taskStats} /> : null}
+      <div
+        className={props.className}
+        data-allowed-update={props["data-allowed-update"]}
+        data-via-email={props["data-via-email"]}
+        id={props.id}
+      >
+        {blocks.map((block) => (
+          <MarkdownBlock block={block} context={context} key={block.key} />
+        ))}
+      </div>
+    </>
   );
 }
