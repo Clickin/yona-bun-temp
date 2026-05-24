@@ -152,7 +152,7 @@ async fn create_issue(app: axum::Router, cookie_header: &str, csrf: &str, title:
 }
 
 #[tokio::test]
-async fn legacy_markdown_renderer_route_returns_project_context_html() {
+async fn legacy_markdown_preview_route_returns_markdown_source_for_react() {
     let app = build_app_with_repository().await;
     let (csrf, cookie_header) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie_header, &csrf).await;
@@ -190,34 +190,21 @@ async fn legacy_markdown_renderer_route_returns_project_context_html() {
         .and_then(|value| value.to_str().ok())
         .unwrap_or_default()
         .to_string();
-    let html = response_text(response).await;
+    let payload: Value = serde_json::from_str(&response_text(response).await).unwrap();
 
     assert!(
-        content_type.starts_with("text/html"),
-        "legacy markdown renderer should return raw HTML, got {content_type}: {html}"
+        content_type.starts_with("application/json"),
+        "markdown preview should return source JSON for React rendering, got {content_type}: {payload}"
     );
-    assert!(html.contains("Hello "), "{html}");
-    assert!(
-        html.contains(r#"href="/yona/owner" class="no-text-decoration user-link">"#),
-        "{html}"
+    assert_eq!(
+        payload["bodyMarkdown"],
+        "Hello @owner #1 owner/projectYobi#1 http://example.com\n<script>alert(1)</script>"
     );
-    assert!(
-        html.contains(r#"href="/yona/owner/projectYobi/issue/1" class="issueLink" title="Markdown preview target" data-issue-state="open">#1</a>"#),
-        "{html}"
-    );
-    assert!(
-        html.contains(r#"href="/yona/owner/projectYobi/issue/1" class="issueLink" title="Markdown preview target" data-issue-state="open">owner/projectYobi#1</a>"#),
-        "{html}"
-    );
-    assert!(
-        html.contains(r#"<a href="http://example.com">http://example.com</a>"#),
-        "{html}"
-    );
-    assert!(!html.contains("<script>"), "{html}");
+    assert_eq!(payload["breaks"], true);
 }
 
 #[tokio::test]
-async fn legacy_markdown_renderer_preserves_marked_soft_breaks() {
+async fn legacy_markdown_preview_route_preserves_breaks_flag() {
     let app = build_app_with_repository().await;
     let (csrf, cookie_header) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie_header, &csrf).await;
@@ -242,13 +229,13 @@ async fn legacy_markdown_renderer_preserves_marked_soft_breaks() {
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::OK);
-    let html = response_text(response).await;
-    assert!(html.contains("first line<br"), "{html}");
-    assert!(html.contains("second line"), "{html}");
+    let payload: Value = serde_json::from_str(&response_text(response).await).unwrap();
+    assert_eq!(payload["bodyMarkdown"], "first line\nsecond line");
+    assert_eq!(payload["breaks"], true);
 }
 
 #[tokio::test]
-async fn legacy_markdown_renderer_autolinks_gfm_ftp_www_and_email() {
+async fn legacy_markdown_preview_route_does_not_server_render_autolinks() {
     let app = build_app_with_repository().await;
     let (csrf, cookie_header) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &cookie_header, &csrf).await;
@@ -273,17 +260,9 @@ async fn legacy_markdown_renderer_autolinks_gfm_ftp_www_and_email() {
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::OK);
-    let html = response_text(response).await;
-    assert!(
-        html.contains(r#"<a href="ftp://files.example.com">ftp://files.example.com</a>"#),
-        "{html}"
-    );
-    assert!(
-        html.contains(r#"<a href="http://www.example.com">www.example.com</a>"#),
-        "{html}"
-    );
-    assert!(
-        html.contains(r#"<a href="mailto:help@example.com">help@example.com</a>"#),
-        "{html}"
+    let payload: Value = serde_json::from_str(&response_text(response).await).unwrap();
+    assert_eq!(
+        payload["bodyMarkdown"],
+        "ftp://files.example.com www.example.com help@example.com"
     );
 }

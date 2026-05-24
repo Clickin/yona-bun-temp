@@ -1082,14 +1082,14 @@ GET   /sites/export            → 데이터 익스포트
 **Legacy 라우트**:
 
 ```
-POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 → HTML 변환
+POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 원문 반환(React preview 렌더링용)
 ```
 
 #### 기능 목록과 상태
 
 | 기능            | Legacy 동작                      | 현재 상태 | Phase |
 | --------------- | -------------------------------- | --------- | ----- |
-| 마크다운 렌더링 | GFM + 확장 문법                  | basic implemented, including legacy project preview renderer route, marked-compatible soft line breaks, and React-side board/milestone body rendering; full legacy extension parity gap | 2     |
+| 마크다운 렌더링 | GFM + 확장 문법                  | basic implemented, including React-side project preview autolinks, marked-compatible soft line breaks, and React-side board/milestone body rendering; full legacy extension parity gap | 2     |
 | @멘션 링크      | `@username` → 사용자 프로필 링크 | basic implemented on project Markdown projection, including issue/post/milestone/PR/code comment render paths | 2     |
 | 이슈 참조       | `#123`, `owner/project#123` → 이슈 링크 | implemented on project Markdown projection, including issue/post/milestone/PR/code comment render paths; readable issue refs add `title`/`data-issue-state` metadata without exposing inaccessible issue titles | 2     |
 | 자동 링크       | URL 자동 링크 변환               | basic `http://`/`https://`, `ftp://`, `www.`, and email autolinks implemented; residual legacy edge-case parity gap | 2     |
@@ -1112,7 +1112,7 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 → H
 - [x] project-home Git README fallback preserves the legacy readme body wrapper, returns rewritten Markdown instead of server-rendered HTML, and lets React render local images to `/:owner/:project/files/:branch/...` plus normal local links to `/:owner/:project/code/:branch/...`
 - [x] issue detail bodies/comments, board post detail/comments, and DB-backed README postings return Markdown source with empty HTML compatibility fields and render through the shared React Markdown renderer.
 - [x] milestone detail descriptions return Markdown source with an empty HTML compatibility field and render through the shared React Markdown renderer.
-- [x] legacy `POST /markdown/:owner/:project` preview renderer returns raw project-context sanitized HTML
+- [x] legacy `POST /markdown/:owner/:project` preview route no longer returns server-rendered HTML; it validates project read access and returns Markdown source for React-side preview rendering
 - [x] soft line breaks render as `<br>` like legacy marked `breaks: true`
 - [x] 코드 블록: 기본 token span syntax highlighting
 - [x] XSS: `<script>` 등 위험 태그 제거
@@ -1364,7 +1364,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, core event icon/message projection, single/mass-update issue state-change receiver fan-out, mail queue staging, due-row outbound fan-out helper, allowed-domain mail receiver filtering, BCC hide-address mode, recipientLimit partitioning |
 | 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment/merge/commit-changed non-JSON fan-out, DETAIL_HANGOUT_CHAT thread name persistence/reuse, plus git-push JSON payloads; delivery history/retry and hardening remain gaps |
 | 관리자            | ❌ 미구현         |                                                                  |
-| 마크다운          | 🔶 기본 구현      | legacy preview sanitized HTML projection plus `@user`, `#123`, `owner/project#123`, bare `http(s)`/`ftp`/`www`/email autolinks, readable issue title/state metadata, soft line breaks, safe inline images, disabled task-list checkboxes, fenced-code token highlighting, code-browser Markdown React-side rendering with local image path rewrite, project-home Git README React-side rendering with local image/normal-link rewrite, issue body/comment/history modal React-side rendering, PR body/review comment React-side rendering, Git commit discussion comment React-side rendering, board post/comment/history modal/DB README posting React-side rendering, milestone detail React-side rendering, and legacy `POST /markdown/:owner/:project` preview rendering |
+| 마크다운          | 🔶 기본 구현      | React-side project preview/source rendering plus `@user`, `#123`, `owner/project#123`, bare `http(s)`/`ftp`/`www`/email autolinks, readable issue title/state metadata where React receives reference data, soft line breaks, safe inline images, disabled task-list checkboxes, fenced-code token highlighting on older helper code paths, code-browser Markdown React-side rendering with local image path rewrite, project-home Git README React-side rendering with local image/normal-link rewrite, issue body/comment/history modal React-side rendering, PR body/review comment React-side rendering, Git commit discussion comment React-side rendering, board post/comment/history modal/DB README posting React-side rendering, and milestone detail React-side rendering |
 | REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1` legacy external API는 app scope에서 미지원이며 별도 migrator/export/import deliverable로 분리 |
 | Frontend 라우트   | ✅ 구현           | legacy issueform/editform 포함                                   |
 | Frontend 테스트   | 🔶 부분           | API client, route parity, E2E smoke                              |
@@ -1582,6 +1582,6 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope
 - Webhook follow-up: HTTPS production delivery hardening, optional signature compatibility if external evidence requires it, and delivery history/retry behavior
 - Admin: users/projects/site-admin/account-lock/test-mail surfaces
-- Markdown follow-up: migrate remaining legacy preview server-rendered Markdown surface to React-side rendering, restore readable issue-ref metadata in React-rendered issue/PR/code/milestone/board surfaces, full legacy/GFM extension parity, remaining autolink edge cases if legacy evidence requires them, full Highlight.js-equivalent language coverage, and checklist progress-bar integration polish
+- Markdown follow-up: restore readable issue-ref metadata in React-rendered issue/PR/code/milestone/board surfaces, full legacy/GFM extension parity, remaining autolink edge cases if legacy evidence requires them, full Highlight.js-equivalent language coverage, and checklist progress-bar integration polish
 
 ---
