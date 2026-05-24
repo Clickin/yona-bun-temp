@@ -41,6 +41,21 @@ type MarkdownLineRecord = {
   text: string;
 };
 
+type MarkdownTableCell = {
+  key: string;
+  text: string;
+};
+
+type MarkdownTableRow = {
+  cells: MarkdownTableCell[];
+  key: string;
+};
+
+type MarkdownTableRecord = {
+  headers: MarkdownTableCell[];
+  rows: MarkdownTableRow[];
+};
+
 function isSafeUrl(value: string) {
   return (
     value.startsWith("/") ||
@@ -124,6 +139,8 @@ function parseTextWithAutolinks(
         target: `${basePath}/${ownerName}/${projectName}/issue/${issueNumber}`,
         title: reference?.title,
       });
+    } else if (token.startsWith("#")) {
+      parts.push({ kind: "text", key, value: token });
     } else if (/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+#[0-9]+$/.test(token)) {
       const pathIssueMatch = /^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)#([0-9]+)$/.exec(token);
       const referenceOwner = pathIssueMatch?.[1] ?? "";
@@ -266,9 +283,78 @@ function markdownLines(block: string): MarkdownLineRecord[] {
   return lines;
 }
 
+function splitTableRow(line: string): string[] {
+  return line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim());
+}
+
+function parseMarkdownTable(lines: MarkdownLineRecord[]): MarkdownTableRecord | null {
+  if (lines.length < 2) {
+    return null;
+  }
+  const header = splitTableRow(lines[0]?.text ?? "");
+  const separator = splitTableRow(lines[1]?.text ?? "");
+  if (header.length === 0 || separator.length !== header.length) {
+    return null;
+  }
+  if (!separator.every((cell) => /^:?-{3,}:?$/.test(cell))) {
+    return null;
+  }
+  const headers = header.map((text, columnIndex) => ({
+    key: `${lines[0]?.key ?? "header"}-${columnIndex}-${text}`,
+    text,
+  }));
+  const rows: MarkdownTableRow[] = [];
+  for (const line of lines.slice(2)) {
+    const cells = splitTableRow(line.text);
+    if (cells.length <= 1) {
+      continue;
+    }
+    rows.push({
+      cells: headers.map((headerCell, columnIndex) => ({
+        key: `${line.key}-${headerCell.key}`,
+        text: cells[columnIndex] ?? "",
+      })),
+      key: line.key,
+    });
+  }
+  return { headers, rows };
+}
+
 function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownContext }) {
   const lines = markdownLines(props.block.text);
   const firstLine = lines[0]?.text ?? "";
+  const table = parseMarkdownTable(lines);
+  if (table) {
+    return (
+      <table>
+        <thead>
+          <tr>
+            {table.headers.map((header) => (
+              <th key={header.key}>
+                <MarkdownInline context={props.context} line={header.text} />
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {table.rows.map((row) => (
+            <tr key={row.key}>
+              {row.cells.map((cell) => (
+                <td key={cell.key}>
+                  <MarkdownInline context={props.context} line={cell.text} />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  }
   if (firstLine.startsWith("# ")) {
     return (
       <h1>

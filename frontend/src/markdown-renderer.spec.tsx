@@ -69,4 +69,16 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<strong>strong</strong>");
     expect(html).toContain("<del>deleted</del>");
   });
+
+  it("renders basic GFM pipe tables like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"| Name | State |\n| --- | --- |\n| #1 | ~~closed~~ |"} />,
+    );
+
+    expect(html).toContain("<table>");
+    expect(html).toContain("<thead>");
+    expect(html).toContain("<th>Name</th>");
+    expect(html).toContain("<td>#1</td>");
+    expect(html).toContain("<td><del>closed</del></td>");
+  });
 });
