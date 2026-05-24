@@ -255,10 +255,12 @@ async fn project_delete_requires_update_authority_and_removes_project_state() {
         .expect("project lookup")
         .expect("project exists");
     let repo_path = yona_rust_vcs::repository_path(data_dir.path(), project.id);
+    let svn_repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project.id);
     assert!(
         repo_path.exists(),
         "project create should provision bare repo"
     );
+    std::fs::create_dir_all(&svn_repo_path).expect("seed stale svn repository path");
     seed_dependent_project_rows(&db, project.id, guest_id).await;
 
     ok_json(
@@ -435,6 +437,10 @@ async fn project_delete_requires_update_authority_and_removes_project_state() {
     assert!(
         !repo_path.exists(),
         "project delete should remove the provisioned bare repo"
+    );
+    assert!(
+        !svn_repo_path.exists(),
+        "project delete should also remove executable-backed SVN repository storage"
     );
 
     let missing = rest(

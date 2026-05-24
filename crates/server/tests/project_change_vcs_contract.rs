@@ -6,15 +6,23 @@ use sea_orm::{
     QueryFilter,
 };
 use serde_json::{json, Value};
+use std::process::Command;
 use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tower::ServiceExt;
 use yona_rust_persistence::{posting, project, AppRepository};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
-use yona_rust_vcs::repository_path;
+use yona_rust_vcs::{repository_path, svn_repository_path};
 
 mod rest_test_support;
+
+fn svnadmin_available() -> bool {
+    Command::new("svnadmin")
+        .arg("--version")
+        .output()
+        .is_ok_and(|output| output.status.success())
+}
 
 fn yona_data_env_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
@@ -180,6 +188,7 @@ async fn project_change_vcs_follows_legacy_update_gate_and_resets_repository() {
         .expect("project lookup")
         .expect("project exists");
     let repo_path = repository_path(data_dir.path(), project.id);
+    let svn_repo_path = svn_repository_path(data_dir.path(), project.id);
     assert!(
         repo_path.exists(),
         "project create should provision the original repository"
@@ -233,6 +242,34 @@ async fn project_change_vcs_follows_legacy_update_gate_and_resets_repository() {
     .await;
     assert_eq!(forbidden_mutation.status(), StatusCode::FORBIDDEN);
 
+    if !svnadmin_available() {
+        let missing_svn = rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/change-vcs",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            None,
+        )
+        .await;
+        assert_eq!(missing_svn.status(), StatusCode::NOT_IMPLEMENTED);
+        let stored = project::Entity::find_by_id(project.id)
+            .one(&db)
+            .await
+            .expect("read project")
+            .expect("project row");
+        assert_eq!(
+            stored.vcs.as_deref(),
+            Some("GIT"),
+            "missing svnadmin should be rejected before changing project metadata"
+        );
+        assert!(
+            repo_path.join("sentinel.txt").exists(),
+            "missing svnadmin should not reset the Git repository"
+        );
+        return;
+    }
+
     let changed = ok_json(
         rest(
             app.clone(),
@@ -249,8 +286,12 @@ async fn project_change_vcs_follows_legacy_update_gate_and_resets_repository() {
     assert_eq!(changed["nextVcs"], "GIT");
     assert_eq!(changed["redirectPath"], "/owner/projectYobi");
     assert!(
-        repo_path.exists(),
-        "change VCS should recreate repository storage"
+        !repo_path.exists(),
+        "change VCS to SVN should remove the previous Git repository storage"
+    );
+    assert!(
+        svn_repo_path.exists(),
+        "change VCS to SVN should create executable-backed SVN repository storage"
     );
     assert!(
         !repo_path.join("sentinel.txt").exists(),

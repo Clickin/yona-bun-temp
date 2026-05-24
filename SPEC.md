@@ -465,7 +465,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 | 가입 요청            | 비멤버가 가입 요청/취소                            | ✅ 구현           | 1     |
 | 웹훅 관리            | CRUD, event type, secret                           | ✅ CRUD 구현      | 5     |
 | 프로젝트 이관        | 다른 owner로 이관                                  | ✅ request/accept 구현 | 6     |
-| VCS 변경             | Git ↔ SVN                                          | deferred          | 2차   |
+| VCS 변경             | Git ↔ SVN                                          | partial           | 2차   |
 | 프로젝트 통계        | Under Construction shell                          | ✅ legacy shell 구현 | 5     |
 | 프로젝트 메뉴 설정   | code/issue/milestone/board/pullRequest 토글        | ✅ 구현           | 1     |
 | 프로젝트 공개범위    | public/protected/private + ACL 체크                | ✅ 구현           | 1     |
@@ -487,7 +487,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 - [x] `project.default.scope.when.create` / `YONA_PROJECT_DEFAULT_SCOPE`는 프로젝트 생성 폼 기본 공개범위와 scope가 생략된 생성 요청의 기본값을 제어하고, 명시된 요청 scope는 그대로 우선한다
 - [x] `project.creation.default.menus` / `YONA_PROJECT_DEFAULT_MENUS`는 새 프로젝트의 `project_menu_setting` 기본값을 제어한다. Code가 꺼져 있으면 Pull Requests/Reviews도 legacy처럼 code menu visibility에 종속되어 숨겨진다
 - [x] Project create/settings forms expose legacy menu checkbox IDs and persist Code/Issues/Pull Requests/Reviews/Milestones/Board toggle changes through `/api/v1/owners/:owner/projects/:project`
-- [x] `/:owner/:project/changeVCS`는 UPDATE 가능한 프로젝트의 legacy `project/change_vcs.scala.html` checkbox/modal shell을 보존하고 `/api/v1/owners/:owner/projects/:project/change-vcs`로 `vcs` metadata toggle, README posting flag clear, ID-based repository storage reset을 수행한다
+- [x] `/:owner/:project/changeVCS`는 UPDATE 가능한 프로젝트의 legacy `project/change_vcs.scala.html` checkbox/modal shell을 보존하고 `/api/v1/owners/:owner/projects/:project/change-vcs`로 `vcs` metadata toggle, README posting flag clear, ID-based repository storage reset을 수행한다. Subversion 전환은 `svnadmin create` executable wrapper로 `YONA_DATA/repo/<project_id>.svn` storage를 만들며, `svnadmin`이 없으면 DB 변경 전에 실패한다.
 - [x] `/:owner/:project?tabId=history|dashboard`는 legacy project home tab query를 반영해 `partial_history`의 `.content-container.nm`, `.main-stream`, `.activity-streams.unstyled`, `.activity-stream`, `.avatar-wrap.pull-left.mr10`, `.actor`, `.where`, `.title`, `.date` anchors와 `partial_dashboard`의 `.project-overview-home`, `.overview-assignee`, `.overview-milestone`, `.overview-pullrequest`, `.overview-label` anchors를 렌더링한다. Project container REST now returns `history.items` for DB-backed issue/post/pullrequest rows and Git commit rows, plus `dashboard.labels`, `dashboard.assignees`, `dashboard.unassignedOpenIssueCount` for label/assignee dashboard rows, and the legacy direct `PUT /:owner/:project` overview edit route returns `{"overview": ...}` while updating the shared project container state.
 - [x] Smart HTTP clone URL follows the current owner/project name after transfer through the ID-based repository lookup; push post-receive side effects are recorded against the same ID-based repository
 
@@ -1357,7 +1357,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 이슈              | ✅ Phase 2A 구현  | CRUD, 댓글, 타임라인, watch/vote/assignee, mass update, Markdown |
 | 게시판            | 🔶 Phase 5B 구현  | project/organization board app surface                           |
 | 라벨/마일스톤     | ✅ 구현           | 라벨/카테고리 관리, 마일스톤 CRUD/state 구현                     |
-| 코드 브라우저     | 🔶 Phase 3L 구현  | Git 폴더/파일 보기, 브랜치 선택기, raw/open/image 파일 표면, archive download, syntax/line-number 표시, commit history/detail diff/compare, commit comments/thread lifecycle, branch list/latest PR/default/delete, project create 시 bare Git repository provisioning, Smart HTTP transport, push post-receive records |
+| 코드 브라우저     | 🔶 Phase 3M 구현  | Git 폴더/파일 보기, 브랜치 선택기, raw/open/image 파일 표면, archive download, syntax/line-number 표시, commit history/detail diff/compare, commit comments/thread lifecycle, branch list/latest PR/default/delete, project create 시 bare Git repository provisioning, Smart HTTP transport, push post-receive records, changeVCS 시 executable-backed SVN repository storage provisioning |
 | Git Smart HTTP    | 🔶 Phase 3L 구현 | `git http-backend` wrapper로 clone/pull upload-pack 및 인증/권한이 적용된 receive-pack transport를 구현하고, receive-pack 후 `NEW_COMMIT` notification, pushed-branch metadata, push JSON webhook outbox를 기록한다 |
 | PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, specific commit changes route/filter, selected commit `.commitInfo`/`.commitMsg.mt5`, 조직 PR 목록, create/edit, close/reopen, review/unreview, required/lacking reviewer projection, project default reviewer threshold settings, review-threshold-gated accept, PR watcher projection/watch-unwatch, PR watcher/body-mention-derived notification receiver, 일반 PR comment, thread open/close, fork/clone, conflict-free merge, conflict 표시/merge 비활성화 안내, source branch cleanup/restore, PR commit-changed event/webhook, PRIOR commit/review-card outdated marker, side-aware single/multi-line ranged inline review CRUD. in-app conflict resolution은 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
@@ -1575,7 +1575,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Board: posting list/detail/create/update/delete/comment flows
 - Label follow-up: legacy external label/project API parity for the separate migrator/export/import scope
 - Milestone follow-up: migration export and search milestone result type
-- Code follow-up: SVN executable repository/serve integration
+- Code follow-up: SVN protocol serve/WebDAV integration over executable-backed repository storage
 - PullRequest follow-up: in-app merge conflict resolution workflow
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: full mail notification template parity plus IMAP polling, sender extraction, MIME parsing, and mailbox/reply threading after issue/board/code/review comment `original_email` marker parity, mailbox plus-address parser parity, and DB-backed `CreationViaEmailTest` resource creation parity

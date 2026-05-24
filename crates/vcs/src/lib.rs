@@ -225,6 +225,8 @@ pub struct PullRequestMergeResult {
 pub enum VcsError {
     #[error("git executable is unavailable")]
     GitUnavailable,
+    #[error("svnadmin executable is unavailable")]
+    SvnAdminUnavailable,
     #[error("git command timed out")]
     GitTimedOut,
     #[error("invalid repository path")]
@@ -239,10 +241,38 @@ pub enum VcsError {
     FilesystemFailed(String),
     #[error("git command failed: {0}")]
     GitFailed(String),
+    #[error("svnadmin command failed: {0}")]
+    SvnAdminFailed(String),
 }
 
 pub fn repository_path(data_root: &Path, project_id: i64) -> PathBuf {
     data_root.join("repo").join(format!("{project_id}.git"))
+}
+
+pub fn svn_repository_path(data_root: &Path, project_id: i64) -> PathBuf {
+    data_root.join("repo").join(format!("{project_id}.svn"))
+}
+
+pub fn repository_path_for_vcs(data_root: &Path, project_id: i64, vcs: &str) -> PathBuf {
+    if vcs == "Subversion" {
+        svn_repository_path(data_root, project_id)
+    } else {
+        repository_path(data_root, project_id)
+    }
+}
+
+pub fn ensure_svnadmin_available() -> Result<(), VcsError> {
+    let output = Command::new("svnadmin")
+        .arg("--version")
+        .output()
+        .map_err(|_| VcsError::SvnAdminUnavailable)?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(VcsError::SvnAdminFailed(
+            String::from_utf8_lossy(&output.stderr).trim().to_string(),
+        ))
+    }
 }
 
 pub fn create_bare_repository(repo_path: &Path) -> Result<(), VcsError> {
@@ -266,6 +296,32 @@ pub fn create_bare_repository(repo_path: &Path) -> Result<(), VcsError> {
         Ok(())
     } else {
         Err(VcsError::GitFailed(
+            String::from_utf8_lossy(&output.stderr).trim().to_string(),
+        ))
+    }
+}
+
+pub fn create_svn_repository(repo_path: &Path) -> Result<(), VcsError> {
+    if let Some(parent) = repo_path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|error| VcsError::FilesystemFailed(error.to_string()))?;
+    }
+    if repo_path.exists() && !repo_path.is_dir() {
+        return Err(VcsError::FilesystemFailed(format!(
+            "{} exists and is not a directory",
+            repo_path.display()
+        )));
+    }
+
+    let output = Command::new("svnadmin")
+        .args(["create"])
+        .arg(repo_path)
+        .output()
+        .map_err(|_| VcsError::SvnAdminUnavailable)?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(VcsError::SvnAdminFailed(
             String::from_utf8_lossy(&output.stderr).trim().to_string(),
         ))
     }
@@ -315,7 +371,7 @@ pub fn delete_repository(repo_path: &Path) -> Result<(), VcsError> {
         .file_name()
         .and_then(|value| value.to_str())
         .ok_or(VcsError::InvalidRepositoryPath)?;
-    if !file_name.ends_with(".git") {
+    if !file_name.ends_with(".git") && !file_name.ends_with(".svn") {
         return Err(VcsError::InvalidRepositoryPath);
     }
 

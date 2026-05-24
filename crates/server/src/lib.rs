@@ -11639,16 +11639,7 @@ async fn rest_delete_site_project(
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
-    {
-        let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), project.id);
-        let _guard = repository_provisioning_lock()
-            .lock()
-            .map_err(|_| internal_error("repository provisioning lock poisoned"))
-            .map_err(RestRouteError::from_connect_error)?;
-        yona_rust_vcs::delete_repository(&repo_path)
-            .map_err(code_browser_error)
-            .map_err(RestRouteError::from_connect_error)?;
-    }
+    delete_project_repository_storage(project.id)?;
 
     Ok(Json(RestProjectDeleteResponse {
         ok: true,
@@ -13878,15 +13869,34 @@ fn rest_project_change_vcs_response(
     })
 }
 
-fn reset_project_repository_storage(project_id: i64) -> Result<(), RestRouteError> {
-    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), project_id);
+fn delete_project_repository_storage(project_id: i64) -> Result<(), RestRouteError> {
+    let data_root = yona_data_root();
+    let git_repo_path = yona_rust_vcs::repository_path(&data_root, project_id);
+    let svn_repo_path = yona_rust_vcs::svn_repository_path(&data_root, project_id);
     let _guard = repository_provisioning_lock()
         .lock()
         .map_err(|_| internal_error("repository provisioning lock poisoned"))
         .map_err(RestRouteError::from_connect_error)?;
-    yona_rust_vcs::delete_repository(&repo_path)
+    yona_rust_vcs::delete_repository(&git_repo_path)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)?;
+    yona_rust_vcs::delete_repository(&svn_repo_path)
+        .map_err(code_browser_error)
+        .map_err(RestRouteError::from_connect_error)
+}
+
+fn reset_project_repository_storage(project_id: i64, vcs: &str) -> Result<(), RestRouteError> {
+    delete_project_repository_storage(project_id)?;
+    let _guard = repository_provisioning_lock()
+        .lock()
+        .map_err(|_| internal_error("repository provisioning lock poisoned"))
+        .map_err(RestRouteError::from_connect_error)?;
+    let repo_path = yona_rust_vcs::repository_path_for_vcs(&yona_data_root(), project_id, vcs);
+    if vcs == "Subversion" {
+        return yona_rust_vcs::create_svn_repository(&repo_path)
+            .map_err(code_browser_error)
+            .map_err(RestRouteError::from_connect_error);
+    }
     yona_rust_vcs::create_bare_repository(&repo_path)
         .map_err(code_browser_error)
         .map_err(RestRouteError::from_connect_error)
@@ -13934,13 +13944,19 @@ async fn rest_change_project_vcs(
     };
     let authorization =
         rest_require_project_update(repository, &owner_name, &project_name, Some(actor_id)).await?;
+    let next_vcs = rest_next_project_vcs(&authorization.project.vcs);
+    if next_vcs == "Subversion" {
+        yona_rust_vcs::ensure_svnadmin_available()
+            .map_err(code_browser_error)
+            .map_err(RestRouteError::from_connect_error)?;
+    }
     let changed = repository
         .change_project_vcs(authorization.project.id)
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("project not found"))?;
-    reset_project_repository_storage(changed.id)?;
+    reset_project_repository_storage(changed.id, &changed.vcs)?;
     let mut changed_authorization = authorization;
     changed_authorization.project = changed;
     Ok(Json(rest_project_change_vcs_response(
@@ -14149,16 +14165,7 @@ async fn rest_delete_project(
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
-    {
-        let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), project_id);
-        let _guard = repository_provisioning_lock()
-            .lock()
-            .map_err(|_| internal_error("repository provisioning lock poisoned"))
-            .map_err(RestRouteError::from_connect_error)?;
-        yona_rust_vcs::delete_repository(&repo_path)
-            .map_err(code_browser_error)
-            .map_err(RestRouteError::from_connect_error)?;
-    }
+    delete_project_repository_storage(project_id)?;
 
     Ok(Json(RestProjectDeleteResponse {
         ok: true,
@@ -28047,26 +28054,34 @@ fn rest_pull_request_detail_from_record_with_issue_references(
 fn code_browser_error(error: VcsError) -> ConnectError {
     match error {
         VcsError::GitUnavailable => ConnectError::unimplemented("git executable is unavailable"),
+        VcsError::SvnAdminUnavailable => {
+            ConnectError::unimplemented("svnadmin executable is unavailable")
+        }
         VcsError::InvalidBranch | VcsError::InvalidPath | VcsError::InvalidRepositoryPath => {
             ConnectError::invalid_argument(error.to_string())
         }
         VcsError::NotFound => ConnectError::not_found("repository path not found"),
-        VcsError::GitTimedOut | VcsError::GitFailed(_) | VcsError::FilesystemFailed(_) => {
-            internal_error(error)
-        }
+        VcsError::GitTimedOut
+        | VcsError::GitFailed(_)
+        | VcsError::SvnAdminFailed(_)
+        | VcsError::FilesystemFailed(_) => internal_error(error),
     }
 }
 
 fn code_branch_error(error: VcsError) -> ConnectError {
     match error {
         VcsError::GitUnavailable => ConnectError::unimplemented("git executable is unavailable"),
+        VcsError::SvnAdminUnavailable => {
+            ConnectError::unimplemented("svnadmin executable is unavailable")
+        }
         VcsError::InvalidBranch | VcsError::InvalidPath | VcsError::InvalidRepositoryPath => {
             ConnectError::invalid_argument(error.to_string())
         }
         VcsError::NotFound => ConnectError::not_found("branch not found"),
-        VcsError::GitTimedOut | VcsError::GitFailed(_) | VcsError::FilesystemFailed(_) => {
-            internal_error(error)
-        }
+        VcsError::GitTimedOut
+        | VcsError::GitFailed(_)
+        | VcsError::SvnAdminFailed(_)
+        | VcsError::FilesystemFailed(_) => internal_error(error),
     }
 }
 
