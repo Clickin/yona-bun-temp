@@ -60,4 +60,13 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("missing#99");
     expect(html).not.toContain('href="/yona/missing/projectYobi/issue/99"');
   });
+
+  it("renders GFM strikethrough like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown="Keep **strong** and ~~deleted~~ text" />,
+    );
+
+    expect(html).toContain("<strong>strong</strong>");
+    expect(html).toContain("<del>deleted</del>");
+  });
 });

@@ -2,6 +2,7 @@ import * as React from "react";
 
 type MarkdownInlinePart =
   | { kind: "code"; key: string; value: string }
+  | { kind: "delete"; key: string; value: string }
   | { kind: "image"; key: string; label: string; target: string }
   | {
       kind: "link";
@@ -180,7 +181,7 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
   const parts: MarkdownInlinePart[] = [];
   let index = 0;
   const inlinePattern =
-    /(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)|\*\*([^*\n]+)\*\*|`([^`\n]+)`/g;
+    /(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|`([^`\n]+)`/g;
   for (const match of line.matchAll(inlinePattern)) {
     const start = match.index ?? 0;
     if (start > index) {
@@ -189,7 +190,9 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
     if (match[4] !== undefined) {
       parts.push({ kind: "strong", key: `strong-${start}`, value: match[4] ?? "" });
     } else if (match[5] !== undefined) {
-      parts.push({ kind: "code", key: `code-${start}`, value: match[5] ?? "" });
+      parts.push({ kind: "delete", key: `delete-${start}`, value: match[5] ?? "" });
+    } else if (match[6] !== undefined) {
+      parts.push({ kind: "code", key: `code-${start}`, value: match[6] ?? "" });
     } else if (isSafeUrl(match[3] ?? "")) {
       parts.push({
         kind: match[1] === "!" ? "image" : "link",
@@ -231,6 +234,9 @@ function MarkdownInline(props: { context?: MarkdownContext; line: string }) {
     }
     if (part.kind === "code") {
       return <code key={part.key}>{part.value}</code>;
+    }
+    if (part.kind === "delete") {
+      return <del key={part.key}>{part.value}</del>;
     }
     return <React.Fragment key={part.key}>{part.value}</React.Fragment>;
   });
