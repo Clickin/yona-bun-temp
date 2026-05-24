@@ -32,4 +32,32 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('href="http://www.example.com"');
     expect(html).toContain('href="mailto:help@example.com"');
   });
+
+  it("renders legacy owner issue references and project mentions", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 7,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "closed",
+            title: "Owner-scoped reference",
+          },
+        ]}
+        markdown="See owner#7 and @owner/projectYobi, but leave missing#99 as text"
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/7"');
+    expect(html).toContain('title="Owner-scoped reference"');
+    expect(html).toContain('data-issue-state="closed"');
+    expect(html).toContain('href="/yona/owner/projectYobi"');
+    expect(html).toContain('class="no-text-decoration project-link"');
+    expect(html).toContain("missing#99");
+    expect(html).not.toContain('href="/yona/missing/projectYobi/issue/99"');
+  });
 });

@@ -386,7 +386,7 @@ Interpretation:
 - [x] Basic Markdown rendering on issue surfaces
 - [x] Basic Markdown rendering on milestone surfaces
 - [x] HTML sanitization on implemented render path
-- [x] Basic project Markdown autolinks for `@username`, same-project `#123`, and `owner/project#123` on issue/post/milestone bodies and comments, PR bodies/general review comments, Git non-ranged commit comments, and preview output
+- [x] Basic project Markdown autolinks for `@username`, legacy `@owner/project` project mentions, same-project `#123`, legacy `owner#123`, and `owner/project#123` on issue/post/milestone bodies and comments, PR bodies/general review comments, Git non-ranged commit comments, and preview output
 - [x] Basic bare `http://`/`https://`, `ftp://`, `www.`, and email autolinks on the project Markdown render path
 - [x] Legacy marked-style soft line breaks render as `<br>` on the project Markdown render path
 - [x] Basic task checklist rendering with sanitized disabled checkboxes
@@ -394,10 +394,10 @@ Interpretation:
 - [x] Basic fenced-code token highlighting on the project Markdown render path
 - [x] Code-browser Markdown files render in React with legacy `.codebrowser-markdown` while the REST payload rewrites local `./...` image paths to the project file route as Markdown
 - [x] Project-home Git README fallback renders in React with the legacy readme body wrapper while the REST payload rewrites local images/normal links to project file/code routes as Markdown
-- [x] Legacy `POST /markdown/:owner/:project` preview renderer returns raw sanitized project-context HTML
+- [x] Legacy `POST /markdown/:owner/:project` preview renderer validates project read access and returns Markdown source for React-side preview rendering instead of server-rendered HTML
 - [x] Readable issue references expose title/state metadata on project Markdown render paths
 - [ ] Full legacy/GFM extension parity
-- [~] Remaining legacy autolink edge-case parity if evidence requires it
+- [~] Remaining legacy autolink edge-case parity if evidence requires it; `MarkdownAppTest` owner-scoped issue refs and project mentions are covered
 - [~] Full Highlight.js-equivalent language coverage for Markdown code blocks
 - [~] Task checklist progress-bar integration polish
 

@@ -78,7 +78,7 @@ function parseTextWithAutolinks(
   const ownerName = context?.ownerName ?? "";
   const projectName = context?.projectName ?? "";
   const autolinkPattern =
-    /(^|[^\w/@#.-])(@[A-Za-z0-9_.-]+|[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+#[0-9]+|#[0-9]+|https?:\/\/[^\s<]+|ftp:\/\/[^\s<]+|www\.[^\s<]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/g;
+    /(^|[^\w/@#.-])(@[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+|@[A-Za-z0-9_.-]+|[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+#[0-9]+|[A-Za-z0-9_.-]+#[0-9]+|#[0-9]+|https?:\/\/[^\s<]+|ftp:\/\/[^\s<]+|www\.[^\s<]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/g;
   let index = 0;
   for (const match of text.matchAll(autolinkPattern)) {
     const matchStart = match.index ?? 0;
@@ -93,7 +93,16 @@ function parseTextWithAutolinks(
       });
     }
     const key = `${keyPrefix}-autolink-${tokenStart}`;
-    if (token.startsWith("@") && token.length > 1) {
+    if (/^@[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(token)) {
+      const projectPath = token.slice(1);
+      parts.push({
+        className: "no-text-decoration project-link",
+        kind: "link",
+        key,
+        label: token,
+        target: `${basePath}/${projectPath}`,
+      });
+    } else if (token.startsWith("@") && token.length > 1) {
       const loginId = token.slice(1);
       parts.push({
         className: "no-text-decoration user-link",
@@ -129,6 +138,24 @@ function parseTextWithAutolinks(
           label: token,
           target: `${basePath}/${referenceOwner}/${referenceProject}/issue/${issueNumber}`,
           title: reference?.title,
+        });
+      } else {
+        parts.push({ kind: "text", key, value: token });
+      }
+    } else if (/^[A-Za-z0-9_.-]+#[0-9]+$/.test(token) && projectName) {
+      const ownerIssueMatch = /^([A-Za-z0-9_.-]+)#([0-9]+)$/.exec(token);
+      const referenceOwner = ownerIssueMatch?.[1] ?? "";
+      const issueNumber = Number.parseInt(ownerIssueMatch?.[2] ?? "", 10);
+      const reference = issueReferenceFor(context, referenceOwner, projectName, issueNumber);
+      if (reference) {
+        parts.push({
+          className: "issueLink",
+          issueState: reference.state,
+          kind: "link",
+          key,
+          label: token,
+          target: `${basePath}/${referenceOwner}/${projectName}/issue/${issueNumber}`,
+          title: reference.title,
         });
       } else {
         parts.push({ kind: "text", key, value: token });
