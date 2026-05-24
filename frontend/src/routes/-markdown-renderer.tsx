@@ -322,7 +322,7 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
   const parts: MarkdownInlinePart[] = [];
   let index = 0;
   const inlinePattern =
-    /\\([^\w\s])|(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]*)\)))?\)|(!?)\[([^\]]+)\]\[([^\]]*)\]|(!?)\[([^\]]+)\](?:\[\])?|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|`([^`\n]+)`|\*([^*\n]+)\*|_([^_\n]+)_/g;
+    /\\([^\w\s])|(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]*)\)))?\)|(!?)\[([^\]]+)\]\[([^\]]*)\]|(!?)\[([^\]]+)\](?:\[\])?|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|``([^`\n]|[^`][\s\S]*?[^`])``|`([^`\n]+)`|\*([^*\n]+)\*|_([^_\n]+)_/g;
   for (const match of line.matchAll(inlinePattern)) {
     const start = match.index ?? 0;
     if (start > index) {
@@ -357,17 +357,17 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
       parts.push({ kind: "strong", key: `strong-${start}`, value: match[13] ?? "" });
     } else if (match[14] !== undefined) {
       parts.push({ kind: "delete", key: `delete-${start}`, value: match[14] ?? "" });
-    } else if (match[15] !== undefined) {
+    } else if (match[15] !== undefined || match[16] !== undefined) {
       parts.push({
         kind: "code",
         key: `code-${start}`,
-        value: normalizeCodeSpan(match[15] ?? ""),
+        value: normalizeCodeSpan(match[15] ?? match[16] ?? ""),
       });
-    } else if (match[16] !== undefined || match[17] !== undefined) {
+    } else if (match[17] !== undefined || match[18] !== undefined) {
       parts.push({
         kind: "emphasis",
         key: `emphasis-${start}`,
-        value: match[16] ?? match[17] ?? "",
+        value: match[17] ?? match[18] ?? "",
       });
     } else {
       parts.push({ kind: "text", key: `text-${start}`, value: match[0] ?? "" });
