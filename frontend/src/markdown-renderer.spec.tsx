@@ -109,6 +109,16 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<del>deleted</del>");
   });
 
+  it("renders inline emphasis like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown="Keep *italic* and _also italic_ beside **strong**" />,
+    );
+
+    expect(html).toContain("<em>italic</em>");
+    expect(html).toContain("<em>also italic</em>");
+    expect(html).toContain("<strong>strong</strong>");
+  });
+
   it("renders basic GFM pipe tables like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"| Name | State |\n| --- | --- |\n| #1 | ~~closed~~ |"} />,
