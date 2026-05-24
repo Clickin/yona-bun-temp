@@ -330,8 +330,8 @@ describe("project code browser routing", () => {
               authorLabel: "Owner",
               authorLoginId: "owner",
               canDelete: true,
-              contentsHtml: "<p>First commit note</p>",
-              contentsMarkdown: "First commit note",
+              contentsHtml: "",
+              contentsMarkdown: "First **commit** note",
               createdLabel: "2026-04-21",
               id: 11,
               threadId: 7,
@@ -355,7 +355,7 @@ describe("project code browser routing", () => {
               authorLabel: "Reviewer",
               authorLoginId: "reviewer",
               canDelete: false,
-              contentsHtml: "<p>Closed note</p>",
+              contentsHtml: "",
               contentsMarkdown: "Closed note",
               createdLabel: "2026-04-22",
               id: 12,
@@ -386,7 +386,8 @@ describe("project code browser routing", () => {
     expect(detailHtml).toContain('id="thread-7"');
     expect(detailHtml).toContain('class="comment-thread-wrap open"');
     expect(detailHtml).toContain('id="comment-11"');
-    expect(detailHtml).toContain("First commit note");
+    expect(detailHtml).toContain("First <strong>commit</strong> note");
+    expect(detailHtml).toContain('class="comment-body markdown-wrap"');
     expect(detailHtml).toContain('data-request-method="delete"');
     expect(detailHtml).toContain(
       'data-request-uri="/yona/api/v1/projects/owner/projectYobi/commit/abcdef1234567890abcdef1234567890abcdef12/comments/11"',

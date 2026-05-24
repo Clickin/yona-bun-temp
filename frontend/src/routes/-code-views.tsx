@@ -1527,11 +1527,11 @@ function CommitDiscussionThread(props: {
                   </button>
                 </form>
               ) : (
-                <div
+                <MarkdownRenderer
                   className="comment-body markdown-wrap"
                   data-via-email={comment.viaEmail ? "true" : undefined}
-                  dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
-                ></div>
+                  markdown={comment.contentsMarkdown}
+                />
               )}
             </div>
           </li>

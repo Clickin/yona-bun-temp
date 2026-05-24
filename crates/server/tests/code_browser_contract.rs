@@ -889,30 +889,11 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
         created["threads"][0]["comments"][0]["contentsMarkdown"],
         "First **commit** note @owner #1 owner/projectYobi#1 `<script>alert(1)</script> @owner #1`"
     );
-    let commit_comment_html = created["threads"][0]["comments"][0]["contentsHtml"]
-        .as_str()
-        .unwrap();
-    assert!(
-        commit_comment_html.contains("<strong>commit</strong>"),
-        "{commit_comment_html}"
-    );
-    assert!(
-        commit_comment_html.contains("href=\"/yona/owner\""),
-        "{commit_comment_html}"
-    );
-    assert!(
-        commit_comment_html.contains("href=\"/yona/owner/projectYobi/issue/1\""),
-        "{commit_comment_html}"
-    );
-    assert!(
-        commit_comment_html.contains("title=\"Commit linked issue\"")
-            && commit_comment_html.contains("data-issue-state=\"open\""),
-        "{commit_comment_html}"
-    );
-    assert!(
-        commit_comment_html
-            .contains("<code>&lt;script&gt;alert(1)&lt;/script&gt; @owner #1</code>"),
-        "{commit_comment_html}"
+    assert_eq!(
+        created["threads"][0]["comments"][0]["contentsHtml"]
+            .as_str()
+            .unwrap_or(""),
+        ""
     );
     assert_eq!(created["threads"][0]["comments"][0]["canDelete"], true);
     let thread_id = created["threads"][0]["id"].as_i64().unwrap();
@@ -936,10 +917,12 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
         updated["threads"][0]["comments"][0]["contentsMarkdown"],
         "Updated **commit** note"
     );
-    assert!(updated["threads"][0]["comments"][0]["contentsHtml"]
-        .as_str()
-        .unwrap()
-        .contains("<strong>commit</strong>"));
+    assert_eq!(
+        updated["threads"][0]["comments"][0]["contentsHtml"]
+            .as_str()
+            .unwrap_or(""),
+        ""
+    );
 
     original_email::ActiveModel {
         id: NotSet,
