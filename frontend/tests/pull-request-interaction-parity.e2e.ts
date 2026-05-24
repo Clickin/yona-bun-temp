@@ -29,7 +29,7 @@ const baseThread = {
       authorLabel: "Reviewer",
       authorLoginId: "reviewer",
       canDelete: true,
-      contentsHtml: "<p>Initial review</p>",
+      contentsHtml: "",
       contentsMarkdown: "Initial review",
       createdLabel: "2026-05-03",
       id: 8,
@@ -51,7 +51,7 @@ const outdatedClosedThread = {
   comments: [
     {
       ...baseThread.comments[0],
-      contentsHtml: "<p>Outdated review</p>",
+      contentsHtml: "",
       contentsMarkdown: "Outdated review",
       id: 19,
       threadId: 11,
@@ -72,8 +72,8 @@ function detail(overrides: Record<string, unknown> = {}) {
   const requiredReviewerCount = Number(overrides.requiredReviewerCount ?? 1);
   const lackingReviewerCount = Math.max(requiredReviewerCount - reviewers.length, 0);
   const response = {
-    bodyHtml: "<p>Pull request body</p>",
-    bodyMarkdown: "Pull request body",
+    bodyHtml: "",
+    bodyMarkdown: "Pull request **body**",
     commits: [],
     conflict: false,
     contributor: { loginId: "admin", userId: 1, userLabel: "Admin" },
@@ -348,7 +348,7 @@ test.beforeEach(async ({ page }) => {
                     comment.id === 18
                       ? {
                           ...comment,
-                          contentsHtml: `<p>${body.contentsMarkdown ?? ""}</p>`,
+                          contentsHtml: "",
                           contentsMarkdown: body.contentsMarkdown ?? "",
                         }
                       : comment,
@@ -386,7 +386,7 @@ test.beforeEach(async ({ page }) => {
                     authorLabel: "Reviewer",
                     authorLoginId: "reviewer",
                     canDelete: true,
-                    contentsHtml: `<p>${body.contentsMarkdown ?? ""}</p>`,
+                    contentsHtml: "",
                     contentsMarkdown: body.contentsMarkdown ?? "",
                     createdLabel: "2026-05-04",
                     id: 18,
@@ -421,7 +421,7 @@ test.beforeEach(async ({ page }) => {
                   authorLabel: "Reviewer",
                   authorLoginId: "reviewer",
                   canDelete: true,
-                  contentsHtml: "<p>New review comment</p>",
+                  contentsHtml: "",
                   contentsMarkdown: "New review comment",
                   createdLabel: "2026-05-04",
                   id: 10,
@@ -512,7 +512,7 @@ test.beforeEach(async ({ page }) => {
       if (method === "PATCH") {
         pullRequest = detail({
           ...pullRequest,
-          bodyHtml: "<p>Updated body</p>",
+          bodyHtml: "",
           bodyMarkdown: "Updated body",
           title: "Updated interaction parity",
         });
@@ -528,7 +528,7 @@ test.beforeEach(async ({ page }) => {
     async (route) => {
       if (route.request().method() === "POST") {
         pullRequest = detail({
-          bodyHtml: "<p>Create PR body</p>",
+          bodyHtml: "",
           bodyMarkdown: "Create PR body",
           title: "Created interaction parity",
         });

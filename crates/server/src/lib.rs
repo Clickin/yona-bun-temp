@@ -17080,24 +17080,9 @@ async fn rest_update_pull_request_thread_state(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("review thread not found"))?;
-    let issue_references = review_thread_markdown_references_for_project(
-        repository,
-        Some(actor.id),
-        &service.base_path,
-        &owner_name,
-        &project_name,
-        std::slice::from_ref(&record),
-    )
-    .await
-    .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(rest_review_thread_from_record(
         record,
-        MarkdownLinkContext::with_issue_references(
-            &service.base_path,
-            &owner_name,
-            &project_name,
-            &issue_references,
-        ),
+        MarkdownLinkContext::new(&service.base_path, &owner_name, &project_name),
     )))
 }
 
@@ -17266,16 +17251,6 @@ async fn rest_list_project_reviews(
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
-    let issue_references = review_thread_markdown_references_for_project(
-        repository,
-        actor_id,
-        &service.base_path,
-        &owner_name,
-        &project_name,
-        &record.items,
-    )
-    .await
-    .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(RestReviewThreadListResponse {
         closed_count: record.closed_count,
         items: record
@@ -17284,12 +17259,7 @@ async fn rest_list_project_reviews(
             .map(|thread| {
                 rest_review_thread_from_record(
                     thread,
-                    MarkdownLinkContext::with_issue_references(
-                        &service.base_path,
-                        &owner_name,
-                        &project_name,
-                        &issue_references,
-                    ),
+                    MarkdownLinkContext::new(&service.base_path, &owner_name, &project_name),
                 )
             })
             .collect(),
@@ -28981,26 +28951,32 @@ fn rest_review_comment_from_record(
     record: persistence::ReviewCommentRecord,
     context: MarkdownLinkContext<'_>,
 ) -> RestReviewComment {
-    rest_review_comment_from_record_with_permissions(record, false, context)
+    rest_review_comment_from_record_with_permissions(record, false, false, context)
 }
 
 fn rest_review_comment_from_record_with_permissions(
     record: persistence::ReviewCommentRecord,
     can_delete: bool,
+    render_html: bool,
     context: MarkdownLinkContext<'_>,
 ) -> RestReviewComment {
-    RestReviewComment {
-        author_id: record.author_id.unwrap_or_default(),
-        author_label: record.author_label,
-        author_login_id: record.author_login_id,
-        can_delete,
-        contents_html: render_project_markdown_html_with_issue_references(
+    let contents_html = if render_html {
+        render_project_markdown_html_with_issue_references(
             &record.contents_markdown,
             context.base_path,
             context.owner_name,
             context.project_name,
             context.issue_references,
-        ),
+        )
+    } else {
+        String::new()
+    };
+    RestReviewComment {
+        author_id: record.author_id.unwrap_or_default(),
+        author_label: record.author_label,
+        author_login_id: record.author_login_id,
+        can_delete,
+        contents_html,
         contents_markdown: record.contents_markdown,
         created_label: record.created_label,
         id: record.id,
@@ -29050,7 +29026,9 @@ fn rest_pull_request_thread_from_record(
             .into_iter()
             .map(|comment| {
                 let can_delete = can_moderate || comment.author_id == actor_id;
-                rest_review_comment_from_record_with_permissions(comment, can_delete, context)
+                rest_review_comment_from_record_with_permissions(
+                    comment, can_delete, false, context,
+                )
             })
             .collect(),
         commit_id: record.commit_id,
@@ -29081,7 +29059,7 @@ fn rest_commit_thread_from_record(
             .into_iter()
             .map(|comment| {
                 let can_delete = can_moderate || comment.author_id == actor_id;
-                rest_review_comment_from_record_with_permissions(comment, can_delete, context)
+                rest_review_comment_from_record_with_permissions(comment, can_delete, true, context)
             })
             .collect(),
         commit_id: record.commit_id,
@@ -29187,9 +29165,6 @@ async fn rest_pull_request_detail_from_record_with_repository_issue_references(
     actor_id: Option<i64>,
     base_path: &str,
 ) -> Result<RestPullRequestDetailResponse, ConnectError> {
-    let issue_references =
-        pull_request_markdown_references_for_record(repository, &record, actor_id, base_path)
-            .await?;
     let source_branch_state =
         rest_pull_request_source_branch_state(repository, &record, actor_id).await?;
     rest_pull_request_detail_from_record_with_issue_references(
@@ -29197,7 +29172,7 @@ async fn rest_pull_request_detail_from_record_with_repository_issue_references(
         authorization,
         actor_id,
         base_path,
-        &issue_references,
+        &[],
         source_branch_state,
     )
 }
@@ -29242,37 +29217,6 @@ async fn rest_pull_request_source_branch_state(
     })
 }
 
-fn pull_request_markdown_texts(record: &persistence::PullRequestDetailRecord) -> Vec<&str> {
-    let mut markdowns = Vec::with_capacity(1 + record.threads.len());
-    markdowns.push(record.body_markdown.as_str());
-    for thread in &record.threads {
-        markdowns.extend(
-            thread
-                .comments
-                .iter()
-                .map(|comment| comment.contents_markdown.as_str()),
-        );
-    }
-    markdowns
-}
-
-async fn pull_request_markdown_references_for_record(
-    repository: &PilotRepository,
-    record: &persistence::PullRequestDetailRecord,
-    actor_id: Option<i64>,
-    base_path: &str,
-) -> Result<Vec<MarkdownIssueReference>, ConnectError> {
-    markdown_issue_references_for_markdowns(
-        repository,
-        actor_id,
-        base_path,
-        &record.owner_name,
-        &record.project_name,
-        &pull_request_markdown_texts(record),
-    )
-    .await
-}
-
 fn rest_pull_request_detail_from_record_with_issue_references(
     record: persistence::PullRequestDetailRecord,
     authorization: &persistence::ProjectAuthorizationRecord,
@@ -29314,13 +29258,7 @@ fn rest_pull_request_detail_from_record_with_issue_references(
     );
 
     Ok(RestPullRequestDetailResponse {
-        body_html: render_project_markdown_html_with_issue_references(
-            &record.body_markdown,
-            base_path,
-            &owner_name,
-            &project_name,
-            issue_references,
-        ),
+        body_html: String::new(),
         body_markdown: record.body_markdown,
         commits: record
             .commits

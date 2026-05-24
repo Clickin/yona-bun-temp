@@ -74,10 +74,10 @@
   legacy `yobi.git.Write` / `yobi.git.View` image paste/drop path by posting
   image files to `/files`, inserting `![name](url)`, and submitting uploaded
   attachment ids with the matching `/api/v1` PR mutation.
-- PR bodies and general review comments now use the project Markdown projection
-  for sanitized `@username`, same-project `#123`, `owner/project#123`, and
-  bare `http://`/`https://` URL autolinks. Legacy issue-link title/state
-  enrichment remains a Markdown renderer follow-up.
+- PR bodies and general review comments now render from Markdown source in
+  React. REST `bodyHtml` and review-comment `contentsHtml` stay as empty
+  app-runtime compatibility fields, while legacy issue-link title/state
+  enrichment remains a shared React Markdown renderer follow-up.
 - PR review comments backed by legacy `original_email` rows now expose
   `viaEmail` in detail/changes/review-list REST responses and render
   `data-via-email` on the review comment body.

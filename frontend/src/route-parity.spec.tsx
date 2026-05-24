@@ -16,6 +16,7 @@ import {
   ProjectBoardListPage,
 } from "./routes/-board-views";
 import { ProjectMilestoneDetailPage } from "./routes/-milestone-views";
+import { ProjectPullRequestDetailPage } from "./routes/-pull-request-views";
 
 function expectOrderedText(html: string, orderedSnippets: string[]) {
   let previousIndex = -1;
@@ -415,6 +416,90 @@ describe("file-route parity harness", () => {
 
     expect(html).toContain('<div class="markdown-wrap"><p>Ship <strong>parity</strong> with ');
     expect(html).toContain("<code>React</code>");
+    expect(html).not.toContain("contentsHtml");
+  });
+
+  it("renders pull request bodies and review comments from Markdown source in React", () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const html = renderToStaticMarkup(
+      <ProjectPullRequestDetailPage
+        detail={null}
+        pullRequest={{
+          bodyHtml: "",
+          bodyMarkdown: "Ship **PR** with `React`",
+          commits: [],
+          conflict: false,
+          contributor: { loginId: "owner", userId: 1, userLabel: "Owner User" },
+          createdLabel: "now",
+          events: [],
+          fromBranch: "topic/pr",
+          fromOwnerName: "owner",
+          fromProjectName: "projectYobi",
+          id: 1,
+          isWatching: false,
+          lackingReviewerCount: 1,
+          mergedCommitIdFrom: "",
+          mergedCommitIdTo: "",
+          ownerName: "owner",
+          permissions: {
+            canComment: false,
+            canDeleteSourceBranch: false,
+            canRead: true,
+            canReadChanges: true,
+            canReview: false,
+            canRestoreSourceBranch: false,
+            canUpdate: false,
+            canUpdateState: false,
+          },
+          projectName: "projectYobi",
+          pullRequestNumber: 1,
+          receiver: { loginId: "reviewer", userId: 2, userLabel: "Reviewer" },
+          requiredReviewerCount: 1,
+          reviewed: false,
+          reviewers: [],
+          sourceBranchExists: true,
+          state: "open",
+          threads: [
+            {
+              authorId: 2,
+              authorLabel: "Reviewer",
+              authorLoginId: "reviewer",
+              comments: [
+                {
+                  authorId: 2,
+                  authorLabel: "Reviewer",
+                  authorLoginId: "reviewer",
+                  canDelete: false,
+                  contentsHtml: "",
+                  contentsMarkdown: "Review **comment** with `React`",
+                  createdLabel: "now",
+                  id: 8,
+                  threadId: 7,
+                  viaEmail: true,
+                },
+              ],
+              commitId: "abcdef1",
+              createdLabel: "now",
+              id: 7,
+              path: "",
+              prevCommitId: "",
+              state: "open",
+            },
+          ],
+          title: "PR detail",
+          toBranch: "main",
+          updatedLabel: "",
+          watcherCount: 0,
+        }}
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(html).toContain('<div class="markdown-wrap"><p>Ship <strong>PR</strong> with ');
+    expect(html).toContain("<code>React</code>");
+    expect(html).toContain('<div class="comment-body markdown-wrap" data-via-email="true"');
+    expect(html).toContain("<p>Review <strong>comment</strong> with ");
+    expect(html).not.toContain("bodyHtml");
     expect(html).not.toContain("contentsHtml");
   });
 

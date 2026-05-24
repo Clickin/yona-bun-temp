@@ -14,6 +14,7 @@ import type {
 } from "../api/pull-requests";
 import type { RuntimeConfig } from "../runtime-config";
 import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
+import { MarkdownRenderer } from "./-markdown-renderer";
 import { buildOrganizationHref, OrganizationMenu } from "./-organization-views";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
 import type { OrganizationDetailViewModel, ProjectDetailViewModel } from "./-view-models";
@@ -1039,7 +1040,7 @@ export function ProjectPullRequestDetailPage(props: {
             )}
           </section>
           <section className="board-body">
-            <div className="markdown-wrap" dangerouslySetInnerHTML={{ __html: pr.bodyHtml }} />
+            <MarkdownRenderer className="markdown-wrap" markdown={pr.bodyMarkdown} />
           </section>
           <ReviewThreadSection
             csrfToken={props.csrfToken}
@@ -1294,10 +1295,10 @@ function ReviewThreadItem(props: {
               </button>
             </form>
           ) : (
-            <div
+            <MarkdownRenderer
               className="comment-body markdown-wrap"
               data-via-email={comment.viaEmail ? "true" : undefined}
-              dangerouslySetInnerHTML={{ __html: comment.contentsHtml }}
+              markdown={comment.contentsMarkdown}
             />
           )}
         </div>

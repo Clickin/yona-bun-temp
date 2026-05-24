@@ -1111,20 +1111,7 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         updated["bodyMarkdown"],
         "Updated body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
     );
-    let updated_body_html = updated["bodyHtml"].as_str().unwrap();
-    assert!(
-        updated_body_html.contains("href=\"/yona/reviewer\""),
-        "{updated_body_html}"
-    );
-    assert!(
-        updated_body_html.contains("href=\"/yona/owner/projectYobi/issue/1\""),
-        "{updated_body_html}"
-    );
-    assert!(
-        updated_body_html
-            .contains("<code>&lt;script&gt;alert(1)&lt;/script&gt; @reviewer #1</code>"),
-        "{updated_body_html}"
-    );
+    assert_eq!(updated["bodyHtml"].as_str().unwrap_or(""), "");
     assert_eq!(updated["fromBranch"], "topic/pr");
     assert_eq!(updated["toBranch"], "main");
 
@@ -1219,20 +1206,11 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         commented["threads"][0]["comments"][0]["contentsMarkdown"],
         "Review comment body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
     );
-    let commented_html = commented["threads"][0]["comments"][0]["contentsHtml"]
-        .as_str()
-        .unwrap();
-    assert!(
-        commented_html.contains("href=\"/yona/reviewer\""),
-        "{commented_html}"
-    );
-    assert!(
-        commented_html.contains("href=\"/yona/owner/projectYobi/issue/1\""),
-        "{commented_html}"
-    );
-    assert!(
-        commented_html.contains("<code>&lt;script&gt;alert(1)&lt;/script&gt; @reviewer #1</code>"),
-        "{commented_html}"
+    assert_eq!(
+        commented["threads"][0]["comments"][0]["contentsHtml"]
+            .as_str()
+            .unwrap_or(""),
+        ""
     );
     assert_eq!(
         commented["events"].as_array().unwrap().last().unwrap()["eventType"],
@@ -1345,16 +1323,11 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         edited_thread["comments"][0]["contentsMarkdown"],
         "Edited inline review body @owner #1"
     );
-    let edited_html = edited_thread["comments"][0]["contentsHtml"]
-        .as_str()
-        .unwrap();
-    assert!(
-        edited_html.contains("href=\"/yona/owner\""),
-        "{edited_html}"
-    );
-    assert!(
-        edited_html.contains("href=\"/yona/owner/projectYobi/issue/1\""),
-        "{edited_html}"
+    assert_eq!(
+        edited_thread["comments"][0]["contentsHtml"]
+            .as_str()
+            .unwrap_or(""),
+        ""
     );
     assert_eq!(
         count_rows(&db, "pull_request_event", "NEW_REVIEW_COMMENT").await,

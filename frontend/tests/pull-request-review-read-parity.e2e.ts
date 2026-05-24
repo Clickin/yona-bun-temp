@@ -40,8 +40,8 @@ const reviewThread = {
       authorId: 2,
       authorLabel: "Reviewer",
       authorLoginId: "reviewer",
-      contentsHtml: "<p>Review comment body</p>",
-      contentsMarkdown: "Review comment body",
+      contentsHtml: "",
+      contentsMarkdown: "Review **comment** body",
       createdLabel: "2026-05-03",
       id: 8,
       threadId: 7,
@@ -58,8 +58,8 @@ const reviewThread = {
 };
 
 const pullRequestDetail = {
-  bodyHtml: "<p>Pull request markdown body</p>",
-  bodyMarkdown: "Pull request markdown body",
+  bodyHtml: "",
+  bodyMarkdown: "Pull request **markdown** body",
   commits: [
     {
       authorDateLabel: "2026-05-01",
