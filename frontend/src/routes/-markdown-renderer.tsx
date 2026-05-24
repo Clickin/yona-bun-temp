@@ -71,6 +71,11 @@ type MarkdownBlockquoteRecord = {
   text: string;
 };
 
+type MarkdownCodeBlockRecord = {
+  code: string;
+  language?: string;
+};
+
 function isSafeUrl(value: string) {
   return (
     value.startsWith("/") ||
@@ -383,6 +388,23 @@ function parseMarkdownBlockquote(lines: MarkdownLineRecord[]): MarkdownBlockquot
   return quoteLines;
 }
 
+function parseFencedCodeBlock(lines: MarkdownLineRecord[]): MarkdownCodeBlockRecord | null {
+  if (lines.length < 2) {
+    return null;
+  }
+  const openMatch = /^```\s*([A-Za-z0-9_+.-]+)?\s*$/.exec(lines[0]?.text ?? "");
+  if (!openMatch || !/^```\s*$/.test(lines[lines.length - 1]?.text ?? "")) {
+    return null;
+  }
+  return {
+    code: lines
+      .slice(1, -1)
+      .map((line) => line.text)
+      .join("\n"),
+    language: openMatch[1],
+  };
+}
+
 function slugifyHeadingId(value: string): string {
   return value
     .trim()
@@ -422,6 +444,14 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   }
   if (lines.length === 2 && /^-+\s*$/.test(secondLine)) {
     return <MarkdownHeading context={props.context} level={2} text={firstLine.trim()} />;
+  }
+  const codeBlock = parseFencedCodeBlock(lines);
+  if (codeBlock) {
+    return (
+      <pre>
+        <code className={codeBlock.language}>{codeBlock.code}</code>
+      </pre>
+    );
   }
   const table = parseMarkdownTable(lines);
   if (table) {

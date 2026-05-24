@@ -52,6 +52,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<h2 id="secondary-title">Secondary Title</h2>');
   });
 
+  it("renders fenced code blocks like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"``` rust\nlet value = 1;\n#1 stays text\n```"} />,
+    );
+
+    expect(html).toContain("<pre><code");
+    expect(html).toContain('class="rust"');
+    expect(html).toContain("let value = 1;");
+    expect(html).toContain("#1 stays text");
+    expect(html).not.toContain("issueLink");
+  });
+
   it("renders legacy owner issue references and project mentions", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
