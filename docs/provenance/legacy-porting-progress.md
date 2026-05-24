@@ -392,7 +392,7 @@ Interpretation:
 - [x] Basic bare `http://`/`https://`, `ftp://`, `www.`, and email autolinks on the project Markdown render path
 - [x] Legacy marked-style soft line breaks render as `<br>` on the project Markdown render path
 - [x] GFM strikethrough renders `~~deleted~~` as `<del>` on the project Markdown render path
-- [x] Basic GFM pipe tables render as `<table>` on the project Markdown render path
+- [x] Basic GFM pipe tables render as `<table>` on the project Markdown render path, including escaped `\|` pipes inside cells
 - [x] Basic smart-list rendering emits `<ul>` / `<ol>` on the project Markdown render path
 - [x] Basic blockquotes render as `<blockquote>` on the project Markdown render path
 - [x] Marked-style backslash escapes keep punctuation literal before inline Markdown and autolink parsing

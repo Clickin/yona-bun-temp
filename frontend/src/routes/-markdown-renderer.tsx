@@ -328,12 +328,14 @@ function markdownLines(block: string): MarkdownLineRecord[] {
 }
 
 function splitTableRow(line: string): string[] {
-  return line
+  const protectedPipe = "\u0000";
+  const protectedLine = line.replace(/\\\|/g, protectedPipe);
+  return protectedLine
     .trim()
     .replace(/^\|/, "")
     .replace(/\|$/, "")
     .split("|")
-    .map((cell) => cell.trim());
+    .map((cell) => cell.replaceAll(protectedPipe, "|").trim());
 }
 
 function parseMarkdownTable(lines: MarkdownLineRecord[]): MarkdownTableRecord | null {

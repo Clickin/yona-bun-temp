@@ -156,6 +156,17 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<td><del>closed</del></td>");
   });
 
+  it("keeps escaped table pipes inside cells like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"| Name | State |\n| --- | --- |\n| a \\| b | **open** |"} />,
+    );
+
+    expect(html).toContain("<table>");
+    expect(html).toContain("<td>a | b</td>");
+    expect(html).toContain("<td><strong>open</strong></td>");
+    expect(html).not.toContain("<td>b</td>");
+  });
+
   it("renders basic smart lists like legacy marked", () => {
     const unorderedHtml = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- **first**\n- ~~second~~"} />,
