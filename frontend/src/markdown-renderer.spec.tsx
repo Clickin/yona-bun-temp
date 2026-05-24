@@ -81,4 +81,20 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<td>#1</td>");
     expect(html).toContain("<td><del>closed</del></td>");
   });
+
+  it("renders basic smart lists like legacy marked", () => {
+    const unorderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"- **first**\n- ~~second~~"} />,
+    );
+    const orderedHtml = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"1. first\n2. `second`"} />,
+    );
+
+    expect(unorderedHtml).toContain("<ul>");
+    expect(unorderedHtml).toContain("<li><strong>first</strong></li>");
+    expect(unorderedHtml).toContain("<li><del>second</del></li>");
+    expect(orderedHtml).toContain("<ol>");
+    expect(orderedHtml).toContain("<li>first</li>");
+    expect(orderedHtml).toContain("<li><code>second</code></li>");
+  });
 });

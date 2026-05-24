@@ -391,6 +391,7 @@ Interpretation:
 - [x] Legacy marked-style soft line breaks render as `<br>` on the project Markdown render path
 - [x] GFM strikethrough renders `~~deleted~~` as `<del>` on the project Markdown render path
 - [x] Basic GFM pipe tables render as `<table>` on the project Markdown render path
+- [x] Basic smart-list rendering emits `<ul>` / `<ol>` on the project Markdown render path
 - [x] Basic task checklist rendering with sanitized disabled checkboxes
 - [x] Basic safe inline image rendering on the project Markdown render path
 - [x] Basic fenced-code token highlighting on the project Markdown render path

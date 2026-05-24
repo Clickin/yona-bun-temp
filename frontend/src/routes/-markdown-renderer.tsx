@@ -56,6 +56,16 @@ type MarkdownTableRecord = {
   rows: MarkdownTableRow[];
 };
 
+type MarkdownListItem = {
+  key: string;
+  text: string;
+};
+
+type MarkdownListRecord = {
+  items: MarkdownListItem[];
+  ordered: boolean;
+};
+
 function isSafeUrl(value: string) {
   return (
     value.startsWith("/") ||
@@ -325,6 +335,34 @@ function parseMarkdownTable(lines: MarkdownLineRecord[]): MarkdownTableRecord | 
   return { headers, rows };
 }
 
+function parseMarkdownList(lines: MarkdownLineRecord[]): MarkdownListRecord | null {
+  if (lines.length === 0) {
+    return null;
+  }
+  const unorderedItems: MarkdownListItem[] = [];
+  const orderedItems: MarkdownListItem[] = [];
+  for (const line of lines) {
+    const unorderedMatch = /^\s*[-*+]\s+(.+)$/.exec(line.text);
+    if (unorderedMatch) {
+      unorderedItems.push({ key: line.key, text: unorderedMatch[1] ?? "" });
+      continue;
+    }
+    const orderedMatch = /^\s*\d+[.)]\s+(.+)$/.exec(line.text);
+    if (orderedMatch) {
+      orderedItems.push({ key: line.key, text: orderedMatch[1] ?? "" });
+      continue;
+    }
+    return null;
+  }
+  if (unorderedItems.length === lines.length) {
+    return { items: unorderedItems, ordered: false };
+  }
+  if (orderedItems.length === lines.length) {
+    return { items: orderedItems, ordered: true };
+  }
+  return null;
+}
+
 function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownContext }) {
   const lines = markdownLines(props.block.text);
   const firstLine = lines[0]?.text ?? "";
@@ -354,6 +392,15 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
         </tbody>
       </table>
     );
+  }
+  const list = parseMarkdownList(lines);
+  if (list) {
+    const children = list.items.map((item) => (
+      <li key={item.key}>
+        <MarkdownInline context={props.context} line={item.text} />
+      </li>
+    ));
+    return list.ordered ? <ol>{children}</ol> : <ul>{children}</ul>;
   }
   if (firstLine.startsWith("# ")) {
     return (
