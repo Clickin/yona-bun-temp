@@ -171,7 +171,7 @@ function parseTextWithAutolinks(
   const ownerName = context?.ownerName ?? "";
   const projectName = context?.projectName ?? "";
   const autolinkPattern =
-    /(^|[^\w/@#.-])(@[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+|@[A-Za-z0-9_.-]+|[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+#[0-9]+|[A-Za-z0-9_.-]+#[0-9]+|#[0-9]+|https?:\/\/[^\s<]+|ftp:\/\/[^\s<]+|www\.[^\s<]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/g;
+    /(^|[^\w/@#.-])(<(?:https?:\/\/[^\s<>]+|ftp:\/\/[^\s<>]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|@[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+|@[A-Za-z0-9_.-]+|[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+#[0-9]+|[A-Za-z0-9_.-]+#[0-9]+|#[0-9]+|https?:\/\/[^\s<]+|ftp:\/\/[^\s<]+|www\.[^\s<]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/g;
   let index = 0;
   for (const match of text.matchAll(autolinkPattern)) {
     const matchStart = match.index ?? 0;
@@ -186,7 +186,13 @@ function parseTextWithAutolinks(
       });
     }
     const key = `${keyPrefix}-autolink-${tokenStart}`;
-    if (/^@[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(token)) {
+    if (/^<.+>$/.test(token)) {
+      const label = token.slice(1, -1);
+      const target = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(label)
+        ? `mailto:${label}`
+        : label;
+      parts.push({ kind: "link", key, label, target });
+    } else if (/^@[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(token)) {
       const projectPath = token.slice(1);
       parts.push({
         className: "no-text-decoration project-link",

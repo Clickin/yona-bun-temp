@@ -176,6 +176,19 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("[shortcut]:");
   });
 
+  it("renders angle-bracket autolinks like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown="See <https://example.com/docs> and <help@example.com>" />,
+    );
+
+    expect(html).toContain(
+      'See <a href="https://example.com/docs">https://example.com/docs</a> and ',
+    );
+    expect(html).toContain('<a href="mailto:help@example.com">help@example.com</a>');
+    expect(html).not.toContain("https://example.com/docs&gt;");
+    expect(html).not.toContain("&lt;help@example.com&gt;");
+  });
+
   it("renders basic GFM pipe tables like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"| Name | State |\n| --- | --- |\n| #1 | ~~closed~~ |"} />,

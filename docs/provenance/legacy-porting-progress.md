@@ -390,6 +390,7 @@ Interpretation:
 - [x] Inline emphasis renders as `<em>` on the project Markdown render path
 - [x] Basic project Markdown autolinks for `@username`, legacy `@owner/project` project mentions, same-project `#123`, legacy `owner#123`, and `owner/project#123` on issue/post/milestone bodies and comments, PR bodies/general review comments, Git non-ranged commit comments, and preview output
 - [x] Basic bare `http://`/`https://`, `ftp://`, `www.`, and email autolinks on the project Markdown render path
+- [x] Legacy marked angle-bracket URL/email autolinks strip brackets and preserve `mailto:` targets
 - [x] Inline Markdown links and images preserve legacy marked `title` attributes
 - [x] Reference-style Markdown links and images resolve legacy marked definitions without rendering definition lines
 - [x] Legacy marked-style soft line breaks render as `<br>` on the project Markdown render path
