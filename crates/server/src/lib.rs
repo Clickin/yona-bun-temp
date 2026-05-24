@@ -22026,23 +22026,6 @@ fn render_code_browser_markdown_file_html(
     render_project_markdown_html(&rewritten, base_path, owner_name, project_name)
 }
 
-fn render_project_readme_file_html(
-    markdown: &str,
-    base_path: &str,
-    owner_name: &str,
-    project_name: &str,
-    branch: &str,
-) -> String {
-    let rewritten = rewrite_project_readme_markdown_links(
-        markdown,
-        base_path,
-        owner_name,
-        project_name,
-        branch,
-    );
-    render_project_markdown_html(&rewritten, base_path, owner_name, project_name)
-}
-
 fn rewrite_code_browser_markdown_image_links(
     markdown: &str,
     base_path: &str,
@@ -29721,15 +29704,16 @@ fn project_readme_file_from_git(
                 if !code_file_record_is_renderable_markdown(&file) {
                     continue;
                 }
+                let body_markdown = rewrite_project_readme_markdown_links(
+                    &file.text,
+                    base_path,
+                    owner_name,
+                    project_name,
+                    &snapshot.selected_branch,
+                );
                 return Ok(Some(RestProjectReadmeFile {
-                    body_html: render_project_readme_file_html(
-                        &file.text,
-                        base_path,
-                        owner_name,
-                        project_name,
-                        &snapshot.selected_branch,
-                    ),
-                    body_markdown: file.text,
+                    body_html: String::new(),
+                    body_markdown,
                     name: file.name,
                 }));
             }

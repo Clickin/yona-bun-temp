@@ -154,9 +154,9 @@ describe("wave 2A container parity", () => {
       projectName: "projectYobi",
       projectScope: "public",
       readmeFile: {
-        bodyHtml:
-          '<h1>Git README</h1><p><img src="/yona/weblabs/projectYobi/files/main/assets/logo.png"></p><p><a href="/yona/weblabs/projectYobi/code/main/docs/guide.md">Guide</a></p>',
-        bodyMarkdown: "# Git README",
+        bodyHtml: "",
+        bodyMarkdown:
+          "# Git README\n\n![logo](/yona/weblabs/projectYobi/files/main/assets/logo.png)\n\n[Guide](/yona/weblabs/projectYobi/code/main/docs/guide.md)",
         name: "README.md",
       },
       viewerCanEnroll: false,

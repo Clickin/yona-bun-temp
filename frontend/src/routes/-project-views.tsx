@@ -15,6 +15,7 @@ import type {
   ProjectWebhookType,
   ProjectWatchersResponse,
 } from "../api/org-project";
+import { MarkdownRenderer } from "./-markdown-renderer";
 import type { ProjectDetailViewModel } from "./-view-models";
 
 export function buildProjectHref(
@@ -924,9 +925,9 @@ export function ProjectDetailPage(props: {
                         <header>
                           <strong>{detail.readmeFile.name || "README.md"}</strong>
                         </header>
-                        <div
+                        <MarkdownRenderer
                           className="readme-body markdown-wrap"
-                          dangerouslySetInnerHTML={{ __html: detail.readmeFile.bodyHtml }}
+                          markdown={detail.readmeFile.bodyMarkdown}
                         />
                       </article>
                     ) : (

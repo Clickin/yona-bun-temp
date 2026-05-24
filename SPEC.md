@@ -1093,7 +1093,7 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 → H
 | 이슈 참조       | `#123`, `owner/project#123` → 이슈 링크 | implemented on project Markdown projection, including issue/post/milestone/PR/code comment render paths; readable issue refs add `title`/`data-issue-state` metadata without exposing inaccessible issue titles | 2     |
 | 자동 링크       | URL 자동 링크 변환               | basic `http://`/`https://`, `ftp://`, `www.`, and email autolinks implemented; residual legacy edge-case parity gap | 2     |
 | 코드 블록       | syntax highlighting              | basic fenced-code token highlighting implemented; full Highlight.js-equivalent language coverage gap | 2     |
-| 이미지          | 인라인 이미지 표시               | basic safe inline image rendering, code-browser Markdown local image path rewrite, and project-home Git README local image/normal-link rewrite implemented | 2     |
+| 이미지          | 인라인 이미지 표시               | basic safe inline image rendering, code-browser Markdown local image path rewrite, and project-home Git README React-side local image/normal-link rewrite implemented | 2     |
 | 체크리스트      | `- [ ]` / `- [x]`                | basic disabled checkbox rendering implemented | 2     |
 | XSS 방지        | HTML sanitization                | implemented on current render path | 2     |
 
@@ -1108,7 +1108,7 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 → H
 - [x] `- [ ]` / `- [x]` 체크리스트 렌더링
 - [x] safe inline image Markdown renders as sanitized `<img>`
 - [x] code-browser Markdown file rendering preserves legacy `.codebrowser-markdown` and rewrites local `./...` image paths to `/:owner/:project/files/:branch/...`
-- [x] project-home Git README fallback preserves legacy readme body and rewrites local images to `/:owner/:project/files/:branch/...` plus normal local links to `/:owner/:project/code/:branch/...`
+- [x] project-home Git README fallback preserves the legacy readme body wrapper, returns rewritten Markdown instead of server-rendered HTML, and lets React render local images to `/:owner/:project/files/:branch/...` plus normal local links to `/:owner/:project/code/:branch/...`
 - [x] legacy `POST /markdown/:owner/:project` preview renderer returns raw project-context sanitized HTML
 - [x] soft line breaks render as `<br>` like legacy marked `breaks: true`
 - [x] 코드 블록: 기본 token span syntax highlighting
@@ -1361,7 +1361,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, core event icon/message projection, single/mass-update issue state-change receiver fan-out, mail queue staging, due-row outbound fan-out helper, allowed-domain mail receiver filtering, BCC hide-address mode, recipientLimit partitioning |
 | 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment/merge/commit-changed non-JSON fan-out, DETAIL_HANGOUT_CHAT thread name persistence/reuse, plus git-push JSON payloads; delivery history/retry and hardening remain gaps |
 | 관리자            | ❌ 미구현         |                                                                  |
-| 마크다운          | 🔶 기본 구현      | Issue/post/milestone/PR/code comment sanitized HTML projection plus `@user`, `#123`, `owner/project#123`, bare `http(s)`/`ftp`/`www`/email autolinks, readable issue title/state metadata, soft line breaks, safe inline images, disabled task-list checkboxes, fenced-code token highlighting, code-browser Markdown local image path rewrite, project-home Git README local image/normal-link rewrite, and legacy `POST /markdown/:owner/:project` preview rendering |
+| 마크다운          | 🔶 기본 구현      | Issue/post/milestone/PR/code comment sanitized HTML projection plus `@user`, `#123`, `owner/project#123`, bare `http(s)`/`ftp`/`www`/email autolinks, readable issue title/state metadata, soft line breaks, safe inline images, disabled task-list checkboxes, fenced-code token highlighting, code-browser Markdown local image path rewrite, project-home Git README React-side rendering with local image/normal-link rewrite, and legacy `POST /markdown/:owner/:project` preview rendering |
 | REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1` legacy external API는 app scope에서 미지원이며 별도 migrator/export/import deliverable로 분리 |
 | Frontend 라우트   | ✅ 구현           | legacy issueform/editform 포함                                   |
 | Frontend 테스트   | 🔶 부분           | API client, route parity, E2E smoke                              |

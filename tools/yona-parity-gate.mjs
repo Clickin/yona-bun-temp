@@ -115,13 +115,19 @@ const DOMAIN_BUCKETS = [
     id: "project-markdown-rendering",
     label: "Project Markdown rendering",
     status: "partial",
-    implementationPatterns: [/^crates\/server\/src\/lib\.rs$/i],
+    implementationPatterns: [
+      /^crates\/server\/src\/lib\.rs$/i,
+      /^frontend\/src\/routes\/-markdown-renderer\.tsx$/i,
+    ],
     testKeywords: [
       "markdown",
       "issue_core_contract",
       "pull_request_read_contract",
       "pull_request_mutation_contract",
       "code_browser_contract",
+      "project-home",
+      "wave2a",
+      "container-parity",
     ],
     provenanceDocs: [
       "docs/provenance/phase-0b/issue.md",

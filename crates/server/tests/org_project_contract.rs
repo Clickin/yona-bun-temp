@@ -887,15 +887,22 @@ async fn rest_project_container_includes_git_readme_with_legacy_readme_link_rewr
     let payload: serde_json::Value = serde_json::from_str(&json).expect("container json");
     let readme = &payload["readmeFile"];
     assert_eq!(readme["name"], "README.md");
-    let body_html = readme["bodyHtml"].as_str().expect("readme body html");
-    assert!(body_html.contains("<h1>Git README</h1>"), "{body_html}");
+    assert_eq!(
+        readme["bodyHtml"].as_str().expect("readme body html"),
+        "",
+        "Git README fallback must leave Markdown rendering to React"
+    );
+    let body_markdown = readme["bodyMarkdown"]
+        .as_str()
+        .expect("readme body markdown");
+    assert!(body_markdown.contains("# Git README"), "{body_markdown}");
     assert!(
-        body_html.contains(r#"src="/yona/admin/projectYobi/files/main/assets/logo.png""#),
-        "{body_html}"
+        body_markdown.contains(r#"![logo](/yona/admin/projectYobi/files/main/assets/logo.png)"#),
+        "{body_markdown}"
     );
     assert!(
-        body_html.contains(r#"href="/yona/admin/projectYobi/code/main/docs/guide.md""#),
-        "{body_html}"
+        body_markdown.contains(r#"[Guide](/yona/admin/projectYobi/code/main/docs/guide.md)"#),
+        "{body_markdown}"
     );
     std::env::remove_var("YONA_DATA");
 }
