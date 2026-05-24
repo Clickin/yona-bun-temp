@@ -1834,6 +1834,7 @@ async fn anonymous_access_gate(
     if allows_anonymous_access()
         || anonymous_access_path_is_public(request.uri().path())
         || smart_http_route_from_path(request.uri().path(), &base_path).is_some()
+        || svn_protocol_route_from_path(request.uri().path(), &base_path).is_some()
     {
         return next.run(request).await;
     }
@@ -1918,6 +1919,13 @@ struct SmartHttpRoute {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+struct SvnProtocolRoute {
+    owner_name: String,
+    project_name: String,
+    svn_path: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct SmartHttpPushChange {
     commits: Vec<GitPushCommitRecord>,
     full_ref: String,
@@ -1999,6 +2007,9 @@ async fn serve_filesystem_or_smart_http_fallback(
     public_origin: String,
 ) -> Response {
     let method = request.method().clone();
+    if svn_protocol_route_from_path(request.uri().path(), &base_path).is_some() {
+        return direct_svn_protocol_request(request, session_manager, backend, base_path).await;
+    }
     if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
         return direct_smart_http_request(
             request,
@@ -2021,6 +2032,9 @@ async fn serve_embedded_or_smart_http_fallback(
     public_origin: String,
 ) -> Response {
     let method = request.method().clone();
+    if svn_protocol_route_from_path(request.uri().path(), &base_path).is_some() {
+        return direct_svn_protocol_request(request, session_manager, backend, base_path).await;
+    }
     if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
         return direct_smart_http_request(
             request,
@@ -2041,6 +2055,9 @@ async fn smart_http_or_not_found(
     base_path: String,
     public_origin: String,
 ) -> Response {
+    if svn_protocol_route_from_path(request.uri().path(), &base_path).is_some() {
+        return direct_svn_protocol_request(request, session_manager, backend, base_path).await;
+    }
     if smart_http_route_from_path(request.uri().path(), &base_path).is_some() {
         return direct_smart_http_request(
             request,
@@ -2052,6 +2069,82 @@ async fn smart_http_or_not_found(
         .await;
     }
     StatusCode::NOT_FOUND.into_response()
+}
+
+async fn direct_svn_protocol_request(
+    request: Request,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let Some(route) = svn_protocol_route_from_path(request.uri().path(), &base_path) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let (parts, _body) = request.into_parts();
+    let method = parts.method.as_str().to_ascii_uppercase();
+    let permission = if matches!(method.as_str(), "GET" | "HEAD" | "OPTIONS" | "PROPFIND") {
+        SmartHttpPermission::Read
+    } else {
+        SmartHttpPermission::Write
+    };
+    let PilotBackend::Repository(repository) = &backend else {
+        return StatusCode::NOT_IMPLEMENTED.into_response();
+    };
+    let principal =
+        match smart_http_principal_from_headers(&parts.headers, &session_manager, repository).await
+        {
+            Ok(principal) => principal,
+            Err(response) => return response,
+        };
+    let actor_id = principal.as_ref().map(|user| user.id);
+    let authorization = match repository
+        .read_project_authorization(&route.owner_name, &route.project_name, actor_id)
+        .await
+    {
+        Ok(Some(authorization)) => authorization,
+        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response();
+        }
+    };
+    if authorization.project.vcs != "Subversion" {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    match smart_http_authorization(&authorization, actor_id.is_none(), permission) {
+        Ok(()) => {}
+        Err(SmartHttpAccessFailure::AuthenticationRequired) => {
+            return smart_http_basic_challenge_response();
+        }
+        Err(SmartHttpAccessFailure::Forbidden) => return StatusCode::FORBIDDEN.into_response(),
+        Err(SmartHttpAccessFailure::InvalidProjectScope(error)) => {
+            return RestRouteError::from_connect_error(error).into_response();
+        }
+    }
+
+    let repo_path = yona_rust_vcs::svn_repository_path(&yona_data_root(), authorization.project.id);
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    svn_protocol_not_implemented_response(&route, &method)
+}
+
+fn svn_protocol_not_implemented_response(route: &SvnProtocolRoute, method: &str) -> Response {
+    let mut response = (
+        StatusCode::NOT_IMPLEMENTED,
+        format!(
+            "SVN protocol serving is not implemented yet for {}/{} ({method} {})",
+            route.owner_name, route.project_name, route.svn_path
+        ),
+    )
+        .into_response();
+    response
+        .headers_mut()
+        .insert("dav", HeaderValue::from_static("1,2"));
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("text/plain; charset=utf-8"),
+    );
+    response
 }
 
 async fn direct_smart_http_request(
@@ -2241,6 +2334,35 @@ fn smart_http_route_from_path(path: &str, base_path: &str) -> Option<SmartHttpRo
         git_path,
         owner_name,
         project_name,
+    })
+}
+
+fn svn_protocol_route_from_path(path: &str, base_path: &str) -> Option<SvnProtocolRoute> {
+    let mut relative = path;
+    if base_path != "/" {
+        if relative == base_path {
+            relative = "/";
+        } else if let Some(stripped) = relative.strip_prefix(&format!("{base_path}/")) {
+            relative = stripped;
+        }
+    }
+    let segments = relative
+        .trim_start_matches('/')
+        .split('/')
+        .filter(|segment| !segment.is_empty())
+        .collect::<Vec<_>>();
+    if segments.len() < 3 || segments[0] != "svn" {
+        return None;
+    }
+    let owner_name = segments[1].to_string();
+    let project_name = segments[2].to_string();
+    if owner_name.is_empty() || project_name.is_empty() {
+        return None;
+    }
+    Some(SvnProtocolRoute {
+        owner_name,
+        project_name,
+        svn_path: segments[3..].join("/"),
     })
 }
 

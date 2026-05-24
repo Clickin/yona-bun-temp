@@ -68,5 +68,5 @@
 - PR merge/commit-changed VCS lifecycle side effects remain a Pull Request follow-up.
 - Git README write-back/sync through board README editing remains a board/VCS lifecycle follow-up.
 - The legacy project preview route now validates read access and returns Markdown source instead of server-rendered HTML; project-home Git README, code-browser Markdown files, issue body/comments/history modal, PR body/review comments, Git commit discussion comments, board post/comment/history modal/DB README postings, and milestone detail descriptions now render Markdown in React.
-- SVN repository storage lifecycle has started: changeVCS now uses the local `svnadmin create` executable for `YONA_DATA/repo/<project_id>.svn` and project deletion removes stale SVN storage. SVN protocol serving/WebDAV remains deferred.
+- SVN repository storage lifecycle has started: changeVCS now uses the local `svnadmin create` executable for `YONA_DATA/repo/<project_id>.svn` and project deletion removes stale SVN storage. The legacy `/svn/$path<.+>` boundary is mounted with Basic/session auth, Subversion-only project filtering, and DAV response metadata; the executable WebDAV bridge remains deferred.
 

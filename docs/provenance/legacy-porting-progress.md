@@ -3,7 +3,7 @@
 > Status dashboard. This document is a progress mirror for humans and agents.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, and the narrower provenance docs under `docs/provenance/**`.
 
-Last updated: 2026-05-20
+Last updated: 2026-05-25
 
 ## Progress Estimate
 
@@ -16,7 +16,7 @@ Last updated: 2026-05-20
 Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace/public profile, organization/project ownership, issue-tracker core behavior, Git read/admin surfaces, PR/review interaction surfaces, and board/posting core app behavior.
-- The largest remaining gaps are still PR/review in-app conflict resolution workflow, board/posting follow-ups, notification fan-out/mail delivery, webhook delivery hardening/history, full-text/indexed search hardening, SVN executable-backed serve, and separate migrator/external API compatibility.
+- The largest remaining gaps are still PR/review in-app conflict resolution workflow, board/posting follow-ups, notification fan-out/mail delivery, webhook delivery hardening/history, full-text/indexed search hardening, executable SVN WebDAV bridging beyond the mounted auth/DAV boundary, and separate migrator/external API compatibility.
 - Percentages are approximate. Update them only when a slice lands with tests and provenance updates.
 
 ## Update Protocol
@@ -36,9 +36,9 @@ Interpretation:
 | --------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | Foundation / DB / runtime               | [~] Mostly implemented    | Schema, migrations, `/api/v1` REST runtime, assets, and config compatibility for base path/session/project default scope/project default menus/languages are strong; production migration/import/export is not. |
 | Auth / Workspace                        | [~] Partially implemented | Core account, direct login/signup form posts, password-reset mail format, admin signup approval state, guest-prefix account classification, global anonymous-access gate, remember-me session persistence, login placeholder config, settings, public profile, user statistics count flows, and the legacy user attachment list exist; full guest permission matrix/OAuth/LDAP remain. |
-| Organization / Project core             | [~] Partially implemented | CRUD, organization home legacy wrapper/project-list/roster anchors, members, enrollment, watch/favorite, webhook CRUD plus issue/comment, PR create/review/comment fan-out, DETAIL_HANGOUT_CHAT thread name reuse, git-push JSON fan-out, transfer request/accept/mail, change VCS shell/metadata reset, Smart HTTP clone/push transport, and the legacy project statistics shell exist; SVN executable-backed serve and remaining webhook delivery hardening remain. |
+| Organization / Project core             | [~] Partially implemented | CRUD, organization home legacy wrapper/project-list/roster anchors, members, enrollment, watch/favorite, webhook CRUD plus issue/comment, PR create/review/comment fan-out, DETAIL_HANGOUT_CHAT thread name reuse, git-push JSON fan-out, transfer request/accept/mail, change VCS shell/metadata reset, Smart HTTP clone/push transport, SVN storage creation plus `/svn/$path` auth/DAV boundary, and the legacy project statistics shell exist; executable SVN WebDAV bridging and remaining webhook delivery hardening remain. |
 | Issue tracker core                      | [~] Strong partial        | CRUD/comment/timeline/watch/vote/comment vote/label/milestone/sharer/org/user issue lists, favorite issue, direct/project sharer effects, issue/comment mention row effects, and legacy `.posting-history` / `#-yona-posting-history` change-history modal anchors exist over `/api/v1`; legacy external REST parity is separate migrator scope. |
-| VCS / Code hosting                      | [~] Strong partial        | Git code browser, React-side Markdown file rendering with local image path rewrite, raw/open/image streaming, archive download, syntax/line rendering, commit history/detail/compare, commit discussion with same-file multi-line code-comment selection plus comment edit/delete, branch admin, project-create provisioning, Smart HTTP upload-pack/receive-pack transport, push post-receive records/webhooks, reviewer-threshold-gated conflict-free PR merge accept, conflict-state merge disable/help, PR source branch cleanup/restore, and PR commit-changed lifecycle records exist; SVN and PR in-app conflict resolution workflow remain. |
+| VCS / Code hosting                      | [~] Strong partial        | Git code browser, React-side Markdown file rendering with local image path rewrite, raw/open/image streaming, archive download, syntax/line rendering, commit history/detail/compare, commit discussion with same-file multi-line code-comment selection plus comment edit/delete, branch admin, project-create provisioning, Smart HTTP upload-pack/receive-pack transport, push post-receive records/webhooks, SVN repository storage creation plus direct `/svn/$path` auth/status boundary, reviewer-threshold-gated conflict-free PR merge accept, conflict-state merge disable/help, PR source branch cleanup/restore, and PR commit-changed lifecycle records exist; executable SVN WebDAV bridging and PR in-app conflict resolution workflow remain. |
 | Pull Request / Review                   | [~] Strong partial        | Phase 4A restores read surfaces, Phase 4B restores create/edit, close/reopen, review/unreview, general PR comments, and thread open/close, the fork/clone slice restores legacy `newFork` plus native bare-repo clone, merge/branch lifecycle slices restore reviewer-threshold-gated conflict-free accept plus source branch delete/restore, project settings restores default reviewer threshold lifecycle, PR detail projects required/lacking reviewer state and legacy watcher projection plus `#watch-button` watch/unwatch mutation, PR source pushes record commit-changed events/webhooks, and PR changes supports specific commit routes/filters, PRIOR selected commit outdated markers, selected commit `.commitInfo`/`.commitMsg.mt5` metadata, current-changes inline filtering that excludes outdated/commit-only review threads, legacy review-card show/hide anchors plus open/closed review-card tabs with outdated markers, and side-aware single/multi-line ranged inline comment create/edit/delete from line clicks or same-file diff text selection. Legacy generated routes expose no separate per-PR reviewer assignment endpoint beyond `ReviewApp.review`/`unreview`. |
 | Board / Posting                         | [~] Strong partial        | Project board CRUD/comment/watch/notice/README/label flows, body history modal anchors, read-only Git README fallback React-side Markdown rendering, and organization board list exist over `/api/v1`; Git README write-back/sync, issue template/file edit, and legacy external API compatibility remain. |
 | Search                                  | [~] Strong partial        | Global/project/organization app search exists over `/api/v1` with all legacy result tabs, counts, snippets, pagination, and ACL filtering; full-text/indexed search and external API compatibility remain deferred. |
@@ -276,7 +276,7 @@ Interpretation:
 - [x] Smart HTTP push transport
 - [x] Basic Auth/token auth for Git HTTP
 - [ ] Post-receive hooks/events
-- [ ] SVN support (deferred)
+- [~] SVN support: storage lifecycle and `/svn/$path` auth/DAV boundary implemented; executable WebDAV bridge deferred
 
 ## Pull Request / Review
 
