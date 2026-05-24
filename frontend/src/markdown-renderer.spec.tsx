@@ -159,6 +159,23 @@ describe("MarkdownRenderer", () => {
     );
   });
 
+  it("renders reference-style links and images like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          '[docs][guide] ![logo][asset] [shortcut]\n\n[guide]: https://example.com/docs "Read docs"\n[asset]: /files/logo.png "Logo title"\n[shortcut]: ./shortcut'
+        }
+      />,
+    );
+
+    expect(html).toContain('<a href="https://example.com/docs" title="Read docs">docs</a>');
+    expect(html).toContain('<img alt="logo" src="/files/logo.png" title="Logo title"/>');
+    expect(html).toContain('<a href="./shortcut">shortcut</a>');
+    expect(html).not.toContain("[guide]:");
+    expect(html).not.toContain("[asset]:");
+    expect(html).not.toContain("[shortcut]:");
+  });
+
   it("renders basic GFM pipe tables like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"| Name | State |\n| --- | --- |\n| #1 | ~~closed~~ |"} />,

@@ -391,6 +391,7 @@ Interpretation:
 - [x] Basic project Markdown autolinks for `@username`, legacy `@owner/project` project mentions, same-project `#123`, legacy `owner#123`, and `owner/project#123` on issue/post/milestone bodies and comments, PR bodies/general review comments, Git non-ranged commit comments, and preview output
 - [x] Basic bare `http://`/`https://`, `ftp://`, `www.`, and email autolinks on the project Markdown render path
 - [x] Inline Markdown links and images preserve legacy marked `title` attributes
+- [x] Reference-style Markdown links and images resolve legacy marked definitions without rendering definition lines
 - [x] Legacy marked-style soft line breaks render as `<br>` on the project Markdown render path
 - [x] GFM strikethrough renders `~~deleted~~` as `<del>` on the project Markdown render path
 - [x] Basic GFM pipe tables render as `<table>` on the project Markdown render path, including escaped `\|` pipes inside cells and left/center/right alignment attributes

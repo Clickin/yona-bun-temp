@@ -26,11 +26,17 @@ type MarkdownIssueReference = {
   title?: string;
 };
 
+type MarkdownReferenceDefinition = {
+  target: string;
+  title?: string;
+};
+
 type MarkdownContext = {
   basePath?: string;
   issueReferenceMap?: Map<string, MarkdownIssueReference>;
   ownerName?: string;
   projectName?: string;
+  referenceMap?: Map<string, MarkdownReferenceDefinition>;
 };
 
 type MarkdownBlockRecord = {
@@ -95,6 +101,7 @@ function isSafeUrl(value: string) {
     value.startsWith("#") ||
     value.startsWith("http://") ||
     value.startsWith("https://") ||
+    value.startsWith("ftp://") ||
     value.startsWith("mailto:")
   );
 }
@@ -104,6 +111,45 @@ function normalizeBasePath(basePath?: string) {
     return "";
   }
   return basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
+}
+
+function normalizeReferenceLabel(label: string) {
+  return label.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function extractReferenceDefinitions(markdown: string) {
+  const referenceMap = new Map<string, MarkdownReferenceDefinition>();
+  const markdownLines: string[] = [];
+  let inFence = false;
+  for (const line of markdown.replace(/\r\n?/g, "\n").split("\n")) {
+    if (/^ {0,3}```/.test(line)) {
+      inFence = !inFence;
+      markdownLines.push(line);
+      continue;
+    }
+    const match =
+      /^ {0,3}\[([^\]]+)\]:\s*<?([^\s>]+)>?(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]*)\)))?\s*$/.exec(
+        line,
+      );
+    if (inFence || !match) {
+      markdownLines.push(line);
+      continue;
+    }
+    const target = match[2] ?? "";
+    if (!isSafeUrl(target)) {
+      markdownLines.push(line);
+      continue;
+    }
+    const label = normalizeReferenceLabel(match[1] ?? "");
+    if (referenceMap.has(label)) {
+      continue;
+    }
+    referenceMap.set(label, {
+      target,
+      title: match[3] ?? match[4] ?? match[5],
+    });
+  }
+  return { markdown: markdownLines.join("\n"), referenceMap };
 }
 
 function issueReferenceFor(
@@ -229,7 +275,7 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
   const parts: MarkdownInlinePart[] = [];
   let index = 0;
   const inlinePattern =
-    /\\([^\w\s])|(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|`([^`\n]+)`|\*([^*\n]+)\*|_([^_\n]+)_/g;
+    /\\([^\w\s])|(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)|(!?)\[([^\]]+)\]\[([^\]]*)\]|(!?)\[([^\]]+)\](?:\[\])?|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|`([^`\n]+)`|\*([^*\n]+)\*|_([^_\n]+)_/g;
   for (const match of line.matchAll(inlinePattern)) {
     const start = match.index ?? 0;
     if (start > index) {
@@ -237,18 +283,6 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
     }
     if (match[1] !== undefined) {
       parts.push({ kind: "escape", key: `escape-${start}`, value: match[1] ?? "" });
-    } else if (match[6] !== undefined) {
-      parts.push({ kind: "strong", key: `strong-${start}`, value: match[6] ?? "" });
-    } else if (match[7] !== undefined) {
-      parts.push({ kind: "delete", key: `delete-${start}`, value: match[7] ?? "" });
-    } else if (match[8] !== undefined) {
-      parts.push({ kind: "code", key: `code-${start}`, value: match[8] ?? "" });
-    } else if (match[9] !== undefined || match[10] !== undefined) {
-      parts.push({
-        kind: "emphasis",
-        key: `emphasis-${start}`,
-        value: match[9] ?? match[10] ?? "",
-      });
     } else if (isSafeUrl(match[4] ?? "")) {
       parts.push({
         kind: match[2] === "!" ? "image" : "link",
@@ -256,6 +290,33 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
         label: match[3] ?? "",
         target: match[4] ?? "",
         title: match[5],
+      });
+    } else if (match[7] !== undefined || match[10] !== undefined) {
+      const label = match[7] ?? match[10] ?? "";
+      const referenceLabel = match[8] ? (match[8] ?? "") : label;
+      const reference = context?.referenceMap?.get(normalizeReferenceLabel(referenceLabel));
+      if (reference) {
+        parts.push({
+          kind: (match[6] ?? match[9]) === "!" ? "image" : "link",
+          key: `reference-${start}`,
+          label,
+          target: reference.target,
+          title: reference.title,
+        });
+      } else {
+        parts.push({ kind: "text", key: `text-${start}`, value: match[0] ?? "" });
+      }
+    } else if (match[11] !== undefined) {
+      parts.push({ kind: "strong", key: `strong-${start}`, value: match[11] ?? "" });
+    } else if (match[12] !== undefined) {
+      parts.push({ kind: "delete", key: `delete-${start}`, value: match[12] ?? "" });
+    } else if (match[13] !== undefined) {
+      parts.push({ kind: "code", key: `code-${start}`, value: match[13] ?? "" });
+    } else if (match[14] !== undefined || match[15] !== undefined) {
+      parts.push({
+        kind: "emphasis",
+        key: `emphasis-${start}`,
+        value: match[14] ?? match[15] ?? "",
       });
     } else {
       parts.push({ kind: "text", key: `text-${start}`, value: match[0] ?? "" });
@@ -642,8 +703,9 @@ export function MarkdownRenderer(props: {
   projectName?: string;
   showTasklistBar?: boolean;
 }) {
-  const blocks = paragraphBlocks(props.markdown);
-  const taskStats = props.showTasklistBar ? markdownTaskStats(props.markdown) : null;
+  const parsedMarkdown = extractReferenceDefinitions(props.markdown);
+  const blocks = paragraphBlocks(parsedMarkdown.markdown);
+  const taskStats = props.showTasklistBar ? markdownTaskStats(parsedMarkdown.markdown) : null;
   const issueReferenceMap = new Map(
     (props.issueReferences ?? []).map((reference) => [
       `${reference.ownerName}/${reference.projectName}#${reference.issueNumber}`,
@@ -655,6 +717,7 @@ export function MarkdownRenderer(props: {
     issueReferenceMap,
     ownerName: props.ownerName,
     projectName: props.projectName,
+    referenceMap: parsedMarkdown.referenceMap,
   };
   if (blocks.length === 0) {
     return (
