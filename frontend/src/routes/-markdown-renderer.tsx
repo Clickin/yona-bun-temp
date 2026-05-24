@@ -179,6 +179,14 @@ function splitBareAutolinkToken(token: string) {
   return { label, suffix };
 }
 
+function normalizeCodeSpan(value: string) {
+  let text = value.replace(/\n/g, " ");
+  if (/[^ ]/.test(text) && text.startsWith(" ") && text.endsWith(" ")) {
+    text = text.slice(1, -1);
+  }
+  return text;
+}
+
 function parseTextWithAutolinks(
   text: string,
   keyPrefix: string,
@@ -339,7 +347,11 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
     } else if (match[12] !== undefined) {
       parts.push({ kind: "delete", key: `delete-${start}`, value: match[12] ?? "" });
     } else if (match[13] !== undefined) {
-      parts.push({ kind: "code", key: `code-${start}`, value: match[13] ?? "" });
+      parts.push({
+        kind: "code",
+        key: `code-${start}`,
+        value: normalizeCodeSpan(match[13] ?? ""),
+      });
     } else if (match[14] !== undefined || match[15] !== undefined) {
       parts.push({
         kind: "emphasis",

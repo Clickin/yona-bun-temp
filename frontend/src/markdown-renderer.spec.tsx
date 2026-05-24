@@ -144,6 +144,17 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain('href="target"');
   });
 
+  it("normalizes inline code spans like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"Keep ` code sample ` and `  spaced  ` text"} />,
+    );
+
+    expect(html).toContain("<code>code sample</code>");
+    expect(html).toContain("<code> spaced </code>");
+    expect(html).not.toContain("<code> code sample </code>");
+    expect(html).not.toContain("<code>  spaced  </code>");
+  });
+
   it("renders inline link and image titles like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
