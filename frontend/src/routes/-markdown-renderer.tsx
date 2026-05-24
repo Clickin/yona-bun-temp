@@ -1,8 +1,10 @@
 import * as React from "react";
 
 type MarkdownInlinePart =
+  | { kind: "code"; key: string; value: string }
   | { kind: "image"; key: string; label: string; target: string }
   | { kind: "link"; key: string; label: string; target: string }
+  | { kind: "strong"; key: string; value: string }
   | { kind: "text"; key: string; value: string };
 
 type MarkdownBlockRecord = {
@@ -30,19 +32,23 @@ function isSafeUrl(value: string) {
 function parseInlineMarkdown(line: string): MarkdownInlinePart[] {
   const parts: MarkdownInlinePart[] = [];
   let index = 0;
-  const linkPattern = /(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
-  for (const match of line.matchAll(linkPattern)) {
+  const inlinePattern =
+    /(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)|\*\*([^*\n]+)\*\*|`([^`\n]+)`/g;
+  for (const match of line.matchAll(inlinePattern)) {
     const start = match.index ?? 0;
     if (start > index) {
       parts.push({ kind: "text", key: `text-${index}`, value: line.slice(index, start) });
     }
-    const target = match[3] ?? "";
-    if (isSafeUrl(target)) {
+    if (match[4] !== undefined) {
+      parts.push({ kind: "strong", key: `strong-${start}`, value: match[4] ?? "" });
+    } else if (match[5] !== undefined) {
+      parts.push({ kind: "code", key: `code-${start}`, value: match[5] ?? "" });
+    } else if (isSafeUrl(match[3] ?? "")) {
       parts.push({
         kind: match[1] === "!" ? "image" : "link",
         key: `link-${start}`,
         label: match[2] ?? "",
-        target,
+        target: match[3] ?? "",
       });
     } else {
       parts.push({ kind: "text", key: `text-${start}`, value: match[0] ?? "" });
@@ -66,6 +72,12 @@ function MarkdownInline(props: { line: string }) {
           {part.label || part.target}
         </a>
       );
+    }
+    if (part.kind === "strong") {
+      return <strong key={part.key}>{part.value}</strong>;
+    }
+    if (part.kind === "code") {
+      return <code key={part.key}>{part.value}</code>;
     }
     return <React.Fragment key={part.key}>{part.value}</React.Fragment>;
   });

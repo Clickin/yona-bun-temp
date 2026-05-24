@@ -15,6 +15,7 @@ import {
   ProjectBoardDetailPage,
   ProjectBoardListPage,
 } from "./routes/-board-views";
+import { ProjectMilestoneDetailPage } from "./routes/-milestone-views";
 
 function expectOrderedText(html: string, orderedSnippets: string[]) {
   let previousIndex = -1;
@@ -382,6 +383,39 @@ describe("file-route parity harness", () => {
     expect(orgHtml).toContain("Page 1 of 2");
     expect(orgHtml).toContain("projectNames%5B%5D=alpha");
     expect(orgHtml).toContain("pageNum=2");
+  });
+
+  it("renders milestone descriptions from Markdown source in React", () => {
+    const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const html = renderToStaticMarkup(
+      <ProjectMilestoneDetailPage
+        detail={null}
+        issueState="open"
+        milestone={{
+          attachments: [],
+          closedIssueCount: 0,
+          closedIssues: [],
+          completionPercent: 0,
+          contentsHtml: "",
+          contentsMarkdown: "Ship **parity** with `React`",
+          dueDateLabel: "",
+          id: 7,
+          openIssueCount: 0,
+          openIssues: [],
+          state: "open",
+          title: "v1.0",
+          viewerCanDelete: false,
+          viewerCanUpdate: false,
+        }}
+        owner="owner"
+        projectName="projectYobi"
+        runtimeConfig={runtimeConfig}
+      />,
+    );
+
+    expect(html).toContain('<div class="markdown-wrap"><p>Ship <strong>parity</strong> with ');
+    expect(html).toContain("<code>React</code>");
+    expect(html).not.toContain("contentsHtml");
   });
 
   it("requires real PR/review interaction routes without create/edit placeholders", () => {

@@ -20486,22 +20486,7 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
-        let issue_references = milestone_markdown_references_for_record(
-            repository,
-            &milestone,
-            session.user_id,
-            &self.base_path,
-            request.owner_name,
-            request.project_name,
-        )
-        .await?;
-        let mut milestone = issue_milestone_from_record_with_issue_references(
-            &milestone,
-            &self.base_path,
-            request.owner_name,
-            request.project_name,
-            &issue_references,
-        );
+        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
         milestone.viewer_can_update = true;
         milestone.viewer_can_delete = true;
         Ok((
@@ -23351,31 +23336,9 @@ fn issue_timeline_item_from_record(
     }
 }
 
-async fn milestone_markdown_references_for_record(
-    repository: &PilotRepository,
-    record: &persistence::IssueMilestoneRecord,
-    actor_id: Option<i64>,
-    base_path: &str,
-    owner_name: &str,
-    project_name: &str,
-) -> Result<Vec<MarkdownIssueReference>, ConnectError> {
-    markdown_issue_references_for_markdowns(
-        repository,
-        actor_id,
-        base_path,
-        owner_name,
-        project_name,
-        &[record.contents_markdown.as_str()],
-    )
-    .await
-}
-
-fn issue_milestone_from_record_with_issue_references(
+fn issue_milestone_from_record(
     record: &persistence::IssueMilestoneRecord,
     base_path: &str,
-    owner_name: &str,
-    project_name: &str,
-    issue_references: &[MarkdownIssueReference],
 ) -> IssueMilestone {
     IssueMilestone {
         attachments: record
@@ -23391,13 +23354,7 @@ fn issue_milestone_from_record_with_issue_references(
             .map(project_issue_list_item_to_proto)
             .collect(),
         completion_percent: record.completion_percent,
-        contents_html: render_project_markdown_html_with_issue_references(
-            &record.contents_markdown,
-            base_path,
-            owner_name,
-            project_name,
-            issue_references,
-        ),
+        contents_html: String::new(),
         contents_markdown: record.contents_markdown.clone(),
         due_date_label: record.due_date_label.clone(),
         id: record.id,
@@ -28676,25 +28633,10 @@ impl PilotServiceImpl {
             )
             .await
             .map_err(internal_error)?;
-        let mut milestones = Vec::with_capacity(records.len());
-        for record in &records {
-            let issue_references = milestone_markdown_references_for_record(
-                repository,
-                record,
-                actor_id,
-                &self.base_path,
-                request.owner_name,
-                request.project_name,
-            )
-            .await?;
-            milestones.push(issue_milestone_from_record_with_issue_references(
-                record,
-                &self.base_path,
-                request.owner_name,
-                request.project_name,
-                &issue_references,
-            ));
-        }
+        let milestones = records
+            .iter()
+            .map(|record| issue_milestone_from_record(record, &self.base_path))
+            .collect();
         Ok((
             ListProjectMilestonesResponse {
                 milestones,
@@ -28732,22 +28674,7 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
-        let issue_references = milestone_markdown_references_for_record(
-            repository,
-            &milestone,
-            session.as_ref().and_then(|session| session.user_id),
-            &self.base_path,
-            request.owner_name,
-            request.project_name,
-        )
-        .await?;
-        let mut milestone = issue_milestone_from_record_with_issue_references(
-            &milestone,
-            &self.base_path,
-            request.owner_name,
-            request.project_name,
-            &issue_references,
-        );
+        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
         milestone.viewer_can_update = viewer_can_update;
         milestone.viewer_can_delete = viewer_can_update;
         Ok((
@@ -28812,22 +28739,7 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        let issue_references = milestone_markdown_references_for_record(
-            repository,
-            &milestone,
-            session.user_id,
-            &self.base_path,
-            request.owner_name,
-            request.project_name,
-        )
-        .await?;
-        let mut milestone = issue_milestone_from_record_with_issue_references(
-            &milestone,
-            &self.base_path,
-            request.owner_name,
-            request.project_name,
-            &issue_references,
-        );
+        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
         milestone.viewer_can_update = true;
         milestone.viewer_can_delete = true;
         Ok((
@@ -28895,22 +28807,7 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("milestone not found"))?;
-        let issue_references = milestone_markdown_references_for_record(
-            repository,
-            &milestone,
-            session.user_id,
-            &self.base_path,
-            request.owner_name,
-            request.project_name,
-        )
-        .await?;
-        let mut milestone = issue_milestone_from_record_with_issue_references(
-            &milestone,
-            &self.base_path,
-            request.owner_name,
-            request.project_name,
-            &issue_references,
-        );
+        let mut milestone = issue_milestone_from_record(&milestone, &self.base_path);
         milestone.viewer_can_update = true;
         milestone.viewer_can_delete = true;
         Ok((

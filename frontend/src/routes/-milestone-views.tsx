@@ -1,6 +1,7 @@
 import * as React from "react";
 import type { RuntimeConfig } from "../runtime-config";
 import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
+import { MarkdownRenderer } from "./-markdown-renderer";
 import { buildProjectHref, ProjectMenu } from "./-project-views";
 import type {
   ProjectDetailViewModel,
@@ -278,12 +279,9 @@ export function ProjectMilestoneDetailPage(props: {
             </small>
           </h4>
           <MilestoneProgress percent={milestone.completionPercent} />
-          {milestone.contentsHtml ? (
+          {milestone.contentsMarkdown.trim() ? (
             <div className="milestone-desc">
-              <div
-                className="markdown-wrap"
-                dangerouslySetInnerHTML={{ __html: milestone.contentsHtml }}
-              />
+              <MarkdownRenderer className="markdown-wrap" markdown={milestone.contentsMarkdown} />
               <div className="attachments">
                 {milestone.attachments.map((attachment) => (
                   <a href={attachment.url} key={attachment.id}>

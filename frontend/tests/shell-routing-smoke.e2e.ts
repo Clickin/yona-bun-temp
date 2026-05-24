@@ -285,7 +285,7 @@ test.beforeEach(async ({ page }) => {
             },
           ],
           completionPercent: 50,
-          contentsHtml: "<p>Ship parity</p>",
+          contentsHtml: "",
           contentsMarkdown: "Ship parity",
           dueDateLabel: "2026-05-09",
           id: "7",
@@ -1741,7 +1741,7 @@ test("project milestone create editor inserts pasted and dropped image uploads",
     await route.fulfill({
       body: JSON.stringify({
         milestone: {
-          contentsHtml: `<p>${body.contentsMarkdown ?? ""}</p>`,
+          contentsHtml: "",
           contentsMarkdown: body.contentsMarkdown ?? "",
           dueDateLabel: "",
           id: "8",
@@ -1828,7 +1828,7 @@ test("project milestone edit editor submits pasted image uploads", async ({ page
       await route.fulfill({
         body: JSON.stringify({
           milestone: {
-            contentsHtml: `<p>${body.contentsMarkdown ?? ""}</p>`,
+            contentsHtml: "",
             contentsMarkdown: body.contentsMarkdown ?? "",
             dueDateLabel: "2026-05-09",
             id: "7",
@@ -1845,7 +1845,7 @@ test("project milestone edit editor submits pasted image uploads", async ({ page
     await route.fulfill({
       body: JSON.stringify({
         milestone: {
-          contentsHtml: "<p>Ship parity</p>",
+          contentsHtml: "",
           contentsMarkdown: "Ship parity",
           dueDateLabel: "2026-05-09",
           id: "7",

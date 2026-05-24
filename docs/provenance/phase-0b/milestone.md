@@ -3,7 +3,7 @@
 ## Scope
 
 - Phase 2C project milestone management parity.
-- Covers milestone list/detail/create/edit/delete/open/close, issue counts and progress, detail issue tabs, Markdown description rendering, attachment binding, create/edit image paste/drop upload, and legacy direct mutation routes.
+- Covers milestone list/detail/create/edit/delete/open/close, issue counts and progress, detail issue tabs, React-side Markdown description rendering, attachment binding, create/edit image paste/drop upload, and legacy direct mutation routes.
 - REST `/-_-api/v1/.../milestones`, migration export/import, and search milestone result type remain follow-up packets.
 
 ## Legacy Sources
@@ -31,7 +31,7 @@
 | `MilestoneApp.editMilestone/editMilestoneForm` + `edit.scala.html` | project update viewers can edit title, Markdown contents, state, due date, and attachment bindings                                             | `UpdateProjectMilestone` RPC, direct `POST /:owner/:project/milestone/:id/edit`, `editform` route           |
 | `MilestoneApp.deleteMilestone` + `Milestone.delete`                | delete nulls linked issue milestone references before deleting the milestone                                                                   | `DeleteProjectMilestone` RPC, direct `DELETE /:owner/:project/milestone/:id/delete`, repository transaction |
 | `MilestoneApp.open/close`                                          | state toggle only changes milestone state and preserves linked issue states                                                                    | `OpenProjectMilestone`, `CloseProjectMilestone`, direct open/close routes                                   |
-| `milestone/view.scala.html`                                        | detail shows due date, progress, Markdown contents, attachments, list/edit/delete/open-close actions, and open/closed/all issue tabs           | `ReadProjectMilestone` RPC and `frontend/src/routes/$owner/$projectName/milestone/$milestoneId/route.tsx`   |
+| `milestone/view.scala.html`                                        | detail shows due date, progress, Markdown contents, attachments, list/edit/delete/open-close actions, and open/closed/all issue tabs           | `ReadProjectMilestone` RPC returns `contentsMarkdown` with empty `contentsHtml`; `frontend/src/routes/$owner/$projectName/milestone/$milestoneId/route.tsx` renders the shared React Markdown renderer |
 | `common.editor` + `common.fileUploader` + `yobi.Files` / `yobi.Attachments` | create/edit milestone contents support image paste/drop upload, insert `![name](url)`, and submit temporary attachment ids                     | `MarkdownAttachmentTextarea` in `ProjectMilestoneFormPage` plus `attachmentIds` in milestone create/update   |
 
 ## Verification
@@ -46,3 +46,4 @@
 - REST milestone API parity remains in the REST/API packet.
 - Migration export/import milestone flows remain in the migration/export packet.
 - Search `milestone` result type remains in the search packet.
+- React-rendered milestone issue-reference metadata (`title` / `data-issue-state`) remains in the shared Markdown renderer follow-up.

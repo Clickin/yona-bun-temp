@@ -156,14 +156,14 @@ async fn milestone_rpc_manages_crud_state_sorting_and_linked_issues() {
     let milestone_id = created["milestone"]["id"].as_str().unwrap();
     assert_eq!(created["milestone"]["title"], "v1.0");
     assert_eq!(created["milestone"]["dueDateLabel"], "2026-05-09");
-    assert!(created["milestone"]["contentsHtml"]
-        .as_str()
-        .unwrap()
-        .contains("<strong>parity</strong>"));
-    assert!(!created["milestone"]["contentsHtml"]
-        .as_str()
-        .unwrap()
-        .contains("<script>"));
+    assert_eq!(
+        created["milestone"]["contentsHtml"].as_str().unwrap_or(""),
+        ""
+    );
+    assert_eq!(
+        created["milestone"]["contentsMarkdown"],
+        "Ship **parity** <script>alert(1)</script>"
+    );
 
     let duplicate = rpc(
         app.clone(),
@@ -295,11 +295,13 @@ async fn milestone_rpc_manages_crud_state_sorting_and_linked_issues() {
     .await;
     assert_eq!(updated["milestone"]["title"], "v1.0 patched");
     assert_eq!(updated["milestone"]["state"], "closed");
-    let updated_html = updated["milestone"]["contentsHtml"].as_str().unwrap();
-    assert!(
-        updated_html.contains("title=\"Open milestone issue\"")
-            && updated_html.contains("data-issue-state=\"open\""),
-        "{updated_html}"
+    assert_eq!(
+        updated["milestone"]["contentsHtml"].as_str().unwrap_or(""),
+        ""
+    );
+    assert_eq!(
+        updated["milestone"]["contentsMarkdown"],
+        "Updated #1 owner/projectYobi#1"
     );
 
     let opened = response_json(
