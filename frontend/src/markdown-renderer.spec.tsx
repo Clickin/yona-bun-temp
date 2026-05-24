@@ -119,6 +119,31 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<strong>strong</strong>");
   });
 
+  it("honors legacy marked backslash escapes before inline parsing", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 1,
+            ownerName: "owner",
+            projectName: "projectYobi",
+          },
+        ]}
+        markdown={"Keep \\*literal\\* \\@owner \\#1 \\[label\\]\\(target\\) and real **strong** #1"}
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain("Keep *literal* @owner #1 [label](target) and real ");
+    expect(html).toContain("<strong>strong</strong>");
+    expect(html).toContain('href="/yona/owner/projectYobi/issue/1"');
+    expect(html).not.toContain("<em>literal</em>");
+    expect(html).not.toContain('href="/yona/owner"');
+    expect(html).not.toContain('href="target"');
+  });
+
   it("renders basic GFM pipe tables like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"| Name | State |\n| --- | --- |\n| #1 | ~~closed~~ |"} />,
