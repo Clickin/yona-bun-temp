@@ -416,6 +416,13 @@ function MarkdownHeading(props: { context?: MarkdownContext; level: number; text
 function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownContext }) {
   const lines = markdownLines(props.block.text);
   const firstLine = lines[0]?.text ?? "";
+  const secondLine = lines[1]?.text ?? "";
+  if (lines.length === 2 && /^=+\s*$/.test(secondLine)) {
+    return <MarkdownHeading context={props.context} level={1} text={firstLine.trim()} />;
+  }
+  if (lines.length === 2 && /^-+\s*$/.test(secondLine)) {
+    return <MarkdownHeading context={props.context} level={2} text={firstLine.trim()} />;
+  }
   const table = parseMarkdownTable(lines);
   if (table) {
     return (

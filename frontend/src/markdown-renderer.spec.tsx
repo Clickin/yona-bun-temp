@@ -43,6 +43,15 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<h6 id="final-heading">Final Heading</h6>');
   });
 
+  it("renders setext headings like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"Primary Title\n=====\n\nSecondary Title\n-----"} />,
+    );
+
+    expect(html).toContain('<h1 id="primary-title">Primary Title</h1>');
+    expect(html).toContain('<h2 id="secondary-title">Secondary Title</h2>');
+  });
+
   it("renders legacy owner issue references and project mentions", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
