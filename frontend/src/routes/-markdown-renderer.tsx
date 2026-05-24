@@ -5,7 +5,7 @@ type MarkdownInlinePart =
   | { kind: "delete"; key: string; value: string }
   | { kind: "emphasis"; key: string; value: string }
   | { kind: "escape"; key: string; value: string }
-  | { kind: "image"; key: string; label: string; target: string }
+  | { kind: "image"; key: string; label: string; target: string; title?: string }
   | {
       kind: "link";
       className?: string;
@@ -229,7 +229,7 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
   const parts: MarkdownInlinePart[] = [];
   let index = 0;
   const inlinePattern =
-    /\\([^\w\s])|(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|`([^`\n]+)`|\*([^*\n]+)\*|_([^_\n]+)_/g;
+    /\\([^\w\s])|(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|`([^`\n]+)`|\*([^*\n]+)\*|_([^_\n]+)_/g;
   for (const match of line.matchAll(inlinePattern)) {
     const start = match.index ?? 0;
     if (start > index) {
@@ -237,17 +237,17 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
     }
     if (match[1] !== undefined) {
       parts.push({ kind: "escape", key: `escape-${start}`, value: match[1] ?? "" });
-    } else if (match[5] !== undefined) {
-      parts.push({ kind: "strong", key: `strong-${start}`, value: match[5] ?? "" });
     } else if (match[6] !== undefined) {
-      parts.push({ kind: "delete", key: `delete-${start}`, value: match[6] ?? "" });
+      parts.push({ kind: "strong", key: `strong-${start}`, value: match[6] ?? "" });
     } else if (match[7] !== undefined) {
-      parts.push({ kind: "code", key: `code-${start}`, value: match[7] ?? "" });
-    } else if (match[8] !== undefined || match[9] !== undefined) {
+      parts.push({ kind: "delete", key: `delete-${start}`, value: match[7] ?? "" });
+    } else if (match[8] !== undefined) {
+      parts.push({ kind: "code", key: `code-${start}`, value: match[8] ?? "" });
+    } else if (match[9] !== undefined || match[10] !== undefined) {
       parts.push({
         kind: "emphasis",
         key: `emphasis-${start}`,
-        value: match[8] ?? match[9] ?? "",
+        value: match[9] ?? match[10] ?? "",
       });
     } else if (isSafeUrl(match[4] ?? "")) {
       parts.push({
@@ -255,6 +255,7 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
         key: `link-${start}`,
         label: match[3] ?? "",
         target: match[4] ?? "",
+        title: match[5],
       });
     } else {
       parts.push({ kind: "text", key: `text-${start}`, value: match[0] ?? "" });
@@ -270,7 +271,7 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
 function MarkdownInline(props: { context?: MarkdownContext; line: string }) {
   return parseInlineMarkdown(props.line, props.context).map((part) => {
     if (part.kind === "image") {
-      return <img alt={part.label} key={part.key} src={part.target} />;
+      return <img alt={part.label} key={part.key} src={part.target} title={part.title} />;
     }
     if (part.kind === "link") {
       return (
