@@ -117,6 +117,14 @@ function normalizeReferenceLabel(label: string) {
   return label.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
+function normalizeInlineTarget(target: string) {
+  const trimmed = target.trim();
+  if (trimmed.startsWith("<") && trimmed.endsWith(">")) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+
 function extractReferenceDefinitions(markdown: string) {
   const referenceMap = new Map<string, MarkdownReferenceDefinition>();
   const markdownLines: string[] = [];
@@ -335,20 +343,21 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
   const parts: MarkdownInlinePart[] = [];
   let index = 0;
   const inlinePattern =
-    /\\([^\w\s])|(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]*)\)))?\)|(!?)\[([^\]]+)\]\[([^\]]*)\]|(!?)\[([^\]]+)\](?:\[\])?|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|(?<codeFence>`+)(?<codeText>[^`]|[^`][\s\S]*?[^`])\k<codeFence>(?!`)|\*([^*\n]+)\*|_([^_\n]+)_/g;
+    /\\([^\w\s])|(!?)\[([^\]]*)\]\((<[^>\s]+>|[^)\s]+)(?:\s+(?:"([^"]*)"|'([^']*)'|\(([^)]*)\)))?\)|(!?)\[([^\]]+)\]\[([^\]]*)\]|(!?)\[([^\]]+)\](?:\[\])?|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|(?<codeFence>`+)(?<codeText>[^`]|[^`][\s\S]*?[^`])\k<codeFence>(?!`)|\*([^*\n]+)\*|_([^_\n]+)_/g;
   for (const match of line.matchAll(inlinePattern)) {
     const start = match.index ?? 0;
     if (start > index) {
       parts.push(...parseTextWithAutolinks(line.slice(index, start), `text-${index}`, context));
     }
+    const inlineTarget = normalizeInlineTarget(match[4] ?? "");
     if (match[1] !== undefined) {
       parts.push({ kind: "escape", key: `escape-${start}`, value: match[1] ?? "" });
-    } else if (isSafeUrl(match[4] ?? "")) {
+    } else if (isSafeUrl(inlineTarget)) {
       parts.push({
         kind: match[2] === "!" ? "image" : "link",
         key: `link-${start}`,
         label: match[3] ?? "",
-        target: match[4] ?? "",
+        target: inlineTarget,
         title: match[5] ?? match[6] ?? match[7],
       });
     } else if (match[9] !== undefined || match[12] !== undefined) {

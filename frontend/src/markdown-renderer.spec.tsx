@@ -219,6 +219,21 @@ describe("MarkdownRenderer", () => {
     );
   });
 
+  it("strips angle-wrapped inline link and image targets like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          '[docs](<https://example.com/docs> "Read docs") ![logo](</files/logo.png> "Logo title")'
+        }
+      />,
+    );
+
+    expect(html).toContain('<a href="https://example.com/docs" title="Read docs">docs</a>');
+    expect(html).toContain('<img alt="logo" src="/files/logo.png" title="Logo title"/>');
+    expect(html).not.toContain("href=&quot;&lt;");
+    expect(html).not.toContain('src="&lt;');
+  });
+
   it("renders reference-style links and images like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

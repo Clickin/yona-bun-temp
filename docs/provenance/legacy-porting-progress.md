@@ -393,7 +393,7 @@ Interpretation:
 - [x] Basic bare `http://`/`https://`, `ftp://`, `www.`, and email autolinks on the project Markdown render path
 - [x] Legacy marked angle-bracket URL/email autolinks strip brackets and preserve `mailto:` targets
 - [x] Legacy marked bare URL/email autolinks trim trailing punctuation outside the rendered link
-- [x] Inline Markdown links and images preserve legacy marked `title` attributes, including double-quoted, single-quoted, and parenthesized delimiters
+- [x] Inline Markdown links and images preserve legacy marked angle-wrapped targets and `title` attributes, including double-quoted, single-quoted, and parenthesized delimiters
 - [x] Reference-style Markdown links and images resolve legacy marked definitions without rendering definition lines
 - [x] Legacy marked-style soft line breaks render as `<br>` on the project Markdown render path
 - [x] Legacy hard-break markers (`\` or two trailing spaces before newline) are consumed before rendering `<br>`
