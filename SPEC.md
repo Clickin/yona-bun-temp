@@ -1125,13 +1125,13 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 원�
 
 **Legacy API 접두사**: `/-_-api/v1/`
 
-**현재 결정**: Rust frontend/server app은 `/-_-api/v1/**` endpoint support를 제공하지 않는다. 기존 외부 API 사용자 대상 migration/export/import compatibility는 별도 migrator 제품/도구에서 다루며, app-facing canonical REST surface는 `/api/v1/**`만 유지한다.
+**현재 결정**: Rust frontend/server app의 app-facing canonical REST surface는 `/api/v1/**`다. Legacy external `/-_-api/v1/**` compatibility는 별도 migrator 제품/도구에서 다루되, `GET /-_-api/v1/hello` health check는 외부 API bootstrap compatibility로 app server에서 직접 제공한다.
 
 #### 기능 목록과 상태
 
 | API                           | Legacy 동작        | 현재 상태                         | Phase |
 | ----------------------------- | ------------------ | --------------------------------- | ----- |
-| `GET /-_-api/v1/hello`        | Health check       | unsupported in app                | migrator/deferred |
+| `GET /-_-api/v1/hello`        | Health check       | direct legacy JSON `{message,ok}` | implemented |
 | `GET /-_-api/v1/users`        | 사용자 목록        | unsupported in app                | migrator/deferred |
 | `POST /-_-api/v1/users`       | 사용자 생성        | unsupported in app                | migrator/deferred |
 | `POST /-_-api/v1/users/token` | API 토큰 발급      | unsupported in app                | migrator/deferred |
@@ -1142,13 +1142,13 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 원�
 | Watcher API                   | 감시자 목록        | unsupported in app                | migrator/deferred |
 | Favorite API                  | 즐겨찾기 관리      | unsupported in app                | migrator/deferred |
 
-**주의**: REST에는 두 계층이 있다. 새 React application API는 `/api/v1/**`를 canonical surface로 사용한다. legacy 외부 호환 API(`/-_-api/v1/**`)는 현재 app scope가 아니며, 기존 Yona API를 사용하는 외부 도구와의 호환은 별도 migrator/export/import deliverable에서 다룬다.
+**주의**: REST에는 두 계층이 있다. 새 React application API는 `/api/v1/**`를 canonical surface로 사용한다. `GET /-_-api/v1/hello`를 제외한 legacy 외부 호환 API(`/-_-api/v1/**`)는 현재 app scope가 아니며, 기존 Yona API를 사용하는 외부 도구와의 호환은 별도 migrator/export/import deliverable에서 다룬다.
 
-`/-_-api/v1/**` legacy API를 frontend/server app에 추가하지 않는다. 내부 React 화면이나 legacy view helper API를 `/-_-api/v1/**`로 확장하지 않는다. 내부 React 화면은 `/api/v1/**` application API와 TanStack Query를 사용한다.
+`GET /-_-api/v1/hello` health check 외의 `/-_-api/v1/**` legacy API를 frontend/server app에 추가하지 않는다. 내부 React 화면이나 legacy view helper API를 `/-_-api/v1/**`로 확장하지 않는다. 내부 React 화면은 `/api/v1/**` application API와 TanStack Query를 사용한다.
 
 #### 별도 migrator 검수 기준
 
-- [ ] `/-_-api/v1/hello` 가 200 OK를 반환한다
+- [x] `/-_-api/v1/hello` 가 200 OK를 반환한다
 - [ ] API 인증: `Yona-Token` 헤더 또는 쿠키 기반 세션 — legacy 동일
 - [ ] API 응답: JSON 포맷, legacy 필드명과 동일한 스키마
 - [ ] 에러 응답: legacy와 동일한 HTTP 상태 코드 + 에러 메시지 형식
@@ -1365,7 +1365,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment/merge/commit-changed non-JSON fan-out, DETAIL_HANGOUT_CHAT thread name persistence/reuse, plus git-push JSON payloads; delivery history/retry and hardening remain gaps |
 | 관리자            | ❌ 미구현         |                                                                  |
 | 마크다운          | 🔶 기본 구현      | React-side project preview/source rendering plus `@user`, `#123`, `owner/project#123`, bare `http(s)`/`ftp`/`www`/email autolinks, readable issue title/state metadata where React receives reference data, soft line breaks, safe inline images, disabled task-list checkboxes, fenced-code token highlighting on older helper code paths, code-browser Markdown React-side rendering with local image path rewrite, project-home Git README React-side rendering with local image/normal-link rewrite, issue body/comment/history modal React-side rendering, PR body/review comment React-side rendering, Git commit discussion comment React-side rendering, board post/comment/history modal/DB README posting React-side rendering, and milestone detail React-side rendering |
-| REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1` legacy external API는 app scope에서 미지원이며 별도 migrator/export/import deliverable로 분리 |
+| REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1/hello` health check는 legacy JSON으로 구현됐고, 나머지 `/-_-api/v1` legacy external API는 별도 migrator/export/import deliverable로 분리 |
 | Frontend 라우트   | ✅ 구현           | legacy issueform/editform 포함                                   |
 | Frontend 테스트   | 🔶 부분           | API client, route parity, E2E smoke                              |
 | i18n              | ❌ 미구현         | hardcoded English/Korean                                         |
@@ -1546,7 +1546,8 @@ max_file_size = 2147483454             # application.maxFileSize
 | `/sites/diagnostic`                 | GET      | `GET /api/v1/site/diagnostics`        | `sites/$pageName`                             | implemented        |
 | `/sites/unwatchUpdate`              | POST     | in-process update notification flag   | direct route                                  | implemented        |
 | `/sites/*`                         | GET      | —                                     | `sites/$pageName` unknown fallback            | no legacy catch-all; not-found |
-| `/-_-api/v1/*`                     | Various  | —                                     | —                                             | unsupported in app; migrator/deferred |
+| `/-_-api/v1/hello`                 | GET      | direct legacy health JSON             | `{"message":"I'm alive!","ok":true}`          | implemented        |
+| `/-_-api/v1/*`                     | Various  | —                                     | —                                             | unsupported in app except hello; migrator/deferred |
 | `/svn/*`                           | Various  | legacy SVN boundary mounted with auth/DAV metadata | executable WebDAV bridge pending             | partial            |
 | `/authenticate/:provider`          | GET      | —                                     | —                                             | deferred           |
 
@@ -1579,7 +1580,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - PullRequest follow-up: in-app merge conflict resolution workflow
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: full mail notification template parity plus IMAP polling, sender extraction, MIME parsing, and mailbox/reply threading after issue/board/code/review comment `original_email` marker parity, mailbox plus-address parser parity, and DB-backed `CreationViaEmailTest` resource creation parity
-- Migrator/export/import: legacy external `/-_-api/v1/**` compatibility, including issue API parity, is a separate product/tool deliverable rather than app server scope
+- Migrator/export/import: legacy external `/-_-api/v1/**` compatibility beyond the direct `hello` health check, including issue API parity, is a separate product/tool deliverable rather than app server scope
 - Webhook follow-up: HTTPS production delivery hardening, optional signature compatibility if external evidence requires it, and delivery history/retry behavior
 - Admin: users/projects/site-admin/account-lock/test-mail surfaces
 - Markdown follow-up: restore readable issue-ref metadata in React-rendered issue/PR/code/milestone/board surfaces, full legacy/GFM extension parity, remaining autolink edge cases if legacy evidence requires them, full Highlight.js-equivalent language coverage, and checklist progress-bar integration polish

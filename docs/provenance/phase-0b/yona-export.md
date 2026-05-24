@@ -4,7 +4,7 @@
 
 - Long-term replacement target for `https://github.com/yona-projects/yona-export`.
 - This is not a general internal-view REST contract. It is a migration-facing project export/import tool contract.
-- Future `/-_-api/v1/**` issue, milestone, label, project, post, and file compatibility belongs to a separate migrator/export/import deliverable. These endpoints must not be added to the frontend/server app unless that deliverable explicitly owns and tests the compatibility adapter.
+- Future `/-_-api/v1/**` issue, milestone, label, project, post, and file compatibility belongs to a separate migrator/export/import deliverable. The app server only carries the legacy `GET /-_-api/v1/hello` health check bootstrap endpoint; other external endpoints must not be added to the frontend/server app unless that deliverable explicitly owns and tests the compatibility adapter.
 
 ## Upstream Tool Sources
 
@@ -59,5 +59,5 @@ The Node tool calls these external surfaces:
 
 ## Guardrail
 
-- Do not add `/-_-api/v1` issue/milestone/label/post/project REST endpoints just because a React view needs data.
+- Do not add `/-_-api/v1` issue/milestone/label/post/project REST endpoints just because a React view needs data. `GET /-_-api/v1/hello` is the narrow health-check exception.
 - Those endpoints require explicit migration/export provenance, tests tied to the external tool contract, and a separate migrator/export/import plan.

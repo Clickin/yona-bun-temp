@@ -372,6 +372,25 @@ async fn unknown_rest_route_returns_shared_json_error_envelope() {
 }
 
 #[tokio::test]
+async fn legacy_external_hello_matches_global_api_contract() {
+    let response = build_router()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/-_-api/v1/hello")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response_json(response).await;
+    assert_eq!(body["message"], "I'm alive!");
+    assert_eq!(body["ok"], true);
+}
+
+#[tokio::test]
 async fn rest_organization_routes_cover_directory_views_and_membership_mutations() {
     let (app, repository) = build_app_with_repository().await;
     let (admin_csrf, admin_cookie) = register_user(app.clone(), "admin").await;

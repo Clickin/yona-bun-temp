@@ -434,6 +434,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
             }),
         )
         .nest("/api/v1", rest_router)
+        .route("/-_-api/v1/hello", get(legacy_external_api_hello))
         .route(
             "/api/v1/{*rest_path}",
             any(|| async { rest_not_found_response() }),
@@ -15039,6 +15040,13 @@ async fn rest_read_current_session(
 
 fn rest_not_found_response() -> Response {
     RestRouteError::not_found("REST endpoint not found.").into_response()
+}
+
+async fn legacy_external_api_hello() -> Json<serde_json::Value> {
+    Json(serde_json::json!({
+        "message": "I'm alive!",
+        "ok": true,
+    }))
 }
 
 async fn rest_read_code_browser(
