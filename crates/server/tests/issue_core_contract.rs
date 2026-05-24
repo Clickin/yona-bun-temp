@@ -620,7 +620,7 @@ async fn issue_mutation_contract_preserves_legacy_public_project_permissions() {
     .await;
     assert_eq!(updated["title"], "edited by member");
     assert_eq!(updated["historyMarkdown"], "body");
-    assert!(updated["historyHtml"].as_str().unwrap().contains("body"));
+    assert_eq!(updated["historyHtml"].as_str().unwrap_or(""), "");
 
     let mass_updated = response_json(
         rest(

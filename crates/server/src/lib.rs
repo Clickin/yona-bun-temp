@@ -19667,10 +19667,6 @@ async fn rest_update_issue_comment(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
-    let issue_references =
-        issue_markdown_references_for_record(repository, &issue, session.user_id, &base_path)
-            .await
-            .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(
         rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
             &issue,
@@ -19680,7 +19676,7 @@ async fn rest_update_issue_comment(
             access.share_status.inherited_from_parent,
             session.user_id,
             &base_path,
-            &issue_references,
+            &[],
         ),
     ))
 }
@@ -19733,10 +19729,6 @@ async fn rest_delete_issue_comment(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
-    let issue_references =
-        issue_markdown_references_for_record(repository, &issue, session.user_id, &base_path)
-            .await
-            .map_err(RestRouteError::from_connect_error)?;
     Ok(Json(
         rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
             &issue,
@@ -19746,7 +19738,7 @@ async fn rest_delete_issue_comment(
             access.share_status.inherited_from_parent,
             session.user_id,
             &base_path,
-            &issue_references,
+            &[],
         ),
     ))
 }
@@ -23873,9 +23865,9 @@ fn rest_post_list_item_from_record(
 }
 
 async fn rest_post_detail_response_from_record_with_repository_issue_references(
-    repository: &PilotRepository,
+    _repository: &PilotRepository,
     posting: &persistence::PostingRecord,
-    actor_id: Option<i64>,
+    _actor_id: Option<i64>,
     base_path: &str,
     viewer_can_create: bool,
     viewer_can_update: bool,
@@ -23884,8 +23876,6 @@ async fn rest_post_detail_response_from_record_with_repository_issue_references(
     viewer_can_set_notice: bool,
     viewer_can_watch: bool,
 ) -> Result<RestPostDetailResponse, ConnectError> {
-    let issue_references =
-        posting_markdown_references_for_record(repository, posting, actor_id, base_path).await?;
     Ok(rest_post_detail_response_from_record_with_issue_references(
         posting,
         base_path,
@@ -23895,37 +23885,8 @@ async fn rest_post_detail_response_from_record_with_repository_issue_references(
         viewer_can_comment,
         viewer_can_set_notice,
         viewer_can_watch,
-        &issue_references,
+        &[],
     ))
-}
-
-fn posting_markdown_texts(posting: &persistence::PostingRecord) -> Vec<&str> {
-    let mut markdowns = Vec::with_capacity(1 + posting.comments.len());
-    markdowns.push(posting.body_markdown.as_str());
-    markdowns.extend(
-        posting
-            .comments
-            .iter()
-            .map(|comment| comment.contents_markdown.as_str()),
-    );
-    markdowns
-}
-
-async fn posting_markdown_references_for_record(
-    repository: &PilotRepository,
-    posting: &persistence::PostingRecord,
-    actor_id: Option<i64>,
-    base_path: &str,
-) -> Result<Vec<MarkdownIssueReference>, ConnectError> {
-    markdown_issue_references_for_markdowns(
-        repository,
-        actor_id,
-        base_path,
-        &posting.owner_name,
-        &posting.project_name,
-        &posting_markdown_texts(posting),
-    )
-    .await
 }
 
 fn rest_post_detail_response_from_record_with_issue_references(
@@ -23965,13 +23926,7 @@ fn rest_post_detail_response_from_record_with_issue_references(
             })
             .collect(),
         created_label: posting.created_label.clone(),
-        history_html: render_project_markdown_html_with_issue_references(
-            &posting.history_markdown,
-            base_path,
-            &posting.owner_name,
-            &posting.project_name,
-            issue_references,
-        ),
+        history_html: String::new(),
         history_markdown: posting.history_markdown.clone(),
         id: posting.id.to_string(),
         is_watching: posting.is_watching,
@@ -24019,15 +23974,13 @@ fn issue_detail_response_from_record(
 }
 
 async fn issue_detail_response_from_record_with_repository_issue_references(
-    repository: &PilotRepository,
+    _repository: &PilotRepository,
     issue: &persistence::IssueRecord,
     viewer_can_manage: bool,
     viewer_can_comment: bool,
     viewer_id: Option<i64>,
     base_path: &str,
 ) -> Result<ReadIssueDetailResponse, ConnectError> {
-    let issue_references =
-        issue_markdown_references_for_record(repository, issue, viewer_id, base_path).await?;
     Ok(
         issue_detail_response_from_record_with_sharer_flags_and_issue_references(
             issue,
@@ -24037,21 +23990,19 @@ async fn issue_detail_response_from_record_with_repository_issue_references(
             false,
             viewer_id,
             base_path,
-            &issue_references,
+            &[],
         ),
     )
 }
 
 async fn rest_issue_detail_response_from_record_with_repository_issue_references(
-    repository: &PilotRepository,
+    _repository: &PilotRepository,
     issue: &persistence::IssueRecord,
     viewer_can_manage: bool,
     viewer_can_comment: bool,
     viewer_id: Option<i64>,
     base_path: &str,
 ) -> Result<RestIssueDetailResponse, ConnectError> {
-    let issue_references =
-        issue_markdown_references_for_record(repository, issue, viewer_id, base_path).await?;
     Ok(
         rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
             issue,
@@ -24061,7 +24012,7 @@ async fn rest_issue_detail_response_from_record_with_repository_issue_references
             false,
             viewer_id,
             base_path,
-            &issue_references,
+            &[],
         ),
     )
 }
@@ -24083,14 +24034,11 @@ fn issue_detail_response_from_access(
 }
 
 async fn rest_issue_detail_response_from_access_with_repository_issue_references(
-    repository: &PilotRepository,
+    _repository: &PilotRepository,
     access: &IssueAccessContext,
     viewer_id: Option<i64>,
     base_path: &str,
 ) -> Result<RestIssueDetailResponse, ConnectError> {
-    let issue_references =
-        issue_markdown_references_for_record(repository, &access.issue, viewer_id, base_path)
-            .await?;
     Ok(
         rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
             &access.issue,
@@ -24100,7 +24048,7 @@ async fn rest_issue_detail_response_from_access_with_repository_issue_references
             access.share_status.inherited_from_parent,
             viewer_id,
             base_path,
-            &issue_references,
+            &[],
         ),
     )
 }
@@ -24133,31 +24081,6 @@ fn issue_detail_response_from_record_with_sharer_flags(
     )
 }
 
-fn issue_markdown_texts(issue: &persistence::IssueRecord) -> Vec<&str> {
-    let mut markdowns = Vec::with_capacity(1);
-    if !issue.history_markdown.trim().is_empty() {
-        markdowns.push(issue.history_markdown.as_str());
-    }
-    markdowns
-}
-
-async fn issue_markdown_references_for_record(
-    repository: &PilotRepository,
-    issue: &persistence::IssueRecord,
-    viewer_id: Option<i64>,
-    base_path: &str,
-) -> Result<Vec<MarkdownIssueReference>, ConnectError> {
-    markdown_issue_references_for_markdowns(
-        repository,
-        viewer_id,
-        base_path,
-        &issue.owner_name,
-        &issue.project_name,
-        &issue_markdown_texts(issue),
-    )
-    .await
-}
-
 fn rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
     issue: &persistence::IssueRecord,
     viewer_can_manage: bool,
@@ -24180,13 +24103,7 @@ fn rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references
     );
     RestIssueDetailResponse {
         detail,
-        history_html: render_project_markdown_html_with_issue_references(
-            &issue.history_markdown,
-            base_path,
-            &issue.owner_name,
-            &issue.project_name,
-            issue_references,
-        ),
+        history_html: String::new(),
         history_markdown: issue.history_markdown.clone(),
     }
 }

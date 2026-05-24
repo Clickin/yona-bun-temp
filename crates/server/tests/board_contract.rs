@@ -514,10 +514,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
         updated["historyMarkdown"],
         "# README\n@guest should see this board notification #1 owner/projectYobi#1"
     );
-    assert!(updated["historyHtml"]
-        .as_str()
-        .unwrap()
-        .contains("<h1>README</h1>"));
+    assert_eq!(updated["historyHtml"].as_str().unwrap_or(""), "");
 
     let deleted_comment = ok_json(
         rest(

@@ -67,6 +67,6 @@
 - Multi-line block selection and inline edit remain follow-ups; Phase 3I covers non-ranged Git commit discussion, single-line inline commit comment creation/readback, and inline ranged reply upload.
 - PR merge/commit-changed VCS lifecycle side effects remain a Pull Request follow-up.
 - Git README write-back/sync through board README editing remains a board/VCS lifecycle follow-up.
-- Remaining server-rendered Markdown projections outside project-home Git README, code-browser Markdown files, issue body/comments, PR body/review comments, Git commit discussion comments, board post/comment/DB README postings, and milestone detail descriptions remain Markdown renderer follow-up scope.
+- The legacy project preview renderer remains the known server-rendered Markdown follow-up; project-home Git README, code-browser Markdown files, issue body/comments/history modal, PR body/review comments, Git commit discussion comments, board post/comment/history modal/DB README postings, and milestone detail descriptions now render Markdown in React.
 - SVN remains deferred.
 

@@ -70,7 +70,7 @@ The first issue provenance trace for this batch is the edit matrix in `IssueAppT
 - Legacy `UserApi.toggleFoveriteIssue` toggles `favorite_issue(user, issue)` rows and updates the issue detail star. Rust implements this through `POST /api/v1/owners/:owner/projects/:project/issues/:number/favorite` and projects `ReadIssueDetailResponse.isFavorited`; no `/-_-api/v1/favoriteIssues` endpoint is added in this phase.
 - Legacy `IssueApp.userIssues` defaults to assigned-to-me when no condition is supplied and renders the personal quick filters from `my_partial_list_quicksearch.scala.html`. Rust implements `/user/issues` with assigned/authored/commented/mentioned/shared/favorite filters over `GET /api/v1/user/issues`.
 - The mentioned filter reads issue body and comment `mention` rows produced by Rust mention sync, while tolerating earlier Rust `issue` resource rows.
-- Issue detail body and comments now render from Markdown source in React. REST `bodyHtml` and comment `contentsHtml` stay as empty app-runtime compatibility fields; issue history modal and legacy preview output remain on the existing sanitized server-rendered Markdown path until those surfaces move to React.
+- Issue detail body, comments, and body-history modal now render from Markdown source in React. REST `bodyHtml`, comment `contentsHtml`, and `historyHtml` stay as empty app-runtime compatibility fields; legacy preview output remains on the existing sanitized server-rendered Markdown path until that surface moves to React.
 
 ## Phase 2H Issue Comment Vote Translation Rule
 

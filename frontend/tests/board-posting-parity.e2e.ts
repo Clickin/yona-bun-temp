@@ -55,8 +55,8 @@ function boardDetail(overrides: Record<string, unknown> = {}) {
       },
     ],
     id: "100",
-    historyHtml: "<p>Changed title from old board post</p>",
-    historyMarkdown: "Changed title from old board post",
+    historyHtml: "",
+    historyMarkdown: "Changed **title** from old board post",
     isWatching: false,
     permissions: {
       canComment: true,
@@ -451,6 +451,7 @@ test("project board detail supports watch and comment create update delete", asy
   await expect(page.locator("#-yona-posting-history")).toContainText(
     "Changed title from old board post",
   );
+  await expect(page.locator("#-yona-posting-history strong")).toHaveText("title");
   await expect(page.locator(".board-comment-wrap")).toContainText("First board comment");
 
   const watchRequest = page.waitForRequest(

@@ -407,8 +407,8 @@ test.beforeEach(async ({ page }) => {
           },
         ],
         hasVoted: false,
-        historyHtml: "<p>Changed issue title from old value</p>",
-        historyMarkdown: "Changed issue title from old value",
+        historyHtml: "",
+        historyMarkdown: "Changed issue **title** from old value",
         isFavorited: false,
         isWatching: false,
         issueNumber: "1",
@@ -1021,6 +1021,7 @@ test("project issue routes render data-backed issue list filters and detail scre
   await expect(page.locator("#-yona-posting-history")).toContainText(
     "Changed issue title from old value",
   );
+  await expect(page.locator("#-yona-posting-history strong")).toHaveText("title");
   await expect(page.locator(".author-info a.usf-group")).toHaveAttribute("href", "/yona/nori");
   await expect(page.locator(".author-info .avatar-wrap.smaller img")).toHaveAttribute(
     "src",

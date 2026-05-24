@@ -50,9 +50,9 @@ function nextOrderDir(currentOrderBy: string, currentOrderDir: string, fieldName
   return currentOrderBy === fieldName && currentOrderDir === "desc" ? "asc" : "desc";
 }
 
-function PostingHistoryModal(props: { historyHtml?: string; linkLabel: string }) {
-  const historyHtml = props.historyHtml ?? "";
-  if (!historyHtml.trim()) {
+function PostingHistoryModal(props: { historyMarkdown?: string; linkLabel: string }) {
+  const historyMarkdown = props.historyMarkdown ?? "";
+  if (!historyMarkdown.trim()) {
     return null;
   }
 
@@ -68,7 +68,7 @@ function PostingHistoryModal(props: { historyHtml?: string; linkLabel: string })
           </button>
           <h5 className="nm">change.history</h5>
         </div>
-        <div className="modal-body" dangerouslySetInnerHTML={{ __html: historyHtml }} />
+        <MarkdownRenderer className="modal-body" markdown={historyMarkdown} />
         <div className="modal-footer">
           <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" type="button">
             button.confirm
@@ -507,7 +507,7 @@ export function ProjectBoardDetailPage(props: {
             {postBadges(post)}
             {boardLabels(post.labels)}
           </div>
-          <PostingHistoryModal historyHtml={post.historyHtml} linkLabel="change.history" />
+          <PostingHistoryModal historyMarkdown={post.historyMarkdown} linkLabel="change.history" />
         </header>
         <MarkdownRenderer className="board-body markdown-wrap" markdown={post.bodyMarkdown} />
         <div className="board-actions">
