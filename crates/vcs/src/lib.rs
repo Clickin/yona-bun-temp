@@ -932,6 +932,40 @@ pub fn svn_path_exists(
     }
 }
 
+pub fn svn_deleted_revision(
+    repo_path: &Path,
+    path: &str,
+    peg_revision: i64,
+    end_revision: i64,
+) -> Result<Option<i64>, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    if peg_revision < 0 || end_revision < 0 {
+        return Err(VcsError::InvalidPath);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    if !svn_path_exists(repo_path, Some(peg_revision), &clean_path)? {
+        return Err(VcsError::NotFound);
+    }
+    if end_revision <= peg_revision {
+        return Ok(None);
+    }
+
+    let mut previous_exists = true;
+    for revision in (peg_revision + 1)..=end_revision {
+        let exists = svn_path_exists(repo_path, Some(revision), &clean_path)?;
+        if previous_exists && !exists {
+            return Ok(Some(revision));
+        }
+        previous_exists = exists;
+    }
+    Ok(None)
+}
+
 fn parse_svnlook_lock(path: &str, output: &str) -> Option<SvnLock> {
     let mut token = String::new();
     let mut owner = String::new();

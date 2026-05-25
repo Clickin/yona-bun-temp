@@ -2784,6 +2784,9 @@ fn svn_protocol_report_response(
     if request.contains("mergeinfo-report") {
         return svn_protocol_mergeinfo_report_response(repo_path, route, &request);
     }
+    if request.contains("get-deleted-rev-report") {
+        return svn_protocol_get_deleted_rev_report_response(repo_path, route, &request);
+    }
     if request.contains("get-locks-report") {
         return svn_protocol_get_locks_report_response(repo_path, route);
     }
@@ -3093,6 +3096,65 @@ fn svn_protocol_mergeinfo_report_response(
         r#"<?xml version="1.0" encoding="utf-8"?>
 <S:mergeinfo-report xmlns:S="svn:" xmlns:D="DAV:">
 {items}</S:mergeinfo-report>"#
+    );
+    let mut response = (StatusCode::OK, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
+    response
+}
+
+fn svn_protocol_get_deleted_rev_report_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    request: &str,
+) -> Response {
+    let Some(requested_path) = svn_protocol_xml_text(request, "path") else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    let Some(peg_revision) = svn_protocol_xml_i64(request, "peg-revision") else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    let end_revision = match svn_protocol_xml_i64(request, "end-revision") {
+        Some(revision) => revision,
+        None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
+            Ok(revision) => revision,
+            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "REPORT")
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        },
+    };
+    let base_path = svn_protocol_file_lookup(&route.svn_path)
+        .map(|(_, path)| path)
+        .unwrap_or_default();
+    let path = join_svn_report_path(&base_path, &requested_path);
+    let deleted_revision =
+        match yona_rust_vcs::svn_deleted_revision(repo_path, &path, peg_revision, end_revision) {
+            Ok(revision) => revision,
+            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::InvalidPath) => {
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+            }
+            Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "REPORT")
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        };
+    let version_name = deleted_revision
+        .map(|revision| format!("  <D:version-name>{revision}</D:version-name>\n"))
+        .unwrap_or_default();
+    let body = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<S:get-deleted-rev-report xmlns:S="svn:" xmlns:D="DAV:">
+{version_name}</S:get-deleted-rev-report>"#
     );
     let mut response = (StatusCode::OK, body).into_response();
     add_svn_dav_headers(&mut response);
