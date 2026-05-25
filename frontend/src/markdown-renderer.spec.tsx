@@ -776,4 +776,13 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<p>after</p>");
     expect(html).not.toContain("<p>before<br/><br/>---");
   });
+
+  it("splits blank-line paragraphs inside blockquotes like legacy marked", () => {
+    const html = renderToStaticMarkup(<MarkdownRenderer markdown={"> first\n>\n> second"} />);
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain("<p>first</p>");
+    expect(html).toContain("<p>second</p>");
+    expect(html).not.toContain("<p>first<br/><br/>second</p>");
+  });
 });

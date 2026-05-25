@@ -818,6 +818,10 @@ function markdownLinesContainSetextHeading(lines: MarkdownLineRecord[]): boolean
   );
 }
 
+function markdownLinesContainBlankLine(lines: MarkdownLineRecord[]): boolean {
+  return lines.some((line) => line.text.trim() === "");
+}
+
 function MarkdownBlockSequence(props: {
   context?: MarkdownContext;
   lines: MarkdownLineRecord[];
@@ -1114,6 +1118,7 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
     const hasNestedBlocks =
       normalizedBlockquote.some((line) => markdownLineStartsBlock(line.text)) ||
       markdownLinesContainSetextHeading(normalizedBlockquote) ||
+      markdownLinesContainBlankLine(normalizedBlockquote) ||
       markdownLinesContainTable(normalizedBlockquote);
     if (hasNestedBlocks) {
       return (
