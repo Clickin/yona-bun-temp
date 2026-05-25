@@ -537,7 +537,13 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         text.contains("/svn/owner/projectYobi/trunk/")
             && text.contains("<D:resourcetype><D:collection/></D:resourcetype>")
             && text.contains("/svn/owner/projectYobi/trunk/README.md")
-            && text.contains("<D:resourcetype/>"),
+            && text.contains("<D:resourcetype/>")
+            && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
+            && text.contains(&format!(
+                "<D:href>/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md</D:href>"
+            ))
+            && text
+                .contains("<S:baseline-relative-path>trunk/README.md</S:baseline-relative-path>"),
         "SVN collection PROPFIND should return directory and child metadata: {text}"
     );
 

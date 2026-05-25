@@ -2543,12 +2543,32 @@ fn svn_protocol_tree_propfind_response(
             return Some(RestRouteError::from_connect_error(internal_error(error)).into_response())
         }
     };
-    Some(svn_protocol_propfind_tree_response(route, &tree))
+    let version_revision = match revision {
+        Some(revision) => Some(revision),
+        None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
+            Ok(revision) => Some(revision),
+            Err(VcsError::NotFound) => {
+                return Some(svn_protocol_status_response(StatusCode::NOT_FOUND))
+            }
+            Err(VcsError::SvnLookUnavailable) => None,
+            Err(error) => {
+                return Some(
+                    RestRouteError::from_connect_error(internal_error(error)).into_response(),
+                )
+            }
+        },
+    };
+    Some(svn_protocol_propfind_tree_response(
+        route,
+        &tree,
+        version_revision,
+    ))
 }
 
 fn svn_protocol_propfind_tree_response(
     route: &SvnProtocolRoute,
     tree: &yona_rust_vcs::SvnTree,
+    version_revision: Option<i64>,
 ) -> Response {
     let mut responses = String::new();
     let collection_href = svn_protocol_href(route, &tree.path, true);
@@ -2558,14 +2578,27 @@ fn svn_protocol_propfind_tree_response(
         if entry.is_dir {
             responses.push_str(&svn_protocol_propfind_collection_item(&href));
         } else {
+            let version_href = version_revision.map(|revision| {
+                format!(
+                    "/svn/{}/{}/!svn/ver/{}/{}",
+                    route.owner_name,
+                    route.project_name,
+                    revision,
+                    entry.path.trim_matches('/')
+                )
+            });
             responses.push_str(&svn_protocol_propfind_file_item(
-                &href, None, None, None, None,
+                &href,
+                None,
+                version_revision,
+                version_href.as_deref(),
+                Some(&entry.path),
             ));
         }
     }
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
-<D:multistatus xmlns:D="DAV:">
+<D:multistatus xmlns:D="DAV:" xmlns:S="svn:">
 {responses}</D:multistatus>"#
     );
     let mut response = (StatusCode::MULTI_STATUS, body).into_response();
