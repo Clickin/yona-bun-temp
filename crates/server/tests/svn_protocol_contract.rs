@@ -4,6 +4,7 @@ use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::{ConnectionTrait, Database, DatabaseConnection};
 use serde_json::json;
+use std::process::Command;
 use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tower::ServiceExt;
@@ -16,6 +17,17 @@ mod rest_test_support;
 fn yona_data_env_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))
+}
+
+fn svn_tools_available() -> bool {
+    Command::new("svnadmin")
+        .arg("--version")
+        .output()
+        .is_ok_and(|output| output.status.success())
+        && Command::new("svnlook")
+            .arg("--version")
+            .output()
+            .is_ok_and(|output| output.status.success())
 }
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
@@ -124,7 +136,7 @@ async fn mark_project_as_svn(
     repository: &AppRepository,
     db: &DatabaseConnection,
     data_root: &std::path::Path,
-) -> i64 {
+) -> (i64, Option<i64>) {
     let project = repository
         .read_project_by_owner_and_name("owner", "projectYobi")
         .await
@@ -136,9 +148,15 @@ async fn mark_project_as_svn(
     ))
     .await
     .expect("mark project as svn");
-    std::fs::create_dir_all(yona_rust_vcs::svn_repository_path(data_root, project.id))
-        .expect("seed svn storage");
-    project.id
+    let repo_path = yona_rust_vcs::svn_repository_path(data_root, project.id);
+    let youngest_revision = if svn_tools_available() {
+        yona_rust_vcs::create_svn_repository(&repo_path).expect("seed executable svn storage");
+        Some(yona_rust_vcs::svn_youngest_revision(&repo_path).expect("read youngest revision"))
+    } else {
+        std::fs::create_dir_all(&repo_path).expect("seed svn storage");
+        None
+    };
+    (project.id, youngest_revision)
 }
 
 async fn direct_request(
@@ -175,7 +193,8 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     let (app, repository, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
-    let project_id = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let (project_id, youngest_revision) =
+        mark_project_as_svn(&repository, &db, data_dir.path()).await;
 
     let response = direct_request(
         app.clone(),
@@ -209,6 +228,12 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
         text.contains("<D:multistatus") && text.contains("<D:collection/>"),
         "SVN root PROPFIND should return a WebDAV collection multistatus: {text}"
     );
+    if let Some(revision) = youngest_revision {
+        assert!(
+            text.contains(&format!("<D:version-name>{revision}</D:version-name>")),
+            "SVN root PROPFIND should include executable-backed youngest revision metadata: {text}"
+        );
+    }
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
     let response = direct_request(
@@ -226,6 +251,12 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             && text.contains("<D:collection/>"),
         "SVN default VCC PROPFIND should return a WebDAV collection multistatus: {text}"
     );
+    if let Some(revision) = youngest_revision {
+        assert!(
+            text.contains(&format!("<D:version-name>{revision}</D:version-name>")),
+            "SVN default VCC PROPFIND should include executable-backed youngest revision metadata: {text}"
+        );
+    }
 
     let response =
         direct_request(app.clone(), Method::OPTIONS, "/svn/owner/projectYobi", None).await;

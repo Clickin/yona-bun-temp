@@ -3,11 +3,18 @@ use std::process::Command;
 use tempfile::tempdir;
 use yona_rust_vcs::{
     create_svn_repository, delete_repository, ensure_svnadmin_available, repository_path,
-    repository_path_for_vcs, svn_repository_path, VcsError,
+    repository_path_for_vcs, svn_repository_path, svn_youngest_revision, VcsError,
 };
 
 fn svnadmin_available() -> bool {
     Command::new("svnadmin")
+        .arg("--version")
+        .output()
+        .is_ok_and(|output| output.status.success())
+}
+
+fn svnlook_available() -> bool {
+    Command::new("svnlook")
         .arg("--version")
         .output()
         .is_ok_and(|output| output.status.success())
@@ -67,4 +74,21 @@ fn create_svn_repository_uses_svnadmin_when_available() {
 
     assert!(repo_path.join("format").exists());
     assert!(repo_path.join("db").is_dir());
+}
+
+#[test]
+fn svn_youngest_revision_uses_svnlook_when_available() {
+    if !svnadmin_available() || !svnlook_available() {
+        return;
+    }
+
+    let data_root = tempdir().expect("tempdir");
+    let repo_path = svn_repository_path(data_root.path(), 12);
+
+    create_svn_repository(&repo_path).expect("create svn repository");
+
+    assert_eq!(
+        svn_youngest_revision(&repo_path).expect("read youngest revision"),
+        0
+    );
 }

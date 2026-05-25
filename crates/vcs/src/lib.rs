@@ -227,6 +227,8 @@ pub enum VcsError {
     GitUnavailable,
     #[error("svnadmin executable is unavailable")]
     SvnAdminUnavailable,
+    #[error("svnlook executable is unavailable")]
+    SvnLookUnavailable,
     #[error("git command timed out")]
     GitTimedOut,
     #[error("invalid repository path")]
@@ -243,6 +245,8 @@ pub enum VcsError {
     GitFailed(String),
     #[error("svnadmin command failed: {0}")]
     SvnAdminFailed(String),
+    #[error("svnlook command failed: {0}")]
+    SvnLookFailed(String),
 }
 
 pub fn repository_path(data_root: &Path, project_id: i64) -> PathBuf {
@@ -325,6 +329,28 @@ pub fn create_svn_repository(repo_path: &Path) -> Result<(), VcsError> {
             String::from_utf8_lossy(&output.stderr).trim().to_string(),
         ))
     }
+}
+
+pub fn svn_youngest_revision(repo_path: &Path) -> Result<i64, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+
+    let output = Command::new("svnlook")
+        .args(["youngest"])
+        .arg(repo_path)
+        .output()
+        .map_err(|_| VcsError::SvnLookUnavailable)?;
+    if !output.status.success() {
+        return Err(VcsError::SvnLookFailed(
+            String::from_utf8_lossy(&output.stderr).trim().to_string(),
+        ));
+    }
+
+    let revision = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    revision
+        .parse::<i64>()
+        .map_err(|_| VcsError::SvnLookFailed(format!("invalid youngest revision: {revision}")))
 }
 
 pub fn clone_bare_repository(source_repo_path: &Path, repo_path: &Path) -> Result<(), VcsError> {

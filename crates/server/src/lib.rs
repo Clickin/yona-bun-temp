@@ -2133,10 +2133,12 @@ async fn direct_svn_protocol_request(
         return svn_protocol_options_response();
     }
     if method == "PROPFIND" && route.svn_path.is_empty() {
-        return svn_protocol_root_propfind_response(&route);
+        let youngest_revision = yona_rust_vcs::svn_youngest_revision(&repo_path).ok();
+        return svn_protocol_root_propfind_response(&route, youngest_revision);
     }
     if method == "PROPFIND" && route.svn_path == "!svn/vcc/default" {
-        return svn_protocol_collection_propfind_response(&route);
+        let youngest_revision = yona_rust_vcs::svn_youngest_revision(&repo_path).ok();
+        return svn_protocol_collection_propfind_response(&route, youngest_revision);
     }
     svn_protocol_not_implemented_response(&route, &method)
 }
@@ -2155,20 +2157,32 @@ fn svn_protocol_options_response() -> Response {
     response
 }
 
-fn svn_protocol_root_propfind_response(route: &SvnProtocolRoute) -> Response {
+fn svn_protocol_root_propfind_response(
+    route: &SvnProtocolRoute,
+    youngest_revision: Option<i64>,
+) -> Response {
     let href = format!("/svn/{}/{}/", route.owner_name, route.project_name);
-    svn_protocol_propfind_collection_response(&href)
+    svn_protocol_propfind_collection_response(&href, youngest_revision)
 }
 
-fn svn_protocol_collection_propfind_response(route: &SvnProtocolRoute) -> Response {
+fn svn_protocol_collection_propfind_response(
+    route: &SvnProtocolRoute,
+    youngest_revision: Option<i64>,
+) -> Response {
     let href = format!(
         "/svn/{}/{}/{}",
         route.owner_name, route.project_name, route.svn_path
     );
-    svn_protocol_propfind_collection_response(&href)
+    svn_protocol_propfind_collection_response(&href, youngest_revision)
 }
 
-fn svn_protocol_propfind_collection_response(href: &str) -> Response {
+fn svn_protocol_propfind_collection_response(
+    href: &str,
+    youngest_revision: Option<i64>,
+) -> Response {
+    let version_name = youngest_revision
+        .map(|revision| format!("        <D:version-name>{revision}</D:version-name>\n"))
+        .unwrap_or_default();
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
 <D:multistatus xmlns:D="DAV:">
@@ -2177,6 +2191,7 @@ fn svn_protocol_propfind_collection_response(href: &str) -> Response {
     <D:propstat>
       <D:prop>
         <D:resourcetype><D:collection/></D:resourcetype>
+{version_name}
       </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
@@ -28574,6 +28589,8 @@ fn code_browser_error(error: VcsError) -> ConnectError {
         VcsError::GitTimedOut
         | VcsError::GitFailed(_)
         | VcsError::SvnAdminFailed(_)
+        | VcsError::SvnLookFailed(_)
+        | VcsError::SvnLookUnavailable
         | VcsError::FilesystemFailed(_) => internal_error(error),
     }
 }
@@ -28591,6 +28608,8 @@ fn code_branch_error(error: VcsError) -> ConnectError {
         VcsError::GitTimedOut
         | VcsError::GitFailed(_)
         | VcsError::SvnAdminFailed(_)
+        | VcsError::SvnLookFailed(_)
+        | VcsError::SvnLookUnavailable
         | VcsError::FilesystemFailed(_) => internal_error(error),
     }
 }
