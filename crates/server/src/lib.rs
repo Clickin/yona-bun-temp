@@ -2129,6 +2129,9 @@ async fn direct_svn_protocol_request(
     if method == "OPTIONS" {
         return svn_protocol_options_response();
     }
+    if method == "PROPFIND" && route.svn_path.is_empty() {
+        return svn_protocol_root_propfind_response(&route);
+    }
     svn_protocol_not_implemented_response(&route, &method)
 }
 
@@ -2144,6 +2147,43 @@ fn svn_protocol_options_response() -> Response {
         ),
     );
     response
+}
+
+fn svn_protocol_root_propfind_response(route: &SvnProtocolRoute) -> Response {
+    let href = format!("/svn/{}/{}/", route.owner_name, route.project_name);
+    let body = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<D:multistatus xmlns:D="DAV:">
+  <D:response>
+    <D:href>{}</D:href>
+    <D:propstat>
+      <D:prop>
+        <D:resourcetype><D:collection/></D:resourcetype>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+</D:multistatus>"#,
+        xml_escape(&href)
+    );
+    let mut response = (StatusCode::MULTI_STATUS, body).into_response();
+    response
+        .headers_mut()
+        .insert("dav", HeaderValue::from_static("1,2"));
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
+    response
+}
+
+fn xml_escape(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
 }
 
 fn svn_protocol_not_implemented_response(route: &SvnProtocolRoute, method: &str) -> Response {

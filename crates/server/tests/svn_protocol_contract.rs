@@ -194,6 +194,23 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     );
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request(app.clone(), propfind, "/svn/owner/projectYobi", None).await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:multistatus") && text.contains("<D:collection/>"),
+        "SVN root PROPFIND should return a WebDAV collection multistatus: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
     let response = direct_request(
         app.clone(),
         propfind,
