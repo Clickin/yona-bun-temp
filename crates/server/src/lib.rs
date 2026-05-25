@@ -2276,7 +2276,7 @@ async fn direct_svn_protocol_request(
     let Some(route) = svn_protocol_route_from_path(request.uri().path(), &base_path) else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    let (parts, _body) = request.into_parts();
+    let (parts, body) = request.into_parts();
     let method = parts.method.as_str().to_ascii_uppercase();
     let permission = if matches!(
         method.as_str(),
@@ -2343,6 +2343,15 @@ async fn direct_svn_protocol_request(
     }
     if method == "GET" || method == "HEAD" {
         return svn_protocol_file_response(&repo_path, &route, method == "HEAD");
+    }
+    if method == "REPORT" {
+        let body_bytes = match body.collect().await {
+            Ok(collected) => collected.to_bytes(),
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
+            }
+        };
+        return svn_protocol_report_response(&repo_path, &route, &body_bytes);
     }
     svn_protocol_not_implemented_response(&route, &method)
 }
@@ -2596,6 +2605,96 @@ fn svn_protocol_status_response(status: StatusCode) -> Response {
     let mut response = status.into_response();
     add_svn_dav_headers(&mut response);
     response
+}
+
+fn svn_protocol_report_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    body: &Bytes,
+) -> Response {
+    let request = String::from_utf8_lossy(body);
+    if request.contains("log-report") {
+        return svn_protocol_log_report_response(repo_path, route, &request);
+    }
+    svn_protocol_not_implemented_response(route, "REPORT")
+}
+
+fn svn_protocol_log_report_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    request: &str,
+) -> Response {
+    let youngest_revision = match yona_rust_vcs::svn_youngest_revision(repo_path) {
+        Ok(revision) => revision,
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "REPORT")
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    let start_revision =
+        svn_protocol_xml_i64(request, "start-revision").unwrap_or(youngest_revision);
+    let end_revision = svn_protocol_xml_i64(request, "end-revision").unwrap_or(start_revision);
+    let limit = svn_protocol_xml_i64(request, "limit")
+        .and_then(|value| usize::try_from(value).ok())
+        .unwrap_or(0);
+    let entries =
+        match yona_rust_vcs::svn_log_entries(repo_path, start_revision, end_revision, limit) {
+            Ok(entries) => entries,
+            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::InvalidPath) => {
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+            }
+            Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "REPORT")
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        };
+    let items = entries
+        .iter()
+        .map(svn_protocol_log_item)
+        .collect::<String>();
+    let body = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<S:log-report xmlns:S="svn:" xmlns:D="DAV:">
+{items}</S:log-report>"#
+    );
+    let mut response = (StatusCode::OK, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
+    response
+}
+
+fn svn_protocol_log_item(entry: &yona_rust_vcs::SvnLogEntry) -> String {
+    format!(
+        r#"  <S:log-item>
+    <D:version-name>{}</D:version-name>
+    <S:creator-displayname>{}</S:creator-displayname>
+    <S:date>{}</S:date>
+    <D:comment>{}</D:comment>
+  </S:log-item>
+"#,
+        entry.revision,
+        xml_escape(&entry.author),
+        xml_escape(&entry.date),
+        xml_escape(&entry.message)
+    )
+}
+
+fn svn_protocol_xml_i64(xml: &str, tag: &str) -> Option<i64> {
+    let start = xml
+        .find(&format!("<S:{tag}>"))
+        .or_else(|| xml.find(&format!("<{tag}>")))?;
+    let value_start = xml[start..].find('>')? + start + 1;
+    let end = xml[value_start..].find('<')? + value_start;
+    xml[value_start..end].trim().parse::<i64>().ok()
 }
 
 fn svn_protocol_file_lookup(svn_path: &str) -> Option<(Option<i64>, String)> {

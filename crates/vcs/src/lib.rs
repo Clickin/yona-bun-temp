@@ -233,6 +233,14 @@ pub struct SvnTree {
     pub entries: Vec<SvnTreeEntry>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SvnLogEntry {
+    pub revision: i64,
+    pub author: String,
+    pub date: String,
+    pub message: String,
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum VcsError {
     #[error("git executable is unavailable")]
@@ -471,6 +479,60 @@ pub fn svn_list_tree(
         path: base,
         entries,
     })
+}
+
+pub fn svn_log_entries(
+    repo_path: &Path,
+    start_revision: i64,
+    end_revision: i64,
+    limit: usize,
+) -> Result<Vec<SvnLogEntry>, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    if start_revision < 0 || end_revision < 0 {
+        return Err(VcsError::InvalidPath);
+    }
+    let mut revisions = if start_revision >= end_revision {
+        (end_revision..=start_revision).rev().collect::<Vec<_>>()
+    } else {
+        (start_revision..=end_revision).collect::<Vec<_>>()
+    };
+    if limit > 0 && revisions.len() > limit {
+        revisions.truncate(limit);
+    }
+
+    revisions
+        .into_iter()
+        .map(|revision| {
+            Ok(SvnLogEntry {
+                revision,
+                author: svnlook_text(repo_path, revision, "author")?,
+                date: svnlook_text(repo_path, revision, "date")?,
+                message: svnlook_text(repo_path, revision, "log")?,
+            })
+        })
+        .collect()
+}
+
+fn svnlook_text(repo_path: &Path, revision: i64, subcommand: &str) -> Result<String, VcsError> {
+    let output = Command::new("svnlook")
+        .arg(subcommand)
+        .args(["-r", &revision.to_string()])
+        .arg(repo_path)
+        .output()
+        .map_err(|_| VcsError::SvnLookUnavailable)?;
+    if output.status.success() {
+        return Ok(String::from_utf8_lossy(&output.stdout)
+            .trim_end_matches(['\r', '\n'])
+            .to_string());
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+    if stderr.to_ascii_lowercase().contains("no such revision") {
+        return Err(VcsError::NotFound);
+    }
+    Err(VcsError::SvnLookFailed(stderr))
 }
 
 pub fn clone_bare_repository(source_repo_path: &Path, repo_path: &Path) -> Result<(), VcsError> {

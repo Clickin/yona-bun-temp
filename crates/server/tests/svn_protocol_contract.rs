@@ -198,15 +198,23 @@ async fn direct_request(
     path: &str,
     authorization: Option<&str>,
 ) -> Response<Body> {
+    direct_request_with_body(app, method, path, authorization, Body::empty()).await
+}
+
+async fn direct_request_with_body(
+    app: axum::Router,
+    method: Method,
+    path: &str,
+    authorization: Option<&str>,
+    body: Body,
+) -> Response<Body> {
     let mut builder = Request::builder()
         .method(method)
         .uri(format!("/yona{path}"));
     if let Some(authorization) = authorization {
         builder = builder.header(http::header::AUTHORIZATION, authorization);
     }
-    app.oneshot(builder.body(Body::empty()).unwrap())
-        .await
-        .unwrap()
+    app.oneshot(builder.body(body).unwrap()).await.unwrap()
 }
 
 fn basic(login_id: &str, password: &str) -> String {
@@ -476,6 +484,39 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && text.contains("/svn/owner/projectYobi/trunk/README.md")
             && text.contains("<D:resourcetype/>"),
         "SVN collection PROPFIND should return directory and child metadata: {text}"
+    );
+
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        &format!("/svn/owner/projectYobi/!svn/bc/{revision}/trunk"),
+        None,
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:log-report xmlns:S="svn:" xmlns:D="DAV:">
+  <S:start-revision>{revision}</S:start-revision>
+  <S:end-revision>{revision}</S:end-revision>
+  <S:path></S:path>
+</S:log-report>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<S:log-report")
+            && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
+            && text.contains("<D:comment>seed svn readme</D:comment>"),
+        "SVN log REPORT should return executable-backed revision metadata: {text}"
     );
 
     let response = direct_request(
