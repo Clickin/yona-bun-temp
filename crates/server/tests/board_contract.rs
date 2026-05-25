@@ -223,6 +223,22 @@ async fn create_label(app: axum::Router, cookie: &str, csrf: &str) -> String {
     payload["label"]["id"].as_str().unwrap().to_string()
 }
 
+fn mention_targets(payload: &serde_json::Value) -> Vec<(String, String, String, String)> {
+    payload["mentionReferences"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| {
+            (
+                item["kind"].as_str().unwrap().to_string(),
+                item["loginId"].as_str().unwrap_or_default().to_string(),
+                item["ownerName"].as_str().unwrap_or_default().to_string(),
+                item["projectName"].as_str().unwrap_or_default().to_string(),
+            )
+        })
+        .collect()
+}
+
 #[tokio::test]
 async fn board_readme_posting_commits_git_readme_file() {
     let _guard = yona_data_env_lock()
@@ -570,7 +586,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
             Some(&owner_csrf),
             Some(json!({
                 "title": "Project README",
-                "bodyMarkdown": "# README\n@guest should see this board notification #1 owner/projectYobi#1",
+                "bodyMarkdown": "# README\n@guest should link, @nforge @nforge/yobi should not #1 owner/projectYobi#1",
                 "labelIds": [label_id],
                 "readme": true
             })),
@@ -584,7 +600,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     assert_eq!(readme["bodyHtml"], "");
     assert_eq!(
         readme["bodyMarkdown"],
-        "# README\n@guest should see this board notification #1 owner/projectYobi#1"
+        "# README\n@guest should link, @nforge @nforge/yobi should not #1 owner/projectYobi#1"
     );
 
     let notice = ok_json(
@@ -646,7 +662,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     assert_eq!(list["readme"]["postNumber"], "1");
     assert_eq!(
         list["readme"]["bodyMarkdown"],
-        "# README\n@guest should see this board notification #1 owner/projectYobi#1"
+        "# README\n@guest should link, @nforge @nforge/yobi should not #1 owner/projectYobi#1"
     );
 
     let detail = ok_json(
@@ -670,6 +686,16 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     assert_eq!(detail["permissions"]["canSetNotice"], true);
     assert_eq!(detail["permissions"]["canWatch"], true);
     assert_eq!(detail["watcherCount"], 1);
+    let detail_mentions = mention_targets(&detail);
+    assert!(detail_mentions.contains(&(
+        "user".to_string(),
+        "guest".to_string(),
+        String::new(),
+        String::new()
+    )));
+    assert!(!detail_mentions.iter().any(|(_, login_id, owner_name, project_name)| {
+        login_id == "nforge" || owner_name == "nforge" || project_name == "yobi"
+    }));
 
     let commented = ok_json(
         rest(
@@ -679,7 +705,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
             Some(&owner_cookie),
             Some(&owner_csrf),
             Some(json!({
-                "contentsMarkdown": "First **comment** #1"
+                "contentsMarkdown": "First **comment** @owner/projectYobi @nforge #1"
             })),
         )
         .await,
@@ -690,8 +716,18 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     assert_eq!(commented["comments"][0]["contentsHtml"], "");
     assert_eq!(
         commented["comments"][0]["contentsMarkdown"],
-        "First **comment** #1"
+        "First **comment** @owner/projectYobi @nforge #1"
     );
+    let comment_mentions = mention_targets(&commented["comments"][0]);
+    assert!(comment_mentions.contains(&(
+        "project".to_string(),
+        String::new(),
+        "owner".to_string(),
+        "projectYobi".to_string()
+    )));
+    assert!(!comment_mentions
+        .iter()
+        .any(|(_, login_id, _, _)| login_id == "nforge"));
 
     let comment_id = commented["comments"][0]["id"].as_str().unwrap();
     original_email::ActiveModel {
@@ -834,7 +870,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     assert_eq!(updated["bodyMarkdown"], "Updated body");
     assert_eq!(
         updated["historyMarkdown"],
-        "# README\n@guest should see this board notification #1 owner/projectYobi#1"
+        "# README\n@guest should link, @nforge @nforge/yobi should not #1 owner/projectYobi#1"
     );
     assert_eq!(updated["historyHtml"].as_str().unwrap_or(""), "");
 
@@ -953,7 +989,7 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
     assert_eq!(notifications["items"][0]["eventType"], "NEW_POSTING");
     assert_eq!(
         notifications["items"][0]["message"],
-        "# README\n@guest should see this board notification #1 owner/projectYobi#1"
+        "# README\n@guest should link, @nforge @nforge/yobi should not #1 owner/projectYobi#1"
     );
     assert_eq!(notifications["items"][0]["typeIcon"], "edit2");
     assert_eq!(

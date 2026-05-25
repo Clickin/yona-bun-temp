@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
-import type { IssueReferenceMetadata } from "./issue-meta";
-import { normalizeIssueReferences } from "./issue-meta";
+import type { IssueReferenceMetadata, MentionReferenceMetadata } from "./issue-meta";
+import { normalizeIssueReferences, normalizeMentionReferences } from "./issue-meta";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
 
@@ -31,6 +31,7 @@ export type BoardPostComment = {
   createdLabel: string;
   id: string;
   issueReferences?: IssueReferenceMetadata[];
+  mentionReferences?: MentionReferenceMetadata[];
   parentCommentId: string;
   viaEmail: boolean;
 };
@@ -60,6 +61,7 @@ export type BoardPostDetail = BoardPostListItem & {
   historyMarkdown: string;
   id: string;
   issueReferences?: IssueReferenceMetadata[];
+  mentionReferences?: MentionReferenceMetadata[];
   isWatching: boolean;
   permissions: BoardPostPermissions;
   watcherCount: number;
@@ -333,6 +335,7 @@ function normalizePostDetail(response: Partial<BoardPostDetail>): BoardPostDetai
       createdLabel: comment.createdLabel ?? "",
       id: comment.id ?? "",
       issueReferences: normalizeIssueReferences(comment.issueReferences),
+      mentionReferences: normalizeMentionReferences(comment.mentionReferences),
       parentCommentId: comment.parentCommentId ?? "",
       viaEmail: comment.viaEmail ?? false,
     })),
@@ -340,6 +343,7 @@ function normalizePostDetail(response: Partial<BoardPostDetail>): BoardPostDetai
     historyMarkdown: response.historyMarkdown ?? "",
     id: response.id ?? "",
     issueReferences: normalizeIssueReferences(response.issueReferences),
+    mentionReferences: normalizeMentionReferences(response.mentionReferences),
     isWatching: response.isWatching ?? false,
     permissions: normalizePermissions(response),
     watcherCount: response.watcherCount ?? 0,

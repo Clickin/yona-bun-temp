@@ -54,6 +54,7 @@ function PostingHistoryModal(props: {
   historyMarkdown?: string;
   issueReferences?: BoardPostDetail["issueReferences"];
   linkLabel: string;
+  mentionReferences?: BoardPostDetail["mentionReferences"];
   ownerName?: string;
   basePath?: string;
   projectName?: string;
@@ -80,6 +81,7 @@ function PostingHistoryModal(props: {
           basePath={props.basePath}
           issueReferences={props.issueReferences}
           markdown={historyMarkdown}
+          mentionReferences={props.mentionReferences}
           ownerName={props.ownerName}
           projectName={props.projectName}
         />
@@ -526,6 +528,7 @@ export function ProjectBoardDetailPage(props: {
             basePath={props.runtimeConfig.basePath}
             issueReferences={post.issueReferences}
             linkLabel="change.history"
+            mentionReferences={post.mentionReferences}
             ownerName={post.ownerName}
             projectName={post.projectName}
           />
@@ -535,6 +538,7 @@ export function ProjectBoardDetailPage(props: {
           basePath={props.runtimeConfig.basePath}
           issueReferences={post.issueReferences}
           markdown={post.bodyMarkdown}
+          mentionReferences={post.mentionReferences}
           ownerName={post.ownerName}
           projectName={post.projectName}
           showTasklistBar
@@ -621,6 +625,7 @@ export function ProjectBoardDetailPage(props: {
                     data-via-email={comment.viaEmail ? "true" : undefined}
                     issueReferences={comment.issueReferences}
                     markdown={comment.contentsMarkdown}
+                    mentionReferences={comment.mentionReferences}
                     ownerName={post.ownerName}
                     projectName={post.projectName}
                     showTasklistBar

@@ -6855,6 +6855,7 @@ struct RestPostComment {
     created_label: String,
     id: String,
     issue_references: Vec<RestIssueReferenceMetadata>,
+    mention_references: Vec<RestMentionReferenceMetadata>,
     parent_comment_id: String,
     via_email: bool,
 }
@@ -6892,6 +6893,7 @@ struct RestPostDetailResponse {
     history_markdown: String,
     id: String,
     issue_references: Vec<RestIssueReferenceMetadata>,
+    mention_references: Vec<RestMentionReferenceMetadata>,
     is_watching: bool,
     labels: Vec<RestBoardLabel>,
     notice: bool,
@@ -23036,6 +23038,16 @@ struct RestIssueReferenceMetadata {
     title: String,
 }
 
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestMentionReferenceMetadata {
+    kind: String,
+    login_id: String,
+    owner_name: String,
+    project_name: String,
+    label: String,
+}
+
 fn issue_reference_metadata_from_resolved(
     reference: &MarkdownIssueReference,
 ) -> IssueReferenceMetadata {
@@ -23071,6 +23083,18 @@ fn rest_issue_reference_metadata_from_resolved(
         issue_number: reference.issue_number,
         state: reference.state.clone(),
         title: reference.title.clone(),
+    }
+}
+
+fn rest_mention_reference_metadata_from_resolved(
+    reference: &MarkdownMentionReference,
+) -> RestMentionReferenceMetadata {
+    RestMentionReferenceMetadata {
+        kind: reference.kind.clone(),
+        login_id: reference.login_id.clone(),
+        owner_name: reference.owner_name.clone(),
+        project_name: reference.project_name.clone(),
+        label: reference.label.clone(),
     }
 }
 
@@ -24320,6 +24344,7 @@ fn rest_post_comment_from_record(
     _owner_name: &str,
     _project_name: &str,
     issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
 ) -> RestPostComment {
     RestPostComment {
         attachments: comment
@@ -24337,6 +24362,10 @@ fn rest_post_comment_from_record(
         issue_references: issue_references
             .iter()
             .map(rest_issue_reference_metadata_from_resolved)
+            .collect(),
+        mention_references: mention_references
+            .iter()
+            .map(rest_mention_reference_metadata_from_resolved)
             .collect(),
         parent_comment_id: optional_i64_string(comment.parent_comment_id),
         via_email: comment.via_email,
@@ -24398,7 +24427,8 @@ async fn rest_post_detail_response_from_record_with_repository_issue_references(
     let issue_references =
         markdown_issue_references_for_project(repository, &authorization, actor_id, &markdowns)
             .await?;
-    Ok(rest_post_detail_response_from_record_with_issue_references(
+    let mention_references = markdown_mention_references(repository, &markdowns).await?;
+    Ok(rest_post_detail_response_from_record_with_references(
         posting,
         base_path,
         viewer_can_create,
@@ -24408,10 +24438,11 @@ async fn rest_post_detail_response_from_record_with_repository_issue_references(
         viewer_can_set_notice,
         viewer_can_watch,
         &issue_references,
+        &mention_references,
     ))
 }
 
-fn rest_post_detail_response_from_record_with_issue_references(
+fn rest_post_detail_response_from_record_with_references(
     posting: &persistence::PostingRecord,
     base_path: &str,
     viewer_can_create: bool,
@@ -24421,6 +24452,7 @@ fn rest_post_detail_response_from_record_with_issue_references(
     viewer_can_set_notice: bool,
     viewer_can_watch: bool,
     issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
 ) -> RestPostDetailResponse {
     RestPostDetailResponse {
         attachments: posting
@@ -24444,6 +24476,7 @@ fn rest_post_detail_response_from_record_with_issue_references(
                     &posting.owner_name,
                     &posting.project_name,
                     issue_references,
+                    mention_references,
                 )
             })
             .collect(),
@@ -24454,6 +24487,10 @@ fn rest_post_detail_response_from_record_with_issue_references(
         issue_references: issue_references
             .iter()
             .map(rest_issue_reference_metadata_from_resolved)
+            .collect(),
+        mention_references: mention_references
+            .iter()
+            .map(rest_mention_reference_metadata_from_resolved)
             .collect(),
         is_watching: posting.is_watching,
         labels: posting
