@@ -2341,6 +2341,9 @@ async fn direct_svn_protocol_request(
             repository_uuid,
         );
     }
+    if method == "PROPFIND" && route.svn_path.starts_with("!svn/bln/") {
+        return svn_protocol_baseline_propfind_response(&repo_path, &route);
+    }
     if method == "PROPFIND" {
         if let Some(response) = svn_protocol_tree_propfind_response(&repo_path, &route) {
             return response;
@@ -2450,7 +2453,18 @@ fn svn_protocol_root_propfind_response(
     repository_uuid: Option<String>,
 ) -> Response {
     let href = format!("/svn/{}/{}/", route.owner_name, route.project_name);
-    svn_protocol_propfind_collection_response(&href, youngest_revision, repository_uuid)
+    let checked_in_href = youngest_revision.map(|revision| {
+        format!(
+            "/svn/{}/{}/!svn/bln/{revision}",
+            route.owner_name, route.project_name
+        )
+    });
+    svn_protocol_propfind_collection_response(
+        &href,
+        youngest_revision,
+        repository_uuid,
+        checked_in_href.as_deref(),
+    )
 }
 
 fn svn_protocol_collection_propfind_response(
@@ -2462,13 +2476,29 @@ fn svn_protocol_collection_propfind_response(
         "/svn/{}/{}/{}",
         route.owner_name, route.project_name, route.svn_path
     );
-    svn_protocol_propfind_collection_response(&href, youngest_revision, repository_uuid)
+    let checked_in_href = if route.svn_path == "!svn/vcc/default" {
+        youngest_revision.map(|revision| {
+            format!(
+                "/svn/{}/{}/!svn/bln/{revision}",
+                route.owner_name, route.project_name
+            )
+        })
+    } else {
+        None
+    };
+    svn_protocol_propfind_collection_response(
+        &href,
+        youngest_revision,
+        repository_uuid,
+        checked_in_href.as_deref(),
+    )
 }
 
 fn svn_protocol_propfind_collection_response(
     href: &str,
     youngest_revision: Option<i64>,
     repository_uuid: Option<String>,
+    checked_in_href: Option<&str>,
 ) -> Response {
     let version_name = youngest_revision
         .map(|revision| format!("        <D:version-name>{revision}</D:version-name>\n"))
@@ -2478,6 +2508,14 @@ fn svn_protocol_propfind_collection_response(
             format!(
                 "        <S:repository-uuid>{}</S:repository-uuid>\n",
                 xml_escape(&uuid)
+            )
+        })
+        .unwrap_or_default();
+    let checked_in = checked_in_href
+        .map(|href| {
+            format!(
+                "        <D:checked-in><D:href>{}</D:href></D:checked-in>\n",
+                xml_escape(href)
             )
         })
         .unwrap_or_default();
@@ -2491,12 +2529,74 @@ fn svn_protocol_propfind_collection_response(
         <D:resourcetype><D:collection/></D:resourcetype>
 {version_name}
 {repository_uuid}
+{checked_in}
       </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
   </D:response>
 </D:multistatus>"#,
         xml_escape(href)
+    );
+    let mut response = (StatusCode::MULTI_STATUS, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
+    response
+}
+
+fn svn_protocol_baseline_propfind_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+) -> Response {
+    let Some(revision) = route
+        .svn_path
+        .strip_prefix("!svn/bln/")
+        .and_then(|value| value.trim_matches('/').parse::<i64>().ok())
+    else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    if revision < 0 {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    }
+    match yona_rust_vcs::svn_youngest_revision(repo_path) {
+        Ok(youngest) if revision <= youngest => {}
+        Ok(_) | Err(VcsError::NotFound) => {
+            return svn_protocol_status_response(StatusCode::NOT_FOUND)
+        }
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "PROPFIND")
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    }
+    let href = format!(
+        "/svn/{}/{}/!svn/bln/{revision}",
+        route.owner_name, route.project_name
+    );
+    let baseline_collection = format!(
+        "/svn/{}/{}/!svn/bc/{revision}",
+        route.owner_name, route.project_name
+    );
+    let body = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<D:multistatus xmlns:D="DAV:" xmlns:S="svn:">
+  <D:response>
+    <D:href>{}</D:href>
+    <D:propstat>
+      <D:prop>
+        <D:resourcetype><D:baseline/></D:resourcetype>
+        <D:version-name>{revision}</D:version-name>
+        <D:baseline-collection><D:href>{}</D:href></D:baseline-collection>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+</D:multistatus>"#,
+        xml_escape(&href),
+        xml_escape(&baseline_collection)
     );
     let mut response = (StatusCode::MULTI_STATUS, body).into_response();
     add_svn_dav_headers(&mut response);

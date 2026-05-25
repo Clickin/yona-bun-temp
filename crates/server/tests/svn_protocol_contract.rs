@@ -403,11 +403,44 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             text.contains(&format!("<D:version-name>{revision}</D:version-name>")),
             "SVN default VCC PROPFIND should include executable-backed youngest revision metadata: {text}"
         );
+        assert!(
+            text.contains(&format!(
+                "<D:checked-in><D:href>/svn/owner/projectYobi/!svn/bln/{revision}</D:href></D:checked-in>"
+            )),
+            "SVN default VCC PROPFIND should expose the latest baseline resource for ra_serf discovery: {text}"
+        );
         let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
         let uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).expect("read repository uuid");
         assert!(
             text.contains(&format!("<S:repository-uuid>{uuid}</S:repository-uuid>")),
             "SVN default VCC PROPFIND should include executable-backed repository UUID metadata: {text}"
+        );
+
+        let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+        let response = direct_request(
+            app.clone(),
+            propfind,
+            &format!("/svn/owner/projectYobi/!svn/bln/{revision}"),
+            None,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+        assert_eq!(
+            response
+                .headers()
+                .get("dav")
+                .and_then(|value| value.to_str().ok()),
+            Some("1,2")
+        );
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let text = String::from_utf8(body.to_vec()).unwrap();
+        assert!(
+            text.contains("<D:resourcetype><D:baseline/></D:resourcetype>")
+                && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
+                && text.contains(&format!(
+                    "<D:baseline-collection><D:href>/svn/owner/projectYobi/!svn/bc/{revision}</D:href></D:baseline-collection>"
+                )),
+            "SVN baseline resource PROPFIND should expose baseline collection metadata: {text}"
         );
     }
 
