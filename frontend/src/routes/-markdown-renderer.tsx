@@ -76,6 +76,7 @@ type MarkdownListItem = {
 type MarkdownListRecord = {
   items: MarkdownListItem[];
   ordered: boolean;
+  start?: number;
 };
 
 type MarkdownTaskStats = {
@@ -602,9 +603,9 @@ function parseMarkdownList(lines: MarkdownLineRecord[]): MarkdownListRecord | nu
       unorderedItems.push(parseMarkdownListItem(line.key, unorderedMatch[1] ?? ""));
       continue;
     }
-    const orderedMatch = /^\s*\d+[.)]\s+(.+)$/.exec(line.text);
+    const orderedMatch = /^\s*(\d+)[.)]\s+(.+)$/.exec(line.text);
     if (orderedMatch) {
-      orderedItems.push(parseMarkdownListItem(line.key, orderedMatch[1] ?? ""));
+      orderedItems.push(parseMarkdownListItem(line.key, orderedMatch[2] ?? ""));
       continue;
     }
     return null;
@@ -613,7 +614,9 @@ function parseMarkdownList(lines: MarkdownLineRecord[]): MarkdownListRecord | nu
     return { items: unorderedItems, ordered: false };
   }
   if (orderedItems.length === lines.length) {
-    return { items: orderedItems, ordered: true };
+    const firstOrderedMatch = /^\s*(\d+)[.)]/.exec(lines[0]?.text ?? "");
+    const start = Number.parseInt(firstOrderedMatch?.[1] ?? "1", 10);
+    return { items: orderedItems, ordered: true, start };
   }
   return null;
 }
@@ -820,7 +823,11 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
         <MarkdownInline context={props.context} line={item.text} />
       </li>
     ));
-    return list.ordered ? <ol>{children}</ol> : <ul>{children}</ul>;
+    return list.ordered ? (
+      <ol start={list.start && list.start !== 1 ? list.start : undefined}>{children}</ol>
+    ) : (
+      <ul>{children}</ul>
+    );
   }
   const blockquote = parseMarkdownBlockquote(lines);
   if (blockquote) {

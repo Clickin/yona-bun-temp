@@ -477,6 +477,14 @@ describe("MarkdownRenderer", () => {
     expect(orderedHtml).toContain("<li><code>second</code></li>");
   });
 
+  it("preserves ordered list start numbers like legacy marked", () => {
+    const html = renderToStaticMarkup(<MarkdownRenderer markdown={"3. third\n4. fourth"} />);
+
+    expect(html).toContain('<ol start="3">');
+    expect(html).toContain("<li>third</li>");
+    expect(html).toContain("<li>fourth</li>");
+  });
+
   it("renders task-list checkboxes like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- [ ] open\n- [x] **done**\n- [X] done upper"} />,
