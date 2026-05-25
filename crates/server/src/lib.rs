@@ -2350,6 +2350,15 @@ async fn direct_svn_protocol_request(
     if method == "GET" || method == "HEAD" {
         return svn_protocol_file_response(&repo_path, &route, method == "HEAD");
     }
+    if method == "PUT" {
+        let body_bytes = match body.collect().await {
+            Ok(collected) => collected.to_bytes(),
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
+            }
+        };
+        return svn_protocol_put_response(&repo_path, &route, principal.as_ref(), &body_bytes);
+    }
     if method == "REPORT" {
         let body_bytes = match body.collect().await {
             Ok(collected) => collected.to_bytes(),
@@ -2972,6 +2981,56 @@ fn svn_protocol_get_locks_report_response(
         HeaderValue::from_static("application/xml; charset=utf-8"),
     );
     response
+}
+
+fn svn_protocol_put_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    principal: Option<&persistence::AppUserRecord>,
+    body: &Bytes,
+) -> Response {
+    let Some(actor) = principal else {
+        return smart_http_basic_challenge_response();
+    };
+    let Some((revision, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    if revision.is_some() || path.trim().is_empty() {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    }
+    let existed = match yona_rust_vcs::svn_path_exists(repo_path, None, &path) {
+        Ok(exists) => exists,
+        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "PUT")
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    let message = format!("Update {path} through WebDAV by {}", actor.login_id);
+    match yona_rust_vcs::svn_put_file(repo_path, &path, body, &message) {
+        Ok(revision) => {
+            let status = if existed {
+                StatusCode::NO_CONTENT
+            } else {
+                StatusCode::CREATED
+            };
+            let mut response = status.into_response();
+            add_svn_dav_headers(&mut response);
+            if let Ok(value) = HeaderValue::from_str(&revision.to_string()) {
+                response.headers_mut().insert("svn-revision", value);
+            }
+            response
+        }
+        Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnUnavailable) | Err(VcsError::SvnLookUnavailable) => {
+            svn_protocol_not_implemented_response(route, "PUT")
+        }
+        Err(VcsError::SvnFailed(_)) => svn_protocol_status_response(StatusCode::CONFLICT),
+        Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
+    }
 }
 
 fn svn_protocol_lock_response(
@@ -30844,6 +30903,7 @@ fn code_browser_error(error: VcsError) -> ConnectError {
         VcsError::SvnAdminUnavailable => {
             ConnectError::unimplemented("svnadmin executable is unavailable")
         }
+        VcsError::SvnUnavailable => ConnectError::unimplemented("svn executable is unavailable"),
         VcsError::InvalidBranch | VcsError::InvalidPath | VcsError::InvalidRepositoryPath => {
             ConnectError::invalid_argument(error.to_string())
         }
@@ -30851,6 +30911,7 @@ fn code_browser_error(error: VcsError) -> ConnectError {
         VcsError::GitTimedOut
         | VcsError::GitFailed(_)
         | VcsError::SvnAdminFailed(_)
+        | VcsError::SvnFailed(_)
         | VcsError::SvnLookFailed(_)
         | VcsError::SvnLookUnavailable
         | VcsError::FilesystemFailed(_) => internal_error(error),
@@ -30863,6 +30924,7 @@ fn code_branch_error(error: VcsError) -> ConnectError {
         VcsError::SvnAdminUnavailable => {
             ConnectError::unimplemented("svnadmin executable is unavailable")
         }
+        VcsError::SvnUnavailable => ConnectError::unimplemented("svn executable is unavailable"),
         VcsError::InvalidBranch | VcsError::InvalidPath | VcsError::InvalidRepositoryPath => {
             ConnectError::invalid_argument(error.to_string())
         }
@@ -30870,6 +30932,7 @@ fn code_branch_error(error: VcsError) -> ConnectError {
         VcsError::GitTimedOut
         | VcsError::GitFailed(_)
         | VcsError::SvnAdminFailed(_)
+        | VcsError::SvnFailed(_)
         | VcsError::SvnLookFailed(_)
         | VcsError::SvnLookUnavailable
         | VcsError::FilesystemFailed(_) => internal_error(error),

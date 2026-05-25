@@ -873,6 +873,48 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         Some("1,2")
     );
 
+    let put = Method::from_bytes(b"PUT").expect("PUT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        put,
+        "/svn/owner/projectYobi/trunk/README.md",
+        Some(&owner_basic),
+        Body::from("updated through put\n"),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let put_revision = response
+        .headers()
+        .get("svn-revision")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<i64>().ok())
+        .expect("PUT should return committed SVN revision");
+    assert!(
+        put_revision > revision,
+        "SVN PUT should commit a newer repository revision"
+    );
+
+    let response = direct_request(
+        app.clone(),
+        Method::GET,
+        "/svn/owner/projectYobi/trunk/README.md",
+        None,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(
+        String::from_utf8(body.to_vec()).unwrap(),
+        "updated through put\n"
+    );
+
     let response = direct_request(
         app,
         Method::HEAD,
@@ -886,7 +928,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             .headers()
             .get(http::header::CONTENT_LENGTH)
             .and_then(|value| value.to_str().ok()),
-        Some("15")
+        Some("20")
     );
     let body = response.into_body().collect().await.unwrap().to_bytes();
     assert!(body.is_empty());

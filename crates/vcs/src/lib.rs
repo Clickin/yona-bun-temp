@@ -257,6 +257,8 @@ pub enum VcsError {
     GitUnavailable,
     #[error("svnadmin executable is unavailable")]
     SvnAdminUnavailable,
+    #[error("svn executable is unavailable")]
+    SvnUnavailable,
     #[error("svnlook executable is unavailable")]
     SvnLookUnavailable,
     #[error("git command timed out")]
@@ -275,6 +277,8 @@ pub enum VcsError {
     GitFailed(String),
     #[error("svnadmin command failed: {0}")]
     SvnAdminFailed(String),
+    #[error("svn command failed: {0}")]
+    SvnFailed(String),
     #[error("svnlook command failed: {0}")]
     SvnLookFailed(String),
 }
@@ -669,6 +673,58 @@ pub fn svn_unlock_path(
     Ok(())
 }
 
+pub fn svn_put_file(
+    repo_path: &Path,
+    path: &str,
+    contents: &[u8],
+    message: &str,
+) -> Result<i64, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    let work_dir = svn_temp_work_dir("put")?;
+    let cleanup = WorkDirCleanup {
+        path: work_dir.clone(),
+    };
+    run_svn_command(
+        Command::new("svn")
+            .arg("checkout")
+            .arg(svn_file_url(repo_path))
+            .arg(&work_dir),
+    )?;
+
+    let target_path = work_dir.join(&clean_path);
+    let existed = target_path.exists();
+    if let Some(parent) = target_path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            VcsError::FilesystemFailed(format!("create svn put parent directory: {error}"))
+        })?;
+    }
+    std::fs::write(&target_path, contents)
+        .map_err(|error| VcsError::FilesystemFailed(format!("write svn put file: {error}")))?;
+    if !existed {
+        run_svn_command(
+            Command::new("svn")
+                .arg("add")
+                .arg("--parents")
+                .arg(&target_path),
+        )?;
+    }
+    run_svn_command(
+        Command::new("svn")
+            .arg("commit")
+            .arg("-m")
+            .arg(message)
+            .arg(&target_path),
+    )?;
+    drop(cleanup);
+    svn_youngest_revision(repo_path)
+}
+
 pub fn svn_path_exists(
     repo_path: &Path,
     revision: Option<i64>,
@@ -735,6 +791,45 @@ fn svn_lock_comment_file(label: &str) -> Result<PathBuf, VcsError> {
         "yona-vcs-svn-{label}-{}-{nanos}.txt",
         std::process::id()
     )))
+}
+
+fn svn_temp_work_dir(label: &str) -> Result<PathBuf, VcsError> {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|error| VcsError::FilesystemFailed(format!("read system time: {error}")))?
+        .as_nanos();
+    let path = std::env::temp_dir().join(format!(
+        "yona-vcs-svn-{label}-{}-{nanos}",
+        std::process::id()
+    ));
+    std::fs::create_dir_all(&path)
+        .map_err(|error| VcsError::FilesystemFailed(format!("create svn temp dir: {error}")))?;
+    Ok(path)
+}
+
+fn svn_file_url(path: &Path) -> String {
+    format!("file:///{}", path.display().to_string().replace('\\', "/"))
+}
+
+fn run_svn_command(command: &mut Command) -> Result<(), VcsError> {
+    let output = command.output().map_err(|_| VcsError::SvnUnavailable)?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(VcsError::SvnFailed(
+            String::from_utf8_lossy(&output.stderr).trim().to_string(),
+        ))
+    }
+}
+
+struct WorkDirCleanup {
+    path: PathBuf,
+}
+
+impl Drop for WorkDirCleanup {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.path);
+    }
 }
 
 fn svnlook_text(repo_path: &Path, revision: i64, subcommand: &str) -> Result<String, VcsError> {
