@@ -740,4 +740,20 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<p># Quoted");
     expect(html).not.toContain("<p>- item");
   });
+
+  it("parses setext headings inside blockquotes like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"> Primary\n> ===\n> Secondary\n> ---"} />,
+    );
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain(
+      '<h1 id="primary">Primary<a class="head-anchor" href="#primary">#</a></h1>',
+    );
+    expect(html).toContain(
+      '<h2 id="secondary">Secondary<a class="head-anchor" href="#secondary">#</a></h2>',
+    );
+    expect(html).not.toContain("<p>Primary<br/>===");
+    expect(html).not.toContain("<p>Secondary<br/>---");
+  });
 });

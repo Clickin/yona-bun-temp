@@ -788,8 +788,21 @@ function markdownLineStartsBlock(line: string): boolean {
   return /^ {0,3}#{1,6}(?=\s|$)/.test(line) || /^ {0,3}(?:[*+-]|\d+[.)])\s+/.test(line);
 }
 
+function markdownLineIsSetextUnderline(line: string): boolean {
+  return /^ {0,3}(?:=+|-+)\s*$/.test(line);
+}
+
 function markdownLinesContainTable(lines: MarkdownLineRecord[]): boolean {
   return lines.some((_, index) => Boolean(parseMarkdownTableSpan(lines.slice(index))));
+}
+
+function markdownLinesContainSetextHeading(lines: MarkdownLineRecord[]): boolean {
+  return lines.some(
+    (line, index) =>
+      index > 0 &&
+      (lines[index - 1]?.text.trim() ?? "") !== "" &&
+      markdownLineIsSetextUnderline(line.text),
+  );
 }
 
 function MarkdownBlockSequence(props: {
@@ -809,6 +822,29 @@ function MarkdownBlockSequence(props: {
       index += 1;
       continue;
     }
+    if (/^ {0,3}#{1,6}(?=\s|$)/.test(line.text)) {
+      children.push(
+        <MarkdownBlock
+          block={{ key: `sequence-${line.key}`, text: line.text }}
+          context={props.context}
+          key={`sequence-${line.key}`}
+        />,
+      );
+      index += 1;
+      continue;
+    }
+    const nextLine = props.lines[index + 1];
+    if (nextLine && line.text.trim() !== "" && markdownLineIsSetextUnderline(nextLine.text)) {
+      children.push(
+        <MarkdownBlock
+          block={{ key: `sequence-${line.key}`, text: `${line.text}\n${nextLine.text}` }}
+          context={props.context}
+          key={`sequence-${line.key}`}
+        />,
+      );
+      index += 2;
+      continue;
+    }
     const tableSpan = parseMarkdownTableSpan(props.lines.slice(index));
     if (tableSpan) {
       children.push(
@@ -819,17 +855,6 @@ function MarkdownBlockSequence(props: {
         />,
       );
       index += tableSpan.consumedLineCount;
-      continue;
-    }
-    if (/^ {0,3}#{1,6}(?=\s|$)/.test(line.text)) {
-      children.push(
-        <MarkdownBlock
-          block={{ key: `sequence-${line.key}`, text: line.text }}
-          context={props.context}
-          key={`sequence-${line.key}`}
-        />,
-      );
-      index += 1;
       continue;
     }
     if (/^ {0,3}(?:[*+-]|\d+[.)])\s+/.test(line.text)) {
@@ -1041,6 +1066,7 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
     );
     const hasNestedBlocks =
       normalizedBlockquote.some((line) => markdownLineStartsBlock(line.text)) ||
+      markdownLinesContainSetextHeading(normalizedBlockquote) ||
       markdownLinesContainTable(normalizedBlockquote);
     if (hasNestedBlocks) {
       return (
