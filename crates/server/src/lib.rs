@@ -2778,6 +2778,9 @@ fn svn_protocol_report_response(
     if request.contains("update-report") {
         return svn_protocol_update_report_response(repo_path, route, &request);
     }
+    if request.contains("file-revs-report") {
+        return svn_protocol_file_revs_report_response(repo_path, route, &request);
+    }
     if request.contains("get-locks-report") {
         return svn_protocol_get_locks_report_response(repo_path, route);
     }
@@ -2957,6 +2960,72 @@ fn svn_protocol_update_report_response(
   <S:open-root rev="{target_revision}">
 {entries}  </S:open-root>
 </S:update-report>"#
+    );
+    let mut response = (StatusCode::OK, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
+    response
+}
+
+fn svn_protocol_file_revs_report_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    request: &str,
+) -> Response {
+    let youngest_revision = match yona_rust_vcs::svn_youngest_revision(repo_path) {
+        Ok(revision) => revision,
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "REPORT")
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    let start_revision = svn_protocol_xml_i64(request, "start-revision").unwrap_or(0);
+    let end_revision = svn_protocol_xml_i64(request, "end-revision").unwrap_or(youngest_revision);
+    let requested_path = svn_protocol_xml_text(request, "path").unwrap_or_default();
+    let base_path = svn_protocol_file_lookup(&route.svn_path)
+        .map(|(_, path)| path)
+        .unwrap_or_default();
+    let file_path = join_svn_report_path(&base_path, &requested_path);
+    if file_path.trim().is_empty() {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    }
+    let entries = match yona_rust_vcs::svn_log_entries(repo_path, start_revision, end_revision, 0) {
+        Ok(entries) => entries,
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "REPORT")
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    let mut file_revs = String::new();
+    for entry in entries {
+        match yona_rust_vcs::svn_cat_file(repo_path, Some(entry.revision), &file_path) {
+            Ok(_) => file_revs.push_str(&svn_protocol_file_rev_item(&file_path, &entry)),
+            Err(VcsError::NotFound) => {}
+            Err(VcsError::InvalidPath) => {
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+            }
+            Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "REPORT")
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        }
+    }
+    let body = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<S:file-revs-report xmlns:S="svn:" xmlns:D="DAV:">
+{file_revs}</S:file-revs-report>"#
     );
     let mut response = (StatusCode::OK, body).into_response();
     add_svn_dav_headers(&mut response);
@@ -3386,6 +3455,22 @@ fn svn_protocol_log_item(entry: &yona_rust_vcs::SvnLogEntry) -> String {
     <D:comment>{}</D:comment>
   </S:log-item>
 "#,
+        entry.revision,
+        xml_escape(&entry.author),
+        xml_escape(&entry.date),
+        xml_escape(&entry.message)
+    )
+}
+
+fn svn_protocol_file_rev_item(path: &str, entry: &yona_rust_vcs::SvnLogEntry) -> String {
+    format!(
+        r#"  <S:file-rev path="/{}" rev="{}">
+    <S:rev-prop name="svn:author">{}</S:rev-prop>
+    <S:rev-prop name="svn:date">{}</S:rev-prop>
+    <S:rev-prop name="svn:log">{}</S:rev-prop>
+  </S:file-rev>
+"#,
+        xml_escape(path.trim_matches('/')),
         entry.revision,
         xml_escape(&entry.author),
         xml_escape(&entry.date),

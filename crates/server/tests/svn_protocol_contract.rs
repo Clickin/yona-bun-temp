@@ -803,6 +803,42 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "SVN update-report should expose target revision and versioned file entries: {text}"
     );
 
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:file-revs-report xmlns:S="svn:" xmlns:D="DAV:">
+  <S:start-revision>0</S:start-revision>
+  <S:end-revision>{revision}</S:end-revision>
+  <S:path>trunk/README.md</S:path>
+</S:file-revs-report>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<S:file-revs-report")
+            && text.contains(&format!(
+                r#"<S:file-rev path="/trunk/README.md" rev="{revision}">"#
+            ))
+            && text.contains(r#"<S:rev-prop name="svn:author">"#)
+            && text.contains("<S:rev-prop name=\"svn:log\">seed svn readme</S:rev-prop>"),
+        "SVN file-revs REPORT should expose executable-backed file revision metadata: {text}"
+    );
+
     let lock = Method::from_bytes(b"LOCK").expect("LOCK method");
     let owner_basic = basic("owner", "doorpass1");
     let response = direct_request_with_body(
