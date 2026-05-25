@@ -30,6 +30,39 @@ fn svn_tools_available() -> bool {
             .is_ok_and(|output| output.status.success())
 }
 
+fn svn_client_available() -> bool {
+    Command::new("svn")
+        .arg("--version")
+        .output()
+        .is_ok_and(|output| output.status.success())
+}
+
+fn file_url(path: &std::path::Path) -> String {
+    format!("file:///{}", path.display().to_string().replace('\\', "/"))
+}
+
+fn seed_svn_readme(repo_path: &std::path::Path, contents: &str) -> Option<i64> {
+    if !svn_tools_available() || !svn_client_available() {
+        return None;
+    }
+    let import_dir = tempdir().expect("svn import tempdir");
+    let trunk_dir = import_dir.path().join("trunk");
+    std::fs::create_dir_all(&trunk_dir).expect("create svn trunk");
+    std::fs::write(trunk_dir.join("README.md"), contents).expect("write svn readme");
+    let output = Command::new("svn")
+        .args(["import", "-m", "seed svn readme"])
+        .arg(import_dir.path())
+        .arg(file_url(repo_path))
+        .output()
+        .expect("run svn import");
+    assert!(
+        output.status.success(),
+        "svn import should seed executable-backed repository: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    Some(yona_rust_vcs::svn_youngest_revision(repo_path).expect("read seeded revision"))
+}
+
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
@@ -203,7 +236,10 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
         None,
     )
     .await;
-    assert_eq!(response.status(), StatusCode::NOT_IMPLEMENTED);
+    assert!(
+        response.status() == StatusCode::NOT_IMPLEMENTED
+            || response.status() == StatusCode::NOT_FOUND
+    );
     assert_eq!(
         response
             .headers()
@@ -338,6 +374,81 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     .expect("mark project as git");
     let response = direct_request(app, Method::GET, "/svn/owner/projectYobi", None).await;
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn svn_protocol_get_serves_repository_file_with_svnlook() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping executable SVN content test because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let revision = seed_svn_readme(&repo_path, "hello from svn\n").expect("seed svn readme");
+
+    let response = direct_request(
+        app.clone(),
+        Method::GET,
+        "/svn/owner/projectYobi/trunk/README.md",
+        None,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(
+        String::from_utf8(body.to_vec()).unwrap(),
+        "hello from svn\n"
+    );
+
+    let response = direct_request(
+        app.clone(),
+        Method::GET,
+        &format!("/svn/owner/projectYobi/!svn/rvr/{revision}/trunk/README.md"),
+        None,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(
+        String::from_utf8(body.to_vec()).unwrap(),
+        "hello from svn\n"
+    );
+
+    let response = direct_request(
+        app,
+        Method::HEAD,
+        "/svn/owner/projectYobi/trunk/README.md",
+        None,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get(http::header::CONTENT_LENGTH)
+            .and_then(|value| value.to_str().ok()),
+        Some("15")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    assert!(body.is_empty());
 }
 
 #[tokio::test]

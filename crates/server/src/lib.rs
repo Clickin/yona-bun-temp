@@ -2335,6 +2335,9 @@ async fn direct_svn_protocol_request(
         let youngest_revision = yona_rust_vcs::svn_youngest_revision(&repo_path).ok();
         return svn_protocol_collection_propfind_response(&route, youngest_revision);
     }
+    if method == "GET" || method == "HEAD" {
+        return svn_protocol_file_response(&repo_path, &route, method == "HEAD");
+    }
     svn_protocol_not_implemented_response(&route, &method)
 }
 
@@ -2399,6 +2402,82 @@ fn svn_protocol_propfind_collection_response(
         HeaderValue::from_static("application/xml; charset=utf-8"),
     );
     response
+}
+
+fn svn_protocol_file_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    head_only: bool,
+) -> Response {
+    let Some((revision, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+        return svn_protocol_not_implemented_response(
+            route,
+            if head_only { "HEAD" } else { "GET" },
+        );
+    };
+    let bytes = match yona_rust_vcs::svn_cat_file(repo_path, revision, &path) {
+        Ok(bytes) => bytes,
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(
+                route,
+                if head_only { "HEAD" } else { "GET" },
+            )
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    let body = if head_only {
+        Bytes::new()
+    } else {
+        Bytes::from(bytes.clone())
+    };
+    let mut response = (StatusCode::OK, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/octet-stream"),
+    );
+    if let Ok(value) = HeaderValue::from_str(&bytes.len().to_string()) {
+        response
+            .headers_mut()
+            .insert(http::header::CONTENT_LENGTH, value);
+    }
+    response
+}
+
+fn svn_protocol_status_response(status: StatusCode) -> Response {
+    let mut response = status.into_response();
+    add_svn_dav_headers(&mut response);
+    response
+}
+
+fn svn_protocol_file_lookup(svn_path: &str) -> Option<(Option<i64>, String)> {
+    let trimmed = svn_path.trim_matches('/');
+    if trimmed.is_empty() {
+        return None;
+    }
+    if let Some(rest) = trimmed.strip_prefix("!svn/rvr/") {
+        return svn_protocol_revision_path(rest);
+    }
+    if let Some(rest) = trimmed.strip_prefix("!svn/bc/") {
+        return svn_protocol_revision_path(rest);
+    }
+    if trimmed.starts_with("!svn/") {
+        return None;
+    }
+    Some((None, trimmed.to_string()))
+}
+
+fn svn_protocol_revision_path(rest: &str) -> Option<(Option<i64>, String)> {
+    let (revision, path) = rest.split_once('/')?;
+    let revision = revision.parse::<i64>().ok()?;
+    if path.trim_matches('/').is_empty() {
+        return None;
+    }
+    Some((Some(revision), path.to_string()))
 }
 
 fn add_svn_dav_headers(response: &mut Response) {

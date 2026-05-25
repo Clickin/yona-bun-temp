@@ -353,6 +353,40 @@ pub fn svn_youngest_revision(repo_path: &Path) -> Result<i64, VcsError> {
         .map_err(|_| VcsError::SvnLookFailed(format!("invalid youngest revision: {revision}")))
 }
 
+pub fn svn_cat_file(
+    repo_path: &Path,
+    revision: Option<i64>,
+    path: &str,
+) -> Result<Vec<u8>, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+
+    let mut command = Command::new("svnlook");
+    command.arg("cat");
+    if let Some(revision) = revision {
+        command.args(["-r", &revision.to_string()]);
+    }
+    let output = command
+        .arg(repo_path)
+        .arg(&clean_path)
+        .output()
+        .map_err(|_| VcsError::SvnLookUnavailable)?;
+    if output.status.success() {
+        return Ok(output.stdout);
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+    if stderr.to_ascii_lowercase().contains("path not found") {
+        return Err(VcsError::NotFound);
+    }
+    Err(VcsError::SvnLookFailed(stderr))
+}
+
 pub fn clone_bare_repository(source_repo_path: &Path, repo_path: &Path) -> Result<(), VcsError> {
     if !source_repo_path.exists() || !source_repo_path.is_dir() {
         return Err(VcsError::NotFound);
