@@ -3623,6 +3623,11 @@ export type IssueMilestone = Message<"yona.pilot.v1.IssueMilestone"> & {
    * @generated from field: bool viewer_can_delete = 14;
    */
   viewerCanDelete: boolean;
+
+  /**
+   * @generated from field: repeated yona.pilot.v1.MentionReferenceMetadata mention_references = 16;
+   */
+  mentionReferences: MentionReferenceMetadata[];
 };
 
 /**

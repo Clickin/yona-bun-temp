@@ -23649,10 +23649,16 @@ async fn issue_milestone_from_record_with_issue_references(
         &[record.contents_markdown.as_str()],
     )
     .await?;
+    let mention_references =
+        markdown_mention_references(repository, &[record.contents_markdown.as_str()]).await?;
     let mut milestone = issue_milestone_from_record(record, base_path);
     milestone.issue_references = issue_references
         .iter()
         .map(issue_reference_metadata_from_resolved)
+        .collect();
+    milestone.mention_references = mention_references
+        .iter()
+        .map(mention_reference_metadata_from_resolved)
         .collect();
     Ok(milestone)
 }

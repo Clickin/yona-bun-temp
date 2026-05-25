@@ -286,6 +286,7 @@ export function ProjectMilestoneDetailPage(props: {
                 basePath={props.runtimeConfig.basePath}
                 issueReferences={milestone.issueReferences}
                 markdown={milestone.contentsMarkdown}
+                mentionReferences={milestone.mentionReferences}
                 ownerName={detail.ownerName}
                 projectName={detail.projectName}
               />

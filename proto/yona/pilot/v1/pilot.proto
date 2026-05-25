@@ -870,6 +870,7 @@ message IssueMilestone {
   bool viewer_can_update = 13;
   bool viewer_can_delete = 14;
   repeated IssueReferenceMetadata issue_references = 15;
+  repeated MentionReferenceMetadata mention_references = 16;
 }
 
 message IssueAttachment {

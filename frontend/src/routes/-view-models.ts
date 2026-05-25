@@ -397,6 +397,7 @@ export interface ProjectMilestoneViewModel {
   dueDateLabel: string;
   id: number;
   issueReferences?: IssueReferenceMetadata[];
+  mentionReferences?: MentionReferenceMetadata[];
   openIssueCount: number;
   openIssues: ProjectMilestoneIssueViewModel[];
   state: string;

@@ -714,6 +714,7 @@ function toProjectMilestoneView(
     dueDateLabel: milestone.dueDateLabel,
     id: Number(milestone.id),
     issueReferences: issueReferencesFrom(milestone),
+    mentionReferences: mentionReferencesFrom(milestone),
     openIssueCount: milestone.openIssueCount,
     openIssues: milestone.openIssues.map(toProjectMilestoneIssueView),
     state: milestone.state,
