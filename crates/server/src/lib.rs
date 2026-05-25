@@ -2336,6 +2336,9 @@ async fn direct_svn_protocol_request(
         return svn_protocol_collection_propfind_response(&route, youngest_revision);
     }
     if method == "PROPFIND" {
+        if let Some(response) = svn_protocol_tree_propfind_response(&repo_path, &route) {
+            return response;
+        }
         return svn_protocol_file_propfind_response(&repo_path, &route);
     }
     if method == "GET" || method == "HEAD" {
@@ -2475,22 +2478,46 @@ fn svn_protocol_file_propfind_response(repo_path: &StdPath, route: &SvnProtocolR
     svn_protocol_propfind_file_response(&href, bytes.len())
 }
 
-fn svn_protocol_propfind_file_response(href: &str, content_length: usize) -> Response {
+fn svn_protocol_tree_propfind_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+) -> Option<Response> {
+    let (revision, path) = svn_protocol_file_lookup(&route.svn_path)?;
+    let tree = match yona_rust_vcs::svn_list_tree(repo_path, revision, &path) {
+        Ok(tree) => tree,
+        Err(VcsError::NotFound) => return None,
+        Err(VcsError::InvalidPath) => {
+            return Some(svn_protocol_status_response(StatusCode::BAD_REQUEST))
+        }
+        Err(VcsError::SvnLookUnavailable) => {
+            return Some(svn_protocol_not_implemented_response(route, "PROPFIND"))
+        }
+        Err(error) => {
+            return Some(RestRouteError::from_connect_error(internal_error(error)).into_response())
+        }
+    };
+    Some(svn_protocol_propfind_tree_response(route, &tree))
+}
+
+fn svn_protocol_propfind_tree_response(
+    route: &SvnProtocolRoute,
+    tree: &yona_rust_vcs::SvnTree,
+) -> Response {
+    let mut responses = String::new();
+    let collection_href = svn_protocol_href(route, &tree.path, true);
+    responses.push_str(&svn_protocol_propfind_collection_item(&collection_href));
+    for entry in &tree.entries {
+        let href = svn_protocol_href(route, &entry.path, entry.is_dir);
+        if entry.is_dir {
+            responses.push_str(&svn_protocol_propfind_collection_item(&href));
+        } else {
+            responses.push_str(&svn_protocol_propfind_file_item(&href, None));
+        }
+    }
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
 <D:multistatus xmlns:D="DAV:">
-  <D:response>
-    <D:href>{}</D:href>
-    <D:propstat>
-      <D:prop>
-        <D:resourcetype/>
-        <D:getcontentlength>{content_length}</D:getcontentlength>
-      </D:prop>
-      <D:status>HTTP/1.1 200 OK</D:status>
-    </D:propstat>
-  </D:response>
-</D:multistatus>"#,
-        xml_escape(href)
+{responses}</D:multistatus>"#
     );
     let mut response = (StatusCode::MULTI_STATUS, body).into_response();
     add_svn_dav_headers(&mut response);
@@ -2499,6 +2526,70 @@ fn svn_protocol_propfind_file_response(href: &str, content_length: usize) -> Res
         HeaderValue::from_static("application/xml; charset=utf-8"),
     );
     response
+}
+
+fn svn_protocol_propfind_file_response(href: &str, content_length: usize) -> Response {
+    let item = svn_protocol_propfind_file_item(href, Some(content_length));
+    let body = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<D:multistatus xmlns:D="DAV:">
+{item}
+</D:multistatus>"#,
+    );
+    let mut response = (StatusCode::MULTI_STATUS, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
+    response
+}
+
+fn svn_protocol_propfind_collection_item(href: &str) -> String {
+    format!(
+        r#"  <D:response>
+    <D:href>{}</D:href>
+    <D:propstat>
+      <D:prop>
+        <D:resourcetype><D:collection/></D:resourcetype>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+"#,
+        xml_escape(href)
+    )
+}
+
+fn svn_protocol_propfind_file_item(href: &str, content_length: Option<usize>) -> String {
+    let content_length = content_length
+        .map(|length| format!("        <D:getcontentlength>{length}</D:getcontentlength>\n"))
+        .unwrap_or_default();
+    format!(
+        r#"  <D:response>
+    <D:href>{}</D:href>
+    <D:propstat>
+      <D:prop>
+        <D:resourcetype/>
+{content_length}      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+"#,
+        xml_escape(href)
+    )
+}
+
+fn svn_protocol_href(route: &SvnProtocolRoute, path: &str, collection: bool) -> String {
+    let clean_path = path.trim_matches('/');
+    let suffix = if clean_path.is_empty() {
+        String::new()
+    } else if collection {
+        format!("/{clean_path}/")
+    } else {
+        format!("/{clean_path}")
+    };
+    format!("/svn/{}/{}{}", route.owner_name, route.project_name, suffix)
 }
 
 fn svn_protocol_status_response(status: StatusCode) -> Response {

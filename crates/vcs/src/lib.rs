@@ -221,6 +221,18 @@ pub struct PullRequestMergeResult {
     pub target_commit_id_before: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SvnTreeEntry {
+    pub path: String,
+    pub is_dir: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SvnTree {
+    pub path: String,
+    pub entries: Vec<SvnTreeEntry>,
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum VcsError {
     #[error("git executable is unavailable")]
@@ -385,6 +397,80 @@ pub fn svn_cat_file(
         return Err(VcsError::NotFound);
     }
     Err(VcsError::SvnLookFailed(stderr))
+}
+
+pub fn svn_list_tree(
+    repo_path: &Path,
+    revision: Option<i64>,
+    path: &str,
+) -> Result<SvnTree, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+
+    let mut command = Command::new("svnlook");
+    command.args(["tree", "--full-paths"]);
+    if let Some(revision) = revision {
+        command.args(["-r", &revision.to_string()]);
+    }
+    let output = command
+        .arg(repo_path)
+        .arg(&clean_path)
+        .output()
+        .map_err(|_| VcsError::SvnLookUnavailable)?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        if stderr.to_ascii_lowercase().contains("path not found") {
+            return Err(VcsError::NotFound);
+        }
+        return Err(VcsError::SvnLookFailed(stderr));
+    }
+
+    let base = clean_path.trim_matches('/').to_string();
+    let base_prefix = if base.is_empty() {
+        String::new()
+    } else {
+        format!("{base}/")
+    };
+    let mut base_is_collection = base.is_empty();
+    let mut entries = Vec::new();
+    for line in String::from_utf8_lossy(&output.stdout).lines() {
+        let raw_path = line.trim();
+        if raw_path.is_empty() {
+            continue;
+        }
+        let is_dir = raw_path.ends_with('/');
+        let entry_path = raw_path.trim_matches('/').to_string();
+        if entry_path == base {
+            base_is_collection = is_dir;
+            continue;
+        }
+        if !base_prefix.is_empty() && !entry_path.starts_with(&base_prefix) {
+            continue;
+        }
+        let relative = if base_prefix.is_empty() {
+            entry_path.as_str()
+        } else {
+            entry_path
+                .strip_prefix(&base_prefix)
+                .expect("entry prefix checked")
+        };
+        if relative.is_empty() || relative.trim_matches('/').contains('/') {
+            continue;
+        }
+        entries.push(SvnTreeEntry {
+            path: entry_path,
+            is_dir,
+        });
+    }
+    if !base_is_collection {
+        return Err(VcsError::NotFound);
+    }
+    Ok(SvnTree {
+        path: base,
+        entries,
+    })
 }
 
 pub fn clone_bare_repository(source_repo_path: &Path, repo_path: &Path) -> Result<(), VcsError> {

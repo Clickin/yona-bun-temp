@@ -457,6 +457,27 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "SVN file PROPFIND should return file metadata: {text}"
     );
 
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response =
+        direct_request(app.clone(), propfind, "/svn/owner/projectYobi/trunk", None).await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("/svn/owner/projectYobi/trunk/")
+            && text.contains("<D:resourcetype><D:collection/></D:resourcetype>")
+            && text.contains("/svn/owner/projectYobi/trunk/README.md")
+            && text.contains("<D:resourcetype/>"),
+        "SVN collection PROPFIND should return directory and child metadata: {text}"
+    );
+
     let response = direct_request(
         app,
         Method::HEAD,
