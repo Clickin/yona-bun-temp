@@ -785,7 +785,15 @@ function parseMarkdownBlockquote(lines: MarkdownLineRecord[]): MarkdownBlockquot
 }
 
 function markdownLineStartsBlock(line: string): boolean {
-  return /^ {0,3}#{1,6}(?=\s|$)/.test(line) || /^ {0,3}(?:[*+-]|\d+[.)])\s+/.test(line);
+  return (
+    markdownLineIsIndentedCode(line) ||
+    /^ {0,3}#{1,6}(?=\s|$)/.test(line) ||
+    /^ {0,3}(?:[*+-]|\d+[.)])\s+/.test(line)
+  );
+}
+
+function markdownLineIsIndentedCode(line: string): boolean {
+  return /^ {4}/.test(line) || line.startsWith("\t");
 }
 
 function markdownLineIsSetextUnderline(line: string): boolean {
@@ -843,6 +851,29 @@ function MarkdownBlockSequence(props: {
         />,
       );
       index += 2;
+      continue;
+    }
+    if (markdownLineIsIndentedCode(line.text)) {
+      const codeLines = [line];
+      index += 1;
+      while (index < lineCount) {
+        const nextLine = props.lines[index];
+        if (!nextLine || !markdownLineIsIndentedCode(nextLine.text)) {
+          break;
+        }
+        codeLines.push(nextLine);
+        index += 1;
+      }
+      children.push(
+        <MarkdownBlock
+          block={{
+            key: `sequence-${line.key}`,
+            text: codeLines.map((item) => item.text).join("\n"),
+          }}
+          context={props.context}
+          key={`sequence-${line.key}`}
+        />,
+      );
       continue;
     }
     const tableSpan = parseMarkdownTableSpan(props.lines.slice(index));

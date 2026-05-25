@@ -756,4 +756,12 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<p>Primary<br/>===");
     expect(html).not.toContain("<p>Secondary<br/>---");
   });
+
+  it("parses indented code blocks inside blockquotes like legacy marked", () => {
+    const html = renderToStaticMarkup(<MarkdownRenderer markdown={">     const value = 1;"} />);
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain("<pre><code>const value = 1;</code></pre>");
+    expect(html).not.toContain("<p>    const value = 1;");
+  });
 });
