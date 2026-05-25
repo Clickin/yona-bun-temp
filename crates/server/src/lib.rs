@@ -3294,12 +3294,32 @@ fn svn_protocol_update_report_response(
             return RestRouteError::from_connect_error(internal_error(error)).into_response()
         }
     };
+    let revision_log =
+        match yona_rust_vcs::svn_log_entries(repo_path, target_revision, target_revision, 1) {
+            Ok(mut entries) => entries.pop().unwrap_or(yona_rust_vcs::SvnLogEntry {
+                revision: target_revision,
+                author: String::new(),
+                date: String::new(),
+                message: String::new(),
+            }),
+            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::InvalidPath) => {
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+            }
+            Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "REPORT")
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        };
     let entries = if recursive {
         svn_protocol_update_entries_recursive(
             route,
             &tree.entries,
             &update_path,
             target_revision,
+            &revision_log,
             2,
         )
     } else {
@@ -3326,6 +3346,7 @@ fn svn_protocol_update_report_response(
                     route,
                     entry,
                     target_revision,
+                    &revision_log,
                     2,
                 ));
             }
@@ -3336,9 +3357,13 @@ fn svn_protocol_update_report_response(
         r#"<?xml version="1.0" encoding="utf-8"?>
 <S:update-report xmlns:S="svn:" xmlns:D="DAV:">
   <S:target-revision rev="{target_revision}"/>
-  <S:open-root rev="{target_revision}">
-{entries}  </S:open-root>
-</S:update-report>"#
+  <S:open-directory rev="{target_revision}">
+    <D:checked-in><D:href>{}</D:href></D:checked-in>
+{}
+{entries}  </S:open-directory>
+</S:update-report>"#,
+        svn_protocol_version_href(route, target_revision, &update_path),
+        svn_protocol_update_entry_props(&revision_log, 2)
     );
     let mut response = (StatusCode::OK, body).into_response();
     add_svn_dav_headers(&mut response);
@@ -4329,6 +4354,7 @@ fn svn_protocol_update_entries_recursive(
     entries: &[yona_rust_vcs::SvnTreeEntry],
     parent_path: &str,
     revision: i64,
+    revision_log: &yona_rust_vcs::SvnLogEntry,
     indent_level: usize,
 ) -> String {
     let parent_path = parent_path.trim_matches('/');
@@ -4356,18 +4382,29 @@ fn svn_protocol_update_entries_recursive(
         });
         if is_dir {
             let indent = "  ".repeat(indent_level);
+            let child_indent = "  ".repeat(indent_level + 1);
             let nested = svn_protocol_update_entries_recursive(
                 route,
                 entries,
                 &child_path,
                 revision,
+                revision_log,
                 indent_level + 1,
             );
             output.push_str(&format!(
-                r#"{indent}<S:add-directory name="{}">
+                r#"{indent}<S:add-directory name="{}" bc-url="{}">
+{child_indent}<D:checked-in><D:href>{}</D:href></D:checked-in>
+{}
 {}{indent}</S:add-directory>
 "#,
                 xml_escape(&name),
+                xml_escape(&svn_protocol_baseline_collection_href(
+                    route,
+                    revision,
+                    &child_path
+                )),
+                xml_escape(&svn_protocol_version_href(route, revision, &child_path)),
+                svn_protocol_update_entry_props(revision_log, indent_level + 1),
                 nested
             ));
         } else if let Some(entry) = child_entry {
@@ -4375,6 +4412,7 @@ fn svn_protocol_update_entries_recursive(
                 route,
                 entry,
                 revision,
+                revision_log,
                 indent_level,
             ));
         }
@@ -4399,6 +4437,7 @@ fn svn_protocol_update_file_entry(
     route: &SvnProtocolRoute,
     entry: &yona_rust_vcs::SvnTreeEntry,
     revision: i64,
+    revision_log: &yona_rust_vcs::SvnLogEntry,
     indent_level: usize,
 ) -> String {
     let indent = "  ".repeat(indent_level);
@@ -4409,23 +4448,87 @@ fn svn_protocol_update_file_entry(
         .rsplit('/')
         .next()
         .unwrap_or(entry.path.as_str());
-    let version_href = format!(
-        "{}/!svn/ver/{}/{}",
-        svn_protocol_project_href(route),
-        revision,
-        entry.path.trim_matches('/')
-    );
+    let version_href = svn_protocol_version_href(route, revision, entry.path.trim_matches('/'));
     format!(
         r#"{indent}<S:add-file name="{}">
 {child_indent}<D:checked-in><D:href>{}</D:href></D:checked-in>
+{}
 {child_indent}<S:baseline-relative-path>{}</S:baseline-relative-path>
 {child_indent}<S:fetch-file/>
 {indent}</S:add-file>
 "#,
         xml_escape(name),
         xml_escape(&version_href),
+        svn_protocol_update_entry_props(revision_log, indent_level + 1),
         xml_escape(entry.path.trim_matches('/'))
     )
+}
+
+fn svn_protocol_update_entry_props(
+    revision_log: &yona_rust_vcs::SvnLogEntry,
+    indent_level: usize,
+) -> String {
+    let indent = "  ".repeat(indent_level);
+    let mut props = format!(
+        r#"{indent}<S:set-prop name="svn:entry:committed-rev">{}</S:set-prop>
+"#,
+        revision_log.revision
+    );
+    if !revision_log.date.is_empty() {
+        props.push_str(&format!(
+            r#"{indent}<S:set-prop name="svn:entry:committed-date">{}</S:set-prop>
+"#,
+            xml_escape(&svn_protocol_committed_date(&revision_log.date))
+        ));
+    }
+    if !revision_log.author.is_empty() {
+        props.push_str(&format!(
+            r#"{indent}<S:set-prop name="svn:entry:last-author">{}</S:set-prop>
+"#,
+            xml_escape(&revision_log.author)
+        ));
+    }
+    props
+}
+
+fn svn_protocol_committed_date(svnlook_date: &str) -> String {
+    let mut parts = svnlook_date.split_whitespace();
+    let Some(date) = parts.next() else {
+        return svnlook_date.trim().to_string();
+    };
+    let Some(time) = parts.next() else {
+        return svnlook_date.trim().to_string();
+    };
+    let time = time.split_once('.').map(|(head, _)| head).unwrap_or(time);
+    format!("{date}T{time}.000000Z")
+}
+
+fn svn_protocol_version_href(route: &SvnProtocolRoute, revision: i64, path: &str) -> String {
+    let path = path.trim_matches('/');
+    if path.is_empty() {
+        format!("{}/!svn/ver/{revision}/", svn_protocol_project_href(route))
+    } else {
+        format!(
+            "{}/!svn/ver/{revision}/{path}",
+            svn_protocol_project_href(route)
+        )
+    }
+}
+
+fn svn_protocol_baseline_collection_href(
+    route: &SvnProtocolRoute,
+    revision: i64,
+    path: &str,
+) -> String {
+    let path = path.trim_matches('/');
+    if path.is_empty() {
+        format!("{}/!svn/bc/{revision}/", svn_protocol_project_href(route))
+    } else {
+        format!(
+            "{}/!svn/bc/{revision}/{path}",
+            svn_protocol_project_href(route)
+        )
+    }
 }
 
 fn svn_protocol_update_depth(request: &str) -> String {

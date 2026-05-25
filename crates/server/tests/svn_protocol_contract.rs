@@ -69,6 +69,28 @@ fn file_url(path: &std::path::Path) -> String {
     format!("file:///{}", path.display().to_string().replace('\\', "/"))
 }
 
+fn list_relative_paths(root: &std::path::Path) -> Vec<String> {
+    fn visit(root: &std::path::Path, path: &std::path::Path, output: &mut Vec<String>) {
+        let Ok(entries) = std::fs::read_dir(path) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if let Ok(relative) = path.strip_prefix(root) {
+                output.push(relative.display().to_string().replace('\\', "/"));
+            }
+            if path.is_dir() {
+                visit(root, &path, output);
+            }
+        }
+    }
+
+    let mut paths = Vec::new();
+    visit(root, root, &mut paths);
+    paths.sort();
+    paths
+}
+
 fn seed_svn_readme(repo_path: &std::path::Path, contents: &str) -> Option<i64> {
     if !svn_tools_available() || !svn_client_available() {
         return None;
@@ -933,7 +955,8 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert!(
         text.contains("<S:update-report")
             && text.contains(&format!(r#"<S:target-revision rev="{revision}"/>"#))
-            && text.contains(&format!(r#"<S:open-root rev="{revision}">"#))
+            && text.contains(&format!(r#"<S:open-directory rev="{revision}">"#))
+            && text.contains(r#"<S:set-prop name="svn:entry:committed-rev">"#)
             && text.contains(r#"<S:add-file name="README.md">"#)
             && text.contains(&format!(
                 "<D:href>/yona/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md</D:href>"
@@ -978,7 +1001,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
         text.contains(&format!(r#"<S:target-revision rev="{nested_revision}"/>"#))
-            && text.contains(&format!(r#"<S:open-root rev="{nested_revision}">"#))
+            && text.contains(&format!(r#"<S:open-directory rev="{nested_revision}">"#))
             && !text.contains("<S:add-file")
             && !text.contains("<S:add-directory"),
         "SVN update-report depth=empty should open the target without child entries: {text}"
@@ -1056,7 +1079,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
-        text.contains(r#"<S:add-directory name="guides">"#)
+        text.contains(r#"<S:add-directory name="guides" bc-url="#)
             && text.contains(r#"<S:add-file name="Guide.md">"#)
             && text.contains(&format!(
                 "<D:href>/yona/svn/owner/projectYobi/!svn/ver/{nested_revision}/trunk/guides/Guide.md</D:href>"
@@ -1684,6 +1707,54 @@ async fn svn_protocol_external_client_can_info_public_project() {
         None,
     )
     .await;
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
+async fn svn_protocol_external_client_can_checkout_public_project() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping external SVN checkout smoke because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello from external svn checkout\n").expect("seed svn readme");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let svn_url = format!("{base_url}/yona/svn/owner/projectYobi");
+    let checkout_dir = tempdir().expect("svn checkout tempdir");
+    run_svn_blocking(
+        vec![
+            "checkout".to_string(),
+            "--non-interactive".to_string(),
+            svn_url,
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let readme = checkout_dir.path().join("trunk").join("README.md");
+    let contents = std::fs::read_to_string(&readme).unwrap_or_else(|error| {
+        panic!(
+            "checkout should materialize README at {}; error: {error}; paths: {:?}",
+            readme.display(),
+            list_relative_paths(checkout_dir.path())
+        )
+    });
+    assert_eq!(contents, "hello from external svn checkout\n");
 
     let _ = shutdown.send(());
 }
