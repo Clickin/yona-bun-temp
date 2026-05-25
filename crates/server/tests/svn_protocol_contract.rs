@@ -851,6 +851,43 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         None,
         Body::from(format!(
             r#"<?xml version="1.0" encoding="utf-8"?>
+<S:list-report xmlns:S="svn:">
+  <S:path>trunk</S:path>
+  <S:revision>{revision}</S:revision>
+  <S:depth>immediates</S:depth>
+</S:list-report>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<S:list-report")
+            && text.contains(&format!(
+                r#"<S:item node-kind="file" size="15" created-rev="{revision}""#
+            ))
+            && text.contains("<D:creator-displayname>")
+            && text.contains("trunk/README.md")
+            && text.contains("</S:item>"),
+        "SVN list-report should expose executable-backed directory entries in ra_serf shape: {text}"
+    );
+
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
 <S:file-revs-report xmlns:S="svn:" xmlns:D="DAV:">
   <S:start-revision>0</S:start-revision>
   <S:end-revision>{revision}</S:end-revision>

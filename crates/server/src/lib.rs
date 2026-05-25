@@ -2787,6 +2787,9 @@ fn svn_protocol_report_response(
     if request.contains("get-deleted-rev-report") {
         return svn_protocol_get_deleted_rev_report_response(repo_path, route, &request);
     }
+    if request.contains("list-report") {
+        return svn_protocol_list_report_response(repo_path, route, &request);
+    }
     if request.contains("get-locks-report") {
         return svn_protocol_get_locks_report_response(repo_path, route);
     }
@@ -3155,6 +3158,79 @@ fn svn_protocol_get_deleted_rev_report_response(
         r#"<?xml version="1.0" encoding="utf-8"?>
 <S:get-deleted-rev-report xmlns:S="svn:" xmlns:D="DAV:">
 {version_name}</S:get-deleted-rev-report>"#
+    );
+    let mut response = (StatusCode::OK, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
+    response
+}
+
+fn svn_protocol_list_report_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    request: &str,
+) -> Response {
+    let revision = match svn_protocol_xml_i64(request, "revision") {
+        Some(revision) => revision,
+        None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
+            Ok(revision) => revision,
+            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "REPORT")
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        },
+    };
+    let requested_path = svn_protocol_xml_text(request, "path").unwrap_or_default();
+    let base_path = svn_protocol_file_lookup(&route.svn_path)
+        .map(|(_, path)| path)
+        .unwrap_or_default();
+    let list_path = join_svn_report_path(&base_path, &requested_path);
+    let tree = match yona_rust_vcs::svn_list_tree(repo_path, Some(revision), &list_path) {
+        Ok(tree) => tree,
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "REPORT")
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    let log_entry = match yona_rust_vcs::svn_log_entries(repo_path, revision, revision, 1) {
+        Ok(mut entries) => entries.pop(),
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "REPORT")
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    let author = log_entry
+        .as_ref()
+        .map(|entry| entry.author.as_str())
+        .unwrap_or_default();
+    let date = log_entry
+        .as_ref()
+        .map(|entry| entry.date.as_str())
+        .unwrap_or_default();
+    let mut items = String::new();
+    for entry in &tree.entries {
+        items.push_str(&svn_protocol_list_item(
+            repo_path, revision, entry, author, date,
+        ));
+    }
+    let body = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<S:list-report xmlns:S="svn:" xmlns:D="DAV:">
+{items}</S:list-report>"#
     );
     let mut response = (StatusCode::OK, body).into_response();
     add_svn_dav_headers(&mut response);
@@ -3616,6 +3692,44 @@ fn svn_protocol_mergeinfo_item(path: &str, mergeinfo: &str) -> String {
 "#,
         xml_escape(path.trim_matches('/')),
         xml_escape(mergeinfo)
+    )
+}
+
+fn svn_protocol_list_item(
+    repo_path: &StdPath,
+    revision: i64,
+    entry: &yona_rust_vcs::SvnTreeEntry,
+    author: &str,
+    date: &str,
+) -> String {
+    let node_kind = if entry.is_dir { "dir" } else { "file" };
+    let size = if entry.is_dir {
+        String::new()
+    } else {
+        match yona_rust_vcs::svn_cat_file(repo_path, Some(revision), &entry.path) {
+            Ok(bytes) => format!(r#" size="{}""#, bytes.len()),
+            Err(_) => String::new(),
+        }
+    };
+    let date_attr = if date.trim().is_empty() {
+        String::new()
+    } else {
+        format!(r#" date="{}""#, xml_escape(date))
+    };
+    let author_element = if author.trim().is_empty() {
+        String::new()
+    } else {
+        format!(
+            "    <D:creator-displayname>{}</D:creator-displayname>\n",
+            xml_escape(author)
+        )
+    };
+    format!(
+        r#"  <S:item node-kind="{node_kind}"{size} created-rev="{revision}"{date_attr}>
+{author_element}    {}
+  </S:item>
+"#,
+        xml_escape(entry.path.trim_matches('/'))
     )
 }
 
