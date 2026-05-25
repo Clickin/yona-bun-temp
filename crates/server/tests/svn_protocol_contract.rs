@@ -730,6 +730,43 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "SVN get-location-segments REPORT should return the path segment for the requested revision range: {text}"
     );
 
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:update-report xmlns:S="svn:">
+  <S:src-path>trunk</S:src-path>
+  <S:target-revision>{revision}</S:target-revision>
+</S:update-report>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<S:update-report")
+            && text.contains(&format!(r#"<S:target-revision rev="{revision}"/>"#))
+            && text.contains(&format!(r#"<S:open-root rev="{revision}">"#))
+            && text.contains(r#"<S:add-file name="README.md">"#)
+            && text.contains(&format!(
+                "<D:href>/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md</D:href>"
+            ))
+            && text.contains("<S:fetch-file/>"),
+        "SVN update-report should expose target revision and versioned file entries: {text}"
+    );
+
     let response = direct_request(
         app,
         Method::HEAD,

@@ -2729,6 +2729,9 @@ fn svn_protocol_report_response(
     if request.contains("dated-rev-report") {
         return svn_protocol_dated_rev_report_response(repo_path, route, &request);
     }
+    if request.contains("update-report") {
+        return svn_protocol_update_report_response(repo_path, route, &request);
+    }
     if request.contains("get-locks-report") {
         return svn_protocol_get_locks_report_response(repo_path, route);
     }
@@ -2820,6 +2823,94 @@ fn svn_protocol_dated_rev_report_response(
 <S:dated-rev-report xmlns:S="svn:" xmlns:D="DAV:">
   <D:version-name>{revision}</D:version-name>
 </S:dated-rev-report>"#
+    );
+    let mut response = (StatusCode::OK, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
+    response
+}
+
+fn svn_protocol_update_report_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    request: &str,
+) -> Response {
+    let target_revision = svn_protocol_xml_i64(request, "target-revision")
+        .or_else(|| svn_protocol_xml_i64(request, "revision"));
+    let target_revision = match target_revision {
+        Some(revision) => revision,
+        None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
+            Ok(revision) => revision,
+            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "REPORT")
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        },
+    };
+    let requested_path = svn_protocol_xml_text(request, "src-path").unwrap_or_default();
+    let base_path = svn_protocol_file_lookup(&route.svn_path)
+        .map(|(_, path)| path)
+        .unwrap_or_default();
+    let update_path = join_svn_report_path(&base_path, &requested_path);
+    let tree = match yona_rust_vcs::svn_list_tree(repo_path, Some(target_revision), &update_path) {
+        Ok(tree) => tree,
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "REPORT")
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    let mut entries = String::new();
+    for entry in &tree.entries {
+        let name = entry
+            .path
+            .trim_matches('/')
+            .rsplit('/')
+            .next()
+            .unwrap_or(entry.path.as_str());
+        if entry.is_dir {
+            entries.push_str(&format!(
+                r#"    <S:add-directory name="{}"/>
+"#,
+                xml_escape(name)
+            ));
+        } else {
+            let version_href = format!(
+                "/svn/{}/{}/!svn/ver/{}/{}",
+                route.owner_name,
+                route.project_name,
+                target_revision,
+                entry.path.trim_matches('/')
+            );
+            entries.push_str(&format!(
+                r#"    <S:add-file name="{}">
+      <D:checked-in><D:href>{}</D:href></D:checked-in>
+      <S:baseline-relative-path>{}</S:baseline-relative-path>
+      <S:fetch-file/>
+    </S:add-file>
+"#,
+                xml_escape(name),
+                xml_escape(&version_href),
+                xml_escape(entry.path.trim_matches('/'))
+            ));
+        }
+    }
+    let body = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<S:update-report xmlns:S="svn:" xmlns:D="DAV:">
+  <S:target-revision rev="{target_revision}"/>
+  <S:open-root rev="{target_revision}">
+{entries}  </S:open-root>
+</S:update-report>"#
     );
     let mut response = (StatusCode::OK, body).into_response();
     add_svn_dav_headers(&mut response);
