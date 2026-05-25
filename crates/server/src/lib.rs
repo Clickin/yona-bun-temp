@@ -2802,6 +2802,9 @@ fn svn_protocol_report_response(
     if request.contains("update-report") {
         return svn_protocol_update_report_response(repo_path, route, &request);
     }
+    if request.contains("replay-report") {
+        return svn_protocol_replay_report_response(repo_path, route, &request);
+    }
     if request.contains("file-revs-report") {
         return svn_protocol_file_revs_report_response(repo_path, route, &request);
     }
@@ -3062,6 +3065,67 @@ fn svn_protocol_file_revs_report_response(
         r#"<?xml version="1.0" encoding="utf-8"?>
 <S:file-revs-report xmlns:S="svn:" xmlns:D="DAV:">
 {file_revs}</S:file-revs-report>"#
+    );
+    let mut response = (StatusCode::OK, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
+    response
+}
+
+fn svn_protocol_replay_report_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    request: &str,
+) -> Response {
+    let revision = match svn_protocol_xml_i64(request, "revision")
+        .or_else(|| svn_protocol_file_lookup(&route.svn_path).and_then(|(revision, _)| revision))
+    {
+        Some(revision) => revision,
+        None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
+            Ok(revision) => revision,
+            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "REPORT")
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        },
+    };
+    let low_water_mark = svn_protocol_xml_i64(request, "low-water-mark").unwrap_or(0);
+    let include_path = svn_protocol_xml_text(request, "include-path")
+        .map(|path| path.trim_matches('/').to_string())
+        .filter(|path| !path.is_empty());
+    let base_path = svn_protocol_file_lookup(&route.svn_path)
+        .map(|(_, path)| path.trim_matches('/').to_string())
+        .filter(|path| !path.is_empty());
+    let filter_path = include_path.or(base_path);
+    let changed_paths = match yona_rust_vcs::svn_changed_paths(repo_path, revision) {
+        Ok(paths) => paths,
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "REPORT")
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    let operations = changed_paths
+        .iter()
+        .filter(|path| svn_protocol_replay_included(&path.path, filter_path.as_deref()))
+        .map(|path| svn_protocol_replay_operation(path, low_water_mark))
+        .collect::<String>();
+    let body = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<S:editor-report xmlns:S="svn:">
+  <S:target-revision rev="{revision}"/>
+  <S:open-root rev="{low_water_mark}">
+{operations}  </S:open-root>
+</S:editor-report>"#
     );
     let mut response = (StatusCode::OK, body).into_response();
     add_svn_dav_headers(&mut response);
@@ -3905,6 +3969,51 @@ fn svn_protocol_file_rev_item(path: &str, entry: &yona_rust_vcs::SvnLogEntry) ->
         xml_escape(&entry.date),
         xml_escape(&entry.message)
     )
+}
+
+fn svn_protocol_replay_included(path: &str, filter_path: Option<&str>) -> bool {
+    let Some(filter_path) = filter_path else {
+        return true;
+    };
+    let path = path.trim_matches('/');
+    let filter_path = filter_path.trim_matches('/');
+    path == filter_path || path.starts_with(&format!("{filter_path}/"))
+}
+
+fn svn_protocol_replay_operation(
+    path: &yona_rust_vcs::SvnChangedPath,
+    low_water_mark: i64,
+) -> String {
+    let name = xml_escape(path.path.trim_matches('/'));
+    match (&path.action, path.is_dir) {
+        (yona_rust_vcs::SvnChangedAction::Added, true)
+        | (yona_rust_vcs::SvnChangedAction::Replaced, true) => format!(
+            r#"    <S:add-directory name="{name}">
+    </S:add-directory>
+"#
+        ),
+        (yona_rust_vcs::SvnChangedAction::Added, false)
+        | (yona_rust_vcs::SvnChangedAction::Replaced, false) => format!(
+            r#"    <S:add-file name="{name}">
+      <S:close-file/>
+    </S:add-file>
+"#
+        ),
+        (yona_rust_vcs::SvnChangedAction::Deleted, _) => {
+            format!(r#"    <S:delete-entry name="{name}" rev="{low_water_mark}"/>"#) + "\n"
+        }
+        (yona_rust_vcs::SvnChangedAction::Modified, true) => format!(
+            r#"    <S:open-directory name="{name}" rev="{low_water_mark}">
+    </S:open-directory>
+"#
+        ),
+        (yona_rust_vcs::SvnChangedAction::Modified, false) => format!(
+            r#"    <S:open-file name="{name}" rev="{low_water_mark}">
+      <S:close-file/>
+    </S:open-file>
+"#
+        ),
+    }
 }
 
 fn svn_protocol_mergeinfo_item(path: &str, mergeinfo: &str) -> String {

@@ -242,6 +242,21 @@ pub struct SvnLogEntry {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SvnChangedAction {
+    Added,
+    Modified,
+    Deleted,
+    Replaced,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SvnChangedPath {
+    pub path: String,
+    pub is_dir: bool,
+    pub action: SvnChangedAction,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SvnLock {
     pub path: String,
     pub token: String,
@@ -568,6 +583,28 @@ pub fn svn_log_entries(
             })
         })
         .collect()
+}
+
+pub fn svn_changed_paths(repo_path: &Path, revision: i64) -> Result<Vec<SvnChangedPath>, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    if revision < 0 {
+        return Err(VcsError::InvalidPath);
+    }
+
+    let output = Command::new("svnlook")
+        .args(["changed", "-r", &revision.to_string()])
+        .arg(repo_path)
+        .output()
+        .map_err(|_| VcsError::SvnLookUnavailable)?;
+    if !output.status.success() {
+        return Err(VcsError::SvnLookFailed(
+            String::from_utf8_lossy(&output.stderr).trim().to_string(),
+        ));
+    }
+
+    parse_svnlook_changed(&String::from_utf8_lossy(&output.stdout))
 }
 
 pub fn svn_revision_at_or_before(repo_path: &Path, date: &str) -> Result<Option<i64>, VcsError> {
@@ -1101,6 +1138,37 @@ fn parse_svnlook_lock(path: &str, output: &str) -> Option<SvnLock> {
         created,
         expires,
     })
+}
+
+fn parse_svnlook_changed(output: &str) -> Result<Vec<SvnChangedPath>, VcsError> {
+    let mut paths = Vec::new();
+    for line in output.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        let mut columns = line.chars();
+        let text_status = columns.next().unwrap_or_default();
+        let prop_status = columns.next().unwrap_or_default();
+        let action = match text_status {
+            'A' => SvnChangedAction::Added,
+            'U' | '_' => SvnChangedAction::Modified,
+            'D' => SvnChangedAction::Deleted,
+            'R' => SvnChangedAction::Replaced,
+            _ if prop_status == 'U' => SvnChangedAction::Modified,
+            _ => continue,
+        };
+        let raw_path = line.get(4..).unwrap_or_default().trim();
+        let clean_path = normalize_repo_path(raw_path)?;
+        if clean_path.is_empty() {
+            continue;
+        }
+        paths.push(SvnChangedPath {
+            path: clean_path,
+            is_dir: raw_path.ends_with('/'),
+            action,
+        });
+    }
+    Ok(paths)
 }
 
 fn svn_lock_comment_file(label: &str) -> Result<PathBuf, VcsError> {
@@ -2914,4 +2982,48 @@ fn find_delimiter(buffer: &[u8], delimiter: &[u8]) -> Option<(usize, usize)> {
         .windows(delimiter.len())
         .position(|window| window == delimiter)
         .map(|index| (index, delimiter.len()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_svnlook_changed_preserves_action_path_and_kind() {
+        let changed = parse_svnlook_changed(
+            "A   trunk/\nA   trunk/README.md\n U  trunk/\nD   old.txt\nR   moved.txt\n",
+        )
+        .expect("parse changed output");
+
+        assert_eq!(
+            changed,
+            vec![
+                SvnChangedPath {
+                    path: "trunk".to_string(),
+                    is_dir: true,
+                    action: SvnChangedAction::Added,
+                },
+                SvnChangedPath {
+                    path: "trunk/README.md".to_string(),
+                    is_dir: false,
+                    action: SvnChangedAction::Added,
+                },
+                SvnChangedPath {
+                    path: "trunk".to_string(),
+                    is_dir: true,
+                    action: SvnChangedAction::Modified,
+                },
+                SvnChangedPath {
+                    path: "old.txt".to_string(),
+                    is_dir: false,
+                    action: SvnChangedAction::Deleted,
+                },
+                SvnChangedPath {
+                    path: "moved.txt".to_string(),
+                    is_dir: false,
+                    action: SvnChangedAction::Replaced,
+                },
+            ]
+        );
+    }
 }

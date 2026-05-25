@@ -851,6 +851,43 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         None,
         Body::from(format!(
             r#"<?xml version="1.0" encoding="utf-8"?>
+<S:replay-report xmlns:S="svn:">
+  <S:revision>{revision}</S:revision>
+  <S:low-water-mark>0</S:low-water-mark>
+  <S:send-deltas>0</S:send-deltas>
+</S:replay-report>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<S:editor-report")
+            && text.contains(&format!(r#"<S:target-revision rev="{revision}"/>"#))
+            && text.contains(r#"<S:open-root rev="0">"#)
+            && text.contains(r#"<S:add-directory name="trunk">"#)
+            && text.contains(r#"<S:add-file name="trunk/README.md">"#)
+            && text.contains("<S:close-file")
+            && text.contains("</S:editor-report>"),
+        "SVN replay-report should expose executable-backed ra_serf editor operations: {text}"
+    );
+
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
 <S:list-report xmlns:S="svn:">
   <S:path>trunk</S:path>
   <S:revision>{revision}</S:revision>
