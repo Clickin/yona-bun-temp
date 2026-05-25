@@ -665,8 +665,8 @@ function parseFencedCodeBlock(lines: MarkdownLineRecord[]): MarkdownCodeBlockRec
   }
   const openMatch = /^(`{3,}|~{3,})\s*([A-Za-z0-9_+.-]+)?\s*$/.exec(lines[0]?.text ?? "");
   const fence = openMatch?.[1] ?? "";
-  const closePattern = fence.startsWith("`") ? /^`{3,}\s*$/ : /^~{3,}\s*$/;
-  if (!openMatch || !closePattern.test(lines[lines.length - 1]?.text ?? "")) {
+  const closeFence = /^(`+|~+)\s*$/.exec(lines[lines.length - 1]?.text ?? "")?.[1] ?? "";
+  if (!openMatch || closeFence.length < fence.length || closeFence.at(0) !== fence.at(0)) {
     return null;
   }
   return {

@@ -76,6 +76,19 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("~~~");
   });
 
+  it("requires closing fences to match the opening fence length like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={"```` rust\n#1 stays text\n```\n\nAfter"}
+        ownerName="owner"
+        projectName="project"
+      />,
+    );
+
+    expect(html).not.toContain("<pre><code");
+    expect(html).toContain("After");
+  });
+
   it("renders horizontal rules like legacy marked", () => {
     const html = renderToStaticMarkup(<MarkdownRenderer markdown={"Before\n\n---\n\nAfter"} />);
 
