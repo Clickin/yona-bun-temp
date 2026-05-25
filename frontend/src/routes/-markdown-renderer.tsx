@@ -617,7 +617,7 @@ function parseMarkdownTable(lines: MarkdownLineRecord[]): MarkdownTableRecord | 
   if (header.length === 0 || separator.length !== header.length) {
     return null;
   }
-  if (!separator.every((cell) => /^:?-{3,}:?$/.test(cell))) {
+  if (!separator.every((cell) => /^:?-+:?$/.test(cell))) {
     return null;
   }
   const headers = header.map((text, columnIndex) => ({

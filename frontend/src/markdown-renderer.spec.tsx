@@ -616,6 +616,17 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<td align="right">R</td>');
   });
 
+  it("accepts one-dash table separators like legacy marked", () => {
+    const html = renderToStaticMarkup(<MarkdownRenderer markdown={"A | B\n- | -:\n1 | 2"} />);
+
+    expect(html).toContain("<table>");
+    expect(html).toContain("<th>A</th>");
+    expect(html).toContain('<th align="right">B</th>');
+    expect(html).toContain("<td>1</td>");
+    expect(html).toContain('<td align="right">2</td>');
+    expect(html).not.toContain("<p>A | B");
+  });
+
   it("renders basic smart lists like legacy marked", () => {
     const unorderedHtml = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- **first**\n- ~~second~~"} />,
