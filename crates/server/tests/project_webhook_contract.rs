@@ -7,7 +7,8 @@ use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
 use tower::ServiceExt;
 use yona_rust_integrations::{
-    clear_test_webhook_outbox, queue_test_webhook_response, snapshot_test_webhook_outbox,
+    clear_test_webhook_outbox, queue_test_webhook_failure, queue_test_webhook_response,
+    snapshot_test_webhook_outbox,
 };
 use yona_rust_persistence::{webhook, webhook_delivery, webhook_thread, AppRepository};
 use yona_rust_pilot_migration::Migrator;
@@ -18,6 +19,11 @@ mod rest_test_support;
 fn yona_data_env_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))
+}
+
+fn clear_webhook_retry_env() {
+    std::env::remove_var("WEBHOOK_DELIVERY_RETRIES");
+    std::env::remove_var("YONA_WEBHOOK_DELIVERY_RETRIES");
 }
 
 async fn build_app_with_repository() -> (axum::Router, DatabaseConnection) {
@@ -167,6 +173,7 @@ async fn project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks() {
     let _guard = yona_data_env_lock()
         .lock()
         .expect("serialize YONA_DATA mutation");
+    clear_webhook_retry_env();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
     std::env::set_var("YONA_DATA", data_dir.path());
@@ -317,10 +324,79 @@ async fn project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks() {
 }
 
 #[tokio::test]
+async fn project_webhooks_retry_transient_delivery_failures_once_configured() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    clear_webhook_retry_env();
+    clear_test_webhook_outbox();
+    std::env::set_var("YONA_WEBHOOK_DELIVERY_RETRIES", "1");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf).await;
+
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "payloadUrl": "https://hooks.example/retry",
+                "secret": "s3",
+                "webhookType": "SIMPLE",
+                "gitPush": false,
+            })),
+        )
+        .await,
+    )
+    .await;
+    queue_test_webhook_failure("temporary delivery failure");
+    queue_test_webhook_response("retried-ok");
+
+    ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "title": "Retried webhook issue",
+                "bodyMarkdown": "Issue body for retry",
+            })),
+        )
+        .await,
+    )
+    .await;
+
+    let attempts = snapshot_test_webhook_outbox();
+    assert_eq!(attempts.len(), 2);
+    assert!(attempts
+        .iter()
+        .all(|attempt| attempt.payload_url == "https://hooks.example/retry"));
+    let history = webhook_delivery::Entity::find()
+        .all(&db)
+        .await
+        .expect("webhook delivery history rows");
+    assert_eq!(history.len(), 1);
+    assert_eq!(history[0].status.as_deref(), Some("SUCCESS"));
+    assert_eq!(history[0].response_body.as_deref(), Some("retried-ok"));
+    assert!(history[0].error_message.is_none());
+
+    clear_webhook_retry_env();
+    clear_test_webhook_outbox();
+}
+
+#[tokio::test]
 async fn project_webhooks_persist_hangout_thread_names_for_resource_followups() {
     let _guard = yona_data_env_lock()
         .lock()
         .expect("serialize YONA_DATA mutation");
+    clear_webhook_retry_env();
     clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
     std::env::set_var("YONA_DATA", data_dir.path());
@@ -427,6 +503,8 @@ async fn project_webhooks_require_update_and_manage_crud() {
     let _guard = yona_data_env_lock()
         .lock()
         .expect("serialize YONA_DATA mutation");
+    clear_webhook_retry_env();
+    clear_test_webhook_outbox();
     let data_dir = tempdir().expect("yona data tempdir");
     std::env::set_var("YONA_DATA", data_dir.path());
     let (app, db) = build_app_with_repository().await;

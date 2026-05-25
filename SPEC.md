@@ -149,6 +149,7 @@ legacy Yona 사용자가 기존 설정을 최소한의 변환으로 새 실행�
 | `application.notification.bymail.delay`    | `YONA_NOTIFICATION_MAIL_DELAY`                      | default 180000ms             |
 | `application.notification.bymail.hideAddress` | `YONA_NOTIFICATION_MAIL_HIDE_ADDRESS`            | notification mail BCC mode   |
 | `application.notification.bymail.recipientLimit` | `YONA_NOTIFICATION_MAIL_RECIPIENT_LIMIT`      | notification mail recipient partitioning |
+| webhook delivery retry count                 | `YONA_WEBHOOK_DELIVERY_RETRIES`                  | capped at 5 retries          |
 | `application.maxFileSize`                  | `YONA_MAX_FILE_SIZE`                                |                              |
 | `project.default.scope.when.create`        | `YONA_PROJECT_DEFAULT_SCOPE`                        | public/protected/private     |
 | `project.creation.default.menus`           | `YONA_PROJECT_DEFAULT_MENUS`                        | issue, milestone, board 등   |
@@ -162,6 +163,7 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 - `YONA_LANGS`: 설정은 파싱하고 browser runtime config의 `supportedLanguages`로 보존한다. 1차 PoC에서는 legacy copy parity를 우선하며 동적 i18n runtime 전환은 deferred다.
 - `YONA_PROJECT_DEFAULT_MENUS`: 설정은 프로젝트 생성 시 `project_menu_setting` 기본 row와 create-form checkbox 기본값에 반영한다. settings 화면은 legacy menu checkbox mutation으로 `project_menu_setting`을 갱신한다.
 - `YONA_SMTP_HOST`, `YONA_SMTP_PORT`, `YONA_SMTP_SSL`, `YONA_SMTP_USER`, `YONA_SMTP_PASSWORD`: Rust mail 설정/발송 경로에서 기존 `SMTP_*` 이름과 함께 인식한다. `YONA_SMTP_SSL=true`는 legacy `smtp.ssl=true`처럼 SMTPS wrapper transport를 사용하고, 명시적 false는 plain SMTP transport를 사용한다. notification template parity와 mailbox/reply threading은 mail delivery follow-up이다.
+- `YONA_WEBHOOK_DELIVERY_RETRIES`: webhook transient delivery failure retry count로 사용한다. legacy-compatible `WEBHOOK_DELIVERY_RETRIES` alias도 인식하며 runaway retry를 막기 위해 최대 5회로 제한한다. HTTPS/TLS delivery hardening은 별도 follow-up이다.
 - deferred 기능과 연결된 설정은 명시된 no-op/fallback/warning 동작 없이 조용히 무시하면 안 된다.
 
 ---
@@ -954,7 +956,7 @@ DELETE /:owner/:project/webhooks/:id  → 웹훅 삭제
 | Secret 전달 | `Authorization: token <secret> ` 헤더    | 🔶 부분 구현 | 5     |
 | 이벤트 타입 | issue, pull_request, comment, review 등  | 🔶 부분 구현 | 5     |
 | Hangout Chat thread | `DETAIL_HANGOUT_CHAT` 응답의 `thread.name`을 resource별로 저장/재사용 | ✅ 구현 | 5 |
-| 실행 이력   | 발송 성공/실패 기록                      | 🔶 delivery history row와 settings read surface 구현; retry gap | 5     |
+| 실행 이력   | 발송 성공/실패 기록                      | 🔶 delivery history row/settings read surface와 retry 구현; HTTPS hardening gap | 5     |
 
 #### 검수 기준
 
@@ -965,7 +967,8 @@ DELETE /:owner/:project/webhooks/:id  → 웹훅 삭제
 - [x] Pull request commit-changed fan-out: Smart HTTP pushes to open PR source branches persist `PULL_REQUEST_COMMIT_CHANGED` and dispatch the legacy non-JSON PR webhook shape; plain close/reopen did not call project webhooks in observed legacy code.
 - [x] DETAIL_HANGOUT_CHAT thread reuse: legacy `WebhookThread` semantics are mirrored for issue/comment and PR webhook fan-out by persisting the first successful response `thread.name` per webhook/resource and sending it on follow-up payloads.
 - [x] Delivery history read surface: `/api/v1/owners/:owner/projects/:project/webhooks` returns recent `webhook_delivery` rows and `/:owner/:project/webhooks` renders `#webhookDeliveryHistory` / `.webhook-history-wrap` with success/failure status, payload URL, response body, and error message.
-- [ ] HTTPS production delivery hardening and retry behavior
+- [x] Retry behavior: `YONA_WEBHOOK_DELIVERY_RETRIES` / `WEBHOOK_DELIVERY_RETRIES` retries transient webhook failures up to 5 times before recording the final success/failure result.
+- [ ] HTTPS production delivery hardening
 - [ ] HMAC-style signature compatibility is not present in observed legacy `Webhook.java`; only add if external integration evidence requires it.
 
 ---
@@ -1381,7 +1384,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, specific commit changes route/filter, selected commit `.commitInfo`/`.commitMsg.mt5`, 조직 PR 목록, create/edit, close/reopen, review/unreview, required/lacking reviewer projection, project default reviewer threshold settings, review-threshold-gated accept, PR watcher projection/watch-unwatch, PR watcher/body-mention-derived notification receiver, 일반 PR comment, thread open/close, fork/clone, conflict-free merge, conflict 표시/merge 비활성화 안내, source branch cleanup/restore, PR commit-changed event/webhook, PRIOR commit/review-card outdated marker, side-aware single/multi-line ranged inline review CRUD. in-app conflict resolution은 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
 | 알림              | 🔶 기본만         | SMTP 인프라, 프로젝트 알림 토글, notification inbox/list, core event icon/message projection, single/mass-update issue state-change receiver fan-out, mail queue staging, due-row outbound fan-out helper, allowed-domain mail receiver filtering, BCC hide-address mode, recipientLimit partitioning |
-| 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment/merge/commit-changed non-JSON fan-out, DETAIL_HANGOUT_CHAT thread name persistence/reuse, git-push JSON payloads, delivery history row recording, and settings history read surface; retry behavior and production delivery hardening remain gaps |
+| 웹훅              | 🔶 부분 구현      | UPDATE-gated project webhook form/list CRUD plus issue/comment and PR create/review/comment/merge/commit-changed non-JSON fan-out, DETAIL_HANGOUT_CHAT thread name persistence/reuse, git-push JSON payloads, delivery history row recording, settings history read surface, and retry behavior; HTTPS production delivery hardening remains a gap |
 | 관리자            | ❌ 미구현         |                                                                  |
 | 마크다운          | 🔶 기본 구현      | React-side project preview/source rendering plus marked-style leading-space ATX and setext heading ids/levels/head-anchor links, marked-style backslash escapes, inline link/image angle-wrapped targets, escaped target/title punctuation, safe uppercase URL schemes, and title attributes with legacy delimiters, reference-style links/images with escaped reference labels, newline-split target/title definitions, escaped definition target/title punctuation, and fenced-code definition exclusion for backtick/tilde fences, inline emphasis/strong/delete nested parsing and code span delimiter, newline, and spacing normalization, `@user`, `@owner/project`, `#123`, `owner#123`, `owner/project#123`, bare and angle-bracket `http(s)`/`ftp`/`www`/email autolinks with marked-style angle URL case handling and trailing-punctuation/entity-like suffix backpedaling, readable issue title/state metadata on saved issue/PR/code/milestone/board Markdown render paths, normal soft line breaks, legacy `readme-body` `breaks: false` soft-line behavior, hard-break marker consumption, horizontal rules including spaced markers, GFM strikethrough, basic GFM pipe tables with escaped-pipe cells, one-or-more dash separators, row cell padding/truncation, block interruption, and left/center/right alignment, basic smart lists with non-1 ordered-list start preservation, basic blockquotes with blank-line paragraph splitting plus nested ATX/setext heading, list, table, horizontal-rule, and indented-code block parsing, indented code blocks plus backtick and tilde fenced code blocks with optional separating space, EOF closure, backtick-fence indent compensation, first info-string token language class preservation, and matching closing-fence length, safe inline images, disabled task-list checkbox inputs, issue/board tasklist progress bars, fenced-code token highlighting on older helper code paths, code-browser Markdown React-side rendering with local image path rewrite, project-home Git README React-side rendering with local image/normal-link rewrite, issue body/comment/history modal React-side rendering, PR body/review comment React-side rendering, Git commit discussion comment React-side rendering, board post/comment/history modal/DB README posting React-side rendering, and milestone detail React-side rendering |
 | REST API          | 🔶 부분           | `/api/v1` application API는 Phase 1~3A 구현 흐름을 커버. `/-_-api/v1/hello` health check는 legacy JSON으로 구현됐고, 나머지 `/-_-api/v1` legacy external API는 별도 migrator/export/import deliverable로 분리 |
@@ -1600,7 +1603,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
 - Notification: full mail notification template parity plus IMAP polling, sender extraction, MIME parsing, and mailbox/reply threading after issue/board/code/review comment `original_email` marker parity, mailbox plus-address parser parity, and DB-backed `CreationViaEmailTest` resource creation parity
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility beyond the direct `hello` health check, including issue API parity, is a separate product/tool deliverable rather than app server scope
-- Webhook follow-up: HTTPS production delivery hardening, optional signature compatibility if external evidence requires it, and retry behavior
+- Webhook follow-up: HTTPS production delivery hardening and optional signature compatibility if external evidence requires it
 - Admin: users/projects/site-admin/account-lock/test-mail surfaces
 - Markdown follow-up: full legacy/GFM extension parity, remaining autolink edge cases if legacy evidence requires them, and full Highlight.js-equivalent language coverage
 

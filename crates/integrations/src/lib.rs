@@ -110,8 +110,8 @@ fn test_webhook_outbox() -> &'static Mutex<Vec<WebhookDeliveryRecord>> {
     OUTBOX.get_or_init(|| Mutex::new(Vec::new()))
 }
 
-fn test_webhook_responses() -> &'static Mutex<VecDeque<String>> {
-    static RESPONSES: OnceLock<Mutex<VecDeque<String>>> = OnceLock::new();
+fn test_webhook_responses() -> &'static Mutex<VecDeque<Result<String, String>>> {
+    static RESPONSES: OnceLock<Mutex<VecDeque<Result<String, String>>>> = OnceLock::new();
     RESPONSES.get_or_init(|| Mutex::new(VecDeque::new()))
 }
 
@@ -136,7 +136,14 @@ pub fn queue_test_webhook_response(response: impl ToString) {
     test_webhook_responses()
         .lock()
         .unwrap()
-        .push_back(response.to_string());
+        .push_back(Ok(response.to_string()));
+}
+
+pub fn queue_test_webhook_failure(error: impl ToString) {
+    test_webhook_responses()
+        .lock()
+        .unwrap()
+        .push_back(Err(error.to_string()));
 }
 
 pub fn smtp_enabled() -> bool {
@@ -154,6 +161,13 @@ fn configured_env_value(names: &[&str]) -> Option<String> {
 
 pub fn webhook_http_delivery_enabled() -> bool {
     read_bool_env("WEBHOOK_HTTP_DELIVERY_ENABLED")
+}
+
+pub fn webhook_delivery_retry_count_from_env() -> usize {
+    configured_env_value(&["WEBHOOK_DELIVERY_RETRIES", "YONA_WEBHOOK_DELIVERY_RETRIES"])
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(0)
+        .min(5)
 }
 
 pub fn smtp_delivery_config_from_env() -> SmtpDeliveryConfig {
@@ -229,15 +243,32 @@ pub fn deliver_webhook(webhook: OutboundWebhook) -> Result<WebhookDeliveryOutcom
         payload_url: webhook.payload_url,
         webhook_type: webhook.webhook_type,
     };
+    let attempts = webhook_delivery_retry_count_from_env() + 1;
+    let mut last_error = None;
+    for _attempt in 0..attempts {
+        match deliver_webhook_once(&record) {
+            Ok(outcome) => return Ok(outcome),
+            Err(error) => last_error = Some(error),
+        }
+    }
+    Err(last_error.unwrap_or_else(|| "webhook delivery failed".to_string()))
+}
 
+fn deliver_webhook_once(record: &WebhookDeliveryRecord) -> Result<WebhookDeliveryOutcome, String> {
     if !webhook_http_delivery_enabled() {
-        test_webhook_outbox().lock().unwrap().push(record);
-        return Ok(WebhookDeliveryOutcome {
-            response_body: test_webhook_responses().lock().unwrap().pop_front(),
-        });
+        test_webhook_outbox().lock().unwrap().push(record.clone());
+        return match test_webhook_responses().lock().unwrap().pop_front() {
+            Some(Ok(response_body)) => Ok(WebhookDeliveryOutcome {
+                response_body: Some(response_body),
+            }),
+            Some(Err(error)) => Err(error),
+            None => Ok(WebhookDeliveryOutcome {
+                response_body: None,
+            }),
+        };
     }
 
-    post_webhook_over_plain_http(&record)
+    post_webhook_over_plain_http(record)
 }
 
 fn webhook_headers(secret: &str) -> Vec<WebhookHeaderRecord> {
