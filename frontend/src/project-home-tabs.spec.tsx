@@ -133,6 +133,77 @@ describe("project home tab parity", () => {
     expect(html).not.toContain("No README post yet.");
   });
 
+  it("uses metadata-backed mention links for DB-backed README postings", () => {
+    const html = renderToString(
+      <ProjectDetailPage
+        detail={{
+          ...projectHomeDetail,
+          defaultTab: "readme",
+        }}
+        readmePost={{
+          authorLabel: "Owner",
+          authorLoginId: "owner",
+          authorId: "1",
+          attachments: [],
+          bodyHtml: "",
+          bodyMarkdown: "README @owner @yona/projectYobi @ghost @yona/missing",
+          commentCount: 0,
+          comments: [],
+          createdLabel: "now",
+          historyHtml: "",
+          historyMarkdown: "",
+          id: "1",
+          issueReferences: [],
+          isWatching: false,
+          labels: [],
+          mentionReferences: [
+            {
+              kind: "user",
+              label: "owner",
+              loginId: "owner",
+              ownerName: "",
+              projectName: "",
+            },
+            {
+              kind: "project",
+              label: "yona/projectYobi",
+              loginId: "",
+              ownerName: "yona",
+              projectName: "projectYobi",
+            },
+          ],
+          notice: false,
+          ownerName: "yona",
+          permissions: {
+            canComment: false,
+            canCreate: false,
+            canDelete: false,
+            canRead: true,
+            canSetNotice: false,
+            canWatch: false,
+            canUpdate: false,
+          },
+          postNumber: "1",
+          projectName: "projectYobi",
+          readme: true,
+          title: "README",
+          updatedLabel: "now",
+          watcherCount: 0,
+        }}
+        routeHref="/yona/yona/projectYobi"
+        runtimeConfig={testRuntimeConfig}
+      />,
+    );
+
+    expect(html).toContain('class="board-view project-readme-post"');
+    expect(html).toContain('href="/yona/owner"');
+    expect(html).toContain('href="/yona/yona/projectYobi"');
+    expect(html).toContain("@ghost");
+    expect(html).toContain("@yona/missing");
+    expect(html).not.toContain('href="/yona/ghost"');
+    expect(html).not.toContain('href="/yona/yona/missing"');
+  });
+
   it("uses tabId=dashboard to render the legacy dashboard composition shell", () => {
     const html = renderProjectHome("/yona/yona/projectYobi?tabId=dashboard");
 
@@ -205,3 +276,33 @@ describe("project home tab parity", () => {
     expect(html).toContain('title="33%"');
   });
 });
+
+const projectHomeDetail: ProjectDetailViewModel = {
+  boardCount: 2,
+  currentMilestone: {
+    closedIssueCount: 1,
+    completionPercent: 25,
+    dueDateLabel: "Due 2026-06-30",
+    openIssueCount: 3,
+    title: "Phase dashboard",
+  },
+  defaultTab: "readme",
+  enrollmentRequested: false,
+  isFavorited: false,
+  openIssueCount: 4,
+  openPullRequestCount: 2,
+  organizationName: "",
+  overview: "Project home parity",
+  ownerName: "yona",
+  projectName: "projectYobi",
+  projectScope: "public",
+  reviewCount: 1,
+  showBoard: true,
+  showCode: true,
+  showIssue: true,
+  showMilestone: true,
+  showPullRequest: true,
+  showReview: true,
+  viewerCanEnroll: false,
+  viewerCanUpdate: false,
+};

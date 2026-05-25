@@ -920,7 +920,12 @@ export function ProjectDetailPage(props: {
                         <h3>{props.readmePost.title || "README"}</h3>
                         <MarkdownRenderer
                           className="readme-body markdown-wrap"
+                          basePath={props.runtimeConfig?.basePath}
+                          issueReferences={props.readmePost.issueReferences}
                           markdown={props.readmePost.bodyMarkdown}
+                          mentionReferences={props.readmePost.mentionReferences}
+                          ownerName={props.readmePost.ownerName}
+                          projectName={props.readmePost.projectName}
                         />
                       </article>
                     ) : detail.readmeFile ? (
