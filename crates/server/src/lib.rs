@@ -2502,7 +2502,27 @@ fn svn_protocol_file_propfind_response(repo_path: &StdPath, route: &SvnProtocolR
         route.project_name,
         route.svn_path.trim_matches('/')
     );
-    svn_protocol_propfind_file_response(&href, bytes.len())
+    let version_revision = match revision {
+        Some(revision) => Some(revision),
+        None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
+            Ok(revision) => Some(revision),
+            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::SvnLookUnavailable) => None,
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        },
+    };
+    let version_href = version_revision.map(|revision| {
+        format!(
+            "/svn/{}/{}/!svn/ver/{}/{}",
+            route.owner_name,
+            route.project_name,
+            revision,
+            path.trim_matches('/')
+        )
+    });
+    svn_protocol_propfind_file_response(&href, bytes.len(), version_revision, version_href, &path)
 }
 
 fn svn_protocol_tree_propfind_response(
@@ -2538,7 +2558,9 @@ fn svn_protocol_propfind_tree_response(
         if entry.is_dir {
             responses.push_str(&svn_protocol_propfind_collection_item(&href));
         } else {
-            responses.push_str(&svn_protocol_propfind_file_item(&href, None));
+            responses.push_str(&svn_protocol_propfind_file_item(
+                &href, None, None, None, None,
+            ));
         }
     }
     let body = format!(
@@ -2555,11 +2577,23 @@ fn svn_protocol_propfind_tree_response(
     response
 }
 
-fn svn_protocol_propfind_file_response(href: &str, content_length: usize) -> Response {
-    let item = svn_protocol_propfind_file_item(href, Some(content_length));
+fn svn_protocol_propfind_file_response(
+    href: &str,
+    content_length: usize,
+    version_revision: Option<i64>,
+    version_href: Option<String>,
+    baseline_relative_path: &str,
+) -> Response {
+    let item = svn_protocol_propfind_file_item(
+        href,
+        Some(content_length),
+        version_revision,
+        version_href.as_deref(),
+        Some(baseline_relative_path),
+    );
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
-<D:multistatus xmlns:D="DAV:">
+<D:multistatus xmlns:D="DAV:" xmlns:S="svn:">
 {item}
 </D:multistatus>"#,
     );
@@ -2588,9 +2622,34 @@ fn svn_protocol_propfind_collection_item(href: &str) -> String {
     )
 }
 
-fn svn_protocol_propfind_file_item(href: &str, content_length: Option<usize>) -> String {
+fn svn_protocol_propfind_file_item(
+    href: &str,
+    content_length: Option<usize>,
+    version_revision: Option<i64>,
+    version_href: Option<&str>,
+    baseline_relative_path: Option<&str>,
+) -> String {
     let content_length = content_length
         .map(|length| format!("        <D:getcontentlength>{length}</D:getcontentlength>\n"))
+        .unwrap_or_default();
+    let version_name = version_revision
+        .map(|revision| format!("        <D:version-name>{revision}</D:version-name>\n"))
+        .unwrap_or_default();
+    let checked_in = version_href
+        .map(|href| {
+            format!(
+                "        <D:checked-in><D:href>{}</D:href></D:checked-in>\n",
+                xml_escape(href)
+            )
+        })
+        .unwrap_or_default();
+    let baseline_relative_path = baseline_relative_path
+        .map(|path| {
+            format!(
+                "        <S:baseline-relative-path>{}</S:baseline-relative-path>\n",
+                xml_escape(path.trim_matches('/'))
+            )
+        })
         .unwrap_or_default();
     format!(
         r#"  <D:response>
@@ -2598,7 +2657,7 @@ fn svn_protocol_propfind_file_item(href: &str, content_length: Option<usize>) ->
     <D:propstat>
       <D:prop>
         <D:resourcetype/>
-{content_length}      </D:prop>
+{content_length}{version_name}{checked_in}{baseline_relative_path}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
   </D:response>

@@ -487,6 +487,12 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert!(
         text.contains("<D:resourcetype/>")
             && text.contains("<D:getcontentlength>15</D:getcontentlength>")
+            && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
+            && text.contains(&format!(
+                "<D:href>/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md</D:href>"
+            ))
+            && text
+                .contains("<S:baseline-relative-path>trunk/README.md</S:baseline-relative-path>")
             && text.contains("/svn/owner/projectYobi/trunk/README.md"),
         "SVN file PROPFIND should return file metadata: {text}"
     );
@@ -505,6 +511,9 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert!(
         text.contains("<D:resourcetype/>")
             && text.contains("<D:getcontentlength>15</D:getcontentlength>")
+            && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
+            && text
+                .contains("<S:baseline-relative-path>trunk/README.md</S:baseline-relative-path>")
             && text.contains(&format!(
                 "/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md"
             )),
