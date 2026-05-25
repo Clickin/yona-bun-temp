@@ -242,8 +242,27 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             .headers()
             .get(http::header::ALLOW)
             .and_then(|value| value.to_str().ok())
-            .is_some_and(|allow| allow.contains("OPTIONS") && allow.contains("PROPFIND")),
+            .is_some_and(|allow| {
+                allow.contains("OPTIONS") && allow.contains("PROPFIND") && allow.contains("REPORT")
+            }),
         "SVN OPTIONS should advertise WebDAV methods"
+    );
+
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NOT_IMPLEMENTED);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
     );
 
     db.execute_unprepared(&format!(

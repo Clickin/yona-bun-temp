@@ -2083,7 +2083,10 @@ async fn direct_svn_protocol_request(
     };
     let (parts, _body) = request.into_parts();
     let method = parts.method.as_str().to_ascii_uppercase();
-    let permission = if matches!(method.as_str(), "GET" | "HEAD" | "OPTIONS" | "PROPFIND") {
+    let permission = if matches!(
+        method.as_str(),
+        "GET" | "HEAD" | "OPTIONS" | "PROPFIND" | "REPORT"
+    ) {
         SmartHttpPermission::Read
     } else {
         SmartHttpPermission::Write
