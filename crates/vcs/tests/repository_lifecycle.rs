@@ -3,7 +3,8 @@ use std::process::Command;
 use tempfile::tempdir;
 use yona_rust_vcs::{
     create_svn_repository, delete_repository, ensure_svnadmin_available, repository_path,
-    repository_path_for_vcs, svn_repository_path, svn_youngest_revision, VcsError,
+    repository_path_for_vcs, svn_repository_path, svn_repository_uuid, svn_youngest_revision,
+    VcsError,
 };
 
 fn svnadmin_available() -> bool {
@@ -91,4 +92,20 @@ fn svn_youngest_revision_uses_svnlook_when_available() {
         svn_youngest_revision(&repo_path).expect("read youngest revision"),
         0
     );
+}
+
+#[test]
+fn svn_repository_uuid_uses_svnlook_when_available() {
+    if !svnadmin_available() || !svnlook_available() {
+        return;
+    }
+
+    let data_root = tempdir().expect("tempdir");
+    let repo_path = svn_repository_path(data_root.path(), 13);
+
+    create_svn_repository(&repo_path).expect("create svn repository");
+
+    let uuid = svn_repository_uuid(&repo_path).expect("read repository uuid");
+    assert_eq!(uuid.len(), 36);
+    assert!(uuid.chars().all(|ch| ch.is_ascii_hexdigit() || ch == '-'));
 }

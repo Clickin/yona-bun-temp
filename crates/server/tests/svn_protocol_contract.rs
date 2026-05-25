@@ -291,6 +291,12 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             text.contains(&format!("<D:version-name>{revision}</D:version-name>")),
             "SVN root PROPFIND should include executable-backed youngest revision metadata: {text}"
         );
+        let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+        let uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).expect("read repository uuid");
+        assert!(
+            text.contains(&format!("<S:repository-uuid>{uuid}</S:repository-uuid>")),
+            "SVN root PROPFIND should include executable-backed repository UUID metadata: {text}"
+        );
     }
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
@@ -320,6 +326,12 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
         assert!(
             text.contains(&format!("<D:version-name>{revision}</D:version-name>")),
             "SVN default VCC PROPFIND should include executable-backed youngest revision metadata: {text}"
+        );
+        let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+        let uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).expect("read repository uuid");
+        assert!(
+            text.contains(&format!("<S:repository-uuid>{uuid}</S:repository-uuid>")),
+            "SVN default VCC PROPFIND should include executable-backed repository UUID metadata: {text}"
         );
     }
 

@@ -2329,11 +2329,17 @@ async fn direct_svn_protocol_request(
     }
     if method == "PROPFIND" && route.svn_path.is_empty() {
         let youngest_revision = yona_rust_vcs::svn_youngest_revision(&repo_path).ok();
-        return svn_protocol_root_propfind_response(&route, youngest_revision);
+        let repository_uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).ok();
+        return svn_protocol_root_propfind_response(&route, youngest_revision, repository_uuid);
     }
     if method == "PROPFIND" && route.svn_path == "!svn/vcc/default" {
         let youngest_revision = yona_rust_vcs::svn_youngest_revision(&repo_path).ok();
-        return svn_protocol_collection_propfind_response(&route, youngest_revision);
+        let repository_uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).ok();
+        return svn_protocol_collection_propfind_response(
+            &route,
+            youngest_revision,
+            repository_uuid,
+        );
     }
     if method == "PROPFIND" {
         if let Some(response) = svn_protocol_tree_propfind_response(&repo_path, &route) {
@@ -2371,38 +2377,50 @@ fn svn_protocol_options_response() -> Response {
 fn svn_protocol_root_propfind_response(
     route: &SvnProtocolRoute,
     youngest_revision: Option<i64>,
+    repository_uuid: Option<String>,
 ) -> Response {
     let href = format!("/svn/{}/{}/", route.owner_name, route.project_name);
-    svn_protocol_propfind_collection_response(&href, youngest_revision)
+    svn_protocol_propfind_collection_response(&href, youngest_revision, repository_uuid)
 }
 
 fn svn_protocol_collection_propfind_response(
     route: &SvnProtocolRoute,
     youngest_revision: Option<i64>,
+    repository_uuid: Option<String>,
 ) -> Response {
     let href = format!(
         "/svn/{}/{}/{}",
         route.owner_name, route.project_name, route.svn_path
     );
-    svn_protocol_propfind_collection_response(&href, youngest_revision)
+    svn_protocol_propfind_collection_response(&href, youngest_revision, repository_uuid)
 }
 
 fn svn_protocol_propfind_collection_response(
     href: &str,
     youngest_revision: Option<i64>,
+    repository_uuid: Option<String>,
 ) -> Response {
     let version_name = youngest_revision
         .map(|revision| format!("        <D:version-name>{revision}</D:version-name>\n"))
         .unwrap_or_default();
+    let repository_uuid = repository_uuid
+        .map(|uuid| {
+            format!(
+                "        <S:repository-uuid>{}</S:repository-uuid>\n",
+                xml_escape(&uuid)
+            )
+        })
+        .unwrap_or_default();
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
-<D:multistatus xmlns:D="DAV:">
+<D:multistatus xmlns:D="DAV:" xmlns:S="svn:">
   <D:response>
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
         <D:resourcetype><D:collection/></D:resourcetype>
 {version_name}
+{repository_uuid}
       </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>

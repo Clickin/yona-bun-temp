@@ -383,6 +383,29 @@ pub fn svn_youngest_revision(repo_path: &Path) -> Result<i64, VcsError> {
         .map_err(|_| VcsError::SvnLookFailed(format!("invalid youngest revision: {revision}")))
 }
 
+pub fn svn_repository_uuid(repo_path: &Path) -> Result<String, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+
+    let output = Command::new("svnlook")
+        .args(["uuid"])
+        .arg(repo_path)
+        .output()
+        .map_err(|_| VcsError::SvnLookUnavailable)?;
+    if !output.status.success() {
+        return Err(VcsError::SvnLookFailed(
+            String::from_utf8_lossy(&output.stderr).trim().to_string(),
+        ));
+    }
+
+    let uuid = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if uuid.is_empty() {
+        return Err(VcsError::SvnLookFailed("empty repository uuid".to_string()));
+    }
+    Ok(uuid)
+}
+
 pub fn svn_cat_file(
     repo_path: &Path,
     revision: Option<i64>,
