@@ -506,7 +506,7 @@ function MarkdownInline(props: { context?: MarkdownContext; line: string }) {
 }
 
 function paragraphBlocks(markdown: string): MarkdownBlockRecord[] {
-  const normalized = markdown.replace(/\r\n?/g, "\n").trim();
+  const normalized = markdown.replace(/\r\n?/g, "\n").replace(/^\n+|\n+$/g, "");
   if (!normalized) {
     return [];
   }
@@ -698,6 +698,25 @@ function parseFencedCodeBlock(lines: MarkdownLineRecord[]): MarkdownCodeBlockRec
   };
 }
 
+function parseIndentedCodeBlock(lines: MarkdownLineRecord[]): MarkdownCodeBlockRecord | null {
+  if (lines.length === 0) {
+    return null;
+  }
+  const codeLines: string[] = [];
+  for (const line of lines) {
+    if (/^ {4}/.test(line.text)) {
+      codeLines.push(line.text.slice(4));
+      continue;
+    }
+    if (line.text.startsWith("\t")) {
+      codeLines.push(line.text.slice(1));
+      continue;
+    }
+    return null;
+  }
+  return { code: codeLines.join("\n") };
+}
+
 function slugifyHeadingId(value: string): string {
   return value
     .trim()
@@ -746,6 +765,14 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
     return (
       <pre>
         <code className={codeBlock.language}>{codeBlock.code}</code>
+      </pre>
+    );
+  }
+  const indentedCodeBlock = parseIndentedCodeBlock(lines);
+  if (indentedCodeBlock) {
+    return (
+      <pre>
+        <code>{indentedCodeBlock.code}</code>
       </pre>
     );
   }

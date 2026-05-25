@@ -102,6 +102,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("After");
   });
 
+  it("renders indented code blocks like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"    let value = '#1';\n    [guide]: https://example.com"} />,
+    );
+
+    expect(html).toContain("<pre><code");
+    expect(html).toContain("let value = &#x27;#1&#x27;;");
+    expect(html).toContain("[guide]: https://example.com");
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain('<a href="https://example.com">');
+  });
+
   it("renders horizontal rules like legacy marked", () => {
     const html = renderToStaticMarkup(<MarkdownRenderer markdown={"Before\n\n---\n\nAfter"} />);
 
