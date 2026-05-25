@@ -784,6 +784,102 @@ function parseMarkdownBlockquote(lines: MarkdownLineRecord[]): MarkdownBlockquot
   return quoteLines;
 }
 
+function markdownLineStartsBlock(line: string): boolean {
+  return /^ {0,3}#{1,6}(?=\s|$)/.test(line) || /^ {0,3}(?:[*+-]|\d+[.)])\s+/.test(line);
+}
+
+function markdownLinesContainTable(lines: MarkdownLineRecord[]): boolean {
+  return lines.some((_, index) => Boolean(parseMarkdownTableSpan(lines.slice(index))));
+}
+
+function MarkdownBlockSequence(props: {
+  context?: MarkdownContext;
+  lines: MarkdownLineRecord[];
+  terminalNewline?: boolean;
+}) {
+  const children: React.ReactNode[] = [];
+  const lineCount = props.lines.length;
+  let index = 0;
+  while (index < lineCount) {
+    const line = props.lines[index];
+    if (!line) {
+      break;
+    }
+    if (/^\s*$/.test(line.text)) {
+      index += 1;
+      continue;
+    }
+    const tableSpan = parseMarkdownTableSpan(props.lines.slice(index));
+    if (tableSpan) {
+      children.push(
+        <MarkdownTable
+          context={props.context}
+          key={`sequence-${line.key}-table`}
+          table={tableSpan.table}
+        />,
+      );
+      index += tableSpan.consumedLineCount;
+      continue;
+    }
+    if (/^ {0,3}#{1,6}(?=\s|$)/.test(line.text)) {
+      children.push(
+        <MarkdownBlock
+          block={{ key: `sequence-${line.key}`, text: line.text }}
+          context={props.context}
+          key={`sequence-${line.key}`}
+        />,
+      );
+      index += 1;
+      continue;
+    }
+    if (/^ {0,3}(?:[*+-]|\d+[.)])\s+/.test(line.text)) {
+      const listLines = [line];
+      index += 1;
+      while (index < lineCount) {
+        const nextLine = props.lines[index];
+        if (!nextLine || !/^ {0,3}(?:[*+-]|\d+[.)])\s+/.test(nextLine.text)) {
+          break;
+        }
+        listLines.push(nextLine);
+        index += 1;
+      }
+      children.push(
+        <MarkdownBlock
+          block={{
+            key: `sequence-${line.key}`,
+            text: listLines.map((item) => item.text).join("\n"),
+          }}
+          context={props.context}
+          key={`sequence-${line.key}`}
+        />,
+      );
+      continue;
+    }
+    const paragraphLines = [line];
+    index += 1;
+    while (index < lineCount) {
+      const nextLine = props.lines[index];
+      if (!nextLine || /^\s*$/.test(nextLine.text) || markdownLineStartsBlock(nextLine.text)) {
+        break;
+      }
+      paragraphLines.push(nextLine);
+      index += 1;
+    }
+    children.push(
+      <MarkdownBlock
+        block={{
+          key: `sequence-${line.key}`,
+          terminalNewline: index >= lineCount ? props.terminalNewline : undefined,
+          text: paragraphLines.map((item) => item.text).join("\n"),
+        }}
+        context={props.context}
+        key={`sequence-${line.key}`}
+      />,
+    );
+  }
+  return <>{children}</>;
+}
+
 function parseFencedCodeBlock(
   lines: MarkdownLineRecord[],
   closesAtEof: boolean,
@@ -943,6 +1039,20 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
     const normalizedBlockquote = markdownLines(
       normalizeCodeSpanNewlines(blockquote.map((line) => line.text).join("\n")),
     );
+    const hasNestedBlocks =
+      normalizedBlockquote.some((line) => markdownLineStartsBlock(line.text)) ||
+      markdownLinesContainTable(normalizedBlockquote);
+    if (hasNestedBlocks) {
+      return (
+        <blockquote>
+          <MarkdownBlockSequence
+            context={props.context}
+            lines={normalizedBlockquote}
+            terminalNewline={props.block.terminalNewline}
+          />
+        </blockquote>
+      );
+    }
     return (
       <blockquote>
         <p>

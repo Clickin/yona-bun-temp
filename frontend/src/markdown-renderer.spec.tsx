@@ -727,4 +727,17 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<p>&gt;");
     expect(html).toContain("<del>style</del>");
   });
+
+  it("parses Markdown blocks inside blockquotes like legacy marked", () => {
+    const html = renderToStaticMarkup(<MarkdownRenderer markdown={"> # Quoted\n> - item"} />);
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain(
+      '<h1 id="quoted">Quoted<a class="head-anchor" href="#quoted">#</a></h1>',
+    );
+    expect(html).toContain("<ul>");
+    expect(html).toContain("<li>item</li>");
+    expect(html).not.toContain("<p># Quoted");
+    expect(html).not.toContain("<p>- item");
+  });
 });
