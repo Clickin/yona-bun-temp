@@ -518,6 +518,21 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain('href="https://example.com/end."');
   });
 
+  it("backpedals entity-like suffixes from bare URLs like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={"See https://example.com/a&copy; and https://example.com/a&amp;copy;"}
+      />,
+    );
+
+    expect(html).toContain('<a href="https://example.com/a">https://example.com/a</a>&amp;copy;');
+    expect(html).toContain(
+      '<a href="https://example.com/a&amp;amp;copy">https://example.com/a&amp;amp;copy</a>;',
+    );
+    expect(html).not.toContain('href="https://example.com/a&amp;copy"');
+    expect(html).not.toContain('href="https://example.com/a&amp;copy;"');
+  });
+
   it("renders basic GFM pipe tables like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"| Name | State |\n| --- | --- |\n| #1 | ~~closed~~ |"} />,

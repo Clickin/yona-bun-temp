@@ -240,6 +240,16 @@ function issueReferenceFor(
 function splitBareAutolinkToken(token: string) {
   let label = token;
   let suffix = "";
+  const entitySuffix = /&[A-Za-z0-9]+;$/.exec(label)?.[0];
+  if (entitySuffix) {
+    const entityStart = label.length - entitySuffix.length;
+    if (label[entityStart - 1] !== ";") {
+      return {
+        label: label.slice(0, entityStart),
+        suffix: entitySuffix,
+      };
+    }
+  }
   while (/[?!.,:;*_~)]$/.test(label)) {
     const last = label.at(-1) ?? "";
     if (last === ")") {
