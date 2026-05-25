@@ -26,6 +26,13 @@ type MarkdownIssueReference = {
   title?: string;
 };
 
+type MarkdownCommitReference = {
+  commitId: string;
+  ownerName: string;
+  projectName: string;
+  title?: string;
+};
+
 type MarkdownReferenceDefinition = {
   target: string;
   title?: string;
@@ -34,6 +41,7 @@ type MarkdownReferenceDefinition = {
 type MarkdownContext = {
   basePath?: string;
   breaks?: boolean;
+  commitReferenceMap?: Map<string, MarkdownCommitReference>;
   issueReferenceMap?: Map<string, MarkdownIssueReference>;
   ownerName?: string;
   projectName?: string;
@@ -238,6 +246,42 @@ function issueReferenceFor(
   return context?.issueReferenceMap?.get(`${ownerName}/${projectName}#${issueNumber}`);
 }
 
+function commitReferenceKey(ownerName: string, projectName: string, commitId: string) {
+  return `${ownerName}/${projectName}@${commitId.toLowerCase()}`;
+}
+
+function commitReferenceFor(
+  context: MarkdownContext | undefined,
+  ownerName: string,
+  projectName: string,
+  commitId: string,
+) {
+  return context?.commitReferenceMap?.get(commitReferenceKey(ownerName, projectName, commitId));
+}
+
+function commitAutolinkPart(
+  token: string,
+  key: string,
+  basePath: string,
+  ownerName: string,
+  projectName: string,
+  commitId: string,
+  context?: MarkdownContext,
+): MarkdownInlinePart {
+  const reference = commitReferenceFor(context, ownerName, projectName, commitId);
+  if (!reference) {
+    return { kind: "text", key, value: token };
+  }
+  return {
+    className: "commit-link",
+    kind: "link",
+    key,
+    label: token,
+    target: `${basePath}/${ownerName}/${projectName}/commit/${reference.commitId}`,
+    title: reference.title,
+  };
+}
+
 function splitBareAutolinkToken(token: string) {
   let label = token;
   let suffix = "";
@@ -320,7 +364,7 @@ function parseTextWithAutolinks(
   const ownerName = context?.ownerName ?? "";
   const projectName = context?.projectName ?? "";
   const autolinkPattern =
-    /(^|[^\w/@#.-])(<(?:(?:[Hh][Tt][Tt][Pp][Ss]?|[Ff][Tt][Pp]):\/\/[^\s<>]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|@[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+|@[A-Za-z0-9_.-]+|[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+#[0-9]+|[A-Za-z0-9_.-]+#[0-9]+|#[0-9]+|https?:\/\/[^\s<]+|ftp:\/\/[^\s<]+|www\.[^\s<]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/g;
+    /(^|[^\w/@#.-])(<(?:(?:[Hh][Tt][Tt][Pp][Ss]?|[Ff][Tt][Pp]):\/\/[^\s<>]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+@[0-9A-Fa-f]{40}|[A-Za-z0-9_.-]+@[0-9A-Fa-f]{40}|@[0-9A-Fa-f]{40}|[0-9A-Fa-f]{40}|@[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+|@[A-Za-z0-9_.-]+|[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+#[0-9]+|[A-Za-z0-9_.-]+#[0-9]+|#[0-9]+|https?:\/\/[^\s<]+|ftp:\/\/[^\s<]+|www\.[^\s<]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/g;
   let index = 0;
   for (const match of text.matchAll(autolinkPattern)) {
     const matchStart = match.index ?? 0;
@@ -341,6 +385,38 @@ function parseTextWithAutolinks(
         ? `mailto:${label}`
         : label;
       parts.push({ kind: "link", key, label, target });
+    } else if (/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+@[0-9a-f]{40}$/i.test(token)) {
+      const match = /^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)@([0-9a-f]{40})$/i.exec(token);
+      parts.push(
+        commitAutolinkPart(
+          token,
+          key,
+          basePath,
+          match?.[1] ?? "",
+          match?.[2] ?? "",
+          match?.[3] ?? "",
+          context,
+        ),
+      );
+    } else if (/^[A-Za-z0-9_.-]+@[0-9a-f]{40}$/i.test(token)) {
+      const match = /^([A-Za-z0-9_.-]+)@([0-9a-f]{40})$/i.exec(token);
+      parts.push(
+        commitAutolinkPart(
+          token,
+          key,
+          basePath,
+          match?.[1] ?? "",
+          projectName,
+          match?.[2] ?? "",
+          context,
+        ),
+      );
+    } else if (/^@[0-9a-f]{40}$/i.test(token) && ownerName && projectName) {
+      parts.push(
+        commitAutolinkPart(token, key, basePath, ownerName, projectName, token.slice(1), context),
+      );
+    } else if (/^[0-9a-f]{40}$/i.test(token) && ownerName && projectName) {
+      parts.push(commitAutolinkPart(token, key, basePath, ownerName, projectName, token, context));
     } else if (/^@[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(token)) {
       const projectPath = token.slice(1);
       parts.push({
@@ -1182,6 +1258,7 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
 export function MarkdownRenderer(props: {
   basePath?: string;
   className?: string;
+  commitReferences?: MarkdownCommitReference[];
   "data-allowed-update"?: string;
   "data-via-email"?: string;
   id?: string;
@@ -1202,9 +1279,16 @@ export function MarkdownRenderer(props: {
       reference,
     ]),
   );
+  const commitReferenceMap = new Map(
+    (props.commitReferences ?? []).map((reference) => [
+      commitReferenceKey(reference.ownerName, reference.projectName, reference.commitId),
+      reference,
+    ]),
+  );
   const context = {
     basePath: props.basePath,
     breaks,
+    commitReferenceMap,
     issueReferenceMap,
     ownerName: props.ownerName,
     projectName: props.projectName,

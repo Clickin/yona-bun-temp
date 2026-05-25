@@ -245,6 +245,69 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain('href="/yona/missing/projectYobi/issue/99"');
   });
 
+  it("renders legacy commit SHA references when commit metadata exists", () => {
+    const currentSha = "be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2";
+    const ownerSha = "ffffffffffffffffffffffffffffffffffffffff";
+    const projectSha = "0123456789abcdef0123456789abcdef01234567";
+    const missingSha = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        commitReferences={[
+          {
+            commitId: currentSha,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            title: "Current project commit",
+          },
+          {
+            commitId: ownerSha,
+            ownerName: "other",
+            projectName: "projectYobi",
+            title: "Owner scoped commit",
+          },
+          {
+            commitId: projectSha,
+            ownerName: "other",
+            projectName: "project",
+            title: "Project scoped commit",
+          },
+        ]}
+        markdown={`See ${currentSha} @${currentSha} other@${ownerSha} other/project@${projectSha} missing@${missingSha}`}
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain(`href="/yona/owner/projectYobi/commit/${currentSha}"`);
+    expect(html).toContain('title="Current project commit"');
+    expect(html).toContain(`href="/yona/other/projectYobi/commit/${ownerSha}"`);
+    expect(html).toContain(`href="/yona/other/project/commit/${projectSha}"`);
+    expect(html).toContain(`missing@${missingSha}`);
+    expect(html).not.toContain(`/commit/${missingSha}`);
+  });
+
+  it("does not autolink commit SHA references inside code spans or fences", () => {
+    const sha = "be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2";
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        commitReferences={[
+          {
+            commitId: sha,
+            ownerName: "owner",
+            projectName: "projectYobi",
+          },
+        ]}
+        markdown={`Keep \`${sha}\`\n\n\`\`\`\n${sha}\n\`\`\``}
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain(`<code>${sha}</code>`);
+    expect(html).not.toContain(`/commit/${sha}`);
+  });
+
   it("renders GFM strikethrough like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown="Keep **strong** and ~~deleted~~ text" />,

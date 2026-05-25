@@ -442,6 +442,31 @@ function commitDiscussionApiHref(
   )}${suffix}`;
 }
 
+function commitDiscussionMarkdownCommitReferences(commitDetail: CodeCommitDetailViewModel) {
+  const references: Array<{
+    commitId: string;
+    ownerName: string;
+    projectName: string;
+    title?: string;
+  }> = [];
+  if (commitDetail.commit?.commitId) {
+    references.push({
+      commitId: commitDetail.commit.commitId,
+      ownerName: commitDetail.ownerName,
+      projectName: commitDetail.projectName,
+      title: commitDetail.commit.shortMessage || commitDetail.commit.commitId,
+    });
+  }
+  if (commitDetail.parentCommit?.commitId) {
+    references.push({
+      commitId: commitDetail.parentCommit.commitId,
+      ownerName: commitDetail.ownerName,
+      projectName: commitDetail.projectName,
+    });
+  }
+  return references;
+}
+
 export function CodeBrowserPage(props: {
   code: CodeBrowserViewModel | null;
   detail: ProjectDetailViewModel | null;
@@ -1532,6 +1557,7 @@ function CommitDiscussionThread(props: {
                 <MarkdownRenderer
                   className="comment-body markdown-wrap"
                   basePath={props.runtimeConfig.basePath}
+                  commitReferences={commitDiscussionMarkdownCommitReferences(props.commitDetail)}
                   data-via-email={comment.viaEmail ? "true" : undefined}
                   issueReferences={comment.issueReferences}
                   markdown={comment.contentsMarkdown}

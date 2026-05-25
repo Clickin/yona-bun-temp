@@ -90,6 +90,35 @@ function pullRequestCommitTitle(commit: PullRequestCommitViewModel) {
   return (commit.commitMessage || "").split("\n")[0] || commit.commitId;
 }
 
+function pullRequestMarkdownCommitReferences(pullRequest: PullRequestDetailResponse) {
+  return pullRequest.commits.flatMap((commit) => {
+    if (!commit.commitId) {
+      return [];
+    }
+    const title = pullRequestCommitTitle(commit);
+    const references = [
+      {
+        commitId: commit.commitId,
+        ownerName: pullRequest.ownerName,
+        projectName: pullRequest.projectName,
+        title,
+      },
+    ];
+    if (
+      pullRequest.fromOwnerName !== pullRequest.ownerName ||
+      pullRequest.fromProjectName !== pullRequest.projectName
+    ) {
+      references.push({
+        commitId: commit.commitId,
+        ownerName: pullRequest.fromOwnerName,
+        projectName: pullRequest.fromProjectName,
+        title,
+      });
+    }
+    return references;
+  });
+}
+
 function pullRequestCommitShortId(commitId: string) {
   return commitId.slice(0, 7) || commitId;
 }
@@ -1043,6 +1072,7 @@ export function ProjectPullRequestDetailPage(props: {
             <MarkdownRenderer
               className="markdown-wrap"
               basePath={props.runtimeConfig.basePath}
+              commitReferences={pullRequestMarkdownCommitReferences(pr)}
               issueReferences={pr.issueReferences}
               markdown={pr.bodyMarkdown}
               ownerName={pr.ownerName}
@@ -1305,6 +1335,9 @@ function ReviewThreadItem(props: {
             <MarkdownRenderer
               className="comment-body markdown-wrap"
               basePath={props.runtimeConfig?.basePath}
+              commitReferences={
+                props.pullRequest ? pullRequestMarkdownCommitReferences(props.pullRequest) : []
+              }
               data-via-email={comment.viaEmail ? "true" : undefined}
               issueReferences={comment.issueReferences}
               markdown={comment.contentsMarkdown}

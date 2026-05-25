@@ -442,13 +442,23 @@ describe("file-route parity harness", () => {
 
   it("renders pull request bodies and review comments from Markdown source in React", () => {
     const runtimeConfig = { apiBaseUrl: "/yona/api", basePath: "/yona" };
+    const commitSha = "be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2";
     const html = renderToStaticMarkup(
       <ProjectPullRequestDetailPage
         detail={null}
         pullRequest={{
           bodyHtml: "",
-          bodyMarkdown: "Ship **PR** with `React` #1",
-          commits: [],
+          bodyMarkdown: `Ship **PR** with \`React\` #1 @${commitSha}`,
+          commits: [
+            {
+              authorDateLabel: "now",
+              authorEmail: "owner@example.com",
+              commitId: commitSha,
+              commitMessage: "Commit SHA markdown",
+              commitShortId: "be6a8cc",
+              state: "CURRENT",
+            },
+          ],
           conflict: false,
           contributor: { loginId: "owner", userId: 1, userLabel: "Owner User" },
           createdLabel: "now",
@@ -501,7 +511,7 @@ describe("file-route parity harness", () => {
                   authorLoginId: "reviewer",
                   canDelete: false,
                   contentsHtml: "",
-                  contentsMarkdown: "Review **comment** with `React` #2",
+                  contentsMarkdown: `Review **comment** with \`React\` #2 ${commitSha}`,
                   createdLabel: "now",
                   id: 8,
                   issueReferences: [
@@ -538,6 +548,7 @@ describe("file-route parity harness", () => {
     expect(html).toContain("<code>React</code>");
     expect(html).toContain('data-issue-state="open"');
     expect(html).toContain('data-issue-state="closed"');
+    expect(html).toContain(`href="/yona/owner/projectYobi/commit/${commitSha}"`);
     expect(html).toContain('<div class="comment-body markdown-wrap" data-via-email="true"');
     expect(html).toContain("<p>Review <strong>comment</strong> with ");
     expect(html).not.toContain("bodyHtml");
