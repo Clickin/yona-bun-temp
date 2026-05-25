@@ -151,6 +151,32 @@ describe("project code browser routing", () => {
     expect(routeTreeSource).toContain("OwnerProjectNameBranchesRoute");
   });
 
+  it("renders tag refs in the legacy branch selector without adding branch-admin actions", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(CodeBrowserPage, {
+        code: {
+          branches: [{ name: "main" }, { name: "v1.0.0" }],
+          breadcrumbs: [],
+          entries: [],
+          file: undefined,
+          noHead: false,
+          ownerName: "owner",
+          path: "",
+          projectName: "projectYobi",
+          selectedBranch: "v1.0.0",
+        },
+        detail: projectDetail,
+        runtimeConfig,
+      }),
+    );
+
+    expect(html).toContain('id="branches"');
+    expect(html).toContain('<option value="v1.0.0" selected="">v1.0.0</option>');
+    expect(html).toContain('href="/yona/owner/projectYobi/code/v1.0.0"');
+    expect(html).toContain('href="/yona/owner/projectYobi/branches"');
+    expect(html).not.toContain('data-request-uri="/yona/owner/projectYobi/code/v1.0.0/');
+  });
+
   it("renders legacy raw/open/image file action anchors", () => {
     const textHtml = renderCodeFile({
       isBinary: false,

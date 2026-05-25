@@ -481,6 +481,14 @@ fn create_bare_repository_branch(yona_data: &Path, project_id: i64, branch: &str
     );
 }
 
+fn create_bare_repository_tag(yona_data: &Path, project_id: i64, tag: &str) {
+    let bare_repo = yona_data.join("repo").join(format!("{project_id}.git"));
+    run_git(
+        &["--git-dir", bare_repo.to_str().unwrap(), "tag", tag, "main"],
+        None,
+    );
+}
+
 fn bare_repository_head_commit_id(yona_data: &Path, project_id: i64) -> String {
     let bare_repo = yona_data.join("repo").join(format!("{project_id}.git"));
     let output = Command::new("git")
@@ -633,6 +641,79 @@ async fn rest_code_browser_reads_root_folder_and_text_file_from_git_repo() {
     assert_eq!(file["file"]["path"], "src/main.rs");
     assert_eq!(file["file"]["text"], "fn main() {}\n");
     assert!(!json_bool(&file["file"], "isBinary"));
+}
+
+#[tokio::test]
+async fn rest_code_browser_selector_includes_tags_and_reads_tagged_files() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+    append_bare_repository_commit(
+        data_dir.path(),
+        project.id,
+        "src/main.rs",
+        "fn main() {\n    println!(\"v1\");\n}\n",
+        "Prepare release tag",
+    );
+    create_bare_repository_tag(data_dir.path(), project.id, "v1.0.0");
+    append_bare_repository_commit(
+        data_dir.path(),
+        project.id,
+        "src/main.rs",
+        "fn main() {\n    println!(\"main\");\n}\n",
+        "Move main after tag",
+    );
+
+    let root =
+        response_json(rest_get(app.clone(), "/projects/owner/projectYobi/code", None).await).await;
+    assert!(root["branches"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|branch| branch["name"] == "v1.0.0"));
+
+    let tagged_file = response_json(
+        rest_get(
+            app.clone(),
+            "/projects/owner/projectYobi/code?branch=v1.0.0&path=src%2Fmain.rs",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(tagged_file["selectedBranch"], "v1.0.0");
+    assert_eq!(
+        tagged_file["file"]["text"],
+        "fn main() {\n    println!(\"v1\");\n}\n"
+    );
+
+    let history = response_json(
+        rest_get(
+            app,
+            "/projects/owner/projectYobi/commits?branch=v1.0.0&path=src%2Fmain.rs",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(history["selectedBranch"], "v1.0.0");
+    assert!(history["branches"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|branch| branch["name"] == "v1.0.0"));
+    assert_eq!(history["commits"][0]["shortMessage"], "Prepare release tag");
 }
 
 #[tokio::test]

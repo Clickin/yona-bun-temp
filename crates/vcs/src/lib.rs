@@ -688,7 +688,7 @@ pub fn read_code_browser(
     }
     let repo_path = repo_path.to_path_buf();
     let clean_path = normalize_repo_path(path)?;
-    let branches = list_branches(&repo_path)?;
+    let branches = list_code_selector_refs(&repo_path)?;
     if branches.is_empty() || !has_head(&repo_path) {
         return Ok(no_head_snapshot());
     }
@@ -785,7 +785,7 @@ pub fn read_code_history(
     }
     let repo_path = repo_path.to_path_buf();
     let clean_path = normalize_repo_path(path)?;
-    let branches = list_branches(&repo_path)?;
+    let branches = list_code_selector_refs(&repo_path)?;
     if branches.is_empty() || !has_head(&repo_path) {
         return Ok(no_head_history_snapshot(page));
     }
@@ -880,7 +880,7 @@ pub fn read_commit_detail(
     }
     let repo_path = repo_path.to_path_buf();
     let clean_path = normalize_repo_path(path)?;
-    let branches = list_branches(&repo_path)?;
+    let branches = list_code_selector_refs(&repo_path)?;
     if branches.is_empty() || !has_head(&repo_path) {
         return Ok(no_head_commit_detail_snapshot());
     }
@@ -1316,6 +1316,35 @@ fn list_branches(repo_path: &Path) -> Result<Vec<CodeBranchRecord>, VcsError> {
             name: name.to_string(),
         })
         .collect())
+}
+
+fn list_code_selector_refs(repo_path: &Path) -> Result<Vec<CodeBranchRecord>, VcsError> {
+    let output = git_output(
+        repo_path,
+        &[
+            "for-each-ref",
+            "--format=%(refname:short)",
+            "refs/heads",
+            "refs/tags",
+        ],
+    )?;
+    let mut refs = Vec::new();
+    for name in output
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+    {
+        if refs
+            .iter()
+            .any(|existing: &CodeBranchRecord| existing.name == name)
+        {
+            continue;
+        }
+        refs.push(CodeBranchRecord {
+            name: name.to_string(),
+        });
+    }
+    Ok(refs)
 }
 
 fn list_branch_details(

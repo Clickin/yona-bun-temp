@@ -1381,7 +1381,7 @@ Phase -1 REST pivot 이후 현재 구현 상태 표는 다음 신규 phase의 �
 | 이슈              | ✅ Phase 2A 구현  | CRUD, 댓글, 타임라인, watch/vote/assignee, mass update, Markdown |
 | 게시판            | 🔶 Phase 5B 구현  | project/organization board app surface                           |
 | 라벨/마일스톤     | ✅ 구현           | 라벨/카테고리 관리, 마일스톤 CRUD/state 구현                     |
-| 코드 브라우저     | 🔶 Phase 3N 구현  | Git 폴더/파일 보기, 브랜치 선택기, raw/open/image 파일 표면, archive download, syntax/line-number 표시, commit history/detail diff/compare, commit comments/thread lifecycle, branch list/latest PR/default/delete, project create 시 bare Git repository provisioning, Smart HTTP transport, push post-receive records, changeVCS 시 executable-backed SVN repository storage provisioning, legacy `/svn/$path` auth/DAV boundary plus WebDAV `OPTIONS`, `DAV: 1,2`/`MS-Author-Via: DAV` discovery headers, root `PROPFIND`, default VCC `PROPFIND` collection responses with executable-backed youngest revision metadata when `svnlook` is available, and read-classified `REPORT` boundary |
+| 코드 브라우저     | 🔶 Phase 3N 구현  | Git 폴더/파일 보기, 브랜치/태그 선택기, raw/open/image 파일 표면, archive download, syntax/line-number 표시, commit history/detail diff/compare, commit comments/thread lifecycle, branch list/latest PR/default/delete, project create 시 bare Git repository provisioning, Smart HTTP transport, push post-receive records, changeVCS 시 executable-backed SVN repository storage provisioning, legacy `/svn/$path` auth/DAV boundary plus WebDAV `OPTIONS`, `DAV: 1,2`/`MS-Author-Via: DAV` discovery headers, root `PROPFIND`, default VCC `PROPFIND` collection responses with executable-backed youngest revision metadata when `svnlook` is available, and read-classified `REPORT` boundary |
 | Git Smart HTTP    | 🔶 Phase 3L 구현 | `git http-backend` wrapper로 clone/pull upload-pack 및 인증/권한이 적용된 receive-pack transport를 구현하고, receive-pack 후 `NEW_COMMIT` notification, pushed-branch metadata, push JSON webhook outbox를 기록한다 |
 | PR/리뷰           | 🔶 Phase 4B+ 구현 | PR 목록/상세/changes/reviews, specific commit changes route/filter, selected commit `.commitInfo`/`.commitMsg.mt5`, 조직 PR 목록, create/edit, close/reopen, review/unreview, required/lacking reviewer projection, project default reviewer threshold settings, review-threshold-gated accept, PR watcher projection/watch-unwatch, PR watcher/body-mention-derived notification receiver, 일반 PR comment, thread open/close, fork/clone, conflict-free merge, conflict 표시/merge 비활성화 안내, source branch cleanup/restore, PR commit-changed event/webhook, PRIOR commit/review-card outdated marker, side-aware single/multi-line ranged inline review CRUD. in-app conflict resolution은 gap |
 | 검색              | 🔶 Phase 5C 구현  | `/api/v1` global/project/organization app search surface          |
@@ -1592,14 +1592,14 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 | Organization/project | `/api/v1/organizations/**`, `/api/v1/owners/:owner/projects/**`, `/api/v1/projects` implemented |
 | Issue core/meta   | `/api/v1/projects/:owner/:project/issues/**`, `/api/v1/organizations/:org/issues`, `/api/v1/user/issues`, `/api/v1/owners/:owner/projects/:project/assignable-users`, `/api/v1/owners/:owner/projects/:project/issue-references`, `/api/v1/owners/:owner/projects/:project/issues/:number/**` implemented |
 | Label/milestone   | `/api/v1/owners/:owner/projects/:project/labels/**`, `/api/v1/owners/:owner/projects/:project/milestones/**` implemented |
-| Code browser      | `GET /api/v1/projects/:owner/:project/code`, `/commits`, `/commit/:id`, `/compare/:revA..:revB`, `/branches`, `POST /branches/default`, and `DELETE /branches` implemented |
+| Code browser      | `GET /api/v1/projects/:owner/:project/code` with branch/tag selector refs, `/commits`, `/commit/:id`, `/compare/:revA..:revB`, `/branches`, `POST /branches/default`, and `DELETE /branches` implemented |
 
 **새 runtime API는 REST로 구현할 영역**:
 
 - Issue follow-up: notification full mail batching, group sharer mutation, and remaining issue-adjacent parity gaps
 - Board: posting list/detail/create/update/delete/comment flows
 - Label follow-up: legacy external label/project API parity for the separate migrator/export/import scope
-- Milestone follow-up: migration export and search milestone result type
+- Milestone follow-up: migration export/import scope only
 - Code follow-up: executable-backed SVN WebDAV bridge over mounted `/svn/$path` boundary
 - PullRequest follow-up: in-app merge conflict resolution workflow
 - Search follow-up: full-text/index-backed search, async indexing, ranking improvements, and legacy external search compatibility only if the separate migrator/export scope requires it
