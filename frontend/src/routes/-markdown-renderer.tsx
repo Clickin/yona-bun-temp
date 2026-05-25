@@ -97,15 +97,16 @@ type MarkdownCodeBlockRecord = {
 };
 
 function isSafeUrl(value: string) {
+  const normalized = value.toLowerCase();
   return (
     value.startsWith("/") ||
     value.startsWith("./") ||
     value.startsWith("../") ||
     value.startsWith("#") ||
-    value.startsWith("http://") ||
-    value.startsWith("https://") ||
-    value.startsWith("ftp://") ||
-    value.startsWith("mailto:")
+    normalized.startsWith("http://") ||
+    normalized.startsWith("https://") ||
+    normalized.startsWith("ftp://") ||
+    normalized.startsWith("mailto:")
   );
 }
 

@@ -434,6 +434,18 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain('\\"');
   });
 
+  it("accepts uppercase safe inline link and image schemes like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown="[Docs](HTTP://EXAMPLE.COM) ![Logo](HTTPS://EXAMPLE.COM/logo.png) [Mail](MAILTO:HELP@EXAMPLE.COM) [Bad](javascript:alert(1))" />,
+    );
+
+    expect(html).toContain('<a href="HTTP://EXAMPLE.COM">Docs</a>');
+    expect(html).toContain('<img alt="Logo" src="HTTPS://EXAMPLE.COM/logo.png"/>');
+    expect(html).toContain('<a href="MAILTO:HELP@EXAMPLE.COM">Mail</a>');
+    expect(html).toContain("[Bad](javascript:alert(1))");
+    expect(html).not.toContain('href="javascript:alert(1)"');
+  });
+
   it("renders reference-style links and images like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
