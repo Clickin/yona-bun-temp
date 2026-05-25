@@ -1439,13 +1439,7 @@ function SiteAdminDataPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
 
               <h3>site.data.export</h3>
               <p>site.data.export.info</p>
-              <a
-                aria-disabled="true"
-                className="ybtn ybtn-primary disabled"
-                data-deferred="site.data.export"
-                href={appHref(runtimeConfig, "/sites/export")}
-                onClick={(event) => event.preventDefault()}
-              >
+              <a className="ybtn ybtn-primary" href={appHref(runtimeConfig, "/sites/export")}>
                 <strong>site.data.export</strong>
               </a>
 

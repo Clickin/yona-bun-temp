@@ -662,6 +662,93 @@ async fn site_admin_unwatch_update_alias_follows_legacy_route() {
 }
 
 #[tokio::test]
+async fn site_admin_export_download_follows_legacy_site_data_route() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &member_csrf,
+        "member",
+        "dataproj",
+    )
+    .await;
+    repo.create_posting(CreatePostingInput {
+        actor_display_name: "Member Name".to_string(),
+        actor_id: member_id,
+        actor_login_id: "member".to_string(),
+        owner_name: "member".to_string(),
+        project_name: "dataproj".to_string(),
+        values: PostingMutationInput {
+            attachment_ids: vec![],
+            body_markdown: "legacy data export post".to_string(),
+            label_ids: vec![],
+            notice: false,
+            readme: false,
+            title: "Data export post".to_string(),
+        },
+    })
+    .await
+    .expect("create export posting")
+    .expect("posting created");
+    repo.create_issue(CreateIssueInput {
+        actor_display_name: "Member Name".to_string(),
+        actor_id: member_id,
+        actor_login_id: "member".to_string(),
+        owner_name: "member".to_string(),
+        project_name: "dataproj".to_string(),
+        values: IssueMutationInput {
+            assignee_login_id: None,
+            attachment_ids: vec![],
+            body_markdown: "legacy data export issue".to_string(),
+            label_ids: vec![],
+            milestone_id: None,
+            title: "Data export issue".to_string(),
+        },
+    })
+    .await
+    .expect("create export issue")
+    .expect("issue created");
+
+    let unauthenticated = rest_get(app.clone(), "/yona/sites/export", None).await;
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let forbidden = rest_get(app.clone(), "/yona/sites/export", Some(&member_cookie)).await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let response = rest_get(app, "/yona/sites/export", Some(&admin_cookie)).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response.headers().get(http::header::CONTENT_TYPE).unwrap(),
+        "application/x-download"
+    );
+    let disposition = response
+        .headers()
+        .get(http::header::CONTENT_DISPOSITION)
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(disposition.starts_with("attachment; filename=yobi-data-"));
+    assert!(disposition.ends_with(".json"));
+
+    let payload: Value = serde_json::from_str(&response_text(response).await).unwrap();
+    assert_eq!(payload["format"], "yobi-data");
+    assert_eq!(payload["provenance"], "rust-app-runtime");
+    assert!(payload["users"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|user| user["loginId"] == "member"));
+    assert_eq!(payload["projects"][0]["ownerName"], "member");
+    assert_eq!(payload["projects"][0]["projectName"], "dataproj");
+    assert_eq!(payload["posts"][0]["title"], "Data export post");
+    assert_eq!(payload["issues"][0]["title"], "Data export issue");
+}
+
+#[tokio::test]
 async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     let (app, repo, db) = build_app_with_repository().await;
     let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;

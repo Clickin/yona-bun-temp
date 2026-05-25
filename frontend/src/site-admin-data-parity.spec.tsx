@@ -14,8 +14,12 @@ describe("site-admin data management parity", () => {
     expect(routeSource).toContain("SiteDataRoute");
     expect(routeSource).toContain("SiteAdminDataPage");
     expect(routeSource).toContain('activePageName="data"');
+    expect(routeSource).toContain(
+      'className="ybtn ybtn-primary" href={appHref(runtimeConfig, "/sites/export")}',
+    );
     expect(routeSource).toContain('href={appHref(runtimeConfig, "/sites/export")}');
     expect(routeSource).toContain('action={appHref(runtimeConfig, "/sites/import")}');
+    expect(routeSource).not.toContain('data-deferred="site.data.export"');
     expect(routeSource).toContain('encType="multipart/form-data"');
     expect(routeSource).toContain('name="data"');
     expect(routeSource).toContain("site.data.warning1");

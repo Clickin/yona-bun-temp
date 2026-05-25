@@ -1061,7 +1061,7 @@ GET   /sites/export            → 데이터 익스포트
 | 이슈 목록              | 전체 이슈 읽기 목록                | ✅ 구현(`/sites/issueList`, `/api/v1/site/issues`) | 6     |
 | 메일 설정/테스트       | SMTP 테스트, 대량 메일             | ✅ 구현(`/sites/mail`, `/sites/massmail`, `/sites/mailList`, `/api/v1/site/mail*`) | 6     |
 | 시스템 진단            | Diagnostic.checkAll 오류 목록      | ✅ 구현(`/sites/diagnostic`, `/api/v1/site/diagnostics`) | 6     |
-| 데이터 임포트/익스포트 | 전체 데이터 백업/복원              | shell implemented (`/sites/data`); live import/export deferred | 2차   |
+| 데이터 임포트/익스포트 | 전체 데이터 백업/복원              | export download implemented (`/sites/export`); import restore deferred | 2차   |
 | 업데이트 확인          | 새 버전 확인                       | shell implemented (`/sites/update`); live version check/download deferred | 2차   |
 
 #### 검수 기준
@@ -1078,7 +1078,7 @@ GET   /sites/export            → 데이터 익스포트
 - [x] 시스템 진단: site admin 전용 `/api/v1/site/diagnostics`, legacy `/sites/diagnostic` shell/sidebar/title area, no-error message, error count, and `<pre>` error rows
 - [x] 메일 테스트/대량 메일: site admin 전용 `/api/v1/site/mail`, `/api/v1/site/mail/test`, `/api/v1/site/mail-list`, legacy `/sites/mail` form shell, `/sites/massmail` recipient lookup/mailto shell, and direct `/sites/mailList` form-urlencoded JSON-array recipient resolver
 - [x] 업데이트 화면 shell: `/sites/update` is site-admin-gated and preserves the legacy `site/update.scala.html` sidebar/title/no-update shell; direct legacy `POST /sites/unwatchUpdate` is site-admin/CSRF-gated and hides the in-process update notification flag; live version refresh/download remains deferred
-- [x] 데이터 관리 화면 shell: `/sites/data` is site-admin-gated and preserves the legacy `site/data.scala.html` title, warning list, export anchor, multipart import form, and `name="data"` file input; live import/export execution remains deferred
+- [x] 데이터 관리 화면/export: `/sites/data` is site-admin-gated and preserves the legacy `site/data.scala.html` title, warning list, export anchor, multipart import form, and `name="data"` file input; `/sites/export` is site-admin-gated and downloads a `yobi-data-*.json` app-runtime snapshot. Live import restore remains deferred.
 
 ---
 

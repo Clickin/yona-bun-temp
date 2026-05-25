@@ -397,6 +397,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let markdown_render_base_path = base_path.clone();
     let project_overview_update_backend = route_backend.clone();
     let project_overview_update_session_manager = session_manager.clone();
+    let site_export_backend = route_backend.clone();
+    let site_export_session_manager = session_manager.clone();
     let site_no_avatar_backend = route_backend.clone();
     let site_no_avatar_session_manager = session_manager.clone();
     let site_set_avatar_backend = route_backend.clone();
@@ -820,6 +822,19 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         id,
                         file_delete_post_trailing_session_manager.clone(),
                         file_delete_post_trailing_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/export",
+            get(move |headers: HeaderMap| {
+                async move {
+                    direct_export_site_data(
+                        headers,
+                        site_export_session_manager.clone(),
+                        site_export_backend.clone(),
                     )
                     .await
                 }
@@ -4834,6 +4849,23 @@ async fn direct_read_site_no_avatar_users(
     }
 }
 
+async fn direct_export_site_data(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_export_site_data(headers, service).await {
+        Ok(payload) => direct_site_export_response(&payload),
+        Err(error) => error.into_response(),
+    }
+}
+
 async fn direct_set_attachment_to_user_avatar(
     headers: HeaderMap,
     body: Bytes,
@@ -4918,6 +4950,34 @@ fn direct_site_mail_list_body(body: &[u8]) -> RestSiteMailListBody {
         }
     }
     parsed
+}
+
+fn direct_site_export_response(payload: &RestSiteExportResponse) -> Response {
+    match serde_json::to_vec(payload) {
+        Ok(body) => {
+            let mut response = body.into_response();
+            let headers = response.headers_mut();
+            headers.insert(
+                axum::http::header::CONTENT_TYPE,
+                HeaderValue::from_static("application/x-download"),
+            );
+            if let Ok(header_value) = HeaderValue::from_str(&format!(
+                "attachment; filename=yobi-data-{}.json",
+                site_export_filename_stamp()
+            )) {
+                headers.insert(axum::http::header::CONTENT_DISPOSITION, header_value);
+            }
+            response
+        }
+        Err(error) => RestRouteError::internal(error.to_string()).into_response(),
+    }
+}
+
+fn site_export_filename_stamp() -> String {
+    SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map(|duration| duration.as_secs().to_string())
+        .unwrap_or_else(|_| "0".to_string())
 }
 
 async fn direct_update_project_overview(
@@ -6561,6 +6621,17 @@ struct RestSiteMailListBody {
 #[serde(rename_all = "camelCase")]
 struct RestSiteMailListResponse {
     recipients: Vec<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteExportResponse {
+    format: String,
+    provenance: String,
+    users: Vec<RestSiteUserItem>,
+    projects: Vec<RestSiteProjectItem>,
+    posts: Vec<RestPostListItem>,
+    issues: Vec<RestSiteIssueItem>,
 }
 
 #[derive(Default, Deserialize)]
@@ -12008,6 +12079,103 @@ async fn rest_read_site_diagnostics(
         error_count: errors.len() as u32,
         errors,
     }))
+}
+
+async fn rest_export_site_data(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<RestSiteExportResponse, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, false).await?;
+    let users = rest_export_site_users(repository).await?;
+    let projects = repository
+        .list_projects()
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?
+        .into_iter()
+        .map(rest_site_project_from_record)
+        .collect();
+    let posts = rest_export_site_posts(repository).await?;
+    let issues = rest_export_site_issues(repository).await?;
+
+    Ok(RestSiteExportResponse {
+        format: "yobi-data".to_string(),
+        provenance: "rust-app-runtime".to_string(),
+        users,
+        projects,
+        posts,
+        issues,
+    })
+}
+
+async fn rest_export_site_users(
+    repository: &PilotRepository,
+) -> Result<Vec<RestSiteUserItem>, RestRouteError> {
+    let mut users_by_id = HashMap::new();
+    for state in ["ACTIVE", "LOCKED", "DELETED", "GUEST", "SITE_ADMIN"] {
+        let mut page = 1;
+        loop {
+            let record = repository
+                .list_site_users(persistence::SiteUserListFilter {
+                    page,
+                    query: String::new(),
+                    state: state.to_string(),
+                })
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            for user in record.users {
+                users_by_id
+                    .entry(user.id)
+                    .or_insert_with(|| rest_site_user_from_record(user));
+            }
+            if record.total_pages == 0 || page >= record.total_pages {
+                break;
+            }
+            page += 1;
+        }
+    }
+    let mut users = users_by_id.into_values().collect::<Vec<_>>();
+    users.sort_by(|left, right| left.login_id.cmp(&right.login_id));
+    Ok(users)
+}
+
+async fn rest_export_site_posts(
+    repository: &PilotRepository,
+) -> Result<Vec<RestPostListItem>, RestRouteError> {
+    let mut posts = Vec::new();
+    let mut page = 1;
+    loop {
+        let record = repository
+            .list_site_postings(page)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        posts.extend(record.posts.iter().map(rest_post_list_item_from_record));
+        if record.total_pages == 0 || page >= record.total_pages {
+            break;
+        }
+        page += 1;
+    }
+    Ok(posts)
+}
+
+async fn rest_export_site_issues(
+    repository: &PilotRepository,
+) -> Result<Vec<RestSiteIssueItem>, RestRouteError> {
+    let mut issues = Vec::new();
+    for state in ["open", "closed"] {
+        let mut page = 1;
+        loop {
+            let record = repository
+                .list_site_issues(state, page)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+            issues.extend(record.issues.iter().map(rest_site_issue_from_record));
+            if record.total_pages == 0 || page >= record.total_pages {
+                break;
+            }
+            page += 1;
+        }
+    }
+    Ok(issues)
 }
 
 async fn rest_read_site_mail(
