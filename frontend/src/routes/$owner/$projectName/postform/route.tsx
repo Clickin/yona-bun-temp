@@ -18,9 +18,20 @@ function PostCreateRouteComponent() {
   const { owner, projectName } = Route.useParams();
   const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
   const queryClient = useQueryClient();
+  const searchParams =
+    typeof window === "undefined"
+      ? new URLSearchParams()
+      : new URLSearchParams(window.location.search);
+  const onlineCommitSearch = {
+    branch: searchParams.get("branch") ?? undefined,
+    edit: searchParams.has("edit"),
+    issueTemplate: searchParams.has("issueTemplate"),
+    path: searchParams.get("path") ?? undefined,
+  };
   const formOptionsQuery = useQuery({
     ...readProjectPostFormOptionsQueryOptions(runtimeConfig, {
       ownerName: owner,
+      ...onlineCommitSearch,
       projectName,
     }),
     enabled: !bootstrapping,
@@ -57,6 +68,7 @@ function PostCreateRouteComponent() {
       csrfToken={csrfToken}
       labels={formOptionsQuery.data?.labels ?? []}
       mode="create"
+      onlineCommit={formOptionsQuery.data?.onlineCommit}
       ownerName={owner}
       projectName={projectName}
       runtimeConfig={runtimeConfig}
@@ -65,18 +77,27 @@ function PostCreateRouteComponent() {
           const created = await createProjectPostRest(runtimeConfig, csrfToken, {
             attachmentIds: input.attachmentIds,
             bodyMarkdown: input.bodyMarkdown,
+            branch: formOptionsQuery.data?.onlineCommit.branch,
+            edit: formOptionsQuery.data?.onlineCommit.edit,
+            issueTemplate: formOptionsQuery.data?.onlineCommit.issueTemplate,
             labelIds: input.labelIds,
+            newFileName: input.newFileName,
             notice: input.notice,
             ownerName: owner,
+            path: formOptionsQuery.data?.onlineCommit.path,
             projectName,
             readme: input.readme,
             title: input.title,
           });
           await queryClient.invalidateQueries({ queryKey: apiQueryKeys.v1() });
-          navigateToAppHref(
-            runtimeConfig.basePath,
-            `/${owner}/${projectName}/post/${created.postNumber}`,
-          );
+          if ("onlineCommit" in created) {
+            navigateToAppHref(runtimeConfig.basePath, created.redirectHref);
+          } else {
+            navigateToAppHref(
+              runtimeConfig.basePath,
+              `/${owner}/${projectName}/post/${created.postNumber}`,
+            );
+          }
         } catch (error) {
           setErrorMessage(error instanceof Error ? error.message : "Create post failed.");
         }

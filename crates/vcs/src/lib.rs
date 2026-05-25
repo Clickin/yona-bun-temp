@@ -389,11 +389,39 @@ pub fn commit_readme_file(
     author_name: &str,
     author_email: &str,
 ) -> Result<Option<String>, VcsError> {
+    commit_text_file(
+        repo_path,
+        None,
+        "README.md",
+        body_markdown,
+        "Update README",
+        author_name,
+        author_email,
+    )
+}
+
+pub fn commit_text_file(
+    repo_path: &Path,
+    branch: Option<&str>,
+    path: &str,
+    contents: &str,
+    message: &str,
+    author_name: &str,
+    author_email: &str,
+) -> Result<Option<String>, VcsError> {
     if !repo_path.exists() || !repo_path.is_dir() {
         return Err(VcsError::NotFound);
     }
 
-    let branch = default_branch(repo_path).unwrap_or_else(|| "main".to_string());
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    let branch = branch
+        .map(normalize_branch_name)
+        .transpose()?
+        .or_else(|| default_branch(repo_path))
+        .unwrap_or_else(|| "main".to_string());
     let had_head = has_head(repo_path);
     let work_dir = TempWorkDir::create("readme")?;
     git_clone_repository(repo_path, work_dir.path())?;
@@ -403,15 +431,21 @@ pub fn commit_readme_file(
             repo_path,
             &["symbolic-ref", "HEAD", &format!("refs/heads/{branch}")],
         )?;
+    } else {
+        git_worktree_output(work_dir.path(), &["checkout", &branch])?;
     }
 
-    let readme_path = work_dir.path().join("README.md");
-    std::fs::write(&readme_path, body_markdown)
+    let target_path = work_dir.path().join(&clean_path);
+    if let Some(parent) = target_path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|error| VcsError::FilesystemFailed(error.to_string()))?;
+    }
+    std::fs::write(&target_path, contents)
         .map_err(|error| VcsError::FilesystemFailed(error.to_string()))?;
-    git_worktree_output(work_dir.path(), &["add", "README.md"])?;
+    git_worktree_output(work_dir.path(), &["add", "--", &clean_path])?;
     let status = git_worktree_output(
         work_dir.path(),
-        &["status", "--porcelain", "--", "README.md"],
+        &["status", "--porcelain", "--", &clean_path],
     )?;
     if status.trim().is_empty() {
         return Ok(None);
@@ -436,7 +470,7 @@ pub fn commit_readme_file(
             &format!("user.name={name}"),
             "commit",
             "-m",
-            "Update README",
+            message,
         ],
     )?;
     let commit_id = git_worktree_output(work_dir.path(), &["rev-parse", "HEAD"])?

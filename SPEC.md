@@ -607,7 +607,8 @@ DELETE /:owner/:project/post/:number/comment/:commentId/delete → 댓글 삭제
 - [x] Legacy direct posting comment form aliases: `POST /:owner/:project/post/:number/comment`, `POST /:owner/:project/post/:number/comment/:commentId`, and `DELETE /:owner/:project/post/:number/comment/:commentId/delete` reuse the `/api/v1` comment contract and redirect back to the legacy post anchor
 - [x] 검증: `frontend/tests/board-posting-parity.e2e.ts`가 프로젝트/조직 board list, detail, comment CRUD, watch, create/edit/delete CSRF, filter/sort/label/project selector, placeholder 제거를 전용 Playwright surface로 검증한다.
 - [x] Git-backed README commit/sync: README-marked board posting create/update commits `README.md` to the project Git repository when repository storage exists.
-- [ ] Deferred: issue template edit, online code file edit, `/-_-api/v1/**` board compatibility.
+- [x] Issue template edit and online code file edit: legacy `postform` query context (`issueTemplate`, `path`, `branch`, `edit`) reuses the board form shell, disables attachments where legacy does, prepares existing file content for edit, and commits `ISSUE_TEMPLATE.md` or the selected code path through the local Git executable without creating a board posting row.
+- [ ] Deferred: `/-_-api/v1/**` board compatibility.
 
 ---
 

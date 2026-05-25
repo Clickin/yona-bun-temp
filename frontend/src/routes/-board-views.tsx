@@ -695,6 +695,14 @@ export function ProjectPostFormPage(props: {
   initialPost?: BoardPostDetail | null;
   labels: BoardLabel[];
   mode: "create" | "edit";
+  onlineCommit?: {
+    branch: string;
+    edit: boolean;
+    issueTemplate: boolean;
+    path: string;
+    preparedBodyMarkdown: string;
+    title: string;
+  };
   ownerName: string;
   projectName: string;
   runtimeConfig: RuntimeConfig;
@@ -705,10 +713,16 @@ export function ProjectPostFormPage(props: {
     notice: boolean;
     readme: boolean;
     title: string;
+    newFileName?: string;
   }) => Promise<void>;
 }) {
-  const [title, setTitle] = React.useState(props.initialPost?.title ?? "");
-  const [bodyMarkdown, setBodyMarkdown] = React.useState(props.initialPost?.bodyMarkdown ?? "");
+  const onlineCommit = props.onlineCommit;
+  const isOnlineCommit = Boolean(onlineCommit?.path || onlineCommit?.issueTemplate);
+  const [title, setTitle] = React.useState(props.initialPost?.title ?? onlineCommit?.title ?? "");
+  const [bodyMarkdown, setBodyMarkdown] = React.useState(
+    props.initialPost?.bodyMarkdown ?? onlineCommit?.preparedBodyMarkdown ?? "",
+  );
+  const [newFileName, setNewFileName] = React.useState("");
   const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
   const [notice, setNotice] = React.useState(props.initialPost?.notice ?? false);
   const [readme, setReadme] = React.useState(props.initialPost?.readme ?? false);
@@ -717,13 +731,14 @@ export function ProjectPostFormPage(props: {
   );
 
   React.useEffect(() => {
-    setTitle(props.initialPost?.title ?? "");
-    setBodyMarkdown(props.initialPost?.bodyMarkdown ?? "");
+    setTitle(props.initialPost?.title ?? onlineCommit?.title ?? "");
+    setBodyMarkdown(props.initialPost?.bodyMarkdown ?? onlineCommit?.preparedBodyMarkdown ?? "");
+    setNewFileName("");
     setAttachmentIds([]);
     setNotice(props.initialPost?.notice ?? false);
     setReadme(props.initialPost?.readme ?? false);
     setSelectedLabelIds(new Set((props.initialPost?.labels ?? []).map((label) => label.id)));
-  }, [props.initialPost]);
+  }, [props.initialPost, onlineCommit?.preparedBodyMarkdown, onlineCommit?.title]);
 
   return (
     <main className="app-shell board-page">
@@ -736,6 +751,7 @@ export function ProjectPostFormPage(props: {
             attachmentIds,
             bodyMarkdown,
             labelIds: [...selectedLabelIds],
+            newFileName,
             notice,
             readme,
             title,
@@ -752,6 +768,29 @@ export function ProjectPostFormPage(props: {
             value={title}
           />
         </label>
+        {isOnlineCommit ? (
+          <div className="file-path-wrap">
+            <span className="help file-path">
+              {onlineCommit?.branch}: /{onlineCommit?.path}
+              {!onlineCommit?.edit && !onlineCommit?.issueTemplate ? (
+                <input
+                  className="new-file-name"
+                  name="new-file-name"
+                  onChange={(event) => setNewFileName(event.target.value)}
+                  placeholder="filename.."
+                  required
+                  type="text"
+                  value={newFileName}
+                />
+              ) : null}
+            </span>
+          </div>
+        ) : null}
+        {onlineCommit?.issueTemplate ? (
+          <div className="attach-wrap">
+            <span className="help help-droppable">Issue templates do not support attachments.</span>
+          </div>
+        ) : null}
         <label htmlFor="board-post-body-markdown">
           <span>Body</span>
           <BoardMarkdownTextarea
@@ -766,7 +805,7 @@ export function ProjectPostFormPage(props: {
             value={bodyMarkdown}
           />
         </label>
-        {props.labels.length ? (
+        {props.labels.length && !isOnlineCommit ? (
           <fieldset className="board-label-picker">
             <legend>Labels</legend>
             {props.labels.map((label) => (
@@ -791,7 +830,7 @@ export function ProjectPostFormPage(props: {
             ))}
           </fieldset>
         ) : null}
-        {props.canMarkNotice ? (
+        {props.canMarkNotice && !isOnlineCommit ? (
           <label className="board-check">
             <input
               checked={notice}
@@ -801,7 +840,7 @@ export function ProjectPostFormPage(props: {
             <span>Notice</span>
           </label>
         ) : null}
-        {props.canMarkReadme ? (
+        {props.canMarkReadme && !isOnlineCommit ? (
           <label className="board-check">
             <input
               checked={readme}

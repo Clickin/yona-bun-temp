@@ -146,7 +146,10 @@ describe("api query keys", () => {
       projectName: "projectYobi",
     });
     const formOptions = readProjectPostFormOptionsQueryOptions(runtimeConfig, {
+      branch: "main",
+      edit: true,
       ownerName: "owner",
+      path: "docs/guide.md",
       projectName: "projectYobi",
     });
     const orgOptions = listOrganizationBoardsQueryOptions(runtimeConfig, {
@@ -166,9 +169,15 @@ describe("api query keys", () => {
       }),
     );
     expect(detailOptions.queryKey).toEqual(apiQueryKeys.project.post("owner", "projectYobi", 12));
-    expect(formOptions.queryKey).toEqual(
-      apiQueryKeys.project.postFormOptions("owner", "projectYobi"),
-    );
+    expect(formOptions.queryKey).toEqual([
+      ...apiQueryKeys.project.postFormOptions("owner", "projectYobi"),
+      {
+        branch: "main",
+        edit: true,
+        issueTemplate: false,
+        path: "docs/guide.md",
+      },
+    ]);
     expect(orgOptions.queryKey).toEqual(
       apiQueryKeys.organization.boards("weblabs", {
         filter: "cross",

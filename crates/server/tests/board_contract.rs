@@ -334,6 +334,187 @@ async fn board_readme_posting_commits_git_readme_file() {
 }
 
 #[tokio::test]
+async fn board_postform_online_commit_updates_issue_template_and_code_files() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+
+    let (app, repo, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf).await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    let repo_path = data_dir
+        .path()
+        .join("repo")
+        .join(format!("{}.git", project.id));
+    assert!(fs::metadata(&repo_path).unwrap().is_dir());
+
+    let issue_template_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/posts/form-options?issueTemplate=true",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(issue_template_options["canAttachFiles"], false);
+    assert_eq!(
+        issue_template_options["onlineCommit"]["issueTemplate"],
+        true
+    );
+    assert_eq!(
+        issue_template_options["onlineCommit"]["path"],
+        "ISSUE_TEMPLATE.md"
+    );
+    assert_eq!(
+        issue_template_options["onlineCommit"]["title"],
+        "ISSUE_TEMPLATE.md: Project Issue Template"
+    );
+
+    let issue_template_commit = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/posts",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "title": "ISSUE_TEMPLATE.md: Project Issue Template",
+                "bodyMarkdown": "## Please describe\n",
+                "issueTemplate": true
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(issue_template_commit["onlineCommit"], true);
+    let default_branch = issue_template_commit["branch"].as_str().unwrap();
+    assert_eq!(issue_template_commit["path"], "ISSUE_TEMPLATE.md");
+    assert_eq!(
+        run_git_output(
+            &[
+                "--git-dir",
+                repo_path.to_str().unwrap(),
+                "show",
+                "HEAD:ISSUE_TEMPLATE.md"
+            ],
+            None
+        ),
+        "## Please describe\n"
+    );
+
+    let new_file_commit = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/posts",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "title": "Add docs guide",
+                "bodyMarkdown": "# Guide\n",
+                "branch": default_branch,
+                "path": "docs",
+                "newFileName": "guide.md"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(new_file_commit["onlineCommit"], true);
+    assert_eq!(new_file_commit["path"], "docs/guide.md");
+    assert_eq!(
+        run_git_output(
+            &[
+                "--git-dir",
+                repo_path.to_str().unwrap(),
+                "show",
+                "HEAD:docs/guide.md"
+            ],
+            None
+        ),
+        "# Guide\n"
+    );
+
+    let edit_options = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            &format!("/yona/api/v1/projects/owner/projectYobi/posts/form-options?branch={default_branch}&path=docs%2Fguide.md&edit=true"),
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(edit_options["onlineCommit"]["edit"], true);
+    assert_eq!(
+        edit_options["onlineCommit"]["preparedBodyMarkdown"],
+        "# Guide\n"
+    );
+
+    let edited_file_commit = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/posts",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            Some(json!({
+                "title": "Update docs guide",
+                "bodyMarkdown": "# Updated Guide\n",
+                "branch": default_branch,
+                "edit": true,
+                "path": "docs/guide.md"
+            })),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(edited_file_commit["onlineCommit"], true);
+    assert_eq!(edited_file_commit["path"], "docs/guide.md");
+    assert_eq!(
+        run_git_output(
+            &[
+                "--git-dir",
+                repo_path.to_str().unwrap(),
+                "show",
+                "HEAD:docs/guide.md"
+            ],
+            None
+        ),
+        "# Updated Guide\n"
+    );
+
+    let list = ok_json(
+        rest(
+            app,
+            Method::GET,
+            "/yona/api/v1/projects/owner/projectYobi/posts",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(list["totalCount"], 0);
+
+    std::env::remove_var("YONA_DATA");
+}
+
+#[tokio::test]
 async fn board_contract_manages_project_posts_comments_watch_and_notifications() {
     let _guard = yona_data_env_lock()
         .lock()

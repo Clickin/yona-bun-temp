@@ -94,6 +94,24 @@ export type BoardPostFormOptions = {
   canMarkReadme: boolean;
   defaultPermissions: BoardDefaultPermissions;
   labels: BoardLabel[];
+  onlineCommit: BoardOnlineCommitOptions;
+};
+
+export type BoardOnlineCommitOptions = {
+  branch: string;
+  edit: boolean;
+  issueTemplate: boolean;
+  path: string;
+  preparedBodyMarkdown: string;
+  title: string;
+};
+
+export type BoardOnlineCommitResponse = {
+  branch: string;
+  commitId?: string | null;
+  onlineCommit: true;
+  path: string;
+  redirectHref: string;
 };
 
 export type ProjectPostsInput = {
@@ -138,9 +156,15 @@ export type OrganizationBoardsResponse = {
 export type BoardPostMutationInput = {
   attachmentIds?: Array<number | string>;
   bodyMarkdown: string;
+  branch?: string;
+  edit?: boolean;
+  issueTemplate?: boolean;
   labelIds?: Array<number | string>;
+  lineEnding?: string;
+  newFileName?: string;
   notice?: boolean;
   ownerName: string;
+  path?: string;
   projectName: string;
   readme?: boolean;
   title: string;
@@ -406,6 +430,14 @@ function normalizePostFormOptions(response: Partial<BoardPostFormOptions>): Boar
     canMarkReadme: response.canMarkReadme ?? false,
     defaultPermissions: normalizeDefaultPermissions(response.defaultPermissions),
     labels: normalizeLabels(response.labels),
+    onlineCommit: {
+      branch: response.onlineCommit?.branch ?? "",
+      edit: response.onlineCommit?.edit ?? false,
+      issueTemplate: response.onlineCommit?.issueTemplate ?? false,
+      path: response.onlineCommit?.path ?? "",
+      preparedBodyMarkdown: response.onlineCommit?.preparedBodyMarkdown ?? "",
+      title: response.onlineCommit?.title ?? "",
+    },
   };
 }
 
@@ -413,8 +445,14 @@ function postMutationBody(input: BoardPostMutationInput) {
   return {
     attachmentIds: input.attachmentIds ?? [],
     bodyMarkdown: input.bodyMarkdown,
+    branch: input.branch ?? "",
+    edit: input.edit ?? false,
+    issueTemplate: input.issueTemplate ?? false,
     labelIds: input.labelIds ?? [],
+    lineEnding: input.lineEnding ?? "",
+    newFileName: input.newFileName ?? "",
     notice: input.notice ?? false,
+    path: input.path ?? "",
     readme: input.readme ?? false,
     title: input.title,
   };
@@ -459,12 +497,24 @@ export function readProjectPostRest(
 
 export function readProjectPostFormOptionsRest(
   runtimeConfig: RuntimeConfig,
-  input: { ownerName: string; projectName: string },
+  input: {
+    branch?: string;
+    edit?: boolean;
+    issueTemplate?: boolean;
+    ownerName: string;
+    path?: string;
+    projectName: string;
+  },
   fetchImpl: typeof fetch = fetch,
 ): Promise<BoardPostFormOptions> {
   return restFetch<Partial<BoardPostFormOptions>>(
     runtimeConfig,
-    `${projectPostsPath(input.ownerName, input.projectName)}/form-options`,
+    `${projectPostsPath(input.ownerName, input.projectName)}/form-options${queryString({
+      branch: input.branch,
+      edit: input.edit ? "true" : undefined,
+      issueTemplate: input.issueTemplate ? "true" : undefined,
+      path: input.path,
+    })}`,
     { fetchImpl },
   ).then(normalizePostFormOptions);
 }
@@ -492,8 +542,8 @@ export function createProjectPostRest(
   csrfToken: string,
   input: BoardPostMutationInput,
   fetchImpl: typeof fetch = fetch,
-): Promise<BoardPostDetail> {
-  return restFetch<Partial<BoardPostDetail>>(
+): Promise<BoardPostDetail | BoardOnlineCommitResponse> {
+  return restFetch<Partial<BoardPostDetail> | BoardOnlineCommitResponse>(
     runtimeConfig,
     projectPostsPath(input.ownerName, input.projectName),
     {
@@ -502,7 +552,11 @@ export function createProjectPostRest(
       fetchImpl,
       method: "POST",
     },
-  ).then(normalizePostDetail);
+  ).then((response) =>
+    "onlineCommit" in response && response.onlineCommit
+      ? response
+      : normalizePostDetail(response as Partial<BoardPostDetail>),
+  );
 }
 
 export function updateProjectPostRest(
@@ -658,11 +712,26 @@ export function readProjectPostQueryOptions(
 
 export function readProjectPostFormOptionsQueryOptions(
   runtimeConfig: RuntimeConfig,
-  input: { ownerName: string; projectName: string },
+  input: {
+    branch?: string;
+    edit?: boolean;
+    issueTemplate?: boolean;
+    ownerName: string;
+    path?: string;
+    projectName: string;
+  },
 ) {
   return queryOptions({
     queryFn: () => readProjectPostFormOptionsRest(runtimeConfig, input),
-    queryKey: apiQueryKeys.project.postFormOptions(input.ownerName, input.projectName),
+    queryKey: [
+      ...apiQueryKeys.project.postFormOptions(input.ownerName, input.projectName),
+      {
+        branch: input.branch ?? "",
+        edit: input.edit ?? false,
+        issueTemplate: input.issueTemplate ?? false,
+        path: input.path ?? "",
+      },
+    ],
   });
 }
 

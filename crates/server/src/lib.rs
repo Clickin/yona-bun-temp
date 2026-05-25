@@ -6459,6 +6459,38 @@ impl RestProjectPostsQuery {
     }
 }
 
+#[derive(Default)]
+struct RestPostFormOptionsQuery {
+    branch: Option<String>,
+    edit: bool,
+    issue_template: bool,
+    path: Option<String>,
+}
+
+impl RestPostFormOptionsQuery {
+    fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
+        let mut query = Self::default();
+        let Some(raw_query) = raw_query else {
+            return Ok(query);
+        };
+        for pair in raw_query.split('&').filter(|pair| !pair.is_empty()) {
+            let (raw_key, raw_value) = pair.split_once('=').unwrap_or((pair, ""));
+            let key = decode_query_component(raw_key);
+            let value = decode_query_component(raw_value);
+            match key.as_str() {
+                "branch" => query.branch = Some(value),
+                "edit" => query.edit = true,
+                "issueTemplate" | "issueTemplate[]" | "issue_template" => {
+                    query.issue_template = true;
+                }
+                "path" => query.path = Some(value),
+                _ => {}
+            }
+        }
+        Ok(query)
+    }
+}
+
 #[derive(Default, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestOrganizationBoardsQuery {
@@ -6650,7 +6682,36 @@ struct RestProjectPostFormOptionsResponse {
     can_mark_notice: bool,
     can_mark_readme: bool,
     default_permissions: RestPostDefaultPermissions,
+    online_commit: RestPostOnlineCommitOptions,
     labels: Vec<RestBoardLabel>,
+}
+
+#[derive(Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPostOnlineCommitOptions {
+    branch: String,
+    edit: bool,
+    issue_template: bool,
+    path: String,
+    prepared_body_markdown: String,
+    title: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestPostOnlineCommitResponse {
+    branch: String,
+    commit_id: Option<String>,
+    online_commit: bool,
+    path: String,
+    redirect_href: String,
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum RestPostMutationResponse {
+    Detail(RestPostDetailResponse),
+    OnlineCommit(RestPostOnlineCommitResponse),
 }
 
 #[derive(Serialize)]
@@ -8615,14 +8676,17 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 let session_manager = session_manager.clone();
                 let backend = backend.clone();
                 move |headers: HeaderMap,
-                      Path((owner_name, project_name)): Path<(String, String)>| {
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      RawQuery(raw_query): RawQuery| {
                     let session_manager = session_manager.clone();
                     let backend = backend.clone();
                     async move {
+                        let query = RestPostFormOptionsQuery::from_raw_query(raw_query.as_deref())?;
                         rest_project_post_form_options(
                             headers,
                             owner_name,
                             project_name,
+                            query,
                             session_manager,
                             backend,
                         )
@@ -17874,12 +17938,18 @@ struct RestPostMutationBody {
     )]
     attachment_ids: Vec<i64>,
     body_markdown: String,
+    branch: String,
+    edit: bool,
+    issue_template: bool,
     #[serde(
         default,
         deserialize_with = "deserialize_i64_vec_from_strings_or_numbers"
     )]
     label_ids: Vec<i64>,
+    line_ending: String,
+    new_file_name: String,
     notice: bool,
+    path: String,
     readme: bool,
     title: String,
 }
@@ -17964,6 +18034,60 @@ fn rest_post_mutation_input_from_body(
         notice: body.notice,
         readme: body.readme,
         title: body.title.trim().to_string(),
+    }
+}
+
+struct RestPostOnlineCommitInput {
+    branch: String,
+    contents: String,
+    edit: bool,
+    enabled: bool,
+    issue_template: bool,
+    path: String,
+    title: String,
+}
+
+fn rest_post_online_commit_input(body: &RestPostMutationBody) -> RestPostOnlineCommitInput {
+    let issue_template = body.issue_template;
+    let has_path = !body.path.trim().is_empty();
+    let mut path = if issue_template {
+        "ISSUE_TEMPLATE.md".to_string()
+    } else {
+        body.path.trim().trim_matches('/').to_string()
+    };
+    if !issue_template && !body.edit && !body.new_file_name.trim().is_empty() {
+        let file_name = body.new_file_name.trim().trim_matches('/');
+        path = if path.is_empty() {
+            file_name.to_string()
+        } else {
+            format!("{path}/{file_name}")
+        };
+    }
+    let contents = normalize_online_commit_line_endings(&body.body_markdown, &body.line_ending);
+    let title = if !body.title.trim().is_empty() {
+        body.title.trim().to_string()
+    } else if issue_template {
+        "ISSUE_TEMPLATE.md: Project Issue Template".to_string()
+    } else {
+        format!("Update {path}")
+    };
+    RestPostOnlineCommitInput {
+        branch: body.branch.trim().to_string(),
+        contents,
+        edit: body.edit,
+        enabled: issue_template || has_path,
+        issue_template,
+        path,
+        title,
+    }
+}
+
+fn normalize_online_commit_line_endings(contents: &str, line_ending: &str) -> String {
+    let normalized = contents.replace("\r\n", "\n").replace('\r', "\n");
+    if line_ending.eq_ignore_ascii_case("CRLF") {
+        normalized.replace('\n', "\r\n")
+    } else {
+        normalized
     }
 }
 
@@ -18346,6 +18470,7 @@ async fn rest_project_post_form_options(
     headers: HeaderMap,
     owner_name: String,
     project_name: String,
+    query: RestPostFormOptionsQuery,
     session_manager: SessionManager,
     backend: PilotBackend,
 ) -> Result<Json<RestProjectPostFormOptionsResponse>, RestRouteError> {
@@ -18373,7 +18498,10 @@ async fn rest_project_post_form_options(
     let can_create = actor_id.is_some() && posting_can_create(&authorization);
     let can_mark_notice = actor_id.is_some() && posting_can_set_notice(&authorization);
     let can_mark_readme = can_mark_notice;
-    let can_attach_files = can_create;
+    let online_commit = rest_post_online_commit_options(&authorization, &query)
+        .map_err(RestRouteError::from_connect_error)?;
+    let can_attach_files =
+        can_create && online_commit.path.is_empty() && !online_commit.issue_template;
     Ok(Json(RestProjectPostFormOptionsResponse {
         can_attach_files,
         can_mark_notice,
@@ -18384,6 +18512,7 @@ async fn rest_project_post_form_options(
             can_mark_notice,
             can_mark_readme,
         },
+        online_commit,
         labels: labels.iter().map(rest_board_label_from_record).collect(),
     }))
 }
@@ -18520,12 +18649,13 @@ async fn rest_create_posting(
     session_manager: SessionManager,
     backend: PilotBackend,
     base_path: String,
-) -> Result<Json<RestPostDetailResponse>, RestRouteError> {
+) -> Result<Json<RestPostMutationResponse>, RestRouteError> {
     let session =
         require_session(&session_manager, &headers).map_err(RestRouteError::from_connect_error)?;
     require_valid_csrf(&session_manager, &headers, &session)
         .map_err(RestRouteError::from_connect_error)?;
-    if body.title.trim().is_empty() {
+    let online_commit = rest_post_online_commit_input(&body);
+    if !online_commit.enabled && body.title.trim().is_empty() {
         return Err(RestRouteError::bad_request("post title is required"));
     }
     let PilotBackend::Repository(repository) = &backend else {
@@ -18544,6 +18674,15 @@ async fn rest_create_posting(
         return Err(RestRouteError::from_connect_error(
             ConnectError::permission_denied("posting create is not allowed"),
         ));
+    }
+    if online_commit.enabled {
+        let response = create_online_commit_from_posting_form(
+            &authorization,
+            &online_commit,
+            &actor,
+            &base_path,
+        )?;
+        return Ok(Json(RestPostMutationResponse::OnlineCommit(response)));
     }
     if (body.notice || body.readme) && !posting_can_set_notice(&authorization) {
         return Err(RestRouteError::from_connect_error(
@@ -18576,7 +18715,7 @@ async fn rest_create_posting(
             &actor,
         )?;
     }
-    Ok(Json(
+    Ok(Json(RestPostMutationResponse::Detail(
         rest_post_detail_response_from_record_with_repository_issue_references(
             repository,
             &posting,
@@ -18591,7 +18730,7 @@ async fn rest_create_posting(
         )
         .await
         .map_err(RestRouteError::from_connect_error)?,
-    ))
+    )))
 }
 
 async fn rest_update_posting(
@@ -23181,6 +23320,136 @@ fn sync_readme_posting_to_git(
         RestRouteError::from_connect_error(internal_error(format!(
             "failed to sync README posting for {owner_name}/{project_name}: {error}"
         )))
+    })
+}
+
+fn rest_post_online_commit_options(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    query: &RestPostFormOptionsQuery,
+) -> Result<RestPostOnlineCommitOptions, ConnectError> {
+    if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
+        return Ok(RestPostOnlineCommitOptions::default());
+    }
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let issue_template = query.issue_template;
+    let path = if issue_template {
+        "ISSUE_TEMPLATE.md".to_string()
+    } else {
+        query
+            .path
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or_default()
+            .to_string()
+    };
+    if path.is_empty() {
+        return Ok(RestPostOnlineCommitOptions::default());
+    }
+    let branch = query
+        .branch
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+        .or_else(|| {
+            yona_rust_vcs::read_branch_list(&repo_path)
+                .ok()
+                .map(|snapshot| snapshot.default_branch)
+                .filter(|value| !value.is_empty())
+        })
+        .unwrap_or_else(|| "main".to_string());
+    let prepared_body_markdown =
+        match yona_rust_vcs::read_code_browser(&repo_path, Some(&branch), &path) {
+            Ok(snapshot) => snapshot
+                .file
+                .filter(|file| !file.is_binary && !file.is_too_large)
+                .map(|file| file.text)
+                .unwrap_or_default(),
+            Err(VcsError::NotFound) if !query.edit || issue_template => String::new(),
+            Err(error) => return Err(code_browser_error(error)),
+        };
+    let title = if issue_template {
+        "ISSUE_TEMPLATE.md: Project Issue Template".to_string()
+    } else if query.edit {
+        format!("Update {path}")
+    } else {
+        String::new()
+    };
+    Ok(RestPostOnlineCommitOptions {
+        branch,
+        edit: query.edit,
+        issue_template,
+        path,
+        prepared_body_markdown,
+        title,
+    })
+}
+
+fn create_online_commit_from_posting_form(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    input: &RestPostOnlineCommitInput,
+    actor: &persistence::AppUserRecord,
+    _base_path: &str,
+) -> Result<RestPostOnlineCommitResponse, RestRouteError> {
+    if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
+        return Err(RestRouteError::bad_request(
+            "online code editing requires a Git project",
+        ));
+    }
+    if !project_update_allowed(authorization).map_err(RestRouteError::from_connect_error)? {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("online code editing is not allowed"),
+        ));
+    }
+    if input.path.trim().is_empty() {
+        return Err(RestRouteError::bad_request(
+            "online code editing requires a file path",
+        ));
+    }
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    let branch = if input.branch.trim().is_empty() {
+        None
+    } else {
+        Some(input.branch.as_str())
+    };
+    if input.edit && !input.issue_template {
+        let snapshot = yona_rust_vcs::read_code_browser(&repo_path, branch, &input.path)
+            .map_err(code_browser_error)
+            .map_err(RestRouteError::from_connect_error)?;
+        if snapshot.file.is_none() {
+            return Err(RestRouteError::bad_request(
+                "online code editing requires an existing file",
+            ));
+        }
+    }
+    let commit_id = yona_rust_vcs::commit_text_file(
+        &repo_path,
+        branch,
+        &input.path,
+        &input.contents,
+        &input.title,
+        &actor.display_name,
+        &actor.email_address,
+    )
+    .map_err(code_browser_error)
+    .map_err(RestRouteError::from_connect_error)?;
+    let snapshot = yona_rust_vcs::read_code_browser(&repo_path, branch, &input.path)
+        .map_err(code_browser_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    let redirect_href = format!(
+        "/{}/{}/code/{}/{}",
+        authorization.project.owner_name,
+        authorization.project.project_name,
+        snapshot.selected_branch,
+        snapshot.path
+    );
+    Ok(RestPostOnlineCommitResponse {
+        branch: snapshot.selected_branch,
+        commit_id,
+        online_commit: true,
+        path: snapshot.path,
+        redirect_href,
     })
 }
 
