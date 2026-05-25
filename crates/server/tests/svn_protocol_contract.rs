@@ -519,6 +519,36 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "SVN log REPORT should return executable-backed revision metadata: {text}"
     );
 
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:dated-rev-report xmlns:S="svn:" xmlns:D="DAV:">
+  <D:creationdate>2999-01-01T00:00:00.000000Z</D:creationdate>
+</S:dated-rev-report>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<S:dated-rev-report")
+            && text.contains(&format!("<D:version-name>{revision}</D:version-name>")),
+        "SVN dated-rev REPORT should return the latest revision at or before the requested date: {text}"
+    );
+
     let response = direct_request(
         app,
         Method::HEAD,

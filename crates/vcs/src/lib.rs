@@ -515,6 +515,21 @@ pub fn svn_log_entries(
         .collect()
 }
 
+pub fn svn_revision_at_or_before(repo_path: &Path, date: &str) -> Result<Option<i64>, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let target = parse_svn_report_date(date)?;
+    let youngest = svn_youngest_revision(repo_path)?;
+    for revision in (0..=youngest).rev() {
+        let revision_date = svnlook_text(repo_path, revision, "date")?;
+        if parse_svnlook_date(&revision_date)? <= target {
+            return Ok(Some(revision));
+        }
+    }
+    Ok(None)
+}
+
 fn svnlook_text(repo_path: &Path, revision: i64, subcommand: &str) -> Result<String, VcsError> {
     let output = Command::new("svnlook")
         .arg(subcommand)
@@ -533,6 +548,104 @@ fn svnlook_text(repo_path: &Path, revision: i64, subcommand: &str) -> Result<Str
         return Err(VcsError::NotFound);
     }
     Err(VcsError::SvnLookFailed(stderr))
+}
+
+fn parse_svn_report_date(value: &str) -> Result<i64, VcsError> {
+    let value = value.trim();
+    let (date, time) = value.split_once('T').ok_or(VcsError::InvalidPath)?;
+    let time = time.trim_end_matches('Z');
+    let (hour, minute, second) = parse_time_hms(time)?;
+    let (year, month, day) = parse_ymd(date)?;
+    Ok(epoch_seconds_utc(year, month, day, hour, minute, second))
+}
+
+fn parse_svnlook_date(value: &str) -> Result<i64, VcsError> {
+    let mut parts = value.split_whitespace();
+    let date = parts.next().ok_or(VcsError::InvalidPath)?;
+    let time = parts.next().ok_or(VcsError::InvalidPath)?;
+    let offset = parts.next().ok_or(VcsError::InvalidPath)?;
+    let (year, month, day) = parse_ymd(date)?;
+    let (hour, minute, second) = parse_time_hms(time)?;
+    let offset_seconds = parse_tz_offset(offset)?;
+    Ok(epoch_seconds_utc(year, month, day, hour, minute, second) - offset_seconds)
+}
+
+fn parse_ymd(value: &str) -> Result<(i32, u32, u32), VcsError> {
+    let mut parts = value.split('-');
+    let year = parts
+        .next()
+        .and_then(|part| part.parse::<i32>().ok())
+        .ok_or(VcsError::InvalidPath)?;
+    let month = parts
+        .next()
+        .and_then(|part| part.parse::<u32>().ok())
+        .ok_or(VcsError::InvalidPath)?;
+    let day = parts
+        .next()
+        .and_then(|part| part.parse::<u32>().ok())
+        .ok_or(VcsError::InvalidPath)?;
+    if parts.next().is_some() || !(1..=12).contains(&month) || !(1..=31).contains(&day) {
+        return Err(VcsError::InvalidPath);
+    }
+    Ok((year, month, day))
+}
+
+fn parse_time_hms(value: &str) -> Result<(u32, u32, u32), VcsError> {
+    let value = value.split_once('.').map(|(head, _)| head).unwrap_or(value);
+    let mut parts = value.split(':');
+    let hour = parts
+        .next()
+        .and_then(|part| part.parse::<u32>().ok())
+        .ok_or(VcsError::InvalidPath)?;
+    let minute = parts
+        .next()
+        .and_then(|part| part.parse::<u32>().ok())
+        .ok_or(VcsError::InvalidPath)?;
+    let second = parts
+        .next()
+        .and_then(|part| part.parse::<u32>().ok())
+        .ok_or(VcsError::InvalidPath)?;
+    if parts.next().is_some() || hour > 23 || minute > 59 || second > 60 {
+        return Err(VcsError::InvalidPath);
+    }
+    Ok((hour, minute, second))
+}
+
+fn parse_tz_offset(value: &str) -> Result<i64, VcsError> {
+    if value.len() != 5 {
+        return Err(VcsError::InvalidPath);
+    }
+    let sign = match &value[0..1] {
+        "+" => 1,
+        "-" => -1,
+        _ => return Err(VcsError::InvalidPath),
+    };
+    let hours = value[1..3]
+        .parse::<i64>()
+        .map_err(|_| VcsError::InvalidPath)?;
+    let minutes = value[3..5]
+        .parse::<i64>()
+        .map_err(|_| VcsError::InvalidPath)?;
+    if hours > 23 || minutes > 59 {
+        return Err(VcsError::InvalidPath);
+    }
+    Ok(sign * ((hours * 60 + minutes) * 60))
+}
+
+fn epoch_seconds_utc(year: i32, month: u32, day: u32, hour: u32, minute: u32, second: u32) -> i64 {
+    let days = days_from_civil(year, month, day);
+    days * 86_400 + i64::from(hour) * 3_600 + i64::from(minute) * 60 + i64::from(second)
+}
+
+fn days_from_civil(year: i32, month: u32, day: u32) -> i64 {
+    let year = year - i32::from(month <= 2);
+    let era = if year >= 0 { year } else { year - 399 } / 400;
+    let year_of_era = year - era * 400;
+    let month = month as i32;
+    let day = day as i32;
+    let day_of_year = (153 * (month + if month > 2 { -3 } else { 9 }) + 2) / 5 + day - 1;
+    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
+    i64::from(era * 146_097 + day_of_era - 719_468)
 }
 
 pub fn clone_bare_repository(source_repo_path: &Path, repo_path: &Path) -> Result<(), VcsError> {

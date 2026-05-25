@@ -2616,6 +2616,9 @@ fn svn_protocol_report_response(
     if request.contains("log-report") {
         return svn_protocol_log_report_response(repo_path, route, &request);
     }
+    if request.contains("dated-rev-report") {
+        return svn_protocol_dated_rev_report_response(repo_path, route, &request);
+    }
     svn_protocol_not_implemented_response(route, "REPORT")
 }
 
@@ -2672,6 +2675,42 @@ fn svn_protocol_log_report_response(
     response
 }
 
+fn svn_protocol_dated_rev_report_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    request: &str,
+) -> Response {
+    let Some(creation_date) = svn_protocol_xml_text(request, "creationdate") else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    let revision = match yona_rust_vcs::svn_revision_at_or_before(repo_path, &creation_date) {
+        Ok(Some(revision)) => revision,
+        Ok(None) | Err(VcsError::NotFound) => {
+            return svn_protocol_status_response(StatusCode::NOT_FOUND)
+        }
+        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "REPORT")
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    let body = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<S:dated-rev-report xmlns:S="svn:" xmlns:D="DAV:">
+  <D:version-name>{revision}</D:version-name>
+</S:dated-rev-report>"#
+    );
+    let mut response = (StatusCode::OK, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
+    response
+}
+
 fn svn_protocol_log_item(entry: &yona_rust_vcs::SvnLogEntry) -> String {
     format!(
         r#"  <S:log-item>
@@ -2689,12 +2728,17 @@ fn svn_protocol_log_item(entry: &yona_rust_vcs::SvnLogEntry) -> String {
 }
 
 fn svn_protocol_xml_i64(xml: &str, tag: &str) -> Option<i64> {
+    svn_protocol_xml_text(xml, tag)?.parse::<i64>().ok()
+}
+
+fn svn_protocol_xml_text(xml: &str, tag: &str) -> Option<String> {
     let start = xml
         .find(&format!("<S:{tag}>"))
+        .or_else(|| xml.find(&format!("<D:{tag}>")))
         .or_else(|| xml.find(&format!("<{tag}>")))?;
     let value_start = xml[start..].find('>')? + start + 1;
     let end = xml[value_start..].find('<')? + value_start;
-    xml[value_start..end].trim().parse::<i64>().ok()
+    Some(xml[value_start..end].trim().to_string())
 }
 
 fn svn_protocol_file_lookup(svn_path: &str) -> Option<(Option<i64>, String)> {
