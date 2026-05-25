@@ -4,9 +4,11 @@ use http::{Method, Request, Response, StatusCode};
 use http_body_util::BodyExt;
 use sea_orm::{ConnectionTrait, Database, DatabaseConnection};
 use serde_json::json;
+use std::path::Path;
 use std::process::Command;
 use std::sync::{Mutex, OnceLock};
 use tempfile::tempdir;
+use tokio::sync::oneshot;
 use tower::ServiceExt;
 use yona_rust_persistence::AppRepository;
 use yona_rust_pilot_migration::Migrator;
@@ -35,6 +37,32 @@ fn svn_client_available() -> bool {
         .arg("--version")
         .output()
         .is_ok_and(|output| output.status.success())
+}
+
+fn run_svn(args: &[&str], cwd: Option<&Path>) {
+    let mut command = Command::new(yona_rust_vcs::svn_executable("svn"));
+    command.args(args);
+    command.env("SVN_NONINTERACTIVE", "1");
+    if let Some(cwd) = cwd {
+        command.current_dir(cwd);
+    }
+    let output = command.output().expect("run svn");
+    assert!(
+        output.status.success(),
+        "svn {:?} failed\nstdout: {}\nstderr: {}",
+        args,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+async fn run_svn_blocking(args: Vec<String>, cwd: Option<std::path::PathBuf>) {
+    tokio::task::spawn_blocking(move || {
+        let borrowed = args.iter().map(String::as_str).collect::<Vec<_>>();
+        run_svn(&borrowed, cwd.as_deref());
+    })
+    .await
+    .expect("svn task");
 }
 
 fn file_url(path: &std::path::Path) -> String {
@@ -135,6 +163,24 @@ async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseCo
     );
 
     (app, app_repo, db)
+}
+
+async fn spawn_app_server(app: axum::Router) -> (String, oneshot::Sender<()>) {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind test server");
+    let address = listener.local_addr().expect("local address");
+    let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+    tokio::spawn(async move {
+        axum::serve(listener, app)
+            .with_graceful_shutdown(async {
+                let _ = shutdown_rx.await;
+            })
+            .await
+            .expect("serve test app");
+    });
+
+    (format!("http://{address}"), shutdown_tx)
 }
 
 async fn response_json(response: Response<Body>) -> serde_json::Value {
@@ -359,7 +405,11 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
-        text.contains("<D:multistatus") && text.contains("<D:collection/>"),
+        text.contains("<D:multistatus")
+            && text.contains("<D:collection/>")
+            && text.contains(
+                "<D:version-controlled-configuration><D:href>/yona/svn/owner/projectYobi/!svn/vcc/default</D:href></D:version-controlled-configuration>"
+            ),
         "SVN root PROPFIND should return a WebDAV collection multistatus: {text}"
     );
     if let Some(revision) = youngest_revision {
@@ -394,7 +444,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
-        text.contains("/svn/owner/projectYobi/!svn/vcc/default")
+        text.contains("/yona/svn/owner/projectYobi/!svn/vcc/default")
             && text.contains("<D:collection/>"),
         "SVN default VCC PROPFIND should return a WebDAV collection multistatus: {text}"
     );
@@ -405,7 +455,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
         );
         assert!(
             text.contains(&format!(
-                "<D:checked-in><D:href>/svn/owner/projectYobi/!svn/bln/{revision}</D:href></D:checked-in>"
+                "<D:checked-in><D:href>/yona/svn/owner/projectYobi/!svn/bln/{revision}</D:href></D:checked-in>"
             )),
             "SVN default VCC PROPFIND should expose the latest baseline resource for ra_serf discovery: {text}"
         );
@@ -438,7 +488,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             text.contains("<D:resourcetype><D:baseline/></D:resourcetype>")
                 && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
                 && text.contains(&format!(
-                    "<D:baseline-collection><D:href>/svn/owner/projectYobi/!svn/bc/{revision}</D:href></D:baseline-collection>"
+                    "<D:baseline-collection><D:href>/yona/svn/owner/projectYobi/!svn/bc/{revision}</D:href></D:baseline-collection>"
                 )),
             "SVN baseline resource PROPFIND should expose baseline collection metadata: {text}"
         );
@@ -598,11 +648,11 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && text.contains("<D:getcontentlength>15</D:getcontentlength>")
             && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
             && text.contains(&format!(
-                "<D:href>/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md</D:href>"
+                "<D:href>/yona/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md</D:href>"
             ))
             && text
                 .contains("<S:baseline-relative-path>trunk/README.md</S:baseline-relative-path>")
-            && text.contains("/svn/owner/projectYobi/trunk/README.md"),
+            && text.contains("/yona/svn/owner/projectYobi/trunk/README.md"),
         "SVN file PROPFIND should return file metadata: {text}"
     );
 
@@ -624,7 +674,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && text
                 .contains("<S:baseline-relative-path>trunk/README.md</S:baseline-relative-path>")
             && text.contains(&format!(
-                "/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md"
+                "/yona/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md"
             )),
         "SVN version resource file PROPFIND should return file metadata: {text}"
     );
@@ -643,13 +693,13 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
-        text.contains("/svn/owner/projectYobi/trunk/")
+        text.contains("/yona/svn/owner/projectYobi/trunk/")
             && text.contains("<D:resourcetype><D:collection/></D:resourcetype>")
-            && text.contains("/svn/owner/projectYobi/trunk/README.md")
+            && text.contains("/yona/svn/owner/projectYobi/trunk/README.md")
             && text.contains("<D:resourcetype/>")
             && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
             && text.contains(&format!(
-                "<D:href>/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md</D:href>"
+                "<D:href>/yona/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md</D:href>"
             ))
             && text
                 .contains("<S:baseline-relative-path>trunk/README.md</S:baseline-relative-path>"),
@@ -675,9 +725,9 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
-        text.contains("/svn/owner/projectYobi/")
+        text.contains("/yona/svn/owner/projectYobi/")
             && text.contains("<D:resourcetype><D:collection/></D:resourcetype>")
-            && text.contains("/svn/owner/projectYobi/trunk/"),
+            && text.contains("/yona/svn/owner/projectYobi/trunk/"),
         "SVN baseline collection PROPFIND should expose the revision root tree: {text}"
     );
 
@@ -886,7 +936,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && text.contains(&format!(r#"<S:open-root rev="{revision}">"#))
             && text.contains(r#"<S:add-file name="README.md">"#)
             && text.contains(&format!(
-                "<D:href>/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md</D:href>"
+                "<D:href>/yona/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md</D:href>"
             ))
             && text.contains("<S:fetch-file/>"),
         "SVN update-report should expose target revision and versioned file entries: {text}"
@@ -1006,10 +1056,10 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
-        text.contains(r#"<S:add-directory name="guides"/>"#)
+        text.contains(r#"<S:add-directory name="guides">"#)
             && text.contains(r#"<S:add-file name="Guide.md">"#)
             && text.contains(&format!(
-                "<D:href>/svn/owner/projectYobi/!svn/ver/{nested_revision}/trunk/guides/Guide.md</D:href>"
+                "<D:href>/yona/svn/owner/projectYobi/!svn/ver/{nested_revision}/trunk/guides/Guide.md</D:href>"
             )),
         "SVN update-report depth=infinity should include nested executable-backed entries: {text}"
     );
@@ -1250,7 +1300,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && text.contains("<D:owner>owner</D:owner>")
             && text.contains("<D:locktype><D:write/></D:locktype>")
             && text.contains("<D:lockscope><D:exclusive/></D:lockscope>")
-            && text.contains("/svn/owner/projectYobi/trunk/README.md")
+            && text.contains("/yona/svn/owner/projectYobi/trunk/README.md")
             && text.contains(lock_token.trim_matches(['<', '>'])),
         "SVN LOCK should create executable-backed lock discovery metadata: {text}"
     );
@@ -1302,7 +1352,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && text.contains("<D:owner>owner</D:owner>")
             && text.contains(lock_token.trim_matches(['<', '>']))
             && text.contains(
-                "<D:lockroot><D:href>/svn/owner/projectYobi/trunk/README.md</D:href></D:lockroot>"
+                "<D:lockroot><D:href>/yona/svn/owner/projectYobi/trunk/README.md</D:href></D:lockroot>"
             ),
         "SVN file PROPFIND should expose executable-backed lock discovery metadata: {text}"
     );
@@ -1598,10 +1648,44 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
-        text.contains("/svn/owner/projectYobi/trunk/docs/")
+        text.contains("/yona/svn/owner/projectYobi/trunk/docs/")
             && text.contains("<D:resourcetype><D:collection/></D:resourcetype>"),
         "SVN MKCOL should create a WebDAV collection visible through PROPFIND: {text}"
     );
+}
+
+#[tokio::test]
+async fn svn_protocol_external_client_can_info_public_project() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!("skipping external SVN client smoke because svnadmin/svnlook/svn is unavailable");
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello from external svn client\n").expect("seed svn readme");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let svn_url = format!("{base_url}/yona/svn/owner/projectYobi");
+    run_svn_blocking(
+        vec![
+            "info".to_string(),
+            "--non-interactive".to_string(),
+            svn_url.clone(),
+        ],
+        None,
+    )
+    .await;
+
+    let _ = shutdown.send(());
 }
 
 #[tokio::test]
@@ -1732,7 +1816,9 @@ async fn svn_protocol_supports_checkout_merge_choreography() {
             && text.contains("<D:updated-set>")
             && text.contains(&format!("<D:version-name>{put_revision}</D:version-name>"))
             && text.contains("<D:creator-displayname>")
-            && text.contains(&format!("/svn/owner/projectYobi/!svn/ver/{put_revision}/")),
+            && text.contains(&format!(
+                "/yona/svn/owner/projectYobi/!svn/ver/{put_revision}/"
+            )),
         "SVN MERGE should expose ra_serf commit info and checked-in metadata: {text}"
     );
 
