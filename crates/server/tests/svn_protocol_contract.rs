@@ -609,6 +609,41 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "SVN get-locations REPORT should return the path location at the requested revision: {text}"
     );
 
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        &format!("/svn/owner/projectYobi/!svn/bc/{revision}/trunk"),
+        None,
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:get-location-segments xmlns:S="svn:">
+  <S:path></S:path>
+  <S:peg-revision>{revision}</S:peg-revision>
+  <S:start-revision>{revision}</S:start-revision>
+  <S:end-revision>{revision}</S:end-revision>
+</S:get-location-segments>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<S:get-location-segments-report")
+            && text.contains(&format!(
+                r#"<S:location-segment path="/trunk" range-start="{revision}" range-end="{revision}"/>"#
+            )),
+        "SVN get-location-segments REPORT should return the path segment for the requested revision range: {text}"
+    );
+
     let response = direct_request(
         app,
         Method::HEAD,

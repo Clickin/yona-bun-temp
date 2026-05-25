@@ -2622,6 +2622,9 @@ fn svn_protocol_report_response(
     if request.contains("get-locks-report") {
         return svn_protocol_get_locks_report_response(repo_path, route);
     }
+    if request.contains("get-location-segments") {
+        return svn_protocol_get_location_segments_report_response(repo_path, route, &request);
+    }
     if request.contains("get-locations") {
         return svn_protocol_get_locations_report_response(repo_path, route, &request);
     }
@@ -2793,6 +2796,57 @@ fn svn_protocol_get_locations_report_response(
         r#"<?xml version="1.0" encoding="utf-8"?>
 <S:get-locations-report xmlns:S="svn:" xmlns:D="DAV:">
 {location}</S:get-locations-report>"#
+    );
+    let mut response = (StatusCode::OK, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
+    response
+}
+
+fn svn_protocol_get_location_segments_report_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    request: &str,
+) -> Response {
+    let Some(start_revision) = svn_protocol_xml_i64(request, "start-revision") else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    let end_revision = svn_protocol_xml_i64(request, "end-revision").unwrap_or(start_revision);
+    let requested_path = svn_protocol_xml_text(request, "path").unwrap_or_default();
+    let base_path = svn_protocol_file_lookup(&route.svn_path)
+        .map(|(_, path)| path)
+        .unwrap_or_default();
+    let location_path = join_svn_report_path(&base_path, &requested_path);
+    let exists =
+        match yona_rust_vcs::svn_path_exists(repo_path, Some(start_revision), &location_path) {
+            Ok(exists) => exists,
+            Err(VcsError::InvalidPath) => {
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+            }
+            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "REPORT")
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        };
+    let segment = if exists {
+        format!(
+            r#"  <S:location-segment path="/{}" range-start="{start_revision}" range-end="{end_revision}"/>
+"#,
+            xml_escape(location_path.trim_matches('/'))
+        )
+    } else {
+        String::new()
+    };
+    let body = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<S:get-location-segments-report xmlns:S="svn:" xmlns:D="DAV:">
+{segment}</S:get-location-segments-report>"#
     );
     let mut response = (StatusCode::OK, body).into_response();
     add_svn_dav_headers(&mut response);
