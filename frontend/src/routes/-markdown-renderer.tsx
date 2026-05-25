@@ -132,15 +132,21 @@ function extractReferenceDefinitions(markdown: string) {
   const referenceMap = new Map<string, MarkdownReferenceDefinition>();
   const markdownLines: string[] = [];
   let inFence = false;
-  for (const line of markdown.replace(/\r\n?/g, "\n").split("\n")) {
+  const lines = markdown.replace(/\r\n?/g, "\n").split("\n");
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index] ?? "";
     if (/^ {0,3}```/.test(line)) {
       inFence = !inFence;
       markdownLines.push(line);
       continue;
     }
+    const candidateLine =
+      !inFence && /^ {0,3}\[[^\]]+\]:\s*$/.test(line) && index < lines.length - 1
+        ? `${line} ${(lines[index + 1] ?? "").trim()}`
+        : line;
     const match =
       /^ {0,3}\[([^\]]+)\]:\s*(<[^>\s]+>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_`{|}~]|[^\s>\\])+)(?:\s+(?:"((?:\\"|[^"\\])*)"|'((?:\\'|[^'\\])*)'|\(((?:\\\)|[^)\\])*)\)))?\s*$/.exec(
-        line,
+        candidateLine,
       );
     if (inFence || !match) {
       markdownLines.push(line);
@@ -160,6 +166,9 @@ function extractReferenceDefinitions(markdown: string) {
       target,
       title: title === undefined ? undefined : unescapeMarkdownPunctuation(title),
     });
+    if (candidateLine !== line) {
+      index += 1;
+    }
   }
   return { markdown: markdownLines.join("\n"), referenceMap };
 }

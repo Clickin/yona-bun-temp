@@ -291,6 +291,21 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("[asset]:");
   });
 
+  it("resolves newline-split reference definitions like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          '[docs][guide] ![logo][asset]\n\n[guide]:\n  https://example.com/docs "Read docs"\n[asset]:\n  /files/logo.png "Logo title"'
+        }
+      />,
+    );
+
+    expect(html).toContain('<a href="https://example.com/docs" title="Read docs">docs</a>');
+    expect(html).toContain('<img alt="logo" src="/files/logo.png" title="Logo title"/>');
+    expect(html).not.toContain("[guide]:");
+    expect(html).not.toContain("[asset]:");
+  });
+
   it("renders angle-bracket autolinks like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown="See <https://example.com/docs> and <help@example.com>" />,
