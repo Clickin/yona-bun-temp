@@ -26,22 +26,22 @@ use crate::repo_types::{
     ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
     ProjectMilestoneSummaryRecord, ProjectPostingListItemRecord, ProjectPostingListRecord,
     ProjectRecord, ProjectTransferRecord, ProjectTransferRequestInput, ProjectViewerRecord,
-    ProjectWatcherListRecord, ProjectWatcherRecord, ProjectWebhookListRecord, ProjectWebhookRecord,
-    PullRequestCommitChangedInput, PullRequestCommitChangedRecord, PullRequestCommitRecord,
-    PullRequestDetailRecord, PullRequestEventRecord, PullRequestListFilter,
-    PullRequestListItemRecord, PullRequestListRecord, PullRequestMergeInput,
-    PullRequestReviewInput, PullRequestStateInput, PullRequestThreadStateInput,
-    PullRequestUserRecord, ReviewCommentRecord, ReviewThreadListFilter, ReviewThreadListRecord,
-    ReviewThreadRecord, SearchContextRecord, SearchCountsRecord, SearchItemRecord,
-    SearchRepositoryInput, SearchResultRecord, SearchScope, SiteIssueListRecord,
-    SiteNoAvatarUserRecord, SitePostingListRecord, SiteUserAvatarFromAttachmentResult,
-    SiteUserDeleteResult, SiteUserListFilter, SiteUserListRecord, SiteUserRecord,
-    ToggleFavoriteIssueResult, ToggleFavoriteProjectResult, UpdateCommitDiscussionCommentInput,
-    UpdateIssueCommentInput, UpdateIssueInput, UpdateMilestoneInput, UpdateOrganizationInput,
-    UpdatePostingCommentInput, UpdatePostingInput, UpdateProjectInput,
-    UpdateProjectLabelCategoryInput, UpdateProjectLabelInput, UpdatePullRequestCommentInput,
-    UpdatePullRequestInput, UserAttachmentListRecord, UserAttachmentRecord,
-    UserIssueCandidateRecord, UserIssueListFilter, UserStatisticsRecord,
+    ProjectWatcherListRecord, ProjectWatcherRecord, ProjectWebhookDeliveryRecord,
+    ProjectWebhookListRecord, ProjectWebhookRecord, PullRequestCommitChangedInput,
+    PullRequestCommitChangedRecord, PullRequestCommitRecord, PullRequestDetailRecord,
+    PullRequestEventRecord, PullRequestListFilter, PullRequestListItemRecord,
+    PullRequestListRecord, PullRequestMergeInput, PullRequestReviewInput, PullRequestStateInput,
+    PullRequestThreadStateInput, PullRequestUserRecord, ReviewCommentRecord,
+    ReviewThreadListFilter, ReviewThreadListRecord, ReviewThreadRecord, SearchContextRecord,
+    SearchCountsRecord, SearchItemRecord, SearchRepositoryInput, SearchResultRecord, SearchScope,
+    SiteIssueListRecord, SiteNoAvatarUserRecord, SitePostingListRecord,
+    SiteUserAvatarFromAttachmentResult, SiteUserDeleteResult, SiteUserListFilter,
+    SiteUserListRecord, SiteUserRecord, ToggleFavoriteIssueResult, ToggleFavoriteProjectResult,
+    UpdateCommitDiscussionCommentInput, UpdateIssueCommentInput, UpdateIssueInput,
+    UpdateMilestoneInput, UpdateOrganizationInput, UpdatePostingCommentInput, UpdatePostingInput,
+    UpdateProjectInput, UpdateProjectLabelCategoryInput, UpdateProjectLabelInput,
+    UpdatePullRequestCommentInput, UpdatePullRequestInput, UserAttachmentListRecord,
+    UserAttachmentRecord, UserIssueCandidateRecord, UserIssueListFilter, UserStatisticsRecord,
     WatchedProjectNotificationsRecord, WebhookThreadRecord, WorkspaceEmailRecord,
     WorkspaceIssueListItemRecord, WorkspaceMemberProjectRecord,
     WorkspaceNotificationPreferenceRecord, WorkspaceProfileRecord,
@@ -857,6 +857,23 @@ fn webhook_thread_record_from_model(row: webhook_thread::Model) -> WebhookThread
         resource_type: row.resource_type.unwrap_or_default(),
         thread_id: row.thread_id.unwrap_or_default(),
         webhook_id: row.webhook_id.unwrap_or_default(),
+    }
+}
+
+fn project_webhook_delivery_record_from_model(
+    row: webhook_delivery::Model,
+) -> ProjectWebhookDeliveryRecord {
+    ProjectWebhookDeliveryRecord {
+        created_at: row.created_at,
+        error_message: row.error_message,
+        event_type: row.event_type.unwrap_or_default(),
+        id: row.id,
+        payload_url: row.payload_url.unwrap_or_default(),
+        request_body: row.request_body.unwrap_or_default(),
+        response_body: row.response_body,
+        status: row.status.unwrap_or_default(),
+        webhook_id: row.webhook_id.unwrap_or_default(),
+        webhook_type: row.webhook_type.unwrap_or_default(),
     }
 }
 
@@ -6483,6 +6500,34 @@ impl AppRepository {
         .insert(&self.db)
         .await?;
         Ok(())
+    }
+
+    pub async fn list_project_webhook_deliveries(
+        &self,
+        project_id: i64,
+        limit: u64,
+    ) -> Result<Vec<ProjectWebhookDeliveryRecord>, DbErr> {
+        let webhook_ids: Vec<i64> = webhook::Entity::find()
+            .filter(webhook::Column::ProjectId.eq(Some(project_id)))
+            .all(&self.db)
+            .await?
+            .into_iter()
+            .map(|row| row.id)
+            .collect();
+        if webhook_ids.is_empty() || limit == 0 {
+            return Ok(Vec::new());
+        }
+        let rows = webhook_delivery::Entity::find()
+            .filter(webhook_delivery::Column::WebhookId.is_in(webhook_ids.into_iter().map(Some)))
+            .order_by_desc(webhook_delivery::Column::CreatedAt)
+            .order_by_desc(webhook_delivery::Column::Id)
+            .limit(limit)
+            .all(&self.db)
+            .await?;
+        Ok(rows
+            .into_iter()
+            .map(project_webhook_delivery_record_from_model)
+            .collect())
     }
 
     pub async fn delete_project_webhook(

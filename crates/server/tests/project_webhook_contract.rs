@@ -260,6 +260,33 @@ async fn project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks() {
             && body.contains("/yona/owner/projectYobi/issue/1|#1: First webhook issue")
     }));
     assert!(history[0].error_message.is_none());
+    let webhooks_with_history = ok_json(
+        rest(
+            app.clone(),
+            Method::GET,
+            "/yona/api/v1/owners/owner/projects/projectYobi/webhooks",
+            Some(&owner_cookie),
+            None,
+            None,
+        )
+        .await,
+    )
+    .await;
+    let response_history = webhooks_with_history["deliveries"]
+        .as_array()
+        .expect("webhook delivery history response");
+    assert_eq!(response_history.len(), 1);
+    assert_eq!(response_history[0]["webhookId"], 1);
+    assert_eq!(response_history[0]["eventType"], "NEW_ISSUE");
+    assert_eq!(response_history[0]["webhookType"], "SIMPLE");
+    assert_eq!(
+        response_history[0]["payloadUrl"],
+        "https://hooks.example/simple"
+    );
+    assert_eq!(response_history[0]["status"], "SUCCESS");
+    assert!(response_history[0]["requestBody"]
+        .as_str()
+        .is_some_and(|body| body.contains("notification.type.new.issue")));
 
     ok_json(
         rest(

@@ -930,6 +930,20 @@ pub struct ProjectWebhookListRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectWebhookDeliveryRecord {
+    pub created_at: Option<DateTime>,
+    pub error_message: Option<String>,
+    pub event_type: String,
+    pub id: i64,
+    pub payload_url: String,
+    pub request_body: String,
+    pub response_body: Option<String>,
+    pub status: String,
+    pub webhook_id: i64,
+    pub webhook_type: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CreateWebhookDeliveryInput {
     pub error_message: Option<String>,
     pub event_type: String,

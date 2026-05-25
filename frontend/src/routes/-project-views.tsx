@@ -1297,6 +1297,7 @@ export function ProjectWebhooksPage(props: {
     ownerName: props.projectDetail?.ownerName ?? "",
     projectName: props.projectDetail?.projectName ?? "",
     viewerCanUpdate: props.projectDetail?.viewerCanUpdate ?? false,
+    deliveries: [],
     webhookTypes: ["SIMPLE", "DETAIL_SLACK", "DETAIL_HANGOUT_CHAT", "JSON"] as ProjectWebhookType[],
     webhooks: [],
   };
@@ -1489,6 +1490,43 @@ export function ProjectWebhooksPage(props: {
                         >
                           button.delete
                         </button>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+
+            <div className="webhook-history-wrap" id="webhookDeliveryHistory">
+              <h4 className="form-legend">project.webhook.delivery.history</h4>
+              {detail.deliveries.length === 0 ? (
+                <div className="error-wrap">
+                  <i className="ico ico-err1" />
+                  <p>project.webhook.delivery.empty</p>
+                </div>
+              ) : (
+                <>
+                  <div className="row-fluid list-head">
+                    <div className="span2 text-center">project.webhook.delivery.created</div>
+                    <div className="span2 text-center">project.webhook.delivery.event</div>
+                    <div className="span2 text-center">project.webhook.delivery.status</div>
+                    <div className="span3 payload-url">project.webhook.payloadUrl</div>
+                    <div className="span3">project.webhook.delivery.response</div>
+                  </div>
+                  {detail.deliveries.map((delivery) => (
+                    <div
+                      className="row-fluid list-item vertical-align webhook-history-item"
+                      data-webhook-delivery-id={delivery.id}
+                      key={delivery.id}
+                    >
+                      <div className="span2 text-center">{delivery.createdLabel}</div>
+                      <div className="span2 text-center">{delivery.eventType}</div>
+                      <div className="span2 text-center">{delivery.status}</div>
+                      <div className="span3 payload-url">{delivery.payloadUrl}</div>
+                      <div className="span3 webhook-delivery-response">
+                        {delivery.errorMessage ||
+                          delivery.responseBody ||
+                          "project.webhook.delivery.response.empty"}
                       </div>
                     </div>
                   ))}

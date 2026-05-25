@@ -7084,7 +7084,23 @@ struct RestProjectWebhook {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RestProjectWebhookDelivery {
+    created_label: String,
+    error_message: Option<String>,
+    event_type: String,
+    id: i64,
+    payload_url: String,
+    request_body: String,
+    response_body: Option<String>,
+    status: String,
+    webhook_id: i64,
+    webhook_type: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RestProjectWebhooksResponse {
+    deliveries: Vec<RestProjectWebhookDelivery>,
     owner_name: String,
     project_name: String,
     viewer_can_update: bool,
@@ -13149,11 +13165,33 @@ fn rest_project_webhook_from_record(
     }
 }
 
+fn rest_project_webhook_delivery_from_record(
+    record: persistence::ProjectWebhookDeliveryRecord,
+) -> RestProjectWebhookDelivery {
+    RestProjectWebhookDelivery {
+        created_label: format_project_date_label(record.created_at),
+        error_message: record.error_message,
+        event_type: record.event_type,
+        id: record.id,
+        payload_url: record.payload_url,
+        request_body: record.request_body,
+        response_body: record.response_body,
+        status: record.status,
+        webhook_id: record.webhook_id,
+        webhook_type: record.webhook_type,
+    }
+}
+
 fn build_project_webhooks_response(
     authorization: &persistence::ProjectAuthorizationRecord,
     webhooks: persistence::ProjectWebhookListRecord,
+    deliveries: Vec<persistence::ProjectWebhookDeliveryRecord>,
 ) -> Result<RestProjectWebhooksResponse, RestRouteError> {
     Ok(RestProjectWebhooksResponse {
+        deliveries: deliveries
+            .into_iter()
+            .map(rest_project_webhook_delivery_from_record)
+            .collect(),
         owner_name: authorization.project.owner_name.clone(),
         project_name: authorization.project.project_name.clone(),
         viewer_can_update: project_update_allowed(authorization)
@@ -13614,7 +13652,17 @@ async fn rest_read_project_webhooks(
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
-    Ok(Json(build_project_webhooks_response(&authorization, webhooks)?).into_response())
+    let deliveries = repository
+        .list_project_webhook_deliveries(authorization.project.id, 20)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(build_project_webhooks_response(
+        &authorization,
+        webhooks,
+        deliveries,
+    )?)
+    .into_response())
 }
 
 async fn rest_create_project_webhook(
@@ -13669,7 +13717,17 @@ async fn rest_create_project_webhook(
         .await
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?;
-    Ok(Json(build_project_webhooks_response(&authorization, webhooks)?).into_response())
+    let deliveries = repository
+        .list_project_webhook_deliveries(authorization.project.id, 20)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(build_project_webhooks_response(
+        &authorization,
+        webhooks,
+        deliveries,
+    )?)
+    .into_response())
 }
 
 async fn rest_delete_project_webhook(
@@ -13703,7 +13761,17 @@ async fn rest_delete_project_webhook(
     else {
         return Err(RestRouteError::not_found("project webhook not found"));
     };
-    Ok(Json(build_project_webhooks_response(&authorization, webhooks)?).into_response())
+    let deliveries = repository
+        .list_project_webhook_deliveries(authorization.project.id, 20)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    Ok(Json(build_project_webhooks_response(
+        &authorization,
+        webhooks,
+        deliveries,
+    )?)
+    .into_response())
 }
 
 fn rest_project_transfer_response(

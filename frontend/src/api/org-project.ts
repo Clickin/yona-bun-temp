@@ -141,7 +141,21 @@ export type ProjectWebhook = {
   webhookType: ProjectWebhookType;
 };
 
+export type ProjectWebhookDelivery = {
+  createdLabel: string;
+  errorMessage?: string | null;
+  eventType: string;
+  id: number;
+  payloadUrl: string;
+  requestBody: string;
+  responseBody?: string | null;
+  status: string;
+  webhookId: number;
+  webhookType: ProjectWebhookType | string;
+};
+
 export type ProjectWebhooksResponse = {
+  deliveries: ProjectWebhookDelivery[];
   ownerName: string;
   projectName: string;
   viewerCanUpdate: boolean;

@@ -754,6 +754,8 @@ describe("file-route parity harness", () => {
     expect(viewSource).toContain('id="gitPush"');
     expect(viewSource).toContain('id="webhooksList"');
     expect(viewSource).toContain("data-webhook-id");
+    expect(viewSource).toContain('id="webhookDeliveryHistory"');
+    expect(viewSource).toContain("data-webhook-delivery-id");
     expect(viewSource).toContain('data-request-method="delete"');
   });
 
