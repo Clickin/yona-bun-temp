@@ -143,8 +143,10 @@ const referenceDefinitionPattern = new RegExp(
   `^ {0,3}\\[(${referenceLabelPattern})\\]:\\s*(${referenceTargetPattern})(?:\\s+(?:"((?:\\\\"|[^"\\\\])*)"|'((?:\\\\'|[^'\\\\])*)'|\\(((?:\\\\\\)|[^)\\\\])*)\\)))?\\s*$`,
 );
 
+const openingFencePattern = /^ {0,3}(`{3,}|~{3,})(?:\s+([A-Za-z0-9_+.-]+)(?:\s+.*)?)?\s*$/;
+
 function openingFenceFromLine(line: string): string {
-  return /^ {0,3}(`{3,}|~{3,})(?:\s+[A-Za-z0-9_+.-]+)?\s*$/.exec(line)?.[1] ?? "";
+  return openingFencePattern.exec(line)?.[1] ?? "";
 }
 
 function closingFenceFromLine(line: string): string {
@@ -686,7 +688,7 @@ function parseFencedCodeBlock(lines: MarkdownLineRecord[]): MarkdownCodeBlockRec
   if (lines.length < 2) {
     return null;
   }
-  const openMatch = /^ {0,3}(`{3,}|~{3,})(?:\s+([A-Za-z0-9_+.-]+))?\s*$/.exec(lines[0]?.text ?? "");
+  const openMatch = openingFencePattern.exec(lines[0]?.text ?? "");
   const fence = openMatch?.[1] ?? "";
   const closeFence = closingFenceFromLine(lines[lines.length - 1]?.text ?? "");
   if (!openMatch || !closesMarkdownFence(fence, closeFence)) {

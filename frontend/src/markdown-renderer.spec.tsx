@@ -64,6 +64,18 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("issueLink");
   });
 
+  it("uses the first fenced code info-string token like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"``` rust linenos\nlet value = '#1';\n```"} />,
+    );
+
+    expect(html).toContain("<pre><code");
+    expect(html).toContain('class="rust"');
+    expect(html).toContain("let value = &#x27;#1&#x27;;");
+    expect(html).not.toContain("linenos");
+    expect(html).not.toContain("issueLink");
+  });
+
   it("renders tilde fenced code blocks like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"~~~ js\nconst value = '#1';\n~~~"} />,
