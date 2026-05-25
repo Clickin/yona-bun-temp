@@ -399,7 +399,7 @@ Interpretation:
 - [x] Legacy marked-style soft line breaks render as `<br>` on the project Markdown render path, while legacy `readme-body` surfaces keep marked `breaks: false` soft-line behavior
 - [x] Legacy hard-break markers (`\` or two trailing spaces before newline) are consumed before rendering `<br>`
 - [x] GFM strikethrough renders `~~deleted~~` as `<del>` on the project Markdown render path
-- [x] Basic GFM pipe tables render as `<table>` on the project Markdown render path, including escaped `\|` pipes inside cells, one-or-more dash separators, and left/center/right alignment attributes
+- [x] Basic GFM pipe tables render as `<table>` on the project Markdown render path, including escaped `\|` pipes inside cells, one-or-more dash separators, row cell padding/truncation, and left/center/right alignment attributes
 - [x] Basic smart-list rendering emits `<ul>` / `<ol>` on the project Markdown render path and preserves non-1 ordered-list start numbers
 - [x] Basic blockquotes render as `<blockquote>` on the project Markdown render path
 - [x] Marked-style backslash escapes keep punctuation literal before inline Markdown and autolink parsing

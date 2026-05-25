@@ -582,15 +582,22 @@ function markdownLines(block: string): MarkdownLineRecord[] {
   return lines;
 }
 
-function splitTableRow(line: string): string[] {
+function splitTableRow(line: string, count?: number): string[] {
   const protectedPipe = "\u0000";
   const protectedLine = line.replace(/\\\|/g, protectedPipe);
-  return protectedLine
+  const cells = protectedLine
     .trim()
     .replace(/^\|/, "")
     .replace(/\|$/, "")
     .split("|")
     .map((cell) => cell.replaceAll(protectedPipe, "|").trim());
+  if (count === undefined) {
+    return cells;
+  }
+  if (cells.length > count) {
+    return cells.slice(0, count);
+  }
+  return [...cells, ...Array.from({ length: count - cells.length }, () => "")];
 }
 
 function tableAlignment(separator: string): MarkdownTableCell["align"] {
@@ -627,10 +634,7 @@ function parseMarkdownTable(lines: MarkdownLineRecord[]): MarkdownTableRecord | 
   }));
   const rows: MarkdownTableRow[] = [];
   for (const line of lines.slice(2)) {
-    const cells = splitTableRow(line.text);
-    if (cells.length <= 1) {
-      continue;
-    }
+    const cells = splitTableRow(line.text, headers.length);
     rows.push({
       cells: headers.map((headerCell, columnIndex) => ({
         align: headerCell.align,

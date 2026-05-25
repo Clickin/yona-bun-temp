@@ -627,6 +627,17 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<p>A | B");
   });
 
+  it("pads and truncates table row cells like legacy marked", () => {
+    const html = renderToStaticMarkup(<MarkdownRenderer markdown={"A | B\n- | -\n1\n2 | 3 | 4"} />);
+
+    expect(html).toContain("<table>");
+    expect(html).toContain("<td>1</td>");
+    expect(html).toContain("<td></td>");
+    expect(html).toContain("<td>2</td>");
+    expect(html).toContain("<td>3</td>");
+    expect(html).not.toContain("<td>4</td>");
+  });
+
   it("renders basic smart lists like legacy marked", () => {
     const unorderedHtml = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- **first**\n- ~~second~~"} />,
