@@ -760,6 +760,51 @@ pub fn svn_delete_path(repo_path: &Path, path: &str, message: &str) -> Result<i6
     svn_youngest_revision(repo_path)
 }
 
+pub fn svn_make_collection(repo_path: &Path, path: &str, message: &str) -> Result<i64, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    let work_dir = svn_temp_work_dir("mkcol")?;
+    let cleanup = WorkDirCleanup {
+        path: work_dir.clone(),
+    };
+    run_svn_command(
+        Command::new("svn")
+            .arg("checkout")
+            .arg(svn_file_url(repo_path))
+            .arg(&work_dir),
+    )?;
+
+    let target_path = work_dir.join(&clean_path);
+    if target_path.exists() {
+        return Err(VcsError::FilesystemFailed(format!(
+            "svn collection already exists: {clean_path}"
+        )));
+    }
+    std::fs::create_dir_all(&target_path).map_err(|error| {
+        VcsError::FilesystemFailed(format!("create svn collection directory: {error}"))
+    })?;
+    run_svn_command(
+        Command::new("svn")
+            .arg("add")
+            .arg("--parents")
+            .arg(&target_path),
+    )?;
+    run_svn_command(
+        Command::new("svn")
+            .arg("commit")
+            .arg("-m")
+            .arg(message)
+            .arg(&target_path),
+    )?;
+    drop(cleanup);
+    svn_youngest_revision(repo_path)
+}
+
 pub fn svn_path_exists(
     repo_path: &Path,
     revision: Option<i64>,

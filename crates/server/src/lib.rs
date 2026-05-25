@@ -2362,6 +2362,9 @@ async fn direct_svn_protocol_request(
     if method == "DELETE" {
         return svn_protocol_delete_response(&repo_path, &route, principal.as_ref());
     }
+    if method == "MKCOL" {
+        return svn_protocol_mkcol_response(&repo_path, &route, principal.as_ref());
+    }
     if method == "REPORT" {
         let body_bytes = match body.collect().await {
             Ok(collected) => collected.to_bytes(),
@@ -3032,6 +3035,40 @@ fn svn_protocol_put_response(
             svn_protocol_not_implemented_response(route, "PUT")
         }
         Err(VcsError::SvnFailed(_)) => svn_protocol_status_response(StatusCode::CONFLICT),
+        Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
+    }
+}
+
+fn svn_protocol_mkcol_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    principal: Option<&persistence::AppUserRecord>,
+) -> Response {
+    let Some(actor) = principal else {
+        return smart_http_basic_challenge_response();
+    };
+    let Some((revision, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    if revision.is_some() || path.trim().is_empty() {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    }
+    let message = format!("Create {path} through WebDAV by {}", actor.login_id);
+    match yona_rust_vcs::svn_make_collection(repo_path, &path, &message) {
+        Ok(revision) => {
+            let mut response = StatusCode::CREATED.into_response();
+            add_svn_dav_headers(&mut response);
+            if let Ok(value) = HeaderValue::from_str(&revision.to_string()) {
+                response.headers_mut().insert("svn-revision", value);
+            }
+            response
+        }
+        Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnUnavailable) => svn_protocol_not_implemented_response(route, "MKCOL"),
+        Err(VcsError::SvnFailed(_)) | Err(VcsError::FilesystemFailed(_)) => {
+            svn_protocol_status_response(StatusCode::CONFLICT)
+        }
         Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
     }
 }
