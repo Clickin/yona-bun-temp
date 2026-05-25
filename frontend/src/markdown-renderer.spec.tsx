@@ -88,6 +88,19 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("```js");
   });
 
+  it("compensates indented fenced code contents like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"  ``` js\n  const value = '#1';\n    nested();\n  ```"} />,
+    );
+
+    expect(html).toContain("<pre><code");
+    expect(html).toContain('class="js"');
+    expect(html).toContain("const value = &#x27;#1&#x27;;");
+    expect(html).toContain("  nested();");
+    expect(html).not.toContain("    nested();");
+    expect(html).not.toContain("issueLink");
+  });
+
   it("renders tilde fenced code blocks like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"~~~ js\nconst value = '#1';\n~~~"} />,

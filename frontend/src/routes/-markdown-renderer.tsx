@@ -143,10 +143,10 @@ const referenceDefinitionPattern = new RegExp(
   `^ {0,3}\\[(${referenceLabelPattern})\\]:\\s*(${referenceTargetPattern})(?:\\s+(?:"((?:\\\\"|[^"\\\\])*)"|'((?:\\\\'|[^'\\\\])*)'|\\(((?:\\\\\\)|[^)\\\\])*)\\)))?\\s*$`,
 );
 
-const openingFencePattern = /^ {0,3}(`{3,}|~{3,})(?:[ \t]*([A-Za-z0-9_+.-]+)(?:[ \t]+.*)?)?\s*$/;
+const openingFencePattern = /^( {0,3})(`{3,}|~{3,})(?:[ \t]*([A-Za-z0-9_+.-]+)(?:[ \t]+.*)?)?\s*$/;
 
 function openingFenceFromLine(line: string): string {
-  return openingFencePattern.exec(line)?.[1] ?? "";
+  return openingFencePattern.exec(line)?.[2] ?? "";
 }
 
 function closingFenceFromLine(line: string): string {
@@ -155,6 +155,17 @@ function closingFenceFromLine(line: string): string {
 
 function closesMarkdownFence(openFence: string, closeFence: string): boolean {
   return closeFence.length >= openFence.length && closeFence.at(0) === openFence.at(0);
+}
+
+function compensateIndentedFenceLine(line: string, indent: string) {
+  if (!indent) {
+    return line;
+  }
+  const lineIndent = /^\s+/.exec(line)?.[0] ?? "";
+  if (lineIndent.length < indent.length) {
+    return line;
+  }
+  return line.slice(indent.length);
 }
 
 function extractReferenceDefinitions(markdown: string) {
@@ -689,7 +700,8 @@ function parseFencedCodeBlock(lines: MarkdownLineRecord[]): MarkdownCodeBlockRec
     return null;
   }
   const openMatch = openingFencePattern.exec(lines[0]?.text ?? "");
-  const fence = openMatch?.[1] ?? "";
+  const fence = openMatch?.[2] ?? "";
+  const indent = fence.startsWith("`") ? (openMatch?.[1] ?? "") : "";
   const closeFence = closingFenceFromLine(lines[lines.length - 1]?.text ?? "");
   if (!openMatch || !closesMarkdownFence(fence, closeFence)) {
     return null;
@@ -697,9 +709,9 @@ function parseFencedCodeBlock(lines: MarkdownLineRecord[]): MarkdownCodeBlockRec
   return {
     code: lines
       .slice(1, -1)
-      .map((line) => line.text)
+      .map((line) => compensateIndentedFenceLine(line.text, indent))
       .join("\n"),
-    language: openMatch[2],
+    language: openMatch[3],
   };
 }
 
