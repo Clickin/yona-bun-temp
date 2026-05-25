@@ -42,6 +42,7 @@ type MarkdownContext = {
 
 type MarkdownBlockRecord = {
   key: string;
+  terminalNewline?: boolean;
   text: string;
 };
 
@@ -520,14 +521,21 @@ function MarkdownInline(props: { context?: MarkdownContext; line: string }) {
 }
 
 function paragraphBlocks(markdown: string): MarkdownBlockRecord[] {
-  const normalized = markdown.replace(/\r\n?/g, "\n").replace(/^\n+|\n+$/g, "");
+  const source = markdown.replace(/\r\n?/g, "\n").replace(/^\n+/g, "");
+  const terminalNewline = /\n+$/.test(source);
+  const normalized = source.replace(/\n+$/g, "");
   if (!normalized) {
     return [];
   }
   const blocks: MarkdownBlockRecord[] = [];
   let offset = 0;
-  for (const text of normalized.split(/\n{2,}/)) {
-    blocks.push({ key: `block-${offset}`, text });
+  const blockTexts = normalized.split(/\n{2,}/);
+  for (const [index, text] of blockTexts.entries()) {
+    blocks.push({
+      key: `block-${offset}`,
+      terminalNewline: index === blockTexts.length - 1 ? terminalNewline : undefined,
+      text,
+    });
     offset += text.length + 2;
   }
   return blocks;
@@ -695,7 +703,10 @@ function parseMarkdownBlockquote(lines: MarkdownLineRecord[]): MarkdownBlockquot
   return quoteLines;
 }
 
-function parseFencedCodeBlock(lines: MarkdownLineRecord[]): MarkdownCodeBlockRecord | null {
+function parseFencedCodeBlock(
+  lines: MarkdownLineRecord[],
+  closesAtEof: boolean,
+): MarkdownCodeBlockRecord | null {
   if (lines.length < 2) {
     return null;
   }
@@ -703,12 +714,16 @@ function parseFencedCodeBlock(lines: MarkdownLineRecord[]): MarkdownCodeBlockRec
   const fence = openMatch?.[2] ?? "";
   const indent = fence.startsWith("`") ? (openMatch?.[1] ?? "") : "";
   const closeFence = closingFenceFromLine(lines[lines.length - 1]?.text ?? "");
-  if (!openMatch || !closesMarkdownFence(fence, closeFence)) {
+  if (!openMatch) {
+    return null;
+  }
+  const hasClosingFence = Boolean(closeFence && closesMarkdownFence(fence, closeFence));
+  if (!hasClosingFence && !closesAtEof) {
     return null;
   }
   return {
     code: lines
-      .slice(1, -1)
+      .slice(1, hasClosingFence ? -1 : undefined)
       .map((line) => compensateIndentedFenceLine(line.text, indent))
       .join("\n"),
     language: openMatch[3],
@@ -777,7 +792,7 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   if (lines.length === 2 && /^-+\s*$/.test(secondLine)) {
     return <MarkdownHeading context={props.context} level={2} text={firstLine.trim()} />;
   }
-  const codeBlock = parseFencedCodeBlock(lines);
+  const codeBlock = parseFencedCodeBlock(lines, props.block.terminalNewline ?? false);
   if (codeBlock) {
     return (
       <pre>

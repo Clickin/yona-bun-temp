@@ -101,6 +101,19 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("issueLink");
   });
 
+  it("closes fenced code blocks at EOF like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"```js\nconst value = '#1';\n#1 stays text\n"} />,
+    );
+
+    expect(html).toContain("<pre><code");
+    expect(html).toContain('class="js"');
+    expect(html).toContain("const value = &#x27;#1&#x27;;");
+    expect(html).toContain("#1 stays text");
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain("```js");
+  });
+
   it("renders tilde fenced code blocks like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"~~~ js\nconst value = '#1';\n~~~"} />,
