@@ -570,6 +570,26 @@ pub fn svn_lock(repo_path: &Path, path: &str) -> Result<Option<SvnLock>, VcsErro
     Ok(parse_svnlook_lock(&clean_path, &output))
 }
 
+pub fn svn_path_exists(
+    repo_path: &Path,
+    revision: Option<i64>,
+    path: &str,
+) -> Result<bool, VcsError> {
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Ok(true);
+    }
+    match svn_cat_file(repo_path, revision, &clean_path) {
+        Ok(_) => Ok(true),
+        Err(VcsError::NotFound) => match svn_list_tree(repo_path, revision, &clean_path) {
+            Ok(_) => Ok(true),
+            Err(VcsError::NotFound) => Ok(false),
+            Err(error) => Err(error),
+        },
+        Err(error) => Err(error),
+    }
+}
+
 fn parse_svnlook_lock(path: &str, output: &str) -> Option<SvnLock> {
     let mut token = String::new();
     let mut owner = String::new();

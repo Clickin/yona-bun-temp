@@ -2622,6 +2622,9 @@ fn svn_protocol_report_response(
     if request.contains("get-locks-report") {
         return svn_protocol_get_locks_report_response(repo_path, route);
     }
+    if request.contains("get-locations") {
+        return svn_protocol_get_locations_report_response(repo_path, route, &request);
+    }
     svn_protocol_not_implemented_response(route, "REPORT")
 }
 
@@ -2750,6 +2753,56 @@ fn svn_protocol_get_locks_report_response(
     response
 }
 
+fn svn_protocol_get_locations_report_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    request: &str,
+) -> Response {
+    let Some(location_revision) = svn_protocol_xml_i64(request, "location-revision") else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    let requested_path = svn_protocol_xml_text(request, "path").unwrap_or_default();
+    let base_path = svn_protocol_file_lookup(&route.svn_path)
+        .map(|(_, path)| path)
+        .unwrap_or_default();
+    let location_path = join_svn_report_path(&base_path, &requested_path);
+    let exists =
+        match yona_rust_vcs::svn_path_exists(repo_path, Some(location_revision), &location_path) {
+            Ok(exists) => exists,
+            Err(VcsError::InvalidPath) => {
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+            }
+            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "REPORT")
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        };
+    let location = if exists {
+        format!(
+            r#"  <S:location rev="{location_revision}" path="/{}"/>
+"#,
+            xml_escape(location_path.trim_matches('/'))
+        )
+    } else {
+        String::new()
+    };
+    let body = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<S:get-locations-report xmlns:S="svn:" xmlns:D="DAV:">
+{location}</S:get-locations-report>"#
+    );
+    let mut response = (StatusCode::OK, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
+    response
+}
+
 fn svn_protocol_lock_item(lock: &yona_rust_vcs::SvnLock) -> String {
     let comment = if lock.comment.is_empty() {
         String::new()
@@ -2809,6 +2862,18 @@ fn svn_protocol_xml_text(xml: &str, tag: &str) -> Option<String> {
     let value_start = xml[start..].find('>')? + start + 1;
     let end = xml[value_start..].find('<')? + value_start;
     Some(xml[value_start..end].trim().to_string())
+}
+
+fn join_svn_report_path(base_path: &str, requested_path: &str) -> String {
+    let base_path = base_path.trim_matches('/');
+    let requested_path = requested_path.trim_matches('/');
+    if base_path.is_empty() {
+        requested_path.to_string()
+    } else if requested_path.is_empty() {
+        base_path.to_string()
+    } else {
+        format!("{base_path}/{requested_path}")
+    }
 }
 
 fn svn_protocol_file_lookup(svn_path: &str) -> Option<(Option<i64>, String)> {

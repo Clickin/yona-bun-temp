@@ -577,6 +577,38 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "SVN get-locks REPORT should return an empty lock report for an unlocked path: {text}"
     );
 
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        &format!("/svn/owner/projectYobi/!svn/bc/{revision}/trunk"),
+        None,
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:get-locations xmlns:S="svn:">
+  <S:path></S:path>
+  <S:peg-revision>{revision}</S:peg-revision>
+  <S:location-revision>{revision}</S:location-revision>
+</S:get-locations>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<S:get-locations-report")
+            && text.contains(&format!(r#"<S:location rev="{revision}" path="/trunk"/>"#)),
+        "SVN get-locations REPORT should return the path location at the requested revision: {text}"
+    );
+
     let response = direct_request(
         app,
         Method::HEAD,
