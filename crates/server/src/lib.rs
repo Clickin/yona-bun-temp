@@ -2592,7 +2592,25 @@ fn svn_protocol_file_propfind_response(repo_path: &StdPath, route: &SvnProtocolR
             path.trim_matches('/')
         )
     });
-    svn_protocol_propfind_file_response(&href, bytes.len(), version_revision, version_href, &path)
+    let properties = match yona_rust_vcs::svn_properties(repo_path, version_revision, &path) {
+        Ok(properties) => properties,
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "PROPFIND")
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    svn_protocol_propfind_file_response(
+        &href,
+        bytes.len(),
+        version_revision,
+        version_href,
+        &path,
+        &properties,
+    )
 }
 
 fn svn_protocol_tree_propfind_response(
@@ -2663,6 +2681,7 @@ fn svn_protocol_propfind_tree_response(
                 version_revision,
                 version_href.as_deref(),
                 Some(&entry.path),
+                &[],
             ));
         }
     }
@@ -2686,6 +2705,7 @@ fn svn_protocol_propfind_file_response(
     version_revision: Option<i64>,
     version_href: Option<String>,
     baseline_relative_path: &str,
+    properties: &[yona_rust_vcs::SvnProperty],
 ) -> Response {
     let item = svn_protocol_propfind_file_item(
         href,
@@ -2693,10 +2713,11 @@ fn svn_protocol_propfind_file_response(
         version_revision,
         version_href.as_deref(),
         Some(baseline_relative_path),
+        properties,
     );
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
-<D:multistatus xmlns:D="DAV:" xmlns:S="svn:">
+<D:multistatus xmlns:D="DAV:" xmlns:S="svn:" xmlns:SVN="http://subversion.tigris.org/xmlns/svn/" xmlns:C="http://subversion.tigris.org/xmlns/custom/" xmlns:SD="http://subversion.tigris.org/xmlns/dav/">
 {item}
 </D:multistatus>"#,
     );
@@ -2731,6 +2752,7 @@ fn svn_protocol_propfind_file_item(
     version_revision: Option<i64>,
     version_href: Option<&str>,
     baseline_relative_path: Option<&str>,
+    properties: &[yona_rust_vcs::SvnProperty],
 ) -> String {
     let content_length = content_length
         .map(|length| format!("        <D:getcontentlength>{length}</D:getcontentlength>\n"))
@@ -2754,19 +2776,66 @@ fn svn_protocol_propfind_file_item(
             )
         })
         .unwrap_or_default();
+    let property_items = svn_protocol_property_items(properties);
+    let deadprop_count = if properties.is_empty() {
+        String::new()
+    } else {
+        "        <SD:deadprop-count>1</SD:deadprop-count>\n".to_string()
+    };
     format!(
         r#"  <D:response>
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
         <D:resourcetype/>
-{content_length}{version_name}{checked_in}{baseline_relative_path}      </D:prop>
+{content_length}{version_name}{checked_in}{baseline_relative_path}{deadprop_count}{property_items}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
   </D:response>
 "#,
         xml_escape(href)
     )
+}
+
+fn svn_protocol_property_items(properties: &[yona_rust_vcs::SvnProperty]) -> String {
+    properties
+        .iter()
+        .filter_map(|property| {
+            let (prefix, name) = svn_protocol_property_xml_name(&property.name)?;
+            Some(format!(
+                "        <{prefix}:{name}>{}</{prefix}:{name}>\n",
+                xml_escape(&property.value)
+            ))
+        })
+        .collect()
+}
+
+fn svn_protocol_property_xml_name(name: &str) -> Option<(&'static str, String)> {
+    let clean = name.trim();
+    if clean.is_empty() {
+        return None;
+    }
+    if let Some(rest) = clean.strip_prefix("svn:") {
+        if svn_protocol_xml_local_name(rest) {
+            return Some(("SVN", rest.to_string()));
+        }
+        return None;
+    }
+    if svn_protocol_xml_local_name(clean) {
+        return Some(("C", clean.to_string()));
+    }
+    None
+}
+
+fn svn_protocol_xml_local_name(name: &str) -> bool {
+    let mut chars = name.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    if !(first.is_ascii_alphabetic() || first == '_') {
+        return false;
+    }
+    chars.all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '_' | '-' | '.'))
 }
 
 fn svn_protocol_href(route: &SvnProtocolRoute, path: &str, collection: bool) -> String {

@@ -771,6 +771,21 @@ pub fn svn_property(
     Err(VcsError::SvnLookFailed(stderr))
 }
 
+pub fn svn_properties(
+    repo_path: &Path,
+    revision: Option<i64>,
+    path: &str,
+) -> Result<Vec<SvnProperty>, VcsError> {
+    let property_names = svn_property_names(repo_path, revision, path)?;
+    let mut properties = Vec::new();
+    for name in property_names {
+        if let Some(value) = svn_property(repo_path, revision, path, &name)? {
+            properties.push(SvnProperty { name, value });
+        }
+    }
+    Ok(properties)
+}
+
 pub fn svn_inherited_properties(
     repo_path: &Path,
     revision: i64,

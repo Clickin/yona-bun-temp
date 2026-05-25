@@ -1355,6 +1355,31 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         Some("true")
     );
 
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request(
+        app.clone(),
+        propfind,
+        "/svn/owner/projectYobi/trunk/README.md",
+        None,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains(r#"xmlns:C="http://subversion.tigris.org/xmlns/custom/""#)
+            && text.contains("<SD:deadprop-count>1</SD:deadprop-count>")
+            && text.contains("<C:reviewed>true</C:reviewed>"),
+        "SVN file PROPFIND should expose executable-backed regular properties: {text}"
+    );
+
     let response = direct_request_with_body(
         app.clone(),
         proppatch,
