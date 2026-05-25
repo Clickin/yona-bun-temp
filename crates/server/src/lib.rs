@@ -2946,7 +2946,7 @@ fn svn_protocol_update_report_response(
         .map(|(_, path)| path)
         .unwrap_or_default();
     let update_path = join_svn_report_path(&base_path, &requested_path);
-    let depth = svn_protocol_xml_text(request, "depth").unwrap_or_else(|| "infinity".to_string());
+    let depth = svn_protocol_update_depth(request);
     let recursive = depth.eq_ignore_ascii_case("infinity");
     let tree_result = if recursive {
         yona_rust_vcs::svn_list_tree_recursive(repo_path, Some(target_revision), &update_path)
@@ -3997,6 +3997,19 @@ fn svn_protocol_update_depth_includes(entry: &yona_rust_vcs::SvnTreeEntry, depth
         "files" => !entry.is_dir,
         _ => true,
     }
+}
+
+fn svn_protocol_update_depth(request: &str) -> String {
+    if let Some(depth) = svn_protocol_xml_text(request, "depth") {
+        return depth;
+    }
+    if svn_protocol_xml_text(request, "recursive")
+        .as_deref()
+        .is_some_and(|value| value.eq_ignore_ascii_case("no"))
+    {
+        return "files".to_string();
+    }
+    "infinity".to_string()
 }
 
 fn svn_protocol_replay_operation(

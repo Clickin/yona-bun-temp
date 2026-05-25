@@ -938,6 +938,32 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
 <S:update-report xmlns:S="svn:">
   <S:src-path>trunk</S:src-path>
   <S:target-revision>{nested_revision}</S:target-revision>
+  <S:recursive>no</S:recursive>
+</S:update-report>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains(r#"<S:add-file name="README.md">"#)
+            && !text.contains(r#"<S:add-directory name="guides"/>"#)
+            && !text.contains("Guide.md"),
+        "SVN update-report recursive=no should follow legacy non-recursive file listing: {text}"
+    );
+
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:update-report xmlns:S="svn:">
+  <S:src-path>trunk</S:src-path>
+  <S:target-revision>{nested_revision}</S:target-revision>
   <S:depth>infinity</S:depth>
 </S:update-report>"#
         )),
