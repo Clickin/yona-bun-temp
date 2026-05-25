@@ -2359,6 +2359,23 @@ async fn direct_svn_protocol_request(
         };
         return svn_protocol_report_response(&repo_path, &route, &body_bytes);
     }
+    if method == "LOCK" {
+        let body_bytes = match body.collect().await {
+            Ok(collected) => collected.to_bytes(),
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
+            }
+        };
+        return svn_protocol_lock_response(&repo_path, &route, principal.as_ref(), &body_bytes);
+    }
+    if method == "UNLOCK" {
+        return svn_protocol_unlock_response(
+            &repo_path,
+            &route,
+            principal.as_ref(),
+            &parts.headers,
+        );
+    }
     svn_protocol_not_implemented_response(&route, &method)
 }
 
@@ -2957,6 +2974,83 @@ fn svn_protocol_get_locks_report_response(
     response
 }
 
+fn svn_protocol_lock_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    principal: Option<&persistence::AppUserRecord>,
+    body: &Bytes,
+) -> Response {
+    let Some(actor) = principal else {
+        return smart_http_basic_challenge_response();
+    };
+    let Some((_, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    let request = String::from_utf8_lossy(body);
+    let comment = svn_protocol_xml_text(&request, "comment")
+        .or_else(|| svn_protocol_xml_text(&request, "owner"))
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "Yona WebDAV lock".to_string());
+    let token = svn_protocol_new_lock_token();
+    let lock =
+        match yona_rust_vcs::svn_lock_path(repo_path, &path, &actor.login_id, &comment, &token) {
+            Ok(lock) => lock,
+            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::InvalidPath) => {
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+            }
+            Err(VcsError::SvnAdminUnavailable) | Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "LOCK")
+            }
+            Err(VcsError::SvnAdminFailed(_)) => {
+                return svn_protocol_status_response(
+                    StatusCode::from_u16(423).expect("valid WebDAV Locked status"),
+                )
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        };
+    let body = svn_protocol_lock_discovery_body(route, &lock);
+    let mut response = (StatusCode::OK, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
+    if let Ok(value) = HeaderValue::from_str(&format!("<{}>", lock.token)) {
+        response.headers_mut().insert("lock-token", value);
+    }
+    response
+}
+
+fn svn_protocol_unlock_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    principal: Option<&persistence::AppUserRecord>,
+    headers: &HeaderMap,
+) -> Response {
+    let Some(actor) = principal else {
+        return smart_http_basic_challenge_response();
+    };
+    let Some((_, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    let Some(token) = svn_protocol_lock_token_header(headers) else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    match yona_rust_vcs::svn_unlock_path(repo_path, &path, &actor.login_id, &token) {
+        Ok(()) => svn_protocol_status_response(StatusCode::NO_CONTENT),
+        Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnAdminUnavailable) => {
+            svn_protocol_not_implemented_response(route, "UNLOCK")
+        }
+        Err(VcsError::SvnAdminFailed(_)) => svn_protocol_status_response(StatusCode::CONFLICT),
+        Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
+    }
+}
+
 fn svn_protocol_get_locations_report_response(
     repo_path: &StdPath,
     route: &SvnProtocolRoute,
@@ -3117,6 +3211,64 @@ fn svn_protocol_xml_text(xml: &str, tag: &str) -> Option<String> {
     let value_start = xml[start..].find('>')? + start + 1;
     let end = xml[value_start..].find('<')? + value_start;
     Some(xml[value_start..end].trim().to_string())
+}
+
+fn svn_protocol_new_lock_token() -> String {
+    let nanos = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map(|duration| duration.as_nanos())
+        .unwrap_or_default();
+    format!("opaquelocktoken:yona-{}-{nanos}", std::process::id())
+}
+
+fn svn_protocol_lock_token_header(headers: &HeaderMap) -> Option<String> {
+    let value = headers.get("lock-token")?.to_str().ok()?.trim();
+    let value = value
+        .strip_prefix('<')
+        .and_then(|token| token.strip_suffix('>'))
+        .unwrap_or(value);
+    if value.is_empty() {
+        None
+    } else {
+        Some(value.to_string())
+    }
+}
+
+fn svn_protocol_lock_discovery_body(
+    route: &SvnProtocolRoute,
+    lock: &yona_rust_vcs::SvnLock,
+) -> String {
+    let href = format!(
+        "/svn/{}/{}{}",
+        route.owner_name, route.project_name, lock.path
+    );
+    let created = if lock.created.is_empty() {
+        String::new()
+    } else {
+        format!(
+            "\n        <D:creationdate>{}</D:creationdate>",
+            xml_escape(&lock.created)
+        )
+    };
+    format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<D:prop xmlns:D="DAV:">
+  <D:lockdiscovery>
+    <D:activelock>
+      <D:locktype><D:write/></D:locktype>
+      <D:lockscope><D:exclusive/></D:lockscope>
+      <D:depth>0</D:depth>
+      <D:owner>{}</D:owner>
+      <D:timeout>Infinite</D:timeout>
+      <D:locktoken><D:href>{}</D:href></D:locktoken>
+      <D:lockroot><D:href>{}</D:href></D:lockroot>{created}
+    </D:activelock>
+  </D:lockdiscovery>
+</D:prop>"#,
+        xml_escape(&lock.owner),
+        xml_escape(&lock.token),
+        xml_escape(&href)
+    )
 }
 
 fn join_svn_report_path(base_path: &str, requested_path: &str) -> String {

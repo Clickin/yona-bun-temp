@@ -593,6 +593,82 @@ pub fn svn_lock(repo_path: &Path, path: &str) -> Result<Option<SvnLock>, VcsErro
     Ok(parse_svnlook_lock(&clean_path, &output))
 }
 
+pub fn svn_lock_path(
+    repo_path: &Path,
+    path: &str,
+    owner: &str,
+    comment: &str,
+    token: &str,
+) -> Result<SvnLock, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    let comment_file = svn_lock_comment_file("lock")?;
+    std::fs::write(&comment_file, comment).map_err(|error| {
+        VcsError::FilesystemFailed(format!("write svn lock comment file: {error}"))
+    })?;
+
+    let mut command = Command::new("svnadmin");
+    command
+        .arg("lock")
+        .arg(repo_path)
+        .arg(&clean_path)
+        .arg(owner)
+        .arg(&comment_file);
+    if !token.trim().is_empty() {
+        command.arg(token.trim());
+    }
+    let output = command.output().map_err(|_| VcsError::SvnAdminUnavailable);
+    let _ = std::fs::remove_file(&comment_file);
+    let output = output?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let lower = stderr.to_ascii_lowercase();
+        if lower.contains("path not found") {
+            return Err(VcsError::NotFound);
+        }
+        return Err(VcsError::SvnAdminFailed(stderr));
+    }
+
+    svn_lock(repo_path, &clean_path)?.ok_or(VcsError::NotFound)
+}
+
+pub fn svn_unlock_path(
+    repo_path: &Path,
+    path: &str,
+    owner: &str,
+    token: &str,
+) -> Result<(), VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() || token.trim().is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    let output = Command::new("svnadmin")
+        .arg("unlock")
+        .arg(repo_path)
+        .arg(&clean_path)
+        .arg(owner)
+        .arg(token.trim())
+        .output()
+        .map_err(|_| VcsError::SvnAdminUnavailable)?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let lower = stderr.to_ascii_lowercase();
+        if lower.contains("path not found") || lower.contains("not locked") {
+            return Err(VcsError::NotFound);
+        }
+        return Err(VcsError::SvnAdminFailed(stderr));
+    }
+    Ok(())
+}
+
 pub fn svn_path_exists(
     repo_path: &Path,
     revision: Option<i64>,
@@ -625,7 +701,7 @@ fn parse_svnlook_lock(path: &str, output: &str) -> Option<SvnLock> {
         };
         let value = value.trim().to_string();
         match key.trim().to_ascii_lowercase().as_str() {
-            "token" => token = value,
+            "token" | "uuid token" => token = value,
             "owner" => owner = value,
             "comment" => comment = value,
             "created" => created = value,
@@ -648,6 +724,17 @@ fn parse_svnlook_lock(path: &str, output: &str) -> Option<SvnLock> {
         created,
         expires,
     })
+}
+
+fn svn_lock_comment_file(label: &str) -> Result<PathBuf, VcsError> {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|error| VcsError::FilesystemFailed(format!("read system time: {error}")))?
+        .as_nanos();
+    Ok(std::env::temp_dir().join(format!(
+        "yona-vcs-svn-{label}-{}-{nanos}.txt",
+        std::process::id()
+    )))
 }
 
 fn svnlook_text(repo_path: &Path, revision: i64, subcommand: &str) -> Result<String, VcsError> {

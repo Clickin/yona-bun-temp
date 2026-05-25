@@ -217,6 +217,25 @@ async fn direct_request_with_body(
     app.oneshot(builder.body(body).unwrap()).await.unwrap()
 }
 
+async fn direct_request_with_body_and_header(
+    app: axum::Router,
+    method: Method,
+    path: &str,
+    authorization: Option<&str>,
+    header_name: &'static str,
+    header_value: &str,
+    body: Body,
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(method)
+        .uri(format!("/yona{path}"))
+        .header(header_name, header_value);
+    if let Some(authorization) = authorization {
+        builder = builder.header(http::header::AUTHORIZATION, authorization);
+    }
+    app.oneshot(builder.body(body).unwrap()).await.unwrap()
+}
+
 fn basic(login_id: &str, password: &str) -> String {
     format!(
         "Basic {}",
@@ -765,6 +784,93 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             ))
             && text.contains("<S:fetch-file/>"),
         "SVN update-report should expose target revision and versioned file entries: {text}"
+    );
+
+    let lock = Method::from_bytes(b"LOCK").expect("LOCK method");
+    let owner_basic = basic("owner", "doorpass1");
+    let response = direct_request_with_body(
+        app.clone(),
+        lock,
+        "/svn/owner/projectYobi/trunk/README.md",
+        Some(&owner_basic),
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:lockinfo xmlns:D="DAV:">
+  <D:lockscope><D:exclusive/></D:lockscope>
+  <D:locktype><D:write/></D:locktype>
+  <D:owner>owner</D:owner>
+</D:lockinfo>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let lock_token = response
+        .headers()
+        .get("lock-token")
+        .and_then(|value| value.to_str().ok())
+        .expect("LOCK should return lock-token")
+        .to_string();
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:lockdiscovery>")
+            && text.contains("<D:owner>owner</D:owner>")
+            && text.contains("<D:locktype><D:write/></D:locktype>")
+            && text.contains("<D:lockscope><D:exclusive/></D:lockscope>")
+            && text.contains("/svn/owner/projectYobi/trunk/README.md")
+            && text.contains(lock_token.trim_matches(['<', '>'])),
+        "SVN LOCK should create executable-backed lock discovery metadata: {text}"
+    );
+
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/trunk/README.md",
+        None,
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:get-locks-report xmlns:S="svn:" xmlns:D="DAV:">
+</S:get-locks-report>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<S:get-locks-report")
+            && text.contains("<S:lock>")
+            && text.contains("<S:owner>owner</S:owner>")
+            && text.contains(lock_token.trim_matches(['<', '>'])),
+        "SVN get-locks REPORT should expose the executable-backed lock after LOCK: {text}"
+    );
+
+    let unlock = Method::from_bytes(b"UNLOCK").expect("UNLOCK method");
+    let response = direct_request_with_body_and_header(
+        app.clone(),
+        unlock,
+        "/svn/owner/projectYobi/trunk/README.md",
+        Some(&owner_basic),
+        "lock-token",
+        &lock_token,
+        Body::empty(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
     );
 
     let response = direct_request(
