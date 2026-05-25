@@ -304,6 +304,24 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain('href="/yona/missing/projectYobi/issue/99"');
   });
 
+  it("keeps missing issue references as text like legacy MarkdownApp", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[]}
+        markdown="Keep #12345 owner#12345 owner/projectYobi#12345 as text"
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain("#12345");
+    expect(html).toContain("owner#12345");
+    expect(html).toContain("owner/projectYobi#12345");
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain("/issue/12345");
+  });
+
   it("renders legacy commit SHA references when commit metadata exists", () => {
     const currentSha = "be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2";
     const ownerSha = "ffffffffffffffffffffffffffffffffffffffff";

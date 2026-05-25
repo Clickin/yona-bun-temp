@@ -465,15 +465,19 @@ function parseTextWithAutolinks(
     } else if (token.startsWith("#") && ownerName && projectName) {
       const issueNumber = Number.parseInt(token.slice(1), 10);
       const reference = issueReferenceFor(context, ownerName, projectName, issueNumber);
-      parts.push({
-        className: "issueLink",
-        issueState: reference?.state,
-        kind: "link",
-        key,
-        label: token,
-        target: `${basePath}/${ownerName}/${projectName}/issue/${issueNumber}`,
-        title: reference?.title,
-      });
+      if (reference) {
+        parts.push({
+          className: "issueLink",
+          issueState: reference.state,
+          kind: "link",
+          key,
+          label: token,
+          target: `${basePath}/${ownerName}/${projectName}/issue/${issueNumber}`,
+          title: reference.title,
+        });
+      } else {
+        parts.push({ kind: "text", key, value: token });
+      }
     } else if (token.startsWith("#")) {
       parts.push({ kind: "text", key, value: token });
     } else if (/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+#[0-9]+$/.test(token)) {
@@ -483,15 +487,19 @@ function parseTextWithAutolinks(
       const issueNumber = Number.parseInt(pathIssueMatch?.[3] ?? "", 10);
       if (referenceOwner && referenceProject && Number.isFinite(issueNumber)) {
         const reference = issueReferenceFor(context, referenceOwner, referenceProject, issueNumber);
-        parts.push({
-          className: "issueLink",
-          issueState: reference?.state,
-          kind: "link",
-          key,
-          label: token,
-          target: `${basePath}/${referenceOwner}/${referenceProject}/issue/${issueNumber}`,
-          title: reference?.title,
-        });
+        if (reference) {
+          parts.push({
+            className: "issueLink",
+            issueState: reference.state,
+            kind: "link",
+            key,
+            label: token,
+            target: `${basePath}/${referenceOwner}/${referenceProject}/issue/${issueNumber}`,
+            title: reference.title,
+          });
+        } else {
+          parts.push({ kind: "text", key, value: token });
+        }
       } else {
         parts.push({ kind: "text", key, value: token });
       }
