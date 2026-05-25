@@ -113,12 +113,12 @@ function normalizeBasePath(basePath?: string) {
   return basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
 }
 
-function normalizeReferenceLabel(label: string) {
-  return label.trim().replace(/\s+/g, " ").toLowerCase();
-}
-
 function unescapeMarkdownPunctuation(value: string) {
   return value.replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\]\\^_`{|}~])/g, "$1");
+}
+
+function normalizeReferenceLabel(label: string) {
+  return unescapeMarkdownPunctuation(label).trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 function normalizeInlineTarget(target: string) {
@@ -127,6 +127,19 @@ function normalizeInlineTarget(target: string) {
     trimmed.startsWith("<") && trimmed.endsWith(">") ? trimmed.slice(1, -1) : trimmed;
   return unescapeMarkdownPunctuation(unwrapped);
 }
+
+const referenceLabelPattern = String.raw`(?:\\[\[\]]|[^\[\]])+`;
+const escapedMarkdownPunctuationClass = "[!\"#$%&'()*+,\\-./:;<=>?@[\\]\\\\^_`{|}~]";
+const referenceTargetPattern = `<[^>\\s]+>|(?:\\\\${escapedMarkdownPunctuationClass}|[^\\s>\\\\])+`;
+const referenceLabelOnlyPattern = new RegExp(`^ {0,3}\\[${referenceLabelPattern}\\]:\\s*$`);
+const referenceTargetOnlyPattern = new RegExp(
+  `^ {0,3}\\[${referenceLabelPattern}\\]:\\s*(?:${referenceTargetPattern})\\s*$`,
+);
+const referenceTitleOnlyPattern =
+  /^\s*(?:"(?:\\"|[^"\\])*"|'(?:\\'|[^'\\])*'|\((?:\\\)|[^)\\])*\))\s*$/;
+const referenceDefinitionPattern = new RegExp(
+  `^ {0,3}\\[(${referenceLabelPattern})\\]:\\s*(${referenceTargetPattern})(?:\\s+(?:"((?:\\\\"|[^"\\\\])*)"|'((?:\\\\'|[^'\\\\])*)'|\\(((?:\\\\\\)|[^)\\\\])*)\\)))?\\s*$`,
+);
 
 function extractReferenceDefinitions(markdown: string) {
   const referenceMap = new Map<string, MarkdownReferenceDefinition>();
@@ -141,7 +154,7 @@ function extractReferenceDefinitions(markdown: string) {
       continue;
     }
     const candidateLine =
-      !inFence && /^ {0,3}\[[^\]]+\]:\s*$/.test(line) && index < lines.length - 1
+      !inFence && referenceLabelOnlyPattern.test(line) && index < lines.length - 1
         ? `${line} ${(lines[index + 1] ?? "").trim()}`
         : line;
     const nextLine = lines[index + 1] ?? "";
@@ -149,16 +162,11 @@ function extractReferenceDefinitions(markdown: string) {
       !inFence &&
       index < lines.length - 1 &&
       candidateLine === line &&
-      /^ {0,3}\[[^\]]+\]:\s*(?:<[^>\s]+>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_`{|}~]|[^\s>\\])+)\s*$/.test(
-        line,
-      ) &&
-      /^\s*(?:"(?:\\"|[^"\\])*"|'(?:\\'|[^'\\])*'|\((?:\\\)|[^)\\])*\))\s*$/.test(nextLine)
+      referenceTargetOnlyPattern.test(line) &&
+      referenceTitleOnlyPattern.test(nextLine)
         ? `${line} ${nextLine.trim()}`
         : candidateLine;
-    const match =
-      /^ {0,3}\[([^\]]+)\]:\s*(<[^>\s]+>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_`{|}~]|[^\s>\\])+)(?:\s+(?:"((?:\\"|[^"\\])*)"|'((?:\\'|[^'\\])*)'|\(((?:\\\)|[^)\\])*)\)))?\s*$/.exec(
-        candidateWithTitle,
-      );
+    const match = referenceDefinitionPattern.exec(candidateWithTitle);
     if (inFence || !match) {
       markdownLines.push(line);
       continue;
@@ -367,7 +375,7 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
   const parts: MarkdownInlinePart[] = [];
   let index = 0;
   const inlinePattern =
-    /\\([^\w\s])|(!?)\[([^\]]*)\]\((<[^>\s]+>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_`{|}~]|[^)\\\s])+)(?:\s+(?:"((?:\\"|[^"\\])*)"|'((?:\\'|[^'\\])*)'|\(((?:\\\)|[^)\\])*)\)))?\)|(!?)\[([^\]]+)\]\[([^\]]*)\]|(!?)\[([^\]]+)\](?:\[\])?|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|(?<codeFence>`+)(?<codeText>[^`]|[^`][\s\S]*?[^`])\k<codeFence>(?!`)|\*([^*\n]+)\*|_([^_\n]+)_/g;
+    /\\([^\w\s])|(!?)\[([^\]]*)\]\((<[^>\s]+>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_`{|}~]|[^)\\\s])+)(?:\s+(?:"((?:\\"|[^"\\])*)"|'((?:\\'|[^'\\])*)'|\(((?:\\\)|[^)\\])*)\)))?\)|(!?)\[((?:\\(?:\[|\])|[^\]\\[])+)\]\[((?:\\(?:\[|\])|[^\]\\[])*)\]|(!?)\[((?:\\(?:\[|\])|[^\]\\[])+)\](?:\[\])?|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|(?<codeFence>`+)(?<codeText>[^`]|[^`][\s\S]*?[^`])\k<codeFence>(?!`)|\*([^*\n]+)\*|_([^_\n]+)_/g;
   for (const match of line.matchAll(inlinePattern)) {
     const start = match.index ?? 0;
     if (start > index) {

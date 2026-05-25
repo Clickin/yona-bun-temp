@@ -321,6 +321,21 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("[asset]:");
   });
 
+  it("resolves escaped reference labels like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={
+          "[docs][guide\\]] ![logo][asset\\]]\n\n[guide\\]]: https://example.com/docs\n[asset\\]]: /files/logo.png"
+        }
+      />,
+    );
+
+    expect(html).toContain('<a href="https://example.com/docs">docs</a>');
+    expect(html).toContain('<img alt="logo" src="/files/logo.png"/>');
+    expect(html).not.toContain("[guide\\]]:");
+    expect(html).not.toContain("[asset\\]]:");
+  });
+
   it("renders angle-bracket autolinks like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown="See <https://example.com/docs> and <help@example.com>" />,
