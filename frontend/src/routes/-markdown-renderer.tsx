@@ -33,6 +33,7 @@ type MarkdownReferenceDefinition = {
 
 type MarkdownContext = {
   basePath?: string;
+  breaks?: boolean;
   issueReferenceMap?: Map<string, MarkdownIssueReference>;
   ownerName?: string;
   projectName?: string;
@@ -249,6 +250,18 @@ function markdownLineTextBeforeBreak(
     return line.text;
   }
   return line.text.replace(/(?: {2,}|\\)$/, "");
+}
+
+function markdownLineBreakBefore(
+  lines: MarkdownLineRecord[],
+  index: number,
+  breaks: boolean,
+): React.ReactNode {
+  if (index === 0) {
+    return null;
+  }
+  const previousLine = lines[index - 1]?.text ?? "";
+  return breaks || /(?: {2,}|\\)$/.test(previousLine) ? <br /> : "\n";
 }
 
 function parseTextWithAutolinks(
@@ -770,7 +783,7 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
         <p>
           {normalizedBlockquote.map((line, index) => (
             <React.Fragment key={line.key}>
-              {line.key === "line-0" ? null : <br />}
+              {markdownLineBreakBefore(normalizedBlockquote, index, props.context?.breaks ?? true)}
               <MarkdownInline
                 context={props.context}
                 line={markdownLineTextBeforeBreak(line, index, normalizedBlockquote)}
@@ -796,7 +809,7 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
     <p>
       {normalizedLines.map((line, index) => (
         <React.Fragment key={line.key}>
-          {line.key === "line-0" ? null : <br />}
+          {markdownLineBreakBefore(normalizedLines, index, props.context?.breaks ?? true)}
           <MarkdownInline
             context={props.context}
             line={markdownLineTextBeforeBreak(line, index, normalizedLines)}
@@ -817,11 +830,13 @@ export function MarkdownRenderer(props: {
   markdown: string;
   ownerName?: string;
   projectName?: string;
+  breaks?: boolean;
   showTasklistBar?: boolean;
 }) {
   const parsedMarkdown = extractReferenceDefinitions(props.markdown);
   const blocks = paragraphBlocks(parsedMarkdown.markdown);
   const taskStats = props.showTasklistBar ? markdownTaskStats(parsedMarkdown.markdown) : null;
+  const breaks = props.breaks ?? !props.className?.split(/\s+/).includes("readme-body");
   const issueReferenceMap = new Map(
     (props.issueReferences ?? []).map((reference) => [
       `${reference.ownerName}/${reference.projectName}#${reference.issueNumber}`,
@@ -830,6 +845,7 @@ export function MarkdownRenderer(props: {
   );
   const context = {
     basePath: props.basePath,
+    breaks,
     issueReferenceMap,
     ownerName: props.ownerName,
     projectName: props.projectName,

@@ -395,7 +395,7 @@ Interpretation:
 - [x] Legacy marked bare URL/email autolinks trim trailing punctuation outside the rendered link
 - [x] Inline Markdown links and images preserve legacy marked angle-wrapped targets, escaped target/title punctuation, and `title` attributes, including double-quoted, single-quoted, and parenthesized delimiters
 - [x] Reference-style Markdown links and images resolve legacy marked definitions without rendering definition lines, including escaped reference labels, newline-split target/title definitions, and escaped target/title punctuation
-- [x] Legacy marked-style soft line breaks render as `<br>` on the project Markdown render path
+- [x] Legacy marked-style soft line breaks render as `<br>` on the project Markdown render path, while legacy `readme-body` surfaces keep marked `breaks: false` soft-line behavior
 - [x] Legacy hard-break markers (`\` or two trailing spaces before newline) are consumed before rendering `<br>`
 - [x] GFM strikethrough renders `~~deleted~~` as `<del>` on the project Markdown render path
 - [x] Basic GFM pipe tables render as `<table>` on the project Markdown render path, including escaped `\|` pipes inside cells and left/center/right alignment attributes
@@ -407,7 +407,7 @@ Interpretation:
 - [x] Basic safe inline image rendering on the project Markdown render path
 - [x] Basic fenced-code block rendering with language class preservation on the project Markdown render path
 - [x] Code-browser Markdown files render in React with legacy `.codebrowser-markdown` while the REST payload rewrites local `./...` image paths to the project file route as Markdown
-- [x] Project-home Git README fallback renders in React with the legacy readme body wrapper while the REST payload rewrites local images/normal links to project file/code routes as Markdown
+- [x] Project-home Git README fallback renders in React with the legacy readme body wrapper and `breaks: false` soft-line behavior while the REST payload rewrites local images/normal links to project file/code routes as Markdown
 - [x] Legacy `POST /markdown/:owner/:project` preview renderer validates project read access and returns Markdown source for React-side preview rendering instead of server-rendered HTML
 - [x] Readable issue references expose title/state metadata on project Markdown render paths
 - [ ] Full legacy/GFM extension parity

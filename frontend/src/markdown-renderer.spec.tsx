@@ -189,6 +189,19 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("Two spaces  <br/>");
   });
 
+  it("keeps README soft line breaks disabled like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        className="readme-body markdown-wrap"
+        markdown={"first line\nsecond line\nhard break\\\nnext"}
+      />,
+    );
+
+    expect(html).toContain("first line\nsecond line\nhard break<br/>next");
+    expect(html).not.toContain("first line<br/>second line");
+    expect(html).not.toContain("hard break\\");
+  });
+
   it("renders inline link and image titles like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
