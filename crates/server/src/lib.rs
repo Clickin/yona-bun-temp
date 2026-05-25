@@ -2126,7 +2126,24 @@ async fn direct_svn_protocol_request(
     if !repo_path.exists() || !repo_path.is_dir() {
         return StatusCode::NOT_FOUND.into_response();
     }
+    if method == "OPTIONS" {
+        return svn_protocol_options_response();
+    }
     svn_protocol_not_implemented_response(&route, &method)
+}
+
+fn svn_protocol_options_response() -> Response {
+    let mut response = StatusCode::OK.into_response();
+    response
+        .headers_mut()
+        .insert("dav", HeaderValue::from_static("1,2"));
+    response.headers_mut().insert(
+        http::header::ALLOW,
+        HeaderValue::from_static(
+            "OPTIONS, GET, HEAD, POST, PUT, DELETE, MKCOL, PROPFIND, PROPPATCH, REPORT, LOCK, UNLOCK, CHECKOUT, MERGE",
+        ),
+    );
+    response
 }
 
 fn svn_protocol_not_implemented_response(route: &SvnProtocolRoute, method: &str) -> Response {

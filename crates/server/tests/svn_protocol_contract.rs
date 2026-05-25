@@ -203,6 +203,25 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     .await;
     assert_eq!(response.status(), StatusCode::NOT_IMPLEMENTED);
 
+    let response =
+        direct_request(app.clone(), Method::OPTIONS, "/svn/owner/projectYobi", None).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    assert!(
+        response
+            .headers()
+            .get(http::header::ALLOW)
+            .and_then(|value| value.to_str().ok())
+            .is_some_and(|allow| allow.contains("OPTIONS") && allow.contains("PROPFIND")),
+        "SVN OPTIONS should advertise WebDAV methods"
+    );
+
     db.execute_unprepared(&format!(
         "UPDATE \"project\" SET vcs = 'GIT' WHERE id = {project_id}"
     ))
