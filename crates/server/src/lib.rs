@@ -2840,13 +2840,23 @@ async fn dispatch_git_push_webhooks(
         if !webhook.git_push {
             continue;
         }
-        let _ = deliver_webhook(OutboundWebhook {
+        let webhook_type = project_webhook_type_label(webhook.webhook_type);
+        let delivery = deliver_webhook(OutboundWebhook {
             body: body.clone(),
             event_type: "NEW_COMMIT".to_string(),
-            payload_url: webhook.payload_url,
-            secret: webhook.secret,
-            webhook_type: project_webhook_type_label(webhook.webhook_type),
+            payload_url: webhook.payload_url.clone(),
+            secret: webhook.secret.clone(),
+            webhook_type: webhook_type.clone(),
         });
+        record_project_webhook_delivery(
+            repository,
+            &webhook,
+            "NEW_COMMIT",
+            &webhook_type,
+            &body,
+            &delivery,
+        )
+        .await;
     }
 }
 
@@ -13246,6 +13256,36 @@ async fn persist_hangout_webhook_thread_from_delivery(
         .await;
 }
 
+async fn record_project_webhook_delivery(
+    repository: &PilotRepository,
+    webhook: &persistence::ProjectWebhookRecord,
+    event_type: &str,
+    webhook_type: &str,
+    request_body: &str,
+    delivery: &Result<WebhookDeliveryOutcome, String>,
+) {
+    let (status, response_body, error_message) = match delivery {
+        Ok(outcome) => (
+            "SUCCESS".to_string(),
+            outcome.response_body.clone(),
+            None::<String>,
+        ),
+        Err(error) => ("FAILURE".to_string(), None, Some(error.clone())),
+    };
+    let _ = repository
+        .create_webhook_delivery(persistence::CreateWebhookDeliveryInput {
+            error_message,
+            event_type: event_type.to_string(),
+            payload_url: webhook.payload_url.clone(),
+            request_body: request_body.to_string(),
+            response_body,
+            status,
+            webhook_id: webhook.id,
+            webhook_type: webhook_type.to_string(),
+        })
+        .await;
+}
+
 fn issue_webhook_payload(
     webhook: &persistence::ProjectWebhookRecord,
     issue: &persistence::IssueRecord,
@@ -13354,6 +13394,7 @@ async fn dispatch_issue_webhooks(
             detail_markdown,
             thread_name.as_deref(),
         );
+        let request_body = body.clone();
         let delivery = deliver_webhook(OutboundWebhook {
             body,
             event_type: event_type.to_string(),
@@ -13361,6 +13402,15 @@ async fn dispatch_issue_webhooks(
             secret: webhook.secret.clone(),
             webhook_type,
         });
+        record_project_webhook_delivery(
+            repository,
+            &webhook,
+            event_type,
+            &project_webhook_type_label(webhook.webhook_type),
+            &request_body,
+            &delivery,
+        )
+        .await;
         if webhook.webhook_type == 2 {
             persist_hangout_webhook_thread_from_delivery(
                 repository,
@@ -13494,6 +13544,7 @@ async fn dispatch_pull_request_webhooks(
             detail_markdown,
             thread_name.as_deref(),
         );
+        let request_body = body.clone();
         let delivery = deliver_webhook(OutboundWebhook {
             body,
             event_type: event_type.to_string(),
@@ -13501,6 +13552,15 @@ async fn dispatch_pull_request_webhooks(
             secret: webhook.secret.clone(),
             webhook_type,
         });
+        record_project_webhook_delivery(
+            repository,
+            &webhook,
+            event_type,
+            &project_webhook_type_label(webhook.webhook_type),
+            &request_body,
+            &delivery,
+        )
+        .await;
         if webhook.webhook_type == 2 {
             persist_hangout_webhook_thread_from_delivery(
                 repository,

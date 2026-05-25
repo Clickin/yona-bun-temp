@@ -61,4 +61,5 @@ pub use super::user_setting::Entity as UserSetting;
 pub use super::user_verification::Entity as UserVerification;
 pub use super::watch::Entity as Watch;
 pub use super::webhook::Entity as Webhook;
+pub use super::webhook_delivery::Entity as WebhookDelivery;
 pub use super::webhook_thread::Entity as WebhookThread;

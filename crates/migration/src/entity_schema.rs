@@ -17,7 +17,7 @@ use yona_rust_persistence::{
     pull_request_reviewers, recent_issue, recent_project, recently_visited_projects,
     review_comment, role, site_admin, title_head, unwatch, user_credential,
     user_enrolled_organization, user_enrolled_project, user_project_notification, user_setting,
-    user_verification, watch, webhook, webhook_thread,
+    user_verification, watch, webhook, webhook_delivery, webhook_thread,
 };
 
 const MANIFEST_JSON: &str = include_str!("../legacy-final-schema-manifest.json");
@@ -111,6 +111,7 @@ macro_rules! with_entities {
         $macro!(user_verification::Entity);
         $macro!(watch::Entity);
         $macro!(webhook::Entity);
+        $macro!(webhook_delivery::Entity);
         $macro!(webhook_thread::Entity);
     };
 }
@@ -194,6 +195,7 @@ macro_rules! entity_registrations {
             build_registrations!(user_verification::Entity),
             build_registrations!(watch::Entity),
             build_registrations!(webhook::Entity),
+            build_registrations!(webhook_delivery::Entity),
             build_registrations!(webhook_thread::Entity),
         ]
     };

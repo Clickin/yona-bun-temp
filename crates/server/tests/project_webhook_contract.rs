@@ -9,7 +9,7 @@ use tower::ServiceExt;
 use yona_rust_integrations::{
     clear_test_webhook_outbox, queue_test_webhook_response, snapshot_test_webhook_outbox,
 };
-use yona_rust_persistence::{webhook, webhook_thread, AppRepository};
+use yona_rust_persistence::{webhook, webhook_delivery, webhook_thread, AppRepository};
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
@@ -242,6 +242,24 @@ async fn project_webhooks_enqueue_legacy_issue_payloads_for_non_json_hooks() {
     assert!(created_text.contains("[projectYobi] owner"));
     assert!(created_text.contains("notification.type.new.issue"));
     assert!(created_text.contains("/yona/owner/projectYobi/issue/1|#1: First webhook issue"));
+    let history = webhook_delivery::Entity::find()
+        .all(&_db)
+        .await
+        .expect("webhook delivery history rows");
+    assert_eq!(history.len(), 1);
+    assert_eq!(history[0].webhook_id, Some(1));
+    assert_eq!(history[0].event_type.as_deref(), Some("NEW_ISSUE"));
+    assert_eq!(history[0].webhook_type.as_deref(), Some("SIMPLE"));
+    assert_eq!(
+        history[0].payload_url.as_deref(),
+        Some("https://hooks.example/simple")
+    );
+    assert_eq!(history[0].status.as_deref(), Some("SUCCESS"));
+    assert!(history[0].request_body.as_deref().is_some_and(|body| {
+        body.contains("notification.type.new.issue")
+            && body.contains("/yona/owner/projectYobi/issue/1|#1: First webhook issue")
+    }));
+    assert!(history[0].error_message.is_none());
 
     ok_json(
         rest(

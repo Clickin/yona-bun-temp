@@ -5164,6 +5164,124 @@
         {
           "name": "WebhookThread",
           "attributes": ["has_many = \"super::webhook_thread::Entity\""]
+        },
+        {
+          "name": "WebhookDelivery",
+          "attributes": ["has_many = \"super::webhook_delivery::Entity\""]
+        }
+      ]
+    },
+    {
+      "module": "webhook_delivery",
+      "name": "webhook_delivery",
+      "columns": [
+        {
+          "name": "id",
+          "type": "i64",
+          "nullable": false,
+          "primaryKey": true,
+          "autoIncrement": true,
+          "ignored": false,
+          "unique": false,
+          "attributes": ["primary_key"]
+        },
+        {
+          "name": "webhook_id",
+          "type": "Option<i64>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "event_type",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "webhook_type",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "payload_url",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "request_body",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "status",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "response_body",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "error_message",
+          "type": "Option<String>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        },
+        {
+          "name": "created_at",
+          "type": "Option<DateTime>",
+          "nullable": true,
+          "primaryKey": false,
+          "autoIncrement": false,
+          "ignored": false,
+          "unique": false,
+          "attributes": []
+        }
+      ],
+      "relations": [
+        {
+          "name": "Webhook",
+          "attributes": [
+            "belongs_to = \"super::webhook::Entity\", from = \"Column::WebhookId\", to = \"super::webhook::Column::Id\", on_update = \"Restrict\", on_delete = \"Cascade\""
+          ]
         }
       ]
     },

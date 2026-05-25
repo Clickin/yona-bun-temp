@@ -25,6 +25,8 @@ pub enum Relation {
         on_delete = "Restrict"
     )]
     Project,
+    #[sea_orm(has_many = "super::webhook_delivery::Entity")]
+    WebhookDelivery,
     #[sea_orm(has_many = "super::webhook_thread::Entity")]
     WebhookThread,
 }
@@ -38,6 +40,12 @@ impl Related<super::project::Entity> for Entity {
 impl Related<super::webhook_thread::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::WebhookThread.def()
+    }
+}
+
+impl Related<super::webhook_delivery::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::WebhookDelivery.def()
     }
 }
 

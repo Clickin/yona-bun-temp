@@ -6,7 +6,7 @@ use crate::repo_types::{
     CreatePostingInput, CreateProjectInput, CreateProjectLabelCategoryInput,
     CreateProjectLabelInput, CreateProjectWebhookInput, CreatePullRequestCommentInput,
     CreatePullRequestInput, CreatePullRequestResult, CreateReviewCommentViaEmailInput,
-    CreateUserInput, CreateWebhookThreadInput, DeleteAttachmentResult,
+    CreateUserInput, CreateWebhookDeliveryInput, CreateWebhookThreadInput, DeleteAttachmentResult,
     DeleteCommitDiscussionCommentInput, DeletePullRequestCommentInput, IssueAssignableUserRecord,
     IssueAssignableUserSearchRecord, IssueAttachmentRecord, IssueCommentOriginRecord,
     IssueCommentRecord, IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord,
@@ -58,7 +58,7 @@ use crate::{
     pull_request_commit, pull_request_event, pull_request_reviewers, recent_issue, recent_project,
     review_comment, role, site_admin, unwatch, user_credential, user_enrolled_organization,
     user_enrolled_project, user_project_notification, user_setting, user_verification, watch,
-    webhook, webhook_thread,
+    webhook, webhook_delivery, webhook_thread,
 };
 use rand::{distributions::Alphanumeric, Rng};
 use sea_orm::entity::prelude::{DateTime, DateTimeUtc};
@@ -6283,6 +6283,13 @@ impl AppRepository {
             .exec(&self.db)
             .await?;
         if !webhook_ids.is_empty() {
+            webhook_delivery::Entity::delete_many()
+                .filter(
+                    webhook_delivery::Column::WebhookId
+                        .is_in(webhook_ids.iter().copied().map(Some)),
+                )
+                .exec(&self.db)
+                .await?;
             webhook_thread::Entity::delete_many()
                 .filter(
                     webhook_thread::Column::WebhookId.is_in(webhook_ids.iter().copied().map(Some)),
@@ -6457,6 +6464,27 @@ impl AppRepository {
         Ok(webhook_thread_record_from_model(row))
     }
 
+    pub async fn create_webhook_delivery(
+        &self,
+        input: CreateWebhookDeliveryInput,
+    ) -> Result<(), DbErr> {
+        webhook_delivery::ActiveModel {
+            created_at: Set(Some(current_datetime())),
+            error_message: Set(input.error_message),
+            event_type: Set(Some(input.event_type)),
+            payload_url: Set(Some(input.payload_url)),
+            request_body: Set(Some(input.request_body)),
+            response_body: Set(input.response_body),
+            status: Set(Some(input.status)),
+            webhook_id: Set(Some(input.webhook_id)),
+            webhook_type: Set(Some(input.webhook_type)),
+            ..Default::default()
+        }
+        .insert(&self.db)
+        .await?;
+        Ok(())
+    }
+
     pub async fn delete_project_webhook(
         &self,
         project_id: i64,
@@ -6469,6 +6497,10 @@ impl AppRepository {
         else {
             return Ok(None);
         };
+        webhook_delivery::Entity::delete_many()
+            .filter(webhook_delivery::Column::WebhookId.eq(Some(row.id)))
+            .exec(&self.db)
+            .await?;
         webhook_thread::Entity::delete_many()
             .filter(webhook_thread::Column::WebhookId.eq(Some(row.id)))
             .exec(&self.db)

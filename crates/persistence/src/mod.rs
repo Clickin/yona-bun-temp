@@ -63,4 +63,5 @@ pub mod user_setting;
 pub mod user_verification;
 pub mod watch;
 pub mod webhook;
+pub mod webhook_delivery;
 pub mod webhook_thread;
