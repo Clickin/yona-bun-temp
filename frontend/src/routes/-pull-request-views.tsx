@@ -1075,6 +1075,7 @@ export function ProjectPullRequestDetailPage(props: {
               commitReferences={pullRequestMarkdownCommitReferences(pr)}
               issueReferences={pr.issueReferences}
               markdown={pr.bodyMarkdown}
+              mentionReferences={pr.mentionReferences}
               ownerName={pr.ownerName}
               projectName={pr.projectName}
             />
@@ -1341,6 +1342,7 @@ function ReviewThreadItem(props: {
               data-via-email={comment.viaEmail ? "true" : undefined}
               issueReferences={comment.issueReferences}
               markdown={comment.contentsMarkdown}
+              mentionReferences={comment.mentionReferences}
               ownerName={props.pullRequest?.ownerName}
               projectName={props.pullRequest?.projectName}
             />

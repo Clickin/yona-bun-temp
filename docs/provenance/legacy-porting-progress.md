@@ -390,7 +390,7 @@ Interpretation:
 - [x] Inline emphasis/strong/delete renders nested inline Markdown and `<em>`/`<strong>`/`<del>` for supported delimiters on the project Markdown render path
 - [x] Inline code spans preserve legacy marked matching backtick-run delimiters, newline normalization, and single-space trimming semantics
 - [x] Basic project Markdown autolinks for `@username`, legacy `@owner/project` project mentions, same-project `#123`, legacy `owner#123`, and `owner/project#123` on issue/post/milestone bodies and comments, PR bodies/general review comments, Git non-ranged commit comments, and preview output
-- [x] Legacy `MarkdownAppTest.testMention` existence behavior on issue, board/posting, and milestone detail Markdown: REST/proto `mentionReferences` metadata links existing `@user` / `@owner/project` targets while unresolved mentions remain plain text in React
+- [x] Legacy `MarkdownAppTest.testMention` existence behavior on issue, board/posting, milestone, and PR detail Markdown: REST/proto `mentionReferences` metadata links existing `@user` / `@owner/project` targets while unresolved mentions remain plain text in React
 - [x] Metadata-backed legacy commit SHA autolinks for raw `SHA`, `@SHA`, `owner@SHA`, and `owner/project@SHA` on PR body/review comments and Git commit discussion comments
 - [x] Legacy `MarkdownAppTest.test_ignorePattern` behavior for raw HTML-like blocks: escaped `<a>`, `<code>`, and `<div>` content remains opaque to `#123`/URL autolinks
 - [x] Basic bare `http://`/`https://`, `ftp://`, `www.`, and email autolinks on the project Markdown render path

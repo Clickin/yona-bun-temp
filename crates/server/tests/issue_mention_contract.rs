@@ -324,10 +324,15 @@ async fn issue_mention_contract_returns_renderable_mention_metadata_for_existing
         )),
         "{mention_targets:?}"
     );
-    assert!(!mention_targets.iter().any(|(_, login_id, owner_name, project_name)| {
-        login_id == "nforge" || owner_name == "nforge" || project_name == "yobi"
-    }));
-    assert_eq!(detail["comments"][0]["mentionReferences"], detail["mentionReferences"]);
+    assert!(!mention_targets
+        .iter()
+        .any(|(_, login_id, owner_name, project_name)| {
+            login_id == "nforge" || owner_name == "nforge" || project_name == "yobi"
+        }));
+    assert_eq!(
+        detail["comments"][0]["mentionReferences"],
+        detail["mentionReferences"]
+    );
 }
 
 #[tokio::test]

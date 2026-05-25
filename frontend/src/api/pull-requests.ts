@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
-import type { IssueReferenceMetadata } from "./issue-meta";
-import { normalizeIssueReferences } from "./issue-meta";
+import type { IssueReferenceMetadata, MentionReferenceMetadata } from "./issue-meta";
+import { normalizeIssueReferences, normalizeMentionReferences } from "./issue-meta";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
 
@@ -97,6 +97,7 @@ export type ReviewComment = {
   createdLabel: string;
   id: number;
   issueReferences?: IssueReferenceMetadata[];
+  mentionReferences?: MentionReferenceMetadata[];
   threadId: number;
   viaEmail: boolean;
 };
@@ -142,6 +143,7 @@ export type PullRequestDetailResponse = {
   issueReferences?: IssueReferenceMetadata[];
   isWatching: boolean;
   lackingReviewerCount: number;
+  mentionReferences?: MentionReferenceMetadata[];
   mergedCommitIdFrom: string;
   mergedCommitIdTo: string;
   ownerName: string;
@@ -395,6 +397,7 @@ function normalizeThread(thread: Partial<ReviewThread>): ReviewThread {
       createdLabel: comment.createdLabel ?? "",
       id: comment.id ?? 0,
       issueReferences: normalizeIssueReferences(comment.issueReferences),
+      mentionReferences: normalizeMentionReferences(comment.mentionReferences),
       threadId: comment.threadId ?? 0,
       viaEmail: comment.viaEmail ?? false,
     })),
@@ -427,6 +430,7 @@ function normalizeDetail(response: Partial<PullRequestDetailResponse>): PullRequ
     issueReferences: normalizeIssueReferences(response.issueReferences),
     isWatching: response.isWatching ?? false,
     lackingReviewerCount: response.lackingReviewerCount ?? 0,
+    mentionReferences: normalizeMentionReferences(response.mentionReferences),
     mergedCommitIdFrom: response.mergedCommitIdFrom ?? "",
     mergedCommitIdTo: response.mergedCommitIdTo ?? "",
     ownerName: response.ownerName ?? "",

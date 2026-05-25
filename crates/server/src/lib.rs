@@ -7928,6 +7928,7 @@ struct RestReviewComment {
     created_label: String,
     id: i64,
     issue_references: Vec<RestIssueReferenceMetadata>,
+    mention_references: Vec<RestMentionReferenceMetadata>,
     thread_id: i64,
     via_email: bool,
 }
@@ -8082,6 +8083,7 @@ struct RestPullRequestDetailResponse {
     issue_references: Vec<RestIssueReferenceMetadata>,
     is_watching: bool,
     lacking_reviewer_count: u32,
+    mention_references: Vec<RestMentionReferenceMetadata>,
     merged_commit_id_from: String,
     merged_commit_id_to: String,
     owner_name: String,
@@ -29518,13 +29520,14 @@ fn rest_pull_request_list_from_record(
 }
 
 fn rest_review_comment_from_record(record: persistence::ReviewCommentRecord) -> RestReviewComment {
-    rest_review_comment_from_record_with_permissions(record, false, &[])
+    rest_review_comment_from_record_with_permissions(record, false, &[], &[])
 }
 
 fn rest_review_comment_from_record_with_permissions(
     record: persistence::ReviewCommentRecord,
     can_delete: bool,
     issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
 ) -> RestReviewComment {
     RestReviewComment {
         author_id: record.author_id.unwrap_or_default(),
@@ -29538,6 +29541,10 @@ fn rest_review_comment_from_record_with_permissions(
         issue_references: issue_references
             .iter()
             .map(rest_issue_reference_metadata_from_resolved)
+            .collect(),
+        mention_references: mention_references
+            .iter()
+            .map(rest_mention_reference_metadata_from_resolved)
             .collect(),
         thread_id: record.thread_id,
         via_email: record.via_email,
@@ -29572,6 +29579,7 @@ fn rest_pull_request_thread_from_record(
     actor_id: Option<i64>,
     can_moderate: bool,
     issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
 ) -> RestReviewThread {
     RestReviewThread {
         author_id: record.author_id.unwrap_or_default(),
@@ -29586,6 +29594,7 @@ fn rest_pull_request_thread_from_record(
                     comment,
                     can_delete,
                     issue_references,
+                    mention_references,
                 )
             })
             .collect(),
@@ -29621,6 +29630,7 @@ fn rest_commit_thread_from_record(
                     comment,
                     can_delete,
                     issue_references,
+                    &[],
                 )
             })
             .collect(),
@@ -29708,12 +29718,14 @@ async fn rest_pull_request_detail_from_record_with_repository_issue_references(
     let issue_references =
         markdown_issue_references_for_project(repository, authorization, actor_id, &markdowns)
             .await?;
+    let mention_references = markdown_mention_references(repository, &markdowns).await?;
     rest_pull_request_detail_from_record_with_issue_references(
         record,
         authorization,
         actor_id,
         base_path,
         &issue_references,
+        &mention_references,
         source_branch_state,
     )
 }
@@ -29764,6 +29776,7 @@ fn rest_pull_request_detail_from_record_with_issue_references(
     actor_id: Option<i64>,
     _base_path: &str,
     issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
     source_branch_state: RestPullRequestSourceBranchState,
 ) -> Result<RestPullRequestDetailResponse, ConnectError> {
     let viewer_can_project_update = actor_id.is_some() && project_update_allowed(authorization)?;
@@ -29824,6 +29837,10 @@ fn rest_pull_request_detail_from_record_with_issue_references(
             .collect(),
         is_watching: record.is_watching,
         lacking_reviewer_count: record.lacking_reviewer_count,
+        mention_references: mention_references
+            .iter()
+            .map(rest_mention_reference_metadata_from_resolved)
+            .collect(),
         merged_commit_id_from: record.merged_commit_id_from,
         merged_commit_id_to: record.merged_commit_id_to,
         owner_name: owner_name.clone(),
@@ -29858,6 +29875,7 @@ fn rest_pull_request_detail_from_record_with_issue_references(
                     actor_id,
                     can_moderate_review_comments,
                     issue_references,
+                    mention_references,
                 )
             })
             .collect(),
@@ -30485,6 +30503,8 @@ mod tests {
                 "testOwner/testProject".to_string(),
             ]
         );
-        assert!(markdown_mention_tokens("mail@example.com owner/@ignored path/@ignored").is_empty());
+        assert!(
+            markdown_mention_tokens("mail@example.com owner/@ignored path/@ignored").is_empty()
+        );
     }
 }

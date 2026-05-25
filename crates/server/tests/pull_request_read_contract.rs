@@ -293,7 +293,7 @@ async fn seed_pull_request_between(
     .unwrap();
     let body = if number == 1 {
         format!(
-            "{title} markdown body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
+            "{title} markdown body @reviewer @owner/projectYobi @ghost @owner/missing #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
         )
     } else {
         format!("{title} markdown body")
@@ -397,7 +397,7 @@ async fn seed_pull_request_detail_rows(
         "review_comment",
         "contents",
         comment.id,
-        "Review comment body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`",
+        "Review comment body @reviewer @owner/projectYobi @ghost @owner/missing #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`",
     )
     .await;
     original_email::ActiveModel {
@@ -656,9 +656,42 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     assert_eq!(detail["pullRequestNumber"], 1);
     assert_eq!(
         detail["bodyMarkdown"],
-        "Open read surface markdown body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
+        "Open read surface markdown body @reviewer @owner/projectYobi @ghost @owner/missing #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
     );
     assert_eq!(detail["bodyHtml"].as_str().unwrap_or(""), "");
+    let mention_targets = detail["mentionReferences"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| {
+            (
+                item["kind"].as_str().unwrap().to_string(),
+                item["loginId"].as_str().unwrap_or_default().to_string(),
+                item["ownerName"].as_str().unwrap_or_default().to_string(),
+                item["projectName"].as_str().unwrap_or_default().to_string(),
+            )
+        })
+        .collect::<Vec<_>>();
+    assert!(mention_targets.contains(&(
+        "user".to_string(),
+        "reviewer".to_string(),
+        String::new(),
+        String::new()
+    )));
+    assert!(mention_targets.contains(&(
+        "project".to_string(),
+        String::new(),
+        "owner".to_string(),
+        "projectYobi".to_string()
+    )));
+    assert!(
+        !mention_targets
+            .iter()
+            .any(|(_, login_id, owner_name, project_name)| {
+                login_id == "ghost" || owner_name == "owner" && project_name == "missing"
+            }),
+        "{mention_targets:?}"
+    );
     assert_eq!(detail["contributor"]["loginId"], "owner");
     assert_eq!(detail["receiver"]["loginId"], "reviewer");
     assert_eq!(detail["reviewers"][0]["loginId"], "reviewer");
@@ -666,7 +699,11 @@ async fn pull_request_read_surface_returns_lists_detail_changes_reviews_and_org_
     assert_eq!(detail["events"][0]["eventType"], "NEW_PULL_REQUEST");
     assert_eq!(
         detail["threads"][0]["comments"][0]["contentsMarkdown"],
-        "Review comment body @reviewer #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
+        "Review comment body @reviewer @owner/projectYobi @ghost @owner/missing #1 owner/projectYobi#1 `<script>alert(1)</script> @reviewer #1`"
+    );
+    assert_eq!(
+        detail["threads"][0]["comments"][0]["mentionReferences"],
+        detail["mentionReferences"]
     );
     assert_eq!(detail["threads"][0]["comments"][0]["viaEmail"], true);
     assert_eq!(

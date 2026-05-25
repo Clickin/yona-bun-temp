@@ -693,9 +693,11 @@ async fn board_contract_manages_project_posts_comments_watch_and_notifications()
         String::new(),
         String::new()
     )));
-    assert!(!detail_mentions.iter().any(|(_, login_id, owner_name, project_name)| {
-        login_id == "nforge" || owner_name == "nforge" || project_name == "yobi"
-    }));
+    assert!(!detail_mentions
+        .iter()
+        .any(|(_, login_id, owner_name, project_name)| {
+            login_id == "nforge" || owner_name == "nforge" || project_name == "yobi"
+        }));
 
     let commented = ok_json(
         rest(
