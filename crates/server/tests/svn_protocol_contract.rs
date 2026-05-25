@@ -1246,6 +1246,34 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "SVN get-locks REPORT should expose the executable-backed lock after LOCK: {text}"
     );
 
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request(
+        app.clone(),
+        propfind,
+        "/svn/owner/projectYobi/trunk/README.md",
+        None,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:lockdiscovery>")
+            && text.contains("<D:owner>owner</D:owner>")
+            && text.contains(lock_token.trim_matches(['<', '>']))
+            && text.contains(
+                "<D:lockroot><D:href>/svn/owner/projectYobi/trunk/README.md</D:href></D:lockroot>"
+            ),
+        "SVN file PROPFIND should expose executable-backed lock discovery metadata: {text}"
+    );
+
     let unlock = Method::from_bytes(b"UNLOCK").expect("UNLOCK method");
     let response = direct_request_with_body_and_header(
         app.clone(),

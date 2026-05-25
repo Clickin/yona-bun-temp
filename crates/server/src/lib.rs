@@ -2603,6 +2603,23 @@ fn svn_protocol_file_propfind_response(repo_path: &StdPath, route: &SvnProtocolR
             return RestRouteError::from_connect_error(internal_error(error)).into_response()
         }
     };
+    let lock = if revision.is_none() {
+        match yona_rust_vcs::svn_lock(repo_path, &path) {
+            Ok(lock) => lock,
+            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::InvalidPath) => {
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+            }
+            Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "PROPFIND")
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        }
+    } else {
+        None
+    };
     svn_protocol_propfind_file_response(
         &href,
         bytes.len(),
@@ -2610,6 +2627,7 @@ fn svn_protocol_file_propfind_response(repo_path: &StdPath, route: &SvnProtocolR
         version_href,
         &path,
         &properties,
+        lock.as_ref().map(|lock| (route, lock)),
     )
 }
 
@@ -2682,6 +2700,7 @@ fn svn_protocol_propfind_tree_response(
                 version_href.as_deref(),
                 Some(&entry.path),
                 &[],
+                None,
             ));
         }
     }
@@ -2706,6 +2725,7 @@ fn svn_protocol_propfind_file_response(
     version_href: Option<String>,
     baseline_relative_path: &str,
     properties: &[yona_rust_vcs::SvnProperty],
+    lock: Option<(&SvnProtocolRoute, &yona_rust_vcs::SvnLock)>,
 ) -> Response {
     let item = svn_protocol_propfind_file_item(
         href,
@@ -2714,6 +2734,7 @@ fn svn_protocol_propfind_file_response(
         version_href.as_deref(),
         Some(baseline_relative_path),
         properties,
+        lock,
     );
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
@@ -2753,6 +2774,7 @@ fn svn_protocol_propfind_file_item(
     version_href: Option<&str>,
     baseline_relative_path: Option<&str>,
     properties: &[yona_rust_vcs::SvnProperty],
+    lock: Option<(&SvnProtocolRoute, &yona_rust_vcs::SvnLock)>,
 ) -> String {
     let content_length = content_length
         .map(|length| format!("        <D:getcontentlength>{length}</D:getcontentlength>\n"))
@@ -2782,13 +2804,16 @@ fn svn_protocol_propfind_file_item(
     } else {
         "        <SD:deadprop-count>1</SD:deadprop-count>\n".to_string()
     };
+    let lock_discovery = lock
+        .map(|(route, lock)| svn_protocol_lock_discovery_item(route, lock))
+        .unwrap_or_default();
     format!(
         r#"  <D:response>
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
         <D:resourcetype/>
-{content_length}{version_name}{checked_in}{baseline_relative_path}{deadprop_count}{property_items}      </D:prop>
+{content_length}{version_name}{checked_in}{baseline_relative_path}{deadprop_count}{property_items}{lock_discovery}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
   </D:response>
@@ -4358,6 +4383,18 @@ fn svn_protocol_lock_discovery_body(
     route: &SvnProtocolRoute,
     lock: &yona_rust_vcs::SvnLock,
 ) -> String {
+    let item = svn_protocol_lock_discovery_item(route, lock);
+    format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<D:prop xmlns:D="DAV:">
+{item}</D:prop>"#
+    )
+}
+
+fn svn_protocol_lock_discovery_item(
+    route: &SvnProtocolRoute,
+    lock: &yona_rust_vcs::SvnLock,
+) -> String {
     let href = format!(
         "/svn/{}/{}{}",
         route.owner_name, route.project_name, lock.path
@@ -4371,9 +4408,7 @@ fn svn_protocol_lock_discovery_body(
         )
     };
     format!(
-        r#"<?xml version="1.0" encoding="utf-8"?>
-<D:prop xmlns:D="DAV:">
-  <D:lockdiscovery>
+        r#"        <D:lockdiscovery>
     <D:activelock>
       <D:locktype><D:write/></D:locktype>
       <D:lockscope><D:exclusive/></D:lockscope>
@@ -4384,7 +4419,7 @@ fn svn_protocol_lock_discovery_body(
       <D:lockroot><D:href>{}</D:href></D:lockroot>{created}
     </D:activelock>
   </D:lockdiscovery>
-</D:prop>"#,
+"#,
         xml_escape(&lock.owner),
         xml_escape(&lock.token),
         xml_escape(&href)
