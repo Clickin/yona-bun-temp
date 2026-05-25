@@ -497,6 +497,10 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
   return parts;
 }
 
+function NestedMarkdownInline(props: { context?: MarkdownContext; line: string }) {
+  return <MarkdownInline context={props.context} line={props.line} />;
+}
+
 function MarkdownInline(props: { context?: MarkdownContext; line: string }) {
   return parseInlineMarkdown(props.line, props.context).map((part) => {
     if (part.kind === "image") {
@@ -516,16 +520,28 @@ function MarkdownInline(props: { context?: MarkdownContext; line: string }) {
       );
     }
     if (part.kind === "strong") {
-      return <strong key={part.key}>{part.value}</strong>;
+      return (
+        <strong key={part.key}>
+          <NestedMarkdownInline context={props.context} line={part.value} />
+        </strong>
+      );
     }
     if (part.kind === "code") {
       return <code key={part.key}>{part.value}</code>;
     }
     if (part.kind === "delete") {
-      return <del key={part.key}>{part.value}</del>;
+      return (
+        <del key={part.key}>
+          <NestedMarkdownInline context={props.context} line={part.value} />
+        </del>
+      );
     }
     if (part.kind === "emphasis") {
-      return <em key={part.key}>{part.value}</em>;
+      return (
+        <em key={part.key}>
+          <NestedMarkdownInline context={props.context} line={part.value} />
+        </em>
+      );
     }
     if (part.kind === "escape") {
       return <React.Fragment key={part.key}>{part.value}</React.Fragment>;

@@ -274,6 +274,19 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("__strong__");
   });
 
+  it("parses inline Markdown inside emphasis tokens like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown="**https://example.com** *`code`* ~~www.example.com~~" />,
+    );
+
+    expect(html).toContain(
+      '<strong><a href="https://example.com">https://example.com</a></strong>',
+    );
+    expect(html).toContain("<em><code>code</code></em>");
+    expect(html).toContain('<del><a href="http://www.example.com">www.example.com</a></del>');
+    expect(html).not.toContain("<strong>https://example.com</strong>");
+  });
+
   it("honors legacy marked backslash escapes before inline parsing", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

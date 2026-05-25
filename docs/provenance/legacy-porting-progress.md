@@ -387,7 +387,7 @@ Interpretation:
 - [x] Basic Markdown rendering on milestone surfaces
 - [x] HTML sanitization on implemented render path
 - [x] Marked-style leading-space ATX and setext heading ids, `.head-anchor` links, and `#` through `######` heading levels on the project Markdown render path
-- [x] Inline emphasis/strong renders as `<em>`/`<strong>` for asterisk and underscore delimiters on the project Markdown render path
+- [x] Inline emphasis/strong/delete renders nested inline Markdown and `<em>`/`<strong>`/`<del>` for supported delimiters on the project Markdown render path
 - [x] Inline code spans preserve legacy marked matching backtick-run delimiters, newline normalization, and single-space trimming semantics
 - [x] Basic project Markdown autolinks for `@username`, legacy `@owner/project` project mentions, same-project `#123`, legacy `owner#123`, and `owner/project#123` on issue/post/milestone bodies and comments, PR bodies/general review comments, Git non-ranged commit comments, and preview output
 - [x] Basic bare `http://`/`https://`, `ftp://`, `www.`, and email autolinks on the project Markdown render path
