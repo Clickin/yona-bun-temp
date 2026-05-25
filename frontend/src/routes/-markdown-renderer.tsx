@@ -143,7 +143,7 @@ const referenceDefinitionPattern = new RegExp(
   `^ {0,3}\\[(${referenceLabelPattern})\\]:\\s*(${referenceTargetPattern})(?:\\s+(?:"((?:\\\\"|[^"\\\\])*)"|'((?:\\\\'|[^'\\\\])*)'|\\(((?:\\\\\\)|[^)\\\\])*)\\)))?\\s*$`,
 );
 
-const openingFencePattern = /^ {0,3}(`{3,}|~{3,})(?:\s+([A-Za-z0-9_+.-]+)(?:\s+.*)?)?\s*$/;
+const openingFencePattern = /^ {0,3}(`{3,}|~{3,})(?:[ \t]*([A-Za-z0-9_+.-]+)(?:[ \t]+.*)?)?\s*$/;
 
 function openingFenceFromLine(line: string): string {
   return openingFencePattern.exec(line)?.[1] ?? "";

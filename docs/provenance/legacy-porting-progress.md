@@ -405,7 +405,7 @@ Interpretation:
 - [x] Basic task checklist rendering with sanitized disabled checkbox inputs
 - [x] Horizontal rules render as `<hr>` on the project Markdown render path
 - [x] Basic safe inline image rendering on the project Markdown render path
-- [x] Basic indented code blocks plus backtick and tilde fenced-code block rendering with first info-string token language class preservation and matching closing-fence length on the project Markdown render path
+- [x] Basic indented code blocks plus backtick and tilde fenced-code block rendering with optional separating space, first info-string token language class preservation, and matching closing-fence length on the project Markdown render path
 - [x] Code-browser Markdown files render in React with legacy `.codebrowser-markdown` while the REST payload rewrites local `./...` image paths to the project file route as Markdown
 - [x] Project-home Git README fallback renders in React with the legacy readme body wrapper and `breaks: false` soft-line behavior while the REST payload rewrites local images/normal links to project file/code routes as Markdown
 - [x] Legacy `POST /markdown/:owner/:project` preview renderer validates project read access and returns Markdown source for React-side preview rendering instead of server-rendered HTML
