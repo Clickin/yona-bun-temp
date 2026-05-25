@@ -142,25 +142,45 @@ const referenceDefinitionPattern = new RegExp(
   `^ {0,3}\\[(${referenceLabelPattern})\\]:\\s*(${referenceTargetPattern})(?:\\s+(?:"((?:\\\\"|[^"\\\\])*)"|'((?:\\\\'|[^'\\\\])*)'|\\(((?:\\\\\\)|[^)\\\\])*)\\)))?\\s*$`,
 );
 
+function openingFenceFromLine(line: string): string {
+  return /^ {0,3}(`{3,}|~{3,})(?:\s+[A-Za-z0-9_+.-]+)?\s*$/.exec(line)?.[1] ?? "";
+}
+
+function closingFenceFromLine(line: string): string {
+  return /^ {0,3}(`+|~+)\s*$/.exec(line)?.[1] ?? "";
+}
+
+function closesMarkdownFence(openFence: string, closeFence: string): boolean {
+  return closeFence.length >= openFence.length && closeFence.at(0) === openFence.at(0);
+}
+
 function extractReferenceDefinitions(markdown: string) {
   const referenceMap = new Map<string, MarkdownReferenceDefinition>();
   const markdownLines: string[] = [];
-  let inFence = false;
+  let openFence = "";
   const lines = markdown.replace(/\r\n?/g, "\n").split("\n");
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index] ?? "";
-    if (/^ {0,3}```/.test(line)) {
-      inFence = !inFence;
+    if (openFence) {
+      const closeFence = closingFenceFromLine(line);
+      if (closeFence && closesMarkdownFence(openFence, closeFence)) {
+        openFence = "";
+      }
+      markdownLines.push(line);
+      continue;
+    }
+    const nextOpenFence = openingFenceFromLine(line);
+    if (nextOpenFence) {
+      openFence = nextOpenFence;
       markdownLines.push(line);
       continue;
     }
     const candidateLine =
-      !inFence && referenceLabelOnlyPattern.test(line) && index < lines.length - 1
+      referenceLabelOnlyPattern.test(line) && index < lines.length - 1
         ? `${line} ${(lines[index + 1] ?? "").trim()}`
         : line;
     const nextLine = lines[index + 1] ?? "";
     const candidateWithTitle =
-      !inFence &&
       index < lines.length - 1 &&
       candidateLine === line &&
       referenceTargetOnlyPattern.test(line) &&
@@ -168,7 +188,7 @@ function extractReferenceDefinitions(markdown: string) {
         ? `${line} ${nextLine.trim()}`
         : candidateLine;
     const match = referenceDefinitionPattern.exec(candidateWithTitle);
-    if (inFence || !match) {
+    if (!match) {
       markdownLines.push(line);
       continue;
     }
@@ -663,10 +683,10 @@ function parseFencedCodeBlock(lines: MarkdownLineRecord[]): MarkdownCodeBlockRec
   if (lines.length < 2) {
     return null;
   }
-  const openMatch = /^(`{3,}|~{3,})\s*([A-Za-z0-9_+.-]+)?\s*$/.exec(lines[0]?.text ?? "");
+  const openMatch = /^ {0,3}(`{3,}|~{3,})(?:\s+([A-Za-z0-9_+.-]+))?\s*$/.exec(lines[0]?.text ?? "");
   const fence = openMatch?.[1] ?? "";
-  const closeFence = /^(`+|~+)\s*$/.exec(lines[lines.length - 1]?.text ?? "")?.[1] ?? "";
-  if (!openMatch || closeFence.length < fence.length || closeFence.at(0) !== fence.at(0)) {
+  const closeFence = closingFenceFromLine(lines[lines.length - 1]?.text ?? "");
+  if (!openMatch || !closesMarkdownFence(fence, closeFence)) {
     return null;
   }
   return {

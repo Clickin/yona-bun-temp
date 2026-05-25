@@ -76,6 +76,19 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("~~~");
   });
 
+  it("does not extract reference definitions from tilde fences like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={"~~~\n[guide]: https://example.com/docs\n~~~\n\n[docs][guide]"}
+      />,
+    );
+
+    expect(html).toContain("<pre><code");
+    expect(html).toContain("[guide]: https://example.com/docs");
+    expect(html).toContain("[docs][guide]");
+    expect(html).not.toContain('<a href="https://example.com/docs">docs</a>');
+  });
+
   it("requires closing fences to match the opening fence length like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
