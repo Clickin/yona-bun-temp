@@ -63,6 +63,46 @@ fn seed_svn_readme(repo_path: &std::path::Path, contents: &str) -> Option<i64> {
     Some(yona_rust_vcs::svn_youngest_revision(repo_path).expect("read seeded revision"))
 }
 
+fn seed_svn_mergeinfo(repo_path: &std::path::Path, path: &str, mergeinfo: &str) -> Option<i64> {
+    if !svn_tools_available() || !svn_client_available() {
+        return None;
+    }
+    let checkout_dir = tempdir().expect("svn mergeinfo checkout tempdir");
+    let output = Command::new("svn")
+        .arg("checkout")
+        .arg(file_url(repo_path))
+        .arg(checkout_dir.path())
+        .output()
+        .expect("run svn checkout");
+    assert!(
+        output.status.success(),
+        "svn checkout should prepare mergeinfo fixture: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let target = checkout_dir.path().join(path.trim_start_matches('/'));
+    let output = Command::new("svn")
+        .args(["propset", "svn:mergeinfo", mergeinfo])
+        .arg(&target)
+        .output()
+        .expect("run svn propset svn:mergeinfo");
+    assert!(
+        output.status.success(),
+        "svn propset should seed mergeinfo: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let output = Command::new("svn")
+        .args(["commit", "-m", "seed svn mergeinfo"])
+        .arg(checkout_dir.path())
+        .output()
+        .expect("run svn commit");
+    assert!(
+        output.status.success(),
+        "svn commit should persist mergeinfo fixture: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    Some(yona_rust_vcs::svn_youngest_revision(repo_path).expect("read mergeinfo revision"))
+}
+
 fn svn_propget(repo_path: &std::path::Path, property_name: &str, path: &str) -> Option<String> {
     let output = Command::new("svn")
         .arg("propget")
@@ -837,6 +877,42 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && text.contains(r#"<S:rev-prop name="svn:author">"#)
             && text.contains("<S:rev-prop name=\"svn:log\">seed svn readme</S:rev-prop>"),
         "SVN file-revs REPORT should expose executable-backed file revision metadata: {text}"
+    );
+
+    let mergeinfo_revision =
+        seed_svn_mergeinfo(&repo_path, "trunk", "/branches/topic:1").expect("seed svn mergeinfo");
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:mergeinfo-report xmlns:S="svn:">
+  <S:revision>{mergeinfo_revision}</S:revision>
+  <S:inherit>explicit</S:inherit>
+  <S:path>trunk</S:path>
+</S:mergeinfo-report>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<S:mergeinfo-report")
+            && text.contains("<S:mergeinfo-item>")
+            && text.contains("<S:mergeinfo-path>/trunk</S:mergeinfo-path>")
+            && text.contains("<S:mergeinfo-info>/branches/topic:1</S:mergeinfo-info>"),
+        "SVN mergeinfo REPORT should expose executable-backed svn:mergeinfo metadata: {text}"
     );
 
     let lock = Method::from_bytes(b"LOCK").expect("LOCK method");

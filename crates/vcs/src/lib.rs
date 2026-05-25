@@ -603,6 +603,48 @@ pub fn svn_lock(repo_path: &Path, path: &str) -> Result<Option<SvnLock>, VcsErro
     Ok(parse_svnlook_lock(&clean_path, &output))
 }
 
+pub fn svn_property(
+    repo_path: &Path,
+    revision: Option<i64>,
+    path: &str,
+    property_name: &str,
+) -> Result<Option<String>, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    if revision.is_some_and(|revision| revision < 0) {
+        return Err(VcsError::InvalidPath);
+    }
+    validate_svn_property_name(property_name)?;
+    let clean_path = normalize_repo_path(path)?;
+    let mut command = Command::new("svnlook");
+    command.arg("propget");
+    if let Some(revision) = revision {
+        command.args(["-r", &revision.to_string()]);
+    }
+    command.arg(repo_path).arg(property_name);
+    if !clean_path.is_empty() {
+        command.arg(&clean_path);
+    }
+    let output = command.output().map_err(|_| VcsError::SvnLookUnavailable)?;
+    if output.status.success() {
+        let value = String::from_utf8_lossy(&output.stdout)
+            .trim_end_matches(['\r', '\n'])
+            .to_string();
+        return Ok(if value.is_empty() { None } else { Some(value) });
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+    let lower = stderr.to_ascii_lowercase();
+    if lower.contains("path not found")
+        || lower.contains("no such revision")
+        || lower.contains("not found")
+    {
+        return Err(VcsError::NotFound);
+    }
+    Err(VcsError::SvnLookFailed(stderr))
+}
+
 pub fn svn_lock_path(
     repo_path: &Path,
     path: &str,
