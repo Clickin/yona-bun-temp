@@ -916,7 +916,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     );
 
     let response = direct_request(
-        app,
+        app.clone(),
         Method::HEAD,
         "/svn/owner/projectYobi/trunk/README.md",
         None,
@@ -932,6 +932,41 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     );
     let body = response.into_body().collect().await.unwrap().to_bytes();
     assert!(body.is_empty());
+
+    let response = direct_request(
+        app.clone(),
+        Method::DELETE,
+        "/svn/owner/projectYobi/trunk/README.md",
+        Some(&owner_basic),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let delete_revision = response
+        .headers()
+        .get("svn-revision")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<i64>().ok())
+        .expect("DELETE should return committed SVN revision");
+    assert!(
+        delete_revision > put_revision,
+        "SVN DELETE should commit a newer repository revision"
+    );
+
+    let response = direct_request(
+        app,
+        Method::GET,
+        "/svn/owner/projectYobi/trunk/README.md",
+        None,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]

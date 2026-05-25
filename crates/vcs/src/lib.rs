@@ -725,6 +725,41 @@ pub fn svn_put_file(
     svn_youngest_revision(repo_path)
 }
 
+pub fn svn_delete_path(repo_path: &Path, path: &str, message: &str) -> Result<i64, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    let work_dir = svn_temp_work_dir("delete")?;
+    let cleanup = WorkDirCleanup {
+        path: work_dir.clone(),
+    };
+    run_svn_command(
+        Command::new("svn")
+            .arg("checkout")
+            .arg(svn_file_url(repo_path))
+            .arg(&work_dir),
+    )?;
+
+    let target_path = work_dir.join(&clean_path);
+    if !target_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    run_svn_command(Command::new("svn").arg("delete").arg(&target_path))?;
+    run_svn_command(
+        Command::new("svn")
+            .arg("commit")
+            .arg("-m")
+            .arg(message)
+            .arg(&target_path),
+    )?;
+    drop(cleanup);
+    svn_youngest_revision(repo_path)
+}
+
 pub fn svn_path_exists(
     repo_path: &Path,
     revision: Option<i64>,
