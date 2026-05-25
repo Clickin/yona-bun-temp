@@ -2941,6 +2941,9 @@ fn svn_protocol_file_lookup(svn_path: &str) -> Option<(Option<i64>, String)> {
     if let Some(rest) = trimmed.strip_prefix("!svn/bc/") {
         return svn_protocol_revision_path(rest);
     }
+    if let Some(rest) = trimmed.strip_prefix("!svn/ver/") {
+        return svn_protocol_revision_path(rest);
+    }
     if trimmed.starts_with("!svn/") {
         return None;
     }

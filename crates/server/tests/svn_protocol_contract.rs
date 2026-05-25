@@ -440,6 +440,20 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "hello from svn\n"
     );
 
+    let response = direct_request(
+        app.clone(),
+        Method::GET,
+        &format!("/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md"),
+        None,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(
+        String::from_utf8(body.to_vec()).unwrap(),
+        "hello from svn\n"
+    );
+
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
     let response = direct_request(
         app.clone(),
@@ -463,6 +477,26 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && text.contains("<D:getcontentlength>15</D:getcontentlength>")
             && text.contains("/svn/owner/projectYobi/trunk/README.md"),
         "SVN file PROPFIND should return file metadata: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request(
+        app.clone(),
+        propfind,
+        &format!("/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md"),
+        None,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:resourcetype/>")
+            && text.contains("<D:getcontentlength>15</D:getcontentlength>")
+            && text.contains(&format!(
+                "/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md"
+            )),
+        "SVN version resource file PROPFIND should return file metadata: {text}"
     );
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
