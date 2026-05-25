@@ -2365,6 +2365,20 @@ async fn direct_svn_protocol_request(
     if method == "MKCOL" {
         return svn_protocol_mkcol_response(&repo_path, &route, principal.as_ref());
     }
+    if method == "PROPPATCH" {
+        let body_bytes = match body.collect().await {
+            Ok(collected) => collected.to_bytes(),
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
+            }
+        };
+        return svn_protocol_proppatch_response(
+            &repo_path,
+            &route,
+            principal.as_ref(),
+            &body_bytes,
+        );
+    }
     if method == "REPORT" {
         let body_bytes = match body.collect().await {
             Ok(collected) => collected.to_bytes(),
@@ -3073,6 +3087,55 @@ fn svn_protocol_mkcol_response(
     }
 }
 
+fn svn_protocol_proppatch_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    principal: Option<&persistence::AppUserRecord>,
+    body: &Bytes,
+) -> Response {
+    let Some(actor) = principal else {
+        return smart_http_basic_challenge_response();
+    };
+    let Some((revision, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    if revision.is_some() || path.trim().is_empty() {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    }
+    let request = String::from_utf8_lossy(body);
+    let patches = match svn_protocol_property_patches(&request) {
+        Some(patches) if !patches.is_empty() => patches,
+        _ => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+    };
+    let message = format!(
+        "Update properties on {path} through WebDAV by {}",
+        actor.login_id
+    );
+    match yona_rust_vcs::svn_patch_properties(repo_path, &path, &patches, &message) {
+        Ok(revision) => {
+            let mut response = (
+                StatusCode::MULTI_STATUS,
+                svn_protocol_proppatch_multistatus(route, &path, &patches),
+            )
+                .into_response();
+            add_svn_dav_headers(&mut response);
+            response.headers_mut().insert(
+                http::header::CONTENT_TYPE,
+                HeaderValue::from_static("application/xml; charset=utf-8"),
+            );
+            if let Ok(value) = HeaderValue::from_str(&revision.to_string()) {
+                response.headers_mut().insert("svn-revision", value);
+            }
+            response
+        }
+        Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnUnavailable) => svn_protocol_not_implemented_response(route, "PROPPATCH"),
+        Err(VcsError::SvnFailed(_)) => svn_protocol_status_response(StatusCode::CONFLICT),
+        Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
+    }
+}
+
 fn svn_protocol_delete_response(
     repo_path: &StdPath,
     route: &SvnProtocolRoute,
@@ -3342,6 +3405,140 @@ fn svn_protocol_xml_text(xml: &str, tag: &str) -> Option<String> {
     let value_start = xml[start..].find('>')? + start + 1;
     let end = xml[value_start..].find('<')? + value_start;
     Some(xml[value_start..end].trim().to_string())
+}
+
+fn svn_protocol_property_patches(request: &str) -> Option<Vec<yona_rust_vcs::SvnPropertyPatch>> {
+    let mut patches = Vec::new();
+    for section in svn_protocol_xml_sections(request, "set") {
+        patches.extend(svn_protocol_property_elements(section, true));
+    }
+    for section in svn_protocol_xml_sections(request, "remove") {
+        patches.extend(svn_protocol_property_elements(section, false));
+    }
+    Some(patches)
+}
+
+fn svn_protocol_proppatch_multistatus(
+    route: &SvnProtocolRoute,
+    path: &str,
+    patches: &[yona_rust_vcs::SvnPropertyPatch],
+) -> String {
+    let href = svn_protocol_href(route, path, false);
+    let mut properties = String::new();
+    for patch in patches {
+        properties.push_str(&format!("        <D:{}/>\n", xml_escape(&patch.name)));
+    }
+    format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<D:multistatus xmlns:D="DAV:">
+  <D:response>
+    <D:href>{}</D:href>
+    <D:propstat>
+      <D:prop>
+{properties}      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+</D:multistatus>"#,
+        xml_escape(&href)
+    )
+}
+
+fn svn_protocol_xml_sections<'a>(xml: &'a str, tag: &str) -> Vec<&'a str> {
+    let mut sections = Vec::new();
+    let mut rest = xml;
+    loop {
+        let Some(open_start) = svn_protocol_find_xml_tag(rest, tag) else {
+            break;
+        };
+        let after_open = &rest[open_start..];
+        let Some(open_end) = after_open.find('>') else {
+            break;
+        };
+        let content_start = open_start + open_end + 1;
+        let Some(close_start_relative) =
+            svn_protocol_find_xml_close_tag(&rest[content_start..], tag)
+        else {
+            break;
+        };
+        let content_end = content_start + close_start_relative;
+        sections.push(&rest[content_start..content_end]);
+        rest = &rest[content_end..];
+    }
+    sections
+}
+
+fn svn_protocol_find_xml_tag(xml: &str, tag: &str) -> Option<usize> {
+    xml.find(&format!("<D:{tag}"))
+        .or_else(|| xml.find(&format!("<d:{tag}")))
+        .or_else(|| xml.find(&format!("<{tag}")))
+}
+
+fn svn_protocol_find_xml_close_tag(xml: &str, tag: &str) -> Option<usize> {
+    xml.find(&format!("</D:{tag}>"))
+        .or_else(|| xml.find(&format!("</d:{tag}>")))
+        .or_else(|| xml.find(&format!("</{tag}>")))
+}
+
+fn svn_protocol_property_elements(
+    section: &str,
+    set_value: bool,
+) -> Vec<yona_rust_vcs::SvnPropertyPatch> {
+    let prop_body = svn_protocol_xml_sections(section, "prop")
+        .into_iter()
+        .next()
+        .unwrap_or(section);
+    let mut patches = Vec::new();
+    let mut rest = prop_body;
+    while let Some(open_start) = rest.find('<') {
+        rest = &rest[open_start + 1..];
+        if rest.starts_with('/') || rest.starts_with('!') || rest.starts_with('?') {
+            continue;
+        }
+        let Some(open_end) = rest.find('>') else {
+            break;
+        };
+        let raw_name = rest[..open_end]
+            .split_whitespace()
+            .next()
+            .unwrap_or_default()
+            .trim_end_matches('/');
+        let Some(name) = svn_protocol_property_name(raw_name) else {
+            rest = &rest[open_end + 1..];
+            continue;
+        };
+        if set_value {
+            let close_tag = format!("</{raw_name}>");
+            let value_start = open_end + 1;
+            let value = rest[value_start..]
+                .find(&close_tag)
+                .map(|end| rest[value_start..value_start + end].to_string())
+                .unwrap_or_default();
+            patches.push(yona_rust_vcs::SvnPropertyPatch {
+                name,
+                value: Some(value),
+            });
+        } else {
+            patches.push(yona_rust_vcs::SvnPropertyPatch { name, value: None });
+        }
+        rest = &rest[open_end + 1..];
+    }
+    patches
+}
+
+fn svn_protocol_property_name(raw_name: &str) -> Option<String> {
+    let raw_name = raw_name.trim();
+    if raw_name.is_empty() {
+        return None;
+    }
+    let local_name = raw_name
+        .rsplit_once(':')
+        .map_or(raw_name, |(_, local)| local);
+    if local_name.eq_ignore_ascii_case("prop") || local_name.eq_ignore_ascii_case("propertyupdate")
+    {
+        return None;
+    }
+    Some(local_name.to_string())
 }
 
 fn svn_protocol_new_lock_token() -> String {

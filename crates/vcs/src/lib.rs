@@ -251,6 +251,12 @@ pub struct SvnLock {
     pub expires: Option<String>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SvnPropertyPatch {
+    pub name: String,
+    pub value: Option<String>,
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum VcsError {
     #[error("git executable is unavailable")]
@@ -805,6 +811,65 @@ pub fn svn_make_collection(repo_path: &Path, path: &str, message: &str) -> Resul
     svn_youngest_revision(repo_path)
 }
 
+pub fn svn_patch_properties(
+    repo_path: &Path,
+    path: &str,
+    patches: &[SvnPropertyPatch],
+    message: &str,
+) -> Result<i64, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() || patches.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    for patch in patches {
+        validate_svn_property_name(&patch.name)?;
+    }
+    let work_dir = svn_temp_work_dir("proppatch")?;
+    let cleanup = WorkDirCleanup {
+        path: work_dir.clone(),
+    };
+    run_svn_command(
+        Command::new("svn")
+            .arg("checkout")
+            .arg(svn_file_url(repo_path))
+            .arg(&work_dir),
+    )?;
+
+    let target_path = work_dir.join(&clean_path);
+    if !target_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    for patch in patches {
+        match &patch.value {
+            Some(value) => run_svn_command(
+                Command::new("svn")
+                    .arg("propset")
+                    .arg(&patch.name)
+                    .arg(value)
+                    .arg(&target_path),
+            )?,
+            None => run_svn_command(
+                Command::new("svn")
+                    .arg("propdel")
+                    .arg(&patch.name)
+                    .arg(&target_path),
+            )?,
+        }
+    }
+    run_svn_command(
+        Command::new("svn")
+            .arg("commit")
+            .arg("-m")
+            .arg(message)
+            .arg(&target_path),
+    )?;
+    drop(cleanup);
+    svn_youngest_revision(repo_path)
+}
+
 pub fn svn_path_exists(
     repo_path: &Path,
     revision: Option<i64>,
@@ -900,6 +965,18 @@ fn run_svn_command(command: &mut Command) -> Result<(), VcsError> {
             String::from_utf8_lossy(&output.stderr).trim().to_string(),
         ))
     }
+}
+
+fn validate_svn_property_name(name: &str) -> Result<(), VcsError> {
+    let name = name.trim();
+    if name.is_empty()
+        || name
+            .chars()
+            .any(|character| character.is_control() || character.is_whitespace())
+    {
+        return Err(VcsError::InvalidPath);
+    }
+    Ok(())
 }
 
 struct WorkDirCleanup {

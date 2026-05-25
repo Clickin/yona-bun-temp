@@ -63,6 +63,23 @@ fn seed_svn_readme(repo_path: &std::path::Path, contents: &str) -> Option<i64> {
     Some(yona_rust_vcs::svn_youngest_revision(repo_path).expect("read seeded revision"))
 }
 
+fn svn_propget(repo_path: &std::path::Path, property_name: &str, path: &str) -> Option<String> {
+    let output = Command::new("svn")
+        .arg("propget")
+        .arg(property_name)
+        .arg(format!(
+            "{}/{}",
+            file_url(repo_path).trim_end_matches('/'),
+            path.trim_start_matches('/')
+        ))
+        .output()
+        .expect("run svn propget");
+    if !output.status.success() {
+        return None;
+    }
+    Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
@@ -915,6 +932,86 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "updated through put\n"
     );
 
+    let proppatch = Method::from_bytes(b"PROPPATCH").expect("PROPPATCH method");
+    let response = direct_request_with_body(
+        app.clone(),
+        proppatch.clone(),
+        "/svn/owner/projectYobi/trunk/README.md",
+        Some(&owner_basic),
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:" xmlns:C="http://example.com/yona">
+  <D:set>
+    <D:prop>
+      <C:reviewed>true</C:reviewed>
+    </D:prop>
+  </D:set>
+</D:propertyupdate>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let proppatch_revision = response
+        .headers()
+        .get("svn-revision")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<i64>().ok())
+        .expect("PROPPATCH should return committed SVN revision");
+    assert!(
+        proppatch_revision > put_revision,
+        "SVN PROPPATCH should commit a newer repository revision"
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:multistatus") && text.contains("<D:reviewed/>"),
+        "SVN PROPPATCH should return multistatus metadata for the patched property: {text}"
+    );
+    assert_eq!(
+        svn_propget(&repo_path, "reviewed", "trunk/README.md").as_deref(),
+        Some("true")
+    );
+
+    let response = direct_request_with_body(
+        app.clone(),
+        proppatch,
+        "/svn/owner/projectYobi/trunk/README.md",
+        Some(&owner_basic),
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propertyupdate xmlns:D="DAV:" xmlns:C="http://example.com/yona">
+  <D:remove>
+    <D:prop>
+      <C:reviewed/>
+    </D:prop>
+  </D:remove>
+</D:propertyupdate>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let remove_revision = response
+        .headers()
+        .get("svn-revision")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<i64>().ok())
+        .expect("PROPPATCH remove should return committed SVN revision");
+    assert!(
+        remove_revision > proppatch_revision,
+        "SVN PROPPATCH remove should commit a newer repository revision"
+    );
+    assert_eq!(
+        svn_propget(&repo_path, "reviewed", "trunk/README.md").unwrap_or_default(),
+        ""
+    );
+
     let response = direct_request(
         app.clone(),
         Method::HEAD,
@@ -955,7 +1052,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         .and_then(|value| value.parse::<i64>().ok())
         .expect("DELETE should return committed SVN revision");
     assert!(
-        delete_revision > put_revision,
+        delete_revision > remove_revision,
         "SVN DELETE should commit a newer repository revision"
     );
 
