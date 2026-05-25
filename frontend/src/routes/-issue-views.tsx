@@ -181,6 +181,17 @@ export function ProjectIssueListPage(props: {
         >
           New Issue
         </a>
+        <a
+          className="ybtn small"
+          href={projectIssueExcelExportHref(
+            props.runtimeConfig,
+            detail.ownerName,
+            detail.projectName,
+            query,
+          )}
+        >
+          <i className="yobicon-file-excel" /> issue.downloadAsExcel
+        </a>
       </section>
       <section>
         <p>{`Total ${props.issueList?.totalCount ?? 0}`}</p>
@@ -244,6 +255,35 @@ export interface IssueListFilterMilestone {
   id: number;
   state: string;
   title: string;
+}
+
+function projectIssueExcelExportHref(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  query: ProjectIssueListQuery,
+): string {
+  const params = new URLSearchParams();
+  if (query.state) {
+    params.set("state", query.state);
+  }
+  if (query.authorLoginId) {
+    params.set("authorLoginId", query.authorLoginId);
+  }
+  if (query.assigneeLoginId) {
+    params.set("assigneeLoginId", query.assigneeLoginId);
+  }
+  if (query.assigneeId !== undefined) {
+    params.set("assigneeId", String(query.assigneeId));
+  }
+  if (query.milestoneId > 0) {
+    params.set("milestoneId", String(query.milestoneId));
+  }
+  for (const labelId of query.labelIds) {
+    params.append("labelIds", String(labelId));
+  }
+  params.set("format", "xls");
+  return `${buildProjectHref(runtimeConfig, ownerName, projectName, "issues")}?${params.toString()}`;
 }
 
 export function ProjectIssueDetailPage(props: {

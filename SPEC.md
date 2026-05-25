@@ -538,7 +538,7 @@ POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → le
 | @멘션              | `@username` 자동 완성 + 알림                        | ✅ Phase 2L 핵심 구현 | 2     |
 | 이슈 공유 (Sharer) | 비멤버 또는 공개 프로젝트 멤버에게 이슈 읽기 권한 부여 | ✅ Phase 2E/2L/2N 구현 | 2     |
 | Mass Update        | 이슈 일괄 상태/담당자/마일스톤/라벨 변경            | ✅ Phase 2A 구현      | 2     |
-| 이슈 엑셀 내보내기 | xlsx 다운로드                                       | deferred              | 2차   |
+| 이슈 엑셀 내보내기 | `format=xls` Excel 호환 다운로드                    | ✅ 구현               | 2     |
 | 즐겨찾기 이슈      | workspace에서 즐겨찾기 관리                         | ✅ Phase 2G 구현      | 2     |
 | 조직 이슈 목록     | `/organizations/:name/issues`                       | ✅ Phase 2F 구현      | 2     |
 | 사용자 이슈 목록   | `/user/issues`, 개인 quick filter                   | ✅ Phase 2G 구현      | 2     |
@@ -547,6 +547,7 @@ POST  /-_-api/v1/owners/:owner/projects/:projectName/issues/:number/share → le
 #### 검수 기준
 
 - [x] 이슈 목록 필터: state(open/closed), assignee, label, milestone — legacy `IssueApp.issues()` 파라미터 동일; `/issues` form now preserves query values and submits `labelIds`/`milestoneId` through `/api/v1/projects/:owner/:project/issues`
+- [x] 이슈 엑셀 내보내기: legacy `issue/partial_list_wrap.scala.html`의 `format=xls` 다운로드 앵커를 복원하고 현재 필터를 적용한 Excel 호환 `.xls` 응답을 반환한다.
 - [x] 이슈 번호: 프로젝트 내 자동 증가 (`#1`, `#2`, ...) — legacy `Issue.nextNumber()` 동일
 - [x] 이슈 상세: 제목, 본문(마크다운 렌더링), 사이드바(담당자/마일스톤/라벨/감시자/투표수) — legacy `issue/view.scala.html` 레이아웃 동일; detail shell은 `.page-wrap-outer`, `.project-page-wrap.board-view`, `.board-header.issue`, `.board-body.row-fluid`, `.span9.span-left-pane`, `.span3.right-menu`, `.board-actrow.right-txt`, `#watch-button`, `#vote.vote-wrap`, `.watcher-list`, `.badge-issue-*`, and `.label.issue-label.list-label.active` anchors를 유지한다. body history가 있으면 `.posting-history` 링크와 `#-yona-posting-history` modal을 렌더링하고, 작성자/담당자 영역은 `.author-info`, `.assignee-info`, `.usf-group`, `.avatar-wrap.smaller`, `.name`, `.loginid` anchors와 avatar URL을 유지한다.
 - [x] 댓글: 시간순 정렬, 작성자 아바타, 마크다운 렌더링 — REST comment/timeline projection now includes legacy-derived author avatar URLs, and issue detail renders the legacy `#comments.board-comment-wrap`, `.comment-header`, `.comments`, `.comment`, `.comment-avatar`, `.avatar-wrap`, `.media-body`, `.comment_author`, `.ago-date`, `.ago`, `.share-link`, `.act-row.pull-right`, `.new-issue-by`, `#comment-body-*`, and `.comment-body` anchors. Comment vote/unvote controls preserve legacy `data-request-type="comment-vote"` and direct vote/unvote `data-request-uri` anchors; updateable comments use `[data-toggle="comment-edit"]`, `data-comment-id`, and `#comment-editform-*` / `.comment-update-form`; deletable comments use `[data-toggle="comment-delete"]`, `data-request-uri`, and common `#comment-delete-modal` / `#comment-delete-confirm` confirmation shell before invoking the existing mutations. The `.new-issue-by` anchor now lands on `/user/issues/new?commentId=:id`, loads the legacy direct issue form options from recent-project state, pre-fills the body with the source comment attribution, posts `referCommentId`, and creates the legacy derived-issue comment on the source issue. The direct my-issue form `/user/issues/new/mine` uses the legacy `IssueApp.newDirectMyIssueForm` target priority: `inbox`, `_private`, latest private project, then latest public project.

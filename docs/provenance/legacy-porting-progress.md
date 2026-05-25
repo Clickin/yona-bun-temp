@@ -199,7 +199,7 @@ Interpretation:
 - [x] Favorite issue
 - [x] User aggregate issue list
 - [x] Issue body change-history modal anchors
-- [ ] Issue Excel export
+- [x] Issue Excel export: legacy `/:owner/:project/issues?format=xls` link restored with the project issue list filters and Excel-compatible `.xls` download response
 - [ ] REST issue API parity (separate migrator/external compatibility scope)
 
 ## Labels

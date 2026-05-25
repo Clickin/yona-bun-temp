@@ -2008,6 +2008,22 @@ async fn serve_filesystem_or_smart_http_fallback(
     public_origin: String,
 ) -> Response {
     let method = request.method().clone();
+    if let Some(route) = direct_issue_excel_route_from_request(
+        &method,
+        request.uri().path(),
+        request.uri().query(),
+        &base_path,
+    ) {
+        return direct_issue_excel_export(
+            request.headers().clone(),
+            route.owner_name,
+            route.project_name,
+            route.query,
+            session_manager,
+            backend,
+        )
+        .await;
+    }
     if svn_protocol_route_from_path(request.uri().path(), &base_path).is_some() {
         return direct_svn_protocol_request(request, session_manager, backend, base_path).await;
     }
@@ -2033,6 +2049,22 @@ async fn serve_embedded_or_smart_http_fallback(
     public_origin: String,
 ) -> Response {
     let method = request.method().clone();
+    if let Some(route) = direct_issue_excel_route_from_request(
+        &method,
+        request.uri().path(),
+        request.uri().query(),
+        &base_path,
+    ) {
+        return direct_issue_excel_export(
+            request.headers().clone(),
+            route.owner_name,
+            route.project_name,
+            route.query,
+            session_manager,
+            backend,
+        )
+        .await;
+    }
     if svn_protocol_route_from_path(request.uri().path(), &base_path).is_some() {
         return direct_svn_protocol_request(request, session_manager, backend, base_path).await;
     }
@@ -2056,6 +2088,22 @@ async fn smart_http_or_not_found(
     base_path: String,
     public_origin: String,
 ) -> Response {
+    if let Some(route) = direct_issue_excel_route_from_request(
+        request.method(),
+        request.uri().path(),
+        request.uri().query(),
+        &base_path,
+    ) {
+        return direct_issue_excel_export(
+            request.headers().clone(),
+            route.owner_name,
+            route.project_name,
+            route.query,
+            session_manager,
+            backend,
+        )
+        .await;
+    }
     if svn_protocol_route_from_path(request.uri().path(), &base_path).is_some() {
         return direct_svn_protocol_request(request, session_manager, backend, base_path).await;
     }
@@ -2070,6 +2118,48 @@ async fn smart_http_or_not_found(
         .await;
     }
     StatusCode::NOT_FOUND.into_response()
+}
+
+struct DirectIssueExcelRoute {
+    owner_name: String,
+    project_name: String,
+    query: RestProjectIssuesQuery,
+}
+
+fn direct_issue_excel_route_from_request(
+    method: &Method,
+    path: &str,
+    raw_query: Option<&str>,
+    base_path: &str,
+) -> Option<DirectIssueExcelRoute> {
+    if method != Method::GET && method != Method::HEAD {
+        return None;
+    }
+    let mut relative = path;
+    if base_path != "/" {
+        if relative == base_path {
+            relative = "/";
+        } else if let Some(stripped) = relative.strip_prefix(&format!("{base_path}/")) {
+            relative = stripped;
+        }
+    }
+    let segments = relative
+        .trim_start_matches('/')
+        .split('/')
+        .filter(|segment| !segment.is_empty())
+        .collect::<Vec<_>>();
+    if segments.len() != 3 || segments[2] != "issues" {
+        return None;
+    }
+    let query = RestProjectIssuesQuery::from_raw_query(raw_query).ok()?;
+    if !query.format.eq_ignore_ascii_case("xls") {
+        return None;
+    }
+    Some(DirectIssueExcelRoute {
+        owner_name: decode_query_component(segments[0]),
+        project_name: decode_query_component(segments[1]),
+        query,
+    })
 }
 
 async fn direct_svn_protocol_request(
@@ -17744,10 +17834,47 @@ struct RestProjectIssuesQuery {
     assignee_id: Option<i64>,
     assignee_login_id: String,
     author_login_id: String,
+    format: String,
     label_ids: Vec<i64>,
     milestone_id: Option<i64>,
     page_num: u32,
     state: String,
+}
+
+impl RestProjectIssuesQuery {
+    fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
+        let mut query = Self::default();
+        let Some(raw_query) = raw_query else {
+            return Ok(query);
+        };
+
+        for pair in raw_query.split('&').filter(|pair| !pair.is_empty()) {
+            let (raw_key, raw_value) = pair.split_once('=').unwrap_or((pair, ""));
+            let key = decode_query_component(raw_key);
+            let value = decode_query_component(raw_value);
+            match key.as_str() {
+                "assigneeId" => query.assignee_id = Some(parse_rest_query_i64(&value)?),
+                "assigneeLoginId" => query.assignee_login_id = value,
+                "authorLoginId" => query.author_login_id = value,
+                "format" => query.format = value,
+                "labelIds" | "labelIds[]" => {
+                    let parsed = parse_rest_query_i64(&value)?;
+                    if parsed > 0 {
+                        query.label_ids.push(parsed);
+                    }
+                }
+                "milestoneId" => {
+                    let parsed = parse_rest_query_i64(&value)?;
+                    query.milestone_id = (parsed > 0).then_some(parsed);
+                }
+                "pageNum" => query.page_num = parse_rest_query_u32(&value)?,
+                "state" => query.state = value,
+                _ => {}
+            }
+        }
+
+        Ok(query)
+    }
 }
 
 #[derive(Default, Deserialize)]
@@ -18022,6 +18149,119 @@ fn rest_project_issue_filter_from_query(
         page_num: query.page_num.max(1),
         state: (!query.state.trim().is_empty()).then(|| query.state.trim().to_string()),
     }
+}
+
+async fn direct_issue_excel_export(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    mut query: RestProjectIssuesQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return StatusCode::NOT_IMPLEMENTED.into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let authorization =
+        match require_project_read(repository, &owner_name, &project_name, actor_id).await {
+            Ok(authorization) => authorization,
+            Err(error) => return RestRouteError::from_connect_error(error).into_response(),
+        };
+    query.page_num = 1;
+    let record = match repository
+        .list_project_issues_for_export(
+            &authorization.project.owner_name,
+            &authorization.project.project_name,
+            rest_project_issue_filter_from_query(query),
+        )
+        .await
+    {
+        Ok(record) => record,
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    direct_issue_excel_export_response(&authorization.project.project_name, record.items.as_slice())
+}
+
+fn direct_issue_excel_export_response(
+    project_name: &str,
+    items: &[persistence::ProjectIssueListItemRecord],
+) -> Response {
+    let mut body =
+        "\u{feff}Number\tTitle\tState\tAuthor\tAssignee\tMilestone\tLabels\tComments\tVotes\tWatchers\tCreated\tUpdated\n"
+            .to_string();
+    for item in items {
+        let labels = item
+            .labels
+            .iter()
+            .map(|label| {
+                if label.category_name.is_empty() {
+                    label.name.clone()
+                } else {
+                    format!("{}: {}", label.category_name, label.name)
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        let columns = [
+            item.issue_number.to_string(),
+            item.title.clone(),
+            item.state.clone(),
+            issue_export_user_label(&item.author_label, &item.author_login_id),
+            item.assignee_label.clone(),
+            item.milestone_title.clone(),
+            labels,
+            item.comment_count.to_string(),
+            item.voter_count.to_string(),
+            item.watcher_count.to_string(),
+            item.created_label.clone(),
+            item.updated_label.clone(),
+        ];
+        body.push_str(
+            &columns
+                .iter()
+                .map(|value| issue_export_tsv_cell(value))
+                .collect::<Vec<_>>()
+                .join("\t"),
+        );
+        body.push('\n');
+    }
+
+    let filename = format!("{}-issues.xls", sanitize_download_filename(project_name));
+    let disposition = format!("attachment; filename=\"{filename}\"");
+    let mut response = body.into_response();
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/vnd.ms-excel; charset=utf-8"),
+    );
+    if let Ok(header_value) = HeaderValue::from_str(&disposition) {
+        response
+            .headers_mut()
+            .insert(http::header::CONTENT_DISPOSITION, header_value);
+    }
+    response
+}
+
+fn issue_export_user_label(label: &str, login_id: &str) -> String {
+    if label.trim().is_empty() {
+        login_id.to_string()
+    } else if login_id.trim().is_empty() || label == login_id {
+        label.to_string()
+    } else {
+        format!("{label} ({login_id})")
+    }
+}
+
+fn issue_export_tsv_cell(value: &str) -> String {
+    value
+        .replace('\t', " ")
+        .replace(['\r', '\n'], " ")
+        .trim()
+        .to_string()
 }
 
 fn rest_post_mutation_input_from_body(

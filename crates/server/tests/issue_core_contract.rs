@@ -466,6 +466,102 @@ async fn issue_core_contract_creates_reads_updates_and_deletes_over_rest() {
 }
 
 #[tokio::test]
+async fn issue_list_format_xls_exports_filtered_issues_from_legacy_route() {
+    let (app, _) = build_app_with_repository().await;
+    let (csrf, cookie, _) = register_user(app.clone(), "owner").await;
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateProject",
+            Some(&cookie),
+            Some(&csrf),
+            json!({
+                "ownerName": "owner",
+                "projectName": "projectYobi",
+                "overview": "Issue export parity",
+                "projectScope": "public"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Open export issue",
+                "bodyMarkdown": "export me"
+            })),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/projects/owner/projectYobi/issues",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({
+                "title": "Closed export issue",
+                "bodyMarkdown": "do not export me"
+            })),
+        )
+        .await,
+    )
+    .await;
+    response_json(
+        rest(
+            app.clone(),
+            Method::PUT,
+            "/yona/api/v1/projects/owner/projectYobi/issues/2/state",
+            Some(&cookie),
+            Some(&csrf),
+            Some(json!({ "state": "closed" })),
+        )
+        .await,
+    )
+    .await;
+
+    let response = rest(
+        app,
+        Method::GET,
+        "/yona/owner/projectYobi/issues?state=open&format=xls",
+        Some(&cookie),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok()),
+        Some("application/vnd.ms-excel; charset=utf-8")
+    );
+    assert_eq!(
+        response
+            .headers()
+            .get(http::header::CONTENT_DISPOSITION)
+            .and_then(|value| value.to_str().ok()),
+        Some("attachment; filename=\"projectYobi-issues.xls\"")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(text.contains("Number\tTitle\tState\tAuthor"));
+    assert!(text.contains("Open export issue"));
+    assert!(!text.contains("Closed export issue"));
+}
+
+#[tokio::test]
 async fn project_issue_list_filters_unassigned_issues_by_legacy_assignee_id_zero() {
     let (app, _) = build_app_with_repository().await;
     let (csrf, cookie, _) = register_user(app.clone(), "owner").await;

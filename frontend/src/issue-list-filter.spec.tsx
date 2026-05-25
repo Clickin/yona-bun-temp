@@ -64,5 +64,10 @@ describe("project issue list filters", () => {
     expect(html).toContain('<option value="7" selected="">v1.0</option>');
     expect(html).toContain('name="labelIds"');
     expect(html).toContain('<option value="5" selected="">Type: bug</option>');
+    expect(html).toContain('class="ybtn small"');
+    expect(html).toContain('class="yobicon-file-excel"');
+    expect(html).toContain(
+      'href="/yona/admin/projectYobi/issues?state=open&amp;authorLoginId=nori&amp;assigneeLoginId=door&amp;milestoneId=7&amp;labelIds=5&amp;format=xls"',
+    );
   });
 });

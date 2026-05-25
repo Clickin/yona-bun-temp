@@ -2906,6 +2906,33 @@ impl AppRepository {
         filter: IssueListFilter,
     ) -> Result<ProjectIssueListRecord, DbErr> {
         const PAGE_SIZE: u32 = 15;
+        self.list_project_issues_filtered_with_page_size(
+            owner_name,
+            project_name,
+            filter,
+            Some(PAGE_SIZE),
+        )
+        .await
+    }
+
+    pub async fn list_project_issues_for_export(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        filter: IssueListFilter,
+    ) -> Result<ProjectIssueListRecord, DbErr> {
+        self.list_project_issues_filtered_with_page_size(owner_name, project_name, filter, None)
+            .await
+    }
+
+    async fn list_project_issues_filtered_with_page_size(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        filter: IssueListFilter,
+        page_size: Option<u32>,
+    ) -> Result<ProjectIssueListRecord, DbErr> {
+        const DEFAULT_PAGE_SIZE: u32 = 15;
         let Some(project) = self
             .read_project_by_owner_and_name(owner_name, project_name)
             .await?
@@ -2913,7 +2940,7 @@ impl AppRepository {
             return Ok(ProjectIssueListRecord {
                 items: Vec::new(),
                 page_num: filter.page_num.max(1),
-                page_size: PAGE_SIZE,
+                page_size: page_size.unwrap_or(DEFAULT_PAGE_SIZE),
                 total_count: 0,
             });
         };
@@ -3010,17 +3037,22 @@ impl AppRepository {
 
         let page_num = filter.page_num.max(1);
         let total_count = filtered.len() as u32;
-        let offset = ((page_num - 1) * PAGE_SIZE) as usize;
-        let items = filtered
-            .into_iter()
-            .skip(offset)
-            .take(PAGE_SIZE as usize)
-            .collect();
+        let effective_page_size = page_size.unwrap_or(total_count.max(1));
+        let items = if page_size.is_some() {
+            let offset = ((page_num - 1) * effective_page_size) as usize;
+            filtered
+                .into_iter()
+                .skip(offset)
+                .take(effective_page_size as usize)
+                .collect()
+        } else {
+            filtered
+        };
 
         Ok(ProjectIssueListRecord {
             items,
             page_num,
-            page_size: PAGE_SIZE,
+            page_size: effective_page_size,
             total_count,
         })
     }
