@@ -879,13 +879,19 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
       </blockquote>
     );
   }
-  const headingMatch = /^(#{1,6})\s+(.+?)(?:\s+#+)?$/.exec(firstLine);
+  const headingMatch = /^ {0,3}(#{1,6})(?=\s|$)(.*)$/.exec(firstLine);
   if (headingMatch) {
+    const headingText = (headingMatch[2] ?? "").trim();
+    const trailingHashTrimmed = headingText.replace(/#+$/, "");
+    const trimmedHeadingText =
+      headingText.endsWith("#") && (!trailingHashTrimmed || trailingHashTrimmed.endsWith(" "))
+        ? trailingHashTrimmed.trim()
+        : headingText;
     return (
       <MarkdownHeading
         context={props.context}
         level={(headingMatch[1] ?? "").length}
-        text={(headingMatch[2] ?? "").trim()}
+        text={trimmedHeadingText}
       />
     );
   }

@@ -43,6 +43,16 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<h6 id="final-heading">Final Heading</h6>');
   });
 
+  it("renders leading-space ATX headings like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"  ## Indented Title\n\n   # Three Space"} />,
+    );
+
+    expect(html).toContain('<h2 id="indented-title">Indented Title</h2>');
+    expect(html).toContain('<h1 id="three-space">Three Space</h1>');
+    expect(html).not.toContain("<p>## Indented Title</p>");
+  });
+
   it("renders setext headings like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"Primary Title\n=====\n\nSecondary Title\n-----"} />,
