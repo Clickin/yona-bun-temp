@@ -233,7 +233,7 @@ Notification list projection follows the legacy `NotificationEvent.getMessage` d
 ## Remaining Phase 2 Follow-ups
 
 - Full SMTP batching parity.
-- Group sharer mutation only if legacy issue-sharer evidence requires it.
+- Group/org sharer mutation is not implemented as an app parity gap: the available legacy UI artifact only forwards a generic `type` from sharable-user results, while Rust has evidence-backed user and public-project expansion. Unsupported target types now fail with 400 instead of being treated as user login IDs.
 - Legacy external `/-_-api/v1` issue API parity is deferred to a separate migrator/export/import deliverable, not the app server.
 
 ## Shared Surface Notes

@@ -488,6 +488,30 @@ async fn issue_sharer_contract_project_target_mutation_expands_project_members()
 }
 
 #[tokio::test]
+async fn issue_sharer_contract_rejects_unsupported_target_type() {
+    let (app, _, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    register_user(app.clone(), "guest").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    create_issue(app.clone(), &owner_cookie, &owner_csrf, "Public issue").await;
+
+    let unsupported = rest_json(
+        app,
+        Method::POST,
+        "/yona/api/v1/owners/owner/projects/projectYobi/issues/1/sharers",
+        Some(&owner_cookie),
+        Some(&owner_csrf),
+        json!({
+            "loginId": "guest",
+            "targetType": "group"
+        }),
+    )
+    .await;
+
+    assert_eq!(unsupported.status(), StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
 async fn issue_sharer_contract_records_timeline_and_notification_only_on_changed_rows() {
     let (app, _repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;

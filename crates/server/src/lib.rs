@@ -20754,11 +20754,10 @@ async fn rest_create_issue_comment(
     )
     .await;
     Ok(Json(
-        rest_issue_detail_response_from_record_with_repository_issue_references(
+        rest_issue_detail_response_from_record_with_access_issue_references(
             repository,
             &issue,
-            true,
-            true,
+            &access,
             session.user_id,
             &base_path,
         )
@@ -20828,13 +20827,10 @@ async fn rest_update_issue_comment(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
     Ok(Json(
-        rest_issue_detail_response_from_record_with_repository_references_and_sharer_flags(
+        rest_issue_detail_response_from_record_with_access_issue_references(
             repository,
             &issue,
-            access.viewer_can_manage(),
-            access.viewer_can_comment(),
-            access.share_status.direct,
-            access.share_status.inherited_from_parent,
+            &access,
             session.user_id,
             &base_path,
         )
@@ -20892,13 +20888,10 @@ async fn rest_delete_issue_comment(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
     Ok(Json(
-        rest_issue_detail_response_from_record_with_repository_references_and_sharer_flags(
+        rest_issue_detail_response_from_record_with_access_issue_references(
             repository,
             &issue,
-            access.viewer_can_manage(),
-            access.viewer_can_comment(),
-            access.share_status.direct,
-            access.share_status.inherited_from_parent,
+            &access,
             session.user_id,
             &base_path,
         )
@@ -21785,7 +21778,8 @@ impl PilotServiceImpl {
             ));
         }
         let actor = access.actor.as_ref().expect("authenticated issue actor");
-        let target_users = if target_type.trim().eq_ignore_ascii_case("project") {
+        let normalized_target_type = target_type.trim().to_ascii_lowercase();
+        let target_users = if normalized_target_type == "project" {
             let project_id = request
                 .login_id
                 .parse::<i64>()
@@ -21799,12 +21793,16 @@ impl PilotServiceImpl {
                 .list_project_member_users(project_id)
                 .await
                 .map_err(internal_error)?
-        } else {
+        } else if normalized_target_type.is_empty() || normalized_target_type == "user" {
             vec![repository
                 .find_user_by_login_id(request.login_id)
                 .await
                 .map_err(internal_error)?
                 .ok_or_else(|| ConnectError::not_found("issue sharer user not found"))?]
+        } else {
+            return Err(ConnectError::invalid_argument(
+                "unsupported issue sharer target type",
+            ));
         };
 
         for target in target_users {
@@ -24612,6 +24610,46 @@ async fn rest_issue_detail_response_from_record_with_repository_issue_references
         base_path,
     )
     .await
+}
+
+async fn rest_issue_detail_response_from_record_with_access_issue_references(
+    repository: &PilotRepository,
+    issue: &persistence::IssueRecord,
+    access: &IssueAccessContext,
+    viewer_id: Option<i64>,
+    base_path: &str,
+) -> Result<RestIssueDetailResponse, ConnectError> {
+    let mut markdowns = vec![
+        issue.body_markdown.as_str(),
+        issue.history_markdown.as_str(),
+    ];
+    markdowns.extend(
+        issue
+            .comments
+            .iter()
+            .map(|comment| comment.contents_markdown.as_str()),
+    );
+    let issue_references = markdown_issue_references_for_project(
+        repository,
+        &access.authorization,
+        viewer_id,
+        &markdowns,
+    )
+    .await?;
+    let mention_references = markdown_mention_references(repository, &markdowns).await?;
+    Ok(
+        rest_issue_detail_response_from_record_with_sharer_flags_and_references(
+            issue,
+            access.viewer_can_manage(),
+            access.viewer_can_comment(),
+            access.share_status.direct,
+            access.share_status.inherited_from_parent,
+            viewer_id,
+            base_path,
+            &issue_references,
+            &mention_references,
+        ),
+    )
 }
 
 async fn rest_issue_detail_response_from_record_with_repository_references_and_sharer_flags(

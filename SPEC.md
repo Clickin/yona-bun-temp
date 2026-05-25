@@ -1602,7 +1602,7 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 
 **새 runtime API는 REST로 구현할 영역**:
 
-- Issue follow-up: notification full mail batching, group sharer mutation, and remaining issue-adjacent parity gaps
+- Issue follow-up: notification full mail batching and remaining issue-adjacent parity gaps; issue sharer mutation accepts only legacy-observed `user`/`project` target types, and organization/group expansion remains out of app scope unless a legacy controller artifact proves it was supported.
 - Board: posting list/detail/create/update/delete/comment flows
 - Label follow-up: legacy external label/project API parity for the separate migrator/export/import scope
 - Milestone follow-up: migration export/import scope only
