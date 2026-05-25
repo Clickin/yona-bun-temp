@@ -1,4 +1,4 @@
-import type { IssueReferenceMetadata } from "../api/issue-meta";
+import type { IssueReferenceMetadata, MentionReferenceMetadata } from "../api/issue-meta";
 
 export interface WorkspaceOverviewViewModel {
   apiToken?: string;
@@ -318,6 +318,7 @@ export interface ProjectIssueDetailViewModel {
     createdLabel: string;
     id: number;
     issueReferences?: IssueReferenceMetadata[];
+    mentionReferences?: MentionReferenceMetadata[];
     viewerCanDelete: boolean;
     viewerCanUpdate: boolean;
     viewerHasVoted: boolean;
@@ -329,6 +330,7 @@ export interface ProjectIssueDetailViewModel {
   historyHtml: string;
   historyMarkdown: string;
   issueReferences?: IssueReferenceMetadata[];
+  mentionReferences?: MentionReferenceMetadata[];
   isFavorited: boolean;
   isWatching: boolean;
   issueNumber: number;
@@ -348,6 +350,7 @@ export interface ProjectIssueDetailViewModel {
       createdLabel: string;
       id: number;
       issueReferences?: IssueReferenceMetadata[];
+      mentionReferences?: MentionReferenceMetadata[];
       viewerCanDelete: boolean;
       viewerCanUpdate: boolean;
       viewerHasVoted: boolean;

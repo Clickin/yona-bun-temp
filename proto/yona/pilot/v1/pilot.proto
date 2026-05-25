@@ -814,6 +814,7 @@ message ReadIssueDetailResponse {
   string author_avatar_url = 31;
   string assignee_avatar_url = 32;
   repeated IssueReferenceMetadata issue_references = 33;
+  repeated MentionReferenceMetadata mention_references = 34;
 }
 
 message IssueReferenceMetadata {
@@ -822,6 +823,14 @@ message IssueReferenceMetadata {
   int64 issue_number = 3;
   string state = 4;
   string title = 5;
+}
+
+message MentionReferenceMetadata {
+  string kind = 1;
+  string login_id = 2;
+  string owner_name = 3;
+  string project_name = 4;
+  string label = 5;
 }
 
 message IssueSharer {
@@ -887,6 +896,7 @@ message IssueComment {
   bool via_email = 13;
   string author_avatar_url = 14;
   repeated IssueReferenceMetadata issue_references = 15;
+  repeated MentionReferenceMetadata mention_references = 16;
 }
 
 message IssueCommentVoter {

@@ -33,6 +33,14 @@ type MarkdownCommitReference = {
   title?: string;
 };
 
+type MarkdownMentionReference = {
+  kind: string;
+  label?: string;
+  loginId?: string;
+  ownerName?: string;
+  projectName?: string;
+};
+
 type MarkdownReferenceDefinition = {
   target: string;
   title?: string;
@@ -43,6 +51,7 @@ type MarkdownContext = {
   breaks?: boolean;
   commitReferenceMap?: Map<string, MarkdownCommitReference>;
   issueReferenceMap?: Map<string, MarkdownIssueReference>;
+  mentionReferenceMap?: Map<string, MarkdownMentionReference>;
   ownerName?: string;
   projectName?: string;
   referenceMap?: Map<string, MarkdownReferenceDefinition>;
@@ -259,6 +268,10 @@ function commitReferenceFor(
   return context?.commitReferenceMap?.get(commitReferenceKey(ownerName, projectName, commitId));
 }
 
+function mentionReferenceFor(context: MarkdownContext | undefined, token: string) {
+  return context?.mentionReferenceMap?.get(token.toLowerCase());
+}
+
 function commitAutolinkPart(
   token: string,
   key: string,
@@ -419,22 +432,36 @@ function parseTextWithAutolinks(
       parts.push(commitAutolinkPart(token, key, basePath, ownerName, projectName, token, context));
     } else if (/^@[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(token)) {
       const projectPath = token.slice(1);
-      parts.push({
-        className: "no-text-decoration project-link",
-        kind: "link",
-        key,
-        label: token,
-        target: `${basePath}/${projectPath}`,
-      });
+      const reference = mentionReferenceFor(context, projectPath);
+      if (context?.mentionReferenceMap && !reference) {
+        parts.push({ kind: "text", key, value: token });
+      } else {
+        const target =
+          reference?.ownerName && reference.projectName
+            ? `${basePath}/${reference.ownerName}/${reference.projectName}`
+            : `${basePath}/${projectPath}`;
+        parts.push({
+          className: "no-text-decoration project-link",
+          kind: "link",
+          key,
+          label: token,
+          target,
+        });
+      }
     } else if (token.startsWith("@") && token.length > 1) {
       const loginId = token.slice(1);
-      parts.push({
-        className: "no-text-decoration user-link",
-        kind: "link",
-        key,
-        label: token,
-        target: `${basePath}/${loginId}`,
-      });
+      const reference = mentionReferenceFor(context, loginId);
+      if (context?.mentionReferenceMap && !reference) {
+        parts.push({ kind: "text", key, value: token });
+      } else {
+        parts.push({
+          className: "no-text-decoration user-link",
+          kind: "link",
+          key,
+          label: token,
+          target: `${basePath}/${reference?.loginId || loginId}`,
+        });
+      }
     } else if (token.startsWith("#") && ownerName && projectName) {
       const issueNumber = Number.parseInt(token.slice(1), 10);
       const reference = issueReferenceFor(context, ownerName, projectName, issueNumber);
@@ -1284,6 +1311,7 @@ export function MarkdownRenderer(props: {
   id?: string;
   issueReferences?: MarkdownIssueReference[];
   markdown: string;
+  mentionReferences?: MarkdownMentionReference[];
   ownerName?: string;
   projectName?: string;
   breaks?: boolean;
@@ -1305,11 +1333,25 @@ export function MarkdownRenderer(props: {
       reference,
     ]),
   );
+  const mentionReferenceMap =
+    props.mentionReferences === undefined ? undefined : new Map<string, MarkdownMentionReference>();
+  if (mentionReferenceMap) {
+    for (const reference of props.mentionReferences ?? []) {
+      const key =
+        reference.kind === "project"
+          ? `${reference.ownerName ?? ""}/${reference.projectName ?? ""}`
+          : (reference.loginId ?? "");
+      if (key) {
+        mentionReferenceMap.set(key.toLowerCase(), reference);
+      }
+    }
+  }
   const context = {
     basePath: props.basePath,
     breaks,
     commitReferenceMap,
     issueReferenceMap,
+    mentionReferenceMap,
     ownerName: props.ownerName,
     projectName: props.projectName,
     referenceMap: parsedMarkdown.referenceMap,

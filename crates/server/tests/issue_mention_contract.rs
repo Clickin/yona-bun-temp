@@ -246,6 +246,91 @@ fn item_login_ids(payload: &serde_json::Value) -> Vec<String> {
 }
 
 #[tokio::test]
+async fn issue_mention_contract_returns_renderable_mention_metadata_for_existing_targets() {
+    let (app, _repo, _db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "testOwner").await;
+    create_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "testOwner",
+        "testProject",
+        "public",
+    )
+    .await;
+
+    create_issue(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "testOwner",
+        "testProject",
+        "Mention metadata",
+        "@testOwner @testOwner/testProject @nforge @nforge/yobi",
+    )
+    .await;
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateIssueComment",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "ownerName": "testOwner",
+                "projectName": "testProject",
+                "issueNumber": 1,
+                "contentsMarkdown": "@testOwner @testOwner/testProject @nforge"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    let detail = response_json(
+        rest(
+            app,
+            Method::GET,
+            "/yona/api/v1/projects/testOwner/testProject/issues/1",
+            None,
+        )
+        .await,
+    )
+    .await;
+    let mention_targets = detail["mentionReferences"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| {
+            (
+                item["kind"].as_str().unwrap().to_string(),
+                item["loginId"].as_str().unwrap_or_default().to_string(),
+                item["ownerName"].as_str().unwrap_or_default().to_string(),
+                item["projectName"].as_str().unwrap_or_default().to_string(),
+            )
+        })
+        .collect::<Vec<_>>();
+    assert!(mention_targets.contains(&(
+        "user".to_string(),
+        "testowner".to_string(),
+        String::new(),
+        String::new()
+    )));
+    assert!(
+        mention_targets.contains(&(
+            "project".to_string(),
+            String::new(),
+            "testOwner".to_string(),
+            "testProject".to_string()
+        )),
+        "{mention_targets:?}"
+    );
+    assert!(!mention_targets.iter().any(|(_, login_id, owner_name, project_name)| {
+        login_id == "nforge" || owner_name == "nforge" || project_name == "yobi"
+    }));
+    assert_eq!(detail["comments"][0]["mentionReferences"], detail["mentionReferences"]);
+}
+
+#[tokio::test]
 async fn issue_mention_contract_suggests_contextual_users_and_filters_private_search() {
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;

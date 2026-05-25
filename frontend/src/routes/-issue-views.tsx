@@ -427,6 +427,7 @@ export function ProjectIssueDetailPage(props: {
                 data-allowed-update={issue ? String(issue.viewerCanUpdate) : undefined}
                 issueReferences={issue?.issueReferences}
                 markdown={issue?.bodyMarkdown ?? ""}
+                mentionReferences={issue?.mentionReferences}
                 ownerName={detail.ownerName}
                 projectName={detail.projectName}
                 showTasklistBar
@@ -746,6 +747,7 @@ export function ProjectIssueDetailPage(props: {
                                 data-via-email={comment.viaEmail ? "true" : undefined}
                                 issueReferences={comment.issueReferences}
                                 markdown={comment.contentsMarkdown}
+                                mentionReferences={comment.mentionReferences}
                                 ownerName={detail.ownerName}
                                 projectName={detail.projectName}
                                 showTasklistBar

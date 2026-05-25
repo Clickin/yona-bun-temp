@@ -38,13 +38,20 @@ import {
   listProjects,
   readWorkspaceOverview,
 } from "./auth-workspace-client";
-import type { IssueReferenceMetadata } from "./api/issue-meta";
-import { normalizeIssueReferences } from "./api/issue-meta";
+import type { IssueReferenceMetadata, MentionReferenceMetadata } from "./api/issue-meta";
+import { normalizeIssueReferences, normalizeMentionReferences } from "./api/issue-meta";
 
 function issueReferencesFrom(value: unknown): IssueReferenceMetadata[] {
   return normalizeIssueReferences(
     (value as { issueReferences?: Partial<IssueReferenceMetadata>[] } | null | undefined)
       ?.issueReferences,
+  );
+}
+
+function mentionReferencesFrom(value: unknown): MentionReferenceMetadata[] {
+  return normalizeMentionReferences(
+    (value as { mentionReferences?: Partial<MentionReferenceMetadata>[] } | null | undefined)
+      ?.mentionReferences,
   );
 }
 
@@ -590,6 +597,7 @@ export function toProjectIssueDetailView(
       createdLabel: comment.createdLabel,
       id: Number(comment.id),
       issueReferences: issueReferencesFrom(comment),
+      mentionReferences: mentionReferencesFrom(comment),
       viewerCanDelete: comment.viewerCanDelete,
       viewerCanUpdate: comment.viewerCanUpdate,
       viewerHasVoted: comment.viewerHasVoted,
@@ -606,6 +614,7 @@ export function toProjectIssueDetailView(
     historyHtml: response.historyHtml ?? "",
     historyMarkdown: response.historyMarkdown ?? "",
     issueReferences: issueReferencesFrom(response),
+    mentionReferences: mentionReferencesFrom(response),
     isFavorited: response.isFavorited,
     isWatching: response.isWatching,
     issueNumber: Number(response.issueNumber),
@@ -634,6 +643,7 @@ export function toProjectIssueDetailView(
             createdLabel: item.comment.createdLabel,
             id: Number(item.comment.id),
             issueReferences: issueReferencesFrom(item.comment),
+            mentionReferences: mentionReferencesFrom(item.comment),
             viewerCanDelete: item.comment.viewerCanDelete,
             viewerCanUpdate: item.comment.viewerCanUpdate,
             viewerHasVoted: item.comment.viewerHasVoted,

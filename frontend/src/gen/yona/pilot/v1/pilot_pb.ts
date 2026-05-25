@@ -3404,6 +3404,11 @@ export type ReadIssueDetailResponse = Message<"yona.pilot.v1.ReadIssueDetailResp
    * @generated from field: string assignee_avatar_url = 32;
    */
   assigneeAvatarUrl: string;
+
+  /**
+   * @generated from field: repeated yona.pilot.v1.MentionReferenceMetadata mention_references = 34;
+   */
+  mentionReferences: MentionReferenceMetadata[];
 };
 
 /**
@@ -3412,6 +3417,36 @@ export type ReadIssueDetailResponse = Message<"yona.pilot.v1.ReadIssueDetailResp
  */
 export const ReadIssueDetailResponseSchema: GenMessage<ReadIssueDetailResponse> /*@__PURE__*/ =
   messageDesc(file_yona_pilot_v1_pilot, 100);
+
+/**
+ * @generated from message yona.pilot.v1.MentionReferenceMetadata
+ */
+export type MentionReferenceMetadata = Message<"yona.pilot.v1.MentionReferenceMetadata"> & {
+  /**
+   * @generated from field: string kind = 1;
+   */
+  kind: string;
+
+  /**
+   * @generated from field: string login_id = 2;
+   */
+  loginId: string;
+
+  /**
+   * @generated from field: string owner_name = 3;
+   */
+  ownerName: string;
+
+  /**
+   * @generated from field: string project_name = 4;
+   */
+  projectName: string;
+
+  /**
+   * @generated from field: string label = 5;
+   */
+  label: string;
+};
 
 /**
  * @generated from message yona.pilot.v1.IssueSharer
@@ -3711,6 +3746,11 @@ export type IssueComment = Message<"yona.pilot.v1.IssueComment"> & {
    * @generated from field: string author_avatar_url = 14;
    */
   authorAvatarUrl: string;
+
+  /**
+   * @generated from field: repeated yona.pilot.v1.MentionReferenceMetadata mention_references = 16;
+   */
+  mentionReferences: MentionReferenceMetadata[];
 };
 
 /**

@@ -33,6 +33,37 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('href="mailto:help@example.com"');
   });
 
+  it("links only resolved legacy mentions when mention metadata is present", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        markdown="@testOwner @testOwner/testProject @nforge @nforge/yobi"
+        mentionReferences={[
+          {
+            kind: "user",
+            label: "testOwner",
+            loginId: "testOwner",
+            ownerName: "",
+            projectName: "",
+          },
+          {
+            kind: "project",
+            label: "testOwner/testProject",
+            loginId: "",
+            ownerName: "testOwner",
+            projectName: "testProject",
+          },
+        ]}
+      />,
+    );
+
+    expect(html).toContain('href="/yona/testOwner"');
+    expect(html).toContain('href="/yona/testOwner/testProject"');
+    expect(html).toContain("@nforge @nforge/yobi");
+    expect(html).not.toContain('href="/yona/nforge"');
+    expect(html).not.toContain('href="/yona/nforge/yobi"');
+  });
+
   it("ignores autolink patterns inside raw HTML-like blocks like legacy MarkdownApp", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

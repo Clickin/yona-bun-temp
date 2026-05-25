@@ -90,6 +90,14 @@ export type IssueReferenceMetadata = ProjectIssueReferenceItem & {
   projectName: string;
 };
 
+export type MentionReferenceMetadata = {
+  kind: "organization" | "project" | "user" | string;
+  label: string;
+  loginId: string;
+  ownerName: string;
+  projectName: string;
+};
+
 export type ProjectIssueReferencesResponse = {
   items: ProjectIssueReferenceItem[];
   total: number;
@@ -159,9 +167,11 @@ function normalizeIssueDetailResponse(response: ReadIssueDetailResponse): ReadIs
       voterCount: comment.voterCount ?? 0,
       viaEmail: comment.viaEmail ?? false,
       attachments: comment.attachments ?? [],
+      mentionReferences: normalizeMentionReferences(comment.mentionReferences),
       voters: comment.voters ?? [],
     })),
     labels: response.labels ?? [],
+    mentionReferences: normalizeMentionReferences(response.mentionReferences),
     sharers: (response.sharers ?? []).map((sharer) => ({
       ...sharer,
       loginId: sharer.loginId ?? "",
@@ -191,11 +201,12 @@ function normalizeIssueDetailResponse(response: ReadIssueDetailResponse): ReadIs
             voterCount: item.comment.voterCount ?? 0,
             viaEmail: item.comment.viaEmail ?? false,
             attachments: item.comment.attachments ?? [],
+            mentionReferences: normalizeMentionReferences(item.comment.mentionReferences),
             voters: item.comment.voters ?? [],
           }
         : item.comment,
     })),
-  };
+  } as unknown as ReadIssueDetailResponse;
 }
 
 function normalizeIssueAssignableUsersResponse(
@@ -256,6 +267,18 @@ export function normalizeIssueReferences(
     projectName: reference.projectName ?? "",
     state: reference.state ?? "",
     title: reference.title ?? "",
+  }));
+}
+
+export function normalizeMentionReferences(
+  references: Partial<MentionReferenceMetadata>[] | undefined,
+): MentionReferenceMetadata[] {
+  return (references ?? []).map((reference) => ({
+    kind: reference.kind ?? "",
+    label: reference.label ?? "",
+    loginId: reference.loginId ?? "",
+    ownerName: reference.ownerName ?? "",
+    projectName: reference.projectName ?? "",
   }));
 }
 

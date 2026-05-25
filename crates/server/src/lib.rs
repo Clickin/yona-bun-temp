@@ -20819,7 +20819,8 @@ async fn rest_update_issue_comment(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
     Ok(Json(
-        rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+        rest_issue_detail_response_from_record_with_repository_references_and_sharer_flags(
+            repository,
             &issue,
             access.viewer_can_manage(),
             access.viewer_can_comment(),
@@ -20827,8 +20828,9 @@ async fn rest_update_issue_comment(
             access.share_status.inherited_from_parent,
             session.user_id,
             &base_path,
-            &[],
-        ),
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
     ))
 }
 
@@ -20881,7 +20883,8 @@ async fn rest_delete_issue_comment(
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot issue not found"))?;
     Ok(Json(
-        rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+        rest_issue_detail_response_from_record_with_repository_references_and_sharer_flags(
+            repository,
             &issue,
             access.viewer_can_manage(),
             access.viewer_can_comment(),
@@ -20889,8 +20892,9 @@ async fn rest_delete_issue_comment(
             access.share_status.inherited_from_parent,
             session.user_id,
             &base_path,
-            &[],
-        ),
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?,
     ))
 }
 
@@ -23013,6 +23017,15 @@ struct MarkdownIssueReference {
     title: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct MarkdownMentionReference {
+    kind: String,
+    login_id: String,
+    owner_name: String,
+    project_name: String,
+    label: String,
+}
+
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestIssueReferenceMetadata {
@@ -23032,6 +23045,19 @@ fn issue_reference_metadata_from_resolved(
         issue_number: reference.issue_number,
         state: reference.state.clone(),
         title: reference.title.clone(),
+        ..Default::default()
+    }
+}
+
+fn mention_reference_metadata_from_resolved(
+    reference: &MarkdownMentionReference,
+) -> MentionReferenceMetadata {
+    MentionReferenceMetadata {
+        kind: reference.kind.clone(),
+        login_id: reference.login_id.clone(),
+        owner_name: reference.owner_name.clone(),
+        project_name: reference.project_name.clone(),
+        label: reference.label.clone(),
         ..Default::default()
     }
 }
@@ -23081,6 +23107,39 @@ fn markdown_issue_numbers(markdown: &str) -> Vec<i64> {
     numbers
 }
 
+fn markdown_mention_tokens(markdown: &str) -> Vec<String> {
+    let mut tokens = Vec::new();
+    let mut chars = markdown.char_indices().peekable();
+    while let Some((index, item)) = chars.next() {
+        if item != '@' {
+            continue;
+        }
+        if markdown[..index]
+            .chars()
+            .next_back()
+            .is_some_and(|previous| {
+                previous.is_ascii_alphanumeric() || matches!(previous, '-' | '_' | '.' | '/')
+            })
+        {
+            continue;
+        }
+        let mut token = String::new();
+        while let Some((_, next)) = chars.peek().copied() {
+            if !(next.is_ascii_alphanumeric() || matches!(next, '-' | '_' | '.' | '/')) {
+                break;
+            }
+            token.push(next);
+            chars.next();
+        }
+        if !token.is_empty() {
+            tokens.push(token);
+        }
+    }
+    tokens.sort_unstable();
+    tokens.dedup();
+    tokens
+}
+
 async fn markdown_issue_references_for_project(
     repository: &PilotRepository,
     authorization: &persistence::ProjectAuthorizationRecord,
@@ -23117,6 +23176,69 @@ async fn markdown_issue_references_for_project(
             title: record.title,
         })
         .collect())
+}
+
+async fn markdown_mention_references(
+    repository: &PilotRepository,
+    markdowns: &[&str],
+) -> Result<Vec<MarkdownMentionReference>, ConnectError> {
+    let mut tokens = markdowns
+        .iter()
+        .flat_map(|markdown| markdown_mention_tokens(markdown))
+        .collect::<Vec<_>>();
+    tokens.sort_unstable();
+    tokens.dedup();
+
+    let mut references = Vec::new();
+    for token in tokens {
+        if let Some((owner_name, project_name)) = token.split_once('/') {
+            if let Some(project) = repository
+                .read_project_by_owner_and_name(owner_name, project_name)
+                .await
+                .map_err(internal_error)?
+            {
+                references.push(MarkdownMentionReference {
+                    kind: "project".to_string(),
+                    login_id: String::new(),
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                    label: format!("{}/{}", owner_name, project_name),
+                });
+            }
+            continue;
+        }
+
+        if let Some(user) = repository
+            .find_user_by_login_id(&token)
+            .await
+            .map_err(internal_error)?
+        {
+            references.push(MarkdownMentionReference {
+                kind: "user".to_string(),
+                login_id: user.login_id,
+                owner_name: String::new(),
+                project_name: String::new(),
+                label: user.display_name,
+            });
+            continue;
+        }
+
+        if let Some(organization) = repository
+            .read_organization_by_name(&token)
+            .await
+            .map_err(internal_error)?
+        {
+            references.push(MarkdownMentionReference {
+                kind: "organization".to_string(),
+                login_id: organization.organization_name,
+                owner_name: String::new(),
+                project_name: String::new(),
+                label: organization.description.unwrap_or_default(),
+            });
+        }
+    }
+
+    Ok(references)
 }
 
 fn rewrite_code_browser_markdown_image_links(
@@ -23356,6 +23478,7 @@ fn issue_comment_from_record(
     _owner_name: &str,
     _project_name: &str,
     issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
 ) -> IssueComment {
     let viewer_is_author = viewer_id.is_some() && viewer_id == record.author_id;
     IssueComment {
@@ -23374,6 +23497,10 @@ fn issue_comment_from_record(
         issue_references: issue_references
             .iter()
             .map(issue_reference_metadata_from_resolved)
+            .collect(),
+        mention_references: mention_references
+            .iter()
+            .map(mention_reference_metadata_from_resolved)
             .collect(),
         via_email: record.via_email,
         viewer_can_delete: viewer_can_manage || viewer_is_author,
@@ -23409,6 +23536,7 @@ fn issue_timeline_item_from_record(
     owner_name: &str,
     project_name: &str,
     issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
 ) -> IssueTimelineItem {
     match record {
         persistence::IssueTimelineItemRecord::Comment(comment) => IssueTimelineItem {
@@ -23420,6 +23548,7 @@ fn issue_timeline_item_from_record(
                 owner_name,
                 project_name,
                 issue_references,
+                mention_references,
             ))
             .into(),
             created_label: comment.created_label.clone(),
@@ -24398,8 +24527,9 @@ async fn issue_detail_response_from_record_with_repository_issue_references(
     let issue_references =
         markdown_issue_references_for_project(repository, &authorization, viewer_id, &markdowns)
             .await?;
+    let mention_references = markdown_mention_references(repository, &markdowns).await?;
     Ok(
-        issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+        issue_detail_response_from_record_with_sharer_flags_and_references(
             issue,
             viewer_can_manage,
             viewer_can_comment,
@@ -24408,6 +24538,7 @@ async fn issue_detail_response_from_record_with_repository_issue_references(
             viewer_id,
             base_path,
             &issue_references,
+            &mention_references,
         ),
     )
 }
@@ -24417,6 +24548,29 @@ async fn rest_issue_detail_response_from_record_with_repository_issue_references
     issue: &persistence::IssueRecord,
     viewer_can_manage: bool,
     viewer_can_comment: bool,
+    viewer_id: Option<i64>,
+    base_path: &str,
+) -> Result<RestIssueDetailResponse, ConnectError> {
+    rest_issue_detail_response_from_record_with_repository_references_and_sharer_flags(
+        repository,
+        issue,
+        viewer_can_manage,
+        viewer_can_comment,
+        false,
+        false,
+        viewer_id,
+        base_path,
+    )
+    .await
+}
+
+async fn rest_issue_detail_response_from_record_with_repository_references_and_sharer_flags(
+    repository: &PilotRepository,
+    issue: &persistence::IssueRecord,
+    viewer_can_manage: bool,
+    viewer_can_comment: bool,
+    viewer_is_direct_sharer: bool,
+    viewer_has_inherited_share: bool,
     viewer_id: Option<i64>,
     base_path: &str,
 ) -> Result<RestIssueDetailResponse, ConnectError> {
@@ -24440,16 +24594,18 @@ async fn rest_issue_detail_response_from_record_with_repository_issue_references
     let issue_references =
         markdown_issue_references_for_project(repository, &authorization, viewer_id, &markdowns)
             .await?;
+    let mention_references = markdown_mention_references(repository, &markdowns).await?;
     Ok(
-        rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+        rest_issue_detail_response_from_record_with_sharer_flags_and_references(
             issue,
             viewer_can_manage,
             viewer_can_comment,
-            false,
-            false,
+            viewer_is_direct_sharer,
+            viewer_has_inherited_share,
             viewer_id,
             base_path,
             &issue_references,
+            &mention_references,
         ),
     )
 }
@@ -24494,8 +24650,9 @@ async fn rest_issue_detail_response_from_access_with_repository_issue_references
         &markdowns,
     )
     .await?;
+    let mention_references = markdown_mention_references(repository, &markdowns).await?;
     Ok(
-        rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+        rest_issue_detail_response_from_record_with_sharer_flags_and_references(
             &access.issue,
             access.viewer_can_manage(),
             access.viewer_can_comment(),
@@ -24504,6 +24661,7 @@ async fn rest_issue_detail_response_from_access_with_repository_issue_references
             viewer_id,
             base_path,
             &issue_references,
+            &mention_references,
         ),
     )
 }
@@ -24524,7 +24682,7 @@ fn issue_detail_response_from_record_with_sharer_flags(
         state: issue.state.clone(),
         title: issue.title.clone(),
     };
-    issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+    issue_detail_response_from_record_with_sharer_flags_and_references(
         issue,
         viewer_can_manage,
         viewer_can_comment,
@@ -24533,10 +24691,11 @@ fn issue_detail_response_from_record_with_sharer_flags(
         viewer_id,
         base_path,
         std::slice::from_ref(&current_issue_reference),
+        &[],
     )
 }
 
-fn rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+fn rest_issue_detail_response_from_record_with_sharer_flags_and_references(
     issue: &persistence::IssueRecord,
     viewer_can_manage: bool,
     viewer_can_comment: bool,
@@ -24545,8 +24704,9 @@ fn rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references
     viewer_id: Option<i64>,
     base_path: &str,
     issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
 ) -> RestIssueDetailResponse {
-    let detail = issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+    let detail = issue_detail_response_from_record_with_sharer_flags_and_references(
         issue,
         viewer_can_manage,
         viewer_can_comment,
@@ -24555,6 +24715,7 @@ fn rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references
         viewer_id,
         base_path,
         issue_references,
+        mention_references,
     );
     RestIssueDetailResponse {
         detail,
@@ -24563,7 +24724,7 @@ fn rest_issue_detail_response_from_record_with_sharer_flags_and_issue_references
     }
 }
 
-fn issue_detail_response_from_record_with_sharer_flags_and_issue_references(
+fn issue_detail_response_from_record_with_sharer_flags_and_references(
     issue: &persistence::IssueRecord,
     viewer_can_manage: bool,
     viewer_can_comment: bool,
@@ -24572,6 +24733,7 @@ fn issue_detail_response_from_record_with_sharer_flags_and_issue_references(
     viewer_id: Option<i64>,
     base_path: &str,
     issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
 ) -> ReadIssueDetailResponse {
     ReadIssueDetailResponse {
         assignee_avatar_url: if issue.assignee_login_id.is_empty() {
@@ -24604,6 +24766,7 @@ fn issue_detail_response_from_record_with_sharer_flags_and_issue_references(
                     &issue.owner_name,
                     &issue.project_name,
                     issue_references,
+                    mention_references,
                 )
             })
             .collect(),
@@ -24611,6 +24774,10 @@ fn issue_detail_response_from_record_with_sharer_flags_and_issue_references(
         issue_references: issue_references
             .iter()
             .map(issue_reference_metadata_from_resolved)
+            .collect(),
+        mention_references: mention_references
+            .iter()
+            .map(mention_reference_metadata_from_resolved)
             .collect(),
         is_favorited: issue.is_favorited,
         is_watching: issue.is_watching,
@@ -24634,6 +24801,7 @@ fn issue_detail_response_from_record_with_sharer_flags_and_issue_references(
                     &issue.owner_name,
                     &issue.project_name,
                     issue_references,
+                    mention_references,
                 )
             })
             .collect(),
@@ -28260,6 +28428,7 @@ impl PilotServiceImpl {
                             &access.issue.owner_name,
                             &access.issue.project_name,
                             std::slice::from_ref(&current_issue_reference),
+                            &[],
                         )
                     })
                     .collect(),
@@ -30260,5 +30429,19 @@ mod tests {
             max_uploaded_file_size_from_env_value(Some("not-a-number")),
             LEGACY_DEFAULT_MAX_FILE_SIZE
         );
+    }
+
+    #[test]
+    fn markdown_mention_tokens_follow_legacy_boundaries() {
+        assert_eq!(
+            markdown_mention_tokens("@testOwner @testOwner/testProject @nforge @nforge/yobi"),
+            vec![
+                "nforge".to_string(),
+                "nforge/yobi".to_string(),
+                "testOwner".to_string(),
+                "testOwner/testProject".to_string(),
+            ]
+        );
+        assert!(markdown_mention_tokens("mail@example.com owner/@ignored path/@ignored").is_empty());
     }
 }
