@@ -880,6 +880,50 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "SVN list-report should expose executable-backed directory entries in ra_serf shape: {text}"
     );
 
+    let inherited_revision = yona_rust_vcs::svn_patch_properties(
+        &repo_path,
+        "trunk",
+        &[yona_rust_vcs::SvnPropertyPatch {
+            name: "reviewed".to_string(),
+            value: Some("true".to_string()),
+        }],
+        "seed inherited property",
+    )
+    .expect("seed inherited svn property");
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:inherited-props-report xmlns:S="svn:">
+  <S:revision>{inherited_revision}</S:revision>
+  <S:path>trunk/README.md</S:path>
+</S:inherited-props-report>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<S:inherited-props-report")
+            && text.contains("<S:iprop-item>")
+            && text.contains("<S:iprop-path>trunk</S:iprop-path>")
+            && text.contains("<S:iprop-propname>reviewed</S:iprop-propname>")
+            && text.contains("<S:iprop-propval>true</S:iprop-propval>"),
+        "SVN inherited-props REPORT should expose executable-backed inherited regular properties: {text}"
+    );
+
     let report = Method::from_bytes(b"REPORT").expect("REPORT method");
     let response = direct_request_with_body(
         app.clone(),

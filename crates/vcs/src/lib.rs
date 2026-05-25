@@ -257,6 +257,18 @@ pub struct SvnPropertyPatch {
     pub value: Option<String>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SvnInheritedPropertySet {
+    pub path: String,
+    pub properties: Vec<SvnProperty>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SvnProperty {
+    pub name: String,
+    pub value: String,
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum VcsError {
     #[error("git executable is unavailable")]
@@ -643,6 +655,94 @@ pub fn svn_property(
         return Err(VcsError::NotFound);
     }
     Err(VcsError::SvnLookFailed(stderr))
+}
+
+pub fn svn_inherited_properties(
+    repo_path: &Path,
+    revision: i64,
+    path: &str,
+) -> Result<Vec<SvnInheritedPropertySet>, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    if revision < 0 {
+        return Err(VcsError::InvalidPath);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    let mut inherited = Vec::new();
+    for ancestor in svn_inherited_property_ancestors(&clean_path) {
+        let property_names = svn_property_names(repo_path, Some(revision), &ancestor)?;
+        let mut properties = Vec::new();
+        for name in property_names {
+            if let Some(value) = svn_property(repo_path, Some(revision), &ancestor, &name)? {
+                properties.push(SvnProperty { name, value });
+            }
+        }
+        if !properties.is_empty() {
+            inherited.push(SvnInheritedPropertySet {
+                path: ancestor,
+                properties,
+            });
+        }
+    }
+    Ok(inherited)
+}
+
+fn svn_property_names(
+    repo_path: &Path,
+    revision: Option<i64>,
+    path: &str,
+) -> Result<Vec<String>, VcsError> {
+    if revision.is_some_and(|revision| revision < 0) {
+        return Err(VcsError::InvalidPath);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    let mut command = Command::new("svnlook");
+    command.arg("proplist");
+    if let Some(revision) = revision {
+        command.args(["-r", &revision.to_string()]);
+    }
+    command.arg(repo_path);
+    if !clean_path.is_empty() {
+        command.arg(&clean_path);
+    }
+    let output = command.output().map_err(|_| VcsError::SvnLookUnavailable)?;
+    if output.status.success() {
+        return Ok(String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .map(str::trim)
+            .filter(|name| !name.is_empty())
+            .map(ToOwned::to_owned)
+            .collect());
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+    let lower = stderr.to_ascii_lowercase();
+    if lower.contains("path not found")
+        || lower.contains("no such revision")
+        || lower.contains("not found")
+    {
+        return Err(VcsError::NotFound);
+    }
+    Err(VcsError::SvnLookFailed(stderr))
+}
+
+fn svn_inherited_property_ancestors(path: &str) -> Vec<String> {
+    let mut ancestors = Vec::new();
+    let mut current = path.trim_matches('/').to_string();
+    loop {
+        let parent = match current.rsplit_once('/') {
+            Some((parent, _)) => parent.to_string(),
+            None => String::new(),
+        };
+        ancestors.push(parent.clone());
+        if parent.is_empty() {
+            break;
+        }
+        current = parent;
+    }
+    ancestors.reverse();
+    ancestors
 }
 
 pub fn svn_lock_path(
