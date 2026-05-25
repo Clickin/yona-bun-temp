@@ -786,10 +786,15 @@ function parseMarkdownBlockquote(lines: MarkdownLineRecord[]): MarkdownBlockquot
 
 function markdownLineStartsBlock(line: string): boolean {
   return (
+    markdownLineIsHorizontalRule(line) ||
     markdownLineIsIndentedCode(line) ||
     /^ {0,3}#{1,6}(?=\s|$)/.test(line) ||
     /^ {0,3}(?:[*+-]|\d+[.)])\s+/.test(line)
   );
+}
+
+function markdownLineIsHorizontalRule(line: string): boolean {
+  return /^ {0,3}(?:(?:- *){3,}|(?:_ *){3,}|(?:\* *){3,})$/.test(line);
 }
 
 function markdownLineIsIndentedCode(line: string): boolean {
@@ -851,6 +856,17 @@ function MarkdownBlockSequence(props: {
         />,
       );
       index += 2;
+      continue;
+    }
+    if (markdownLineIsHorizontalRule(line.text)) {
+      children.push(
+        <MarkdownBlock
+          block={{ key: `sequence-${line.key}`, text: line.text }}
+          context={props.context}
+          key={`sequence-${line.key}`}
+        />,
+      );
+      index += 1;
       continue;
     }
     if (markdownLineIsIndentedCode(line.text)) {

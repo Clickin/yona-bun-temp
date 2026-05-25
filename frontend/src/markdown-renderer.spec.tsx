@@ -764,4 +764,16 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<pre><code>const value = 1;</code></pre>");
     expect(html).not.toContain("<p>    const value = 1;");
   });
+
+  it("parses horizontal rules inside blockquotes like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"> before\n>\n> ---\n> after"} />,
+    );
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain("<p>before</p>");
+    expect(html).toContain("<hr/>");
+    expect(html).toContain("<p>after</p>");
+    expect(html).not.toContain("<p>before<br/><br/>---");
+  });
 });
