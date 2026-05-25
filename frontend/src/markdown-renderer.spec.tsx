@@ -322,6 +322,31 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("/issue/12345");
   });
 
+  it("does not link wrapped issue references like legacy MarkdownApp", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 77,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            state: "open",
+            title: "Wrapped issue",
+          },
+        ]}
+        markdown={"_owner#77-\nAowner#77AA\n"}
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain("_owner#77-");
+    expect(html).toContain("Aowner#77AA");
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain("/issue/77");
+  });
+
   it("renders legacy commit SHA references when commit metadata exists", () => {
     const currentSha = "be6a8cc1c1ecfe9489fb51e4869af15a13fc2cd2";
     const ownerSha = "ffffffffffffffffffffffffffffffffffffffff";

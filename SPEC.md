@@ -1117,6 +1117,7 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 원�
 - [x] `owner#123` → 같은 프로젝트 이름의 owner-scoped 이슈 링크 변환
 - [x] `owner/project#123` → 크로스 프로젝트 이슈 링크 변환
 - [x] unresolved issue refs remain plain text when no matching readable issue metadata exists
+- [x] wrapped issue refs such as `_owner#123-` and `Aowner#123AA` remain plain text like legacy `MarkdownAppTest.test_WrappedPattern`
 - [x] readable issue refs expose title/state metadata on project Markdown render paths
 - [x] commit SHA references (`SHA`, `@SHA`, `owner@SHA`, `owner/project@SHA`) link only when matching commit metadata is present, and remain plain text inside code spans/fences
 - [x] raw HTML-like blocks are escaped and kept opaque to autolink parsing so `#123`/URL patterns inside `<a>`, `<code>`, or `<div>` do not become links, matching `MarkdownAppTest.test_ignorePattern`

@@ -391,6 +391,7 @@ Interpretation:
 - [x] Inline code spans preserve legacy marked matching backtick-run delimiters, newline normalization, and single-space trimming semantics
 - [x] Basic project Markdown autolinks for `@username`, legacy `@owner/project` project mentions, same-project `#123`, legacy `owner#123`, and `owner/project#123` on issue/post/milestone bodies and comments, PR bodies/general review comments, Git non-ranged commit comments, and preview output
 - [x] Legacy `MarkdownAppTest.test_issueNumber` existence behavior on project Markdown: same-project, owner-scoped, and owner/project issue refs link only when resolved issue metadata exists, while missing refs stay plain text
+- [x] Legacy `MarkdownAppTest.test_WrappedPattern` behavior on project Markdown: wrapped owner-scoped issue refs such as `_owner#123-` and `Aowner#123AA` remain plain text even when the underlying issue metadata exists
 - [x] Legacy `MarkdownAppTest.testMention` existence behavior on issue body/comment/history, board/posting including project-home DB README postings, milestone, PR detail, and Git commit discussion Markdown: REST/proto `mentionReferences` metadata links existing `@user` / `@owner/project` targets while unresolved mentions remain plain text in React
 - [x] Metadata-backed legacy commit SHA autolinks for raw `SHA`, `@SHA`, `owner@SHA`, and `owner/project@SHA` on PR body/review comments and Git commit discussion comments
 - [x] Legacy `MarkdownAppTest.test_ignorePattern` behavior for raw HTML-like blocks: escaped `<a>`, `<code>`, and `<div>` content remains opaque to `#123`/URL autolinks
@@ -416,7 +417,7 @@ Interpretation:
 - [x] Legacy `POST /markdown/:owner/:project` preview renderer validates project read access and returns Markdown source for React-side preview rendering instead of server-rendered HTML
 - [x] Readable issue references expose title/state metadata on project Markdown render paths
 - [ ] Full legacy/GFM extension parity
-- [~] Remaining legacy autolink edge-case parity if evidence requires it; `MarkdownAppTest` issue reference existence, owner-scoped issue refs, and issue body/comment/history, board/project-home README/milestone/PR/commit discussion mention existence checks are covered
+- [~] Remaining legacy autolink edge-case parity if evidence requires it; `MarkdownAppTest` issue reference existence, wrapped owner-scoped issue refs, owner-scoped issue refs, and issue body/comment/history, board/project-home README/milestone/PR/commit discussion mention existence checks are covered
 - [~] Full Highlight.js-equivalent language coverage for Markdown code blocks
 - [x] Task checklist progress-bar integration for issue/board Markdown surfaces
 
