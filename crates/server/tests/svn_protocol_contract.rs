@@ -432,6 +432,31 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "hello from svn\n"
     );
 
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request(
+        app.clone(),
+        propfind,
+        "/svn/owner/projectYobi/trunk/README.md",
+        None,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:resourcetype/>")
+            && text.contains("<D:getcontentlength>15</D:getcontentlength>")
+            && text.contains("/svn/owner/projectYobi/trunk/README.md"),
+        "SVN file PROPFIND should return file metadata: {text}"
+    );
+
     let response = direct_request(
         app,
         Method::HEAD,

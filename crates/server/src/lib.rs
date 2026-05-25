@@ -2335,6 +2335,9 @@ async fn direct_svn_protocol_request(
         let youngest_revision = yona_rust_vcs::svn_youngest_revision(&repo_path).ok();
         return svn_protocol_collection_propfind_response(&route, youngest_revision);
     }
+    if method == "PROPFIND" {
+        return svn_protocol_file_propfind_response(&repo_path, &route);
+    }
     if method == "GET" || method == "HEAD" {
         return svn_protocol_file_response(&repo_path, &route, method == "HEAD");
     }
@@ -2445,6 +2448,56 @@ fn svn_protocol_file_response(
             .headers_mut()
             .insert(http::header::CONTENT_LENGTH, value);
     }
+    response
+}
+
+fn svn_protocol_file_propfind_response(repo_path: &StdPath, route: &SvnProtocolRoute) -> Response {
+    let Some((revision, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+        return svn_protocol_not_implemented_response(route, "PROPFIND");
+    };
+    let bytes = match yona_rust_vcs::svn_cat_file(repo_path, revision, &path) {
+        Ok(bytes) => bytes,
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "PROPFIND")
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    let href = format!(
+        "/svn/{}/{}/{}",
+        route.owner_name,
+        route.project_name,
+        route.svn_path.trim_matches('/')
+    );
+    svn_protocol_propfind_file_response(&href, bytes.len())
+}
+
+fn svn_protocol_propfind_file_response(href: &str, content_length: usize) -> Response {
+    let body = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<D:multistatus xmlns:D="DAV:">
+  <D:response>
+    <D:href>{}</D:href>
+    <D:propstat>
+      <D:prop>
+        <D:resourcetype/>
+        <D:getcontentlength>{content_length}</D:getcontentlength>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+</D:multistatus>"#,
+        xml_escape(href)
+    );
+    let mut response = (StatusCode::MULTI_STATUS, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
     response
 }
 
