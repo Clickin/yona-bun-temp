@@ -1288,6 +1288,149 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
 }
 
 #[tokio::test]
+async fn svn_protocol_supports_checkout_merge_choreography() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let Some(revision) = seed_svn_readme(&repo_path, "initial content\n") else {
+        eprintln!(
+            "skipping executable SVN checkout/merge test because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    };
+
+    let owner_basic = basic("owner", "doorpass1");
+    let mkactivity = Method::from_bytes(b"MKACTIVITY").expect("MKACTIVITY method");
+    let response = direct_request(
+        app.clone(),
+        mkactivity,
+        "/svn/owner/projectYobi/!svn/act/yona-test-activity",
+        Some(&owner_basic),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::CREATED);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+
+    let checkout = Method::from_bytes(b"CHECKOUT").expect("CHECKOUT method");
+    let checkout_body = r#"<?xml version="1.0" encoding="utf-8"?>
+<D:checkout xmlns:D="DAV:">
+  <D:activity-set>
+    <D:href>/svn/owner/projectYobi/!svn/act/yona-test-activity</D:href>
+  </D:activity-set>
+  <D:apply-to-version/>
+</D:checkout>"#;
+    let response = direct_request_with_body(
+        app.clone(),
+        checkout.clone(),
+        &format!("/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md"),
+        Some(&owner_basic),
+        Body::from(checkout_body),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::CREATED);
+    let working_href = response
+        .headers()
+        .get(http::header::LOCATION)
+        .and_then(|value| value.to_str().ok())
+        .expect("CHECKOUT should return working resource Location")
+        .to_string();
+    assert!(
+        working_href.ends_with("/!svn/wrk/yona-test-activity/trunk/README.md"),
+        "CHECKOUT should map the version resource to an activity working resource: {working_href}"
+    );
+
+    let put = Method::from_bytes(b"PUT").expect("PUT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        put,
+        working_href
+            .strip_prefix("/yona")
+            .unwrap_or(working_href.as_str()),
+        Some(&owner_basic),
+        Body::from("updated through checkout choreography\n"),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    let put_revision = response
+        .headers()
+        .get("svn-revision")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<i64>().ok())
+        .expect("working resource PUT should return committed SVN revision");
+    assert!(
+        put_revision > revision,
+        "working resource PUT should commit a newer repository revision"
+    );
+
+    let merge = Method::from_bytes(b"MERGE").expect("MERGE method");
+    let response = direct_request_with_body(
+        app.clone(),
+        merge,
+        "/svn/owner/projectYobi",
+        Some(&owner_basic),
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:merge xmlns:D="DAV:">
+  <D:source>
+    <D:href>/svn/owner/projectYobi/!svn/act/yona-test-activity</D:href>
+  </D:source>
+  <D:no-auto-merge/>
+  <D:no-checkout/>
+  <D:prop>
+    <D:checked-in/>
+    <D:version-name/>
+    <D:resourcetype/>
+    <D:creationdate/>
+    <D:creator-displayname/>
+  </D:prop>
+</D:merge>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:merge-response")
+            && text.contains("<D:updated-set>")
+            && text.contains(&format!("<D:version-name>{put_revision}</D:version-name>"))
+            && text.contains("<D:creator-displayname>owner</D:creator-displayname>")
+            && text.contains(&format!("/svn/owner/projectYobi/!svn/ver/{put_revision}/")),
+        "SVN MERGE should expose ra_serf commit info and checked-in metadata: {text}"
+    );
+
+    let delete = Method::DELETE;
+    let response = direct_request(
+        app,
+        delete,
+        "/svn/owner/projectYobi/!svn/act/yona-test-activity",
+        Some(&owner_basic),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+}
+
+#[tokio::test]
 async fn svn_protocol_private_project_uses_basic_auth_challenge() {
     let _guard = yona_data_env_lock()
         .lock()
