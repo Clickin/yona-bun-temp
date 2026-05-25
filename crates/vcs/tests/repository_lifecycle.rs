@@ -3,19 +3,19 @@ use std::process::Command;
 use tempfile::tempdir;
 use yona_rust_vcs::{
     create_svn_repository, delete_repository, ensure_svnadmin_available, repository_path,
-    repository_path_for_vcs, svn_repository_path, svn_repository_uuid, svn_youngest_revision,
-    VcsError,
+    repository_path_for_vcs, svn_executable, svn_repository_path, svn_repository_uuid,
+    svn_youngest_revision, VcsError,
 };
 
 fn svnadmin_available() -> bool {
-    Command::new("svnadmin")
+    Command::new(svn_executable("svnadmin"))
         .arg("--version")
         .output()
         .is_ok_and(|output| output.status.success())
 }
 
 fn svnlook_available() -> bool {
-    Command::new("svnlook")
+    Command::new(svn_executable("svnlook"))
         .arg("--version")
         .output()
         .is_ok_and(|output| output.status.success())

@@ -2946,7 +2946,14 @@ fn svn_protocol_update_report_response(
         .map(|(_, path)| path)
         .unwrap_or_default();
     let update_path = join_svn_report_path(&base_path, &requested_path);
-    let tree = match yona_rust_vcs::svn_list_tree(repo_path, Some(target_revision), &update_path) {
+    let depth = svn_protocol_xml_text(request, "depth").unwrap_or_else(|| "infinity".to_string());
+    let recursive = depth.eq_ignore_ascii_case("infinity");
+    let tree_result = if recursive {
+        yona_rust_vcs::svn_list_tree_recursive(repo_path, Some(target_revision), &update_path)
+    } else {
+        yona_rust_vcs::svn_list_tree(repo_path, Some(target_revision), &update_path)
+    };
+    let tree = match tree_result {
         Ok(tree) => tree,
         Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
@@ -2958,7 +2965,11 @@ fn svn_protocol_update_report_response(
         }
     };
     let mut entries = String::new();
-    for entry in &tree.entries {
+    for entry in tree
+        .entries
+        .iter()
+        .filter(|entry| svn_protocol_update_depth_includes(entry, &depth))
+    {
         let name = entry
             .path
             .trim_matches('/')
@@ -3978,6 +3989,14 @@ fn svn_protocol_replay_included(path: &str, filter_path: Option<&str>) -> bool {
     let path = path.trim_matches('/');
     let filter_path = filter_path.trim_matches('/');
     path == filter_path || path.starts_with(&format!("{filter_path}/"))
+}
+
+fn svn_protocol_update_depth_includes(entry: &yona_rust_vcs::SvnTreeEntry, depth: &str) -> bool {
+    match depth.to_ascii_lowercase().as_str() {
+        "empty" => false,
+        "files" => !entry.is_dir,
+        _ => true,
+    }
 }
 
 fn svn_protocol_replay_operation(

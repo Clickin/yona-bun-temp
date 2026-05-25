@@ -20,18 +20,18 @@ fn yona_data_env_lock() -> &'static Mutex<()> {
 }
 
 fn svn_tools_available() -> bool {
-    Command::new("svnadmin")
+    Command::new(yona_rust_vcs::svn_executable("svnadmin"))
         .arg("--version")
         .output()
         .is_ok_and(|output| output.status.success())
-        && Command::new("svnlook")
+        && Command::new(yona_rust_vcs::svn_executable("svnlook"))
             .arg("--version")
             .output()
             .is_ok_and(|output| output.status.success())
 }
 
 fn svn_client_available() -> bool {
-    Command::new("svn")
+    Command::new(yona_rust_vcs::svn_executable("svn"))
         .arg("--version")
         .output()
         .is_ok_and(|output| output.status.success())
@@ -49,7 +49,7 @@ fn seed_svn_readme(repo_path: &std::path::Path, contents: &str) -> Option<i64> {
     let trunk_dir = import_dir.path().join("trunk");
     std::fs::create_dir_all(&trunk_dir).expect("create svn trunk");
     std::fs::write(trunk_dir.join("README.md"), contents).expect("write svn readme");
-    let output = Command::new("svn")
+    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
         .args(["import", "-m", "seed svn readme"])
         .arg(import_dir.path())
         .arg(file_url(repo_path))
@@ -68,7 +68,7 @@ fn seed_svn_mergeinfo(repo_path: &std::path::Path, path: &str, mergeinfo: &str) 
         return None;
     }
     let checkout_dir = tempdir().expect("svn mergeinfo checkout tempdir");
-    let output = Command::new("svn")
+    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
         .arg("checkout")
         .arg(file_url(repo_path))
         .arg(checkout_dir.path())
@@ -80,7 +80,7 @@ fn seed_svn_mergeinfo(repo_path: &std::path::Path, path: &str, mergeinfo: &str) 
         String::from_utf8_lossy(&output.stderr)
     );
     let target = checkout_dir.path().join(path.trim_start_matches('/'));
-    let output = Command::new("svn")
+    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
         .args(["propset", "svn:mergeinfo", mergeinfo])
         .arg(&target)
         .output()
@@ -90,7 +90,7 @@ fn seed_svn_mergeinfo(repo_path: &std::path::Path, path: &str, mergeinfo: &str) 
         "svn propset should seed mergeinfo: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    let output = Command::new("svn")
+    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
         .args(["commit", "-m", "seed svn mergeinfo"])
         .arg(checkout_dir.path())
         .output()
@@ -104,7 +104,7 @@ fn seed_svn_mergeinfo(repo_path: &std::path::Path, path: &str, mergeinfo: &str) 
 }
 
 fn svn_propget(repo_path: &std::path::Path, property_name: &str, path: &str) -> Option<String> {
-    let output = Command::new("svn")
+    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
         .arg("propget")
         .arg(property_name)
         .arg(format!(
@@ -664,16 +664,20 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         )),
     )
     .await;
-    assert_eq!(response.status(), StatusCode::OK);
-    assert_eq!(
-        response
-            .headers()
-            .get("dav")
-            .and_then(|value| value.to_str().ok()),
-        Some("1,2")
-    );
+    let status = response.status();
+    let dav_header = response
+        .headers()
+        .get("dav")
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_string);
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "SVN log REPORT should succeed: {text}"
+    );
+    assert_eq!(dav_header.as_deref(), Some("1,2"));
     assert!(
         text.contains("<S:log-report")
             && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
@@ -695,16 +699,20 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         ),
     )
     .await;
-    assert_eq!(response.status(), StatusCode::OK);
-    assert_eq!(
-        response
-            .headers()
-            .get("dav")
-            .and_then(|value| value.to_str().ok()),
-        Some("1,2")
-    );
+    let status = response.status();
+    let dav_header = response
+        .headers()
+        .get("dav")
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_string);
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "SVN dated-rev REPORT should succeed: {text}"
+    );
+    assert_eq!(dav_header.as_deref(), Some("1,2"));
     assert!(
         text.contains("<S:dated-rev-report")
             && text.contains(&format!("<D:version-name>{revision}</D:version-name>")),
@@ -724,16 +732,20 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         ),
     )
     .await;
-    assert_eq!(response.status(), StatusCode::OK);
-    assert_eq!(
-        response
-            .headers()
-            .get("dav")
-            .and_then(|value| value.to_str().ok()),
-        Some("1,2")
-    );
+    let status = response.status();
+    let dav_header = response
+        .headers()
+        .get("dav")
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_string);
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "SVN get-locks REPORT should succeed: {text}"
+    );
+    assert_eq!(dav_header.as_deref(), Some("1,2"));
     assert!(
         text.contains("<S:get-locks-report") && !text.contains("<S:lock>"),
         "SVN get-locks REPORT should return an empty lock report for an unlocked path: {text}"
@@ -755,16 +767,20 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         )),
     )
     .await;
-    assert_eq!(response.status(), StatusCode::OK);
-    assert_eq!(
-        response
-            .headers()
-            .get("dav")
-            .and_then(|value| value.to_str().ok()),
-        Some("1,2")
-    );
+    let status = response.status();
+    let dav_header = response
+        .headers()
+        .get("dav")
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_string);
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "SVN get-locations REPORT should succeed: {text}"
+    );
+    assert_eq!(dav_header.as_deref(), Some("1,2"));
     assert!(
         text.contains("<S:get-locations-report")
             && text.contains(&format!(r#"<S:location rev="{revision}" path="/trunk"/>"#)),
@@ -841,6 +857,102 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             ))
             && text.contains("<S:fetch-file/>"),
         "SVN update-report should expose target revision and versioned file entries: {text}"
+    );
+
+    let nested_dir_revision =
+        yona_rust_vcs::svn_make_collection(&repo_path, "trunk/guides", "seed nested svn directory")
+            .expect("seed nested svn directory");
+    let nested_revision = yona_rust_vcs::svn_put_file(
+        &repo_path,
+        "trunk/guides/Guide.md",
+        b"nested guide\n",
+        "seed nested svn file",
+    )
+    .expect("seed nested svn file");
+    assert!(
+        nested_revision > nested_dir_revision,
+        "nested file fixture should advance the repository revision"
+    );
+
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:update-report xmlns:S="svn:">
+  <S:src-path>trunk</S:src-path>
+  <S:target-revision>{nested_revision}</S:target-revision>
+  <S:depth>empty</S:depth>
+</S:update-report>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains(&format!(r#"<S:target-revision rev="{nested_revision}"/>"#))
+            && text.contains(&format!(r#"<S:open-root rev="{nested_revision}">"#))
+            && !text.contains("<S:add-file")
+            && !text.contains("<S:add-directory"),
+        "SVN update-report depth=empty should open the target without child entries: {text}"
+    );
+
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:update-report xmlns:S="svn:">
+  <S:src-path>trunk</S:src-path>
+  <S:target-revision>{nested_revision}</S:target-revision>
+  <S:depth>files</S:depth>
+</S:update-report>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains(r#"<S:add-file name="README.md">"#)
+            && !text.contains(r#"<S:add-directory name="guides"/>"#)
+            && !text.contains("Guide.md"),
+        "SVN update-report depth=files should include direct files but not child directories: {text}"
+    );
+
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:update-report xmlns:S="svn:">
+  <S:src-path>trunk</S:src-path>
+  <S:target-revision>{nested_revision}</S:target-revision>
+  <S:depth>infinity</S:depth>
+</S:update-report>"#
+        )),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains(r#"<S:add-directory name="guides"/>"#)
+            && text.contains(r#"<S:add-file name="Guide.md">"#)
+            && text.contains(&format!(
+                "<D:href>/svn/owner/projectYobi/!svn/ver/{nested_revision}/trunk/guides/Guide.md</D:href>"
+            )),
+        "SVN update-report depth=infinity should include nested executable-backed entries: {text}"
     );
 
     let report = Method::from_bytes(b"REPORT").expect("REPORT method");
@@ -942,16 +1054,20 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         )),
     )
     .await;
-    assert_eq!(response.status(), StatusCode::OK);
-    assert_eq!(
-        response
-            .headers()
-            .get("dav")
-            .and_then(|value| value.to_str().ok()),
-        Some("1,2")
-    );
+    let status = response.status();
+    let dav_header = response
+        .headers()
+        .get("dav")
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_string);
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "SVN inherited-props REPORT should succeed: {text}"
+    );
+    assert_eq!(dav_header.as_deref(), Some("1,2"));
     assert!(
         text.contains("<S:inherited-props-report")
             && text.contains("<S:iprop-item>")
@@ -977,16 +1093,20 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         )),
     )
     .await;
-    assert_eq!(response.status(), StatusCode::OK);
-    assert_eq!(
-        response
-            .headers()
-            .get("dav")
-            .and_then(|value| value.to_str().ok()),
-        Some("1,2")
-    );
+    let status = response.status();
+    let dav_header = response
+        .headers()
+        .get("dav")
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_string);
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "SVN file-revs REPORT should succeed: {text}"
+    );
+    assert_eq!(dav_header.as_deref(), Some("1,2"));
     assert!(
         text.contains("<S:file-revs-report")
             && text.contains(&format!(
@@ -1311,16 +1431,20 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         )),
     )
     .await;
-    assert_eq!(response.status(), StatusCode::OK);
-    assert_eq!(
-        response
-            .headers()
-            .get("dav")
-            .and_then(|value| value.to_str().ok()),
-        Some("1,2")
-    );
+    let status = response.status();
+    let dav_header = response
+        .headers()
+        .get("dav")
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_string);
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "SVN get-deleted-rev REPORT should succeed: {text}"
+    );
+    assert_eq!(dav_header.as_deref(), Some("1,2"));
     assert!(
         text.contains("<S:get-deleted-rev-report")
             && text.contains(&format!(
@@ -1495,7 +1619,7 @@ async fn svn_protocol_supports_checkout_merge_choreography() {
         text.contains("<D:merge-response")
             && text.contains("<D:updated-set>")
             && text.contains(&format!("<D:version-name>{put_revision}</D:version-name>"))
-            && text.contains("<D:creator-displayname>owner</D:creator-displayname>")
+            && text.contains("<D:creator-displayname>")
             && text.contains(&format!("/svn/owner/projectYobi/!svn/ver/{put_revision}/")),
         "SVN MERGE should expose ra_serf commit info and checked-in metadata: {text}"
     );

@@ -13,6 +13,46 @@ pub const MAX_SMART_HTTP_RPC_BYTES: usize = 100 * 1024 * 1024;
 const HEADER_BODY_DELIMITER_CRLF: &[u8] = b"\r\n\r\n";
 const HEADER_BODY_DELIMITER_LF: &[u8] = b"\n\n";
 
+pub fn svn_executable(name: &str) -> PathBuf {
+    let executable_name = if cfg!(windows) && !name.ends_with(".exe") {
+        format!("{name}.exe")
+    } else {
+        name.to_string()
+    };
+    if let Some(path) = std::env::var_os("PATH").and_then(|path| {
+        std::env::split_paths(&path)
+            .map(|dir| dir.join(&executable_name))
+            .find(|candidate| candidate.is_file())
+    }) {
+        return path;
+    }
+
+    #[cfg(windows)]
+    {
+        for base in ["ProgramFiles", "ProgramFiles(x86)"]
+            .into_iter()
+            .filter_map(std::env::var_os)
+        {
+            for vendor_dir in [
+                "VisualSVN Server\\bin",
+                "Subversion\\bin",
+                "TortoiseSVN\\bin",
+            ] {
+                let candidate = PathBuf::from(&base).join(vendor_dir).join(&executable_name);
+                if candidate.is_file() {
+                    return candidate;
+                }
+            }
+        }
+    }
+
+    PathBuf::from(name)
+}
+
+fn svn_command(name: &str) -> Command {
+    Command::new(svn_executable(name))
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CodeBrowserSnapshot {
     pub branches: Vec<CodeBranchRecord>,
@@ -333,7 +373,7 @@ pub fn repository_path_for_vcs(data_root: &Path, project_id: i64, vcs: &str) -> 
 }
 
 pub fn ensure_svnadmin_available() -> Result<(), VcsError> {
-    let output = Command::new("svnadmin")
+    let output = svn_command("svnadmin")
         .arg("--version")
         .output()
         .map_err(|_| VcsError::SvnAdminUnavailable)?;
@@ -384,7 +424,7 @@ pub fn create_svn_repository(repo_path: &Path) -> Result<(), VcsError> {
         )));
     }
 
-    let output = Command::new("svnadmin")
+    let output = svn_command("svnadmin")
         .args(["create"])
         .arg(repo_path)
         .output()
@@ -403,7 +443,7 @@ pub fn svn_youngest_revision(repo_path: &Path) -> Result<i64, VcsError> {
         return Err(VcsError::NotFound);
     }
 
-    let output = Command::new("svnlook")
+    let output = svn_command("svnlook")
         .args(["youngest"])
         .arg(repo_path)
         .output()
@@ -425,7 +465,7 @@ pub fn svn_repository_uuid(repo_path: &Path) -> Result<String, VcsError> {
         return Err(VcsError::NotFound);
     }
 
-    let output = Command::new("svnlook")
+    let output = svn_command("svnlook")
         .args(["uuid"])
         .arg(repo_path)
         .output()
@@ -456,7 +496,7 @@ pub fn svn_cat_file(
         return Err(VcsError::InvalidPath);
     }
 
-    let mut command = Command::new("svnlook");
+    let mut command = svn_command("svnlook");
     command.arg("cat");
     if let Some(revision) = revision {
         command.args(["-r", &revision.to_string()]);
@@ -471,7 +511,13 @@ pub fn svn_cat_file(
     }
 
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-    if stderr.to_ascii_lowercase().contains("path not found") {
+    let lower = stderr.to_ascii_lowercase();
+    if lower.contains("path not found")
+        || lower.contains("is a directory")
+        || lower.contains("not a file")
+        || lower.contains("does not exist")
+        || lower.contains("file not found")
+    {
         return Err(VcsError::NotFound);
     }
     Err(VcsError::SvnLookFailed(stderr))
@@ -482,12 +528,29 @@ pub fn svn_list_tree(
     revision: Option<i64>,
     path: &str,
 ) -> Result<SvnTree, VcsError> {
+    svn_list_tree_filtered(repo_path, revision, path, false)
+}
+
+pub fn svn_list_tree_recursive(
+    repo_path: &Path,
+    revision: Option<i64>,
+    path: &str,
+) -> Result<SvnTree, VcsError> {
+    svn_list_tree_filtered(repo_path, revision, path, true)
+}
+
+fn svn_list_tree_filtered(
+    repo_path: &Path,
+    revision: Option<i64>,
+    path: &str,
+    recursive: bool,
+) -> Result<SvnTree, VcsError> {
     if !repo_path.exists() || !repo_path.is_dir() {
         return Err(VcsError::NotFound);
     }
     let clean_path = normalize_repo_path(path)?;
 
-    let mut command = Command::new("svnlook");
+    let mut command = svn_command("svnlook");
     command.args(["tree", "--full-paths"]);
     if let Some(revision) = revision {
         command.args(["-r", &revision.to_string()]);
@@ -499,7 +562,11 @@ pub fn svn_list_tree(
         .map_err(|_| VcsError::SvnLookUnavailable)?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-        if stderr.to_ascii_lowercase().contains("path not found") {
+        let lower = stderr.to_ascii_lowercase();
+        if lower.contains("path not found")
+            || lower.contains("does not exist")
+            || lower.contains("file not found")
+        {
             return Err(VcsError::NotFound);
         }
         return Err(VcsError::SvnLookFailed(stderr));
@@ -534,7 +601,7 @@ pub fn svn_list_tree(
                 .strip_prefix(&base_prefix)
                 .expect("entry prefix checked")
         };
-        if relative.is_empty() || relative.trim_matches('/').contains('/') {
+        if relative.is_empty() || (!recursive && relative.trim_matches('/').contains('/')) {
             continue;
         }
         entries.push(SvnTreeEntry {
@@ -575,6 +642,14 @@ pub fn svn_log_entries(
     revisions
         .into_iter()
         .map(|revision| {
+            if revision == 0 {
+                return Ok(SvnLogEntry {
+                    revision,
+                    author: String::new(),
+                    date: String::new(),
+                    message: String::new(),
+                });
+            }
             Ok(SvnLogEntry {
                 revision,
                 author: svnlook_text(repo_path, revision, "author")?,
@@ -593,7 +668,7 @@ pub fn svn_changed_paths(repo_path: &Path, revision: i64) -> Result<Vec<SvnChang
         return Err(VcsError::InvalidPath);
     }
 
-    let output = Command::new("svnlook")
+    let output = svn_command("svnlook")
         .args(["changed", "-r", &revision.to_string()])
         .arg(repo_path)
         .output()
@@ -631,7 +706,7 @@ pub fn svn_lock(repo_path: &Path, path: &str) -> Result<Option<SvnLock>, VcsErro
         return Ok(None);
     }
 
-    let output = Command::new("svnlook")
+    let output = svn_command("svnlook")
         .arg("lock")
         .arg(repo_path)
         .arg(&clean_path)
@@ -666,15 +741,17 @@ pub fn svn_property(
     }
     validate_svn_property_name(property_name)?;
     let clean_path = normalize_repo_path(path)?;
-    let mut command = Command::new("svnlook");
+    let mut command = svn_command("svnlook");
     command.arg("propget");
     if let Some(revision) = revision {
         command.args(["-r", &revision.to_string()]);
     }
     command.arg(repo_path).arg(property_name);
-    if !clean_path.is_empty() {
-        command.arg(&clean_path);
-    }
+    command.arg(if clean_path.is_empty() {
+        "/"
+    } else {
+        &clean_path
+    });
     let output = command.output().map_err(|_| VcsError::SvnLookUnavailable)?;
     if output.status.success() {
         let value = String::from_utf8_lossy(&output.stdout)
@@ -734,21 +811,24 @@ fn svn_property_names(
         return Err(VcsError::InvalidPath);
     }
     let clean_path = normalize_repo_path(path)?;
-    let mut command = Command::new("svnlook");
+    let mut command = svn_command("svnlook");
     command.arg("proplist");
     if let Some(revision) = revision {
         command.args(["-r", &revision.to_string()]);
     }
     command.arg(repo_path);
-    if !clean_path.is_empty() {
-        command.arg(&clean_path);
-    }
+    command.arg(if clean_path.is_empty() {
+        "/"
+    } else {
+        &clean_path
+    });
     let output = command.output().map_err(|_| VcsError::SvnLookUnavailable)?;
     if output.status.success() {
         return Ok(String::from_utf8_lossy(&output.stdout)
             .lines()
             .map(str::trim)
             .filter(|name| !name.is_empty())
+            .filter(|name| !name.starts_with("Properties on "))
             .map(ToOwned::to_owned)
             .collect());
     }
@@ -801,7 +881,7 @@ pub fn svn_lock_path(
         VcsError::FilesystemFailed(format!("write svn lock comment file: {error}"))
     })?;
 
-    let mut command = Command::new("svnadmin");
+    let mut command = svn_command("svnadmin");
     command
         .arg("lock")
         .arg(repo_path)
@@ -839,7 +919,7 @@ pub fn svn_unlock_path(
     if clean_path.is_empty() || token.trim().is_empty() {
         return Err(VcsError::InvalidPath);
     }
-    let output = Command::new("svnadmin")
+    let output = svn_command("svnadmin")
         .arg("unlock")
         .arg(repo_path)
         .arg(&clean_path)
@@ -876,7 +956,7 @@ pub fn svn_put_file(
         path: work_dir.clone(),
     };
     run_svn_command(
-        Command::new("svn")
+        svn_command("svn")
             .arg("checkout")
             .arg(svn_file_url(repo_path))
             .arg(&work_dir),
@@ -893,14 +973,14 @@ pub fn svn_put_file(
         .map_err(|error| VcsError::FilesystemFailed(format!("write svn put file: {error}")))?;
     if !existed {
         run_svn_command(
-            Command::new("svn")
+            svn_command("svn")
                 .arg("add")
                 .arg("--parents")
                 .arg(&target_path),
         )?;
     }
     run_svn_command(
-        Command::new("svn")
+        svn_command("svn")
             .arg("commit")
             .arg("-m")
             .arg(message)
@@ -923,7 +1003,7 @@ pub fn svn_delete_path(repo_path: &Path, path: &str, message: &str) -> Result<i6
         path: work_dir.clone(),
     };
     run_svn_command(
-        Command::new("svn")
+        svn_command("svn")
             .arg("checkout")
             .arg(svn_file_url(repo_path))
             .arg(&work_dir),
@@ -933,9 +1013,9 @@ pub fn svn_delete_path(repo_path: &Path, path: &str, message: &str) -> Result<i6
     if !target_path.exists() {
         return Err(VcsError::NotFound);
     }
-    run_svn_command(Command::new("svn").arg("delete").arg(&target_path))?;
+    run_svn_command(svn_command("svn").arg("delete").arg(&target_path))?;
     run_svn_command(
-        Command::new("svn")
+        svn_command("svn")
             .arg("commit")
             .arg("-m")
             .arg(message)
@@ -958,7 +1038,7 @@ pub fn svn_make_collection(repo_path: &Path, path: &str, message: &str) -> Resul
         path: work_dir.clone(),
     };
     run_svn_command(
-        Command::new("svn")
+        svn_command("svn")
             .arg("checkout")
             .arg(svn_file_url(repo_path))
             .arg(&work_dir),
@@ -974,13 +1054,13 @@ pub fn svn_make_collection(repo_path: &Path, path: &str, message: &str) -> Resul
         VcsError::FilesystemFailed(format!("create svn collection directory: {error}"))
     })?;
     run_svn_command(
-        Command::new("svn")
+        svn_command("svn")
             .arg("add")
             .arg("--parents")
             .arg(&target_path),
     )?;
     run_svn_command(
-        Command::new("svn")
+        svn_command("svn")
             .arg("commit")
             .arg("-m")
             .arg(message)
@@ -1011,7 +1091,7 @@ pub fn svn_patch_properties(
         path: work_dir.clone(),
     };
     run_svn_command(
-        Command::new("svn")
+        svn_command("svn")
             .arg("checkout")
             .arg(svn_file_url(repo_path))
             .arg(&work_dir),
@@ -1024,14 +1104,14 @@ pub fn svn_patch_properties(
     for patch in patches {
         match &patch.value {
             Some(value) => run_svn_command(
-                Command::new("svn")
+                svn_command("svn")
                     .arg("propset")
                     .arg(&patch.name)
                     .arg(value)
                     .arg(&target_path),
             )?,
             None => run_svn_command(
-                Command::new("svn")
+                svn_command("svn")
                     .arg("propdel")
                     .arg(&patch.name)
                     .arg(&target_path),
@@ -1039,7 +1119,7 @@ pub fn svn_patch_properties(
         }
     }
     run_svn_command(
-        Command::new("svn")
+        svn_command("svn")
             .arg("commit")
             .arg("-m")
             .arg(message)
@@ -1234,7 +1314,7 @@ impl Drop for WorkDirCleanup {
 }
 
 fn svnlook_text(repo_path: &Path, revision: i64, subcommand: &str) -> Result<String, VcsError> {
-    let output = Command::new("svnlook")
+    let output = svn_command("svnlook")
         .arg(subcommand)
         .args(["-r", &revision.to_string()])
         .arg(repo_path)
