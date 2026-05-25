@@ -144,9 +144,20 @@ function extractReferenceDefinitions(markdown: string) {
       !inFence && /^ {0,3}\[[^\]]+\]:\s*$/.test(line) && index < lines.length - 1
         ? `${line} ${(lines[index + 1] ?? "").trim()}`
         : line;
+    const nextLine = lines[index + 1] ?? "";
+    const candidateWithTitle =
+      !inFence &&
+      index < lines.length - 1 &&
+      candidateLine === line &&
+      /^ {0,3}\[[^\]]+\]:\s*(?:<[^>\s]+>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_`{|}~]|[^\s>\\])+)\s*$/.test(
+        line,
+      ) &&
+      /^\s*(?:"(?:\\"|[^"\\])*"|'(?:\\'|[^'\\])*'|\((?:\\\)|[^)\\])*\))\s*$/.test(nextLine)
+        ? `${line} ${nextLine.trim()}`
+        : candidateLine;
     const match =
       /^ {0,3}\[([^\]]+)\]:\s*(<[^>\s]+>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_`{|}~]|[^\s>\\])+)(?:\s+(?:"((?:\\"|[^"\\])*)"|'((?:\\'|[^'\\])*)'|\(((?:\\\)|[^)\\])*)\)))?\s*$/.exec(
-        candidateLine,
+        candidateWithTitle,
       );
     if (inFence || !match) {
       markdownLines.push(line);
@@ -166,7 +177,7 @@ function extractReferenceDefinitions(markdown: string) {
       target,
       title: title === undefined ? undefined : unescapeMarkdownPunctuation(title),
     });
-    if (candidateLine !== line) {
+    if (candidateWithTitle !== line) {
       index += 1;
     }
   }
