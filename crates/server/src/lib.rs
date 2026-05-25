@@ -18550,6 +18550,10 @@ async fn rest_create_posting(
             ConnectError::permission_denied("posting notice or readme update is not allowed"),
         ));
     }
+    let should_sync_readme = body.readme;
+    let readme_body_markdown = body.body_markdown.clone();
+    let owner_name_for_sync = owner_name.clone();
+    let project_name_for_sync = project_name.clone();
     let posting = repository
         .create_posting(persistence::CreatePostingInput {
             actor_display_name: actor.display_name.clone(),
@@ -18563,6 +18567,15 @@ async fn rest_create_posting(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+    if should_sync_readme && posting.readme {
+        sync_readme_posting_to_git(
+            &authorization,
+            &owner_name_for_sync,
+            &project_name_for_sync,
+            &readme_body_markdown,
+            &actor,
+        )?;
+    }
     Ok(Json(
         rest_post_detail_response_from_record_with_repository_issue_references(
             repository,
@@ -18629,6 +18642,10 @@ async fn rest_update_posting(
             ConnectError::permission_denied("posting notice or readme update is not allowed"),
         ));
     }
+    let should_sync_readme = body.readme;
+    let readme_body_markdown = body.body_markdown.clone();
+    let owner_name_for_sync = owner_name.clone();
+    let project_name_for_sync = project_name.clone();
     let posting = repository
         .update_posting(persistence::UpdatePostingInput {
             actor_id: actor.id,
@@ -18642,6 +18659,15 @@ async fn rest_update_posting(
         .map_err(internal_error)
         .map_err(RestRouteError::from_connect_error)?
         .ok_or_else(|| RestRouteError::not_found("pilot posting not found"))?;
+    if should_sync_readme && posting.readme {
+        sync_readme_posting_to_git(
+            &access.authorization,
+            &owner_name_for_sync,
+            &project_name_for_sync,
+            &readme_body_markdown,
+            &actor,
+        )?;
+    }
     Ok(Json(
         rest_post_detail_response_from_record_with_repository_issue_references(
             repository,
@@ -23128,6 +23154,34 @@ fn posting_can_delete(
 
 fn posting_can_set_notice(authorization: &persistence::ProjectAuthorizationRecord) -> bool {
     posting_member_or_admin_access(authorization) || posting_group_member_access(authorization)
+}
+
+fn sync_readme_posting_to_git(
+    authorization: &persistence::ProjectAuthorizationRecord,
+    owner_name: &str,
+    project_name: &str,
+    body_markdown: &str,
+    actor: &persistence::AppUserRecord,
+) -> Result<(), RestRouteError> {
+    if !authorization.project.vcs.eq_ignore_ascii_case("GIT") {
+        return Ok(());
+    }
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), authorization.project.id);
+    if !repo_path.exists() {
+        return Ok(());
+    }
+    yona_rust_vcs::commit_readme_file(
+        &repo_path,
+        body_markdown,
+        &actor.display_name,
+        &actor.email_address,
+    )
+    .map(|_| ())
+    .map_err(|error| {
+        RestRouteError::from_connect_error(internal_error(format!(
+            "failed to sync README posting for {owner_name}/{project_name}: {error}"
+        )))
+    })
 }
 
 fn posting_can_comment(

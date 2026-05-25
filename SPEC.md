@@ -606,7 +606,8 @@ DELETE /:owner/:project/post/:number/comment/:commentId/delete → 댓글 삭제
 - [x] PR 본문/review comment, Git commit discussion comment, 게시글/댓글/DB README posting 본문은 REST `bodyMarkdown`/`contentsMarkdown` 원문을 React Markdown renderer로 렌더링하고, `bodyHtml`/`contentsHtml`는 app-runtime compatibility용 빈 필드로 유지한다.
 - [x] Legacy direct posting comment form aliases: `POST /:owner/:project/post/:number/comment`, `POST /:owner/:project/post/:number/comment/:commentId`, and `DELETE /:owner/:project/post/:number/comment/:commentId/delete` reuse the `/api/v1` comment contract and redirect back to the legacy post anchor
 - [x] 검증: `frontend/tests/board-posting-parity.e2e.ts`가 프로젝트/조직 board list, detail, comment CRUD, watch, create/edit/delete CSRF, filter/sort/label/project selector, placeholder 제거를 전용 Playwright surface로 검증한다.
-- [ ] Deferred: Git-backed README commit/sync, issue template edit, online code file edit, `/-_-api/v1/**` board compatibility.
+- [x] Git-backed README commit/sync: README-marked board posting create/update commits `README.md` to the project Git repository when repository storage exists.
+- [ ] Deferred: issue template edit, online code file edit, `/-_-api/v1/**` board compatibility.
 
 ---
 

@@ -248,7 +248,7 @@ Interpretation:
 - [x] REST board API (`/api/v1/**` only)
 - [x] Dedicated board Playwright parity spec
 - [x] Posting body change-history modal anchors
-- [ ] Git-backed README commit/sync
+- [x] Git-backed README commit/sync
 - [ ] Issue template edit / online code file edit through posting forms
 - [ ] Legacy external `/-_-api/v1/**` board compatibility (migrator/deferred)
 - [x] Posting/comment app search

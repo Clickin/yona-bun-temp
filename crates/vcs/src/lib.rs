@@ -383,6 +383,72 @@ pub fn clone_bare_repository(source_repo_path: &Path, repo_path: &Path) -> Resul
     }
 }
 
+pub fn commit_readme_file(
+    repo_path: &Path,
+    body_markdown: &str,
+    author_name: &str,
+    author_email: &str,
+) -> Result<Option<String>, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+
+    let branch = default_branch(repo_path).unwrap_or_else(|| "main".to_string());
+    let had_head = has_head(repo_path);
+    let work_dir = TempWorkDir::create("readme")?;
+    git_clone_repository(repo_path, work_dir.path())?;
+    if !had_head {
+        git_worktree_output(work_dir.path(), &["checkout", "-B", &branch])?;
+        git_output(
+            repo_path,
+            &["symbolic-ref", "HEAD", &format!("refs/heads/{branch}")],
+        )?;
+    }
+
+    let readme_path = work_dir.path().join("README.md");
+    std::fs::write(&readme_path, body_markdown)
+        .map_err(|error| VcsError::FilesystemFailed(error.to_string()))?;
+    git_worktree_output(work_dir.path(), &["add", "README.md"])?;
+    let status = git_worktree_output(
+        work_dir.path(),
+        &["status", "--porcelain", "--", "README.md"],
+    )?;
+    if status.trim().is_empty() {
+        return Ok(None);
+    }
+
+    let email = if author_email.trim().is_empty() {
+        "yona@example.invalid"
+    } else {
+        author_email.trim()
+    };
+    let name = if author_name.trim().is_empty() {
+        "Yona"
+    } else {
+        author_name.trim()
+    };
+    git_worktree_output(
+        work_dir.path(),
+        &[
+            "-c",
+            &format!("user.email={email}"),
+            "-c",
+            &format!("user.name={name}"),
+            "commit",
+            "-m",
+            "Update README",
+        ],
+    )?;
+    let commit_id = git_worktree_output(work_dir.path(), &["rev-parse", "HEAD"])?
+        .trim()
+        .to_string();
+    git_worktree_output(
+        work_dir.path(),
+        &["push", "origin", &format!("HEAD:{branch}")],
+    )?;
+    Ok(Some(commit_id))
+}
+
 pub fn delete_repository(repo_path: &Path) -> Result<(), VcsError> {
     if !repo_path.exists() {
         return Ok(());
