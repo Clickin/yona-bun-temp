@@ -391,6 +391,7 @@ Interpretation:
 - [x] Inline code spans preserve legacy marked matching backtick-run delimiters, newline normalization, and single-space trimming semantics
 - [x] Basic project Markdown autolinks for `@username`, legacy `@owner/project` project mentions, same-project `#123`, legacy `owner#123`, and `owner/project#123` on issue/post/milestone bodies and comments, PR bodies/general review comments, Git non-ranged commit comments, and preview output
 - [x] Metadata-backed legacy commit SHA autolinks for raw `SHA`, `@SHA`, `owner@SHA`, and `owner/project@SHA` on PR body/review comments and Git commit discussion comments
+- [x] Legacy `MarkdownAppTest.test_ignorePattern` behavior for raw HTML-like blocks: escaped `<a>`, `<code>`, and `<div>` content remains opaque to `#123`/URL autolinks
 - [x] Basic bare `http://`/`https://`, `ftp://`, `www.`, and email autolinks on the project Markdown render path
 - [x] Legacy marked angle-bracket URL/email autolinks strip brackets, preserve `mailto:` targets, and accept uppercase URL schemes
 - [x] Legacy marked bare URL/email autolinks trim trailing punctuation and entity-like suffixes outside the rendered link

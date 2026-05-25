@@ -33,6 +33,34 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('href="mailto:help@example.com"');
   });
 
+  it("ignores autolink patterns inside raw HTML-like blocks like legacy MarkdownApp", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        basePath="/yona"
+        issueReferences={[
+          {
+            issueNumber: 1,
+            ownerName: "owner",
+            projectName: "projectYobi",
+            title: "HTML ignored issue",
+          },
+        ]}
+        markdown={
+          "<a href='#'>#1</a>\n<code>\nhttp://yobi.example.com #1 http://yobi.example.com\n</code>\n<div id='#1'>Test</div>"
+        }
+        ownerName="owner"
+        projectName="projectYobi"
+      />,
+    );
+
+    expect(html).toContain("&lt;a href=&#x27;#&#x27;&gt;#1&lt;/a&gt;");
+    expect(html).toContain("http://yobi.example.com #1 http://yobi.example.com");
+    expect(html).toContain("&lt;div id=&#x27;#1&#x27;&gt;Test&lt;/div&gt;");
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain('href="/yona/owner/projectYobi/issue/1"');
+    expect(html).not.toContain('href="http://yobi.example.com"');
+  });
+
   it("renders legacy marked heading ids, levels, and anchors", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"# Title\n\n### Third Heading\n\n###### Final Heading"} />,

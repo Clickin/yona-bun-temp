@@ -1115,6 +1115,23 @@ function MarkdownHeading(props: { context?: MarkdownContext; level: number; text
   return <h6 id={id}>{children}</h6>;
 }
 
+function markdownBlockContainsRawHtmlTag(lines: MarkdownLineRecord[]) {
+  return lines.some((line) => /<\/?[A-Za-z][A-Za-z0-9-]*(?:\s[^<>]*)?>/.test(line.text));
+}
+
+function MarkdownPlainParagraph(props: { breaks: boolean; lines: MarkdownLineRecord[] }) {
+  return (
+    <p>
+      {props.lines.map((line, index) => (
+        <React.Fragment key={line.key}>
+          {index === 0 ? null : props.breaks ? <br /> : "\n"}
+          {line.text}
+        </React.Fragment>
+      ))}
+    </p>
+  );
+}
+
 function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownContext }) {
   const lines = markdownLines(props.block.text);
   const firstLine = lines[0]?.text ?? "";
@@ -1222,6 +1239,9 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
         </p>
       </blockquote>
     );
+  }
+  if (markdownBlockContainsRawHtmlTag(lines)) {
+    return <MarkdownPlainParagraph breaks={props.context?.breaks ?? true} lines={lines} />;
   }
   const headingMatch = /^ {0,3}(#{1,6})(?=\s|$)(.*)$/.exec(firstLine);
   if (headingMatch) {
