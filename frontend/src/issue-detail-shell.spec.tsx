@@ -182,6 +182,42 @@ describe("ProjectIssueDetailPage legacy issue shell", () => {
     expect(html).toContain('class="yobicon-edit-2"');
   });
 
+  it("uses metadata-backed mention links in the legacy issue history modal", () => {
+    const html = renderToStaticMarkup(
+      <ProjectIssueDetailPage
+        detail={projectDetail}
+        issue={{
+          ...issueDetail,
+          historyMarkdown: "Old body @owner @owner/projectYobi @ghost @owner/missing",
+          mentionReferences: [
+            {
+              kind: "user",
+              label: "owner",
+              loginId: "owner",
+              ownerName: "",
+              projectName: "",
+            },
+            {
+              kind: "project",
+              label: "owner/projectYobi",
+              loginId: "",
+              ownerName: "owner",
+              projectName: "projectYobi",
+            },
+          ],
+        }}
+        runtimeConfig={{ apiBaseUrl: "/yona/api", basePath: "/yona" }}
+      />,
+    );
+
+    expect(html).toContain('id="-yona-posting-history"');
+    expect(html).toContain('href="/yona/owner"');
+    expect(html).toContain('href="/yona/owner/projectYobi"');
+    expect(html).toContain("@ghost @owner/missing");
+    expect(html).not.toContain('href="/yona/ghost"');
+    expect(html).not.toContain('href="/yona/owner/missing"');
+  });
+
   it("renders legacy event timeline anchors and hides body-change events", () => {
     const html = renderToStaticMarkup(
       <ProjectIssueDetailPage

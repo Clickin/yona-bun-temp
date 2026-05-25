@@ -38,7 +38,15 @@ function fallbackProjectDetail(): ProjectDetailViewModel {
   };
 }
 
-function PostingHistoryModal(props: { historyMarkdown?: string; linkLabel: string }) {
+function PostingHistoryModal(props: {
+  basePath?: string;
+  historyMarkdown?: string;
+  issueReferences?: ProjectIssueDetailViewModel["issueReferences"];
+  linkLabel: string;
+  mentionReferences?: ProjectIssueDetailViewModel["mentionReferences"];
+  ownerName?: string;
+  projectName?: string;
+}) {
   const historyMarkdown = props.historyMarkdown ?? "";
   if (!historyMarkdown.trim()) {
     return null;
@@ -56,7 +64,15 @@ function PostingHistoryModal(props: { historyMarkdown?: string; linkLabel: strin
           </button>
           <h5 className="nm">change.history</h5>
         </div>
-        <MarkdownRenderer className="modal-body" markdown={historyMarkdown} />
+        <MarkdownRenderer
+          className="modal-body"
+          basePath={props.basePath}
+          issueReferences={props.issueReferences}
+          markdown={historyMarkdown}
+          mentionReferences={props.mentionReferences}
+          ownerName={props.ownerName}
+          projectName={props.projectName}
+        />
         <div className="modal-footer">
           <button className="ybtn ybtn-info ybtn-small" data-dismiss="modal" type="button">
             button.confirm
@@ -391,8 +407,13 @@ export function ProjectIssueDetailPage(props: {
           </div>
           {issue ? (
             <PostingHistoryModal
+              basePath={props.runtimeConfig?.basePath}
               historyMarkdown={issue.historyMarkdown}
+              issueReferences={issue.issueReferences}
               linkLabel="change.edited"
+              mentionReferences={issue.mentionReferences}
+              ownerName={issue.ownerName}
+              projectName={issue.projectName}
             />
           ) : null}
         </header>
