@@ -386,7 +386,7 @@ Interpretation:
 - [x] Basic Markdown rendering on issue surfaces
 - [x] Basic Markdown rendering on milestone surfaces
 - [x] HTML sanitization on implemented render path
-- [x] Marked-style leading-space ATX and setext heading ids and `#` through `######` heading levels on the project Markdown render path
+- [x] Marked-style leading-space ATX and setext heading ids, `.head-anchor` links, and `#` through `######` heading levels on the project Markdown render path
 - [x] Inline emphasis renders as `<em>` on the project Markdown render path
 - [x] Inline code spans preserve legacy marked matching backtick-run delimiters, newline normalization, and single-space trimming semantics
 - [x] Basic project Markdown autolinks for `@username`, legacy `@owner/project` project mentions, same-project `#123`, legacy `owner#123`, and `owner/project#123` on issue/post/milestone bodies and comments, PR bodies/general review comments, Git non-ranged commit comments, and preview output

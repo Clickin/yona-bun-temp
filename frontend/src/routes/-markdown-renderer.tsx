@@ -760,7 +760,14 @@ function slugifyHeadingId(value: string): string {
 
 function MarkdownHeading(props: { context?: MarkdownContext; level: number; text: string }) {
   const id = slugifyHeadingId(props.text);
-  const children = <MarkdownInline context={props.context} line={props.text} />;
+  const children = (
+    <>
+      <MarkdownInline context={props.context} line={props.text} />
+      <a className="head-anchor" href={`#${id}`}>
+        #
+      </a>
+    </>
+  );
   if (props.level === 1) {
     return <h1 id={id}>{children}</h1>;
   }

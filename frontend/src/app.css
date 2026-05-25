@@ -207,6 +207,23 @@ h1 {
   vertical-align: middle;
 }
 
+.markdown-wrap h1 .head-anchor,
+.markdown-wrap h2 .head-anchor,
+.markdown-wrap h3 .head-anchor,
+.markdown-wrap h4 .head-anchor,
+.markdown-wrap h5 .head-anchor {
+  margin-left: 3px;
+  opacity: 0;
+}
+
+.markdown-wrap h1:hover .head-anchor,
+.markdown-wrap h2:hover .head-anchor,
+.markdown-wrap h3:hover .head-anchor,
+.markdown-wrap h4:hover .head-anchor,
+.markdown-wrap h5:hover .head-anchor {
+  opacity: 1;
+}
+
 .notification-page .activity-streams {
   margin: 0;
 }

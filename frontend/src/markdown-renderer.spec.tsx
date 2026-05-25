@@ -33,14 +33,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('href="mailto:help@example.com"');
   });
 
-  it("renders legacy marked heading ids and levels", () => {
+  it("renders legacy marked heading ids, levels, and anchors", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"# Title\n\n### Third Heading\n\n###### Final Heading"} />,
     );
 
-    expect(html).toContain('<h1 id="title">Title</h1>');
-    expect(html).toContain('<h3 id="third-heading">Third Heading</h3>');
-    expect(html).toContain('<h6 id="final-heading">Final Heading</h6>');
+    expect(html).toContain('<h1 id="title">Title<a class="head-anchor" href="#title">#</a></h1>');
+    expect(html).toContain(
+      '<h3 id="third-heading">Third Heading<a class="head-anchor" href="#third-heading">#</a></h3>',
+    );
+    expect(html).toContain(
+      '<h6 id="final-heading">Final Heading<a class="head-anchor" href="#final-heading">#</a></h6>',
+    );
   });
 
   it("renders leading-space ATX headings like legacy marked", () => {
@@ -48,8 +52,12 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer markdown={"  ## Indented Title\n\n   # Three Space"} />,
     );
 
-    expect(html).toContain('<h2 id="indented-title">Indented Title</h2>');
-    expect(html).toContain('<h1 id="three-space">Three Space</h1>');
+    expect(html).toContain(
+      '<h2 id="indented-title">Indented Title<a class="head-anchor" href="#indented-title">#</a></h2>',
+    );
+    expect(html).toContain(
+      '<h1 id="three-space">Three Space<a class="head-anchor" href="#three-space">#</a></h1>',
+    );
     expect(html).not.toContain("<p>## Indented Title</p>");
   });
 
@@ -58,8 +66,12 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer markdown={"Primary Title\n=====\n\nSecondary Title\n-----"} />,
     );
 
-    expect(html).toContain('<h1 id="primary-title">Primary Title</h1>');
-    expect(html).toContain('<h2 id="secondary-title">Secondary Title</h2>');
+    expect(html).toContain(
+      '<h1 id="primary-title">Primary Title<a class="head-anchor" href="#primary-title">#</a></h1>',
+    );
+    expect(html).toContain(
+      '<h2 id="secondary-title">Secondary Title<a class="head-anchor" href="#secondary-title">#</a></h2>',
+    );
   });
 
   it("renders leading-space setext heading underlines like legacy marked", () => {
@@ -67,8 +79,12 @@ describe("MarkdownRenderer", () => {
       <MarkdownRenderer markdown={"Indented Setext\n  ===\n\nSecondary\n   ---"} />,
     );
 
-    expect(html).toContain('<h1 id="indented-setext">Indented Setext</h1>');
-    expect(html).toContain('<h2 id="secondary">Secondary</h2>');
+    expect(html).toContain(
+      '<h1 id="indented-setext">Indented Setext<a class="head-anchor" href="#indented-setext">#</a></h1>',
+    );
+    expect(html).toContain(
+      '<h2 id="secondary">Secondary<a class="head-anchor" href="#secondary">#</a></h2>',
+    );
     expect(html).not.toContain("<p>Indented Setext");
   });
 

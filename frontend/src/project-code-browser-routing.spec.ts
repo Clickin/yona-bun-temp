@@ -216,7 +216,9 @@ describe("project code browser routing", () => {
 
     expect(markdownHtml).toContain('id="codeVal"');
     expect(markdownHtml).toContain('class="markdown-wrap codebrowser-markdown"');
-    expect(markdownHtml).toContain('<h1 id="hello-yona">Hello Yona</h1>');
+    expect(markdownHtml).toContain(
+      '<h1 id="hello-yona">Hello Yona<a class="head-anchor" href="#hello-yona">#</a></h1>',
+    );
     expect(markdownHtml).toContain('src="/yona/owner/projectYobi/files/main/assets/logo.png"');
     expect(markdownHtml).toContain('href="./docs/guide.md"');
     expect(markdownHtml).not.toContain('id="showCode"');

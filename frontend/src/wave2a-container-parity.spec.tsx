@@ -165,7 +165,9 @@ describe("wave 2A container parity", () => {
 
     expect(html).toContain("README.md");
     expect(html).toContain('class="readme-body markdown-wrap"');
-    expect(html).toContain('<h1 id="git-readme">Git README</h1>');
+    expect(html).toContain(
+      '<h1 id="git-readme">Git README<a class="head-anchor" href="#git-readme">#</a></h1>',
+    );
     expect(html).toContain('src="/yona/weblabs/projectYobi/files/main/assets/logo.png"');
     expect(html).toContain('href="/yona/weblabs/projectYobi/code/main/docs/guide.md"');
     expect(html).not.toContain("No README post yet.");
