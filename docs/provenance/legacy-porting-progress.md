@@ -391,7 +391,7 @@ Interpretation:
 - [x] Inline code spans preserve legacy marked matching backtick-run delimiters, newline normalization, and single-space trimming semantics
 - [x] Basic project Markdown autolinks for `@username`, legacy `@owner/project` project mentions, same-project `#123`, legacy `owner#123`, and `owner/project#123` on issue/post/milestone bodies and comments, PR bodies/general review comments, Git non-ranged commit comments, and preview output
 - [x] Basic bare `http://`/`https://`, `ftp://`, `www.`, and email autolinks on the project Markdown render path
-- [x] Legacy marked angle-bracket URL/email autolinks strip brackets and preserve `mailto:` targets
+- [x] Legacy marked angle-bracket URL/email autolinks strip brackets, preserve `mailto:` targets, and accept uppercase URL schemes
 - [x] Legacy marked bare URL/email autolinks trim trailing punctuation and entity-like suffixes outside the rendered link
 - [x] Inline Markdown links and images preserve legacy marked angle-wrapped targets, escaped target/title punctuation, and `title` attributes, including double-quoted, single-quoted, and parenthesized delimiters
 - [x] Reference-style Markdown links and images resolve legacy marked definitions without rendering definition lines, including escaped reference labels, newline-split target/title definitions, escaped target/title punctuation, and fenced-code exclusion for backtick/tilde fences

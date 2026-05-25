@@ -530,6 +530,16 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("&lt;help@example.com&gt;");
   });
 
+  it("renders uppercase angle-bracket URL autolinks like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown="See <HTTP://EXAMPLE.COM> and plain HTTP://EXAMPLE.COM" />,
+    );
+
+    expect(html).toContain('<a href="HTTP://EXAMPLE.COM">HTTP://EXAMPLE.COM</a>');
+    expect(html).toContain(" plain HTTP://EXAMPLE.COM");
+    expect(html).not.toContain('href="HTTP://EXAMPLE.COM">plain');
+  });
+
   it("trims trailing punctuation from bare URLs like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown="See (https://example.com/docs), then https://example.com/end." />,
