@@ -615,7 +615,21 @@ function tableAlignment(separator: string): MarkdownTableCell["align"] {
   return undefined;
 }
 
-function parseMarkdownTable(lines: MarkdownLineRecord[]): MarkdownTableRecord | null {
+function gfmTableBodyInterruption(line: string): boolean {
+  return (
+    /^ {0,3}(?:(?:- *){3,}|(?:_ *){3,}|(?:\* *){3,})$/.test(line) ||
+    /^ {0,3}#{1,6} /.test(line) ||
+    /^ {0,3}>/.test(line) ||
+    /^ {4}[^\n]/.test(line) ||
+    /^ {0,3}(?:`{3,}(?=[^`\n]*$)|~{3,})/.test(line) ||
+    /^ {0,3}(?:[*+-]|1[.)]) /.test(line) ||
+    /^ {0,3}<(?:\/?[A-Za-z][\w:-]*(?:\s|>|\/>)|(?:script|pre|style|!--))/.test(line)
+  );
+}
+
+function parseMarkdownTableSpan(
+  lines: MarkdownLineRecord[],
+): { consumedLineCount: number; table: MarkdownTableRecord } | null {
   if (lines.length < 2) {
     return null;
   }
@@ -633,7 +647,11 @@ function parseMarkdownTable(lines: MarkdownLineRecord[]): MarkdownTableRecord | 
     text,
   }));
   const rows: MarkdownTableRow[] = [];
+  let consumedLineCount = 2;
   for (const line of lines.slice(2)) {
+    if (gfmTableBodyInterruption(line.text)) {
+      break;
+    }
     const cells = splitTableRow(line.text, headers.length);
     rows.push({
       cells: headers.map((headerCell, columnIndex) => ({
@@ -643,8 +661,36 @@ function parseMarkdownTable(lines: MarkdownLineRecord[]): MarkdownTableRecord | 
       })),
       key: line.key,
     });
+    consumedLineCount += 1;
   }
-  return { headers, rows };
+  return { consumedLineCount, table: { headers, rows } };
+}
+
+function MarkdownTable(props: { context?: MarkdownContext; table: MarkdownTableRecord }) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          {props.table.headers.map((header) => (
+            <th align={header.align} key={header.key}>
+              <MarkdownInline context={props.context} line={header.text} />
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {props.table.rows.map((row) => (
+          <tr key={row.key}>
+            {row.cells.map((cell) => (
+              <td align={cell.align} key={cell.key}>
+                <MarkdownInline context={props.context} line={cell.text} />
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
 }
 
 function parseMarkdownList(lines: MarkdownLineRecord[]): MarkdownListRecord | null {
@@ -850,31 +896,23 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
       </pre>
     );
   }
-  const table = parseMarkdownTable(lines);
-  if (table) {
+  const tableSpan = parseMarkdownTableSpan(lines);
+  if (tableSpan) {
+    const remainingLines = lines.slice(tableSpan.consumedLineCount);
     return (
-      <table>
-        <thead>
-          <tr>
-            {table.headers.map((header) => (
-              <th align={header.align} key={header.key}>
-                <MarkdownInline context={props.context} line={header.text} />
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {table.rows.map((row) => (
-            <tr key={row.key}>
-              {row.cells.map((cell) => (
-                <td align={cell.align} key={cell.key}>
-                  <MarkdownInline context={props.context} line={cell.text} />
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <>
+        <MarkdownTable context={props.context} table={tableSpan.table} />
+        {remainingLines.length > 0 ? (
+          <MarkdownBlock
+            block={{
+              key: `${props.block.key}-after-table`,
+              terminalNewline: props.block.terminalNewline,
+              text: remainingLines.map((line) => line.text).join("\n"),
+            }}
+            context={props.context}
+          />
+        ) : null}
+      </>
     );
   }
   const list = parseMarkdownList(lines);

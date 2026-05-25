@@ -638,6 +638,18 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<td>4</td>");
   });
 
+  it("stops GFM table body rows before interrupting blocks like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"A | B\n- | -\n1 | 2\n# Next"} />,
+    );
+
+    expect(html).toContain("<table>");
+    expect(html).toContain("<td>1</td>");
+    expect(html).toContain("<td>2</td>");
+    expect(html).toContain('<h1 id="next">Next<a class="head-anchor" href="#next">#</a></h1>');
+    expect(html).not.toContain("<td># Next</td>");
+  });
+
   it("renders basic smart lists like legacy marked", () => {
     const unorderedHtml = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- **first**\n- ~~second~~"} />,
