@@ -172,6 +172,15 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<p>After</p>");
   });
 
+  it("renders spaced horizontal rules like legacy marked", () => {
+    const html = renderToStaticMarkup(<MarkdownRenderer markdown={"Before\n\n- - -\n\nAfter"} />);
+
+    expect(html).toContain("<p>Before</p>");
+    expect(html).toContain("<hr/>");
+    expect(html).toContain("<p>After</p>");
+    expect(html).not.toContain("<p>- - -</p>");
+  });
+
   it("renders legacy owner issue references and project mentions", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

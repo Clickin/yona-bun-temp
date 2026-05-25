@@ -403,7 +403,7 @@ Interpretation:
 - [x] Basic blockquotes render as `<blockquote>` on the project Markdown render path
 - [x] Marked-style backslash escapes keep punctuation literal before inline Markdown and autolink parsing
 - [x] Basic task checklist rendering with sanitized disabled checkbox inputs
-- [x] Horizontal rules render as `<hr>` on the project Markdown render path
+- [x] Horizontal rules render as `<hr>` on the project Markdown render path, including legacy spaced marker forms
 - [x] Basic safe inline image rendering on the project Markdown render path
 - [x] Basic indented code blocks plus backtick and tilde fenced-code block rendering with optional separating space, EOF closure, backtick-fence indent compensation, first info-string token language class preservation, and matching closing-fence length on the project Markdown render path
 - [x] Code-browser Markdown files render in React with legacy `.codebrowser-markdown` while the REST payload rewrites local `./...` image paths to the project file route as Markdown
