@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { IssueReferenceMetadata } from "../api/issue-meta";
+import type { IssueReferenceMetadata, MentionReferenceMetadata } from "../api/issue-meta";
 import type { RuntimeConfig } from "../runtime-config";
 import { MarkdownAttachmentTextarea } from "./-markdown-attachment-textarea";
 import { MarkdownRenderer } from "./-markdown-renderer";
@@ -59,6 +59,7 @@ export interface CodeReviewCommentViewModel {
   createdLabel: string;
   id: number;
   issueReferences?: IssueReferenceMetadata[];
+  mentionReferences?: MentionReferenceMetadata[];
   threadId: number;
   viaEmail: boolean;
 }
@@ -1561,6 +1562,7 @@ function CommitDiscussionThread(props: {
                   data-via-email={comment.viaEmail ? "true" : undefined}
                   issueReferences={comment.issueReferences}
                   markdown={comment.contentsMarkdown}
+                  mentionReferences={comment.mentionReferences}
                   ownerName={props.commitDetail.ownerName}
                   projectName={props.commitDetail.projectName}
                 />

@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { RuntimeConfig } from "../runtime-config";
-import type { IssueReferenceMetadata } from "./issue-meta";
-import { normalizeIssueReferences } from "./issue-meta";
+import type { IssueReferenceMetadata, MentionReferenceMetadata } from "./issue-meta";
+import { normalizeIssueReferences, normalizeMentionReferences } from "./issue-meta";
 import { apiQueryKeys } from "./query-keys";
 import { restFetch } from "./rest-client";
 
@@ -15,6 +15,7 @@ export type CodeReviewComment = {
   createdLabel: string;
   id: number;
   issueReferences?: IssueReferenceMetadata[];
+  mentionReferences?: MentionReferenceMetadata[];
   threadId: number;
   viaEmail: boolean;
 };
@@ -107,6 +108,7 @@ function normalizeComment(comment: Partial<CodeReviewComment>): CodeReviewCommen
     createdLabel: comment.createdLabel ?? "",
     id: comment.id ?? 0,
     issueReferences: normalizeIssueReferences(comment.issueReferences),
+    mentionReferences: normalizeMentionReferences(comment.mentionReferences),
     threadId: comment.threadId ?? 0,
     viaEmail: comment.viaEmail ?? false,
   };

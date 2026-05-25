@@ -955,7 +955,7 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
             Some(&cookie),
             Some(&csrf),
             json!({
-                "contentsMarkdown": "First **commit** note @owner #1 owner/projectYobi#1 `<script>alert(1)</script> @owner #1`"
+                "contentsMarkdown": "First **commit** note @owner @owner/projectYobi @ghost @owner/missing #1 owner/projectYobi#1 `<script>alert(1)</script> @owner #1`"
             }),
         )
         .await,
@@ -968,7 +968,40 @@ async fn rest_commit_detail_creates_comments_and_updates_threads_from_git_repo()
     assert_eq!(created["threads"][0]["authorLoginId"], "owner");
     assert_eq!(
         created["threads"][0]["comments"][0]["contentsMarkdown"],
-        "First **commit** note @owner #1 owner/projectYobi#1 `<script>alert(1)</script> @owner #1`"
+        "First **commit** note @owner @owner/projectYobi @ghost @owner/missing #1 owner/projectYobi#1 `<script>alert(1)</script> @owner #1`"
+    );
+    let mention_targets = created["threads"][0]["comments"][0]["mentionReferences"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| {
+            (
+                item["kind"].as_str().unwrap().to_string(),
+                item["loginId"].as_str().unwrap_or_default().to_string(),
+                item["ownerName"].as_str().unwrap_or_default().to_string(),
+                item["projectName"].as_str().unwrap_or_default().to_string(),
+            )
+        })
+        .collect::<Vec<_>>();
+    assert!(mention_targets.contains(&(
+        "user".to_string(),
+        "owner".to_string(),
+        String::new(),
+        String::new()
+    )));
+    assert!(mention_targets.contains(&(
+        "project".to_string(),
+        String::new(),
+        "owner".to_string(),
+        "projectYobi".to_string()
+    )));
+    assert!(
+        !mention_targets
+            .iter()
+            .any(|(_, login_id, owner_name, project_name)| {
+                login_id == "ghost" || owner_name == "owner" && project_name == "missing"
+            }),
+        "{mention_targets:?}"
     );
     assert_eq!(
         created["threads"][0]["comments"][0]["contentsHtml"]

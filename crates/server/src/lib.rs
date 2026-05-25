@@ -15942,6 +15942,9 @@ async fn rest_code_commit_detail_response(
         markdown_issue_references_for_project(repository, authorization, actor_id, &markdowns)
             .await
             .map_err(RestRouteError::from_connect_error)?;
+    let mention_references = markdown_mention_references(repository, &markdowns)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
 
     Ok(code_commit_detail_response_from_snapshot(
         authorization,
@@ -15950,6 +15953,7 @@ async fn rest_code_commit_detail_response(
         threads,
         base_path,
         &issue_references,
+        &mention_references,
     ))
 }
 
@@ -16087,6 +16091,7 @@ async fn rest_update_commit_discussion_thread_state(
         record,
         Some(actor.id),
         can_moderate,
+        &[],
         &[],
     )))
 }
@@ -29616,6 +29621,7 @@ fn rest_commit_thread_from_record(
     actor_id: Option<i64>,
     can_moderate: bool,
     issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
 ) -> RestReviewThread {
     RestReviewThread {
         author_id: record.author_id.unwrap_or_default(),
@@ -29630,7 +29636,7 @@ fn rest_commit_thread_from_record(
                     comment,
                     can_delete,
                     issue_references,
-                    &[],
+                    mention_references,
                 )
             })
             .collect(),
@@ -30157,6 +30163,7 @@ fn code_commit_detail_response_from_snapshot(
     threads: Vec<persistence::ReviewThreadRecord>,
     _base_path: &str,
     issue_references: &[MarkdownIssueReference],
+    mention_references: &[MarkdownMentionReference],
 ) -> RestCodeCommitDetailResponse {
     let can_moderate = actor_id.is_some() && project_update_allowed(authorization).unwrap_or(false);
     RestCodeCommitDetailResponse {
@@ -30196,7 +30203,13 @@ fn code_commit_detail_response_from_snapshot(
         threads: threads
             .into_iter()
             .map(|thread| {
-                rest_commit_thread_from_record(thread, actor_id, can_moderate, issue_references)
+                rest_commit_thread_from_record(
+                    thread,
+                    actor_id,
+                    can_moderate,
+                    issue_references,
+                    mention_references,
+                )
             })
             .collect(),
     }
