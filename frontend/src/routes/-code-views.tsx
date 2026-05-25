@@ -427,6 +427,20 @@ function parseUnifiedDiffLines(patch: string): ParsedDiffLine[] {
   });
 }
 
+function diffFileStats(lines: ParsedDiffLine[]) {
+  return lines.reduce(
+    (stats, line) => {
+      if (line.kind === "add") {
+        stats.added += 1;
+      } else if (line.kind === "remove") {
+        stats.deleted += 1;
+      }
+      return stats;
+    },
+    { added: 0, deleted: 0 },
+  );
+}
+
 function diffLineClass(kind: ParsedDiffLine["kind"]) {
   return kind === "hunk" ? "range" : kind;
 }
@@ -1134,6 +1148,7 @@ function CodeCommitDiffView(props: {
           ) : (
             files.map((file) => {
               const diffLines = parseUnifiedDiffLines(file.patch);
+              const stats = diffFileStats(diffLines);
               return (
                 <article
                   className="diff-file diff-container"
@@ -1141,7 +1156,13 @@ function CodeCommitDiffView(props: {
                   id={diffAnchorId(file.path)}
                   key={file.path}
                 >
-                  <h2>{file.path}</h2>
+                  <h2>
+                    <span className="filename">{file.path}</span>
+                    <span aria-label="Changed lines" className="diff-stats">
+                      <span className="num-added">{`+${stats.added}`}</span>
+                      <span className="num-deleted">{`-${stats.deleted}`}</span>
+                    </span>
+                  </h2>
                   <table
                     className="diff-code diff-table"
                     onMouseUp={(event) =>

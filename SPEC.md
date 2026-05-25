@@ -736,7 +736,7 @@ GET   /:owner/:project/compare/:revA..:revB → 커밋 비교
 - [x] 커밋 diff: read-only unified diff 형식, legacy diff anchor/class shell 표시
 - [x] 커밋 비교: `revA..revB` 범위의 read-only unified diff와 legacy compare shell 표시
 - [x] 브랜치 관리: legacy `branches.scala.html` 표, 기본 브랜치 우선 표시, branch-row 최신 PR 링크, 기본 브랜치 변경, non-default 브랜치 삭제
-- [ ] 커밋 diff comment: 파일별 변경 라인 수, 인라인 코멘트 가능 위치 표시
+- [x] 커밋 diff comment: 파일별 변경 라인 수, 인라인 코멘트 가능 위치 표시
 
 ---
 

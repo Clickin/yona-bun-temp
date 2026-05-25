@@ -1657,11 +1657,37 @@ h1 {
 }
 
 .diff-file h2 {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
   margin: 0;
   padding: 8px 10px;
   font-size: 13px;
   background: #f7f7f7;
   border-bottom: 1px solid #ddd;
+}
+
+.diff-file h2 .filename {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.diff-stats {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.diff-stats .num-added {
+  color: #287d3c;
+}
+
+.diff-stats .num-deleted {
+  color: #b73a2d;
 }
 
 .diff-code {
