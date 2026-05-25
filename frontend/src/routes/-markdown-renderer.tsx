@@ -663,8 +663,10 @@ function parseFencedCodeBlock(lines: MarkdownLineRecord[]): MarkdownCodeBlockRec
   if (lines.length < 2) {
     return null;
   }
-  const openMatch = /^```\s*([A-Za-z0-9_+.-]+)?\s*$/.exec(lines[0]?.text ?? "");
-  if (!openMatch || !/^```\s*$/.test(lines[lines.length - 1]?.text ?? "")) {
+  const openMatch = /^(`{3,}|~{3,})\s*([A-Za-z0-9_+.-]+)?\s*$/.exec(lines[0]?.text ?? "");
+  const fence = openMatch?.[1] ?? "";
+  const closePattern = fence.startsWith("`") ? /^`{3,}\s*$/ : /^~{3,}\s*$/;
+  if (!openMatch || !closePattern.test(lines[lines.length - 1]?.text ?? "")) {
     return null;
   }
   return {
@@ -672,7 +674,7 @@ function parseFencedCodeBlock(lines: MarkdownLineRecord[]): MarkdownCodeBlockRec
       .slice(1, -1)
       .map((line) => line.text)
       .join("\n"),
-    language: openMatch[1],
+    language: openMatch[2],
   };
 }
 

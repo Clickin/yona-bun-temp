@@ -64,6 +64,18 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("issueLink");
   });
 
+  it("renders tilde fenced code blocks like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"~~~ js\nconst value = '#1';\n~~~"} />,
+    );
+
+    expect(html).toContain("<pre><code");
+    expect(html).toContain('class="js"');
+    expect(html).toContain("const value = &#x27;#1&#x27;;");
+    expect(html).not.toContain("issueLink");
+    expect(html).not.toContain("~~~");
+  });
+
   it("renders horizontal rules like legacy marked", () => {
     const html = renderToStaticMarkup(<MarkdownRenderer markdown={"Before\n\n---\n\nAfter"} />);
 
