@@ -1837,6 +1837,48 @@ export function ProjectReviewsPage(props: {
           ))}
         </div>
       )}
+      <div className="pull-left">
+        <a
+          className="ybtn small"
+          href={projectReviewExcelExportHref(
+            props.runtimeConfig,
+            detail.ownerName,
+            detail.projectName,
+            props.query,
+            state,
+          )}
+        >
+          <i className="yobicon-file-excel" /> issue.downloadAsExcel
+        </a>
+      </div>
     </main>
   );
+}
+
+function projectReviewExcelExportHref(
+  runtimeConfig: RuntimeConfig,
+  ownerName: string,
+  projectName: string,
+  query: ReviewThreadListQuery,
+  state: string,
+): string {
+  const params = new URLSearchParams();
+  params.set("state", state);
+  if (query.filter) {
+    params.set("filter", query.filter);
+  }
+  if (query.authorId) {
+    params.set("authorId", String(query.authorId));
+  }
+  if (query.participantId) {
+    params.set("participantId", String(query.participantId));
+  }
+  if (query.orderBy) {
+    params.set("orderBy", query.orderBy);
+  }
+  if (query.orderDir) {
+    params.set("orderDir", query.orderDir);
+  }
+  params.set("format", "xls");
+  return `${buildProjectHref(runtimeConfig, ownerName, projectName, "reviews")}?${params.toString()}`;
 }

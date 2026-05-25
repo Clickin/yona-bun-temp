@@ -847,7 +847,7 @@ legacy external `/-_-api/v1/**` compatibility는 이번 app runtime batch에서 
 | 리뷰 승인/철회             | 리뷰어가 승인/철회                   | Phase 4B 구현 | 4     |
 | 리뷰 상태 카운트           | 필수 reviewer 수와 부족 reviewer 수 표시 | required/lacking/reviewed detail projection 구현 | 4     |
 | 코드 리뷰 댓글             | 특정 라인에 인라인 댓글              | 일반 PR review comment + side-aware single/multi-line ranged inline create/edit/delete 구현 | 4     |
-| 리뷰 스레드                | 인라인 댓글 스레드 open/close        | Phase 4B open/close mutation 구현 | 4     |
+| 리뷰 스레드                | 인라인 댓글 스레드 open/close, 목록 Excel export | Phase 4B open/close mutation + `format=xls` export 구현 | 4     |
 | Fork & PR                  | 프로젝트 fork → PR 워크플로우        | fork form/clone + reviewer-threshold-gated conflict-free PR merge accept 구현 | 4     |
 | from 브랜치 삭제/복구      | merge 후 소스 브랜치 삭제/복구       | native Git wrapper 구현 | 4     |
 | PR commit 변경             | source branch push 시 PR commit/event 갱신 | Smart HTTP post-receive에서 `PULL_REQUEST_COMMIT_CHANGED` event/webhook 구현 | 4     |
@@ -861,7 +861,7 @@ legacy external `/-_-api/v1/**` compatibility는 이번 app runtime batch에서 
 - [x] PR interaction: close/reopen, review/unreview, 일반 PR comment, review thread open/close
 - [x] PR review threshold projection: required/lacking/reviewed 상태를 detail payload와 reviewer status UI에 표시
 - [x] 인라인 코드 리뷰: diff 뷰에서 add/context/deleted 라인 클릭 또는 같은 파일 diff text 선택 → 댓글 입력 → side-aware single/multi-line 스레드 생성/edit/delete 구현
-- [~] 리뷰 스레드: open/close 상태 전환 구현; PR changes specific commit 선택, PRIOR selected label, selected commit `.commitInfo`/`.commitMsg.mt5`, `.btn-show-reviewcards`/`.btn-hide-reviewcards`, `#reviewcards-open`/`#reviewcards-closed` review card 탭, `.review-card.open|closed.outdated`, `.outdated-label`, current changes inline diff의 outdated/commit-only thread 제외 표시는 구현; API-level inline/card thread list 분리와 full resolve workflow는 gap
+- [~] 리뷰 스레드: open/close 상태 전환 구현; project review list의 legacy `reviewthread/list.scala.html` `format=xls` Excel 호환 export 구현; PR changes specific commit 선택, PRIOR selected label, selected commit `.commitInfo`/`.commitMsg.mt5`, `.btn-show-reviewcards`/`.btn-hide-reviewcards`, `#reviewcards-open`/`#reviewcards-closed` review card 탭, `.review-card.open|closed.outdated`, `.outdated-label`, current changes inline diff의 outdated/commit-only thread 제외 표시는 구현; API-level inline/card thread list 분리와 full resolve workflow는 gap
 - [x] Merge: reviewer threshold를 만족하고 충돌 없으면 merge 버튼 활성화, 충돌/리뷰 부족 시 비활성화 + 안내
 - [x] Fork: 프로젝트 fork 시 동일 이름의 개인/조직 프로젝트 생성, bare repo 복제
 

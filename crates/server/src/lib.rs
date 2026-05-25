@@ -2024,6 +2024,22 @@ async fn serve_filesystem_or_smart_http_fallback(
         )
         .await;
     }
+    if let Some(route) = direct_review_excel_route_from_request(
+        &method,
+        request.uri().path(),
+        request.uri().query(),
+        &base_path,
+    ) {
+        return direct_review_excel_export(
+            request.headers().clone(),
+            route.owner_name,
+            route.project_name,
+            route.query,
+            session_manager,
+            backend,
+        )
+        .await;
+    }
     if svn_protocol_route_from_path(request.uri().path(), &base_path).is_some() {
         return direct_svn_protocol_request(request, session_manager, backend, base_path).await;
     }
@@ -2056,6 +2072,22 @@ async fn serve_embedded_or_smart_http_fallback(
         &base_path,
     ) {
         return direct_issue_excel_export(
+            request.headers().clone(),
+            route.owner_name,
+            route.project_name,
+            route.query,
+            session_manager,
+            backend,
+        )
+        .await;
+    }
+    if let Some(route) = direct_review_excel_route_from_request(
+        &method,
+        request.uri().path(),
+        request.uri().query(),
+        &base_path,
+    ) {
+        return direct_review_excel_export(
             request.headers().clone(),
             route.owner_name,
             route.project_name,
@@ -2104,6 +2136,22 @@ async fn smart_http_or_not_found(
         )
         .await;
     }
+    if let Some(route) = direct_review_excel_route_from_request(
+        request.method(),
+        request.uri().path(),
+        request.uri().query(),
+        &base_path,
+    ) {
+        return direct_review_excel_export(
+            request.headers().clone(),
+            route.owner_name,
+            route.project_name,
+            route.query,
+            session_manager,
+            backend,
+        )
+        .await;
+    }
     if svn_protocol_route_from_path(request.uri().path(), &base_path).is_some() {
         return direct_svn_protocol_request(request, session_manager, backend, base_path).await;
     }
@@ -2124,6 +2172,12 @@ struct DirectIssueExcelRoute {
     owner_name: String,
     project_name: String,
     query: RestProjectIssuesQuery,
+}
+
+struct DirectReviewExcelRoute {
+    owner_name: String,
+    project_name: String,
+    query: RestReviewThreadListQuery,
 }
 
 fn direct_issue_excel_route_from_request(
@@ -2156,6 +2210,42 @@ fn direct_issue_excel_route_from_request(
         return None;
     }
     Some(DirectIssueExcelRoute {
+        owner_name: decode_query_component(segments[0]),
+        project_name: decode_query_component(segments[1]),
+        query,
+    })
+}
+
+fn direct_review_excel_route_from_request(
+    method: &Method,
+    path: &str,
+    raw_query: Option<&str>,
+    base_path: &str,
+) -> Option<DirectReviewExcelRoute> {
+    if method != Method::GET && method != Method::HEAD {
+        return None;
+    }
+    let mut relative = path;
+    if base_path != "/" {
+        if relative == base_path {
+            relative = "/";
+        } else if let Some(stripped) = relative.strip_prefix(&format!("{base_path}/")) {
+            relative = stripped;
+        }
+    }
+    let segments = relative
+        .trim_start_matches('/')
+        .split('/')
+        .filter(|segment| !segment.is_empty())
+        .collect::<Vec<_>>();
+    if segments.len() != 3 || segments[2] != "reviews" {
+        return None;
+    }
+    let query = RestReviewThreadListQuery::from_raw_query(raw_query).ok()?;
+    if !query.format.eq_ignore_ascii_case("xls") {
+        return None;
+    }
+    Some(DirectReviewExcelRoute {
         owner_name: decode_query_component(segments[0]),
         project_name: decode_query_component(segments[1]),
         query,
@@ -7709,11 +7799,40 @@ struct RestOrganizationPullRequestListQuery {
 struct RestReviewThreadListQuery {
     author_id: i64,
     filter: String,
+    format: String,
     order_by: String,
     order_dir: String,
     page_num: u32,
     participant_id: i64,
     state: String,
+}
+
+impl RestReviewThreadListQuery {
+    fn from_raw_query(raw_query: Option<&str>) -> Result<Self, RestRouteError> {
+        let mut query = Self::default();
+        let Some(raw_query) = raw_query else {
+            return Ok(query);
+        };
+
+        for pair in raw_query.split('&').filter(|pair| !pair.is_empty()) {
+            let (raw_key, raw_value) = pair.split_once('=').unwrap_or((pair, ""));
+            let key = decode_query_component(raw_key);
+            let value = decode_query_component(raw_value);
+            match key.as_str() {
+                "authorId" => query.author_id = parse_rest_query_i64(&value)?,
+                "filter" => query.filter = value,
+                "format" => query.format = value,
+                "orderBy" => query.order_by = value,
+                "orderDir" => query.order_dir = value,
+                "pageNum" => query.page_num = parse_rest_query_u32(&value)?,
+                "participantId" => query.participant_id = parse_rest_query_i64(&value)?,
+                "state" => query.state = value,
+                _ => {}
+            }
+        }
+
+        Ok(query)
+    }
 }
 
 #[derive(Clone, Serialize)]
@@ -18262,6 +18381,105 @@ fn issue_export_tsv_cell(value: &str) -> String {
         .replace(['\r', '\n'], " ")
         .trim()
         .to_string()
+}
+
+async fn direct_review_excel_export(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    mut query: RestReviewThreadListQuery,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let PilotBackend::Repository(repository) = &backend else {
+        return StatusCode::NOT_IMPLEMENTED.into_response();
+    };
+    let actor_id = session_manager
+        .read_session_from_headers(&headers)
+        .and_then(|session| session.user_id);
+    let authorization = match rest_require_project_code_read(
+        repository,
+        &owner_name,
+        &project_name,
+        actor_id,
+    )
+    .await
+    {
+        Ok(authorization) => authorization,
+        Err(error) => return error.into_response(),
+    };
+    query.page_num = 1;
+    let record = match repository
+        .list_project_review_threads_for_export(
+            &authorization.project,
+            rest_review_thread_filter(query),
+        )
+        .await
+    {
+        Ok(record) => record,
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    direct_review_excel_export_response(
+        &authorization.project.project_name,
+        record.items.as_slice(),
+    )
+}
+
+fn direct_review_excel_export_response(
+    project_name: &str,
+    items: &[persistence::ReviewThreadRecord],
+) -> Response {
+    let mut body =
+        "\u{feff}Thread\tState\tAuthor\tPath\tLines\tCommit\tComments\tCreated\n".to_string();
+    for item in items {
+        let latest_comment = item
+            .comments
+            .last()
+            .map(|comment| comment.contents_markdown.as_str())
+            .unwrap_or_default();
+        let columns = [
+            item.id.to_string(),
+            item.state.clone(),
+            issue_export_user_label(&item.author_label, &item.author_login_id),
+            item.path.clone(),
+            review_thread_line_label(item),
+            item.commit_id.clone(),
+            latest_comment.to_string(),
+            item.created_label.clone(),
+        ];
+        body.push_str(
+            &columns
+                .iter()
+                .map(|value| issue_export_tsv_cell(value))
+                .collect::<Vec<_>>()
+                .join("\t"),
+        );
+        body.push('\n');
+    }
+
+    let filename = format!("{}-reviews.xls", sanitize_download_filename(project_name));
+    let disposition = format!("attachment; filename=\"{filename}\"");
+    let mut response = body.into_response();
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/vnd.ms-excel; charset=utf-8"),
+    );
+    if let Ok(header_value) = HeaderValue::from_str(&disposition) {
+        response
+            .headers_mut()
+            .insert(http::header::CONTENT_DISPOSITION, header_value);
+    }
+    response
+}
+
+fn review_thread_line_label(item: &persistence::ReviewThreadRecord) -> String {
+    match (item.start_line, item.end_line) {
+        (Some(start), Some(end)) if start != end => format!("{start}-{end}"),
+        (Some(line), _) => line.to_string(),
+        _ => String::new(),
+    }
 }
 
 fn rest_post_mutation_input_from_body(

@@ -85,6 +85,7 @@
 - Issue detail projection now exposes the issue author's avatar URL and the React detail route renders the legacy `.author-info`, `.usf-group`, `.avatar-wrap.smaller`, `.name`, and `.loginid` anchors from `issue/view.scala.html`.
 - Issue detail projection now also exposes the assigned user's avatar URL and renders the corresponding legacy assigned-user `.usf-group`, `.avatar-wrap.smaller`, `.name`, and `.loginid` anchors when an issue has an assignee.
 - The integrations mailbox helper now mirrors legacy `EmailAddressWithDetailTest` plus-address parsing (`user+detail@domain`) and detail-insensitive comparison. Repository mailbox creation now mirrors legacy `CreationViaEmailTest` for issue, issue comment, and review comment resources and records `original_email` provenance rows. IMAP extraction, MIME parsing, sender extraction, and full reply threading remain follow-up scope.
+- Project review list parity now includes the legacy `reviewthread/list.scala.html` `format=xls` download action with active review filters and an Excel-compatible `.xls` response.
 
 ## Current Frontend Smoke Stabilization Note
 

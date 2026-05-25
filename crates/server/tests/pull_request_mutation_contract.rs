@@ -1227,6 +1227,38 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
     assert!(commented_text.contains("/yona/owner/projectYobi/pullRequest/1#comment-"));
     assert!(commented_text.contains("|#1: Updated interaction parity"));
 
+    let review_export = rest_get(
+        app.clone(),
+        "/yona/owner/projectYobi/reviews?state=open&filter=Review+comment&format=xls",
+        Some(&owner_cookie),
+    )
+    .await;
+    assert_eq!(review_export.status(), StatusCode::OK);
+    assert_eq!(
+        review_export
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok()),
+        Some("application/vnd.ms-excel; charset=utf-8")
+    );
+    assert_eq!(
+        review_export
+            .headers()
+            .get(http::header::CONTENT_DISPOSITION)
+            .and_then(|value| value.to_str().ok()),
+        Some("attachment; filename=\"projectYobi-reviews.xls\"")
+    );
+    let review_export_body = review_export
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    let review_export_text = String::from_utf8(review_export_body.to_vec()).unwrap();
+    assert!(review_export_text.contains("Thread\tState\tAuthor\tPath"));
+    assert!(review_export_text.contains("Review comment body"));
+    assert!(review_export_text.contains("topic-head"));
+
     let ranged_commented = response_json(
         rest_json(
             app.clone(),

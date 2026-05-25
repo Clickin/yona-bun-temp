@@ -8790,6 +8790,25 @@ impl AppRepository {
         filter: ReviewThreadListFilter,
     ) -> Result<ReviewThreadListRecord, DbErr> {
         const PAGE_SIZE: u32 = 15;
+        self.list_project_review_threads_with_page_size(project, filter, Some(PAGE_SIZE))
+            .await
+    }
+
+    pub async fn list_project_review_threads_for_export(
+        &self,
+        project: &ProjectRecord,
+        filter: ReviewThreadListFilter,
+    ) -> Result<ReviewThreadListRecord, DbErr> {
+        self.list_project_review_threads_with_page_size(project, filter, None)
+            .await
+    }
+
+    async fn list_project_review_threads_with_page_size(
+        &self,
+        project: &ProjectRecord,
+        filter: ReviewThreadListFilter,
+        page_size: Option<u32>,
+    ) -> Result<ReviewThreadListRecord, DbErr> {
         let page_num = filter.page_num.max(1);
         let state = match normalize_identity(&filter.state).as_str() {
             "closed" => "closed".to_string(),
@@ -8833,10 +8852,14 @@ impl AppRepository {
                     .order_by_desc(comment_thread::Column::CreatedDate)
                     .order_by_desc(comment_thread::Column::Id)
             };
-            let rows = page_select
-                .paginate(&self.db, PAGE_SIZE as u64)
-                .fetch_page((page_num - 1) as u64)
-                .await?;
+            let rows = if let Some(page_size) = page_size {
+                page_select
+                    .paginate(&self.db, page_size as u64)
+                    .fetch_page((page_num - 1) as u64)
+                    .await?
+            } else {
+                page_select.all(&self.db).await?
+            };
             let mut items = Vec::new();
             for row in rows {
                 let comments = self.list_review_comments(row.id).await?;
@@ -8847,7 +8870,7 @@ impl AppRepository {
                 items,
                 open_count,
                 page_num,
-                page_size: PAGE_SIZE,
+                page_size: page_size.unwrap_or(total_count.max(1)),
                 state,
                 total_count,
             });
@@ -8918,9 +8941,19 @@ impl AppRepository {
             }
         });
         let total_count = matched.len() as u32;
-        let offset = ((page_num - 1) * PAGE_SIZE) as usize;
+        let effective_page_size = page_size.unwrap_or(total_count.max(1));
+        let offset = ((page_num - 1) * effective_page_size) as usize;
         let mut items = Vec::new();
-        for (row, comments, _) in matched.into_iter().skip(offset).take(PAGE_SIZE as usize) {
+        let rows = if page_size.is_some() {
+            matched
+                .into_iter()
+                .skip(offset)
+                .take(effective_page_size as usize)
+                .collect::<Vec<_>>()
+        } else {
+            matched
+        };
+        for (row, comments, _) in rows {
             items.push(self.review_thread_record(row, comments).await?);
         }
         Ok(ReviewThreadListRecord {
@@ -8928,7 +8961,7 @@ impl AppRepository {
             items,
             open_count,
             page_num,
-            page_size: PAGE_SIZE,
+            page_size: effective_page_size,
             state,
             total_count,
         })
