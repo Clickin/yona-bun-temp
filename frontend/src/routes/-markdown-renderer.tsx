@@ -786,10 +786,10 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   if (lines.length === 1 && /^ {0,3}(?:(?:- *){3,}|(?:_ *){3,}|(?:\* *){3,})$/.test(firstLine)) {
     return <hr />;
   }
-  if (lines.length === 2 && /^=+\s*$/.test(secondLine)) {
+  if (lines.length === 2 && /^ {0,3}=+\s*$/.test(secondLine)) {
     return <MarkdownHeading context={props.context} level={1} text={firstLine.trim()} />;
   }
-  if (lines.length === 2 && /^-+\s*$/.test(secondLine)) {
+  if (lines.length === 2 && /^ {0,3}-+\s*$/.test(secondLine)) {
     return <MarkdownHeading context={props.context} level={2} text={firstLine.trim()} />;
   }
   const codeBlock = parseFencedCodeBlock(lines, props.block.terminalNewline ?? false);

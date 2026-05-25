@@ -62,6 +62,16 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('<h2 id="secondary-title">Secondary Title</h2>');
   });
 
+  it("renders leading-space setext heading underlines like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"Indented Setext\n  ===\n\nSecondary\n   ---"} />,
+    );
+
+    expect(html).toContain('<h1 id="indented-setext">Indented Setext</h1>');
+    expect(html).toContain('<h2 id="secondary">Secondary</h2>');
+    expect(html).not.toContain("<p>Indented Setext");
+  });
+
   it("renders fenced code blocks like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"``` rust\nlet value = 1;\n#1 stays text\n```"} />,
