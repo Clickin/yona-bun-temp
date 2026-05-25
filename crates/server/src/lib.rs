@@ -2132,6 +2132,9 @@ async fn direct_svn_protocol_request(
     if method == "PROPFIND" && route.svn_path.is_empty() {
         return svn_protocol_root_propfind_response(&route);
     }
+    if method == "PROPFIND" && route.svn_path == "!svn/vcc/default" {
+        return svn_protocol_collection_propfind_response(&route);
+    }
     svn_protocol_not_implemented_response(&route, &method)
 }
 
@@ -2151,6 +2154,18 @@ fn svn_protocol_options_response() -> Response {
 
 fn svn_protocol_root_propfind_response(route: &SvnProtocolRoute) -> Response {
     let href = format!("/svn/{}/{}/", route.owner_name, route.project_name);
+    svn_protocol_propfind_collection_response(&href)
+}
+
+fn svn_protocol_collection_propfind_response(route: &SvnProtocolRoute) -> Response {
+    let href = format!(
+        "/svn/{}/{}/{}",
+        route.owner_name, route.project_name, route.svn_path
+    );
+    svn_protocol_propfind_collection_response(&href)
+}
+
+fn svn_protocol_propfind_collection_response(href: &str) -> Response {
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
 <D:multistatus xmlns:D="DAV:">
@@ -2164,7 +2179,7 @@ fn svn_protocol_root_propfind_response(route: &SvnProtocolRoute) -> Response {
     </D:propstat>
   </D:response>
 </D:multistatus>"#,
-        xml_escape(&href)
+        xml_escape(href)
     );
     let mut response = (StatusCode::MULTI_STATUS, body).into_response();
     response

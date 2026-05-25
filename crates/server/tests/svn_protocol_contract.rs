@@ -218,7 +218,14 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
         None,
     )
     .await;
-    assert_eq!(response.status(), StatusCode::NOT_IMPLEMENTED);
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("/svn/owner/projectYobi/!svn/vcc/default")
+            && text.contains("<D:collection/>"),
+        "SVN default VCC PROPFIND should return a WebDAV collection multistatus: {text}"
+    );
 
     let response =
         direct_request(app.clone(), Method::OPTIONS, "/svn/owner/projectYobi", None).await;
