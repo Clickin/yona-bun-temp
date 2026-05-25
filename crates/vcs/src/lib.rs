@@ -241,6 +241,16 @@ pub struct SvnLogEntry {
     pub message: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SvnLock {
+    pub path: String,
+    pub token: String,
+    pub owner: String,
+    pub comment: String,
+    pub created: String,
+    pub expires: Option<String>,
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum VcsError {
     #[error("git executable is unavailable")]
@@ -528,6 +538,73 @@ pub fn svn_revision_at_or_before(repo_path: &Path, date: &str) -> Result<Option<
         }
     }
     Ok(None)
+}
+
+pub fn svn_lock(repo_path: &Path, path: &str) -> Result<Option<SvnLock>, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_path = normalize_repo_path(path)?;
+    if clean_path.is_empty() {
+        return Ok(None);
+    }
+
+    let output = Command::new("svnlook")
+        .arg("lock")
+        .arg(repo_path)
+        .arg(&clean_path)
+        .output()
+        .map_err(|_| VcsError::SvnLookUnavailable)?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let lower = stderr.to_ascii_lowercase();
+        if lower.contains("path not found")
+            || lower.contains("not locked")
+            || lower.contains("no lock")
+        {
+            return Ok(None);
+        }
+        return Err(VcsError::SvnLookFailed(stderr));
+    }
+    let output = String::from_utf8_lossy(&output.stdout);
+    Ok(parse_svnlook_lock(&clean_path, &output))
+}
+
+fn parse_svnlook_lock(path: &str, output: &str) -> Option<SvnLock> {
+    let mut token = String::new();
+    let mut owner = String::new();
+    let mut comment = String::new();
+    let mut created = String::new();
+    let mut expires = None;
+    for line in output.lines() {
+        let Some((key, value)) = line.split_once(':') else {
+            continue;
+        };
+        let value = value.trim().to_string();
+        match key.trim().to_ascii_lowercase().as_str() {
+            "token" => token = value,
+            "owner" => owner = value,
+            "comment" => comment = value,
+            "created" => created = value,
+            "expires" => {
+                if !value.eq_ignore_ascii_case("never") {
+                    expires = Some(value);
+                }
+            }
+            _ => {}
+        }
+    }
+    if token.is_empty() {
+        return None;
+    }
+    Some(SvnLock {
+        path: format!("/{path}"),
+        token,
+        owner,
+        comment,
+        created,
+        expires,
+    })
 }
 
 fn svnlook_text(repo_path: &Path, revision: i64, subcommand: &str) -> Result<String, VcsError> {

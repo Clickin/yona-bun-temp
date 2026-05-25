@@ -2619,6 +2619,9 @@ fn svn_protocol_report_response(
     if request.contains("dated-rev-report") {
         return svn_protocol_dated_rev_report_response(repo_path, route, &request);
     }
+    if request.contains("get-locks-report") {
+        return svn_protocol_get_locks_report_response(repo_path, route);
+    }
     svn_protocol_not_implemented_response(route, "REPORT")
 }
 
@@ -2709,6 +2712,73 @@ fn svn_protocol_dated_rev_report_response(
         HeaderValue::from_static("application/xml; charset=utf-8"),
     );
     response
+}
+
+fn svn_protocol_get_locks_report_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+) -> Response {
+    let path = svn_protocol_file_lookup(&route.svn_path)
+        .map(|(_, path)| path)
+        .unwrap_or_default();
+    let lock = match yona_rust_vcs::svn_lock(repo_path, &path) {
+        Ok(lock) => lock,
+        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "REPORT")
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    let lock_item = lock
+        .as_ref()
+        .map(svn_protocol_lock_item)
+        .unwrap_or_default();
+    let body = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<S:get-locks-report xmlns:S="svn:" xmlns:D="DAV:">
+{lock_item}</S:get-locks-report>"#
+    );
+    let mut response = (StatusCode::OK, body).into_response();
+    add_svn_dav_headers(&mut response);
+    response.headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        HeaderValue::from_static("application/xml; charset=utf-8"),
+    );
+    response
+}
+
+fn svn_protocol_lock_item(lock: &yona_rust_vcs::SvnLock) -> String {
+    let comment = if lock.comment.is_empty() {
+        String::new()
+    } else {
+        format!("    <S:comment>{}</S:comment>\n", xml_escape(&lock.comment))
+    };
+    let expiration = lock
+        .expires
+        .as_ref()
+        .map(|value| {
+            format!(
+                "    <S:expirationdate>{}</S:expirationdate>\n",
+                xml_escape(value)
+            )
+        })
+        .unwrap_or_default();
+    format!(
+        r#"  <S:lock>
+    <S:path>{}</S:path>
+    <S:token>{}</S:token>
+    <S:owner>{}</S:owner>
+{comment}    <S:creationdate>{}</S:creationdate>
+{expiration}  </S:lock>
+"#,
+        xml_escape(&lock.path),
+        xml_escape(&lock.token),
+        xml_escape(&lock.owner),
+        xml_escape(&lock.created)
+    )
 }
 
 fn svn_protocol_log_item(entry: &yona_rust_vcs::SvnLogEntry) -> String {

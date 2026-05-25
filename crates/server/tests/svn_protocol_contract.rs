@@ -549,6 +549,34 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "SVN dated-rev REPORT should return the latest revision at or before the requested date: {text}"
     );
 
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/trunk/README.md",
+        None,
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:get-locks-report xmlns:S="svn:" xmlns:D="DAV:">
+</S:get-locks-report>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get("dav")
+            .and_then(|value| value.to_str().ok()),
+        Some("1,2")
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<S:get-locks-report") && !text.contains("<S:lock>"),
+        "SVN get-locks REPORT should return an empty lock report for an unlocked path: {text}"
+    );
+
     let response = direct_request(
         app,
         Method::HEAD,
