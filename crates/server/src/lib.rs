@@ -2145,9 +2145,7 @@ async fn direct_svn_protocol_request(
 
 fn svn_protocol_options_response() -> Response {
     let mut response = StatusCode::OK.into_response();
-    response
-        .headers_mut()
-        .insert("dav", HeaderValue::from_static("1,2"));
+    add_svn_dav_headers(&mut response);
     response.headers_mut().insert(
         http::header::ALLOW,
         HeaderValue::from_static(
@@ -2200,14 +2198,21 @@ fn svn_protocol_propfind_collection_response(
         xml_escape(href)
     );
     let mut response = (StatusCode::MULTI_STATUS, body).into_response();
-    response
-        .headers_mut()
-        .insert("dav", HeaderValue::from_static("1,2"));
+    add_svn_dav_headers(&mut response);
     response.headers_mut().insert(
         http::header::CONTENT_TYPE,
         HeaderValue::from_static("application/xml; charset=utf-8"),
     );
     response
+}
+
+fn add_svn_dav_headers(response: &mut Response) {
+    response
+        .headers_mut()
+        .insert("dav", HeaderValue::from_static("1,2"));
+    response
+        .headers_mut()
+        .insert("ms-author-via", HeaderValue::from_static("DAV"));
 }
 
 fn xml_escape(value: &str) -> String {
@@ -2228,9 +2233,7 @@ fn svn_protocol_not_implemented_response(route: &SvnProtocolRoute, method: &str)
         ),
     )
         .into_response();
-    response
-        .headers_mut()
-        .insert("dav", HeaderValue::from_static("1,2"));
+    add_svn_dav_headers(&mut response);
     response.headers_mut().insert(
         http::header::CONTENT_TYPE,
         HeaderValue::from_static("text/plain; charset=utf-8"),

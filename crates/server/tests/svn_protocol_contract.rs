@@ -211,6 +211,13 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             .and_then(|value| value.to_str().ok()),
         Some("1,2")
     );
+    assert_eq!(
+        response
+            .headers()
+            .get("ms-author-via")
+            .and_then(|value| value.to_str().ok()),
+        Some("DAV")
+    );
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
     let response = direct_request(app.clone(), propfind, "/svn/owner/projectYobi", None).await;
@@ -221,6 +228,13 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             .get("dav")
             .and_then(|value| value.to_str().ok()),
         Some("1,2")
+    );
+    assert_eq!(
+        response
+            .headers()
+            .get("ms-author-via")
+            .and_then(|value| value.to_str().ok()),
+        Some("DAV")
     );
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
@@ -244,6 +258,13 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     )
     .await;
     assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    assert_eq!(
+        response
+            .headers()
+            .get("ms-author-via")
+            .and_then(|value| value.to_str().ok()),
+        Some("DAV")
+    );
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
@@ -267,6 +288,13 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             .get("dav")
             .and_then(|value| value.to_str().ok()),
         Some("1,2")
+    );
+    assert_eq!(
+        response
+            .headers()
+            .get("ms-author-via")
+            .and_then(|value| value.to_str().ok()),
+        Some("DAV")
     );
     assert!(
         response
@@ -294,6 +322,13 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             .get("dav")
             .and_then(|value| value.to_str().ok()),
         Some("1,2")
+    );
+    assert_eq!(
+        response
+            .headers()
+            .get("ms-author-via")
+            .and_then(|value| value.to_str().ok()),
+        Some("DAV")
     );
 
     db.execute_unprepared(&format!(
