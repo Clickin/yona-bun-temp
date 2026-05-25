@@ -2948,11 +2948,8 @@ fn svn_protocol_file_lookup(svn_path: &str) -> Option<(Option<i64>, String)> {
 }
 
 fn svn_protocol_revision_path(rest: &str) -> Option<(Option<i64>, String)> {
-    let (revision, path) = rest.split_once('/')?;
+    let (revision, path) = rest.split_once('/').unwrap_or((rest, ""));
     let revision = revision.parse::<i64>().ok()?;
-    if path.trim_matches('/').is_empty() {
-        return None;
-    }
     Some((Some(revision), path.to_string()))
 }
 
