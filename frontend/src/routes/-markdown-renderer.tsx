@@ -433,7 +433,7 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
   const parts: MarkdownInlinePart[] = [];
   let index = 0;
   const inlinePattern =
-    /\\([^\w\s])|(!?)\[([^\]]*)\]\((<[^>\s]+>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_`{|}~]|[^)\\\s])+)(?:\s+(?:"((?:\\"|[^"\\])*)"|'((?:\\'|[^'\\])*)'|\(((?:\\\)|[^)\\])*)\)))?\)|(!?)\[((?:\\(?:\[|\])|[^\]\\[])+)\]\[((?:\\(?:\[|\])|[^\]\\[])*)\]|(!?)\[((?:\\(?:\[|\])|[^\]\\[])+)\](?:\[\])?|\*\*([^*\n]+)\*\*|~~([^~\n]+)~~|(?<codeFence>`+)(?<codeText>[^`]|[^`][\s\S]*?[^`])\k<codeFence>(?!`)|\*([^*\n]+)\*|_([^_\n]+)_/g;
+    /\\([^\w\s])|(!?)\[([^\]]*)\]\((<[^>\s]+>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_`{|}~]|[^)\\\s])+)(?:\s+(?:"((?:\\"|[^"\\])*)"|'((?:\\'|[^'\\])*)'|\(((?:\\\)|[^)\\])*)\)))?\)|(!?)\[((?:\\(?:\[|\])|[^\]\\[])+)\]\[((?:\\(?:\[|\])|[^\]\\[])*)\]|(!?)\[((?:\\(?:\[|\])|[^\]\\[])+)\](?:\[\])?|\*\*(?<strongAst>[^*\n]+)\*\*|__(?<strongUnd>[^_\n]+)__|~~(?<deleteText>[^~\n]+)~~|(?<codeFence>`+)(?<codeText>[^`]|[^`][\s\S]*?[^`])\k<codeFence>(?!`)|\*(?<emphasisAst>[^*\n]+)\*|_(?<emphasisUnd>[^_\n]+)_/g;
   for (const match of line.matchAll(inlinePattern)) {
     const start = match.index ?? 0;
     if (start > index) {
@@ -466,21 +466,25 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
       } else {
         parts.push({ kind: "text", key: `text-${start}`, value: match[0] ?? "" });
       }
-    } else if (match[13] !== undefined) {
-      parts.push({ kind: "strong", key: `strong-${start}`, value: match[13] ?? "" });
-    } else if (match[14] !== undefined) {
-      parts.push({ kind: "delete", key: `delete-${start}`, value: match[14] ?? "" });
+    } else if (match.groups?.strongAst !== undefined || match.groups?.strongUnd !== undefined) {
+      parts.push({
+        kind: "strong",
+        key: `strong-${start}`,
+        value: match.groups.strongAst ?? match.groups.strongUnd ?? "",
+      });
+    } else if (match.groups?.deleteText !== undefined) {
+      parts.push({ kind: "delete", key: `delete-${start}`, value: match.groups.deleteText });
     } else if (match.groups?.codeText !== undefined) {
       parts.push({
         kind: "code",
         key: `code-${start}`,
         value: normalizeCodeSpan(match.groups.codeText),
       });
-    } else if (match[17] !== undefined || match[18] !== undefined) {
+    } else if (match.groups?.emphasisAst !== undefined || match.groups?.emphasisUnd !== undefined) {
       parts.push({
         kind: "emphasis",
         key: `emphasis-${start}`,
-        value: match[17] ?? match[18] ?? "",
+        value: match.groups.emphasisAst ?? match.groups.emphasisUnd ?? "",
       });
     } else {
       parts.push({ kind: "text", key: `text-${start}`, value: match[0] ?? "" });

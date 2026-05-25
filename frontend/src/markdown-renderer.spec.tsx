@@ -264,6 +264,16 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<strong>strong</strong>");
   });
 
+  it("renders underscore strong emphasis like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown="Keep __strong__ beside _italic_" />,
+    );
+
+    expect(html).toContain("<strong>strong</strong>");
+    expect(html).toContain("<em>italic</em>");
+    expect(html).not.toContain("__strong__");
+  });
+
   it("honors legacy marked backslash escapes before inline parsing", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
