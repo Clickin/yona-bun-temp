@@ -14,6 +14,14 @@ use yona_rust_persistence::{
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yona_rust_vcs::{repository_path, svn_repository_path};
+
+fn svnadmin_available() -> bool {
+    Command::new("svnadmin")
+        .arg("--version")
+        .output()
+        .is_ok_and(|output| output.status.success())
+}
 
 fn yona_data_env_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
@@ -571,6 +579,11 @@ async fn public_directory_lists_project_and_organization_logo_urls() {
 
 #[tokio::test]
 async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
     let (app, app_repo) = build_app_with_repository().await;
 
     let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
@@ -589,12 +602,17 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
                 .header(http::header::COOKIE, &admin_cookie)
                 .header("x-csrf-token", &admin_csrf)
                 .body(Body::from(
-                    "{\"projectName\":\"projectYobi\",\"overview\":\"Yona\",\"projectScope\":\"public\",\"code\":false,\"issue\":true,\"pullRequest\":false,\"review\":false,\"milestone\":false,\"board\":true}",
+                    "{\"projectName\":\"projectYobi\",\"overview\":\"Yona\",\"projectScope\":\"public\",\"vcs\":\"SVN\",\"code\":false,\"issue\":true,\"pullRequest\":false,\"review\":false,\"milestone\":false,\"board\":true}",
                 ))
                 .unwrap(),
         )
         .await
         .unwrap();
+    if !svnadmin_available() {
+        assert_eq!(create_project.status(), StatusCode::NOT_IMPLEMENTED);
+        std::env::remove_var("YONA_DATA");
+        return;
+    }
     assert_eq!(create_project.status(), StatusCode::OK);
 
     let authorization = app_repo
@@ -602,6 +620,15 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
         .await
         .expect("read project authorization")
         .expect("created project authorization");
+    assert_eq!(authorization.project.vcs, "Subversion");
+    assert!(
+        !repository_path(data_dir.path(), authorization.project.id).exists(),
+        "SVN project creation should not leave Git repository storage"
+    );
+    assert!(
+        svn_repository_path(data_dir.path(), authorization.project.id).exists(),
+        "SVN project creation should provision executable-backed SVN storage"
+    );
     let menu_settings = app_repo
         .read_project_menu_settings(authorization.project.id)
         .await
@@ -701,6 +728,7 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
     assert_eq!(updated_payload["defaultReviewerCount"], 2);
     assert_eq!(updated_payload["isUsingReviewerCount"], true);
     assert_eq!(updated_payload["maxReviewerCount"], 2);
+    std::env::remove_var("YONA_DATA");
 }
 
 #[tokio::test]

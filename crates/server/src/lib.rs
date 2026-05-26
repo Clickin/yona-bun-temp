@@ -11680,6 +11680,7 @@ struct RestProjectCreateBody {
     project_name: String,
     project_scope: String,
     review: Option<bool>,
+    vcs: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -11715,6 +11716,17 @@ impl RestProjectCreateBody {
             self.milestone,
             self.board,
         )
+    }
+
+    fn normalized_vcs(&self) -> Result<&'static str, RestRouteError> {
+        let Some(vcs) = self.vcs.as_deref() else {
+            return Ok("GIT");
+        };
+        match vcs.trim().to_ascii_lowercase().as_str() {
+            "" | "git" => Ok("GIT"),
+            "svn" | "subversion" => Ok("Subversion"),
+            _ => Err(RestRouteError::bad_request("invalid project VCS")),
+        }
     }
 }
 
@@ -17965,6 +17977,12 @@ async fn rest_create_project(
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
     let menu_settings = body.menu_settings();
+    let requested_vcs = body.normalized_vcs()?;
+    if requested_vcs == "Subversion" {
+        yona_rust_vcs::ensure_svnadmin_available()
+            .map_err(code_browser_error)
+            .map_err(RestRouteError::from_connect_error)?;
+    }
     let request = CreateProjectRequest {
         owner_name,
         overview: body.overview,
@@ -17973,10 +17991,49 @@ async fn rest_create_project(
         ..Default::default()
     };
     let request = rest_owned_view::<CreateProjectRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
+    let (mut payload, ctx) = service
         .create_project(Context::new(headers.clone()), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
+    if requested_vcs == "Subversion" {
+        let session = require_session(&service.session_manager, &headers)
+            .map_err(RestRouteError::from_connect_error)?;
+        let actor_id = session.user_id.ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::unauthenticated(
+                "missing authenticated session",
+            ))
+        })?;
+        let PilotBackend::Repository(repository) = &service.backend else {
+            return Err(RestRouteError::not_implemented(
+                "project creation requires repository backend",
+            ));
+        };
+        let authorization = repository
+            .read_project_authorization(&payload.owner_name, &payload.project_name, Some(actor_id))
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+            .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+        let changed = repository
+            .change_project_vcs(authorization.project.id)
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+            .ok_or_else(|| RestRouteError::not_found("project not found"))?;
+        reset_project_repository_storage(changed.id, &changed.vcs)?;
+        let mut changed_authorization = authorization;
+        changed_authorization.project = changed;
+        payload = project_detail_with_logo_from_record(
+            repository,
+            &service.base_path,
+            &changed_authorization,
+            project_update_allowed(&changed_authorization)
+                .map_err(RestRouteError::from_connect_error)?,
+            false,
+        )
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    }
     if let Some(menu_settings) = menu_settings {
         rest_update_project_menu_settings(
             &service,

@@ -275,6 +275,7 @@ describe("organization and project REST wrappers", () => {
         projectName: "project/name",
         projectScope: "public",
         review: false,
+        vcs: "SVN",
       },
       fetchMock as unknown as typeof fetch,
     );
@@ -430,6 +431,7 @@ describe("organization and project REST wrappers", () => {
       projectName: "project/name",
       projectScope: "public",
       review: false,
+      vcs: "SVN",
     });
 
     const updateProjectCall = mutationCalls[11]!;

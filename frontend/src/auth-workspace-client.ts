@@ -1551,6 +1551,7 @@ export async function createProject(
       overview: input.overview ?? "",
       projectName: input.projectName ?? "",
       projectScope: input.projectScope ?? "",
+      vcs: input.vcs,
     },
     fetchImpl,
   );
@@ -1625,6 +1626,7 @@ type ProjectMenuSettingsInput = {
   milestone?: boolean;
   pullRequest?: boolean;
   review?: boolean;
+  vcs?: string;
 };
 
 function projectMenuSettingsInput(input: ProjectMenuSettingsInput): ProjectMenuSettingsInput {

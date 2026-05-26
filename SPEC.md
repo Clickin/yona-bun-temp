@@ -459,7 +459,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 | 기능                 | Legacy 동작                                        | 현재 상태         | Phase |
 | -------------------- | -------------------------------------------------- | ----------------- | ----- |
 | 프로젝트 목록 (공개) | 검색, 페이지네이션(10개), 메타데이터, 로고, 멤버수 | ✅ 구현           | 1     |
-| 프로젝트 생성        | owner 선택(개인/조직), 이름, VCS 타입, 공개범위    | ✅ 구현           | 1     |
+| 프로젝트 생성        | owner 선택(개인/조직), 이름, VCS 타입, 공개범위    | ✅ legacy shell + VCS 구현 | 1     |
 | 프로젝트 홈          | overview(README), 최근 활동, 코드 링크             | ✅ 기본 구현(`tabId` history/dashboard shell 보강) | 1     |
 | 프로젝트 설정        | 이름/설명/공개범위 변경, 메뉴 토글                 | ✅ 구현           | 1     |
 | 프로젝트 삭제        | 확인 + 삭제                                        | ✅ 구현           | 2     |
@@ -491,6 +491,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 - [x] `project.default.scope.when.create` / `YONA_PROJECT_DEFAULT_SCOPE`는 프로젝트 생성 폼 기본 공개범위와 scope가 생략된 생성 요청의 기본값을 제어하고, 명시된 요청 scope는 그대로 우선한다
 - [x] `project.creation.default.menus` / `YONA_PROJECT_DEFAULT_MENUS`는 새 프로젝트의 `project_menu_setting` 기본값을 제어한다. Code가 꺼져 있으면 Pull Requests/Reviews도 legacy처럼 code menu visibility에 종속되어 숨겨진다
 - [x] Project create/settings forms expose legacy menu checkbox IDs and persist Code/Issues/Pull Requests/Reviews/Milestones/Board toggle changes through `/api/v1/owners/:owner/projects/:project`
+- [x] `/projects/new` renders the legacy `project/create.scala.html` create shell (`.page-wrap-outer`, `.project-page-wrap`, `.form-wrap.new-project`, `#newProjectForm.frm-wrap`, `#project-owner`, `#project-name`, `#description`, `.advanced-options`, `#vcs`, `#svn`, `.actions.mt20`) and forwards the selected `vcs` through `/api/v1/owners/:owner/projects`. `SVN`/`Subversion` creation validates `svnadmin` before DB mutation, provisions `YONA_DATA/repo/<project_id>.svn` through the executable-backed storage path, and does not leave default Git storage behind.
 - [x] `/:owner/:project/changeVCS`는 UPDATE 가능한 프로젝트의 legacy `project/change_vcs.scala.html` checkbox/modal shell을 보존하고 `/api/v1/owners/:owner/projects/:project/change-vcs`로 `vcs` metadata toggle, README posting flag clear, ID-based repository storage reset을 수행한다. Subversion 전환은 `svnadmin create` executable wrapper로 `YONA_DATA/repo/<project_id>.svn` storage를 만들며, `svnadmin`이 없으면 DB 변경 전에 실패한다.
 - [x] `/:owner/:project?tabId=history|dashboard`는 legacy project home tab query를 반영해 `partial_history`의 `.content-container.nm`, `.main-stream`, `.activity-streams.unstyled`, `.activity-stream`, `.avatar-wrap.pull-left.mr10`, `.actor`, `.where`, `.title`, `.date` anchors와 `partial_dashboard`의 `.project-overview-home`, `.overview-assignee`, `.overview-milestone`, `.overview-pullrequest`, `.overview-label` anchors를 렌더링한다. Project container REST now returns `history.items` for DB-backed issue/post/pullrequest rows and Git commit rows, plus `dashboard.labels`, `dashboard.assignees`, `dashboard.unassignedOpenIssueCount` for label/assignee dashboard rows, and the legacy direct `PUT /:owner/:project` overview edit route returns `{"overview": ...}` while updating the shared project container state.
 - [x] Smart HTTP clone URL follows the current owner/project name after transfer through the ID-based repository lookup; push post-receive side effects are recorded against the same ID-based repository

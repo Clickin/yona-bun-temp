@@ -84,6 +84,27 @@ describe("auth and workspace views", () => {
     expect(html).toContain('<option value="private" selected="">private</option>');
   });
 
+  it("renders the legacy create project form shell and field anchors", () => {
+    const html = renderToStaticMarkup(<ProjectNewPage />);
+
+    expect(html).toContain('class="page-wrap-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="form-wrap new-project"');
+    expect(html).toContain('id="newProjectForm"');
+    expect(html).toContain('class="frm-wrap"');
+    expect(html).toContain('id="project-owner"');
+    expect(html).toContain('name="owner"');
+    expect(html).toContain('id="project-name"');
+    expect(html).toContain('name="name"');
+    expect(html).toContain('id="description"');
+    expect(html).toContain('name="overview"');
+    expect(html).toContain('class="advanced-options"');
+    expect(html).toContain('id="vcs"');
+    expect(html).toContain('name="vcs"');
+    expect(html).toContain('id="svn"');
+    expect(html).toContain('class="actions mt20"');
+  });
+
   it("uses configured legacy project default menus on the create project form", () => {
     const html = renderToStaticMarkup(
       <ProjectNewPage defaultProjectMenus={["issue", "board"]} defaultProjectScope="private" />,

@@ -651,6 +651,7 @@ export function ProjectNewPage(props: {
     projectName: string;
     projectScope: string;
     review: boolean;
+    vcs: string;
   }) => void;
   pending?: boolean;
 }) {
@@ -659,101 +660,184 @@ export function ProjectNewPage(props: {
     overview: "",
     projectName: "",
     projectScope: normalizeProjectDefaultScope(props.defaultProjectScope),
+    vcs: "GIT",
     ...defaultProjectMenuSettings(props.defaultProjectMenus),
   });
 
   return (
-    <main className="app-shell">
-      <p className="eyebrow">Yona Rust Project</p>
-      <h1>Create project</h1>
-      <form
-        className="runtime-grid"
-        onSubmit={(event) => {
-          event.preventDefault();
-          props.onCreateProject?.(formState);
-        }}
-      >
-        <label>
-          <span>Owner</span>
-          <input
-            name="ownerName"
-            type="text"
-            value={formState.ownerName}
-            onChange={(event) =>
-              setFormState((current) => ({
-                ...current,
-                ownerName: event.target.value,
-              }))
-            }
-          />
-        </label>
-        <label>
-          <span>Project name</span>
-          <input
-            name="projectName"
-            type="text"
-            value={formState.projectName}
-            onChange={(event) =>
-              setFormState((current) => ({
-                ...current,
-                projectName: event.target.value,
-              }))
-            }
-          />
-        </label>
-        <label>
-          <span>Overview</span>
-          <textarea
-            name="overview"
-            value={formState.overview}
-            onChange={(event) =>
-              setFormState((current) => ({
-                ...current,
-                overview: event.target.value,
-              }))
-            }
-          />
-        </label>
-        <label>
-          <span>Visibility</span>
-          <select
-            name="projectScope"
-            value={formState.projectScope}
-            onChange={(event) =>
-              setFormState((current) => ({
-                ...current,
-                projectScope: event.target.value,
-              }))
-            }
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="form-wrap new-project">
+          <form
+            className="frm-wrap"
+            id="newProjectForm"
+            method="post"
+            onSubmit={(event) => {
+              event.preventDefault();
+              props.onCreateProject?.(formState);
+            }}
           >
-            <option value="public">public</option>
-            <option value="protected">protected</option>
-            <option value="private">private</option>
-          </select>
-        </label>
-        <section className="menu-setting-wrap">
-          <h2>Menu settings</h2>
-          {PROJECT_MENU_SETTINGS.map((item) => (
-            <label className="checkbox" htmlFor={item.id} key={item.key}>
-              <input
-                checked={formState[item.key]}
-                id={item.id}
-                name={item.name}
-                onChange={(event) =>
-                  setFormState((current) => ({
-                    ...current,
-                    [item.key]: event.target.checked,
-                  }))
-                }
-                type="checkbox"
-              />
-              {item.label}
-            </label>
-          ))}
-        </section>
-        <button type="submit">{props.pending ? "Creating…" : "Create project"}</button>
-      </form>
-    </main>
+            <legend>
+              title.newProject
+              <span>
+                <small>project.import.or &nbsp; </small>
+                <a className="ybtn ybtn-small nm" href="/_import">
+                  <strong>project.import.from.git</strong>
+                </a>
+              </span>
+            </legend>
+            <dl>
+              <dt>
+                <label htmlFor="project-owner">
+                  project.owner <strong className="orange-txt">*</strong>
+                </label>
+              </dt>
+              <dd>
+                <input
+                  className="mb10"
+                  id="project-owner"
+                  name="owner"
+                  type="text"
+                  value={formState.ownerName}
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      ownerName: event.target.value,
+                    }))
+                  }
+                />
+              </dd>
+              <dt>
+                <label htmlFor="project-name">
+                  project.name <strong className="orange-txt">*</strong>
+                </label>
+              </dt>
+              <dd>
+                <input
+                  className="text"
+                  id="project-name"
+                  maxLength={250}
+                  name="name"
+                  placeholder="project.name.placeholder"
+                  type="text"
+                  value={formState.projectName}
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      projectName: event.target.value,
+                    }))
+                  }
+                />
+              </dd>
+              <dt>
+                <label htmlFor="description">project.description</label>
+              </dt>
+              <dd>
+                <textarea
+                  className="text textarea.span4"
+                  id="description"
+                  name="overview"
+                  value={formState.overview}
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      overview: event.target.value,
+                    }))
+                  }
+                />
+              </dd>
+            </dl>
+            <div className="advanced-options">
+              <div className="row-fluid">
+                <div className="span2 right-txt mt10">project.shareOption</div>
+                <div className="span10">
+                  <select
+                    name="projectScope"
+                    value={formState.projectScope}
+                    onChange={(event) =>
+                      setFormState((current) => ({
+                        ...current,
+                        projectScope: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="public">public</option>
+                    <option value="protected">protected</option>
+                    <option value="private">private</option>
+                  </select>
+                </div>
+              </div>
+              <hr />
+              <div className="row-fluid">
+                <div className="span2 right-txt mt10">
+                  <label htmlFor="vcs">project.vcs</label>
+                </div>
+                <div className="span10 cu-desc">
+                  <select
+                    className="mb10 mt5"
+                    data-dropdown-css-class="select2-without-searchbox"
+                    data-toggle="select2"
+                    id="vcs"
+                    name="vcs"
+                    onChange={(event) =>
+                      setFormState((current) => ({
+                        ...current,
+                        vcs: event.target.value,
+                      }))
+                    }
+                    style={{ minWidth: 220 }}
+                    value={formState.vcs}
+                  >
+                    <option value="GIT">Git</option>
+                    <option value="SVN">Subversion</option>
+                  </select>
+                  <span className="ml10 notice" id="svn" style={{ display: "none" }}>
+                    project.svn.warning
+                  </span>
+                </div>
+              </div>
+              <hr />
+              <div className="row-fluid">
+                <div className="span2 right-txt">project.menu.setting</div>
+                <div className="span10">
+                  {PROJECT_MENU_SETTINGS.map((item) => (
+                    <label
+                      className="bg-radiobtn label-public inline-list"
+                      htmlFor={item.id}
+                      key={item.key}
+                    >
+                      <input
+                        checked={formState[item.key]}
+                        className="radio-btn"
+                        id={item.id}
+                        name={item.name}
+                        onChange={(event) =>
+                          setFormState((current) => ({
+                            ...current,
+                            [item.key]: event.target.checked,
+                          }))
+                        }
+                        type="checkbox"
+                        value="true"
+                      />
+                      {item.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="actions mt20">
+              <button className="ybtn ybtn-success" type="submit">
+                {props.pending ? "Creating…" : "project.create"}
+              </button>
+              <a className="ybtn" href="/">
+                button.cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }
 

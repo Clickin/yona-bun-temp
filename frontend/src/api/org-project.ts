@@ -49,6 +49,7 @@ type ProjectCreateInput = {
   projectName: string;
   projectScope: string;
   review?: boolean;
+  vcs?: string;
 };
 
 type ProjectUpdateInput = ProjectPathInput & {
@@ -536,6 +537,7 @@ export function createProjectRest(
       overview: input.overview,
       projectName: input.projectName,
       projectScope: input.projectScope,
+      ...(input.vcs !== undefined ? { vcs: input.vcs } : {}),
     },
     csrfToken,
     fetchImpl,
