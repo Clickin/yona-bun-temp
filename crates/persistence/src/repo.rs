@@ -8078,7 +8078,7 @@ impl AppRepository {
             &input.values.body_markdown,
         )
         .await?;
-        self.bind_attachments(
+        self.sync_attachments(
             PULL_REQUEST_ATTACHMENT_CONTAINER,
             updated.id,
             &input.values.attachment_ids,

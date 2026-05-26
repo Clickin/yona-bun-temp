@@ -9,8 +9,9 @@ use tempfile::tempdir;
 use tower::ServiceExt;
 use yona_rust_persistence::{
     site_admin, AppRepository, CreateIssueCommentInput, CreateIssueInput,
-    CreatePostingCommentInput, CreatePostingInput, CreateProjectInput, IssueMutationInput,
-    MilestoneMutationInput, PostingMutationInput,
+    CreatePostingCommentInput, CreatePostingInput, CreateProjectInput, CreatePullRequestInput,
+    CreatePullRequestResult, IssueMutationInput, MilestoneMutationInput, PostingMutationInput,
+    PullRequestMutationInput, UpdatePullRequestInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
@@ -646,7 +647,7 @@ async fn attachment_binding_uses_legacy_container_type_names() {
     let owner_id = register_user(app.clone(), &cookie_header, &csrf, "owner").await;
     let (other_csrf, other_cookie_header) = bootstrap(app.clone()).await;
     let other_id = register_user(app.clone(), &other_cookie_header, &other_csrf, "other").await;
-    repository
+    let project = repository
         .create_project(CreateProjectInput {
             organization_id: None,
             owner_name: "owner".to_string(),
@@ -991,6 +992,96 @@ async fn attachment_binding_uses_legacy_container_type_names() {
         milestone_file_list_json["attachments"][0]["id"],
         milestone_file_id
     );
+
+    let other_pull_request_file_id = upload_image_file(
+        app.clone(),
+        &other_cookie_header,
+        &other_csrf,
+        "other-pull-request-attachment.png",
+    )
+    .await;
+    let pull_request_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "pull-request-attachment.png",
+    )
+    .await;
+    let pull_request = match repository
+        .create_pull_request(CreatePullRequestInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            from_branch: "topic/pr".to_string(),
+            from_project_id: project.id,
+            to_branch: "main".to_string(),
+            to_project_id: project.id,
+            values: PullRequestMutationInput {
+                attachment_ids: vec![other_pull_request_file_id, pull_request_file_id],
+                body_markdown: "pull request body".to_string(),
+                title: "Pull request with attachment".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("pull request")
+    {
+        CreatePullRequestResult::Created(detail) => detail,
+        CreatePullRequestResult::Duplicate(_) => panic!("unexpected duplicate pull request"),
+    };
+    let other_pull_request_file = repository
+        .read_attachment_by_id(other_pull_request_file_id)
+        .await
+        .unwrap()
+        .expect("other pull request file");
+    assert_eq!(other_pull_request_file.container_type, "USER");
+    assert_eq!(other_pull_request_file.container_id, other_id);
+    let pull_request_file = repository
+        .read_attachment_by_id(pull_request_file_id)
+        .await
+        .unwrap()
+        .expect("pull request file");
+    assert_eq!(pull_request_file.container_type, "PULL_REQUEST");
+    assert_eq!(pull_request_file.container_id, pull_request.id);
+
+    let replacement_pull_request_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "replacement-pull-request-attachment.png",
+    )
+    .await;
+    repository
+        .update_pull_request(UpdatePullRequestInput {
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: "projectYobi".to_string(),
+            pull_request_number: pull_request.pull_request_number,
+            values: PullRequestMutationInput {
+                attachment_ids: vec![replacement_pull_request_file_id],
+                body_markdown: "updated pull request body".to_string(),
+                title: "Updated pull request with attachment".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("updated pull request");
+    assert!(
+        repository
+            .read_attachment_by_id(pull_request_file_id)
+            .await
+            .unwrap()
+            .is_none(),
+        "PR edit should remove omitted legacy PULL_REQUEST attachments"
+    );
+    let replacement_pull_request_file = repository
+        .read_attachment_by_id(replacement_pull_request_file_id)
+        .await
+        .unwrap()
+        .expect("replacement pull request file");
+    assert_eq!(replacement_pull_request_file.container_type, "PULL_REQUEST");
+    assert_eq!(replacement_pull_request_file.container_id, pull_request.id);
 }
 
 #[tokio::test]
