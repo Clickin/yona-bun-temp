@@ -1820,6 +1820,395 @@ async fn svn_protocol_external_client_can_commit_file_update() {
 }
 
 #[tokio::test]
+async fn svn_protocol_external_client_can_add_file_and_commit() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!("skipping external SVN add smoke because svnadmin/svnlook/svn is unavailable");
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello before external svn add\n").expect("seed svn readme");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let svn_url = format!("{base_url}/yona/svn/owner/projectYobi");
+    let checkout_dir = tempdir().expect("svn checkout tempdir");
+    run_svn_blocking(
+        vec![
+            "checkout".to_string(),
+            "--non-interactive".to_string(),
+            svn_url,
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let added = checkout_dir.path().join("trunk").join("ADDED.txt");
+    std::fs::write(&added, "hello from external svn add\n").expect("write added file");
+    run_svn_blocking(
+        vec![
+            "add".to_string(),
+            "--non-interactive".to_string(),
+            added.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    run_svn_blocking(
+        vec![
+            "commit".to_string(),
+            "--non-interactive".to_string(),
+            "--username".to_string(),
+            "owner".to_string(),
+            "--password".to_string(),
+            "doorpass1".to_string(),
+            "-m".to_string(),
+            "external svn add smoke".to_string(),
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let committed =
+        yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/ADDED.txt").expect("read added file");
+    assert_eq!(committed, b"hello from external svn add\n");
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
+async fn svn_protocol_external_client_can_delete_file_and_commit() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!("skipping external SVN delete smoke because svnadmin/svnlook/svn is unavailable");
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello before external svn delete\n").expect("seed svn readme");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let svn_url = format!("{base_url}/yona/svn/owner/projectYobi");
+    let checkout_dir = tempdir().expect("svn checkout tempdir");
+    run_svn_blocking(
+        vec![
+            "checkout".to_string(),
+            "--non-interactive".to_string(),
+            svn_url,
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let readme = checkout_dir.path().join("trunk").join("README.md");
+    run_svn_blocking(
+        vec![
+            "delete".to_string(),
+            "--non-interactive".to_string(),
+            readme.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    run_svn_blocking(
+        vec![
+            "commit".to_string(),
+            "--non-interactive".to_string(),
+            "--username".to_string(),
+            "owner".to_string(),
+            "--password".to_string(),
+            "doorpass1".to_string(),
+            "-m".to_string(),
+            "external svn delete smoke".to_string(),
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let deleted = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
+    assert!(matches!(deleted, Err(yona_rust_vcs::VcsError::NotFound)));
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
+async fn svn_protocol_external_client_can_mkdir_and_commit() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!("skipping external SVN mkdir smoke because svnadmin/svnlook/svn is unavailable");
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello before external svn mkdir\n").expect("seed svn readme");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let svn_url = format!("{base_url}/yona/svn/owner/projectYobi");
+    let checkout_dir = tempdir().expect("svn checkout tempdir");
+    run_svn_blocking(
+        vec![
+            "checkout".to_string(),
+            "--non-interactive".to_string(),
+            svn_url,
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let docs_dir = checkout_dir.path().join("trunk").join("docs");
+    run_svn_blocking(
+        vec![
+            "mkdir".to_string(),
+            "--non-interactive".to_string(),
+            docs_dir.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    run_svn_blocking(
+        vec![
+            "commit".to_string(),
+            "--non-interactive".to_string(),
+            "--username".to_string(),
+            "owner".to_string(),
+            "--password".to_string(),
+            "doorpass1".to_string(),
+            "-m".to_string(),
+            "external svn mkdir smoke".to_string(),
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let tree =
+        yona_rust_vcs::svn_list_tree(&repo_path, None, "trunk").expect("read committed tree");
+    assert!(
+        tree.entries
+            .iter()
+            .any(|entry| entry.is_dir && entry.path == "trunk/docs"),
+        "svn mkdir commit should create trunk/docs; tree: {:?}",
+        tree.entries
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
+async fn svn_protocol_external_client_can_propset_and_commit() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping external SVN propset smoke because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello before external svn propset\n").expect("seed svn readme");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let svn_url = format!("{base_url}/yona/svn/owner/projectYobi");
+    let checkout_dir = tempdir().expect("svn checkout tempdir");
+    run_svn_blocking(
+        vec![
+            "checkout".to_string(),
+            "--non-interactive".to_string(),
+            svn_url,
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let readme = checkout_dir.path().join("trunk").join("README.md");
+    run_svn_blocking(
+        vec![
+            "propset".to_string(),
+            "--non-interactive".to_string(),
+            "yona:test".to_string(),
+            "external-prop".to_string(),
+            readme.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    run_svn_blocking(
+        vec![
+            "commit".to_string(),
+            "--non-interactive".to_string(),
+            "--username".to_string(),
+            "owner".to_string(),
+            "--password".to_string(),
+            "doorpass1".to_string(),
+            "-m".to_string(),
+            "external svn propset smoke".to_string(),
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let properties =
+        yona_rust_vcs::svn_properties(&repo_path, None, "trunk/README.md").expect("read props");
+    assert!(
+        properties
+            .iter()
+            .any(|property| property.name == "yona:test" && property.value == "external-prop"),
+        "svn propset commit should persist yona:test; properties: {:?}",
+        properties
+    );
+
+    run_svn_blocking(
+        vec![
+            "propdel".to_string(),
+            "--non-interactive".to_string(),
+            "yona:test".to_string(),
+            readme.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    run_svn_blocking(
+        vec![
+            "commit".to_string(),
+            "--non-interactive".to_string(),
+            "--username".to_string(),
+            "owner".to_string(),
+            "--password".to_string(),
+            "doorpass1".to_string(),
+            "-m".to_string(),
+            "external svn propdel smoke".to_string(),
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let properties =
+        yona_rust_vcs::svn_properties(&repo_path, None, "trunk/README.md").expect("read props");
+    assert!(
+        properties
+            .iter()
+            .all(|property| property.name != "yona:test"),
+        "svn propdel commit should remove yona:test; properties: {:?}",
+        properties
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
+async fn svn_protocol_external_client_can_lock_and_unlock_file() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!("skipping external SVN lock smoke because svnadmin/svnlook/svn is unavailable");
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello before external svn lock\n").expect("seed svn readme");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let svn_url = format!("{base_url}/yona/svn/owner/projectYobi");
+    let checkout_dir = tempdir().expect("svn checkout tempdir");
+    run_svn_blocking(
+        vec![
+            "checkout".to_string(),
+            "--non-interactive".to_string(),
+            svn_url,
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let readme = checkout_dir.path().join("trunk").join("README.md");
+    run_svn_blocking(
+        vec![
+            "lock".to_string(),
+            "--non-interactive".to_string(),
+            "--username".to_string(),
+            "owner".to_string(),
+            "--password".to_string(),
+            "doorpass1".to_string(),
+            "-m".to_string(),
+            "external svn lock smoke".to_string(),
+            readme.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    let lock = yona_rust_vcs::svn_lock(&repo_path, "trunk/README.md")
+        .expect("read lock")
+        .expect("external svn lock should persist lock metadata");
+    assert_eq!(lock.owner, "owner");
+
+    run_svn_blocking(
+        vec![
+            "unlock".to_string(),
+            "--non-interactive".to_string(),
+            "--username".to_string(),
+            "owner".to_string(),
+            "--password".to_string(),
+            "doorpass1".to_string(),
+            readme.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    let lock = yona_rust_vcs::svn_lock(&repo_path, "trunk/README.md").expect("read lock");
+    assert!(lock.is_none(), "external svn unlock should clear the lock");
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
 async fn svn_protocol_supports_checkout_merge_choreography() {
     let _guard = yona_data_env_lock()
         .lock()

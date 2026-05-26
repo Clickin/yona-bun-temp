@@ -4184,7 +4184,10 @@ fn svn_protocol_proppatch_response(
     let Some(actor) = principal else {
         return smart_http_basic_challenge_response();
     };
-    if svn_protocol_working_activity_id(&route.svn_path).is_some() {
+    let Some((revision, path)) = svn_protocol_file_lookup_for_route(route) else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    if svn_protocol_working_activity_id(&route.svn_path).is_some() && path.trim().is_empty() {
         let mut response = (
             StatusCode::MULTI_STATUS,
             svn_protocol_proppatch_multistatus(route, "", &[]),
@@ -4197,9 +4200,6 @@ fn svn_protocol_proppatch_response(
         );
         return response;
     }
-    let Some((revision, path)) = svn_protocol_file_lookup_for_route(route) else {
-        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
-    };
     if revision.is_some() || path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
@@ -5098,8 +5098,13 @@ fn svn_protocol_property_name(raw_name: &str) -> Option<String> {
         return None;
     }
     let local_name = raw_name
-        .rsplit_once(':')
-        .map_or(raw_name, |(_, local)| local);
+        .strip_prefix("C:")
+        .or_else(|| raw_name.strip_prefix("c:"))
+        .or_else(|| raw_name.strip_prefix("S:"))
+        .or_else(|| raw_name.strip_prefix("s:"))
+        .or_else(|| raw_name.strip_prefix("D:"))
+        .or_else(|| raw_name.strip_prefix("d:"))
+        .unwrap_or(raw_name);
     if local_name.eq_ignore_ascii_case("prop") || local_name.eq_ignore_ascii_case("propertyupdate")
     {
         return None;
