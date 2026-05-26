@@ -2393,7 +2393,14 @@ async fn direct_svn_protocol_request(
         );
     }
     if method == "PROPFIND" && route.svn_path.starts_with("!svn/bln/") {
-        return svn_protocol_baseline_propfind_response(&repo_path, &route);
+        let body_bytes = match body.collect().await {
+            Ok(collected) => collected.to_bytes(),
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response();
+            }
+        };
+        let request = String::from_utf8_lossy(&body_bytes);
+        return svn_protocol_baseline_propfind_response(&repo_path, &route, &request);
     }
     if method == "PROPFIND" {
         let body_bytes = match body.collect().await {
@@ -2775,6 +2782,7 @@ fn svn_protocol_propfind_collection_response(
 fn svn_protocol_baseline_propfind_response(
     repo_path: &StdPath,
     route: &SvnProtocolRoute,
+    request: &str,
 ) -> Response {
     let Some(revision) = route
         .svn_path
@@ -2800,6 +2808,27 @@ fn svn_protocol_baseline_propfind_response(
     }
     let href = format!("{}/!svn/bln/{revision}", svn_protocol_project_href(route));
     let baseline_collection = format!("{}/!svn/bc/{revision}", svn_protocol_project_href(route));
+    let prop_items = if svn_protocol_propfind_is_propname(request) {
+        format!(
+            "        <D:resourcetype/>\n        <D:version-name/>\n        <D:baseline-collection/>\n"
+        )
+    } else {
+        let resourcetype = svn_protocol_propfind_wants(request, "resourcetype")
+            .then_some("        <D:resourcetype><D:baseline/></D:resourcetype>\n")
+            .unwrap_or_default();
+        let version_name = svn_protocol_propfind_wants(request, "version-name")
+            .then_some(format!(
+                "        <D:version-name>{revision}</D:version-name>\n"
+            ))
+            .unwrap_or_default();
+        let baseline_collection_item = svn_protocol_propfind_wants(request, "baseline-collection")
+            .then_some(format!(
+                "        <D:baseline-collection><D:href>{}</D:href></D:baseline-collection>\n",
+                xml_escape(&baseline_collection)
+            ))
+            .unwrap_or_default();
+        format!("{resourcetype}{version_name}{baseline_collection_item}")
+    };
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
 <D:multistatus xmlns:D="DAV:" xmlns:S="http://subversion.tigris.org/xmlns/dav/">
@@ -2807,16 +2836,13 @@ fn svn_protocol_baseline_propfind_response(
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
-        <D:resourcetype><D:baseline/></D:resourcetype>
-        <D:version-name>{revision}</D:version-name>
-        <D:baseline-collection><D:href>{}</D:href></D:baseline-collection>
+{prop_items}
       </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
   </D:response>
 </D:multistatus>"#,
-        xml_escape(&href),
-        xml_escape(&baseline_collection)
+        xml_escape(&href)
     );
     let mut response = (StatusCode::MULTI_STATUS, body).into_response();
     add_svn_dav_headers(&mut response);

@@ -551,6 +551,58 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
                 )),
             "SVN baseline resource PROPFIND should expose baseline collection metadata: {text}"
         );
+
+        let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+        let response = direct_request_with_body(
+            app.clone(),
+            propfind,
+            &format!("/svn/owner/projectYobi/!svn/bln/{revision}"),
+            None,
+            Body::from(
+                r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:propname/>
+</D:propfind>"#,
+            ),
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let text = String::from_utf8(body.to_vec()).unwrap();
+        assert!(
+            text.contains("<D:resourcetype/>")
+                && text.contains("<D:version-name/>")
+                && text.contains("<D:baseline-collection/>")
+                && !text.contains("<D:baseline/>")
+                && !text.contains("<D:href>/yona/svn/owner/projectYobi/!svn/bc/"),
+            "SVN baseline resource PROPFIND propname should expose live property names without values: {text}"
+        );
+
+        let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+        let response = direct_request_with_body(
+            app.clone(),
+            propfind,
+            &format!("/svn/owner/projectYobi/!svn/bln/{revision}"),
+            None,
+            Body::from(
+                r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:prop>
+    <D:resourcetype/>
+  </D:prop>
+</D:propfind>"#,
+            ),
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let text = String::from_utf8(body.to_vec()).unwrap();
+        assert!(
+            text.contains("<D:resourcetype><D:baseline/></D:resourcetype>")
+                && !text.contains("<D:version-name>")
+                && !text.contains("<D:baseline-collection>"),
+            "SVN baseline resource PROPFIND should only return explicitly requested metadata: {text}"
+        );
     }
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
