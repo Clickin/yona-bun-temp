@@ -36,7 +36,7 @@
 
 ## Known SPEC-Level Deviations
 
-- 2026-05-26 SVN executable bridge status: actual VisualSVN-compatible local `svn info`, `svn checkout`, single-file `svn commit` update, `svn add`, `svn delete`, `svn mkdir`, `svn propset`/`svn propdel`, and `svn lock`/`svn unlock` now pass over the mounted `/svn/$path` HTTP boundary. Remaining SVN gaps are narrowed to PROPFIND/property completeness and advanced copy/move/conflict workflows.
+- 2026-05-26 SVN executable bridge status: actual VisualSVN-compatible local `svn info`, `svn checkout`, single-file `svn commit` update, `svn add`, `svn delete`, `svn mkdir`, `svn propset`/`svn propdel`, `svn lock`/`svn unlock`, `svn copy`, and `svn move` now pass over the mounted `/svn/$path` HTTP boundary. Remaining SVN gaps are narrowed to PROPFIND/property completeness and conflict workflows.
 
 | Legacy surface                       | Rust surface                                      | Treatment                                                                                                                                 | Rationale                                                                                                                |
 | ------------------------------------ | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |

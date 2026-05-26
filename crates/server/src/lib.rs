@@ -2421,6 +2421,9 @@ async fn direct_svn_protocol_request(
         };
         return svn_protocol_put_response(&repo_path, &route, principal.as_ref(), &body_bytes);
     }
+    if method == "COPY" {
+        return svn_protocol_copy_response(&repo_path, &route, principal.as_ref(), &parts.headers);
+    }
     if method == "DELETE" {
         if svn_protocol_activity_id(&route.svn_path).is_some() {
             return svn_protocol_status_response(StatusCode::NO_CONTENT);
@@ -2498,7 +2501,7 @@ fn svn_protocol_options_response(
     response.headers_mut().insert(
         http::header::ALLOW,
         HeaderValue::from_static(
-            "OPTIONS, GET, HEAD, POST, PUT, DELETE, MKCOL, MKACTIVITY, PROPFIND, PROPPATCH, REPORT, LOCK, UNLOCK, CHECKOUT, MERGE",
+            "OPTIONS, GET, HEAD, POST, PUT, COPY, DELETE, MKCOL, MKACTIVITY, PROPFIND, PROPPATCH, REPORT, LOCK, UNLOCK, CHECKOUT, MERGE",
         ),
     );
     response.headers_mut().insert(
@@ -4141,6 +4144,66 @@ fn svn_protocol_put_response(
     }
 }
 
+fn svn_protocol_copy_response(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    principal: Option<&persistence::AppUserRecord>,
+    headers: &HeaderMap,
+) -> Response {
+    let Some(actor) = principal else {
+        return smart_http_basic_challenge_response();
+    };
+    let Some((source_revision, source_path)) = svn_protocol_file_lookup_for_route(route) else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    if source_path.trim().is_empty() {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    }
+    let Some(destination) = headers
+        .get("destination")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| svn_protocol_destination_file_lookup(route, value))
+    else {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    };
+    let (destination_revision, destination_path) = destination;
+    if destination_revision.is_some() || destination_path.trim().is_empty() {
+        return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    }
+    let contents = match yona_rust_vcs::svn_cat_file(repo_path, source_revision, &source_path) {
+        Ok(contents) => contents,
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "COPY")
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
+    let message = format!(
+        "Copy {source_path} to {destination_path} through WebDAV by {}",
+        actor.login_id
+    );
+    match yona_rust_vcs::svn_put_file(repo_path, &destination_path, &contents, &message) {
+        Ok(revision) => {
+            let mut response = StatusCode::CREATED.into_response();
+            add_svn_dav_headers(&mut response);
+            if let Ok(value) = HeaderValue::from_str(&revision.to_string()) {
+                response.headers_mut().insert("svn-revision", value);
+            }
+            response
+        }
+        Err(VcsError::NotFound) => svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnUnavailable) | Err(VcsError::SvnLookUnavailable) => {
+            svn_protocol_not_implemented_response(route, "COPY")
+        }
+        Err(VcsError::SvnFailed(_)) => svn_protocol_status_response(StatusCode::CONFLICT),
+        Err(error) => RestRouteError::from_connect_error(internal_error(error)).into_response(),
+    }
+}
+
 fn svn_protocol_mkcol_response(
     repo_path: &StdPath,
     route: &SvnProtocolRoute,
@@ -5219,6 +5282,21 @@ fn svn_protocol_file_lookup_for_route(route: &SvnProtocolRoute) -> Option<(Optio
         revision,
         svn_protocol_strip_project_path_alias(route, &path),
     ))
+}
+
+fn svn_protocol_destination_file_lookup(
+    route: &SvnProtocolRoute,
+    destination: &str,
+) -> Option<(Option<i64>, String)> {
+    let svn_path = svn_protocol_repo_relative_request_path(route, destination);
+    let destination_route = SvnProtocolRoute {
+        base_path: route.base_path.clone(),
+        request_origin: route.request_origin.clone(),
+        owner_name: route.owner_name.clone(),
+        project_name: route.project_name.clone(),
+        svn_path,
+    };
+    svn_protocol_file_lookup_for_route(&destination_route)
 }
 
 fn svn_protocol_strip_project_path_alias(route: &SvnProtocolRoute, path: &str) -> String {
