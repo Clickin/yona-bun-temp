@@ -596,6 +596,7 @@ message ProjectDetail {
   bool viewer_can_enroll = 7;
   bool enrollment_requested = 8;
   bool is_favorited = 9;
+  string logo_url = 10;
 }
 
 message ProjectMember {

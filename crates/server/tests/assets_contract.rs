@@ -1256,6 +1256,95 @@ async fn attachment_binding_uses_legacy_container_type_names() {
 }
 
 #[tokio::test]
+async fn project_logo_update_binds_legacy_project_attachment_and_returns_logo_url() {
+    let (app, repository, _) = build_auth_router().await;
+    let (csrf, cookie_header) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &cookie_header, &csrf, "owner").await;
+    let create_project = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/api/v1/owners/owner/projects")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(
+                    "{\"projectName\":\"projectYobi\",\"overview\":\"logo project\",\"projectScope\":\"public\"}",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(create_project.status(), StatusCode::OK);
+    let project = repository
+        .read_project_authorization("owner", "projectYobi", None)
+        .await
+        .unwrap()
+        .expect("created project")
+        .project;
+
+    let logo_id = upload_image_file(app.clone(), &cookie_header, &csrf, "project-logo.png").await;
+    let update = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PATCH)
+                .uri("/yona/api/v1/owners/owner/projects/projectYobi")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &cookie_header)
+                .header("x-csrf-token", &csrf)
+                .body(Body::from(format!(
+                    "{{\"projectName\":\"projectYobi\",\"overview\":\"logo project\",\"projectScope\":\"public\",\"logoAttachmentId\":{logo_id}}}"
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(update.status(), StatusCode::OK);
+    let update_body = update.into_body().collect().await.unwrap().to_bytes();
+    let update_json: serde_json::Value = serde_json::from_slice(&update_body).unwrap();
+    assert_eq!(update_json["logoUrl"], format!("/yona/files/{logo_id}"));
+
+    let logo = repository
+        .read_attachment_by_id(logo_id)
+        .await
+        .unwrap()
+        .expect("project logo attachment");
+    assert_eq!(logo.container_type, "PROJECT");
+    assert_eq!(logo.container_id, project.id);
+
+    let container = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/owners/owner/projects/projectYobi/container")
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(container.status(), StatusCode::OK);
+    let container_body = container.into_body().collect().await.unwrap().to_bytes();
+    let container_json: serde_json::Value = serde_json::from_slice(&container_body).unwrap();
+    assert_eq!(container_json["logoUrl"], format!("/yona/files/{logo_id}"));
+
+    let public_logo = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!("/yona/files/{logo_id}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(public_logo.status(), StatusCode::OK);
+}
+
+#[tokio::test]
 async fn avatar_file_upload_returns_metadata_and_serves_bytes_for_owner() {
     let (app, _, _) = build_auth_router().await;
     let (csrf, cookie_header) = bootstrap(app.clone()).await;

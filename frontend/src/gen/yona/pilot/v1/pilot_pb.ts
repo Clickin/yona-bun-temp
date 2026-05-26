@@ -2377,6 +2377,11 @@ export type ProjectDetail = Message<"yona.pilot.v1.ProjectDetail"> & {
    * @generated from field: bool is_favorited = 9;
    */
   isFavorited: boolean;
+
+  /**
+   * @generated from field: string logo_url = 10;
+   */
+  logoUrl: string;
 };
 
 /**

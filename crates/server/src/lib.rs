@@ -11653,6 +11653,7 @@ struct RestProjectUpdateBody {
     default_reviewer_count: Option<u32>,
     issue: Option<bool>,
     is_using_reviewer_count: Option<bool>,
+    logo_attachment_id: Option<i64>,
     milestone: Option<bool>,
     overview: String,
     pull_request: Option<bool>,
@@ -19493,6 +19494,7 @@ async fn rest_update_project(
 ) -> Result<Response, RestRouteError> {
     let menu_settings = body.menu_settings();
     let reviewer_settings = body.reviewer_settings();
+    let logo_attachment_id = body.logo_attachment_id;
     let owner_name = current_owner_name.clone();
     let request = UpdateProjectRequest {
         current_owner_name,
@@ -19504,7 +19506,7 @@ async fn rest_update_project(
         ..Default::default()
     };
     let request = rest_owned_view::<UpdateProjectRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
+    let (mut payload, ctx) = service
         .update_project(Context::new(headers.clone()), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
@@ -19528,7 +19530,68 @@ async fn rest_update_project(
         )
         .await?;
     }
+    if let Some(logo_attachment_id) = logo_attachment_id.filter(|attachment_id| *attachment_id > 0)
+    {
+        payload.logo_url = rest_update_project_logo_attachment(
+            &service,
+            &headers,
+            &payload.owner_name,
+            &payload.project_name,
+            logo_attachment_id,
+        )
+        .await?;
+    }
     Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_project_logo_attachment(
+    service: &PilotServiceImpl,
+    headers: &HeaderMap,
+    owner_name: &str,
+    project_name: &str,
+    attachment_id: i64,
+) -> Result<String, RestRouteError> {
+    let session = require_session(&service.session_manager, headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unimplemented("project logo requires repository backend"),
+        ));
+    };
+    let authorization =
+        rest_require_project_update(repository, owner_name, project_name, Some(actor_id)).await?;
+    let attachment = repository
+        .read_attachment_by_id(attachment_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("attachment not found"))?;
+    if !attachment.mime_type.starts_with("image/") || attachment.size > 5 * 1024 * 1024 {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::invalid_argument("project logo must be an image no larger than 5MB"),
+        ));
+    }
+    repository
+        .set_project_logo_attachment(authorization.project.id, attachment_id, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::permission_denied(
+                "project logo attachment is not owned by the actor",
+            ))
+        })?;
+    Ok(base_path_href(
+        &service.base_path,
+        &format!("/files/{attachment_id}"),
+    ))
 }
 
 async fn rest_update_project_menu_settings(
@@ -27320,14 +27383,39 @@ async fn get_uploaded_file(
     };
     let is_avatar = attachment.container_type == "USER_AVATAR";
     if !is_avatar {
-        let Some(session) = session_manager.read_session_from_headers(&headers) else {
-            return StatusCode::FORBIDDEN.into_response();
-        };
-        let Some(user_id) = session.user_id else {
-            return StatusCode::FORBIDDEN.into_response();
-        };
-        if attachment.container_type != "USER" || attachment.container_id != user_id {
-            return StatusCode::FORBIDDEN.into_response();
+        if attachment.container_type == "PROJECT" {
+            let actor_id = session_manager
+                .read_session_from_headers(&headers)
+                .and_then(|session| session.user_id);
+            let allowed = match repository.read_project_by_id(attachment.container_id).await {
+                Ok(Some(project)) => match repository
+                    .read_project_authorization(
+                        &project.owner_name,
+                        &project.project_name,
+                        actor_id,
+                    )
+                    .await
+                {
+                    Ok(Some(authorization)) => {
+                        project_read_allowed(&authorization, actor_id.is_none()).unwrap_or(false)
+                    }
+                    _ => false,
+                },
+                _ => false,
+            };
+            if !allowed {
+                return StatusCode::FORBIDDEN.into_response();
+            }
+        } else {
+            let Some(session) = session_manager.read_session_from_headers(&headers) else {
+                return StatusCode::FORBIDDEN.into_response();
+            };
+            let Some(user_id) = session.user_id else {
+                return StatusCode::FORBIDDEN.into_response();
+            };
+            if attachment.container_type != "USER" || attachment.container_id != user_id {
+                return StatusCode::FORBIDDEN.into_response();
+            }
         }
     }
     let Ok(bytes) = std::fs::read(uploaded_file_path(&attachment.hash)) else {
@@ -27808,6 +27896,32 @@ fn project_detail_from_record(
         is_favorited: authorization.is_favorited,
         ..Default::default()
     }
+}
+
+async fn project_logo_url(
+    repository: &PilotRepository,
+    base_path: &str,
+    project_id: i64,
+) -> Result<String, ConnectError> {
+    Ok(repository
+        .read_project_logo_attachment(project_id)
+        .await
+        .map_err(internal_error)?
+        .map(|attachment| base_path_href(base_path, &format!("/files/{}", attachment.id)))
+        .unwrap_or_default())
+}
+
+async fn project_detail_with_logo_from_record(
+    repository: &PilotRepository,
+    base_path: &str,
+    authorization: &persistence::ProjectAuthorizationRecord,
+    viewer_can_update: bool,
+    viewer_can_enroll: bool,
+) -> Result<ProjectDetail, ConnectError> {
+    let mut detail =
+        project_detail_from_record(authorization, viewer_can_update, viewer_can_enroll);
+    detail.logo_url = project_logo_url(repository, base_path, authorization.project.id).await?;
+    Ok(detail)
 }
 
 fn project_read_allowed(
@@ -30257,7 +30371,7 @@ async fn build_project_container_response(
         is_favorited: authorization.is_favorited,
         is_forked: authorization.project.original_project_id.is_some(),
         is_watching,
-        logo_url: String::new(),
+        logo_url: project_logo_url(repository, base_path, authorization.project.id).await?,
         member_count,
         members,
         open_issue_count: if show_issue {
@@ -31898,7 +32012,17 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        Ok((project_detail_from_record(&authorization, true, false), ctx))
+        Ok((
+            project_detail_with_logo_from_record(
+                repository,
+                &self.base_path,
+                &authorization,
+                true,
+                false,
+            )
+            .await?,
+            ctx,
+        ))
     }
 
     async fn read_project_detail(
@@ -31952,7 +32076,9 @@ impl PilotServiceImpl {
         }
 
         Ok((
-            project_detail_from_record(
+            project_detail_with_logo_from_record(
+                repository,
+                &self.base_path,
                 &authorization,
                 authorize_project_access(
                     &ProjectAccessFacts {
@@ -31975,7 +32101,8 @@ impl PilotServiceImpl {
                     authorization.viewer.is_project_member,
                     authorization.viewer.is_site_admin,
                 ),
-            ),
+            )
+            .await?,
             ctx,
         ))
     }
@@ -32020,7 +32147,17 @@ impl PilotServiceImpl {
             ));
         }
 
-        Ok((project_detail_from_record(&authorization, true, false), ctx))
+        Ok((
+            project_detail_with_logo_from_record(
+                repository,
+                &self.base_path,
+                &authorization,
+                true,
+                false,
+            )
+            .await?,
+            ctx,
+        ))
     }
 
     async fn read_project_members(
@@ -32393,7 +32530,17 @@ impl PilotServiceImpl {
             .await
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("project not found"))?;
-        Ok((project_detail_from_record(&updated, true, false), ctx))
+        Ok((
+            project_detail_with_logo_from_record(
+                repository,
+                &self.base_path,
+                &updated,
+                true,
+                false,
+            )
+            .await?,
+            ctx,
+        ))
     }
 
     async fn enroll_project(
