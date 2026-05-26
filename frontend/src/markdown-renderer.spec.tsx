@@ -868,6 +868,17 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<li>parent</li><li><strong>child</strong></li>");
   });
 
+  it("keeps indented continuation lines inside list items like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"- first\n  continuation with **style**\n- second"} />,
+    );
+
+    expect(html).toContain(
+      "<ul><li>first<br/>continuation with <strong>style</strong></li><li>second</li></ul>",
+    );
+    expect(html).not.toContain("<p>continuation with");
+  });
+
   it("renders task-list checkboxes like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- [ ] open\n- [x] **done**\n- [X] done upper"} />,

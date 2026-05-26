@@ -101,12 +101,22 @@ type MarkdownListRecord = {
 };
 
 type ParsedMarkdownListLine = {
+  kind: "item";
   indent: number;
   key: string;
   ordered: boolean;
   start?: number;
   text: string;
 };
+
+type ParsedMarkdownListContinuation = {
+  indent: number;
+  key: string;
+  kind: "continuation";
+  text: string;
+};
+
+type ParsedMarkdownListEntry = ParsedMarkdownListLine | ParsedMarkdownListContinuation;
 
 type MarkdownTaskStats = {
   checked: number;
@@ -819,19 +829,36 @@ function parseMarkdownList(lines: MarkdownLineRecord[]): MarkdownListRecord | nu
   if (lines.length === 0) {
     return null;
   }
-  const parsedLines = lines.map(parseMarkdownListLine);
+  const parsedLines = lines.map(parseMarkdownListEntry);
   if (parsedLines.some((line) => line === null)) {
     return null;
   }
   const firstLine = parsedLines[0];
-  if (!firstLine) {
+  if (!firstLine || firstLine.kind !== "item") {
     return null;
   }
-  const span = parseMarkdownListAt(parsedLines as ParsedMarkdownListLine[], 0, firstLine.indent);
+  const span = parseMarkdownListAt(parsedLines as ParsedMarkdownListEntry[], 0, firstLine.indent);
   if (!span || span.nextIndex !== parsedLines.length) {
     return null;
   }
   return span.list;
+}
+
+function parseMarkdownListEntry(line: MarkdownLineRecord): ParsedMarkdownListEntry | null {
+  const listLine = parseMarkdownListLine(line);
+  if (listLine) {
+    return listLine;
+  }
+  const continuationMatch = /^(\s+)(\S.*)$/.exec(line.text);
+  if (!continuationMatch) {
+    return null;
+  }
+  return {
+    indent: (continuationMatch[1] ?? "").replace(/\t/g, "    ").length,
+    key: line.key,
+    kind: "continuation",
+    text: continuationMatch[2] ?? "",
+  };
 }
 
 function parseMarkdownListLine(line: MarkdownLineRecord): ParsedMarkdownListLine | null {
@@ -844,6 +871,7 @@ function parseMarkdownListLine(line: MarkdownLineRecord): ParsedMarkdownListLine
   return {
     indent: (match[1] ?? "").replace(/\t/g, "    ").length,
     key: line.key,
+    kind: "item",
     ordered,
     start: ordered ? Number.parseInt(marker, 10) : undefined,
     text: match[3] ?? "",
@@ -851,12 +879,12 @@ function parseMarkdownListLine(line: MarkdownLineRecord): ParsedMarkdownListLine
 }
 
 function parseMarkdownListAt(
-  lines: ParsedMarkdownListLine[],
+  lines: ParsedMarkdownListEntry[],
   startIndex: number,
   indent: number,
 ): { list: MarkdownListRecord; nextIndex: number } | null {
   const firstLine = lines[startIndex];
-  if (!firstLine || firstLine.indent !== indent) {
+  if (!firstLine || firstLine.kind !== "item" || firstLine.indent !== indent) {
     return null;
   }
   const items: MarkdownListItem[] = [];
@@ -865,6 +893,15 @@ function parseMarkdownListAt(
     const line = lines[index];
     if (!line || line.indent < indent) {
       break;
+    }
+    if (line.kind === "continuation") {
+      const parent = items.at(-1);
+      if (!parent || line.indent <= indent) {
+        return null;
+      }
+      parent.text = `${parent.text}\n${line.text}`;
+      index += 1;
+      continue;
     }
     if (line.indent > indent) {
       const parent = items.at(-1);
@@ -957,7 +994,7 @@ function MarkdownList(props: { context?: MarkdownContext; list: MarkdownListReco
         />
       ) : null}
       {item.task ? " " : null}
-      <MarkdownInline context={props.context} line={item.text} />
+      <MarkdownInlineLines context={props.context} text={item.text} />
       {item.children?.map((child) => (
         <MarkdownList
           context={props.context}
@@ -973,6 +1010,23 @@ function MarkdownList(props: { context?: MarkdownContext; list: MarkdownListReco
     </ol>
   ) : (
     <ul>{children}</ul>
+  );
+}
+
+function MarkdownInlineLines(props: { context?: MarkdownContext; text: string }) {
+  const lines = markdownLines(normalizeCodeSpanNewlines(props.text));
+  return (
+    <>
+      {lines.map((line, index) => (
+        <React.Fragment key={line.key}>
+          {markdownLineBreakBefore(lines, index, props.context?.breaks ?? true)}
+          <MarkdownInline
+            context={props.context}
+            line={markdownLineTextBeforeBreak(line, index, lines)}
+          />
+        </React.Fragment>
+      ))}
+    </>
   );
 }
 
