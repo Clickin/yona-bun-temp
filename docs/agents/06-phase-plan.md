@@ -31,7 +31,7 @@
 
 ## Phase 2: 이슈 추적
 
-- Phase 2A complete: issue CRUD, comments, state mutation, watch/vote/assignee, mass update, Markdown rendering, and issue/comment attachment binding on Rust canonical stack.
+- Phase 2A complete: issue CRUD, comments, state mutation, watch/vote/assignee, mass update, Markdown rendering, and issue/comment attachment binding on Rust canonical stack. Issue body/comment edit sync now removes omitted legacy attachment rows while preserving `ISSUE_POST` / `ISSUE_COMMENT` container names and current-user temporary upload ownership.
 - Issue direct comment routes complete: legacy `POST /:owner/:project/issue/:number/comments`, `POST /:owner/:project/issue/:number/comments/:commentId`, and `DELETE /:owner/:project/issue/:number/comment/:commentId/delete` now reuse the `/api/v1` comment contract and redirect to the legacy issue/comment anchors.
 - Phase 2B complete: project issue label/category management screens, REST CRUD, legacy direct label/category routes, and label CSS.
 - Phase 2C complete: milestone management screens/REST CRUD, legacy direct mutation routes, state toggles, issue aggregation, Markdown description rendering, and milestone attachment binding.

@@ -11,7 +11,7 @@ use yona_rust_persistence::{
     site_admin, AppRepository, CreateIssueCommentInput, CreateIssueInput,
     CreatePostingCommentInput, CreatePostingInput, CreateProjectInput, CreatePullRequestInput,
     CreatePullRequestResult, IssueMutationInput, MilestoneMutationInput, PostingMutationInput,
-    PullRequestMutationInput, UpdatePullRequestInput,
+    PullRequestMutationInput, UpdateIssueCommentInput, UpdateIssueInput, UpdatePullRequestInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
@@ -752,6 +752,47 @@ async fn attachment_binding_uses_legacy_container_type_names() {
     assert_eq!(issue_file.container_type, "ISSUE_POST");
     assert_eq!(issue_file.container_id, issue.id);
 
+    let replacement_issue_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "replacement-issue-body-attachment.png",
+    )
+    .await;
+    repository
+        .update_issue(UpdateIssueInput {
+            actor_login_id: "owner".to_string(),
+            issue_number: issue.issue_number,
+            owner_name: "owner".to_string(),
+            project_name: "projectYobi".to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: None,
+                attachment_ids: vec![replacement_issue_file_id],
+                body_markdown: "updated issue body".to_string(),
+                label_ids: Vec::new(),
+                milestone_id: None,
+                title: "Updated issue with attachment".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("updated issue");
+    assert!(
+        repository
+            .read_attachment_by_id(issue_file_id)
+            .await
+            .unwrap()
+            .is_none(),
+        "issue edit should remove omitted legacy ISSUE_POST attachments"
+    );
+    let replacement_issue_file = repository
+        .read_attachment_by_id(replacement_issue_file_id)
+        .await
+        .unwrap()
+        .expect("replacement issue file");
+    assert_eq!(replacement_issue_file.container_type, "ISSUE_POST");
+    assert_eq!(replacement_issue_file.container_id, issue.id);
+
     let anonymous_issue_file_list = app
         .clone()
         .oneshot(
@@ -803,10 +844,13 @@ async fn attachment_binding_uses_legacy_container_type_names() {
         issue_file_list_json["tempFiles"].as_array().unwrap().len(),
         0
     );
-    assert_eq!(issue_file_list_json["attachments"][0]["id"], issue_file_id);
+    assert_eq!(
+        issue_file_list_json["attachments"][0]["id"],
+        replacement_issue_file_id
+    );
     assert_eq!(
         issue_file_list_json["attachments"][0]["url"],
-        format!("/yona/files/{issue_file_id}")
+        format!("/yona/files/{replacement_issue_file_id}")
     );
     assert_eq!(
         issue_file_list_json["attachments"][0]["mimeType"],
@@ -814,7 +858,7 @@ async fn attachment_binding_uses_legacy_container_type_names() {
     );
     assert_eq!(
         issue_file_list_json["attachments"][0]["name"],
-        "issue-body-attachment.png"
+        "replacement-issue-body-attachment.png"
     );
 
     let issue_comment_file_id = upload_image_file(
@@ -847,6 +891,48 @@ async fn attachment_binding_uses_legacy_container_type_names() {
         .expect("issue comment file");
     assert_eq!(issue_comment_file.container_type, "ISSUE_COMMENT");
     assert_eq!(issue_comment_file.container_id, issue_comment_id);
+
+    let replacement_issue_comment_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "replacement-issue-comment-attachment.png",
+    )
+    .await;
+    repository
+        .update_issue_comment(UpdateIssueCommentInput {
+            actor_id: owner_id,
+            attachment_ids: vec![replacement_issue_comment_file_id],
+            comment_id: issue_comment_id,
+            contents_markdown: "updated issue comment body".to_string(),
+            issue_number: issue.issue_number,
+            owner_name: "owner".to_string(),
+            project_name: "projectYobi".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("updated issue comment");
+    assert!(
+        repository
+            .read_attachment_by_id(issue_comment_file_id)
+            .await
+            .unwrap()
+            .is_none(),
+        "issue comment edit should remove omitted legacy ISSUE_COMMENT attachments"
+    );
+    let replacement_issue_comment_file = repository
+        .read_attachment_by_id(replacement_issue_comment_file_id)
+        .await
+        .unwrap()
+        .expect("replacement issue comment file");
+    assert_eq!(
+        replacement_issue_comment_file.container_type,
+        "ISSUE_COMMENT"
+    );
+    assert_eq!(
+        replacement_issue_comment_file.container_id,
+        issue_comment_id
+    );
 
     let board_file_id = upload_image_file(
         app.clone(),

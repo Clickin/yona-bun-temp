@@ -3580,7 +3580,7 @@ impl AppRepository {
 
         self.replace_issue_labels(updated.id, project_record.id, &input.values.label_ids)
             .await?;
-        self.bind_attachments(
+        self.sync_attachments(
             ISSUE_ATTACHMENT_CONTAINER,
             updated.id,
             &input.values.attachment_ids,
@@ -3815,7 +3815,7 @@ impl AppRepository {
             &input.contents_markdown,
         )
         .await?;
-        self.bind_attachments(
+        self.sync_attachments(
             ISSUE_COMMENT_ATTACHMENT_CONTAINER,
             updated.id,
             &input.attachment_ids,
