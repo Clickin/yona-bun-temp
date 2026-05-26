@@ -2652,7 +2652,7 @@ fn svn_protocol_revision_provenance(
     }
     match yona_rust_vcs::svn_log_entries(repo_path, revision, revision, 1) {
         Ok(mut entries) => entries.pop().map(|entry| SvnProtocolRevisionProvenance {
-            creationdate: entry.date,
+            creationdate: svn_protocol_committed_date(&entry.date),
             creator_displayname: entry.author,
         }),
         Err(VcsError::NotFound) | Err(VcsError::InvalidPath) => None,
@@ -2949,14 +2949,14 @@ fn svn_protocol_baseline_propfind_response(
             .then_some(
                 log_entry
                     .as_ref()
-                    .map(|entry| entry.date.as_str())
+                    .map(|entry| svn_protocol_committed_date(&entry.date))
                     .unwrap_or_default(),
             )
             .filter(|date| !date.trim().is_empty())
             .map(|date| {
                 format!(
                     "        <D:creationdate>{}</D:creationdate>\n",
-                    xml_escape(date)
+                    xml_escape(&date)
                 )
             })
             .unwrap_or_default();
@@ -3128,6 +3128,9 @@ fn svn_protocol_file_propfind_response(
     } else {
         None
     };
+    let provenance = version_revision.and_then(|revision| {
+        svn_protocol_revision_provenance(repo_path, route, Some(revision), request)
+    });
     svn_protocol_propfind_file_response(
         route,
         &href,
@@ -3140,6 +3143,7 @@ fn svn_protocol_file_propfind_response(
         yona_rust_vcs::svn_repository_uuid(repo_path)
             .ok()
             .as_deref(),
+        provenance.as_ref(),
         request,
     )
 }
@@ -3256,6 +3260,7 @@ fn svn_protocol_propfind_tree_response(
                     &[],
                     None,
                     repository_uuid,
+                    None,
                     request,
                 ));
             }
@@ -3285,6 +3290,7 @@ fn svn_protocol_propfind_file_response(
     properties: &[yona_rust_vcs::SvnProperty],
     lock: Option<(&SvnProtocolRoute, &yona_rust_vcs::SvnLock)>,
     repository_uuid: Option<&str>,
+    provenance: Option<&SvnProtocolRevisionProvenance>,
     request: &str,
 ) -> Response {
     let item = svn_protocol_propfind_file_item(
@@ -3297,6 +3303,7 @@ fn svn_protocol_propfind_file_response(
         properties,
         lock,
         repository_uuid,
+        provenance,
         request,
     );
     let body = format!(
@@ -3453,6 +3460,7 @@ fn svn_protocol_propfind_file_item(
     properties: &[yona_rust_vcs::SvnProperty],
     lock: Option<(&SvnProtocolRoute, &yona_rust_vcs::SvnLock)>,
     repository_uuid: Option<&str>,
+    provenance: Option<&SvnProtocolRevisionProvenance>,
     request: &str,
 ) -> String {
     if svn_protocol_propfind_is_propname(request) {
@@ -3480,6 +3488,14 @@ fn svn_protocol_propfind_file_item(
             .is_some()
             .then_some("        <S:repository-uuid/>\n")
             .unwrap_or_default();
+        let creationdate = provenance
+            .is_some()
+            .then_some("        <D:creationdate/>\n")
+            .unwrap_or_default();
+        let creator_displayname = provenance
+            .is_some()
+            .then_some("        <D:creator-displayname/>\n")
+            .unwrap_or_default();
         let property_items = svn_protocol_property_name_items(properties);
         return format!(
             r#"  <D:response>
@@ -3487,7 +3503,7 @@ fn svn_protocol_propfind_file_item(
     <D:propstat>
       <D:prop>
         <D:resourcetype/>
-{content_length}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}        <D:version-controlled-configuration/>
+{content_length}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}        <D:version-controlled-configuration/>
 {property_items}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
@@ -3552,6 +3568,26 @@ fn svn_protocol_propfind_file_item(
             )
         })
         .unwrap_or_default();
+    let creationdate = svn_protocol_propfind_wants(request, "creationdate")
+        .then_some(provenance)
+        .flatten()
+        .map(|metadata| {
+            format!(
+                "        <D:creationdate>{}</D:creationdate>\n",
+                xml_escape(&metadata.creationdate)
+            )
+        })
+        .unwrap_or_default();
+    let creator_displayname = svn_protocol_propfind_wants(request, "creator-displayname")
+        .then_some(provenance)
+        .flatten()
+        .map(|metadata| {
+            format!(
+                "        <D:creator-displayname>{}</D:creator-displayname>\n",
+                xml_escape(&metadata.creator_displayname)
+            )
+        })
+        .unwrap_or_default();
     let version_controlled_configuration = if wants_vcc {
         format!(
                 "        <D:version-controlled-configuration><D:href>{}</D:href></D:version-controlled-configuration>\n",
@@ -3574,7 +3610,7 @@ fn svn_protocol_propfind_file_item(
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
-{resourcetype}{content_length}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{version_controlled_configuration}
+{resourcetype}{content_length}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{version_controlled_configuration}
 {deadprop_count}{property_items}{lock_discovery}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
