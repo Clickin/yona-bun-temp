@@ -984,6 +984,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
   <D:prop>
     <D:creationdate/>
     <D:creator-displayname/>
+    <D:getlastmodified/>
   </D:prop>
 </D:propfind>"#,
         ),
@@ -999,6 +1000,8 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && readme_response.contains("</D:creationdate>")
             && readme_response.contains("<D:creator-displayname>")
             && readme_response.contains("</D:creator-displayname>")
+            && readme_response.contains("<D:getlastmodified>")
+            && readme_response.contains("GMT</D:getlastmodified>")
             && !readme_response.contains("<D:checked-in>")
             && !readme_response.contains("<S:repository-uuid>"),
         "SVN collection PROPFIND should expose requested revision provenance metadata on child files only: {text}"
@@ -1048,6 +1051,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
   <D:prop>
     <D:creationdate/>
     <D:creator-displayname/>
+    <D:getlastmodified/>
   </D:prop>
 </D:propfind>"#,
         ),
@@ -1078,6 +1082,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
   <D:prop>
     <D:creationdate/>
     <D:creator-displayname/>
+    <D:getlastmodified/>
   </D:prop>
 </D:propfind>"#,
         ),
@@ -1182,6 +1187,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
   <D:prop>
     <D:creationdate/>
     <D:creator-displayname/>
+    <D:getlastmodified/>
   </D:prop>
 </D:propfind>"#,
         ),
@@ -1199,6 +1205,8 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && readme_response.contains("</D:creationdate>")
             && readme_response.contains("<D:creator-displayname>")
             && readme_response.contains("</D:creator-displayname>")
+            && readme_response.contains("<D:getlastmodified>")
+            && readme_response.contains("GMT</D:getlastmodified>")
             && !readme_response.contains("<D:checked-in>")
             && !readme_response.contains("<S:repository-uuid>"),
         "SVN baseline collection PROPFIND should expose requested revision provenance metadata on child files only: {text}"

@@ -2635,6 +2635,7 @@ fn svn_protocol_collection_propfind_response(
 struct SvnProtocolRevisionProvenance {
     creationdate: String,
     creator_displayname: String,
+    getlastmodified: String,
 }
 
 fn svn_protocol_revision_provenance(
@@ -2646,7 +2647,8 @@ fn svn_protocol_revision_provenance(
     let revision = revision?;
     if !(svn_protocol_propfind_is_propname(request)
         || svn_protocol_propfind_wants(request, "creationdate")
-        || svn_protocol_propfind_wants(request, "creator-displayname"))
+        || svn_protocol_propfind_wants(request, "creator-displayname")
+        || svn_protocol_propfind_wants(request, "getlastmodified"))
     {
         return None;
     }
@@ -2654,6 +2656,7 @@ fn svn_protocol_revision_provenance(
         Ok(mut entries) => entries.pop().map(|entry| SvnProtocolRevisionProvenance {
             creationdate: svn_protocol_committed_date(&entry.date),
             creator_displayname: entry.author,
+            getlastmodified: svn_protocol_http_date(&entry.date),
         }),
         Err(VcsError::NotFound) | Err(VcsError::InvalidPath) => None,
         Err(VcsError::SvnLookUnavailable) => None,
@@ -2714,6 +2717,10 @@ fn svn_protocol_propfind_collection_response(
             .is_some()
             .then_some("        <D:creator-displayname/>\n")
             .unwrap_or_default();
+        let getlastmodified = provenance
+            .is_some()
+            .then_some("        <D:getlastmodified/>\n")
+            .unwrap_or_default();
         let body = format!(
             r#"<?xml version="1.0" encoding="utf-8"?>
 <D:multistatus xmlns:D="DAV:" xmlns:S="http://subversion.tigris.org/xmlns/dav/">
@@ -2722,7 +2729,7 @@ fn svn_protocol_propfind_collection_response(
     <D:propstat>
       <D:prop>
         <D:resourcetype/>
-{version_name}{repository_uuid}{checked_in}{version_controlled_configuration}{baseline_collection}{baseline_relative_path}{creationdate}{creator_displayname}      </D:prop>
+{version_name}{repository_uuid}{checked_in}{version_controlled_configuration}{baseline_collection}{baseline_relative_path}{creationdate}{creator_displayname}{getlastmodified}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
   </D:response>
@@ -2823,6 +2830,20 @@ fn svn_protocol_propfind_collection_response(
             )
         })
         .unwrap_or_default();
+    let getlastmodified = svn_protocol_propfind_wants(request, "getlastmodified")
+        .then_some(
+            provenance
+                .map(|metadata| metadata.getlastmodified.as_str())
+                .unwrap_or_default(),
+        )
+        .filter(|value| !value.trim().is_empty())
+        .map(|value| {
+            format!(
+                "        <D:getlastmodified>{}</D:getlastmodified>\n",
+                xml_escape(value)
+            )
+        })
+        .unwrap_or_default();
     let resourcetype = if request.trim().is_empty()
         || svn_protocol_propfind_wants(request, "resourcetype")
         || svn_protocol_propfind_wants(request, "allprop")
@@ -2847,6 +2868,7 @@ fn svn_protocol_propfind_collection_response(
 {baseline_relative_path}
 {creationdate}
 {creator_displayname}
+{getlastmodified}
       </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
@@ -2894,7 +2916,8 @@ fn svn_protocol_baseline_propfind_response(
     let baseline_collection = format!("{}/!svn/bc/{revision}", svn_protocol_project_href(route));
     let wants_creation_metadata = svn_protocol_propfind_is_propname(request)
         || svn_protocol_propfind_wants(request, "creationdate")
-        || svn_protocol_propfind_wants(request, "creator-displayname");
+        || svn_protocol_propfind_wants(request, "creator-displayname")
+        || svn_protocol_propfind_wants(request, "getlastmodified");
     let repository_uuid = if svn_protocol_propfind_is_propname(request)
         || svn_protocol_propfind_wants(request, "repository-uuid")
     {
@@ -2929,7 +2952,7 @@ fn svn_protocol_baseline_propfind_response(
         None
     };
     let prop_items = if svn_protocol_propfind_is_propname(request) {
-        "        <D:resourcetype/>\n        <D:version-name/>\n        <D:baseline-collection/>\n        <D:creationdate/>\n        <D:creator-displayname/>\n        <S:repository-uuid/>\n".to_string()
+        "        <D:resourcetype/>\n        <D:version-name/>\n        <D:baseline-collection/>\n        <D:creationdate/>\n        <D:creator-displayname/>\n        <D:getlastmodified/>\n        <S:repository-uuid/>\n".to_string()
     } else {
         let resourcetype = svn_protocol_propfind_wants(request, "resourcetype")
             .then_some("        <D:resourcetype><D:baseline/></D:resourcetype>\n")
@@ -2975,6 +2998,21 @@ fn svn_protocol_baseline_propfind_response(
                 )
             })
             .unwrap_or_default();
+        let getlastmodified = svn_protocol_propfind_wants(request, "getlastmodified")
+            .then_some(
+                log_entry
+                    .as_ref()
+                    .map(|entry| svn_protocol_http_date(&entry.date))
+                    .unwrap_or_default(),
+            )
+            .filter(|date| !date.trim().is_empty())
+            .map(|date| {
+                format!(
+                    "        <D:getlastmodified>{}</D:getlastmodified>\n",
+                    xml_escape(&date)
+                )
+            })
+            .unwrap_or_default();
         let repository_uuid = svn_protocol_propfind_wants(request, "repository-uuid")
             .then_some(repository_uuid.as_deref())
             .flatten()
@@ -2986,7 +3024,7 @@ fn svn_protocol_baseline_propfind_response(
             })
             .unwrap_or_default();
         format!(
-            "{resourcetype}{version_name}{baseline_collection_item}{creationdate}{creator_displayname}{repository_uuid}"
+            "{resourcetype}{version_name}{baseline_collection_item}{creationdate}{creator_displayname}{getlastmodified}{repository_uuid}"
         )
     };
     let body = format!(
@@ -3366,6 +3404,10 @@ fn svn_protocol_propfind_collection_item(
             .is_some()
             .then_some("        <D:creator-displayname/>\n")
             .unwrap_or_default();
+        let getlastmodified = provenance
+            .is_some()
+            .then_some("        <D:getlastmodified/>\n")
+            .unwrap_or_default();
         return format!(
             r#"  <D:response>
     <D:href>{}</D:href>
@@ -3373,7 +3415,7 @@ fn svn_protocol_propfind_collection_item(
       <D:prop>
         <D:resourcetype/>
 {version_name}{checked_in}{baseline_collection}{repository_uuid}        <D:version-controlled-configuration/>
-{baseline_relative_path}{creationdate}{creator_displayname}      </D:prop>
+{baseline_relative_path}{creationdate}{creator_displayname}{getlastmodified}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
   </D:response>
@@ -3472,12 +3514,22 @@ fn svn_protocol_propfind_collection_item(
             )
         })
         .unwrap_or_default();
+    let getlastmodified = svn_protocol_propfind_wants(request, "getlastmodified")
+        .then_some(provenance)
+        .flatten()
+        .map(|metadata| {
+            format!(
+                "        <D:getlastmodified>{}</D:getlastmodified>\n",
+                xml_escape(&metadata.getlastmodified)
+            )
+        })
+        .unwrap_or_default();
     format!(
         r#"  <D:response>
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
-{resourcetype}{version_name}{checked_in}{baseline_collection}{repository_uuid}{version_controlled_configuration}{baseline_relative_path}{creationdate}{creator_displayname}
+{resourcetype}{version_name}{checked_in}{baseline_collection}{repository_uuid}{version_controlled_configuration}{baseline_relative_path}{creationdate}{creator_displayname}{getlastmodified}
       </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
@@ -3533,6 +3585,10 @@ fn svn_protocol_propfind_file_item(
             .is_some()
             .then_some("        <D:creator-displayname/>\n")
             .unwrap_or_default();
+        let getlastmodified = provenance
+            .is_some()
+            .then_some("        <D:getlastmodified/>\n")
+            .unwrap_or_default();
         let property_items = svn_protocol_property_name_items(properties);
         return format!(
             r#"  <D:response>
@@ -3540,7 +3596,7 @@ fn svn_protocol_propfind_file_item(
     <D:propstat>
       <D:prop>
         <D:resourcetype/>
-{content_length}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}        <D:version-controlled-configuration/>
+{content_length}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}        <D:version-controlled-configuration/>
 {property_items}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
@@ -3625,6 +3681,16 @@ fn svn_protocol_propfind_file_item(
             )
         })
         .unwrap_or_default();
+    let getlastmodified = svn_protocol_propfind_wants(request, "getlastmodified")
+        .then_some(provenance)
+        .flatten()
+        .map(|metadata| {
+            format!(
+                "        <D:getlastmodified>{}</D:getlastmodified>\n",
+                xml_escape(&metadata.getlastmodified)
+            )
+        })
+        .unwrap_or_default();
     let version_controlled_configuration = if wants_vcc {
         format!(
                 "        <D:version-controlled-configuration><D:href>{}</D:href></D:version-controlled-configuration>\n",
@@ -3647,7 +3713,7 @@ fn svn_protocol_propfind_file_item(
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
-{resourcetype}{content_length}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{version_controlled_configuration}
+{resourcetype}{content_length}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}{version_controlled_configuration}
 {deadprop_count}{property_items}{lock_discovery}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
@@ -5463,6 +5529,109 @@ fn svn_protocol_committed_date(svnlook_date: &str) -> String {
     };
     let time = time.split_once('.').map(|(head, _)| head).unwrap_or(time);
     format!("{date}T{time}.000000Z")
+}
+
+fn svn_protocol_http_date(svnlook_date: &str) -> String {
+    let mut parts = svnlook_date.split_whitespace();
+    let Some(date) = parts.next() else {
+        return svnlook_date.trim().to_string();
+    };
+    let Some(time) = parts.next() else {
+        return svnlook_date.trim().to_string();
+    };
+    let timezone = parts.next();
+    let Some((year, month, day)) = svn_protocol_parse_date_parts(date) else {
+        return svnlook_date.trim().to_string();
+    };
+    let Some((hour, minute, second)) = svn_protocol_parse_time_parts(time) else {
+        return svnlook_date.trim().to_string();
+    };
+    let local_seconds = svn_protocol_days_from_civil(year, month, day)
+        .saturating_mul(86_400)
+        .saturating_add(i64::from(hour) * 3_600 + i64::from(minute) * 60 + i64::from(second));
+    let offset_seconds = timezone
+        .and_then(svn_protocol_parse_timezone_offset)
+        .unwrap_or_default();
+    let utc_seconds = local_seconds.saturating_sub(offset_seconds);
+    let days = utc_seconds.div_euclid(86_400);
+    let seconds_of_day = utc_seconds.rem_euclid(86_400);
+    let (year, month, day) = svn_protocol_civil_from_days(days);
+    let hour = seconds_of_day / 3_600;
+    let minute = (seconds_of_day % 3_600) / 60;
+    let second = seconds_of_day % 60;
+    let weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    let months = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+    let weekday = weekdays[(days + 4).rem_euclid(7) as usize];
+    let month_name = months[(month - 1) as usize];
+    format!("{weekday}, {day:02} {month_name} {year:04} {hour:02}:{minute:02}:{second:02} GMT")
+}
+
+fn svn_protocol_parse_date_parts(date: &str) -> Option<(i64, i64, i64)> {
+    let mut parts = date.split('-');
+    let year = parts.next()?.parse().ok()?;
+    let month = parts.next()?.parse().ok()?;
+    let day = parts.next()?.parse().ok()?;
+    (parts.next().is_none() && (1..=12).contains(&month) && (1..=31).contains(&day))
+        .then_some((year, month, day))
+}
+
+fn svn_protocol_parse_time_parts(time: &str) -> Option<(i64, i64, i64)> {
+    let time = time.split_once('.').map(|(head, _)| head).unwrap_or(time);
+    let mut parts = time.split(':');
+    let hour = parts.next()?.parse().ok()?;
+    let minute = parts.next()?.parse().ok()?;
+    let second = parts.next()?.parse().ok()?;
+    (parts.next().is_none()
+        && (0..=23).contains(&hour)
+        && (0..=59).contains(&minute)
+        && (0..=60).contains(&second))
+    .then_some((hour, minute, second))
+}
+
+fn svn_protocol_parse_timezone_offset(timezone: &str) -> Option<i64> {
+    let sign: i64 = match timezone.as_bytes().first()? {
+        b'+' => 1,
+        b'-' => -1,
+        _ => return None,
+    };
+    if timezone.len() != 5 {
+        return None;
+    }
+    let hour: i64 = timezone[1..3].parse().ok()?;
+    let minute: i64 = timezone[3..5].parse().ok()?;
+    ((0..=23).contains(&hour) && (0..=59).contains(&minute))
+        .then_some(sign * (hour * 3_600 + minute * 60))
+}
+
+fn svn_protocol_days_from_civil(mut year: i64, month: i64, day: i64) -> i64 {
+    if month <= 2 {
+        year -= 1;
+    }
+    let era = if year >= 0 { year } else { year - 399 } / 400;
+    let year_of_era = year - era * 400;
+    let month_prime = month + if month > 2 { -3 } else { 9 };
+    let day_of_year = (153 * month_prime + 2) / 5 + day - 1;
+    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
+    era * 146_097 + day_of_era - 719_468
+}
+
+fn svn_protocol_civil_from_days(days: i64) -> (i64, i64, i64) {
+    let days = days + 719_468;
+    let era = if days >= 0 { days } else { days - 146_096 } / 146_097;
+    let day_of_era = days - era * 146_097;
+    let year_of_era =
+        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
+    let mut year = year_of_era + era * 400;
+    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
+    let month_prime = (5 * day_of_year + 2) / 153;
+    let day = day_of_year - (153 * month_prime + 2) / 5 + 1;
+    let month = month_prime + if month_prime < 10 { 3 } else { -9 };
+    if month <= 2 {
+        year += 1;
+    }
+    (year, month, day)
 }
 
 fn svn_protocol_version_href(route: &SvnProtocolRoute, revision: i64, path: &str) -> String {
