@@ -3250,6 +3250,9 @@ fn svn_protocol_property_items_for_request(
     properties: &[yona_rust_vcs::SvnProperty],
     request: &str,
 ) -> String {
+    if svn_protocol_propfind_is_propname(request) {
+        return svn_protocol_property_name_items(properties);
+    }
     if svn_protocol_propfind_wants(request, "allprop") {
         return svn_protocol_property_items(properties);
     }
@@ -3262,6 +3265,16 @@ fn svn_protocol_property_items_for_request(
                 "        <{prefix}:{name}>{}</{prefix}:{name}>\n",
                 xml_escape(&property.value)
             ))
+        })
+        .collect()
+}
+
+fn svn_protocol_property_name_items(properties: &[yona_rust_vcs::SvnProperty]) -> String {
+    properties
+        .iter()
+        .filter_map(|property| {
+            let (prefix, name) = svn_protocol_property_xml_name(&property.name)?;
+            Some(format!("        <{prefix}:{name}/>\n"))
         })
         .collect()
 }
@@ -3346,6 +3359,11 @@ fn svn_protocol_propfind_wants(request: &str, property_name: &str) -> bool {
         || request.contains("<allprop")
         || request.contains(&format!(":{property_name}"))
         || request.contains(&format!("<{property_name}"))
+}
+
+fn svn_protocol_propfind_is_propname(request: &str) -> bool {
+    let request = request.trim();
+    request.contains("<D:propname") || request.contains("<propname")
 }
 
 fn svn_protocol_repo_relative_request_path(

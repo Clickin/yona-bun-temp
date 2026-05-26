@@ -1568,6 +1568,28 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
     let response = direct_request_with_body(
         app.clone(),
+        propfind.clone(),
+        "/svn/owner/projectYobi/trunk/README.md",
+        None,
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:propname/>
+</D:propfind>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<C:reviewed/>") && !text.contains("<C:reviewed>true</C:reviewed>"),
+        "SVN file PROPFIND propname should expose custom property names without values: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body(
+        app.clone(),
         propfind,
         "/svn/owner/projectYobi/trunk/README.md",
         None,
