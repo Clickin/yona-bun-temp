@@ -345,6 +345,7 @@ Interpretation:
 - [x] Mailbox MIME content selection parity for text, alternative, related, root-part, and joined multipart cases
 - [x] Mailbox exact `original_email.message_id` reply target lookup parity
 - [x] Mailbox Message-ID-left direct resource-path fallback parity
+- [x] Mailbox recipient detail resource-path lookup parity
 - [x] Mailbox DB-backed `CreationViaEmailTest` resource creation parity for issue, issue comment, board comment, and review comment
 - [ ] Mailbox/reply threading parity
 

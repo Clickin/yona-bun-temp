@@ -99,6 +99,14 @@ fn mailbox_project_detail_local(detail: &str) -> Option<(String, String)> {
     Some((owner_name.to_string(), project_name.to_string()))
 }
 
+fn mailbox_resource_path_from_detail_local(detail: &str) -> Option<&str> {
+    let mut parts = detail.splitn(3, '/');
+    parts.next()?;
+    parts.next()?;
+    let resource_path = parts.next()?;
+    (!resource_path.is_empty()).then_some(resource_path)
+}
+
 fn login_id_matches_configured_guest_prefix(login_id: &str) -> bool {
     let normalized_login_id = normalize_identity(login_id);
     if normalized_login_id.is_empty() {
@@ -8815,6 +8823,38 @@ impl AppRepository {
             }
         }
 
+        Ok(targets)
+    }
+
+    pub async fn find_mailbox_reply_targets_by_details(
+        &self,
+        details: &[String],
+    ) -> Result<Vec<MailboxReplyTargetRecord>, DbErr> {
+        let mut targets = Vec::new();
+        let mut seen = HashSet::new();
+        for detail in details {
+            let Some(resource_path) = mailbox_resource_path_from_detail_local(detail.trim()) else {
+                continue;
+            };
+            let Some((resource_type, resource_id)) = resource_path.split_once('/') else {
+                continue;
+            };
+            let Some(resource_id) = resource_id.parse::<i64>().ok() else {
+                continue;
+            };
+            if !self
+                .mailbox_reply_resource_exists(resource_type, resource_id)
+                .await?
+            {
+                continue;
+            }
+            if seen.insert((resource_type.to_string(), resource_id)) {
+                targets.push(MailboxReplyTargetRecord {
+                    resource_id,
+                    resource_type: resource_type.to_string(),
+                });
+            }
+        }
         Ok(targets)
     }
 

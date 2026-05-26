@@ -240,6 +240,23 @@ async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_res
     assert_eq!(path_fallback_targets[0].resource_id, issue.id);
     assert_eq!(path_fallback_targets[1].resource_type, "comment_thread");
     assert_eq!(path_fallback_targets[1].resource_id, thread.id);
+
+    let detail_targets = repo
+        .find_mailbox_reply_targets_by_details(&[
+            format!("yobi/projectYobi/comment_thread/{}", thread.id),
+            format!("yobi/projectYobi/issue_post/{}", issue.id),
+            format!("yobi/projectYobi/comment_thread/{}", thread.id),
+            "yobi/projectYobi/issue_post/not-a-number".to_string(),
+            "yobi/projectYobi/unknown/1".to_string(),
+            "yobi/projectYobi".to_string(),
+        ])
+        .await
+        .unwrap();
+    assert_eq!(detail_targets.len(), 2);
+    assert_eq!(detail_targets[0].resource_type, "comment_thread");
+    assert_eq!(detail_targets[0].resource_id, thread.id);
+    assert_eq!(detail_targets[1].resource_type, "issue_post");
+    assert_eq!(detail_targets[1].resource_id, issue.id);
 }
 
 #[tokio::test]
