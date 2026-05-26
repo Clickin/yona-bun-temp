@@ -1049,6 +1049,7 @@ function markdownLineStartsBlock(line: string): boolean {
   return (
     markdownLineIsHorizontalRule(line) ||
     markdownLineIsIndentedCode(line) ||
+    openingFencePattern.test(line) ||
     /^ {0,3}#{1,6}(?=\s|$)/.test(line) ||
     /^\s*(?:[*+-]|\d+[.)])\s+/.test(line)
   );
@@ -1132,6 +1133,35 @@ function MarkdownBlockSequence(props: {
         />,
       );
       index += 1;
+      continue;
+    }
+    const openingFence = openingFencePattern.exec(line.text)?.[2];
+    if (openingFence) {
+      const codeLines = [line];
+      index += 1;
+      while (index < lineCount) {
+        const nextLine = props.lines[index];
+        if (!nextLine) {
+          break;
+        }
+        codeLines.push(nextLine);
+        index += 1;
+        const closeFence = closingFenceFromLine(nextLine.text);
+        if (closeFence && closesMarkdownFence(openingFence, closeFence)) {
+          break;
+        }
+      }
+      children.push(
+        <MarkdownBlock
+          block={{
+            key: `sequence-${line.key}`,
+            terminalNewline: index >= lineCount ? props.terminalNewline : undefined,
+            text: codeLines.map((item) => item.text).join("\n"),
+          }}
+          context={props.context}
+          key={`sequence-${line.key}`}
+        />,
+      );
       continue;
     }
     if (markdownLineIsIndentedCode(line.text)) {
@@ -1373,25 +1403,25 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   }
   const blockquote = parseMarkdownBlockquote(lines);
   if (blockquote) {
-    const normalizedBlockquote = markdownLines(
-      normalizeCodeSpanNewlines(blockquote.map((line) => line.text).join("\n")),
-    );
+    const rawBlockquoteText = blockquote.map((line) => line.text).join("\n");
+    const rawBlockquote = markdownLines(rawBlockquoteText);
     const hasNestedBlocks =
-      normalizedBlockquote.some((line) => markdownLineStartsBlock(line.text)) ||
-      markdownLinesContainSetextHeading(normalizedBlockquote) ||
-      markdownLinesContainBlankLine(normalizedBlockquote) ||
-      markdownLinesContainTable(normalizedBlockquote);
+      rawBlockquote.some((line) => markdownLineStartsBlock(line.text)) ||
+      markdownLinesContainSetextHeading(rawBlockquote) ||
+      markdownLinesContainBlankLine(rawBlockquote) ||
+      markdownLinesContainTable(rawBlockquote);
     if (hasNestedBlocks) {
       return (
         <blockquote>
           <MarkdownBlockSequence
             context={props.context}
-            lines={normalizedBlockquote}
+            lines={rawBlockquote}
             terminalNewline={props.block.terminalNewline}
           />
         </blockquote>
       );
     }
+    const normalizedBlockquote = markdownLines(normalizeCodeSpanNewlines(rawBlockquoteText));
     return (
       <blockquote>
         <p>

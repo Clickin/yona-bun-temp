@@ -981,6 +981,20 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<p>    const value = 1;");
   });
 
+  it("parses fenced code blocks inside blockquotes like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"> ```js\n> const value = '#1';\n> ```"} />,
+    );
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain("<pre><code");
+    expect(html).toContain('class="js"');
+    expect(html).toContain('class="syntax-token syntax-keyword">const</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&#x27;#1&#x27;</span>');
+    expect(html).not.toContain("<p>```js");
+    expect(html).not.toContain("issueLink");
+  });
+
   it("parses horizontal rules inside blockquotes like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"> before\n>\n> ---\n> after"} />,
