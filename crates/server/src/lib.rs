@@ -4178,9 +4178,18 @@ fn svn_protocol_log_report_response(
                 return RestRouteError::from_connect_error(internal_error(error)).into_response()
             }
         };
+    let include_changed_paths = request.contains("discover-changed-paths");
     let items = entries
         .iter()
-        .map(svn_protocol_log_item)
+        .map(|entry| {
+            if include_changed_paths && entry.revision > 0 {
+                let changed_paths =
+                    yona_rust_vcs::svn_changed_paths(repo_path, entry.revision).unwrap_or_default();
+                svn_protocol_log_item(entry, &changed_paths)
+            } else {
+                svn_protocol_log_item(entry, &[])
+            }
+        })
         .collect::<String>();
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
@@ -5545,19 +5554,41 @@ fn svn_protocol_lock_item(lock: &yona_rust_vcs::SvnLock) -> String {
     )
 }
 
-fn svn_protocol_log_item(entry: &yona_rust_vcs::SvnLogEntry) -> String {
+fn svn_protocol_log_item(
+    entry: &yona_rust_vcs::SvnLogEntry,
+    changed_paths: &[yona_rust_vcs::SvnChangedPath],
+) -> String {
+    let changed_paths = changed_paths
+        .iter()
+        .map(svn_protocol_log_changed_path_item)
+        .collect::<String>();
     format!(
         r#"  <S:log-item>
     <D:version-name>{}</D:version-name>
     <S:creator-displayname>{}</S:creator-displayname>
     <S:date>{}</S:date>
-    <D:comment>{}</D:comment>
+{changed_paths}    <D:comment>{}</D:comment>
   </S:log-item>
 "#,
         entry.revision,
         xml_escape(&entry.author),
         xml_escape(&svn_protocol_committed_date(&entry.date)),
         xml_escape(&entry.message)
+    )
+}
+
+fn svn_protocol_log_changed_path_item(changed_path: &yona_rust_vcs::SvnChangedPath) -> String {
+    let tag_name = match changed_path.action {
+        yona_rust_vcs::SvnChangedAction::Added => "added-path",
+        yona_rust_vcs::SvnChangedAction::Modified => "modified-path",
+        yona_rust_vcs::SvnChangedAction::Deleted => "deleted-path",
+        yona_rust_vcs::SvnChangedAction::Replaced => "replaced-path",
+    };
+    let node_kind = if changed_path.is_dir { "dir" } else { "file" };
+    format!(
+        r#"    <S:{tag_name} node-kind="{node_kind}">/{}</S:{tag_name}>
+"#,
+        xml_escape(changed_path.path.trim_matches('/'))
     )
 }
 

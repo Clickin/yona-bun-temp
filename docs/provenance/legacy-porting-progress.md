@@ -3,7 +3,7 @@
 > Status dashboard. This document is a progress mirror for humans and agents.
 > Source of truth remains `AGENTS.md`, `SPEC.md`, and the narrower provenance docs under `docs/provenance/**`.
 
-Last updated: 2026-05-26
+Last updated: 2026-05-27
 
 ## Progress Estimate
 
@@ -16,6 +16,7 @@ Last updated: 2026-05-26
 Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace/public profile, organization/project ownership, issue-tracker core behavior, Git read/admin surfaces, PR/review interaction surfaces including create/edit merge preflight, and board/posting core app behavior.
+- SVN executable bridge parity now includes requested changed-path entries in `log-report`, pinned by actual local `svn log --verbose` over the mounted DAV boundary with `svn` 1.14.5.
 - The largest remaining gaps are still PR/review in-app conflict resolution workflow, board/posting follow-ups, notification fan-out/mail delivery, webhook HTTPS production delivery hardening, full-text/indexed search hardening, broader VCC/baseline PROPFIND edge completeness beyond the mounted auth/DAV, and separate migrator/external API compatibility.
 - Percentages are approximate. Update them only when a slice lands with tests and provenance updates.
 

@@ -2652,6 +2652,72 @@ async fn svn_protocol_external_client_can_ls_recursive_public_project() {
 }
 
 #[tokio::test]
+async fn svn_protocol_external_client_can_log_verbose_public_project() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping external SVN verbose log smoke because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello before external svn verbose log\n")
+        .expect("seed svn readme");
+    seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let svn_url = format!("{base_url}/yona/svn/owner/projectYobi");
+    let log_output = tokio::task::spawn_blocking({
+        let svn_url = svn_url.clone();
+        move || {
+            run_svn_capture(
+                &[
+                    "log",
+                    "--non-interactive",
+                    "--verbose",
+                    "-l",
+                    "2",
+                    svn_url.as_str(),
+                ],
+                None,
+            )
+        }
+    })
+    .await
+    .expect("svn verbose log task");
+    assert!(
+        log_output.status.success(),
+        "svn log --verbose should read changed path metadata\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&log_output.stdout),
+        String::from_utf8_lossy(&log_output.stderr)
+    );
+    let log_stdout = String::from_utf8_lossy(&log_output.stdout);
+    assert!(
+        log_stdout.contains("Changed paths:"),
+        "svn log --verbose should include the changed-paths section\nstdout: {log_stdout}"
+    );
+    assert!(
+        log_stdout.contains("A /trunk/manual") && log_stdout.contains("A /trunk/manual/guide.md"),
+        "svn log --verbose should include executable-backed changed paths\nstdout: {log_stdout}"
+    );
+    assert!(
+        log_stdout.contains("seed svn nested tree"),
+        "svn log --verbose should include the nested fixture commit message\nstdout: {log_stdout}"
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
 async fn svn_protocol_external_client_can_blame_public_file() {
     if !svn_tools_available() || !svn_client_available() {
         eprintln!("skipping external SVN blame smoke because svnadmin/svnlook/svn is unavailable");
