@@ -1014,6 +1014,19 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<p>- item");
   });
 
+  it("keeps loose-list continuations inside blockquotes like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"> - first\n>\n>   continuation with **style**\n> - second"} />,
+    );
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain(
+      "<ul><li><p>first</p><p>continuation with <strong>style</strong></p></li><li><p>second</p></li></ul>",
+    );
+    expect(html).not.toContain("</ul><p>  continuation");
+    expect(html).not.toContain("<p>- second</p>");
+  });
+
   it("parses setext headings inside blockquotes like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"> Primary\n> ===\n> Secondary\n> ---"} />,

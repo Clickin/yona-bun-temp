@@ -1293,21 +1293,13 @@ function MarkdownBlockSequence(props: {
       continue;
     }
     if (/^\s*(?:[*+-]|\d+[.)])\s+/.test(line.text)) {
-      const listLines = [line];
-      index += 1;
-      while (index < lineCount) {
-        const nextLine = props.lines[index];
-        if (!nextLine || !/^\s*(?:[*+-]|\d+[.)])\s+/.test(nextLine.text)) {
-          break;
-        }
-        listLines.push(nextLine);
-        index += 1;
-      }
+      const listSpan = collectMarkdownListLines(props.lines, index);
+      index = listSpan.nextIndex;
       children.push(
         <MarkdownBlock
           block={{
             key: `sequence-${line.key}`,
-            text: listLines.map((item) => item.text).join("\n"),
+            text: listSpan.lines.map((item) => item.text).join("\n"),
           }}
           context={props.context}
           key={`sequence-${line.key}`}
@@ -1338,6 +1330,57 @@ function MarkdownBlockSequence(props: {
     );
   }
   return <>{children}</>;
+}
+
+function collectMarkdownListLines(
+  lines: MarkdownLineRecord[],
+  startIndex: number,
+): { lines: MarkdownLineRecord[]; nextIndex: number } {
+  const firstLine = lines[startIndex];
+  const firstListLine = firstLine ? parseMarkdownListLine(firstLine) : null;
+  if (!firstLine || !firstListLine) {
+    return { lines: [], nextIndex: startIndex };
+  }
+  const listLines = [firstLine];
+  let index = startIndex + 1;
+  while (index < lines.length) {
+    const nextLine = lines[index];
+    if (!nextLine) {
+      break;
+    }
+    if (parseMarkdownListLine(nextLine)) {
+      listLines.push(nextLine);
+      index += 1;
+      continue;
+    }
+    if (/^\s*$/.test(nextLine.text)) {
+      const continuationLine = lines[index + 1];
+      const continuationMatch = continuationLine ? /^(\s+)\S/.exec(continuationLine.text) : null;
+      const continuationIndent = continuationMatch
+        ? (continuationMatch[1] ?? "").replace(/\t/g, "    ").length
+        : null;
+      if (continuationIndent !== null && continuationIndent > firstListLine.indent) {
+        listLines.push({
+          key: `${nextLine.key}-loose-list-break`,
+          text: `${" ".repeat(firstListLine.indent + 1)}${looseListBreakMarker}`,
+        });
+        index += 1;
+        continue;
+      }
+      break;
+    }
+    const continuationMatch = /^(\s+)\S/.exec(nextLine.text);
+    const continuationIndent = continuationMatch
+      ? (continuationMatch[1] ?? "").replace(/\t/g, "    ").length
+      : null;
+    if (continuationIndent !== null && continuationIndent > firstListLine.indent) {
+      listLines.push(nextLine);
+      index += 1;
+      continue;
+    }
+    break;
+  }
+  return { lines: listLines, nextIndex: index };
 }
 
 function parseFencedCodeBlock(
