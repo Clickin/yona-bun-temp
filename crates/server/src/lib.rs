@@ -3133,16 +3133,17 @@ fn svn_protocol_propfind_file_item(
         .flatten()
         .map(|revision| format!("        <D:version-name>{revision}</D:version-name>\n"))
         .unwrap_or_default();
-    let checked_in = svn_protocol_propfind_wants(request, "checked-in")
-        .then_some(version_href)
-        .flatten()
-        .map(|href| {
-            format!(
-                "        <D:checked-in><D:href>{}</D:href></D:checked-in>\n",
-                xml_escape(href)
-            )
-        })
-        .unwrap_or_default();
+    let checked_in = (svn_protocol_propfind_wants(request, "checked-in")
+        || svn_protocol_propfind_wants(request, "version-controlled-configuration"))
+    .then_some(version_href)
+    .flatten()
+    .map(|href| {
+        format!(
+            "        <D:checked-in><D:href>{}</D:href></D:checked-in>\n",
+            xml_escape(href)
+        )
+    })
+    .unwrap_or_default();
     let baseline_collection = svn_protocol_propfind_wants(request, "baseline-collection")
         .then_some(version_revision)
         .flatten()
