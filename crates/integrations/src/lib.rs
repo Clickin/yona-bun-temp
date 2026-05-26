@@ -92,6 +92,70 @@ pub fn mailbox_parse_message_ids(header_value: &str) -> Vec<String> {
     ids
 }
 
+pub fn mailbox_collect_thread_message_ids(
+    in_reply_to: Option<&str>,
+    references: &[String],
+) -> Vec<String> {
+    let mut ids = Vec::new();
+    if let Some(in_reply_to) = in_reply_to {
+        for id in mailbox_parse_message_ids(in_reply_to) {
+            if !ids.contains(&id) {
+                ids.push(id);
+            }
+        }
+    }
+    for reference in references {
+        for id in mailbox_parse_message_ids(reference) {
+            if !ids.contains(&id) {
+                ids.push(id);
+            }
+        }
+    }
+    ids
+}
+
+pub fn mailbox_recipients_to_yona(
+    recipients: &[String],
+    imap_address: &str,
+) -> Vec<EmailAddressWithDetail> {
+    let imap = EmailAddressWithDetail::new(imap_address);
+    let mut matched = Vec::new();
+    for recipient in recipients {
+        let address = EmailAddressWithDetail::new(recipient);
+        if address.equals_except_details(&imap) {
+            matched.push(address);
+        }
+    }
+    matched
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MailboxProjectDetail {
+    pub owner_name: String,
+    pub project_name: String,
+}
+
+pub fn mailbox_project_detail(detail: &str) -> Option<MailboxProjectDetail> {
+    let mut parts = detail.split('/');
+    let owner_name = parts.next()?;
+    let project_name = parts.next()?;
+    if owner_name.is_empty() || project_name.is_empty() {
+        return None;
+    }
+    Some(MailboxProjectDetail {
+        owner_name: owner_name.to_string(),
+        project_name: project_name.to_string(),
+    })
+}
+
+pub fn mailbox_resource_path_from_detail(detail: &str) -> Option<String> {
+    let mut parts = detail.splitn(3, '/');
+    parts.next()?;
+    parts.next()?;
+    let resource_path = parts.next()?;
+    (!resource_path.is_empty()).then_some(resource_path.to_string())
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MailboxMimePart {
     pub body: String,

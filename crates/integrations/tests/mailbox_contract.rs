@@ -1,6 +1,7 @@
 use yona_rust_integrations::{
-    mailbox_extract_content, mailbox_message_id_left, mailbox_parse_message_ids,
-    EmailAddressWithDetail, MailboxMimePart,
+    mailbox_collect_thread_message_ids, mailbox_extract_content, mailbox_message_id_left,
+    mailbox_parse_message_ids, mailbox_project_detail, mailbox_recipients_to_yona,
+    mailbox_resource_path_from_detail, EmailAddressWithDetail, MailboxMimePart,
 };
 
 #[test]
@@ -44,6 +45,56 @@ fn mailbox_message_id_header_parsing_matches_legacy_email_handler() {
     );
     assert!(mailbox_parse_message_ids("missing angle").is_empty());
     assert!(mailbox_parse_message_ids("<unterminated").is_empty());
+}
+
+#[test]
+fn mailbox_thread_message_id_collection_matches_legacy_email_handler() {
+    assert_eq!(
+        mailbox_collect_thread_message_ids(
+            Some("<reply-to@example.com>"),
+            &[
+                "prefix <first@example.com> <second@example.com>".to_string(),
+                "<reply-to@example.com> <third@example.com>".to_string(),
+            ],
+        ),
+        vec![
+            "<reply-to@example.com>".to_string(),
+            "<first@example.com>".to_string(),
+            "<second@example.com>".to_string(),
+            "<third@example.com>".to_string(),
+        ]
+    );
+}
+
+#[test]
+fn mailbox_recipient_detail_routing_matches_legacy_yona_address_filter() {
+    let recipients = mailbox_recipients_to_yona(
+        &[
+            "noreply+yobi/projectYobi@mail.com".to_string(),
+            "noreply+help@mail.com".to_string(),
+            "other+yobi/projectYobi@mail.com".to_string(),
+        ],
+        "noreply@mail.com",
+    );
+
+    assert_eq!(recipients.len(), 2);
+    assert_eq!(recipients[0].detail(), "yobi/projectYobi");
+    assert_eq!(recipients[1].detail(), "help");
+}
+
+#[test]
+fn mailbox_detail_parsing_matches_legacy_project_and_resource_rules() {
+    let project = mailbox_project_detail("yobi/projectYobi/issue/1").expect("project detail");
+    assert_eq!(project.owner_name, "yobi");
+    assert_eq!(project.project_name, "projectYobi");
+    assert_eq!(mailbox_project_detail("owner-only"), None);
+    assert_eq!(mailbox_project_detail("/project"), None);
+
+    assert_eq!(
+        mailbox_resource_path_from_detail("yobi/projectYobi/issue/1").as_deref(),
+        Some("issue/1")
+    );
+    assert_eq!(mailbox_resource_path_from_detail("yobi/projectYobi"), None);
 }
 
 #[test]
