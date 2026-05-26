@@ -537,6 +537,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             && text.contains("<D:version-name/>")
             && text.contains("<S:repository-uuid/>")
             && text.contains("<D:version-controlled-configuration/>")
+            && text.contains("<D:supported-report-set/>")
             && !text.contains("<D:collection/>")
             && !text.contains("<D:href>/yona/svn/owner/projectYobi/!svn/vcc/default</D:href>"),
         "SVN root PROPFIND propname should expose live property names without values: {text}"
@@ -641,10 +642,40 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
                 && text.contains("<D:supportedlock/>")
                 && text.contains("<D:version-name/>")
                 && text.contains("<D:baseline-collection/>")
+                && text.contains("<D:supported-report-set/>")
                 && text.contains("<S:repository-uuid/>")
                 && !text.contains("<D:baseline/>")
                 && !text.contains("<D:href>/yona/svn/owner/projectYobi/!svn/bc/"),
             "SVN baseline resource PROPFIND propname should expose live property names without values: {text}"
+        );
+
+        let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+        let response = direct_request_with_body(
+            app.clone(),
+            propfind,
+            &format!("/svn/owner/projectYobi/!svn/bln/{revision}"),
+            None,
+            Body::from(
+                r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:prop>
+    <D:supported-report-set/>
+  </D:prop>
+</D:propfind>"#,
+            ),
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let text = String::from_utf8(body.to_vec()).unwrap();
+        assert!(
+            text.contains("<D:supported-report-set>")
+                && text.contains("<S:log-report/>")
+                && text.contains("<S:update-report/>")
+                && text.contains("<S:file-revs-report/>")
+                && text.contains("<S:get-location-segments-report/>")
+                && !text.contains("<D:baseline-collection>"),
+            "SVN baseline resource PROPFIND should expose supported REPORT capabilities only when requested: {text}"
         );
 
         let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
@@ -707,9 +738,40 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             && text.contains("<D:baseline-collection/>")
             && text.contains("<D:creationdate/>")
             && text.contains("<D:creator-displayname/>")
+            && text.contains("<D:supported-report-set/>")
             && !text.contains("<D:collection/>")
             && !text.contains("<D:href>/yona/svn/owner/projectYobi/!svn/bln/"),
         "SVN VCC PROPFIND propname should expose live property names without values: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body(
+        app.clone(),
+        propfind,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:prop>
+    <D:supported-report-set/>
+  </D:prop>
+</D:propfind>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:supported-report-set>")
+            && text.contains("<S:log-report/>")
+            && text.contains("<S:dated-rev-report/>")
+            && text.contains("<S:update-report/>")
+            && text.contains("<S:replay-report/>")
+            && text.contains("<S:mergeinfo-report/>")
+            && !text.contains("<D:checked-in>"),
+        "SVN VCC PROPFIND should expose supported REPORT capabilities only when requested: {text}"
     );
 
     let response =
