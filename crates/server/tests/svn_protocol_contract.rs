@@ -716,6 +716,10 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
                 "<D:checked-in><D:href>/yona/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md</D:href></D:checked-in>"
             ))
             && text.contains("<D:version-controlled-configuration><D:href>/yona/svn/owner/projectYobi/!svn/vcc/default</D:href></D:version-controlled-configuration>")
+            && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
+            && text.contains(&format!(
+                "<D:baseline-collection><D:href>/yona/svn/owner/projectYobi/!svn/bc/{revision}/</D:href></D:baseline-collection>"
+            ))
             && text
                 .contains("<S:baseline-relative-path>trunk/README.md</S:baseline-relative-path>")
             && text.contains("<S:repository-uuid>")

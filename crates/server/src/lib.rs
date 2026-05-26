@@ -3128,23 +3128,24 @@ fn svn_protocol_propfind_file_item(
         .flatten()
         .map(|length| format!("        <D:getcontentlength>{length}</D:getcontentlength>\n"))
         .unwrap_or_default();
-    let version_name = svn_protocol_propfind_wants(request, "version-name")
+    let wants_vcc = svn_protocol_propfind_wants(request, "version-controlled-configuration");
+    let version_name = (svn_protocol_propfind_wants(request, "version-name") || wants_vcc)
         .then_some(version_revision)
         .flatten()
         .map(|revision| format!("        <D:version-name>{revision}</D:version-name>\n"))
         .unwrap_or_default();
-    let checked_in = (svn_protocol_propfind_wants(request, "checked-in")
-        || svn_protocol_propfind_wants(request, "version-controlled-configuration"))
-    .then_some(version_href)
-    .flatten()
-    .map(|href| {
-        format!(
-            "        <D:checked-in><D:href>{}</D:href></D:checked-in>\n",
-            xml_escape(href)
-        )
-    })
-    .unwrap_or_default();
-    let baseline_collection = svn_protocol_propfind_wants(request, "baseline-collection")
+    let checked_in = (svn_protocol_propfind_wants(request, "checked-in") || wants_vcc)
+        .then_some(version_href)
+        .flatten()
+        .map(|href| {
+            format!(
+                "        <D:checked-in><D:href>{}</D:href></D:checked-in>\n",
+                xml_escape(href)
+            )
+        })
+        .unwrap_or_default();
+    let baseline_collection = (svn_protocol_propfind_wants(request, "baseline-collection")
+        || wants_vcc)
         .then_some(version_revision)
         .flatten()
         .map(|revision| {
@@ -3175,10 +3176,7 @@ fn svn_protocol_propfind_file_item(
             )
         })
         .unwrap_or_default();
-    let version_controlled_configuration = if svn_protocol_propfind_wants(
-        request,
-        "version-controlled-configuration",
-    ) {
+    let version_controlled_configuration = if wants_vcc {
         format!(
                 "        <D:version-controlled-configuration><D:href>{}</D:href></D:version-controlled-configuration>\n",
                 xml_escape(&vcc_href)
