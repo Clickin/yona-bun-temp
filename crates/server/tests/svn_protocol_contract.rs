@@ -2848,6 +2848,97 @@ async fn svn_protocol_external_client_can_export_public_project() {
 }
 
 #[tokio::test]
+async fn svn_protocol_external_client_can_checkout_requested_revision() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping external SVN revision-pinned checkout smoke because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let initial_revision = seed_svn_readme(
+        &repo_path,
+        "hello from external svn requested revision checkout\n",
+    )
+    .expect("seed svn readme");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let svn_url = format!("{base_url}/yona/svn/owner/projectYobi");
+    let writer_checkout = tempdir().expect("svn writer checkout tempdir");
+    run_svn_blocking(
+        vec![
+            "checkout".to_string(),
+            "--non-interactive".to_string(),
+            svn_url.clone(),
+            writer_checkout.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let writer_readme = writer_checkout.path().join("trunk").join("README.md");
+    std::fs::write(
+        &writer_readme,
+        "hello after external svn requested revision checkout\n",
+    )
+    .expect("edit writer checkout readme");
+    run_svn_blocking(
+        vec![
+            "commit".to_string(),
+            "--non-interactive".to_string(),
+            "--username".to_string(),
+            "owner".to_string(),
+            "--password".to_string(),
+            "doorpass1".to_string(),
+            "-m".to_string(),
+            "external svn requested revision checkout smoke".to_string(),
+            writer_checkout.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let old_checkout = tempdir().expect("svn requested revision checkout tempdir");
+    run_svn_blocking(
+        vec![
+            "checkout".to_string(),
+            "--non-interactive".to_string(),
+            "-r".to_string(),
+            initial_revision.to_string(),
+            svn_url,
+            old_checkout.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let old_readme = old_checkout.path().join("trunk").join("README.md");
+    let contents = std::fs::read_to_string(&old_readme).unwrap_or_else(|error| {
+        panic!(
+            "revision-pinned checkout should materialize README at {}; error: {error}; paths: {:?}",
+            old_readme.display(),
+            list_relative_paths(old_checkout.path())
+        )
+    });
+    assert_eq!(
+        contents,
+        "hello from external svn requested revision checkout\n"
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
 async fn svn_protocol_external_client_can_commit_file_update() {
     if !svn_tools_available() || !svn_client_available() {
         eprintln!("skipping external SVN commit smoke because svnadmin/svnlook/svn is unavailable");
