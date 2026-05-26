@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   renderOrganizationDetail,
+  renderOrganizationNew,
   renderOrganizationSettings,
   renderProjectDetail,
   renderProjectSettings,
@@ -173,14 +174,32 @@ describe("wave 2A container parity", () => {
     expect(html).not.toContain("No README post yet.");
   });
 
-  it("renders the organization and project settings shells from the container state", () => {
+  it("renders the organization create, settings, and project settings shells from the container state", () => {
+    const organizationNewHtml = renderOrganizationNew();
+    expect(organizationNewHtml).toContain('class="form-wrap new-project"');
+    expect(organizationNewHtml).toContain('name="new-org"');
+    expect(organizationNewHtml).toContain(">title.newOrganization<");
+    expect(organizationNewHtml).toContain('id="name"');
+    expect(organizationNewHtml).toContain('name="name"');
+    expect(organizationNewHtml).toContain('id="descr"');
+    expect(organizationNewHtml).toContain('name="descr"');
+
     const organizationSettingsHtml = renderOrganizationSettings({
       description: "Web labs",
       organizationName: "weblabs",
       viewerCanCreateProject: true,
       viewerCanUpdate: true,
     } as never);
-    expect(organizationSettingsHtml).toContain("Group Setting");
+    expect(organizationSettingsHtml).toContain('id="saveSetting"');
+    expect(organizationSettingsHtml).toContain('name="update-org"');
+    expect(organizationSettingsHtml).toContain('class="bubble-wrap gray"');
+    expect(organizationSettingsHtml).toContain('class="setting-box left"');
+    expect(organizationSettingsHtml).toContain('id="logoPath"');
+    expect(organizationSettingsHtml).toContain('id="project-name"');
+    expect(organizationSettingsHtml).toContain('name="name"');
+    expect(organizationSettingsHtml).toContain('id="project-desc"');
+    expect(organizationSettingsHtml).toContain('name="descr"');
+    expect(organizationSettingsHtml).toContain('id="save"');
     expect(organizationSettingsHtml).toContain(">Group Home<");
     expect(organizationSettingsHtml).toContain(">Issue<");
     expect(organizationSettingsHtml).toContain(">Board<");

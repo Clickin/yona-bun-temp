@@ -202,45 +202,79 @@ export function OrganizationNewPage(props: {
   });
 
   return (
-    <main className="app-shell">
-      <p className="eyebrow">Yona Rust Organization</p>
-      <h1>Create organization</h1>
-      <form
-        className="runtime-grid"
-        onSubmit={(event) => {
-          event.preventDefault();
-          props.onCreateOrganization?.(formState);
-        }}
-      >
-        <label>
-          <span>Organization name</span>
-          <input
-            name="organizationName"
-            type="text"
-            value={formState.organizationName}
-            onChange={(event) =>
-              setFormState((current) => ({
-                ...current,
-                organizationName: event.target.value,
-              }))
-            }
-          />
-        </label>
-        <label>
-          <span>Description</span>
-          <textarea
-            name="description"
-            value={formState.description}
-            onChange={(event) =>
-              setFormState((current) => ({
-                ...current,
-                description: event.target.value,
-              }))
-            }
-          />
-        </label>
-        <button type="submit">{props.pending ? "Creating…" : "Create organization"}</button>
-      </form>
+    <main className="app-shell organization-new-shell">
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <div className="form-wrap new-project">
+            <form
+              action="/organizations/new"
+              className="frm-wrap"
+              method="post"
+              name="new-org"
+              onSubmit={(event) => {
+                event.preventDefault();
+                props.onCreateOrganization?.(formState);
+              }}
+            >
+              <legend>title.newOrganization</legend>
+              <dl>
+                <dt>
+                  <label htmlFor="name">organization.name.placeholder</label>
+                </dt>
+                <dd>
+                  <input
+                    className="text"
+                    id="name"
+                    maxLength={250}
+                    name="name"
+                    placeholder=""
+                    type="text"
+                    value={formState.organizationName}
+                    onChange={(event) =>
+                      setFormState((current) => ({
+                        ...current,
+                        organizationName: event.target.value,
+                      }))
+                    }
+                  />
+                  <div className="n-alert" data-errtype="name">
+                    <div className="orange-txt">
+                      <span className="msg wrongName" style={{ display: "none" }} />
+                    </div>
+                  </div>
+                </dd>
+                <dt>
+                  <label htmlFor="descr">organization.description.placeholder</label>
+                </dt>
+                <dd>
+                  <textarea
+                    className="text textarea span4"
+                    id="descr"
+                    name="descr"
+                    style={{ resize: "vertical" }}
+                    value={formState.description}
+                    onChange={(event) =>
+                      setFormState((current) => ({
+                        ...current,
+                        description: event.target.value,
+                      }))
+                    }
+                  />
+                </dd>
+              </dl>
+              <div className="actions">
+                <button className="ybtn ybtn-success" disabled={props.pending} type="submit">
+                  <i className="yobicon-friends" />
+                  {props.pending ? " organization.creating" : " organization.create"}
+                </button>
+                <a className="ybtn" href="/">
+                  button.cancel
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
@@ -553,50 +587,106 @@ export function OrganizationSettingsPage(props: {
   }, [detail.description, detail.organizationName]);
 
   return (
-    <main className="app-shell">
-      <p className="eyebrow">Yona Rust Organization</p>
-      <h1>Group Setting</h1>
+    <main className="app-shell organization-settings-shell">
       <OrganizationMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <OrganizationSettingsSubMenu
-        organizationName={detail.organizationName}
-        runtimeConfig={props.runtimeConfig}
-      />
-      <form
-        className="runtime-grid"
-        onSubmit={(event) => {
-          event.preventDefault();
-          props.onUpdateOrganization?.(formState);
-        }}
-      >
-        <label>
-          <span>Organization name</span>
-          <input
-            name="organizationName"
-            type="text"
-            value={formState.organizationName}
-            onChange={(event) =>
-              setFormState((current) => ({
-                ...current,
-                organizationName: event.target.value,
-              }))
-            }
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <OrganizationSettingsSubMenu
+            organizationName={detail.organizationName}
+            runtimeConfig={props.runtimeConfig}
           />
-        </label>
-        <label>
-          <span>Description</span>
-          <textarea
-            name="description"
-            value={formState.description}
-            onChange={(event) =>
-              setFormState((current) => ({
-                ...current,
-                description: event.target.value,
-              }))
-            }
-          />
-        </label>
-        <button type="submit">{props.pending ? "Saving…" : "Save organization"}</button>
-      </form>
+          <form
+            action={buildOrganizationHref(props.runtimeConfig, detail.organizationName, "setting")}
+            className="nm"
+            encType="multipart/form-data"
+            id="saveSetting"
+            method="post"
+            name="update-org"
+            onSubmit={(event) => {
+              event.preventDefault();
+              props.onUpdateOrganization?.(formState);
+            }}
+          >
+            <input name="id" type="hidden" value={detail.organizationName} />
+            <div className="bubble-wrap gray">
+              <div className="box-wrap top clearfix frm-wrap" style={{ paddingTop: 20 }}>
+                <div className="setting-box left">
+                  <div className="logo-wrap" />
+                  <div className="logo-desc">
+                    <strong>organization.logo</strong>
+                    <ul className="unstyled descs">
+                      <li>organization.logo.type</li>
+                      <li>organization.logo.maxFileSize</li>
+                    </ul>
+                    <div className="nbtn medium white fake-file-wrap">
+                      <i className="yobicon-upload" />
+                      {" button.upload"}
+                      <input
+                        accept="image/*"
+                        className="file"
+                        id="logoPath"
+                        name="logoPath"
+                        type="file"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <dl className="setting-box right">
+                  <dt>
+                    <label htmlFor="project-name">organization.name.placeholder</label>
+                  </dt>
+                  <dd>
+                    <input
+                      id="project-name"
+                      maxLength={250}
+                      name="name"
+                      type="text"
+                      value={formState.organizationName}
+                      onChange={(event) =>
+                        setFormState((current) => ({
+                          ...current,
+                          organizationName: event.target.value,
+                        }))
+                      }
+                    />
+                    <div className="orange-txt">
+                      <span className="msg wrongName" style={{ display: "none" }} />
+                    </div>
+                  </dd>
+                  <dt>
+                    <label htmlFor="project-desc">organization.description.placeholder</label>
+                  </dt>
+                  <dd>
+                    <textarea
+                      className="textarea"
+                      id="project-desc"
+                      maxLength={250}
+                      name="descr"
+                      value={formState.description}
+                      onChange={(event) =>
+                        setFormState((current) => ({
+                          ...current,
+                          description: event.target.value,
+                        }))
+                      }
+                    />
+                  </dd>
+                </dl>
+              </div>
+              <div className="box-wrap bottom">
+                <button
+                  className="ybtn ybtn-success"
+                  disabled={props.pending}
+                  id="save"
+                  type="submit"
+                >
+                  {props.pending ? "button.saving" : "button.save"}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
     </main>
   );
 }
