@@ -4,8 +4,8 @@ use sea_orm::{
 };
 use yona_rust_persistence::{
     comment_thread, email, original_email, AppRepository, CreateIssueCommentViaEmailInput,
-    CreateIssueViaEmailInput, CreateProjectInput, CreateReviewCommentViaEmailInput,
-    CreateUserInput,
+    CreateIssueViaEmailInput, CreatePostingCommentViaEmailInput, CreatePostingInput,
+    CreateProjectInput, CreateReviewCommentViaEmailInput, CreateUserInput, PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 
@@ -104,6 +104,56 @@ async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_res
             "ISSUE_COMMENT",
             issue_comment.id,
             "<message-id-2@domain>"
+        )
+        .await
+    );
+
+    let posting = repo
+        .create_posting(CreatePostingInput {
+            actor_display_name: member.display_name.clone(),
+            actor_id: member.id,
+            actor_login_id: member.login_id.clone(),
+            owner_name: "yobi".to_string(),
+            project_name: "projectYobi".to_string(),
+            values: PostingMutationInput {
+                attachment_ids: Vec::new(),
+                body_markdown: "posting body".to_string(),
+                label_ids: Vec::new(),
+                notice: false,
+                readme: false,
+                title: "posting title".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("posting");
+    let posting_with_comment = repo
+        .create_posting_comment_via_email(CreatePostingCommentViaEmailInput {
+            actor_display_name: member.display_name.clone(),
+            actor_id: member.id,
+            actor_login_id: member.login_id.clone(),
+            contents_markdown: "posting comment body".to_string(),
+            message_id: "<message-id-board-comment@domain>".to_string(),
+            owner_name: "yobi".to_string(),
+            post_number: posting.post_number,
+            project_name: "projectYobi".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("posting comment via email");
+    let posting_comment = posting_with_comment
+        .comments
+        .iter()
+        .find(|comment| comment.contents_markdown == "posting comment body")
+        .expect("created posting comment");
+    assert_eq!(posting_comment.author_id, Some(member.id));
+    assert!(posting_comment.via_email);
+    assert!(
+        original_email_exists(
+            &db,
+            "NONISSUE_COMMENT",
+            posting_comment.id,
+            "<message-id-board-comment@domain>"
         )
         .await
     );

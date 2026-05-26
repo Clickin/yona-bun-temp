@@ -730,6 +730,18 @@ pub struct CreatePostingCommentInput {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreatePostingCommentViaEmailInput {
+    pub actor_display_name: String,
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub contents_markdown: String,
+    pub message_id: String,
+    pub owner_name: String,
+    pub post_number: i64,
+    pub project_name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpdatePostingCommentInput {
     pub actor_id: i64,
     pub attachment_ids: Vec<i64>,

@@ -3,18 +3,19 @@ use crate::repo_types::{
     CommitDiscussionThreadStateInput, CopyProjectLabelsResult, CreateCommitDiscussionCommentInput,
     CreateForkProjectInput, CreateIssueCommentInput, CreateIssueCommentViaEmailInput,
     CreateIssueInput, CreateIssueViaEmailInput, CreateOrganizationInput, CreatePostingCommentInput,
-    CreatePostingInput, CreateProjectInput, CreateProjectLabelCategoryInput,
-    CreateProjectLabelInput, CreateProjectWebhookInput, CreatePullRequestCommentInput,
-    CreatePullRequestInput, CreatePullRequestResult, CreateReviewCommentViaEmailInput,
-    CreateUserInput, CreateWebhookDeliveryInput, CreateWebhookThreadInput, DeleteAttachmentResult,
-    DeleteCommitDiscussionCommentInput, DeletePullRequestCommentInput, IssueAssignableUserRecord,
-    IssueAssignableUserSearchRecord, IssueAttachmentRecord, IssueCommentOriginRecord,
-    IssueCommentRecord, IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord,
-    IssueListFilter, IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord,
-    IssueMutationInput, IssueRecord, IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord,
-    MailboxReplyTargetRecord, MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter,
-    MilestoneMutationInput, NotificationActorRecord, NotificationItemRecord,
-    NotificationListRecord, NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
+    CreatePostingCommentViaEmailInput, CreatePostingInput, CreateProjectInput,
+    CreateProjectLabelCategoryInput, CreateProjectLabelInput, CreateProjectWebhookInput,
+    CreatePullRequestCommentInput, CreatePullRequestInput, CreatePullRequestResult,
+    CreateReviewCommentViaEmailInput, CreateUserInput, CreateWebhookDeliveryInput,
+    CreateWebhookThreadInput, DeleteAttachmentResult, DeleteCommitDiscussionCommentInput,
+    DeletePullRequestCommentInput, IssueAssignableUserRecord, IssueAssignableUserSearchRecord,
+    IssueAttachmentRecord, IssueCommentOriginRecord, IssueCommentRecord, IssueCommentVoterRecord,
+    IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter, IssueMentionUserRecord,
+    IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueMutationInput, IssueRecord,
+    IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, MailboxReplyTargetRecord,
+    MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
+    NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
+    NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
     OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
     OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
     OrganizationMemberRecord, OrganizationPostingListFilter, OrganizationPostingListRecord,
@@ -4333,6 +4334,51 @@ impl AppRepository {
         )
         .await?;
         self.recount_posting_comments(posting_model.id).await?;
+        self.read_posting_detail_for_viewer(
+            &input.owner_name,
+            &input.project_name,
+            input.post_number,
+            Some(input.actor_id),
+        )
+        .await
+    }
+
+    pub async fn create_posting_comment_via_email(
+        &self,
+        input: CreatePostingCommentViaEmailInput,
+    ) -> Result<Option<PostingRecord>, DbErr> {
+        let posting = self
+            .create_posting_comment(CreatePostingCommentInput {
+                actor_display_name: input.actor_display_name,
+                actor_id: input.actor_id,
+                actor_login_id: input.actor_login_id,
+                attachment_ids: Vec::new(),
+                contents_markdown: input.contents_markdown.clone(),
+                owner_name: input.owner_name.clone(),
+                post_number: input.post_number,
+                project_name: input.project_name.clone(),
+            })
+            .await?;
+        let Some(posting) = posting else {
+            return Ok(None);
+        };
+        let Some(comment) = posting
+            .comments
+            .iter()
+            .filter(|comment| {
+                comment.author_id == Some(input.actor_id)
+                    && comment.contents_markdown == input.contents_markdown
+            })
+            .max_by_key(|comment| comment.id)
+        else {
+            return Ok(Some(posting));
+        };
+        self.record_original_email(
+            BOARD_COMMENT_ATTACHMENT_CONTAINER,
+            comment.id,
+            &input.message_id,
+        )
+        .await?;
         self.read_posting_detail_for_viewer(
             &input.owner_name,
             &input.project_name,
