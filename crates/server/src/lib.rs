@@ -3557,6 +3557,7 @@ fn svn_protocol_propfind_file_item(
             .is_some()
             .then_some("        <D:getcontentlength/>\n")
             .unwrap_or_default();
+        let content_type = "        <D:getcontenttype/>\n";
         let version_name = version_revision
             .is_some()
             .then_some("        <D:version-name/>\n")
@@ -3596,7 +3597,7 @@ fn svn_protocol_propfind_file_item(
     <D:propstat>
       <D:prop>
         <D:resourcetype/>
-{content_length}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}        <D:version-controlled-configuration/>
+{content_length}{content_type}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}        <D:version-controlled-configuration/>
 {property_items}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
@@ -3612,6 +3613,9 @@ fn svn_protocol_propfind_file_item(
         .then_some(content_length)
         .flatten()
         .map(|length| format!("        <D:getcontentlength>{length}</D:getcontentlength>\n"))
+        .unwrap_or_default();
+    let content_type = svn_protocol_propfind_wants(request, "getcontenttype")
+        .then_some("        <D:getcontenttype>application/octet-stream</D:getcontenttype>\n")
         .unwrap_or_default();
     let wants_vcc = svn_protocol_propfind_wants(request, "version-controlled-configuration");
     let version_name = (svn_protocol_propfind_wants(request, "version-name") || wants_vcc)
@@ -3713,7 +3717,7 @@ fn svn_protocol_propfind_file_item(
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
-{resourcetype}{content_length}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}{version_controlled_configuration}
+{resourcetype}{content_length}{content_type}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}{version_controlled_configuration}
 {deadprop_count}{property_items}{lock_discovery}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
