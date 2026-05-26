@@ -123,6 +123,48 @@ fn seed_svn_readme(repo_path: &std::path::Path, contents: &str) -> Option<i64> {
     Some(yona_rust_vcs::svn_youngest_revision(repo_path).expect("read seeded revision"))
 }
 
+fn seed_svn_nested_tree(repo_path: &std::path::Path) -> Option<i64> {
+    if !svn_tools_available() || !svn_client_available() {
+        return None;
+    }
+    let checkout_dir = tempdir().expect("svn nested checkout tempdir");
+    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+        .arg("checkout")
+        .arg(file_url(repo_path))
+        .arg(checkout_dir.path())
+        .output()
+        .expect("run svn checkout");
+    assert!(
+        output.status.success(),
+        "svn checkout should prepare nested fixture: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let manual_dir = checkout_dir.path().join("trunk").join("manual");
+    std::fs::create_dir_all(&manual_dir).expect("create svn manual");
+    std::fs::write(manual_dir.join("guide.md"), "nested guide\n").expect("write svn guide");
+    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+        .args(["add", "trunk/manual"])
+        .current_dir(checkout_dir.path())
+        .output()
+        .expect("run svn add");
+    assert!(
+        output.status.success(),
+        "svn add should stage nested executable-backed fixture: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+        .args(["commit", "-m", "seed svn nested tree"])
+        .arg(checkout_dir.path())
+        .output()
+        .expect("run svn commit");
+    assert!(
+        output.status.success(),
+        "svn commit should persist nested executable-backed fixture: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    Some(yona_rust_vcs::svn_youngest_revision(repo_path).expect("read seeded revision"))
+}
+
 fn seed_svn_mergeinfo(repo_path: &std::path::Path, path: &str, mergeinfo: &str) -> Option<i64> {
     if !svn_tools_available() || !svn_client_available() {
         return None;
@@ -914,6 +956,30 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "SVN collection PROPFIND propname should expose directory and child property names without values: {text}"
     );
 
+    let nested_revision = seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body_and_header(
+        app.clone(),
+        propfind,
+        "/svn/owner/projectYobi/trunk",
+        None,
+        "depth",
+        "infinity",
+        Body::empty(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("/yona/svn/owner/projectYobi/trunk/manual/")
+            && text.contains("/yona/svn/owner/projectYobi/trunk/manual/guide.md")
+            && text.contains(&format!(
+                "<D:href>/yona/svn/owner/projectYobi/!svn/ver/{nested_revision}/trunk/manual/guide.md</D:href>"
+            )),
+        "SVN collection PROPFIND depth=infinity should recursively expose nested entries: {text}"
+    );
+
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
     let response = direct_request(
         app.clone(),
@@ -939,6 +1005,28 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
                 "/yona/svn/owner/projectYobi/!svn/bc/{revision}/trunk/"
             )),
         "SVN baseline collection PROPFIND should expose the revision root tree: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body_and_header(
+        app.clone(),
+        propfind,
+        &format!("/svn/owner/projectYobi/!svn/bc/{revision}"),
+        None,
+        "depth",
+        "0",
+        Body::empty(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains(&format!("/yona/svn/owner/projectYobi/!svn/bc/{revision}"))
+            && !text.contains(&format!(
+                "/yona/svn/owner/projectYobi/!svn/bc/{revision}/trunk/"
+            )),
+        "SVN baseline collection PROPFIND depth=0 should only expose the requested collection: {text}"
     );
 
     let report = Method::from_bytes(b"REPORT").expect("REPORT method");
@@ -1008,7 +1096,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert_eq!(dav_header.as_deref(), Some("1,2"));
     assert!(
         text.contains("<S:dated-rev-report")
-            && text.contains(&format!("<D:version-name>{revision}</D:version-name>")),
+            && text.contains(&format!("<D:version-name>{nested_revision}</D:version-name>")),
         "SVN dated-rev REPORT should return the latest revision at or before the requested date: {text}"
     );
 

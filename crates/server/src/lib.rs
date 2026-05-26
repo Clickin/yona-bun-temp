@@ -2410,15 +2410,22 @@ async fn direct_svn_protocol_request(
             }
         };
         let request = String::from_utf8_lossy(&body_bytes);
-        let include_children = parts
+        let depth = parts
             .headers
             .get("depth")
             .and_then(|value| value.to_str().ok())
-            .map(|value| value.trim() != "0")
-            .unwrap_or(true);
-        if let Some(response) =
-            svn_protocol_tree_propfind_response(&repo_path, &route, include_children, &request)
-        {
+            .map(str::trim);
+        let include_children = depth.map(|value| value != "0").unwrap_or(true);
+        let recursive_children = depth
+            .map(|value| value.eq_ignore_ascii_case("infinity"))
+            .unwrap_or(false);
+        if let Some(response) = svn_protocol_tree_propfind_response(
+            &repo_path,
+            &route,
+            include_children,
+            recursive_children,
+            &request,
+        ) {
             return response;
         }
         return svn_protocol_file_propfind_response(&repo_path, &route, &request);
@@ -2988,10 +2995,16 @@ fn svn_protocol_tree_propfind_response(
     repo_path: &StdPath,
     route: &SvnProtocolRoute,
     include_children: bool,
+    recursive_children: bool,
     request: &str,
 ) -> Option<Response> {
     let (revision, path) = svn_protocol_file_lookup_for_route(route)?;
-    let tree = match yona_rust_vcs::svn_list_tree(repo_path, revision, &path) {
+    let tree_result = if recursive_children {
+        yona_rust_vcs::svn_list_tree_recursive(repo_path, revision, &path)
+    } else {
+        yona_rust_vcs::svn_list_tree(repo_path, revision, &path)
+    };
+    let tree = match tree_result {
         Ok(tree) => tree,
         Err(VcsError::NotFound) => return None,
         Err(VcsError::InvalidPath) => {
