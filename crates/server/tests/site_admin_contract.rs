@@ -780,6 +780,12 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
         "posts": [{
             "authorLoginId": "imported",
             "bodyMarkdown": "restored post body",
+            "labels": [{
+                "categoryIsExclusive": false,
+                "categoryName": "Type",
+                "color": "#f44336",
+                "name": "Notice"
+            }],
             "notice": true,
             "ownerName": "imported",
             "projectName": "restored",
@@ -792,6 +798,12 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
             "bodyMarkdown": "restored issue body",
             "ownerName": "imported",
             "projectName": "restored",
+            "labels": [{
+                "categoryIsExclusive": false,
+                "categoryName": "Type",
+                "color": "#2196f3",
+                "name": "Bug"
+            }],
             "state": "closed",
             "title": "Restored issue"
         }]
@@ -883,6 +895,8 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
         response_json(rest_get(app.clone(), "/yona/api/v1/site/posts", Some(&admin_cookie)).await)
             .await;
     assert_eq!(posts["posts"][0]["title"], "Restored post");
+    assert_eq!(posts["posts"][0]["labels"][0]["name"], "Notice");
+    assert_eq!(posts["posts"][0]["labels"][0]["categoryName"], "Type");
 
     let issues = response_json(
         rest_get(
@@ -894,6 +908,8 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
     )
     .await;
     assert_eq!(issues["issues"][0]["title"], "Restored issue");
+    assert_eq!(issues["issues"][0]["labels"][0]["name"], "Bug");
+    assert_eq!(issues["issues"][0]["labels"][0]["categoryName"], "Type");
 }
 
 #[tokio::test]

@@ -11061,6 +11061,7 @@ struct RestSiteImportProjectItem {
 struct RestSiteExportPostItem {
     author_login_id: String,
     body_markdown: String,
+    labels: Vec<RestSiteExportLabelItem>,
     notice: bool,
     owner_name: String,
     post_number: String,
@@ -11076,10 +11077,21 @@ struct RestSiteExportIssueItem {
     author_login_id: String,
     body_markdown: String,
     issue_number: String,
+    labels: Vec<RestSiteExportLabelItem>,
     owner_name: String,
     project_name: String,
     state: String,
     title: String,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportLabelItem {
+    category_is_exclusive: bool,
+    category_name: String,
+    color: String,
+    #[serde(alias = "labelName")]
+    name: String,
 }
 
 #[derive(Serialize)]
@@ -16707,6 +16719,13 @@ async fn rest_import_site_data(
             skipped_posts += 1;
             continue;
         }
+        let label_ids = rest_site_import_label_ids(
+            repository,
+            &post.owner_name,
+            &post.project_name,
+            &post.labels,
+        )
+        .await?;
         repository
             .create_posting(persistence::CreatePostingInput {
                 actor_display_name: actor.display_name,
@@ -16717,7 +16736,7 @@ async fn rest_import_site_data(
                 values: persistence::PostingMutationInput {
                     attachment_ids: vec![],
                     body_markdown: post.body_markdown,
-                    label_ids: vec![],
+                    label_ids,
                     notice: post.notice,
                     readme: post.readme,
                     title: post.title,
@@ -16746,6 +16765,13 @@ async fn rest_import_site_data(
             skipped_issues += 1;
             continue;
         }
+        let label_ids = rest_site_import_label_ids(
+            repository,
+            &issue.owner_name,
+            &issue.project_name,
+            &issue.labels,
+        )
+        .await?;
         let created = repository
             .create_issue(persistence::CreateIssueInput {
                 actor_display_name: actor.display_name,
@@ -16757,7 +16783,7 @@ async fn rest_import_site_data(
                     assignee_login_id: empty_string_as_none(issue.assignee_login_id.trim()),
                     attachment_ids: vec![],
                     body_markdown: issue.body_markdown,
-                    label_ids: vec![],
+                    label_ids,
                     milestone_id: None,
                     title: issue.title,
                 },
@@ -16795,6 +16821,48 @@ async fn rest_import_site_data(
         skipped_users,
         unsupported_sections: Vec::new(),
     }))
+}
+
+async fn rest_site_import_label_ids(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    labels: &[RestSiteExportLabelItem],
+) -> Result<Vec<i64>, RestRouteError> {
+    let mut label_ids = Vec::new();
+    for label in labels {
+        let label_name = label.name.trim();
+        if label_name.is_empty() {
+            continue;
+        }
+        let category_name = if label.category_name.trim().is_empty() {
+            "Imported"
+        } else {
+            label.category_name.trim()
+        };
+        let label_color = if label.color.trim().is_empty() {
+            "#999999".to_string()
+        } else {
+            normalize_issue_label_color(label.color.trim())
+                .map_err(RestRouteError::from_connect_error)?
+        };
+        let Some((record, _created)) = repository
+            .create_project_label(persistence::CreateProjectLabelInput {
+                category_is_exclusive: label.category_is_exclusive,
+                category_name: category_name.to_string(),
+                label_color,
+                label_name: label_name.to_string(),
+                owner_name: owner_name.trim().to_string(),
+                project_name: project_name.trim().to_string(),
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+        else {
+            continue;
+        };
+        label_ids.push(record.id);
+    }
+    Ok(label_ids)
 }
 
 async fn rest_site_import_actor(
@@ -21412,6 +21480,11 @@ fn rest_site_export_post_from_record(
     RestSiteExportPostItem {
         author_login_id: record.author_login_id.clone(),
         body_markdown: record.body_markdown.clone(),
+        labels: record
+            .labels
+            .iter()
+            .map(rest_site_export_label_from_record)
+            .collect(),
         notice: record.notice,
         owner_name: record.owner_name.clone(),
         post_number: record.post_number.to_string(),
@@ -21429,10 +21502,26 @@ fn rest_site_export_issue_from_record(
         author_login_id: record.author_login_id.clone(),
         body_markdown: record.body_markdown.clone(),
         issue_number: record.issue_number.to_string(),
+        labels: record
+            .labels
+            .iter()
+            .map(rest_site_export_label_from_record)
+            .collect(),
         owner_name: record.owner_name.clone(),
         project_name: record.project_name.clone(),
         state: record.state.clone(),
         title: record.title.clone(),
+    }
+}
+
+fn rest_site_export_label_from_record(
+    record: &persistence::IssueLabelRecord,
+) -> RestSiteExportLabelItem {
+    RestSiteExportLabelItem {
+        category_is_exclusive: record.category_is_exclusive,
+        category_name: record.category_name.clone(),
+        color: record.color.clone(),
+        name: record.name.clone(),
     }
 }
 
