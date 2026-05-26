@@ -3268,7 +3268,7 @@ fn svn_protocol_propfind_tree_response(
                     &[],
                     None,
                     repository_uuid,
-                    None,
+                    provenance,
                     request,
                 ));
             }

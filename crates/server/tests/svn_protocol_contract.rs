@@ -101,6 +101,19 @@ fn list_relative_paths(root: &std::path::Path) -> Vec<String> {
     paths
 }
 
+fn dav_response_for_href<'a>(text: &'a str, href: &str) -> &'a str {
+    let href_marker = format!("<D:href>{href}</D:href>");
+    let href_index = text.find(&href_marker).expect("DAV href marker");
+    let start = text[..href_index]
+        .rfind("<D:response>")
+        .expect("DAV response start");
+    let end = text[href_index..]
+        .find("</D:response>")
+        .map(|offset| href_index + offset + "</D:response>".len())
+        .expect("DAV response end");
+    &text[start..end]
+}
+
 fn seed_svn_readme(repo_path: &std::path::Path, contents: &str) -> Option<i64> {
     if !svn_tools_available() || !svn_client_available() {
         return None;
@@ -979,14 +992,16 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert_eq!(response.status(), StatusCode::MULTI_STATUS);
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
+    let readme_response =
+        dav_response_for_href(&text, "/yona/svn/owner/projectYobi/trunk/README.md");
     assert!(
-        text.contains("<D:creationdate>")
-            && text.contains("</D:creationdate>")
-            && text.contains("<D:creator-displayname>")
-            && text.contains("</D:creator-displayname>")
-            && !text.contains("<D:checked-in>")
-            && !text.contains("<S:repository-uuid>"),
-        "SVN collection PROPFIND should expose requested revision provenance metadata only: {text}"
+        readme_response.contains("<D:creationdate>")
+            && readme_response.contains("</D:creationdate>")
+            && readme_response.contains("<D:creator-displayname>")
+            && readme_response.contains("</D:creator-displayname>")
+            && !readme_response.contains("<D:checked-in>")
+            && !readme_response.contains("<S:repository-uuid>"),
+        "SVN collection PROPFIND should expose requested revision provenance metadata on child files only: {text}"
     );
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
@@ -1175,14 +1190,18 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert_eq!(response.status(), StatusCode::MULTI_STATUS);
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
+    let readme_response = dav_response_for_href(
+        &text,
+        &format!("/yona/svn/owner/projectYobi/!svn/bc/{revision}/trunk/README.md"),
+    );
     assert!(
-        text.contains("<D:creationdate>")
-            && text.contains("</D:creationdate>")
-            && text.contains("<D:creator-displayname>")
-            && text.contains("</D:creator-displayname>")
-            && !text.contains("<D:checked-in>")
-            && !text.contains("<S:repository-uuid>"),
-        "SVN baseline collection PROPFIND should expose requested revision provenance metadata only: {text}"
+        readme_response.contains("<D:creationdate>")
+            && readme_response.contains("</D:creationdate>")
+            && readme_response.contains("<D:creator-displayname>")
+            && readme_response.contains("</D:creator-displayname>")
+            && !readme_response.contains("<D:checked-in>")
+            && !readme_response.contains("<S:repository-uuid>"),
+        "SVN baseline collection PROPFIND should expose requested revision provenance metadata on child files only: {text}"
     );
 
     let report = Method::from_bytes(b"REPORT").expect("REPORT method");

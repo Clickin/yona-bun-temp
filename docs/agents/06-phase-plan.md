@@ -134,7 +134,7 @@
 - Phase 3N latest edge fix: collection `PROPFIND` now distinguishes `Depth: 0` from `Depth: infinity`; nested entries are recursively projected only for infinity while zero-depth requests keep the requested collection-only response.
 - Phase 3N latest edge fix: baseline resource `PROPFIND` now exposes requested `creationdate`, `creator-displayname`, and `repository-uuid` from executable-backed revision/repository metadata without falling back to unrelated allprop fields.
 - Phase 3N latest edge fix: default VCC `PROPFIND` now exposes requested `creationdate` and `creator-displayname` from the executable-backed latest revision while preserving narrow explicit-property responses.
-- Phase 3N latest edge fix: normal and revision-pinned baseline collection `PROPFIND` now exposes requested `creationdate` and `creator-displayname` from executable-backed revision metadata without falling back to unrelated allprop fields.
+- Phase 3N latest edge fix: normal and revision-pinned baseline collection `PROPFIND` now exposes requested `creationdate` and `creator-displayname` on collection and child-file responses from executable-backed revision metadata without falling back to unrelated allprop fields.
 
 ## Phase 4: 풀 리퀘스트와 리뷰
 
