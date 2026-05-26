@@ -676,6 +676,42 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         "dataproj",
     )
     .await;
+    let export_post_attachment = insert_attachment(
+        &db,
+        "USER",
+        member_id,
+        "member",
+        "post-export.png",
+        "image/png",
+    )
+    .await;
+    let export_post_comment_attachment = insert_attachment(
+        &db,
+        "USER",
+        member_id,
+        "member",
+        "post-comment-export.txt",
+        "text/plain",
+    )
+    .await;
+    let export_issue_attachment = insert_attachment(
+        &db,
+        "USER",
+        member_id,
+        "member",
+        "issue-export.png",
+        "image/png",
+    )
+    .await;
+    let export_issue_comment_attachment = insert_attachment(
+        &db,
+        "USER",
+        member_id,
+        "member",
+        "issue-comment-export.txt",
+        "text/plain",
+    )
+    .await;
     repo.create_posting(CreatePostingInput {
         actor_display_name: "Member Name".to_string(),
         actor_id: member_id,
@@ -683,7 +719,7 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         owner_name: "member".to_string(),
         project_name: "dataproj".to_string(),
         values: PostingMutationInput {
-            attachment_ids: vec![],
+            attachment_ids: vec![export_post_attachment.id],
             body_markdown: "legacy data export post".to_string(),
             label_ids: vec![],
             notice: false,
@@ -698,7 +734,7 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         actor_display_name: "Member Name".to_string(),
         actor_id: member_id,
         actor_login_id: "member".to_string(),
-        attachment_ids: vec![],
+        attachment_ids: vec![export_post_comment_attachment.id],
         contents_markdown: "legacy data export post comment".to_string(),
         owner_name: "member".to_string(),
         post_number: 1,
@@ -715,7 +751,7 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         project_name: "dataproj".to_string(),
         values: IssueMutationInput {
             assignee_login_id: None,
-            attachment_ids: vec![],
+            attachment_ids: vec![export_issue_attachment.id],
             body_markdown: "legacy data export issue".to_string(),
             label_ids: vec![],
             milestone_id: None,
@@ -729,7 +765,7 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         actor_display_name: "Member Name".to_string(),
         actor_id: member_id,
         actor_login_id: "member".to_string(),
-        attachment_ids: vec![],
+        attachment_ids: vec![export_issue_comment_attachment.id],
         contents_markdown: "legacy data export issue comment".to_string(),
         issue_number: 1,
         owner_name: "member".to_string(),
@@ -777,8 +813,21 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         "legacy data export post"
     );
     assert_eq!(
+        payload["posts"][0]["attachments"][0]["name"],
+        "post-export.png"
+    );
+    assert_eq!(
+        payload["posts"][0]["attachments"][0]["mimeType"],
+        "image/png"
+    );
+    assert_eq!(payload["posts"][0]["attachments"][0]["size"], 256);
+    assert_eq!(
         payload["posts"][0]["comments"][0]["contentsMarkdown"],
         "legacy data export post comment"
+    );
+    assert_eq!(
+        payload["posts"][0]["comments"][0]["attachments"][0]["name"],
+        "post-comment-export.txt"
     );
     assert_eq!(payload["issues"][0]["title"], "Data export issue");
     assert_eq!(
@@ -786,8 +835,21 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         "legacy data export issue"
     );
     assert_eq!(
+        payload["issues"][0]["attachments"][0]["name"],
+        "issue-export.png"
+    );
+    assert_eq!(
+        payload["issues"][0]["attachments"][0]["mimeType"],
+        "image/png"
+    );
+    assert_eq!(payload["issues"][0]["attachments"][0]["size"], 256);
+    assert_eq!(
         payload["issues"][0]["comments"][0]["contentsMarkdown"],
         "legacy data export issue comment"
+    );
+    assert_eq!(
+        payload["issues"][0]["comments"][0]["attachments"][0]["name"],
+        "issue-comment-export.txt"
     );
 }
 
@@ -977,6 +1039,150 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
         "restored issue comment"
     );
     assert_eq!(issue_detail.history_markdown, "previous issue body");
+}
+
+#[tokio::test]
+async fn site_admin_import_rebinds_existing_attachment_ids_from_yobi_data_snapshot() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &member_csrf,
+        "member",
+        "restored",
+    )
+    .await;
+    let post_attachment = insert_attachment(
+        &db,
+        "USER",
+        member_id,
+        "member",
+        "post-import.png",
+        "image/png",
+    )
+    .await;
+    let post_comment_attachment = insert_attachment(
+        &db,
+        "USER",
+        member_id,
+        "member",
+        "post-comment-import.txt",
+        "text/plain",
+    )
+    .await;
+    let issue_attachment = insert_attachment(
+        &db,
+        "USER",
+        member_id,
+        "member",
+        "issue-import.png",
+        "image/png",
+    )
+    .await;
+    let issue_comment_attachment = insert_attachment(
+        &db,
+        "USER",
+        member_id,
+        "member",
+        "issue-comment-import.txt",
+        "text/plain",
+    )
+    .await;
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [],
+        "projects": [],
+        "posts": [{
+            "authorLoginId": "member",
+            "attachments": [{
+                "id": post_attachment.id,
+                "mimeType": "image/png",
+                "name": "post-import.png",
+                "size": 256
+            }],
+            "bodyMarkdown": "post with imported attachment",
+            "comments": [{
+                "attachments": [{
+                    "id": post_comment_attachment.id,
+                    "mimeType": "text/plain",
+                    "name": "post-comment-import.txt",
+                    "size": 256
+                }],
+                "authorLoginId": "member",
+                "contentsMarkdown": "post comment with imported attachment"
+            }],
+            "ownerName": "member",
+            "projectName": "restored",
+            "title": "Attached imported post"
+        }],
+        "issues": [{
+            "authorLoginId": "member",
+            "attachments": [{
+                "id": issue_attachment.id,
+                "mimeType": "image/png",
+                "name": "issue-import.png",
+                "size": 256
+            }],
+            "bodyMarkdown": "issue with imported attachment",
+            "comments": [{
+                "attachments": [{
+                    "id": issue_comment_attachment.id,
+                    "mimeType": "text/plain",
+                    "name": "issue-comment-import.txt",
+                    "size": 256
+                }],
+                "authorLoginId": "member",
+                "contentsMarkdown": "issue comment with imported attachment"
+            }],
+            "ownerName": "member",
+            "projectName": "restored",
+            "state": "open",
+            "title": "Attached imported issue"
+        }]
+    });
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    let imported = response_json(response).await;
+    assert_eq!(imported["importedPosts"], 1);
+    assert_eq!(imported["importedIssues"], 1);
+
+    let post_detail = repo
+        .read_posting_detail_for_viewer("member", "restored", 1, None)
+        .await
+        .expect("read imported post")
+        .expect("imported post exists");
+    assert_eq!(post_detail.attachments.len(), 1);
+    assert_eq!(post_detail.attachments[0].name, "post-import.png");
+    assert_eq!(post_detail.comments[0].attachments.len(), 1);
+    assert_eq!(
+        post_detail.comments[0].attachments[0].name,
+        "post-comment-import.txt"
+    );
+
+    let issue_detail = repo
+        .read_issue_detail("member", "restored", 1)
+        .await
+        .expect("read imported issue")
+        .expect("imported issue exists");
+    assert_eq!(issue_detail.attachments.len(), 1);
+    assert_eq!(issue_detail.attachments[0].name, "issue-import.png");
+    assert_eq!(issue_detail.comments[0].attachments.len(), 1);
+    assert_eq!(
+        issue_detail.comments[0].attachments[0].name,
+        "issue-comment-import.txt"
+    );
 }
 
 #[tokio::test]

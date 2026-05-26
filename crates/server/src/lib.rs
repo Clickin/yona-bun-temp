@@ -11060,6 +11060,7 @@ struct RestSiteImportProjectItem {
 #[serde(rename_all = "camelCase", default)]
 struct RestSiteExportPostItem {
     author_login_id: String,
+    attachments: Vec<RestSiteExportAttachmentItem>,
     body_markdown: String,
     comments: Vec<RestSiteExportCommentItem>,
     history_markdown: String,
@@ -11077,6 +11078,7 @@ struct RestSiteExportPostItem {
 struct RestSiteExportIssueItem {
     assignee_login_id: String,
     author_login_id: String,
+    attachments: Vec<RestSiteExportAttachmentItem>,
     body_markdown: String,
     comments: Vec<RestSiteExportCommentItem>,
     history_markdown: String,
@@ -11092,7 +11094,17 @@ struct RestSiteExportIssueItem {
 #[serde(rename_all = "camelCase", default)]
 struct RestSiteExportCommentItem {
     author_login_id: String,
+    attachments: Vec<RestSiteExportAttachmentItem>,
     contents_markdown: String,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportAttachmentItem {
+    id: i64,
+    mime_type: String,
+    name: String,
+    size: i64,
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -16745,7 +16757,7 @@ async fn rest_import_site_data(
                 owner_name: post.owner_name.trim().to_string(),
                 project_name: post.project_name.trim().to_string(),
                 values: persistence::PostingMutationInput {
-                    attachment_ids: vec![],
+                    attachment_ids: rest_site_import_attachment_ids(&post.attachments),
                     body_markdown: post.body_markdown,
                     label_ids,
                     notice: post.notice,
@@ -16816,7 +16828,7 @@ async fn rest_import_site_data(
                 project_name: issue.project_name.trim().to_string(),
                 values: persistence::IssueMutationInput {
                     assignee_login_id: empty_string_as_none(issue.assignee_login_id.trim()),
-                    attachment_ids: vec![],
+                    attachment_ids: rest_site_import_attachment_ids(&issue.attachments),
                     body_markdown: issue.body_markdown,
                     label_ids,
                     milestone_id: None,
@@ -16899,7 +16911,7 @@ async fn rest_site_import_post_comments(
                 actor_display_name: actor.display_name,
                 actor_id: actor.id,
                 actor_login_id: actor.login_id,
-                attachment_ids: vec![],
+                attachment_ids: rest_site_import_attachment_ids(&comment.attachments),
                 contents_markdown: contents_markdown.to_string(),
                 owner_name: owner_name.trim().to_string(),
                 post_number,
@@ -16932,7 +16944,7 @@ async fn rest_site_import_issue_comments(
                 actor_display_name: actor.display_name,
                 actor_id: actor.id,
                 actor_login_id: actor.login_id,
-                attachment_ids: vec![],
+                attachment_ids: rest_site_import_attachment_ids(&comment.attachments),
                 contents_markdown: contents_markdown.to_string(),
                 issue_number,
                 owner_name: owner_name.trim().to_string(),
@@ -16960,6 +16972,13 @@ async fn rest_site_import_comment_actor(
         }
     }
     Ok(fallback_actor.clone())
+}
+
+fn rest_site_import_attachment_ids(attachments: &[RestSiteExportAttachmentItem]) -> Vec<i64> {
+    attachments
+        .iter()
+        .filter_map(|attachment| (attachment.id > 0).then_some(attachment.id))
+        .collect()
 }
 
 async fn rest_site_import_label_ids(
@@ -21618,6 +21637,11 @@ fn rest_site_export_post_from_record(
 ) -> RestSiteExportPostItem {
     RestSiteExportPostItem {
         author_login_id: record.author_login_id.clone(),
+        attachments: record
+            .attachments
+            .iter()
+            .map(rest_site_export_attachment_from_record)
+            .collect(),
         body_markdown: record.body_markdown.clone(),
         comments: record
             .comments
@@ -21645,6 +21669,11 @@ fn rest_site_export_issue_from_record(
     RestSiteExportIssueItem {
         assignee_login_id: record.assignee_login_id.clone(),
         author_login_id: record.author_login_id.clone(),
+        attachments: record
+            .attachments
+            .iter()
+            .map(rest_site_export_attachment_from_record)
+            .collect(),
         body_markdown: record.body_markdown.clone(),
         comments: record
             .comments
@@ -21670,6 +21699,11 @@ fn rest_site_export_post_comment_from_record(
 ) -> RestSiteExportCommentItem {
     RestSiteExportCommentItem {
         author_login_id: record.author_login_id.clone(),
+        attachments: record
+            .attachments
+            .iter()
+            .map(rest_site_export_attachment_from_record)
+            .collect(),
         contents_markdown: record.contents_markdown.clone(),
     }
 }
@@ -21679,7 +21713,23 @@ fn rest_site_export_issue_comment_from_record(
 ) -> RestSiteExportCommentItem {
     RestSiteExportCommentItem {
         author_login_id: record.author_login_id.clone(),
+        attachments: record
+            .attachments
+            .iter()
+            .map(rest_site_export_attachment_from_record)
+            .collect(),
         contents_markdown: record.contents_markdown.clone(),
+    }
+}
+
+fn rest_site_export_attachment_from_record(
+    record: &persistence::IssueAttachmentRecord,
+) -> RestSiteExportAttachmentItem {
+    RestSiteExportAttachmentItem {
+        id: record.id,
+        mime_type: record.mime_type.clone(),
+        name: record.name.clone(),
+        size: record.size,
     }
 }
 
