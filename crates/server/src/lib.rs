@@ -2815,9 +2815,29 @@ fn svn_protocol_baseline_propfind_response(
     }
     let href = format!("{}/!svn/bln/{revision}", svn_protocol_project_href(route));
     let baseline_collection = format!("{}/!svn/bc/{revision}", svn_protocol_project_href(route));
+    let wants_creation_metadata = svn_protocol_propfind_is_propname(request)
+        || svn_protocol_propfind_wants(request, "creationdate")
+        || svn_protocol_propfind_wants(request, "creator-displayname");
+    let log_entry = if wants_creation_metadata {
+        match yona_rust_vcs::svn_log_entries(repo_path, revision, revision, 1) {
+            Ok(mut entries) => entries.pop(),
+            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::InvalidPath) => {
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+            }
+            Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "PROPFIND")
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        }
+    } else {
+        None
+    };
     let prop_items = if svn_protocol_propfind_is_propname(request) {
         format!(
-            "        <D:resourcetype/>\n        <D:version-name/>\n        <D:baseline-collection/>\n"
+            "        <D:resourcetype/>\n        <D:version-name/>\n        <D:baseline-collection/>\n        <D:creationdate/>\n        <D:creator-displayname/>\n"
         )
     } else {
         let resourcetype = svn_protocol_propfind_wants(request, "resourcetype")
@@ -2834,7 +2854,39 @@ fn svn_protocol_baseline_propfind_response(
                 xml_escape(&baseline_collection)
             ))
             .unwrap_or_default();
-        format!("{resourcetype}{version_name}{baseline_collection_item}")
+        let creationdate = svn_protocol_propfind_wants(request, "creationdate")
+            .then_some(
+                log_entry
+                    .as_ref()
+                    .map(|entry| entry.date.as_str())
+                    .unwrap_or_default(),
+            )
+            .filter(|date| !date.trim().is_empty())
+            .map(|date| {
+                format!(
+                    "        <D:creationdate>{}</D:creationdate>\n",
+                    xml_escape(date)
+                )
+            })
+            .unwrap_or_default();
+        let creator_displayname = svn_protocol_propfind_wants(request, "creator-displayname")
+            .then_some(
+                log_entry
+                    .as_ref()
+                    .map(|entry| entry.author.as_str())
+                    .unwrap_or_default(),
+            )
+            .filter(|author| !author.trim().is_empty())
+            .map(|author| {
+                format!(
+                    "        <D:creator-displayname>{}</D:creator-displayname>\n",
+                    xml_escape(author)
+                )
+            })
+            .unwrap_or_default();
+        format!(
+            "{resourcetype}{version_name}{baseline_collection_item}{creationdate}{creator_displayname}"
+        )
     };
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
