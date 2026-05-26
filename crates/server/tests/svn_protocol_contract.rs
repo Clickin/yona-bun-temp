@@ -615,6 +615,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             text.contains("<D:resourcetype/>")
                 && text.contains("<D:version-name/>")
                 && text.contains("<D:baseline-collection/>")
+                && text.contains("<S:repository-uuid/>")
                 && !text.contains("<D:baseline/>")
                 && !text.contains("<D:href>/yona/svn/owner/projectYobi/!svn/bc/"),
             "SVN baseline resource PROPFIND propname should expose live property names without values: {text}"
@@ -968,6 +969,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
   <D:prop>
     <D:creationdate/>
     <D:creator-displayname/>
+    <S:repository-uuid/>
   </D:prop>
 </D:propfind>"#,
         ),
@@ -981,8 +983,10 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && text.contains("</D:creationdate>")
             && text.contains("<D:creator-displayname>")
             && text.contains("</D:creator-displayname>")
+            && text.contains("<S:repository-uuid>")
+            && text.contains("</S:repository-uuid>")
             && !text.contains("<D:baseline-collection>"),
-        "SVN baseline resource PROPFIND should expose requested revision author/date metadata only: {text}"
+        "SVN baseline resource PROPFIND should expose requested revision provenance metadata only: {text}"
     );
 
     let nested_revision = seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");

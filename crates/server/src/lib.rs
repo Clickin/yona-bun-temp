@@ -2818,6 +2818,22 @@ fn svn_protocol_baseline_propfind_response(
     let wants_creation_metadata = svn_protocol_propfind_is_propname(request)
         || svn_protocol_propfind_wants(request, "creationdate")
         || svn_protocol_propfind_wants(request, "creator-displayname");
+    let repository_uuid = if svn_protocol_propfind_is_propname(request)
+        || svn_protocol_propfind_wants(request, "repository-uuid")
+    {
+        match yona_rust_vcs::svn_repository_uuid(repo_path) {
+            Ok(uuid) => Some(uuid),
+            Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+            Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "PROPFIND")
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        }
+    } else {
+        None
+    };
     let log_entry = if wants_creation_metadata {
         match yona_rust_vcs::svn_log_entries(repo_path, revision, revision, 1) {
             Ok(mut entries) => entries.pop(),
@@ -2836,9 +2852,7 @@ fn svn_protocol_baseline_propfind_response(
         None
     };
     let prop_items = if svn_protocol_propfind_is_propname(request) {
-        format!(
-            "        <D:resourcetype/>\n        <D:version-name/>\n        <D:baseline-collection/>\n        <D:creationdate/>\n        <D:creator-displayname/>\n"
-        )
+        "        <D:resourcetype/>\n        <D:version-name/>\n        <D:baseline-collection/>\n        <D:creationdate/>\n        <D:creator-displayname/>\n        <S:repository-uuid/>\n".to_string()
     } else {
         let resourcetype = svn_protocol_propfind_wants(request, "resourcetype")
             .then_some("        <D:resourcetype><D:baseline/></D:resourcetype>\n")
@@ -2884,8 +2898,18 @@ fn svn_protocol_baseline_propfind_response(
                 )
             })
             .unwrap_or_default();
+        let repository_uuid = svn_protocol_propfind_wants(request, "repository-uuid")
+            .then_some(repository_uuid.as_deref())
+            .flatten()
+            .map(|uuid| {
+                format!(
+                    "        <S:repository-uuid>{}</S:repository-uuid>\n",
+                    xml_escape(uuid)
+                )
+            })
+            .unwrap_or_default();
         format!(
-            "{resourcetype}{version_name}{baseline_collection_item}{creationdate}{creator_displayname}"
+            "{resourcetype}{version_name}{baseline_collection_item}{creationdate}{creator_displayname}{repository_uuid}"
         )
     };
     let body = format!(
