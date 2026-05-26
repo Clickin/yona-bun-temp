@@ -399,6 +399,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let project_overview_update_session_manager = session_manager.clone();
     let site_export_backend = route_backend.clone();
     let site_export_session_manager = session_manager.clone();
+    let site_import_backend = route_backend.clone();
+    let site_import_session_manager = session_manager.clone();
     let site_no_avatar_backend = route_backend.clone();
     let site_no_avatar_session_manager = session_manager.clone();
     let site_set_avatar_backend = route_backend.clone();
@@ -835,6 +837,20 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         headers,
                         site_export_session_manager.clone(),
                         site_export_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/import",
+            post(move |headers: HeaderMap, body: Bytes| {
+                async move {
+                    direct_import_site_data(
+                        headers,
+                        body,
+                        site_import_session_manager.clone(),
+                        site_import_backend.clone(),
                     )
                     .await
                 }
@@ -7960,6 +7976,26 @@ async fn direct_export_site_data(
     }
 }
 
+async fn direct_import_site_data(
+    headers: HeaderMap,
+    body: Bytes,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let (form, payload) = direct_site_import_payload(&headers, &body);
+    let headers = headers_with_form_csrf(headers, &form);
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_import_site_data(headers, &payload, service).await {
+        Ok(Json(payload)) => Json(payload).into_response(),
+        Err(error) => error.into_response(),
+    }
+}
+
 async fn direct_set_attachment_to_user_avatar(
     headers: HeaderMap,
     body: Bytes,
@@ -8065,6 +8101,56 @@ fn direct_site_export_response(payload: &RestSiteExportResponse) -> Response {
         }
         Err(error) => RestRouteError::internal(error.to_string()).into_response(),
     }
+}
+
+fn direct_site_import_payload(
+    headers: &HeaderMap,
+    body: &[u8],
+) -> (HashMap<String, String>, String) {
+    let content_type = headers
+        .get(http::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default();
+    if !content_type
+        .to_ascii_lowercase()
+        .starts_with("multipart/form-data")
+    {
+        return (HashMap::new(), String::from_utf8_lossy(body).to_string());
+    }
+    let Some(boundary) = content_type
+        .split(';')
+        .map(str::trim)
+        .find_map(|part| part.strip_prefix("boundary="))
+        .map(|part| part.trim_matches('"').to_string())
+    else {
+        return (HashMap::new(), String::new());
+    };
+    let mut form = HashMap::new();
+    let mut data = String::new();
+    let text = String::from_utf8_lossy(body);
+    for part in text.split(&format!("--{boundary}")) {
+        let Some((headers, value)) = part.split_once("\r\n\r\n") else {
+            continue;
+        };
+        let Some(name) = headers
+            .split(';')
+            .find_map(|segment| segment.trim().strip_prefix("name=\""))
+            .and_then(|segment| segment.split('"').next())
+        else {
+            continue;
+        };
+        let value = value
+            .trim_start_matches("\r\n")
+            .trim_end_matches("\r\n")
+            .trim_end_matches("--")
+            .to_string();
+        if name == "data" {
+            data = value;
+        } else {
+            form.insert(name.to_string(), value);
+        }
+    }
+    (form, data)
 }
 
 fn site_export_filename_stamp() -> String {
@@ -9726,6 +9812,44 @@ struct RestSiteExportResponse {
     projects: Vec<RestSiteProjectItem>,
     posts: Vec<RestPostListItem>,
     issues: Vec<RestSiteIssueItem>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteImportPayload {
+    format: String,
+    users: Vec<RestSiteImportUserItem>,
+    projects: Vec<RestSiteImportProjectItem>,
+    posts: Vec<serde_json::Value>,
+    issues: Vec<serde_json::Value>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteImportUserItem {
+    display_name: String,
+    email_address: String,
+    is_site_admin: bool,
+    login_id: String,
+    state: String,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteImportProjectItem {
+    owner_name: String,
+    overview: String,
+    project_name: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RestSiteImportResponse {
+    imported_projects: u32,
+    imported_users: u32,
+    skipped_projects: u32,
+    skipped_users: u32,
+    unsupported_sections: Vec<String>,
 }
 
 #[derive(Default, Deserialize)]
@@ -15203,6 +15327,108 @@ async fn rest_export_site_data(
         posts,
         issues,
     })
+}
+
+async fn rest_import_site_data(
+    headers: HeaderMap,
+    payload: &str,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteImportResponse>, RestRouteError> {
+    let repository = rest_require_site_admin_repository(&service, &headers, true).await?;
+    let payload: RestSiteImportPayload = serde_json::from_str(payload)
+        .map_err(|_| RestRouteError::bad_request("invalid site data import payload"))?;
+    if payload.format.trim() != "yobi-data" {
+        return Err(RestRouteError::bad_request(
+            "unsupported site data import format",
+        ));
+    }
+
+    let mut imported_users = 0;
+    let mut skipped_users = 0;
+    for user in payload.users {
+        let login_id = user.login_id.trim();
+        let email_address = user.email_address.trim();
+        if login_id.is_empty()
+            || repository
+                .find_user_by_login_id(login_id)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .is_some()
+        {
+            skipped_users += 1;
+            continue;
+        }
+        let imported_password_hash = hash(
+            format!(
+                "imported-user-disabled:{login_id}:{}",
+                site_export_filename_stamp()
+            ),
+            DEFAULT_COST,
+        )
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        repository
+            .create_user(persistence::CreateUserInput {
+                display_name: user.display_name.trim().to_string(),
+                email_address: email_address.to_string(),
+                is_confirmed: !user.state.trim().eq_ignore_ascii_case("LOCKED"),
+                is_site_admin: user.is_site_admin,
+                login_id: login_id.to_string(),
+                password_hash: imported_password_hash,
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        imported_users += 1;
+    }
+
+    let mut imported_projects = 0;
+    let mut skipped_projects = 0;
+    for project in payload.projects {
+        let owner_name = project.owner_name.trim();
+        let project_name = project.project_name.trim();
+        if owner_name.is_empty()
+            || project_name.is_empty()
+            || repository
+                .find_user_by_login_id(owner_name)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .is_none()
+            || repository
+                .read_project_by_owner_and_name(owner_name, project_name)
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .is_some()
+        {
+            skipped_projects += 1;
+            continue;
+        }
+        repository
+            .create_project(persistence::CreateProjectInput {
+                organization_id: None,
+                owner_name: owner_name.to_string(),
+                overview: Some(project.overview.trim().to_string()),
+                project_name: project_name.to_string(),
+                project_scope: "public".to_string(),
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        imported_projects += 1;
+    }
+
+    let mut unsupported_sections = Vec::new();
+    if !payload.posts.is_empty() {
+        unsupported_sections.push("posts".to_string());
+    }
+    if !payload.issues.is_empty() {
+        unsupported_sections.push("issues".to_string());
+    }
+
+    Ok(Json(RestSiteImportResponse {
+        imported_projects,
+        imported_users,
+        skipped_projects,
+        skipped_users,
+        unsupported_sections,
+    }))
 }
 
 async fn rest_export_site_users(

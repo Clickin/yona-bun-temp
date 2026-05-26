@@ -749,6 +749,110 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
 }
 
 #[tokio::test]
+async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [{
+            "loginId": "imported",
+            "displayName": "Imported User",
+            "emailAddress": "imported@example.com",
+            "isSiteAdmin": false,
+            "state": "ACTIVE"
+        }],
+        "projects": [{
+            "ownerName": "imported",
+            "projectName": "restored",
+            "overview": "Restored from site import"
+        }],
+        "posts": [{"title": "unsupported post body snapshot"}],
+        "issues": []
+    });
+
+    let unauthenticated = rest_raw_post(
+        app.clone(),
+        "/yona/sites/import",
+        None,
+        None,
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let forbidden = rest_raw_post(
+        app.clone(),
+        "/yona/sites/import",
+        Some(&member_cookie),
+        Some(&member_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let missing_csrf = rest_raw_post(
+        app.clone(),
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        None,
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    assert_eq!(missing_csrf.status(), StatusCode::FORBIDDEN);
+
+    let boundary = "yona-import-boundary";
+    let multipart = format!(
+        "--{boundary}\r\nContent-Disposition: form-data; name=\"csrfToken\"\r\n\r\n{admin_csrf}\r\n--{boundary}\r\nContent-Disposition: form-data; name=\"data\"; filename=\"yobi-data.json\"\r\nContent-Type: application/json\r\n\r\n{}\r\n--{boundary}--\r\n",
+        payload
+    );
+    let imported = rest_raw_post(
+        app.clone(),
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        None,
+        &format!("multipart/form-data; boundary={boundary}"),
+        &multipart,
+    )
+    .await;
+    let imported = response_json(imported).await;
+    assert_eq!(imported["importedUsers"], 1);
+    assert_eq!(imported["importedProjects"], 1);
+    assert_eq!(imported["skippedUsers"], 0);
+    assert_eq!(imported["skippedProjects"], 0);
+    assert_eq!(imported["unsupportedSections"][0], "posts");
+
+    let users = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/site/users?state=ACTIVE&query=imported",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(users["users"][0]["loginId"], "imported");
+    assert_eq!(users["users"][0]["displayName"], "Imported User");
+
+    let projects = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/site/projects?filter=restored",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(projects["projects"][0]["ownerName"], "imported");
+    assert_eq!(projects["projects"][0]["projectName"], "restored");
+}
+
+#[tokio::test]
 async fn site_admin_user_list_and_toggles_follow_legacy_state_buckets() {
     let (app, repo, db) = build_app_with_repository().await;
     let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;

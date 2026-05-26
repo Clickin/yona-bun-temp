@@ -290,6 +290,7 @@ function SiteAdminRouteComponent() {
     return (
       <SiteDataRoute
         bootstrapping={bootstrapping}
+        csrfToken={csrfToken}
         currentIsSiteAdmin={currentIsSiteAdmin}
         href={href}
         runtimeConfig={runtimeConfig}
@@ -325,11 +326,13 @@ function SiteAdminRouteComponent() {
 
 function SiteDataRoute({
   bootstrapping,
+  csrfToken,
   currentIsSiteAdmin,
   href,
   runtimeConfig,
 }: {
   bootstrapping: boolean;
+  csrfToken: string;
   currentIsSiteAdmin: boolean;
   href: string;
   runtimeConfig: RuntimeConfig;
@@ -347,7 +350,7 @@ function SiteDataRoute({
     return <ForbiddenPage href="/sites/data" />;
   }
 
-  return <SiteAdminDataPage runtimeConfig={runtimeConfig} />;
+  return <SiteAdminDataPage csrfToken={csrfToken} runtimeConfig={runtimeConfig} />;
 }
 
 function SiteUpdateRoute({
@@ -1405,7 +1408,13 @@ function SiteAdminMassMailPage({
   );
 }
 
-function SiteAdminDataPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function SiteAdminDataPage({
+  csrfToken,
+  runtimeConfig,
+}: {
+  csrfToken: string;
+  runtimeConfig: RuntimeConfig;
+}) {
   return (
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
@@ -1447,14 +1456,13 @@ function SiteAdminDataPage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) 
               <p>site.data.import.info</p>
               <form
                 action={appHref(runtimeConfig, "/sites/import")}
-                data-deferred="site.data.import"
                 encType="multipart/form-data"
                 method="post"
-                onSubmit={(event) => event.preventDefault()}
               >
-                <input disabled name="data" type="file" />
+                <input name="csrfToken" readOnly type="hidden" value={csrfToken} />
+                <input name="data" type="file" />
                 <p>
-                  <input disabled readOnly type="submit" value="site.data.import" />
+                  <input readOnly type="submit" value="site.data.import" />
                 </p>
               </form>
             </div>
