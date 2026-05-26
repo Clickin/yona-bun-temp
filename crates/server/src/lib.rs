@@ -11084,6 +11084,7 @@ struct RestSiteExportIssueItem {
     history_markdown: String,
     issue_number: String,
     labels: Vec<RestSiteExportLabelItem>,
+    milestone_title: String,
     owner_name: String,
     project_name: String,
     state: String,
@@ -16819,6 +16820,14 @@ async fn rest_import_site_data(
             &issue.labels,
         )
         .await?;
+        let milestone_id = rest_site_import_milestone_id(
+            repository,
+            &issue.owner_name,
+            &issue.project_name,
+            &issue.milestone_title,
+            &actor,
+        )
+        .await?;
         let created = repository
             .create_issue(persistence::CreateIssueInput {
                 actor_display_name: actor.display_name.clone(),
@@ -16831,7 +16840,7 @@ async fn rest_import_site_data(
                     attachment_ids: rest_site_import_attachment_ids(&issue.attachments),
                     body_markdown: issue.body_markdown,
                     label_ids,
-                    milestone_id: None,
+                    milestone_id,
                     title: issue.title,
                 },
             })
@@ -17021,6 +17030,48 @@ async fn rest_site_import_label_ids(
         label_ids.push(record.id);
     }
     Ok(label_ids)
+}
+
+async fn rest_site_import_milestone_id(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    milestone_title: &str,
+    actor: &persistence::AppUserRecord,
+) -> Result<Option<i64>, RestRouteError> {
+    let title = milestone_title.trim();
+    if title.is_empty() {
+        return Ok(None);
+    }
+    let milestones = repository
+        .list_project_milestones(
+            owner_name,
+            project_name,
+            persistence::MilestoneListFilter {
+                order_by: String::new(),
+                order_dir: String::new(),
+                state: String::new(),
+            },
+        )
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    if let Some(existing) = milestones.iter().find(|milestone| milestone.title == title) {
+        return Ok(Some(existing.id));
+    }
+    let created = repository
+        .create_project_milestone(persistence::MilestoneMutationInput {
+            actor_id: Some(actor.id),
+            attachment_ids: Vec::new(),
+            contents_markdown: String::new(),
+            due_date: None,
+            owner_name: owner_name.trim().to_string(),
+            project_name: project_name.trim().to_string(),
+            state: "open".to_string(),
+            title: title.to_string(),
+        })
+        .await
+        .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    Ok(created.map(|milestone| milestone.id))
 }
 
 async fn rest_site_import_actor(
@@ -21687,6 +21738,7 @@ fn rest_site_export_issue_from_record(
             .iter()
             .map(rest_site_export_label_from_record)
             .collect(),
+        milestone_title: record.milestone_title.clone(),
         owner_name: record.owner_name.clone(),
         project_name: record.project_name.clone(),
         state: record.state.clone(),

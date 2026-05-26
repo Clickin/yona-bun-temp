@@ -11,7 +11,8 @@ use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
     attachment, project_user, site_admin, AppRepository, CreateIssueCommentInput, CreateIssueInput,
-    CreatePostingCommentInput, CreatePostingInput, IssueMutationInput, PostingMutationInput,
+    CreatePostingCommentInput, CreatePostingInput, IssueMutationInput, MilestoneMutationInput,
+    PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -712,6 +713,20 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         "text/plain",
     )
     .await;
+    let milestone = repo
+        .create_project_milestone(MilestoneMutationInput {
+            actor_id: Some(member_id),
+            attachment_ids: vec![],
+            contents_markdown: String::new(),
+            due_date: None,
+            owner_name: "member".to_string(),
+            project_name: "dataproj".to_string(),
+            state: "open".to_string(),
+            title: "Export milestone".to_string(),
+        })
+        .await
+        .expect("create export milestone")
+        .expect("export milestone created");
     repo.create_posting(CreatePostingInput {
         actor_display_name: "Member Name".to_string(),
         actor_id: member_id,
@@ -754,7 +769,7 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
             attachment_ids: vec![export_issue_attachment.id],
             body_markdown: "legacy data export issue".to_string(),
             label_ids: vec![],
-            milestone_id: None,
+            milestone_id: Some(milestone.id),
             title: "Data export issue".to_string(),
         },
     })
@@ -830,6 +845,7 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         "post-comment-export.txt"
     );
     assert_eq!(payload["issues"][0]["title"], "Data export issue");
+    assert_eq!(payload["issues"][0]["milestoneTitle"], "Export milestone");
     assert_eq!(
         payload["issues"][0]["bodyMarkdown"],
         "legacy data export issue"
@@ -903,6 +919,7 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
                 "contentsMarkdown": "restored issue comment"
             }],
             "historyMarkdown": "previous issue body",
+            "milestoneTitle": "Imported milestone",
             "ownerName": "imported",
             "projectName": "restored",
             "labels": [{
@@ -1039,6 +1056,7 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
         "restored issue comment"
     );
     assert_eq!(issue_detail.history_markdown, "previous issue body");
+    assert_eq!(issue_detail.milestone_title, "Imported milestone");
 }
 
 #[tokio::test]
