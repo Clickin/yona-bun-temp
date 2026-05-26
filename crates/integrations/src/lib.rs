@@ -65,6 +65,19 @@ impl EmailAddressWithDetail {
     }
 }
 
+pub fn mailbox_message_id_left(message_id: &str) -> Option<String> {
+    let left_angle = message_id.find('<')?;
+    let at_sign = message_id[left_angle + 1..]
+        .find('@')
+        .map(|offset| left_angle + 1 + offset)?;
+    let left = message_id[left_angle + 1..at_sign]
+        .trim()
+        .strip_prefix('/')
+        .unwrap_or_else(|| message_id[left_angle + 1..at_sign].trim())
+        .to_string();
+    (!left.is_empty()).then_some(left)
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SmtpDeliveryConfig {
     pub default_port: u16,
