@@ -844,6 +844,9 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         text.contains("<D:resourcetype/>")
             && text.contains("<D:getcontentlength>15</D:getcontentlength>")
             && text.contains("<D:getcontenttype>application/octet-stream</D:getcontenttype>")
+            && text.contains(&format!(
+                "<D:getetag>&quot;{revision}:trunk/README.md&quot;</D:getetag>"
+            ))
             && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
             && text.contains(&format!(
                 "<D:href>/yona/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md</D:href>"
@@ -908,6 +911,9 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         text.contains("<D:resourcetype/>")
             && text.contains("<D:getcontentlength>15</D:getcontentlength>")
             && text.contains("<D:getcontenttype>application/octet-stream</D:getcontenttype>")
+            && text.contains(&format!(
+                "<D:getetag>&quot;{revision}:trunk/README.md&quot;</D:getetag>"
+            ))
             && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
             && text
                 .contains("<S:baseline-relative-path>trunk/README.md</S:baseline-relative-path>")
@@ -988,6 +994,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     <D:creator-displayname/>
     <D:getlastmodified/>
     <D:getcontenttype/>
+    <D:getetag/>
   </D:prop>
 </D:propfind>"#,
         ),
@@ -1008,6 +1015,9 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && readme_response.contains(
                 "<D:getcontenttype>application/octet-stream</D:getcontenttype>"
             )
+            && readme_response.contains(&format!(
+                "<D:getetag>&quot;{revision}:trunk/README.md&quot;</D:getetag>"
+            ))
             && !readme_response.contains("<D:checked-in>")
             && !readme_response.contains("<S:repository-uuid>"),
         "SVN collection PROPFIND should expose requested revision provenance metadata on child files only: {text}"
@@ -1059,6 +1069,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     <D:creator-displayname/>
     <D:getlastmodified/>
     <D:getcontenttype/>
+    <D:getetag/>
   </D:prop>
 </D:propfind>"#,
         ),
@@ -1091,6 +1102,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     <D:creator-displayname/>
     <D:getlastmodified/>
     <D:getcontenttype/>
+    <D:getetag/>
   </D:prop>
 </D:propfind>"#,
         ),
@@ -1105,6 +1117,9 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && text.contains("<D:creator-displayname>")
             && text.contains("</D:creator-displayname>")
             && text.contains("<D:getcontenttype>application/octet-stream</D:getcontenttype>")
+            && text.contains(&format!(
+                "<D:getetag>&quot;{revision}:trunk/README.md&quot;</D:getetag>"
+            ))
             && !text.contains("<D:getcontentlength>")
             && !text.contains("<D:checked-in>")
             && !text.contains("<S:repository-uuid>"),
@@ -1198,6 +1213,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     <D:creator-displayname/>
     <D:getlastmodified/>
     <D:getcontenttype/>
+    <D:getetag/>
   </D:prop>
 </D:propfind>"#,
         ),
@@ -1220,6 +1236,9 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && readme_response.contains(
                 "<D:getcontenttype>application/octet-stream</D:getcontenttype>"
             )
+            && readme_response.contains(&format!(
+                "<D:getetag>&quot;{revision}:trunk/README.md&quot;</D:getetag>"
+            ))
             && !readme_response.contains("<D:checked-in>")
             && !readme_response.contains("<S:repository-uuid>"),
         "SVN baseline collection PROPFIND should expose requested revision provenance metadata on child files only: {text}"
@@ -2011,6 +2030,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         text.contains("<D:resourcetype/>")
             && text.contains("<D:getcontentlength/>")
             && text.contains("<D:getcontenttype/>")
+            && text.contains("<D:getetag/>")
             && text.contains("<D:version-name/>")
             && text.contains("<D:checked-in/>")
             && text.contains("<D:baseline-collection/>")
@@ -2033,6 +2053,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
   <D:prop>
     <D:resourcetype/>
     <D:getcontenttype/>
+    <D:getetag/>
     <S:baseline-relative-path/>
     <S:repository-uuid/>
   </D:prop>
@@ -2046,6 +2067,8 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert!(
         text.contains("<D:resourcetype/>")
             && text.contains("<D:getcontenttype>application/octet-stream</D:getcontenttype>")
+            && text.contains("<D:getetag>&quot;")
+            && text.contains(":trunk/README.md&quot;</D:getetag>")
             && text.contains("<S:baseline-relative-path>trunk/README.md</S:baseline-relative-path>")
             && text.contains("<S:repository-uuid>")
             && !text.contains("<D:getcontentlength>")

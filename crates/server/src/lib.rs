@@ -3558,6 +3558,10 @@ fn svn_protocol_propfind_file_item(
             .then_some("        <D:getcontentlength/>\n")
             .unwrap_or_default();
         let content_type = "        <D:getcontenttype/>\n";
+        let etag = svn_protocol_file_etag(version_revision, baseline_relative_path)
+            .is_some()
+            .then_some("        <D:getetag/>\n")
+            .unwrap_or_default();
         let version_name = version_revision
             .is_some()
             .then_some("        <D:version-name/>\n")
@@ -3597,7 +3601,7 @@ fn svn_protocol_propfind_file_item(
     <D:propstat>
       <D:prop>
         <D:resourcetype/>
-{content_length}{content_type}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}        <D:version-controlled-configuration/>
+{content_length}{content_type}{etag}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}        <D:version-controlled-configuration/>
 {property_items}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
@@ -3616,6 +3620,11 @@ fn svn_protocol_propfind_file_item(
         .unwrap_or_default();
     let content_type = svn_protocol_propfind_wants(request, "getcontenttype")
         .then_some("        <D:getcontenttype>application/octet-stream</D:getcontenttype>\n")
+        .unwrap_or_default();
+    let etag = svn_protocol_propfind_wants(request, "getetag")
+        .then(|| svn_protocol_file_etag(version_revision, baseline_relative_path))
+        .flatten()
+        .map(|etag| format!("        <D:getetag>{}</D:getetag>\n", xml_escape(&etag)))
         .unwrap_or_default();
     let wants_vcc = svn_protocol_propfind_wants(request, "version-controlled-configuration");
     let version_name = (svn_protocol_propfind_wants(request, "version-name") || wants_vcc)
@@ -3717,7 +3726,7 @@ fn svn_protocol_propfind_file_item(
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
-{resourcetype}{content_length}{content_type}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}{version_controlled_configuration}
+{resourcetype}{content_length}{content_type}{etag}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}{version_controlled_configuration}
 {deadprop_count}{property_items}{lock_discovery}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
@@ -3725,6 +3734,15 @@ fn svn_protocol_propfind_file_item(
 "#,
         xml_escape(href)
     )
+}
+
+fn svn_protocol_file_etag(
+    revision: Option<i64>,
+    baseline_relative_path: Option<&str>,
+) -> Option<String> {
+    let revision = revision?;
+    let path = baseline_relative_path?.trim_matches('/');
+    (!path.is_empty()).then(|| format!("\"{revision}:{path}\""))
 }
 
 fn svn_protocol_property_items(properties: &[yona_rust_vcs::SvnProperty]) -> String {
