@@ -644,6 +644,10 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain('data-request-method="post"');
     expect(pullRequestViewsSource).toContain("merge-conflict-help");
     expect(pullRequestViewsSource).toContain("pullRequest.conflict.manualResolve");
+    expect(pullRequestViewsSource).toContain("howto-resolve-conflict");
+    expect(pullRequestViewsSource).toContain("pullRequest.resolve.conflict");
+    expect(pullRequestViewsSource).toContain("git rebase upstream/");
+    expect(pullRequestViewsSource).toContain("git push -f origin");
     expect(pullRequestViewsSource).toContain("pull-request-source-branch");
     expect(pullRequestViewsSource).toContain("pullRequest.delete.frombranch.message");
     expect(pullRequestViewsSource).toContain("pullRequest.restore.frombranch.message");

@@ -918,6 +918,68 @@ function PullRequestActionBar(props: {
   );
 }
 
+function PullRequestConflictGuide(props: {
+  pullRequest: PullRequestDetailResponse;
+  runtimeConfig: RuntimeConfig;
+  viewerId?: number;
+}) {
+  const pr = props.pullRequest;
+  const isContributor = props.viewerId === pr.contributor.userId;
+  if (!pr.conflict || !isContributor) {
+    return null;
+  }
+  const upstreamUrl = buildProjectHref(props.runtimeConfig, pr.ownerName, `${pr.projectName}.git`);
+  const refreshHref = prHref(
+    props.runtimeConfig,
+    pr.ownerName,
+    pr.projectName,
+    pr.pullRequestNumber,
+  );
+  return (
+    <div className="alert alert-error pull-request-conflict-guide">
+      <i className="yobicon-error mr5"></i>
+      <span>pullRequest.is.not.safe</span>
+      <div className="howto-resolve-conflict">
+        <h6>pullRequest.resolve.conflict</h6>
+        <div className="help">
+          <ol>
+            <li>
+              pullRequest.resolver.step1 <code>{`git checkout ${pr.fromBranch}`}</code>
+            </li>
+            <li>
+              pullRequest.resolver.step2 <code>{`git remote add upstream ${upstreamUrl}`}</code>
+            </li>
+            <li>
+              pullRequest.resolver.step3 <code>git fetch upstream</code>
+            </li>
+            <li>
+              pullRequest.resolver.step4 <code>{`git rebase upstream/${pr.toBranch}`}</code>
+            </li>
+            <li>pullRequest.resolver.step5</li>
+            <li>
+              pullRequest.resolver.step6 <code>git add resolved_file</code>
+            </li>
+            <li>
+              pullRequest.resolver.step7 <code>git rebase --continue</code>
+            </li>
+            <li>pullRequest.resolver.step8</li>
+            <li>
+              pullRequest.resolver.step9 <code>{`git push -f origin ${pr.fromBranch}`}</code>
+            </li>
+            <li>
+              pullRequest.resolver.step10{" "}
+              <a className="ybtn ybtn-mini ybtn-primary" href={refreshHref}>
+                button.page.refresh
+              </a>
+              pullRequest.resolver.step11
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PullRequestSourceBranchActions(props: {
   onDeleteSourceBranch?: () => Promise<void>;
   onRestoreSourceBranch?: () => Promise<void>;
@@ -1049,6 +1111,11 @@ export function ProjectPullRequestDetailPage(props: {
             runtimeConfig={props.runtimeConfig}
             onDeleteSourceBranch={props.onDeleteSourceBranch}
             onRestoreSourceBranch={props.onRestoreSourceBranch}
+          />
+          <PullRequestConflictGuide
+            pullRequest={pr}
+            runtimeConfig={props.runtimeConfig}
+            viewerId={props.viewerId}
           />
           <section id="reviewers" className="review-list-wrap">
             <h2>Reviewers</h2>
@@ -1458,6 +1525,7 @@ export function PullRequestChangesPage(props: {
   detail: ProjectDetailViewModel | null;
   runtimeConfig: RuntimeConfig;
   selectedCommitId?: string;
+  viewerId?: number;
   onCommentDelete?: (commentId: number) => Promise<void>;
   onCommentUpdate?: (
     commentId: number,
@@ -1701,6 +1769,13 @@ export function PullRequestChangesPage(props: {
           <button className="ybtn ybtn-default btn-show-reviewcards" type="button">
             <i className="yobicon-restore"></i>
           </button>
+        ) : null}
+        {pr ? (
+          <PullRequestConflictGuide
+            pullRequest={pr}
+            runtimeConfig={props.runtimeConfig}
+            viewerId={props.viewerId}
+          />
         ) : null}
         {commits.length ? (
           <div className="btn-group auto mb10" id="commits">

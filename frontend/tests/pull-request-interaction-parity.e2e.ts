@@ -798,6 +798,7 @@ test("shows legacy conflict guidance and disables merge accept for conflicted pu
         body: JSON.stringify(
           detail({
             conflict: true,
+            contributor: { loginId: "reviewer", userId: 2, userLabel: "Reviewer" },
             state: "conflict",
           }),
         ),
@@ -813,6 +814,21 @@ test("shows legacy conflict guidance and disables merge accept for conflicted pu
   await expect(page.getByRole("button", { name: "Merge" })).toBeDisabled();
   await expect(page.locator(".merge-conflict-help")).toContainText(
     "pullRequest.conflict.manualResolve",
+  );
+  await expect(page.locator(".howto-resolve-conflict")).toContainText(
+    "pullRequest.resolve.conflict",
+  );
+  await expect(page.locator(".howto-resolve-conflict")).toContainText("git checkout topic/pr");
+  await expect(page.locator(".howto-resolve-conflict")).toContainText(
+    "git remote add upstream /yona/admin/projectYobi.git",
+  );
+  await expect(page.locator(".howto-resolve-conflict")).toContainText("git rebase upstream/main");
+  await expect(page.locator(".howto-resolve-conflict")).toContainText(
+    "git push -f origin topic/pr",
+  );
+  await expect(page.locator(".howto-resolve-conflict .ybtn-primary")).toHaveAttribute(
+    "href",
+    "/yona/admin/projectYobi/pullRequest/9",
   );
 });
 

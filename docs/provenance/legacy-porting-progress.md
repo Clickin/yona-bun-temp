@@ -293,7 +293,7 @@ Interpretation:
 - [x] Organization PR open/closed aggregate read
 - [x] Open/close/reopen
 - [~] Merge: reviewer-threshold-gated conflict-free native merge accept implemented; squash/strategy and in-app conflict workflow remain gaps
-- [~] Merge conflict handling: native conflict detection, PR conflict state, merge disable, and help text implemented; in-app resolution remains a gap
+- [~] Merge conflict handling: native conflict detection, PR conflict state, merge disable, and legacy `.howto-resolve-conflict` contributor guide implemented; in-app resolution remains a gap
 - [x] Reviewer lifecycle: legacy has no separate per-PR assignment route beyond review/unreview, and reviewer threshold projection/settings are implemented
 - [x] Required/lacking reviewer status projection
 - [~] Review approve/reject

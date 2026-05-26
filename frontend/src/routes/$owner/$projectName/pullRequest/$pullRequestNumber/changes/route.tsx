@@ -57,7 +57,8 @@ export function PullRequestChangesRouteContent(props: {
   selectedCommitId?: string;
 }) {
   const { owner, projectName, pullRequestNumber, selectedCommitId } = props;
-  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, currentSession, runtimeConfig, setErrorMessage } =
+    useAppRuntime();
   const queryClient = useQueryClient();
   const parsedNumber = Number(pullRequestNumber);
   const scope = { ownerName: owner, projectName, pullRequestNumber: parsedNumber };
@@ -271,6 +272,7 @@ export function PullRequestChangesRouteContent(props: {
       detail={containerQuery.data ? toProjectContainerView(containerQuery.data) : null}
       runtimeConfig={runtimeConfig}
       selectedCommitId={selectedCommitId}
+      viewerId={currentSession ? Number(currentSession.actorId) : undefined}
       onCommentDelete={async (commentId) => {
         await deleteCommentMutation.mutateAsync(commentId);
       }}
