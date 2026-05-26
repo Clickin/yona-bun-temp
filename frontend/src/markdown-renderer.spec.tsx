@@ -885,11 +885,22 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain("<ul>");
-    expect(html).toContain("<li>first");
+    expect(html).toContain("first");
     expect(html).toContain("continuation with <strong>style</strong>");
-    expect(html).toContain("<li>second</li>");
-    expect(html).not.toContain("<p>continuation with");
+    expect(html).toContain("second");
+    expect(html).not.toContain("</ul><p>  continuation with");
     expect(html).not.toContain("<p>- second</p>");
+  });
+
+  it("wraps loose-list item paragraphs like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"- first\n\n  continuation with **style**\n- second"} />,
+    );
+
+    expect(html).toContain(
+      "<ul><li><p>first</p><p>continuation with <strong>style</strong></p></li><li><p>second</p></li></ul>",
+    );
+    expect(html).not.toContain("first<br/>continuation");
   });
 
   it("renders task-list checkboxes like legacy marked", () => {

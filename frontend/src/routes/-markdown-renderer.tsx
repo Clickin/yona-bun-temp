@@ -90,12 +90,14 @@ type MarkdownListItem = {
   checked?: boolean;
   children?: MarkdownListRecord[];
   key: string;
+  loose?: boolean;
   task: boolean;
   text: string;
 };
 
 type MarkdownListRecord = {
   items: MarkdownListItem[];
+  loose?: boolean;
   ordered: boolean;
   start?: number;
 };
@@ -184,6 +186,7 @@ const referenceDefinitionPattern = new RegExp(
 );
 
 const openingFencePattern = /^( {0,3})(`{3,}|~{3,})(?:[ \t]*([A-Za-z0-9_+.-]+)(?:[ \t]+.*)?)?\s*$/;
+const looseListBreakMarker = "\u0000loose-list-break\u0000";
 
 function openingFenceFromLine(line: string): string {
   return openingFencePattern.exec(line)?.[2] ?? "";
@@ -725,6 +728,7 @@ function normalizeLooseListContinuationLines(markdown: string): string {
         ? (nextIndentMatch[1] ?? "").replace(/\t/g, "    ").length
         : null;
       if (activeListIndent !== null && nextIndent !== null && nextIndent > activeListIndent) {
+        normalized.push(`${" ".repeat(activeListIndent + 1)}${looseListBreakMarker}`);
         continue;
       }
       normalized.push(line);
@@ -936,6 +940,12 @@ function parseMarkdownListAt(
       if (!parent || line.indent <= indent) {
         return null;
       }
+      if (line.text === looseListBreakMarker) {
+        parent.loose = true;
+        parent.text = `${parent.text}\n${looseListBreakMarker}`;
+        index += 1;
+        continue;
+      }
       parent.text = `${parent.text}\n${line.text}`;
       index += 1;
       continue;
@@ -965,6 +975,7 @@ function parseMarkdownListAt(
   return {
     list: {
       items,
+      loose: items.some((item) => item.loose),
       ordered: firstLine.ordered,
       start: firstLine.start,
     },
@@ -1031,7 +1042,11 @@ function MarkdownList(props: { context?: MarkdownContext; list: MarkdownListReco
         />
       ) : null}
       {item.task ? " " : null}
-      <MarkdownInlineLines context={props.context} text={item.text} />
+      {props.list.loose ? (
+        <MarkdownLooseListItem context={props.context} item={item} />
+      ) : (
+        <MarkdownInlineLines context={props.context} text={item.text} />
+      )}
       {item.children?.map((child) => (
         <MarkdownList
           context={props.context}
@@ -1047,6 +1062,27 @@ function MarkdownList(props: { context?: MarkdownContext; list: MarkdownListReco
     </ol>
   ) : (
     <ul>{children}</ul>
+  );
+}
+
+function MarkdownLooseListItem(props: { context?: MarkdownContext; item: MarkdownListItem }) {
+  const paragraphs: { key: string; text: string }[] = [];
+  let offset = 0;
+  for (const rawParagraph of props.item.text.split(`\n${looseListBreakMarker}\n`)) {
+    const text = rawParagraph.replaceAll(looseListBreakMarker, "").trim();
+    if (text) {
+      paragraphs.push({ key: `${props.item.key}-loose-${offset}-${text}`, text });
+    }
+    offset += rawParagraph.length + looseListBreakMarker.length + 2;
+  }
+  return (
+    <>
+      {paragraphs.map((paragraph) => (
+        <p key={paragraph.key}>
+          <MarkdownInlineLines context={props.context} text={paragraph.text} />
+        </p>
+      ))}
+    </>
   );
 }
 
