@@ -193,6 +193,51 @@ pub fn mailbox_extract_content(part: &MailboxMimePart) -> MailboxExtractedConten
     mailbox_process_part(part, None)
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MailboxParsedMessageInput {
+    pub from_addresses: Vec<String>,
+    pub imap_address: String,
+    pub in_reply_to: Option<String>,
+    pub message_id: String,
+    pub recipients: Vec<String>,
+    pub references: Vec<String>,
+    pub root_part: MailboxMimePart,
+    pub subject: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MailboxNormalizedMessage {
+    pub body_markdown: String,
+    pub content_type: String,
+    pub from_addresses: Vec<String>,
+    pub message_id: String,
+    pub recipient_details: Vec<String>,
+    pub reply_message_ids: Vec<String>,
+    pub title: String,
+}
+
+pub fn mailbox_normalize_parsed_message(
+    input: MailboxParsedMessageInput,
+) -> MailboxNormalizedMessage {
+    let content = mailbox_extract_content(&input.root_part);
+    let recipient_details = mailbox_recipients_to_yona(&input.recipients, &input.imap_address)
+        .into_iter()
+        .map(|address| address.detail().to_string())
+        .collect();
+    let reply_message_ids =
+        mailbox_collect_thread_message_ids(input.in_reply_to.as_deref(), &input.references);
+
+    MailboxNormalizedMessage {
+        body_markdown: content.body,
+        content_type: content.content_type,
+        from_addresses: input.from_addresses,
+        message_id: input.message_id,
+        recipient_details,
+        reply_message_ids,
+        title: input.subject,
+    }
+}
+
 fn mailbox_process_part(
     part: &MailboxMimePart,
     parent: Option<&MailboxMimePart>,

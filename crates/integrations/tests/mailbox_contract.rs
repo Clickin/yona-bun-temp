@@ -1,7 +1,8 @@
 use yona_rust_integrations::{
     mailbox_collect_thread_message_ids, mailbox_extract_content, mailbox_message_id_left,
-    mailbox_parse_message_ids, mailbox_project_detail, mailbox_recipients_to_yona,
-    mailbox_resource_path_from_detail, EmailAddressWithDetail, MailboxMimePart,
+    mailbox_normalize_parsed_message, mailbox_parse_message_ids, mailbox_project_detail,
+    mailbox_recipients_to_yona, mailbox_resource_path_from_detail, EmailAddressWithDetail,
+    MailboxMimePart, MailboxParsedMessageInput,
 };
 
 #[test]
@@ -155,6 +156,55 @@ fn mailbox_mime_extraction_joins_mixed_multipart_text_in_order() {
     assert_eq!(content.body, "first second");
     assert_eq!(content.content_type, "text/plain");
     assert!(content.attachments.is_empty());
+}
+
+#[test]
+fn mailbox_parsed_message_normalization_collects_legacy_routing_inputs() {
+    let normalized = mailbox_normalize_parsed_message(MailboxParsedMessageInput {
+        from_addresses: vec!["member@example.com".to_string()],
+        imap_address: "noreply@yona.local".to_string(),
+        in_reply_to: Some("<reply@example.com>".to_string()),
+        message_id: "<message@example.com>".to_string(),
+        recipients: vec![
+            "noreply+yobi/projectYobi/comment_thread/1@yona.local".to_string(),
+            "noreply+help@yona.local".to_string(),
+            "other+yobi/projectYobi@yona.local".to_string(),
+        ],
+        references: vec![
+            "<first@example.com> <second@example.com>".to_string(),
+            "<reply@example.com> <third@example.com>".to_string(),
+        ],
+        root_part: multipart(
+            "multipart/alternative",
+            vec![
+                text("text/html; charset=UTF-8", "<p>html</p>"),
+                text("text/plain; charset=UTF-8", "plain body"),
+            ],
+        ),
+        subject: "mail subject".to_string(),
+    });
+
+    assert_eq!(normalized.title, "mail subject");
+    assert_eq!(normalized.message_id, "<message@example.com>");
+    assert_eq!(normalized.from_addresses, vec!["member@example.com"]);
+    assert_eq!(normalized.body_markdown, "plain body");
+    assert_eq!(normalized.content_type, "text/plain; charset=UTF-8");
+    assert_eq!(
+        normalized.recipient_details,
+        vec![
+            "yobi/projectYobi/comment_thread/1".to_string(),
+            "help".to_string()
+        ]
+    );
+    assert_eq!(
+        normalized.reply_message_ids,
+        vec![
+            "<reply@example.com>".to_string(),
+            "<first@example.com>".to_string(),
+            "<second@example.com>".to_string(),
+            "<third@example.com>".to_string(),
+        ]
+    );
 }
 
 fn text(content_type: &str, body: &str) -> MailboxMimePart {
