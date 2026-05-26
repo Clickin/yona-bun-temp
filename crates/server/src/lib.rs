@@ -9810,8 +9810,8 @@ struct RestSiteExportResponse {
     provenance: String,
     users: Vec<RestSiteUserItem>,
     projects: Vec<RestSiteProjectItem>,
-    posts: Vec<RestPostListItem>,
-    issues: Vec<RestSiteIssueItem>,
+    posts: Vec<RestSiteExportPostItem>,
+    issues: Vec<RestSiteExportIssueItem>,
 }
 
 #[derive(Default, Deserialize)]
@@ -9820,8 +9820,8 @@ struct RestSiteImportPayload {
     format: String,
     users: Vec<RestSiteImportUserItem>,
     projects: Vec<RestSiteImportProjectItem>,
-    posts: Vec<serde_json::Value>,
-    issues: Vec<serde_json::Value>,
+    posts: Vec<RestSiteExportPostItem>,
+    issues: Vec<RestSiteExportIssueItem>,
 }
 
 #[derive(Default, Deserialize)]
@@ -9842,11 +9842,41 @@ struct RestSiteImportProjectItem {
     project_name: String,
 }
 
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportPostItem {
+    author_login_id: String,
+    body_markdown: String,
+    notice: bool,
+    owner_name: String,
+    post_number: String,
+    project_name: String,
+    readme: bool,
+    title: String,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportIssueItem {
+    assignee_login_id: String,
+    author_login_id: String,
+    body_markdown: String,
+    issue_number: String,
+    owner_name: String,
+    project_name: String,
+    state: String,
+    title: String,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RestSiteImportResponse {
     imported_projects: u32,
+    imported_issues: u32,
+    imported_posts: u32,
     imported_users: u32,
+    skipped_issues: u32,
+    skipped_posts: u32,
     skipped_projects: u32,
     skipped_users: u32,
     unsupported_sections: Vec<String>,
@@ -15414,21 +15444,132 @@ async fn rest_import_site_data(
         imported_projects += 1;
     }
 
-    let mut unsupported_sections = Vec::new();
-    if !payload.posts.is_empty() {
-        unsupported_sections.push("posts".to_string());
+    let mut imported_posts = 0;
+    let mut skipped_posts = 0;
+    for post in payload.posts {
+        let Some(actor) =
+            rest_site_import_actor(repository, &post.author_login_id, &post.owner_name).await?
+        else {
+            skipped_posts += 1;
+            continue;
+        };
+        if repository
+            .read_project_by_owner_and_name(&post.owner_name, &post.project_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+            .is_none()
+        {
+            skipped_posts += 1;
+            continue;
+        }
+        repository
+            .create_posting(persistence::CreatePostingInput {
+                actor_display_name: actor.display_name,
+                actor_id: actor.id,
+                actor_login_id: actor.login_id,
+                owner_name: post.owner_name.trim().to_string(),
+                project_name: post.project_name.trim().to_string(),
+                values: persistence::PostingMutationInput {
+                    attachment_ids: vec![],
+                    body_markdown: post.body_markdown,
+                    label_ids: vec![],
+                    notice: post.notice,
+                    readme: post.readme,
+                    title: post.title,
+                },
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        imported_posts += 1;
     }
-    if !payload.issues.is_empty() {
-        unsupported_sections.push("issues".to_string());
+
+    let mut imported_issues = 0;
+    let mut skipped_issues = 0;
+    for issue in payload.issues {
+        let Some(actor) =
+            rest_site_import_actor(repository, &issue.author_login_id, &issue.owner_name).await?
+        else {
+            skipped_issues += 1;
+            continue;
+        };
+        if repository
+            .read_project_by_owner_and_name(&issue.owner_name, &issue.project_name)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+            .is_none()
+        {
+            skipped_issues += 1;
+            continue;
+        }
+        let created = repository
+            .create_issue(persistence::CreateIssueInput {
+                actor_display_name: actor.display_name,
+                actor_id: actor.id,
+                actor_login_id: actor.login_id.clone(),
+                owner_name: issue.owner_name.trim().to_string(),
+                project_name: issue.project_name.trim().to_string(),
+                values: persistence::IssueMutationInput {
+                    assignee_login_id: empty_string_as_none(issue.assignee_login_id.trim()),
+                    attachment_ids: vec![],
+                    body_markdown: issue.body_markdown,
+                    label_ids: vec![],
+                    milestone_id: None,
+                    title: issue.title,
+                },
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        let Some(created) = created else {
+            skipped_issues += 1;
+            continue;
+        };
+        if issue.state.trim().eq_ignore_ascii_case("closed") {
+            repository
+                .update_issue_state_as_actor(
+                    &created.owner_name,
+                    &created.project_name,
+                    created.issue_number,
+                    "closed",
+                    actor.id,
+                    &actor.login_id,
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        }
+        imported_issues += 1;
     }
 
     Ok(Json(RestSiteImportResponse {
+        imported_issues,
+        imported_posts,
         imported_projects,
         imported_users,
+        skipped_issues,
+        skipped_posts,
         skipped_projects,
         skipped_users,
-        unsupported_sections,
+        unsupported_sections: Vec::new(),
     }))
+}
+
+async fn rest_site_import_actor(
+    repository: &PilotRepository,
+    preferred_login_id: &str,
+    owner_name: &str,
+) -> Result<Option<persistence::AppUserRecord>, RestRouteError> {
+    for candidate in [preferred_login_id.trim(), owner_name.trim()] {
+        if candidate.is_empty() {
+            continue;
+        }
+        if let Some(user) = repository
+            .find_user_by_login_id(candidate)
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+        {
+            return Ok(Some(user));
+        }
+    }
+    Ok(None)
 }
 
 async fn rest_export_site_users(
@@ -15464,7 +15605,7 @@ async fn rest_export_site_users(
 
 async fn rest_export_site_posts(
     repository: &PilotRepository,
-) -> Result<Vec<RestPostListItem>, RestRouteError> {
+) -> Result<Vec<RestSiteExportPostItem>, RestRouteError> {
     let mut posts = Vec::new();
     let mut page = 1;
     loop {
@@ -15472,7 +15613,20 @@ async fn rest_export_site_posts(
             .list_site_postings(page)
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
-        posts.extend(record.posts.iter().map(rest_post_list_item_from_record));
+        for post in record.posts {
+            let post_number = post.post_number;
+            let detail = repository
+                .read_posting_detail_for_viewer(
+                    &post.owner_name,
+                    &post.project_name,
+                    post_number,
+                    None,
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?
+                .ok_or_else(|| RestRouteError::internal("site export post disappeared"))?;
+            posts.push(rest_site_export_post_from_record(&detail));
+        }
         if record.total_pages == 0 || page >= record.total_pages {
             break;
         }
@@ -15483,7 +15637,7 @@ async fn rest_export_site_posts(
 
 async fn rest_export_site_issues(
     repository: &PilotRepository,
-) -> Result<Vec<RestSiteIssueItem>, RestRouteError> {
+) -> Result<Vec<RestSiteExportIssueItem>, RestRouteError> {
     let mut issues = Vec::new();
     for state in ["open", "closed"] {
         let mut page = 1;
@@ -15492,7 +15646,14 @@ async fn rest_export_site_issues(
                 .list_site_issues(state, page)
                 .await
                 .map_err(|error| RestRouteError::internal(error.to_string()))?;
-            issues.extend(record.issues.iter().map(rest_site_issue_from_record));
+            for issue in record.issues {
+                let detail = repository
+                    .read_issue_detail(&issue.owner_name, &issue.project_name, issue.issue_number)
+                    .await
+                    .map_err(|error| RestRouteError::internal(error.to_string()))?
+                    .ok_or_else(|| RestRouteError::internal("site export issue disappeared"))?;
+                issues.push(rest_site_export_issue_from_record(&detail));
+            }
             if record.total_pages == 0 || page >= record.total_pages {
                 break;
             }
@@ -19844,6 +20005,15 @@ fn rest_site_legacy_ok_response() -> RestSiteLegacyOkResponse {
     }
 }
 
+fn empty_string_as_none(value: &str) -> Option<String> {
+    let value = value.trim();
+    if value.is_empty() {
+        None
+    } else {
+        Some(value.to_string())
+    }
+}
+
 fn rest_site_project_from_record(record: persistence::ProjectRecord) -> RestSiteProjectItem {
     RestSiteProjectItem {
         created_at: record
@@ -19854,6 +20024,36 @@ fn rest_site_project_from_record(record: persistence::ProjectRecord) -> RestSite
         owner_name: record.owner_name,
         overview: record.overview.unwrap_or_default(),
         project_name: record.project_name,
+    }
+}
+
+fn rest_site_export_post_from_record(
+    record: &persistence::PostingRecord,
+) -> RestSiteExportPostItem {
+    RestSiteExportPostItem {
+        author_login_id: record.author_login_id.clone(),
+        body_markdown: record.body_markdown.clone(),
+        notice: record.notice,
+        owner_name: record.owner_name.clone(),
+        post_number: record.post_number.to_string(),
+        project_name: record.project_name.clone(),
+        readme: record.readme,
+        title: record.title.clone(),
+    }
+}
+
+fn rest_site_export_issue_from_record(
+    record: &persistence::IssueRecord,
+) -> RestSiteExportIssueItem {
+    RestSiteExportIssueItem {
+        assignee_login_id: record.assignee_login_id.clone(),
+        author_login_id: record.author_login_id.clone(),
+        body_markdown: record.body_markdown.clone(),
+        issue_number: record.issue_number.to_string(),
+        owner_name: record.owner_name.clone(),
+        project_name: record.project_name.clone(),
+        state: record.state.clone(),
+        title: record.title.clone(),
     }
 }
 

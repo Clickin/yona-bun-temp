@@ -745,7 +745,15 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
     assert_eq!(payload["projects"][0]["ownerName"], "member");
     assert_eq!(payload["projects"][0]["projectName"], "dataproj");
     assert_eq!(payload["posts"][0]["title"], "Data export post");
+    assert_eq!(
+        payload["posts"][0]["bodyMarkdown"],
+        "legacy data export post"
+    );
     assert_eq!(payload["issues"][0]["title"], "Data export issue");
+    assert_eq!(
+        payload["issues"][0]["bodyMarkdown"],
+        "legacy data export issue"
+    );
 }
 
 #[tokio::test]
@@ -769,8 +777,24 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
             "projectName": "restored",
             "overview": "Restored from site import"
         }],
-        "posts": [{"title": "unsupported post body snapshot"}],
-        "issues": []
+        "posts": [{
+            "authorLoginId": "imported",
+            "bodyMarkdown": "restored post body",
+            "notice": true,
+            "ownerName": "imported",
+            "projectName": "restored",
+            "readme": false,
+            "title": "Restored post"
+        }],
+        "issues": [{
+            "assigneeLoginId": "",
+            "authorLoginId": "imported",
+            "bodyMarkdown": "restored issue body",
+            "ownerName": "imported",
+            "projectName": "restored",
+            "state": "closed",
+            "title": "Restored issue"
+        }]
     });
 
     let unauthenticated = rest_raw_post(
@@ -823,9 +847,13 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
     let imported = response_json(imported).await;
     assert_eq!(imported["importedUsers"], 1);
     assert_eq!(imported["importedProjects"], 1);
+    assert_eq!(imported["importedPosts"], 1);
+    assert_eq!(imported["importedIssues"], 1);
     assert_eq!(imported["skippedUsers"], 0);
     assert_eq!(imported["skippedProjects"], 0);
-    assert_eq!(imported["unsupportedSections"][0], "posts");
+    assert_eq!(imported["skippedPosts"], 0);
+    assert_eq!(imported["skippedIssues"], 0);
+    assert_eq!(imported["unsupportedSections"].as_array().unwrap().len(), 0);
 
     let users = response_json(
         rest_get(
@@ -841,7 +869,7 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
 
     let projects = response_json(
         rest_get(
-            app,
+            app.clone(),
             "/yona/api/v1/site/projects?filter=restored",
             Some(&admin_cookie),
         )
@@ -850,6 +878,22 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
     .await;
     assert_eq!(projects["projects"][0]["ownerName"], "imported");
     assert_eq!(projects["projects"][0]["projectName"], "restored");
+
+    let posts =
+        response_json(rest_get(app.clone(), "/yona/api/v1/site/posts", Some(&admin_cookie)).await)
+            .await;
+    assert_eq!(posts["posts"][0]["title"], "Restored post");
+
+    let issues = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/site/issues?state=closed",
+            Some(&admin_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(issues["issues"][0]["title"], "Restored issue");
 }
 
 #[tokio::test]
