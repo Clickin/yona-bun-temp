@@ -78,6 +78,169 @@ pub fn mailbox_message_id_left(message_id: &str) -> Option<String> {
     (!left.is_empty()).then_some(left)
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MailboxMimePart {
+    pub body: String,
+    pub content_id: Option<String>,
+    pub content_type: String,
+    pub parts: Vec<MailboxMimePart>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MailboxExtractedContent {
+    pub attachments: Vec<MailboxMimePart>,
+    pub body: String,
+    pub content_type: String,
+}
+
+impl MailboxExtractedContent {
+    fn empty() -> Self {
+        Self {
+            attachments: Vec::new(),
+            body: String::new(),
+            content_type: String::new(),
+        }
+    }
+
+    fn merge(&mut self, other: MailboxExtractedContent) {
+        self.body.push_str(&other.body);
+        if self.content_type.is_empty() {
+            self.content_type = other.content_type;
+        }
+        self.attachments.extend(other.attachments);
+    }
+}
+
+pub fn mailbox_extract_content(part: &MailboxMimePart) -> MailboxExtractedContent {
+    mailbox_process_part(part, None)
+}
+
+fn mailbox_process_part(
+    part: &MailboxMimePart,
+    parent: Option<&MailboxMimePart>,
+) -> MailboxExtractedContent {
+    if mailbox_mime_type_matches(&part.content_type, "text/*") {
+        return MailboxExtractedContent {
+            attachments: Vec::new(),
+            body: part.body.clone(),
+            content_type: part.content_type.clone(),
+        };
+    }
+
+    if mailbox_mime_type_matches(&part.content_type, "multipart/*") {
+        if mailbox_mime_type_matches(&part.content_type, "multipart/related") {
+            return mailbox_content_with_attachments(part);
+        }
+        if mailbox_mime_type_matches(&part.content_type, "multipart/alternative") {
+            return mailbox_content_of_best_part(part, parent);
+        }
+        return mailbox_joined_content(part);
+    }
+
+    MailboxExtractedContent::empty()
+}
+
+fn mailbox_joined_content(part: &MailboxMimePart) -> MailboxExtractedContent {
+    let mut content = MailboxExtractedContent::empty();
+    for child in &part.parts {
+        content.merge(mailbox_process_part(child, Some(part)));
+    }
+    content
+}
+
+fn mailbox_content_with_attachments(part: &MailboxMimePart) -> MailboxExtractedContent {
+    let start = mailbox_content_type_parameter(&part.content_type, "start");
+    let mut content = MailboxExtractedContent::empty();
+    for (index, child) in part.parts.iter().enumerate() {
+        if mailbox_is_root_part(child, index, start.as_deref()) {
+            content.merge(mailbox_process_part(child, Some(part)));
+        } else {
+            content.attachments.push(child.clone());
+        }
+    }
+    content
+}
+
+fn mailbox_content_of_best_part(
+    part: &MailboxMimePart,
+    parent: Option<&MailboxMimePart>,
+) -> MailboxExtractedContent {
+    let parent_is_related = parent
+        .is_some_and(|parent| mailbox_mime_type_matches(&parent.content_type, "multipart/related"));
+    let Some(best) = part.parts.iter().fold(None, |best, child| {
+        Some(mailbox_better_part(best, child, parent_is_related))
+    }) else {
+        return MailboxExtractedContent::empty();
+    };
+
+    mailbox_process_part(best, Some(part))
+}
+
+fn mailbox_better_part<'a>(
+    left: Option<&'a MailboxMimePart>,
+    right: &'a MailboxMimePart,
+    prefer_html_for_related: bool,
+) -> &'a MailboxMimePart {
+    let priority = if prefer_html_for_related {
+        ["multipart/related", "text/html", "text/plain"]
+    } else {
+        ["multipart/related", "text/plain", "text/html"]
+    };
+    match left {
+        Some(left)
+            if mailbox_mime_point(left, &priority) > mailbox_mime_point(right, &priority) =>
+        {
+            left
+        }
+        _ => right,
+    }
+}
+
+fn mailbox_mime_point(part: &MailboxMimePart, priority: &[&str]) -> usize {
+    priority
+        .iter()
+        .position(|candidate| mailbox_mime_type_matches(&part.content_type, candidate))
+        .map(|index| priority.len() + 1 - index)
+        .unwrap_or(1)
+}
+
+fn mailbox_is_root_part(part: &MailboxMimePart, index: usize, start: Option<&str>) -> bool {
+    start
+        .map(|start| part.content_id.as_deref() == Some(start))
+        .unwrap_or(index == 0)
+}
+
+fn mailbox_mime_type_matches(content_type: &str, pattern: &str) -> bool {
+    let actual = content_type
+        .split(';')
+        .next()
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_lowercase();
+    if let Some(prefix) = pattern.strip_suffix("/*") {
+        actual.starts_with(&format!("{prefix}/"))
+    } else {
+        actual == pattern
+    }
+}
+
+fn mailbox_content_type_parameter(content_type: &str, name: &str) -> Option<String> {
+    content_type.split(';').skip(1).find_map(|parameter| {
+        let (key, value) = parameter.split_once('=')?;
+        if key.trim().eq_ignore_ascii_case(name) {
+            Some(
+                value
+                    .trim()
+                    .trim_matches('"')
+                    .trim_matches('\'')
+                    .to_string(),
+            )
+        } else {
+            None
+        }
+    })
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SmtpDeliveryConfig {
     pub default_port: u16,
