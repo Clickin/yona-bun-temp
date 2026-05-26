@@ -203,6 +203,8 @@ pub struct NotificationItemRecord {
     pub event_type: String,
     pub id: i64,
     pub message: String,
+    pub resource_id: String,
+    pub resource_type: String,
     pub target_path: String,
     pub target_title: String,
     pub type_icon: String,

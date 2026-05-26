@@ -12,7 +12,7 @@ use std::time::SystemTime;
 use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
-    issue_event, n4user, notification_event, notification_event_n4user, notification_mail,
+    issue_event, n4user, notification_event, notification_event_n4user, notification_mail, unwatch,
     AppRepository,
 };
 use yona_rust_pilot_migration::Migrator;
@@ -599,7 +599,7 @@ async fn notification_contract_scheduler_config_and_tick_follow_legacy_defaults(
     .await;
     response_json(
         rest(
-            app,
+            app.clone(),
             Method::PUT,
             "/yona/api/v1/projects/owner/projectYobi/issues/1/state",
             Some(&owner_cookie),
@@ -663,7 +663,7 @@ async fn notification_contract_delivers_due_mail_rows_to_receivers() {
     clear_test_outbox();
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
-    let (watcher_csrf, watcher_cookie, _) = register_user(app.clone(), "watcher").await;
+    let (watcher_csrf, watcher_cookie, watcher_id) = register_user(app.clone(), "watcher").await;
     create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
     create_issue(
         app.clone(),
@@ -686,7 +686,7 @@ async fn notification_contract_delivers_due_mail_rows_to_receivers() {
     .await;
     response_json(
         rest(
-            app,
+            app.clone(),
             Method::PUT,
             "/yona/api/v1/projects/owner/projectYobi/issues/1/state",
             Some(&owner_cookie),
@@ -737,8 +737,36 @@ async fn notification_contract_delivers_due_mail_rows_to_receivers() {
         .contains("<a href=\"https://yona.example/yona/owner/projectYobi/issue/1\" target=\"_blank\">View it on Yona</a>"));
     assert!(outbox[0]
         .body
+        .contains("<a href=\"https://yona.example/yona/unwatch?resource.type=issue_post&amp;resource.id=1\" target=\"_blank\" style=\"color:#4399e2; text-decoration:underline;\">Unwatch</a>"));
+    assert!(outbox[0]
+        .body
         .contains("<a href=\"https://yona.example/yona/user/editform/notifications\" target=\"_blank\" style=\"color:#4399e2; text-decoration:underline;\">Notification settings</a>"));
     assert!(!outbox[0].body.contains("rel=\" noreferrer\""));
+
+    let unwatch_response = rest_get(
+        app.clone(),
+        "/yona/unwatch?resource.type=issue_post&resource.id=1",
+        Some(&watcher_cookie),
+    )
+    .await;
+    assert_eq!(unwatch_response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        unwatch_response
+            .headers()
+            .get(http::header::LOCATION)
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        "/yona/notification"
+    );
+    let issue_unwatch_count = unwatch::Entity::find()
+        .filter(unwatch::Column::UserId.eq(Some(watcher_id)))
+        .filter(unwatch::Column::ResourceType.eq(Some("ISSUE".to_string())))
+        .filter(unwatch::Column::ResourceId.eq(Some("1".to_string())))
+        .count(&db)
+        .await
+        .unwrap();
+    assert_eq!(issue_unwatch_count, 1);
     clear_test_outbox();
     std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
 }

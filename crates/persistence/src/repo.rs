@@ -523,6 +523,30 @@ fn notification_type_icon(event_type: &str, state: &str) -> &'static str {
     }
 }
 
+fn notification_unwatch_resource_types(resource_type: &str) -> Vec<String> {
+    let normalized = normalize_identity(resource_type);
+    let mut resource_types = match normalized.as_str() {
+        "issue" | "issue_post" => vec![
+            normalized.clone(),
+            "issue".to_string(),
+            "issue_post".to_string(),
+            "ISSUE".to_string(),
+        ],
+        "posting" | "board_post" => vec![
+            normalized.clone(),
+            "posting".to_string(),
+            "board_post".to_string(),
+            "POSTING".to_string(),
+        ],
+        "pull_request" => vec![normalized.clone(), "PULL_REQUEST".to_string()],
+        "project" => vec![normalized.clone(), "PROJECT".to_string()],
+        _ => vec![normalized.clone()],
+    };
+    resource_types.sort();
+    resource_types.dedup();
+    resource_types
+}
+
 fn pull_request_state_notification_message(new_value: &str) -> String {
     let state = normalize_identity(new_value);
     if state == "open" {
@@ -12413,6 +12437,41 @@ impl AppRepository {
         Ok(())
     }
 
+    pub async fn unwatch_notification_resource(
+        &self,
+        user_id: i64,
+        resource_type: &str,
+        resource_id: &str,
+    ) -> Result<(), DbErr> {
+        let resource_types = notification_unwatch_resource_types(resource_type);
+        for resource_type in resource_types {
+            if unwatch::Entity::find()
+                .filter(unwatch::Column::UserId.eq(Some(user_id)))
+                .filter(unwatch::Column::ResourceType.eq(Some(resource_type.clone())))
+                .filter(unwatch::Column::ResourceId.eq(Some(resource_id.to_string())))
+                .one(&self.db)
+                .await?
+                .is_none()
+            {
+                unwatch::ActiveModel {
+                    id: NotSet,
+                    user_id: Set(Some(user_id)),
+                    resource_type: Set(Some(resource_type.clone())),
+                    resource_id: Set(Some(resource_id.to_string())),
+                }
+                .insert(&self.db)
+                .await?;
+            }
+            watch::Entity::delete_many()
+                .filter(watch::Column::UserId.eq(Some(user_id)))
+                .filter(watch::Column::ResourceType.eq(Some(resource_type)))
+                .filter(watch::Column::ResourceId.eq(Some(resource_id.to_string())))
+                .exec(&self.db)
+                .await?;
+        }
+        Ok(())
+    }
+
     async fn has_explicit_pull_request_watch(
         &self,
         pull_request_id: i64,
@@ -13481,6 +13540,8 @@ impl AppRepository {
             event_type: event_type.clone(),
             id: event.id,
             message: notification_message(&event_type, &old_value, &new_value),
+            resource_id: event.resource_id.unwrap_or_default(),
+            resource_type: event.resource_type.unwrap_or_default(),
             target_path: target.0,
             target_title: target.1,
             type_icon: notification_type_icon(&event_type, &new_value).to_string(),

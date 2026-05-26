@@ -407,6 +407,9 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let site_set_avatar_session_manager = session_manager.clone();
     let site_mail_list_backend = route_backend.clone();
     let site_mail_list_session_manager = session_manager.clone();
+    let direct_unwatch_backend = route_backend.clone();
+    let direct_unwatch_session_manager = session_manager.clone();
+    let direct_unwatch_base_path = base_path.clone();
     let site_unwatch_update_backend = route_backend.clone();
     let site_unwatch_update_session_manager = session_manager.clone();
     let site_toggle_admin_backend = route_backend.clone();
@@ -892,6 +895,21 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         body,
                         site_mail_list_session_manager.clone(),
                         site_mail_list_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/unwatch",
+            get(move |headers: HeaderMap, query: Query<LegacyResourceQuery>| {
+                async move {
+                    direct_legacy_unwatch(
+                        headers,
+                        query,
+                        direct_unwatch_session_manager.clone(),
+                        direct_unwatch_backend.clone(),
+                        direct_unwatch_base_path.clone(),
                     )
                     .await
                 }
@@ -7367,6 +7385,9 @@ fn notification_mail_legacy_body(
 ) -> String {
     let settings_url = absolute_app_url(public_origin, base_path, "/user/editform/notifications");
     let settings_link = notification_mail_footer_link(&settings_url, "Notification settings");
+    let unwatch_url = notification_mail_unwatch_url(item, public_origin, base_path)
+        .unwrap_or_else(|| settings_url.clone());
+    let unwatch_link = notification_mail_footer_link(&unwatch_url, "Unwatch");
     let target_link = if target_url.is_empty() {
         String::new()
     } else {
@@ -7378,9 +7399,45 @@ fn notification_mail_legacy_body(
     };
 
     format!(
-        "<div style=\"font-family:'Helvetica Neue','Helvetica','Arial','나눔고딕','NanumGothic','NanumGothicOTF','Apple SD Gothic Neo','맑은 고딕',sans-serif;\">\n  {}\n</div>\n\n<hr style=\"border:0; border-bottom:1px solid #ddd; margin:20px 0;\">\n{}\n<div style=\"max-width:410px;margin-top:20px;color:#989898;text-align:justify;word-break:break-all;font-size:11px;font-family:'Helvetica Neue','Helvetica','Arial','나눔고딕','NanumGothic','NanumGothicOTF','Apple SD Gothic Neo','맑은 고딕',sans-serif;\">change settings at {} if you want to mute this.</div>\n",
-        item.message, target_link, settings_link
+        "<div style=\"font-family:'Helvetica Neue','Helvetica','Arial','나눔고딕','NanumGothic','NanumGothicOTF','Apple SD Gothic Neo','맑은 고딕',sans-serif;\">\n  {}\n</div>\n\n<hr style=\"border:0; border-bottom:1px solid #ddd; margin:20px 0;\">\n{}\n<div style=\"max-width:410px;margin-top:20px;color:#989898;text-align:justify;word-break:break-all;font-size:11px;font-family:'Helvetica Neue','Helvetica','Arial','나눔고딕','NanumGothic','NanumGothicOTF','Apple SD Gothic Neo','맑은 고딕',sans-serif;\">You can {} or<br>change settings at {} if you want to mute this.</div>\n",
+        item.message, target_link, unwatch_link, settings_link
     )
+}
+
+fn notification_mail_unwatch_url(
+    item: &persistence::NotificationItemRecord,
+    public_origin: &str,
+    base_path: &str,
+) -> Option<String> {
+    let resource_type = notification_mail_legacy_resource_type(&item.resource_type)?;
+    let resource_id = item.resource_id.trim();
+    if resource_id.is_empty() {
+        return None;
+    }
+    Some(absolute_app_url(
+        public_origin,
+        base_path,
+        &format!(
+            "/unwatch?resource.type={}&resource.id={}",
+            percent_encode_uri_component(resource_type),
+            percent_encode_uri_component(resource_id)
+        ),
+    ))
+}
+
+fn notification_mail_legacy_resource_type(resource_type: &str) -> Option<&'static str> {
+    match normalize_identifier(resource_type).as_str() {
+        "issue" | "issue_post" => Some("issue_post"),
+        "posting" | "board_post" => Some("board_post"),
+        "pull_request" => Some("pull_request"),
+        "project" => Some("project"),
+        "issue_comment" => Some("issue_comment"),
+        "posting_comment" | "nonissue_comment" => Some("nonissue_comment"),
+        "commit_comment" | "code_comment" => Some("code_comment"),
+        "review_comment" => Some("review_comment"),
+        "comment_thread" => Some("comment_thread"),
+        _ => None,
+    }
 }
 
 fn notification_mail_footer_link(link: &str, anchor_text: &str) -> String {
@@ -9126,6 +9183,57 @@ async fn direct_read_site_mail_list(
     match rest_read_site_mail_list(headers, body, service).await {
         Ok(Json(payload)) => Json(payload.recipients).into_response(),
         Err(error) => error.into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+struct LegacyResourceQuery {
+    #[serde(rename = "resource.id")]
+    resource_id: Option<String>,
+    #[serde(rename = "resource.type")]
+    resource_type: Option<String>,
+}
+
+async fn direct_legacy_unwatch(
+    headers: HeaderMap,
+    Query(query): Query<LegacyResourceQuery>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let Some(session) = session_manager.read_session_from_headers(&headers) else {
+        return Redirect::to(&base_path_href(
+            &base_path,
+            "/users/loginform?redirectUrl=%2Fnotification",
+        ))
+        .into_response();
+    };
+    let Some(user_id) = session.user_id else {
+        return Redirect::to(&base_path_href(
+            &base_path,
+            "/users/loginform?redirectUrl=%2Fnotification",
+        ))
+        .into_response();
+    };
+    let repository = match backend {
+        PilotBackend::Repository(repository) => repository,
+        PilotBackend::Static => {
+            return RestRouteError::not_implemented("unwatch requires repository backend")
+                .into_response();
+        }
+    };
+    let resource_type = query.resource_type.unwrap_or_default();
+    let resource_id = query.resource_id.unwrap_or_default();
+    if resource_type.trim().is_empty() || resource_id.trim().is_empty() {
+        return RestRouteError::bad_request("resource.type and resource.id are required")
+            .into_response();
+    }
+    match repository
+        .unwatch_notification_resource(user_id, &resource_type, &resource_id)
+        .await
+    {
+        Ok(()) => redirect_to(&base_path, "/notification"),
+        Err(error) => RestRouteError::internal(error.to_string()).into_response(),
     }
 }
 
