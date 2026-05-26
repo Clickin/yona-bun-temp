@@ -533,6 +533,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     assert!(
         text.contains("<D:resourcetype/>")
             && text.contains("<D:displayname/>")
+            && text.contains("<D:supportedlock/>")
             && text.contains("<D:version-name/>")
             && text.contains("<S:repository-uuid/>")
             && text.contains("<D:version-controlled-configuration/>")
@@ -607,6 +608,9 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
         assert!(
             text.contains("<D:resourcetype><D:baseline/></D:resourcetype>")
                 && text.contains(&format!("<D:displayname>{revision}</D:displayname>"))
+                && text.contains("<D:supportedlock>")
+                && text.contains("<D:lockscope><D:exclusive/></D:lockscope>")
+                && text.contains("<D:locktype><D:write/></D:locktype>")
                 && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
                 && text.contains(&format!(
                     "<D:baseline-collection><D:href>/yona/svn/owner/projectYobi/!svn/bc/{revision}</D:href></D:baseline-collection>"
@@ -634,6 +638,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
         assert!(
             text.contains("<D:resourcetype/>")
                 && text.contains("<D:displayname/>")
+                && text.contains("<D:supportedlock/>")
                 && text.contains("<D:version-name/>")
                 && text.contains("<D:baseline-collection/>")
                 && text.contains("<S:repository-uuid/>")
@@ -651,9 +656,10 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             Body::from(
                 r#"<?xml version="1.0" encoding="utf-8"?>
 <D:propfind xmlns:D="DAV:">
-  <D:prop>
+    <D:prop>
     <D:resourcetype/>
     <D:displayname/>
+    <D:supportedlock/>
   </D:prop>
 </D:propfind>"#,
             ),
@@ -665,6 +671,9 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
         assert!(
             text.contains("<D:resourcetype><D:baseline/></D:resourcetype>")
                 && text.contains(&format!("<D:displayname>{revision}</D:displayname>"))
+                && text.contains("<D:supportedlock>")
+                && text.contains("<D:lockscope><D:exclusive/></D:lockscope>")
+                && text.contains("<D:locktype><D:write/></D:locktype>")
                 && !text.contains("<D:version-name>")
                 && !text.contains("<D:baseline-collection>"),
             "SVN baseline resource PROPFIND should only return explicitly requested metadata: {text}"
@@ -691,6 +700,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     assert!(
         text.contains("<D:resourcetype/>")
             && text.contains("<D:displayname/>")
+            && text.contains("<D:supportedlock/>")
             && text.contains("<D:version-name/>")
             && text.contains("<S:repository-uuid/>")
             && text.contains("<D:checked-in/>")
@@ -854,6 +864,9 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert!(
         text.contains("<D:resourcetype/>")
             && text.contains("<D:displayname>README.md</D:displayname>")
+            && text.contains("<D:supportedlock>")
+            && text.contains("<D:lockscope><D:exclusive/></D:lockscope>")
+            && text.contains("<D:locktype><D:write/></D:locktype>")
             && text.contains("<D:getcontentlength>15</D:getcontentlength>")
             && text.contains("<D:getcontenttype>application/octet-stream</D:getcontenttype>")
             && text.contains(&format!(
@@ -922,6 +935,9 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert!(
         text.contains("<D:resourcetype/>")
             && text.contains("<D:displayname>README.md</D:displayname>")
+            && text.contains("<D:supportedlock>")
+            && text.contains("<D:lockscope><D:exclusive/></D:lockscope>")
+            && text.contains("<D:locktype><D:write/></D:locktype>")
             && text.contains("<D:getcontentlength>15</D:getcontentlength>")
             && text.contains("<D:getcontenttype>application/octet-stream</D:getcontenttype>")
             && text.contains(&format!(
@@ -953,6 +969,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         text.contains("/yona/svn/owner/projectYobi/trunk/")
             && text.contains("<D:resourcetype><D:collection/></D:resourcetype>")
             && text.contains("<D:displayname>trunk</D:displayname>")
+            && text.contains("<D:supportedlock>")
             && text.contains("/yona/svn/owner/projectYobi/trunk/README.md")
             && text.contains("<D:resourcetype/>")
             && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
@@ -985,6 +1002,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         text.contains("/yona/svn/owner/projectYobi/trunk/")
             && text.contains("<D:resourcetype/>")
             && text.contains("<D:displayname/>")
+            && text.contains("<D:supportedlock/>")
             && text.contains("<D:version-name/>")
             && text.contains("<D:checked-in/>")
             && text.contains("<D:baseline-collection/>")
@@ -1009,6 +1027,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     <D:creator-displayname/>
     <D:getlastmodified/>
     <D:displayname/>
+    <D:supportedlock/>
     <D:getcontenttype/>
     <D:getetag/>
   </D:prop>
@@ -1029,6 +1048,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && readme_response.contains("<D:getlastmodified>")
             && readme_response.contains("GMT</D:getlastmodified>")
             && readme_response.contains("<D:displayname>README.md</D:displayname>")
+            && readme_response.contains("<D:supportedlock>")
             && readme_response.contains(
                 "<D:getcontenttype>application/octet-stream</D:getcontenttype>"
             )
@@ -1086,6 +1106,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     <D:creator-displayname/>
     <D:getlastmodified/>
     <D:displayname/>
+    <D:supportedlock/>
     <D:getcontenttype/>
     <D:getetag/>
   </D:prop>
@@ -1120,6 +1141,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     <D:creator-displayname/>
     <D:getlastmodified/>
     <D:displayname/>
+    <D:supportedlock/>
     <D:getcontenttype/>
     <D:getetag/>
   </D:prop>
@@ -1136,6 +1158,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && text.contains("<D:creator-displayname>")
             && text.contains("</D:creator-displayname>")
             && text.contains("<D:displayname>README.md</D:displayname>")
+            && text.contains("<D:supportedlock>")
             && text.contains("<D:getcontenttype>application/octet-stream</D:getcontenttype>")
             && text.contains(&format!(
                 "<D:getetag>&quot;{revision}:trunk/README.md&quot;</D:getetag>"
@@ -1235,6 +1258,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     <D:creator-displayname/>
     <D:getlastmodified/>
     <D:displayname/>
+    <D:supportedlock/>
     <D:getcontenttype/>
     <D:getetag/>
   </D:prop>
@@ -1257,6 +1281,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && readme_response.contains("<D:getlastmodified>")
             && readme_response.contains("GMT</D:getlastmodified>")
             && readme_response.contains("<D:displayname>README.md</D:displayname>")
+            && readme_response.contains("<D:supportedlock>")
             && readme_response.contains(
                 "<D:getcontenttype>application/octet-stream</D:getcontenttype>"
             )
@@ -1888,6 +1913,9 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert!(
         text.contains("<D:lockdiscovery>")
             && text.contains("<D:owner>owner</D:owner>")
+            && text.contains("<D:supportedlock>")
+            && text.contains("<D:lockscope><D:exclusive/></D:lockscope>")
+            && text.contains("<D:locktype><D:write/></D:locktype>")
             && text.contains(lock_token.trim_matches(['<', '>']))
             && text.contains(
                 "<D:lockroot><D:href>/yona/svn/owner/projectYobi/trunk/README.md</D:href></D:lockroot>"
@@ -2053,6 +2081,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert!(
         text.contains("<D:resourcetype/>")
             && text.contains("<D:displayname/>")
+            && text.contains("<D:supportedlock/>")
             && text.contains("<D:getcontentlength/>")
             && text.contains("<D:getcontenttype/>")
             && text.contains("<D:getetag/>")
@@ -2078,6 +2107,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
   <D:prop>
     <D:resourcetype/>
     <D:displayname/>
+    <D:supportedlock/>
     <D:getcontenttype/>
     <D:getetag/>
     <S:baseline-relative-path/>
@@ -2093,6 +2123,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert!(
         text.contains("<D:resourcetype/>")
             && text.contains("<D:displayname>README.md</D:displayname>")
+            && text.contains("<D:supportedlock>")
             && text.contains("<D:getcontenttype>application/octet-stream</D:getcontenttype>")
             && text.contains("<D:getetag>&quot;")
             && text.contains(":trunk/README.md&quot;</D:getetag>")
