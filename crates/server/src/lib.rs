@@ -2599,12 +2599,14 @@ fn svn_protocol_root_propfind_response(
     let checked_in_href = youngest_revision
         .map(|revision| format!("{}/!svn/bln/{revision}", svn_protocol_project_href(route)));
     let vcc_href = format!("{}/!svn/vcc/default", svn_protocol_project_href(route));
+    let activity_collection_href = format!("{href}/!svn/act/");
     svn_protocol_propfind_collection_response(
         &href,
         youngest_revision,
         repository_uuid,
         checked_in_href.as_deref(),
         Some(&vcc_href),
+        Some(&activity_collection_href),
         svn_protocol_revision_provenance(repo_path, route, youngest_revision, request).as_ref(),
         request,
     )
@@ -2624,12 +2626,15 @@ fn svn_protocol_collection_propfind_response(
     } else {
         None
     };
+    let activity_collection_href = (route.svn_path == "!svn/vcc/default")
+        .then(|| format!("{}/!svn/act/", svn_protocol_project_href(route)));
     svn_protocol_propfind_collection_response(
         &href,
         youngest_revision,
         repository_uuid,
         checked_in_href.as_deref(),
         None,
+        activity_collection_href.as_deref(),
         svn_protocol_revision_provenance(repo_path, route, youngest_revision, request).as_ref(),
         request,
     )
@@ -2676,6 +2681,7 @@ fn svn_protocol_propfind_collection_response(
     repository_uuid: Option<String>,
     checked_in_href: Option<&str>,
     vcc_href: Option<&str>,
+    activity_collection_href: Option<&str>,
     provenance: Option<&SvnProtocolRevisionProvenance>,
     request: &str,
 ) -> Response {
@@ -2714,6 +2720,10 @@ fn svn_protocol_propfind_collection_response(
             .is_some()
             .then_some("        <S:baseline-relative-path/>\n")
             .unwrap_or_default();
+        let activity_collection_set = activity_collection_href
+            .is_some()
+            .then_some("        <D:activity-collection-set/>\n")
+            .unwrap_or_default();
         let creationdate = provenance
             .is_some()
             .then_some("        <D:creationdate/>\n")
@@ -2735,7 +2745,7 @@ fn svn_protocol_propfind_collection_response(
     <D:propstat>
       <D:prop>
         <D:resourcetype/>
-{displayname}{supportedlock}{version_name}{repository_uuid}{checked_in}{version_controlled_configuration}{baseline_collection}{baseline_relative_path}{creationdate}{creator_displayname}{getlastmodified}{supported_report_set}      </D:prop>
+{displayname}{supportedlock}{version_name}{repository_uuid}{checked_in}{version_controlled_configuration}{baseline_collection}{baseline_relative_path}{activity_collection_set}{creationdate}{creator_displayname}{getlastmodified}{supported_report_set}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
   </D:response>
@@ -2808,6 +2818,8 @@ fn svn_protocol_propfind_collection_response(
         } else {
             ""
         };
+    let activity_collection_set =
+        svn_protocol_activity_collection_set_item(activity_collection_href, request);
     let creationdate = svn_protocol_propfind_wants(request, "creationdate")
         .then_some(
             provenance
@@ -2877,6 +2889,7 @@ fn svn_protocol_propfind_collection_response(
 {version_controlled_configuration}
 {baseline_collection}
 {baseline_relative_path}
+{activity_collection_set}
 {creationdate}
 {creator_displayname}
 {getlastmodified}
@@ -3797,6 +3810,22 @@ fn svn_protocol_supported_report_set_item(request: &str) -> String {
         r#"        <D:supported-report-set>
 {reports}        </D:supported-report-set>
 "#
+    )
+}
+
+fn svn_protocol_activity_collection_set_item(
+    activity_collection_href: Option<&str>,
+    request: &str,
+) -> String {
+    if !svn_protocol_propfind_wants(request, "activity-collection-set") {
+        return String::new();
+    }
+    let Some(href) = activity_collection_href else {
+        return String::new();
+    };
+    format!(
+        "        <D:activity-collection-set><D:href>{}</D:href></D:activity-collection-set>\n",
+        xml_escape(href)
     )
 }
 
