@@ -458,6 +458,33 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     }
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body(
+        app.clone(),
+        propfind,
+        "/svn/owner/projectYobi",
+        None,
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:propname/>
+</D:propfind>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:resourcetype/>")
+            && text.contains("<D:version-name/>")
+            && text.contains("<S:repository-uuid/>")
+            && text.contains("<D:version-controlled-configuration/>")
+            && !text.contains("<D:collection/>")
+            && !text.contains("<D:href>/yona/svn/owner/projectYobi/!svn/vcc/default</D:href>"),
+        "SVN root PROPFIND propname should expose live property names without values: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
     let response = direct_request(
         app.clone(),
         propfind,
@@ -525,6 +552,34 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             "SVN baseline resource PROPFIND should expose baseline collection metadata: {text}"
         );
     }
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body(
+        app.clone(),
+        propfind,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:propname/>
+</D:propfind>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:resourcetype/>")
+            && text.contains("<D:version-name/>")
+            && text.contains("<S:repository-uuid/>")
+            && text.contains("<D:checked-in/>")
+            && text.contains("<D:baseline-collection/>")
+            && !text.contains("<D:collection/>")
+            && !text.contains("<D:href>/yona/svn/owner/projectYobi/!svn/bln/"),
+        "SVN VCC PROPFIND propname should expose live property names without values: {text}"
+    );
 
     let response =
         direct_request(app.clone(), Method::OPTIONS, "/svn/owner/projectYobi", None).await;
@@ -775,6 +830,36 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && text
                 .contains("<S:baseline-relative-path>trunk/README.md</S:baseline-relative-path>"),
         "SVN collection PROPFIND should return directory and child metadata: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body(
+        app.clone(),
+        propfind,
+        "/svn/owner/projectYobi/trunk",
+        None,
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:propname/>
+</D:propfind>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("/yona/svn/owner/projectYobi/trunk/")
+            && text.contains("<D:resourcetype/>")
+            && text.contains("<D:version-name/>")
+            && text.contains("<D:checked-in/>")
+            && text.contains("<D:baseline-collection/>")
+            && text.contains("<S:baseline-relative-path/>")
+            && text.contains("/yona/svn/owner/projectYobi/trunk/README.md")
+            && !text.contains("<D:resourcetype><D:collection/></D:resourcetype>")
+            && !text.contains("<D:href>/yona/svn/owner/projectYobi/!svn/ver/"),
+        "SVN collection PROPFIND propname should expose directory and child property names without values: {text}"
     );
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
@@ -1585,6 +1670,18 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert!(
         text.contains("<C:reviewed/>") && !text.contains("<C:reviewed>true</C:reviewed>"),
         "SVN file PROPFIND propname should expose custom property names without values: {text}"
+    );
+    assert!(
+        text.contains("<D:resourcetype/>")
+            && text.contains("<D:getcontentlength/>")
+            && text.contains("<D:version-name/>")
+            && text.contains("<D:checked-in/>")
+            && text.contains("<D:baseline-collection/>")
+            && text.contains("<S:baseline-relative-path/>")
+            && text.contains("<S:repository-uuid/>")
+            && text.contains("<D:version-controlled-configuration/>")
+            && !text.contains("<D:href>/yona/svn/owner/projectYobi/!svn/ver/"),
+        "SVN file PROPFIND propname should expose live property names without values: {text}"
     );
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
