@@ -3185,6 +3185,63 @@ async fn svn_protocol_external_client_can_delete_file_and_commit() {
 }
 
 #[tokio::test]
+async fn svn_protocol_external_client_can_delete_direct_url() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping external SVN direct URL delete smoke because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello before direct URL svn delete\n").expect("seed svn readme");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let readme_url = format!("{base_url}/yona/svn/owner/projectYobi/trunk/README.md");
+    let delete_output = tokio::task::spawn_blocking(move || {
+        run_svn_capture(
+            &[
+                "delete",
+                "--non-interactive",
+                "--username",
+                "owner",
+                "--password",
+                "doorpass1",
+                "-m",
+                "external svn direct URL delete smoke",
+                readme_url.as_str(),
+            ],
+            None,
+        )
+    })
+    .await
+    .expect("svn direct URL delete task");
+    assert!(
+        delete_output.status.success(),
+        "svn delete URL should commit directly against the mounted DAV boundary\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&delete_output.stdout),
+        String::from_utf8_lossy(&delete_output.stderr)
+    );
+
+    let deleted = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
+    assert!(
+        matches!(deleted, Err(yona_rust_vcs::VcsError::NotFound)),
+        "svn direct URL delete should remove README.md"
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
 async fn svn_protocol_external_client_can_mkdir_and_commit() {
     if !svn_tools_available() || !svn_client_available() {
         eprintln!("skipping external SVN mkdir smoke because svnadmin/svnlook/svn is unavailable");
