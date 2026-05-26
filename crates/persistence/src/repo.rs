@@ -1043,6 +1043,24 @@ impl AppRepository {
         self.app_user_record_from_model(user).await.map(Some)
     }
 
+    pub async fn find_mailbox_sender_by_from_addresses(
+        &self,
+        from_addresses: &[String],
+    ) -> Result<Option<AppUserRecord>, DbErr> {
+        for address in from_addresses {
+            let Some(user) = self.find_mailbox_sender_model_by_email(address).await? else {
+                continue;
+            };
+            let is_anonymous = normalize_optional(user.login_id.as_deref()).as_deref()
+                == Some(LEGACY_ANONYMOUS_LOGIN_ID);
+            if !is_anonymous {
+                return self.app_user_record_from_model(user).await.map(Some);
+            }
+        }
+
+        Ok(None)
+    }
+
     pub async fn user_login_id_exists(&self, login_id: &str) -> Result<bool, DbErr> {
         let normalized = normalize_identity(login_id);
         if normalized.is_empty() {
@@ -10444,6 +10462,34 @@ impl AppRepository {
         Ok(users.into_iter().find(|user| {
             normalize_optional(user.email.as_deref()).as_deref() == Some(normalized.as_str())
         }))
+    }
+
+    async fn find_mailbox_sender_model_by_email(
+        &self,
+        email_address: &str,
+    ) -> Result<Option<n4user::Model>, DbErr> {
+        let normalized = normalize_identity(email_address);
+        if normalized.is_empty() {
+            return Ok(None);
+        }
+
+        if let Some(user) = self.find_user_model_by_email(&normalized).await? {
+            return Ok(Some(user));
+        }
+
+        let Some(workspace_email) = email::Entity::find()
+            .filter(email::Column::Email.eq(Some(normalized)))
+            .filter(email::Column::Valid.eq(Some(1)))
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        let Some(user_id) = workspace_email.user_id else {
+            return Ok(None);
+        };
+
+        n4user::Entity::find_by_id(user_id).one(&self.db).await
     }
 
     async fn site_user_is_only_project_manager(&self, user_id: i64) -> Result<bool, DbErr> {

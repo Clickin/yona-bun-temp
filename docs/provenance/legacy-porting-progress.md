@@ -338,6 +338,7 @@ Interpretation:
 - [x] Board comment `original_email` / `data-via-email` marker parity
 - [x] Code discussion and PR review comment `original_email` / `data-via-email` marker parity
 - [x] Mailbox plus-address detail parser and Message-ID left-part parser parity
+- [x] Mailbox sender lookup parity for legacy From-address order, primary emails, and valid workspace emails
 - [x] Mailbox DB-backed `CreationViaEmailTest` resource creation parity for issue, issue comment, and review comment
 - [ ] Mailbox/reply threading parity
 

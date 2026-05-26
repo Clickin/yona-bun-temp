@@ -3,7 +3,7 @@ use sea_orm::{
     Set,
 };
 use yona_rust_persistence::{
-    comment_thread, original_email, AppRepository, CreateIssueCommentViaEmailInput,
+    comment_thread, email, original_email, AppRepository, CreateIssueCommentViaEmailInput,
     CreateIssueViaEmailInput, CreateProjectInput, CreateReviewCommentViaEmailInput,
     CreateUserInput,
 };
@@ -161,4 +161,81 @@ async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_res
         )
         .await
     );
+}
+
+#[tokio::test]
+async fn mailbox_sender_lookup_matches_legacy_from_address_order() {
+    let (repo, db) = build_repository().await;
+    let member = repo
+        .create_user(CreateUserInput {
+            display_name: "Mailbox Member".to_string(),
+            email_address: "member@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "member".to_string(),
+            password_hash: "pw".to_string(),
+        })
+        .await
+        .unwrap();
+    let secondary_owner = repo
+        .create_user(CreateUserInput {
+            display_name: "Secondary Owner".to_string(),
+            email_address: "owner@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "owner".to_string(),
+            password_hash: "pw".to_string(),
+        })
+        .await
+        .unwrap();
+
+    email::ActiveModel {
+        id: NotSet,
+        user_id: Set(Some(secondary_owner.id)),
+        email: Set(Some("alias@example.com".to_string())),
+        valid: Set(Some(1)),
+        token: Set(None),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+    email::ActiveModel {
+        id: NotSet,
+        user_id: Set(Some(member.id)),
+        email: Set(Some("unconfirmed@example.com".to_string())),
+        valid: Set(Some(0)),
+        token: Set(Some("token".to_string())),
+    }
+    .insert(&db)
+    .await
+    .unwrap();
+
+    let first_matching_sender = repo
+        .find_mailbox_sender_by_from_addresses(&[
+            "missing@example.com".to_string(),
+            "MEMBER@example.com".to_string(),
+            "alias@example.com".to_string(),
+        ])
+        .await
+        .unwrap()
+        .expect("first matching sender");
+    assert_eq!(first_matching_sender.id, member.id);
+
+    let secondary_sender = repo
+        .find_mailbox_sender_by_from_addresses(&["alias@example.com".to_string()])
+        .await
+        .unwrap()
+        .expect("valid secondary sender");
+    assert_eq!(secondary_sender.id, secondary_owner.id);
+
+    assert!(repo
+        .find_mailbox_sender_by_from_addresses(&["unconfirmed@example.com".to_string()])
+        .await
+        .unwrap()
+        .is_none());
+    assert!(repo
+        .find_mailbox_sender_by_from_addresses(&["missing@example.com".to_string()])
+        .await
+        .unwrap()
+        .is_none());
 }
