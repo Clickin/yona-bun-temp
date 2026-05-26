@@ -882,6 +882,17 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="bar green" style="width:100%" title="Tasklist"');
   });
 
+  it("counts ordered task-list items in the legacy tasklist progress bar", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"1. [ ] open\n2. [x] done"} showTasklistBar />,
+    );
+
+    expect(html).toContain('Tasks<span class="done-counter">(1/2)</span>');
+    expect(html).toContain('class="bar red" style="width:50%" title="Tasklist"');
+    expect(html).toContain("<ol>");
+    expect(html).toContain('class="task-list-item"');
+  });
+
   it("renders basic blockquotes like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"> **quoted**\n> with ~~style~~"} />,

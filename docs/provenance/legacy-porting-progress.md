@@ -438,7 +438,7 @@ Interpretation:
 - [ ] Full legacy/GFM extension parity
 - [~] Remaining legacy autolink edge-case parity if evidence requires it; `MarkdownAppTest` issue reference existence, wrapped owner-scoped issue refs, owner-scoped issue refs, and issue body/comment/history, board/project-home README/milestone/PR/commit discussion mention existence checks are covered
 - [~] Full Highlight.js-equivalent language coverage for Markdown code blocks
-- [x] Task checklist progress-bar integration for issue/board Markdown surfaces
+- [x] Task checklist progress-bar integration for issue/board Markdown surfaces, including ordered task-list item counts
 
 ## REST API Compatibility
 

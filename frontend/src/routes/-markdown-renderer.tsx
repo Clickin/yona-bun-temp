@@ -850,7 +850,7 @@ function parseMarkdownListItem(key: string, rawText: string): MarkdownListItem {
 function markdownTaskStats(markdown: string): MarkdownTaskStats | null {
   let checked = 0;
   let total = 0;
-  for (const match of markdown.matchAll(/^[ ]*[-+*]\s+\[([ xX]?)\][ ]?.+$/gm)) {
+  for (const match of markdown.matchAll(/^[ ]*(?:[-+*]|\d+[.)])\s+\[([ xX]?)\][ ]?.+$/gm)) {
     total += 1;
     if ((match[1] ?? "").toLowerCase() === "x") {
       checked += 1;
