@@ -411,6 +411,7 @@ GET   /organizations/:name/search                 → 조직 내 검색
 
 - [x] 조직 이름 유효성: 영숫자, 대시, 밑줄, 마침표만 허용. 공백 불가. 길이 제한.
 - [x] 조직 생성/설정 폼은 legacy wrapper와 주요 form anchor를 보존한다 (`name="new-org"`, `#name`, `#descr`, `#saveSetting`, `name="update-org"`, `#logoPath`, `#project-name`, `#project-desc`, `#save`)
+- [x] 조직 설정 logo upload는 legacy `ORGANIZATION` attachment container로 승격되고 organization detail/container `logoUrl`과 public file URL로 렌더링된다.
 - [~] 조직 홈에서 소속 프로젝트가 legacy page/project wrapper, project-list, right-pane roster bubble anchor로 표시된다. 남은 세부 카드 시각 polish는 추적한다
 - [x] 멤버 정렬: org admin → org member → login_id ASC → 대기 요청 순 (legacy 동작)
 - [x] 삭제 시 프로젝트가 존재하면 삭제 불가 (legacy guard 동작)
@@ -1019,7 +1020,7 @@ POST  /files/:id/?            → legacy `_method=delete` 파일 삭제 (trailin
 - [x] Board post/comment attachment binding keeps legacy `BOARD_POST` / `NONISSUE_COMMENT` container names, only moves the current actor's temporary uploads, and edit sync removes omitted attachments.
 - [x] Milestone attachment binding keeps legacy `MILESTONE` container names and only moves the current actor's temporary uploads, matching `Attachment.moveOnlySelected(user.asResource(), milestone.asResource(), ...)`.
 - [x] PR create/edit attachment binding keeps legacy `PULL_REQUEST` container names, only moves the current actor's temporary uploads, and edit sync removes omitted PR attachments.
-- [x] Project settings logo attachment binding keeps the legacy `PROJECT` container name, accepts actor-owned image uploads up to the legacy 5MB project-logo limit, and returns `logoUrl` through project detail/container responses.
+- [x] Project/organization settings logo attachment binding keeps the legacy `PROJECT` / `ORGANIZATION` container names, accepts actor-owned image uploads up to the legacy 5MB logo limit, and returns `logoUrl` through detail/container responses.
 - [x] `YONA_MAX_FILE_SIZE` 설정값 초과 시 업로드 거부
 - [x] MIME type은 legacy `Attachment.save` / `FileUtil.detectMediaType`처럼 multipart header만 신뢰하지 않고 업로드 바이트와 파일명으로 판별한다
 - [x] 다운로드 응답은 legacy `AttachmentApp.getFile`처럼 기본 `inline`, `?action=download` 요청은 `attachment` Content-Disposition과 RFC 2231 파일명을 반환한다

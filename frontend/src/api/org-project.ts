@@ -23,6 +23,7 @@ type OrganizationNameInput = {
 
 type OrganizationUpdateInput = OrganizationNameInput & {
   description: string;
+  logoAttachmentId?: number;
 };
 
 type OrganizationMembershipInput = OrganizationNameInput & {
@@ -286,6 +287,7 @@ export function createOrganizationRest(
   return restFetch<OrganizationDetail>(runtimeConfig, "/organizations", {
     body: {
       description: input.description,
+      logoAttachmentId: input.logoAttachmentId,
       organizationName: input.organizationName,
     },
     csrfToken,

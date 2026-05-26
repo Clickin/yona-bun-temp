@@ -1589,6 +1589,11 @@ export type UpdateOrganizationRequest = Message<"yona.pilot.v1.UpdateOrganizatio
    * @generated from field: string description = 3;
    */
   description: string;
+
+  /**
+   * @generated from field: int64 logo_attachment_id = 4;
+   */
+  logoAttachmentId: bigint;
 };
 
 /**
@@ -1781,6 +1786,11 @@ export type OrganizationDetail = Message<"yona.pilot.v1.OrganizationDetail"> & {
    * @generated from field: bool viewer_can_update = 3;
    */
   viewerCanUpdate: boolean;
+
+  /**
+   * @generated from field: string logo_url = 4;
+   */
+  logoUrl: string;
 };
 
 /**
@@ -2158,6 +2168,11 @@ export type OrganizationContainer = Message<"yona.pilot.v1.OrganizationContainer
    * @generated from field: bool viewer_can_leave = 10;
    */
   viewerCanLeave: boolean;
+
+  /**
+   * @generated from field: string logo_url = 11;
+   */
+  logoUrl: string;
 };
 
 /**

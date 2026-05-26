@@ -11557,6 +11557,7 @@ struct RestIssueSharerDeleteQuery {
 #[serde(rename_all = "camelCase")]
 struct RestOrganizationBody {
     description: String,
+    logo_attachment_id: Option<i64>,
     organization_name: String,
 }
 
@@ -17448,6 +17449,7 @@ async fn rest_update_organization(
     body: RestOrganizationBody,
     service: PilotServiceImpl,
 ) -> Result<Response, RestRouteError> {
+    let logo_attachment_id = body.logo_attachment_id;
     let request = UpdateOrganizationRequest {
         current_organization_name,
         description: body.description,
@@ -17455,11 +17457,82 @@ async fn rest_update_organization(
         ..Default::default()
     };
     let request = rest_owned_view::<UpdateOrganizationRequestView<'static>>(&request)?;
-    let (payload, ctx) = service
+    let (mut payload, ctx) = service
         .update_organization(Context::new(headers), request)
         .await
         .map_err(RestRouteError::from_connect_error)?;
+    if let Some(logo_attachment_id) = logo_attachment_id.filter(|attachment_id| *attachment_id > 0)
+    {
+        payload.logo_url = rest_update_organization_logo_attachment(
+            &service,
+            &ctx.headers,
+            &payload.organization_name,
+            logo_attachment_id,
+        )
+        .await?;
+    }
     Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_update_organization_logo_attachment(
+    service: &PilotServiceImpl,
+    headers: &HeaderMap,
+    organization_name: &str,
+    attachment_id: i64,
+) -> Result<String, RestRouteError> {
+    let session = require_session(&service.session_manager, headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    require_valid_csrf(&service.session_manager, headers, &session)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::unimplemented("organization logo requires repository backend"),
+        ));
+    };
+    let authorization = repository
+        .read_organization_authorization(organization_name, Some(actor_id))
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("organization not found"))?;
+    if !can_update_organization(
+        authorization.viewer.is_organization_admin,
+        authorization.viewer.is_site_admin,
+    ) {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::permission_denied("organization update is not allowed"),
+        ));
+    }
+    let attachment = repository
+        .read_attachment_by_id(attachment_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| RestRouteError::not_found("attachment not found"))?;
+    if !attachment.mime_type.starts_with("image/") || attachment.size > 5 * 1024 * 1024 {
+        return Err(RestRouteError::from_connect_error(
+            ConnectError::invalid_argument("organization logo must be an image no larger than 5MB"),
+        ));
+    }
+    repository
+        .set_organization_logo_attachment(authorization.organization.id, attachment_id, actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::permission_denied(
+                "organization logo attachment is not owned by the actor",
+            ))
+        })?;
+    Ok(base_path_href(
+        &service.base_path,
+        &format!("/files/{attachment_id}"),
+    ))
 }
 
 async fn rest_add_organization_member(
@@ -27383,7 +27456,9 @@ async fn get_uploaded_file(
     };
     let is_avatar = attachment.container_type == "USER_AVATAR";
     if !is_avatar {
-        if attachment.container_type == "PROJECT" {
+        if attachment.container_type == "ORGANIZATION" {
+            // Legacy organization logos are public wherever the organization header/list renders.
+        } else if attachment.container_type == "PROJECT" {
             let actor_id = session_manager
                 .read_session_from_headers(&headers)
                 .and_then(|session| session.user_id);
@@ -27873,6 +27948,30 @@ fn organization_detail_from_record(
         viewer_can_update,
         ..Default::default()
     }
+}
+
+async fn organization_logo_url(
+    repository: &PilotRepository,
+    base_path: &str,
+    organization_id: i64,
+) -> Result<String, ConnectError> {
+    Ok(repository
+        .read_organization_logo_attachment(organization_id)
+        .await
+        .map_err(internal_error)?
+        .map(|attachment| base_path_href(base_path, &format!("/files/{}", attachment.id)))
+        .unwrap_or_default())
+}
+
+async fn organization_detail_with_logo_from_record(
+    repository: &PilotRepository,
+    base_path: &str,
+    record: &persistence::OrganizationRecord,
+    viewer_can_update: bool,
+) -> Result<OrganizationDetail, ConnectError> {
+    let mut detail = organization_detail_from_record(record, viewer_can_update);
+    detail.logo_url = organization_logo_url(repository, base_path, record.id).await?;
+    Ok(detail)
 }
 
 fn project_detail_from_record(
@@ -30041,6 +30140,7 @@ fn project_code_menu_visible(
 
 async fn build_organization_container_response(
     repository: &PilotRepository,
+    base_path: &str,
     authorization: &persistence::OrganizationAuthorizationRecord,
     actor_id: Option<i64>,
 ) -> Result<OrganizationContainer, ConnectError> {
@@ -30116,7 +30216,8 @@ async fn build_organization_container_response(
             last_pushed_label: format_project_date_label(
                 project_authorization.project.last_pushed_date,
             ),
-            logo_url: String::new(),
+            logo_url: project_logo_url(repository, base_path, project_authorization.project.id)
+                .await?,
             member_count: repository
                 .count_project_members(project_authorization.project.id)
                 .await
@@ -30170,6 +30271,8 @@ async fn build_organization_container_response(
             .clone()
             .unwrap_or_default(),
         enrollment_requested: authorization.enrollment_requested,
+        logo_url: organization_logo_url(repository, base_path, authorization.organization.id)
+            .await?,
         member_members,
         organization_name: authorization.organization.organization_name.clone(),
         viewer_can_create_project,
@@ -31151,14 +31254,17 @@ impl PilotServiceImpl {
         attach_session_headers(&mut ctx, &self.session_manager, &session);
 
         Ok((
-            organization_detail_from_record(
+            organization_detail_with_logo_from_record(
+                repository,
+                &self.base_path,
                 &persistence::OrganizationRecord {
                     id: organization.id,
                     organization_name: organization.organization_name,
                     description: organization.description,
                 },
                 true,
-            ),
+            )
+            .await?,
             ctx,
         ))
     }
@@ -31183,13 +31289,16 @@ impl PilotServiceImpl {
             .map_err(internal_error)?;
         if let Some(authorization) = authorization {
             return Ok((
-                organization_detail_from_record(
+                organization_detail_with_logo_from_record(
+                    repository,
+                    &self.base_path,
                     &authorization.organization,
                     can_update_organization(
                         authorization.viewer.is_organization_admin,
                         authorization.viewer.is_site_admin,
                     ),
-                ),
+                )
+                .await?,
                 ctx,
             ));
         }
@@ -31200,14 +31309,17 @@ impl PilotServiceImpl {
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("organization not found"))?;
         Ok((
-            organization_detail_from_record(
+            organization_detail_with_logo_from_record(
+                repository,
+                &self.base_path,
                 &persistence::OrganizationRecord {
                     id: organization.id,
                     organization_name: organization.organization_name,
                     description: organization.description,
                 },
                 false,
-            ),
+            )
+            .await?,
             ctx,
         ))
     }
@@ -31243,7 +31355,13 @@ impl PilotServiceImpl {
         }
 
         Ok((
-            organization_detail_from_record(&authorization.organization, true),
+            organization_detail_with_logo_from_record(
+                repository,
+                &self.base_path,
+                &authorization.organization,
+                true,
+            )
+            .await?,
             ctx,
         ))
     }
@@ -31366,7 +31484,13 @@ impl PilotServiceImpl {
             .ok_or_else(|| ConnectError::not_found("organization not found"))?;
 
         Ok((
-            build_organization_container_response(repository, &authorization, actor_id).await?,
+            build_organization_container_response(
+                repository,
+                &self.base_path,
+                &authorization,
+                actor_id,
+            )
+            .await?,
             ctx,
         ))
     }
@@ -31435,14 +31559,17 @@ impl PilotServiceImpl {
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("organization not found"))?;
         Ok((
-            organization_detail_from_record(
+            organization_detail_with_logo_from_record(
+                repository,
+                &self.base_path,
                 &persistence::OrganizationRecord {
                     id: updated.id,
                     organization_name: updated.organization_name,
                     description: updated.description,
                 },
                 true,
-            ),
+            )
+            .await?,
             ctx,
         ))
     }
@@ -31751,7 +31878,13 @@ impl PilotServiceImpl {
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("organization not found"))?;
         Ok((
-            build_organization_container_response(repository, &refreshed, Some(user_id)).await?,
+            build_organization_container_response(
+                repository,
+                &self.base_path,
+                &refreshed,
+                Some(user_id),
+            )
+            .await?,
             ctx,
         ))
     }
@@ -31797,7 +31930,13 @@ impl PilotServiceImpl {
             .map_err(internal_error)?
             .ok_or_else(|| ConnectError::not_found("organization not found"))?;
         Ok((
-            build_organization_container_response(repository, &refreshed, Some(user_id)).await?,
+            build_organization_container_response(
+                repository,
+                &self.base_path,
+                &refreshed,
+                Some(user_id),
+            )
+            .await?,
             ctx,
         ))
     }

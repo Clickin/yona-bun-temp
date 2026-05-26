@@ -437,6 +437,7 @@ const NOTIFICATION_DRAFT_TIME_IN_MILLIS: i64 = 30_000;
 const USER_ATTACHMENT_CONTAINER: &str = "USER";
 const USER_AVATAR_ATTACHMENT_CONTAINER: &str = "USER_AVATAR";
 const PROJECT_ATTACHMENT_CONTAINER: &str = "PROJECT";
+const ORGANIZATION_ATTACHMENT_CONTAINER: &str = "ORGANIZATION";
 const ISSUE_ATTACHMENT_CONTAINER: &str = "ISSUE_POST";
 const RUST_ISSUE_ATTACHMENT_CONTAINER: &str = "ISSUE";
 const ISSUE_COMMENT_ATTACHMENT_CONTAINER: &str = "ISSUE_COMMENT";
@@ -10220,6 +10221,70 @@ impl AppRepository {
         };
         if updated.container_type != PROJECT_ATTACHMENT_CONTAINER
             || updated.container_id != project_id
+        {
+            return Ok(None);
+        }
+        Ok(Some(updated))
+    }
+
+    pub async fn read_organization_logo_attachment(
+        &self,
+        organization_id: i64,
+    ) -> Result<Option<AttachmentRecord>, DbErr> {
+        let Some(model) = attachment::Entity::find()
+            .filter(
+                attachment::Column::ContainerType
+                    .eq(Some(ORGANIZATION_ATTACHMENT_CONTAINER.to_string())),
+            )
+            .filter(attachment::Column::ContainerId.eq(organization_id))
+            .order_by_desc(attachment::Column::Id)
+            .one(&self.db)
+            .await?
+        else {
+            return Ok(None);
+        };
+        Ok(Some(AttachmentRecord {
+            container_id: model.container_id,
+            container_type: model.container_type.unwrap_or_default(),
+            hash: model.hash.unwrap_or_default(),
+            id: model.id,
+            mime_type: model.mime_type.unwrap_or_default(),
+            name: model.name.unwrap_or_default(),
+            owner_login_id: model.owner_login_id.unwrap_or_default(),
+            size: model.size.unwrap_or_default(),
+        }))
+    }
+
+    pub async fn set_organization_logo_attachment(
+        &self,
+        organization_id: i64,
+        attachment_id: i64,
+        actor_id: i64,
+    ) -> Result<Option<AttachmentRecord>, DbErr> {
+        let Some(current) = self.read_attachment_by_id(attachment_id).await? else {
+            return Ok(None);
+        };
+        if !can_bind_attachment(
+            &current.container_type,
+            current.container_id,
+            ORGANIZATION_ATTACHMENT_CONTAINER,
+            organization_id,
+            Some(actor_id),
+        ) {
+            return Ok(None);
+        }
+        self.sync_attachments(
+            ORGANIZATION_ATTACHMENT_CONTAINER,
+            organization_id,
+            &[attachment_id],
+            Some(actor_id),
+        )
+        .await?;
+        let Some(updated) = self.read_attachment_by_id(attachment_id).await? else {
+            return Ok(None);
+        };
+        if updated.container_type != ORGANIZATION_ATTACHMENT_CONTAINER
+            || updated.container_id != organization_id
         {
             return Ok(None);
         }

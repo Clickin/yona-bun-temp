@@ -317,6 +317,9 @@ async fn organization_and_project_settings_contracts_require_expected_authority(
         .await
         .unwrap();
     assert_eq!(authorized_settings.status(), StatusCode::OK);
+    let authorized_settings_json: serde_json::Value =
+        serde_json::from_str(&response_json(authorized_settings).await).expect("settings json");
+    assert!(authorized_settings_json.get("logoUrl").is_none());
 
     let create_project = app
         .clone()
@@ -514,6 +517,7 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
     assert_eq!(payload["showReview"], false);
     assert_eq!(payload["showMilestone"], false);
     assert_eq!(payload["showBoard"], true);
+    assert!(payload.get("logoUrl").is_none());
     assert_eq!(payload["defaultReviewerCount"], 1);
     assert_eq!(payload["isUsingReviewerCount"], false);
     assert_eq!(payload["maxReviewerCount"], 2);

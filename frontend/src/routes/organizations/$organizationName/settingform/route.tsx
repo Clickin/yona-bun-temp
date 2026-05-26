@@ -44,11 +44,15 @@ function OrganizationSettingsRouteComponent() {
 
   return (
     <OrganizationSettingsPage
+      csrfToken={csrfToken}
       detail={detail}
       runtimeConfig={runtimeConfig}
       onUpdateOrganization={async (input) => {
         try {
-          const nextDetail = await updateOrganization(runtimeConfig, csrfToken, input);
+          const nextDetail = await updateOrganization(runtimeConfig, csrfToken, {
+            ...input,
+            logoAttachmentId: input.logoAttachmentId ? BigInt(input.logoAttachmentId) : undefined,
+          });
           navigateToAppHref(
             runtimeConfig.basePath,
             `/organizations/${nextDetail.organizationName}/settingform`,

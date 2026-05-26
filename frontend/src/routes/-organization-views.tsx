@@ -1,4 +1,5 @@
 import * as React from "react";
+import { uploadTemporaryAttachment } from "../api/attachments";
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
 import type {
   OrganizationAdminViewModel,
@@ -558,12 +559,14 @@ export function OrganizationIssueListPage(props: {
 }
 
 export function OrganizationSettingsPage(props: {
+  csrfToken?: string;
   detail: OrganizationDetailViewModel | null | undefined;
   pending?: boolean;
   runtimeConfig: RuntimeConfig;
   onUpdateOrganization?: (input: {
     currentOrganizationName: string;
     description: string;
+    logoAttachmentId?: number;
     organizationName: string;
   }) => void;
 }) {
@@ -575,16 +578,20 @@ export function OrganizationSettingsPage(props: {
   const [formState, setFormState] = React.useState({
     currentOrganizationName: detail.organizationName,
     description: detail.description,
+    logoAttachmentId: undefined as number | undefined,
     organizationName: detail.organizationName,
   });
+  const [logoPreviewUrl, setLogoPreviewUrl] = React.useState(detail.logoUrl ?? "");
 
   React.useEffect(() => {
     setFormState({
       currentOrganizationName: detail.organizationName,
       description: detail.description,
+      logoAttachmentId: undefined,
       organizationName: detail.organizationName,
     });
-  }, [detail.description, detail.organizationName]);
+    setLogoPreviewUrl(detail.logoUrl ?? "");
+  }, [detail.description, detail.logoUrl, detail.organizationName]);
 
   return (
     <main className="app-shell organization-settings-shell">
@@ -611,7 +618,12 @@ export function OrganizationSettingsPage(props: {
             <div className="bubble-wrap gray">
               <div className="box-wrap top clearfix frm-wrap" style={{ paddingTop: 20 }}>
                 <div className="setting-box left">
-                  <div className="logo-wrap" />
+                  <div
+                    className="logo-wrap"
+                    style={
+                      logoPreviewUrl ? { backgroundImage: `url('${logoPreviewUrl}')` } : undefined
+                    }
+                  />
                   <div className="logo-desc">
                     <strong>organization.logo</strong>
                     <ul className="unstyled descs">
@@ -627,6 +639,23 @@ export function OrganizationSettingsPage(props: {
                         id="logoPath"
                         name="logoPath"
                         type="file"
+                        onChange={(event) => {
+                          const file = event.currentTarget.files?.[0];
+                          if (!file || !props.csrfToken) {
+                            return;
+                          }
+                          void uploadTemporaryAttachment(
+                            props.runtimeConfig,
+                            props.csrfToken,
+                            file,
+                          ).then((attachment) => {
+                            setFormState((current) => ({
+                              ...current,
+                              logoAttachmentId: attachment.id,
+                            }));
+                            setLogoPreviewUrl(attachment.url);
+                          });
+                        }}
                       />
                     </div>
                   </div>

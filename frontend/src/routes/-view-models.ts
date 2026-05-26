@@ -71,6 +71,7 @@ export interface OrganizationDetailViewModel {
   adminMembers?: Array<{ avatarUrl: string; loginId: string; role: string; userLabel: string }>;
   description: string;
   enrollmentRequested?: boolean;
+  logoUrl?: string;
   memberMembers?: Array<{ avatarUrl: string; loginId: string; role: string; userLabel: string }>;
   organizationName: string;
   viewerCanCreateProject?: boolean;

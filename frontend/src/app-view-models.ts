@@ -148,6 +148,7 @@ export function toOrganizationDetailView(
 ): OrganizationDetailViewModel {
   return {
     description: detail.description,
+    logoUrl: detail.logoUrl,
     organizationName: detail.organizationName,
     viewerCanUpdate: detail.viewerCanUpdate,
   };
@@ -165,6 +166,7 @@ export function toOrganizationContainerView(
     })),
     description: detail.description,
     enrollmentRequested: detail.enrollmentRequested,
+    logoUrl: detail.logoUrl,
     memberMembers: detail.memberMembers.map((member) => ({
       avatarUrl: member.avatarUrl,
       loginId: member.loginId,
