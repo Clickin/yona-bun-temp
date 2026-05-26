@@ -424,6 +424,7 @@ export interface AuthUiCapabilitiesViewModel {
 
 export interface ProjectDirectoryViewModel {
   items: Array<{
+    logoUrl: string;
     ownerName: string;
     overview: string;
     projectName: string;
@@ -434,6 +435,7 @@ export interface ProjectDirectoryViewModel {
 export interface OrganizationDirectoryViewModel {
   items: Array<{
     description: string;
+    logoUrl: string;
     organizationName: string;
   }>;
 }

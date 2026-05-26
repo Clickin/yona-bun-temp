@@ -941,6 +941,7 @@ describe("file-route parity harness", () => {
 
   it("keeps the legacy project directory pageNum pagination at ten projects", () => {
     const items = Array.from({ length: 11 }, (_, index) => ({
+      logoUrl: "",
       ownerName: "owner",
       overview: `Project ${index + 1} overview`,
       projectName: `project-${index + 1}`,

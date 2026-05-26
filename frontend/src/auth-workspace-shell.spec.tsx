@@ -309,6 +309,7 @@ describe("auth and workspace views", () => {
       {
         items: [
           {
+            logoUrl: "/yona/files/1",
             overview: "Yona project",
             ownerName: "yobi",
             projectName: "projectYobi",
@@ -321,6 +322,7 @@ describe("auth and workspace views", () => {
 
     expect(projectsHtml).toContain("Project List");
     expect(projectsHtml).toContain('action="/yona/projects"');
+    expect(projectsHtml).toContain('src="/yona/files/1"');
     expect(projectsHtml).toContain("projectYobi");
     expect(projectsHtml).toContain("yobi");
 
@@ -329,6 +331,7 @@ describe("auth and workspace views", () => {
         items: [
           {
             description: "web labs",
+            logoUrl: "/yona/files/2",
             organizationName: "weblabs",
           },
         ],
@@ -338,6 +341,7 @@ describe("auth and workspace views", () => {
 
     expect(organizationsHtml).toContain("Organization List");
     expect(organizationsHtml).toContain('action="/yona/orgs"');
+    expect(organizationsHtml).toContain('src="/yona/files/2"');
     expect(organizationsHtml).toContain("weblabs");
     expect(organizationsHtml).toContain("web labs");
   });

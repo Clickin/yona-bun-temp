@@ -1,8 +1,5 @@
 import { prefixBasePath, type RuntimeConfig } from "../runtime-config";
-import type {
-  OrganizationDirectoryViewModel,
-  ProjectDirectoryViewModel,
-} from "./-view-models";
+import type { OrganizationDirectoryViewModel, ProjectDirectoryViewModel } from "./-view-models";
 
 function appHref(runtimeConfig: RuntimeConfig, href: string): string {
   return prefixBasePath(runtimeConfig.basePath, href);
@@ -76,8 +73,7 @@ export function ProjectDirectoryPage({
     return haystack.includes(filter);
   });
   const pageSize = 10;
-  const totalPageCount =
-    filtered.length === 0 ? 0 : Math.ceil(filtered.length / pageSize);
+  const totalPageCount = filtered.length === 0 ? 0 : Math.ceil(filtered.length / pageSize);
   const currentPageNum = totalPageCount === 0 ? 1 : Math.min(pageNum, totalPageCount);
   const visibleProjects = filtered.slice(
     (currentPageNum - 1) * pageSize,
@@ -128,11 +124,13 @@ export function ProjectDirectoryPage({
             <>
               <ul className="all-projects">
                 {visibleProjects.map((project) => (
-                  <li
-                    className="project"
-                    key={`${project.ownerName}/${project.projectName}`}
-                  >
+                  <li className="project" key={`${project.ownerName}/${project.projectName}`}>
                     <div className="info-wrap">
+                      {project.logoUrl ? (
+                        <div className="project-avatar">
+                          <img alt="" src={project.logoUrl} />
+                        </div>
+                      ) : null}
                       <div className="project-main-copy">
                         <div className="header">
                           <a
@@ -145,9 +143,7 @@ export function ProjectDirectoryPage({
                             {project.projectName}
                           </a>
                         </div>
-                        <div className="desc">
-                          {project.overview || "No overview yet."}
-                        </div>
+                        <div className="desc">{project.overview || "No overview yet."}</div>
                         <p className="name-tag">by {project.ownerName}</p>
                       </div>
                     </div>
@@ -224,8 +220,7 @@ export function OrganizationDirectoryPage({
     return haystack.includes(filter);
   });
   const pageSize = 30;
-  const totalPageCount =
-    filtered.length === 0 ? 0 : Math.ceil(filtered.length / pageSize);
+  const totalPageCount = filtered.length === 0 ? 0 : Math.ceil(filtered.length / pageSize);
   const currentPageNum = totalPageCount === 0 ? 1 : Math.min(pageNum, totalPageCount);
   const visibleOrganizations = filtered.slice(
     (currentPageNum - 1) * pageSize,
@@ -278,6 +273,11 @@ export function OrganizationDirectoryPage({
                 {visibleOrganizations.map((organization) => (
                   <li className="project" key={organization.organizationName}>
                     <div className="info-wrap">
+                      {organization.logoUrl ? (
+                        <div className="project-avatar">
+                          <img alt="" src={organization.logoUrl} />
+                        </div>
+                      ) : null}
                       <div className="project-main-copy">
                         <div className="header">
                           <a
@@ -303,10 +303,7 @@ export function OrganizationDirectoryPage({
                   {currentPageNum > 1 ? (
                     <a
                       className="nav-pill"
-                      href={buildOrganizationsHref(
-                        params.get("filter") ?? "",
-                        currentPageNum - 1,
-                      )}
+                      href={buildOrganizationsHref(params.get("filter") ?? "", currentPageNum - 1)}
                     >
                       Prev
                     </a>
@@ -321,10 +318,7 @@ export function OrganizationDirectoryPage({
                     ) : (
                       <a
                         className="nav-pill"
-                        href={buildOrganizationsHref(
-                          params.get("filter") ?? "",
-                          nextPageNum,
-                        )}
+                        href={buildOrganizationsHref(params.get("filter") ?? "", nextPageNum)}
                         key={nextPageNum}
                       >
                         {nextPageNum}
@@ -334,10 +328,7 @@ export function OrganizationDirectoryPage({
                   {currentPageNum < totalPageCount ? (
                     <a
                       className="nav-pill"
-                      href={buildOrganizationsHref(
-                        params.get("filter") ?? "",
-                        currentPageNum + 1,
-                      )}
+                      href={buildOrganizationsHref(params.get("filter") ?? "", currentPageNum + 1)}
                     >
                       Next
                     </a>

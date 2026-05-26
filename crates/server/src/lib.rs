@@ -32891,19 +32891,21 @@ impl PilotServiceImpl {
         _request: OwnedView<ListProjectsRequestView<'static>>,
     ) -> Result<(ListProjectsResponse, Context), ConnectError> {
         if let PilotBackend::Repository(repository) = &self.backend {
-            let items = repository
+            let records = repository
                 .list_projects()
                 .await
-                .map_err(|error| ConnectError::new(ErrorCode::Internal, error.to_string()))?
-                .into_iter()
-                .map(|item| ProjectListItem {
+                .map_err(|error| ConnectError::new(ErrorCode::Internal, error.to_string()))?;
+            let mut items = Vec::with_capacity(records.len());
+            for item in records {
+                items.push(ProjectListItem {
+                    logo_url: project_logo_url(repository, &self.base_path, item.id).await?,
                     owner_name: item.owner_name,
                     project_name: item.project_name,
                     overview: item.overview.unwrap_or_default(),
                     project_scope: item.project_scope,
                     ..Default::default()
-                })
-                .collect();
+                });
+            }
 
             return Ok((
                 ListProjectsResponse {
@@ -32936,17 +32938,19 @@ impl PilotServiceImpl {
         _request: OwnedView<ListOrganizationsRequestView<'static>>,
     ) -> Result<(ListOrganizationsResponse, Context), ConnectError> {
         if let PilotBackend::Repository(repository) = &self.backend {
-            let items = repository
+            let records = repository
                 .list_organizations()
                 .await
-                .map_err(|error| ConnectError::new(ErrorCode::Internal, error.to_string()))?
-                .into_iter()
-                .map(|item| OrganizationListItem {
+                .map_err(|error| ConnectError::new(ErrorCode::Internal, error.to_string()))?;
+            let mut items = Vec::with_capacity(records.len());
+            for item in records {
+                items.push(OrganizationListItem {
                     organization_name: item.organization_name,
                     description: item.description.unwrap_or_default(),
+                    logo_url: organization_logo_url(repository, &self.base_path, item.id).await?,
                     ..Default::default()
-                })
-                .collect();
+                });
+            }
 
             return Ok((
                 ListOrganizationsResponse {

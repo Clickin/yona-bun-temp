@@ -319,6 +319,7 @@ const DOMAIN_BUCKETS = [
     label: "Organization core CRU",
     status: "partial",
     implementationPatterns: [
+      /^frontend\/src\/routes\/-directory-views\.tsx$/i,
       /^frontend\/.*organization/i,
       /^crates\/(?:domain|persistence|server)\/.*organization/i,
     ],
@@ -333,6 +334,7 @@ const DOMAIN_BUCKETS = [
     label: "Project core CRU and enrollment",
     status: "partial",
     implementationPatterns: [
+      /^frontend\/src\/routes\/-directory-views\.tsx$/i,
       /^frontend\/.*project/i,
       /^crates\/(?:domain|persistence|server)\/.*(project|enrollment)/i,
     ],

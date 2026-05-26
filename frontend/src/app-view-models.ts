@@ -256,6 +256,7 @@ export function toOrganizationDirectoryView(
   return {
     items: response.items.map((item) => ({
       description: item.description,
+      logoUrl: item.logoUrl,
       organizationName: item.organizationName,
     })),
   };
@@ -751,6 +752,7 @@ export function toProjectDirectoryView(
 ): ProjectDirectoryViewModel {
   return {
     items: response.items.map((item) => ({
+      logoUrl: item.logoUrl,
       overview: item.overview,
       ownerName: item.ownerName,
       projectName: item.projectName,

@@ -377,8 +377,8 @@ Interpretation:
 - [x] Board post/comment attachment binding and edit sync
 - [x] Milestone attachment binding
 - [x] PR body attachment binding and edit sync
-- [x] Project logo attachment binding and detail/container `logoUrl` projection
-- [x] Organization logo attachment binding and detail/container `logoUrl` projection
+- [x] Project logo attachment binding and detail/container/public-directory `logoUrl` projection
+- [x] Organization logo attachment binding and detail/container/public-directory `logoUrl` projection
 - [x] File delete authorization, including legacy `POST /files/:id/` `_method=delete` alias
 - [~] Full container type parity across issue/board/PR/project/organization (legacy enum names and current-user temporary binding for issue/board/PR/milestone/project logo/organization logo are covered; issue/board/PR edit sync removes omitted body/comment attachments; import relationship containers remain)
 - [x] Global file size policy parity

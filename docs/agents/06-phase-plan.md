@@ -36,7 +36,7 @@
 - Phase 2B complete: project issue label/category management screens, REST CRUD, legacy direct label/category routes, and label CSS.
 - Phase 2C complete: milestone management screens/REST CRUD, legacy direct mutation routes, state toggles, issue aggregation, Markdown description rendering, and milestone attachment binding.
 - PR attachment binding parity complete for create/edit body attachments: legacy `PULL_REQUEST` container names are preserved, actor-owned temporary uploads are the only moved files, and edit `attachmentIds` sync removes omitted PR attachments.
-- Project/organization logo attachment parity complete for settings/detail/container: legacy `PROJECT` / `ORGANIZATION` container names are preserved, actor-owned image uploads are promoted through `logoAttachmentId`, the legacy 5MB logo limit is enforced, and REST `logoUrl` points at `/files/:id`.
+- Project/organization logo attachment parity complete for settings/detail/container/directory lists: legacy `PROJECT` / `ORGANIZATION` container names are preserved, actor-owned image uploads are promoted through `logoAttachmentId`, the legacy 5MB logo limit is enforced, and REST `logoUrl` points at `/files/:id`.
 - Phase 2E complete: core issue sharer read/comment ACL, REST share/unshare by login ID, and issue detail sharer sidebar controls.
 - Phase 2F complete: organization issue listing body parity with visible-project aggregation, core filters, and organization shell route.
 - Phase 2G complete: favorite issue toggle/detail projection and `/user/issues` personal aggregate list with assigned/authored/commented/mentioned/shared/favorite quick filters.

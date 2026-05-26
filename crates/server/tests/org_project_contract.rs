@@ -447,6 +447,129 @@ async fn create_project_uses_configured_default_menus_for_new_project_container(
 }
 
 #[tokio::test]
+async fn public_directory_lists_project_and_organization_logo_urls() {
+    let (app, repository) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = bootstrap(app.clone()).await;
+    let owner_id = register_user(app.clone(), &owner_cookie, &owner_csrf, "owner").await;
+    create_organization(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "weblabs",
+        "web labs",
+    )
+    .await;
+    create_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "owner",
+        "projectYobi",
+        "logo project",
+        "public",
+    )
+    .await;
+
+    let project_logo = repository
+        .create_user_attachment_upload(
+            owner_id,
+            "owner",
+            "project-logo.png",
+            "image/png",
+            128,
+            "project-directory-logo-hash",
+        )
+        .await
+        .expect("project logo upload");
+    let organization_logo = repository
+        .create_user_attachment_upload(
+            owner_id,
+            "owner",
+            "organization-logo.png",
+            "image/png",
+            128,
+            "organization-directory-logo-hash",
+        )
+        .await
+        .expect("organization logo upload");
+
+    let project_update = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PATCH)
+                .uri("/yona/api/v1/owners/owner/projects/projectYobi")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &owner_cookie)
+                .header("x-csrf-token", &owner_csrf)
+                .body(Body::from(format!(
+                    "{{\"projectName\":\"projectYobi\",\"overview\":\"logo project\",\"projectScope\":\"public\",\"logoAttachmentId\":{}}}",
+                    project_logo.id
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(project_update.status(), StatusCode::OK);
+
+    let organization_update = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::PATCH)
+                .uri("/yona/api/v1/organizations/weblabs")
+                .header(http::header::CONTENT_TYPE, "application/json")
+                .header(http::header::COOKIE, &owner_cookie)
+                .header("x-csrf-token", &owner_csrf)
+                .body(Body::from(format!(
+                    "{{\"organizationName\":\"weblabs\",\"description\":\"web labs\",\"logoAttachmentId\":{}}}",
+                    organization_logo.id
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(organization_update.status(), StatusCode::OK);
+
+    let projects = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/projects")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(projects.status(), StatusCode::OK);
+    let projects_json: serde_json::Value =
+        serde_json::from_str(&response_json(projects).await).expect("projects json");
+    assert_eq!(
+        projects_json["items"][0]["logoUrl"],
+        format!("/yona/files/{}", project_logo.id)
+    );
+
+    let organizations = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/organizations")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(organizations.status(), StatusCode::OK);
+    let organizations_json: serde_json::Value =
+        serde_json::from_str(&response_json(organizations).await).expect("organizations json");
+    assert_eq!(
+        organizations_json["items"][0]["logoUrl"],
+        format!("/yona/files/{}", organization_logo.id)
+    );
+}
+
+#[tokio::test]
 async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() {
     let (app, app_repo) = build_app_with_repository().await;
 

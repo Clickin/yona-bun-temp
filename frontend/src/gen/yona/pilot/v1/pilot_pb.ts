@@ -291,6 +291,11 @@ export type ProjectListItem = Message<"yona.pilot.v1.ProjectListItem"> & {
    * @generated from field: string project_scope = 4;
    */
   projectScope: string;
+
+  /**
+   * @generated from field: string logo_url = 5;
+   */
+  logoUrl: string;
 };
 
 /**
@@ -344,6 +349,11 @@ export type OrganizationListItem = Message<"yona.pilot.v1.OrganizationListItem">
    * @generated from field: string description = 2;
    */
   description: string;
+
+  /**
+   * @generated from field: string logo_url = 3;
+   */
+  logoUrl: string;
 };
 
 /**

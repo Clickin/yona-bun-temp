@@ -1020,7 +1020,7 @@ POST  /files/:id/?            → legacy `_method=delete` 파일 삭제 (trailin
 - [x] Board post/comment attachment binding keeps legacy `BOARD_POST` / `NONISSUE_COMMENT` container names, only moves the current actor's temporary uploads, and edit sync removes omitted attachments.
 - [x] Milestone attachment binding keeps legacy `MILESTONE` container names and only moves the current actor's temporary uploads, matching `Attachment.moveOnlySelected(user.asResource(), milestone.asResource(), ...)`.
 - [x] PR create/edit attachment binding keeps legacy `PULL_REQUEST` container names, only moves the current actor's temporary uploads, and edit sync removes omitted PR attachments.
-- [x] Project/organization settings logo attachment binding keeps the legacy `PROJECT` / `ORGANIZATION` container names, accepts actor-owned image uploads up to the legacy 5MB logo limit, and returns `logoUrl` through detail/container responses.
+- [x] Project/organization settings logo attachment binding keeps the legacy `PROJECT` / `ORGANIZATION` container names, accepts actor-owned image uploads up to the legacy 5MB logo limit, and returns `logoUrl` through detail/container responses plus the public project/organization directory feeds.
 - [x] `YONA_MAX_FILE_SIZE` 설정값 초과 시 업로드 거부
 - [x] MIME type은 legacy `Attachment.save` / `FileUtil.detectMediaType`처럼 multipart header만 신뢰하지 않고 업로드 바이트와 파일명으로 판별한다
 - [x] 다운로드 응답은 legacy `AttachmentApp.getFile`처럼 기본 `inline`, `?action=download` 요청은 `attachment` Content-Disposition과 RFC 2231 파일명을 반환한다
