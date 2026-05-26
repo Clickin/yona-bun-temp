@@ -4527,12 +4527,12 @@ fn svn_protocol_list_report_response(
         .unwrap_or_default();
     let date = log_entry
         .as_ref()
-        .map(|entry| entry.date.as_str())
+        .map(|entry| svn_protocol_committed_date(&entry.date))
         .unwrap_or_default();
     let mut items = String::new();
     for entry in &tree.entries {
         items.push_str(&svn_protocol_list_item(
-            repo_path, revision, entry, author, date,
+            repo_path, revision, entry, author, &date,
         ));
     }
     let body = format!(
@@ -5379,7 +5379,7 @@ fn svn_protocol_log_item(entry: &yona_rust_vcs::SvnLogEntry) -> String {
 "#,
         entry.revision,
         xml_escape(&entry.author),
-        xml_escape(&entry.date),
+        xml_escape(&svn_protocol_committed_date(&entry.date)),
         xml_escape(&entry.message)
     )
 }
@@ -5395,7 +5395,7 @@ fn svn_protocol_file_rev_item(path: &str, entry: &yona_rust_vcs::SvnLogEntry) ->
         xml_escape(path.trim_matches('/')),
         entry.revision,
         xml_escape(&entry.author),
-        xml_escape(&entry.date),
+        xml_escape(&svn_protocol_committed_date(&entry.date)),
         xml_escape(&entry.message)
     )
 }

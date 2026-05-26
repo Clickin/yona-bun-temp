@@ -2334,6 +2334,102 @@ async fn svn_protocol_external_client_can_info_public_project() {
 }
 
 #[tokio::test]
+async fn svn_protocol_external_client_can_ls_cat_and_log_public_project() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!("skipping external SVN read smoke because svnadmin/svnlook/svn is unavailable");
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello from external svn read\n").expect("seed svn readme");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let svn_url = format!("{base_url}/yona/svn/owner/projectYobi");
+    let ls_output = tokio::task::spawn_blocking({
+        let svn_url = svn_url.clone();
+        move || {
+            run_svn_capture(
+                &["ls", "--non-interactive", "--verbose", svn_url.as_str()],
+                None,
+            )
+        }
+    })
+    .await
+    .expect("svn ls task");
+    assert!(
+        ls_output.status.success(),
+        "svn ls should list repository root entries\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&ls_output.stdout),
+        String::from_utf8_lossy(&ls_output.stderr)
+    );
+    assert!(
+        String::from_utf8_lossy(&ls_output.stdout).contains("trunk/"),
+        "svn ls should expose the seeded trunk directory\nstdout: {}",
+        String::from_utf8_lossy(&ls_output.stdout)
+    );
+    assert!(
+        !String::from_utf8_lossy(&ls_output.stdout).contains("invalid date"),
+        "svn ls should receive client-parseable repository dates\nstdout: {}",
+        String::from_utf8_lossy(&ls_output.stdout)
+    );
+
+    let cat_output = tokio::task::spawn_blocking({
+        let readme_url = format!("{svn_url}/trunk/README.md");
+        move || run_svn_capture(&["cat", "--non-interactive", readme_url.as_str()], None)
+    })
+    .await
+    .expect("svn cat task");
+    assert!(
+        cat_output.status.success(),
+        "svn cat should read repository file contents\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&cat_output.stdout),
+        String::from_utf8_lossy(&cat_output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&cat_output.stdout),
+        "hello from external svn read\n"
+    );
+
+    let log_output = tokio::task::spawn_blocking({
+        let svn_url = svn_url.clone();
+        move || {
+            run_svn_capture(
+                &["log", "--non-interactive", "-l", "1", svn_url.as_str()],
+                None,
+            )
+        }
+    })
+    .await
+    .expect("svn log task");
+    assert!(
+        log_output.status.success(),
+        "svn log should read repository revision metadata\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&log_output.stdout),
+        String::from_utf8_lossy(&log_output.stderr)
+    );
+    let log_stdout = String::from_utf8_lossy(&log_output.stdout);
+    assert!(
+        log_stdout.contains("seed svn readme"),
+        "svn log should include the seeded repository commit message\nstdout: {log_stdout}"
+    );
+    assert!(
+        !log_stdout.contains("invalid date"),
+        "svn log should receive client-parseable repository dates\nstdout: {log_stdout}"
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
 async fn svn_protocol_external_client_can_checkout_public_project() {
     if !svn_tools_available() || !svn_client_available() {
         eprintln!(
