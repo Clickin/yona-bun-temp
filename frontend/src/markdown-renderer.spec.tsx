@@ -920,6 +920,22 @@ describe("MarkdownRenderer", () => {
     );
   });
 
+  it("keeps nested loose task-list checkboxes inside their first paragraphs", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"- [x] parent\n  - [ ] child\n\n    child detail\n- [ ] next"} />,
+    );
+
+    expect(html).toContain(
+      '<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox" checked=""/> parent</p><ul><li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> child</p><p>child detail</p></li></ul></li>',
+    );
+    expect(html).toContain(
+      '<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> next</p></li>',
+    );
+    expect(html).not.toContain(
+      '<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> <p>child</p>',
+    );
+  });
+
   it("renders task-list checkboxes like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- [ ] open\n- [x] **done**\n- [X] done upper"} />,

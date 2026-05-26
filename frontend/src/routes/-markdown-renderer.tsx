@@ -960,6 +960,9 @@ function parseMarkdownListAt(
         return null;
       }
       parent.children = [...(parent.children ?? []), nested.list];
+      if (nested.list.loose) {
+        parent.loose = true;
+      }
       index = nested.nextIndex;
       continue;
     }
@@ -975,7 +978,9 @@ function parseMarkdownListAt(
   return {
     list: {
       items,
-      loose: items.some((item) => item.loose),
+      loose: items.some(
+        (item) => item.loose || item.children?.some((child) => child.loose) === true,
+      ),
       ordered: firstLine.ordered,
       start: firstLine.start,
     },

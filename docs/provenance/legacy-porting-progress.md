@@ -424,7 +424,7 @@ Interpretation:
 - [x] Legacy hard-break markers (`\` or two trailing spaces before newline) are consumed before rendering `<br>`
 - [x] GFM strikethrough renders `~~deleted~~` as `<del>` on the project Markdown render path
 - [x] Basic GFM pipe tables render as `<table>` on the project Markdown render path, including escaped `\|` pipes inside cells, one-or-more dash separators, row cell padding/truncation, block interruption, and left/center/right alignment attributes
-- [x] Basic smart-list rendering emits `<ul>` / `<ol>` on the project Markdown render path, preserves nested child lists, indented continuation lines including blank-line-separated continuations, loose-list paragraph wrappers, task-list checkbox placement in loose first paragraphs, and non-1 ordered-list start numbers
+- [x] Basic smart-list rendering emits `<ul>` / `<ol>` on the project Markdown render path, preserves nested child lists, indented continuation lines including blank-line-separated continuations, loose-list paragraph wrappers including nested loose-list propagation, task-list checkbox placement in loose first paragraphs, and non-1 ordered-list start numbers
 - [x] Basic blockquotes render as `<blockquote>` on the project Markdown render path, split blank-line paragraphs, and parse nested ATX/setext heading, list, table, horizontal-rule, indented-code, and fenced-code blocks
 - [x] Marked-style backslash escapes keep punctuation literal before inline Markdown and autolink parsing
 - [x] Basic task checklist rendering with sanitized disabled checkbox inputs
