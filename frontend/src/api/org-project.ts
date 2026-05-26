@@ -52,6 +52,17 @@ type ProjectCreateInput = {
   vcs?: string;
 };
 
+export type ProjectCreateOwnerOption = {
+  organization: boolean;
+  ownerName: string;
+  selected: boolean;
+};
+
+export type ProjectCreateFormOptionsResponse = {
+  ownerOptions: ProjectCreateOwnerOption[];
+  selectedOwnerName: string;
+};
+
 type ProjectUpdateInput = ProjectPathInput & {
   board?: boolean;
   code?: boolean;
@@ -277,6 +288,22 @@ export function listOrganizationsRest(
     fetchImpl,
     method: "GET",
   });
+}
+
+export function readProjectCreateFormOptionsRest(
+  runtimeConfig: RuntimeConfig,
+  input: { owner?: string } = {},
+  fetchImpl: typeof fetch = fetch,
+): Promise<ProjectCreateFormOptionsResponse> {
+  const query = input.owner ? `?owner=${encodeURIComponent(input.owner)}` : "";
+  return restFetch<ProjectCreateFormOptionsResponse>(
+    runtimeConfig,
+    `/projects/form-options${query}`,
+    {
+      fetchImpl,
+      method: "GET",
+    },
+  );
 }
 
 export function createOrganizationRest(

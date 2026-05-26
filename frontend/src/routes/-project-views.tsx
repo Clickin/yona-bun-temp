@@ -7,6 +7,7 @@ import {
 import type { BoardPostDetail } from "../api/boards";
 import type {
   ProjectChangeVcsResponse,
+  ProjectCreateOwnerOption,
   ProjectForkOptionsResponse,
   ProjectMembersResponse,
   ProjectTransferResponse,
@@ -640,6 +641,7 @@ function ProjectHeader(props: { detail: ProjectDetailViewModel; runtimeConfig: R
 export function ProjectNewPage(props: {
   defaultProjectMenus?: string[];
   defaultProjectScope?: string;
+  ownerOptions?: ProjectCreateOwnerOption[];
   onCreateProject?: (input: {
     board: boolean;
     code: boolean;
@@ -654,15 +656,34 @@ export function ProjectNewPage(props: {
     vcs: string;
   }) => void;
   pending?: boolean;
+  selectedOwnerName?: string;
 }) {
+  const selectedOwnerName =
+    props.selectedOwnerName ||
+    props.ownerOptions?.find((option) => option.selected)?.ownerName ||
+    props.ownerOptions?.[0]?.ownerName ||
+    "";
   const [formState, setFormState] = React.useState({
-    ownerName: "",
+    ownerName: selectedOwnerName,
     overview: "",
     projectName: "",
     projectScope: normalizeProjectDefaultScope(props.defaultProjectScope),
     vcs: "GIT",
     ...defaultProjectMenuSettings(props.defaultProjectMenus),
   });
+
+  React.useEffect(() => {
+    setFormState((current) => ({
+      ...current,
+      ownerName: selectedOwnerName,
+    }));
+  }, [selectedOwnerName]);
+
+  const ownerOptions = props.ownerOptions?.length
+    ? props.ownerOptions
+    : selectedOwnerName
+      ? [{ organization: false, ownerName: selectedOwnerName, selected: true }]
+      : [];
 
   return (
     <div className="page-wrap-outer">
@@ -693,11 +714,13 @@ export function ProjectNewPage(props: {
                 </label>
               </dt>
               <dd>
-                <input
+                <select
                   className="mb10"
+                  data-format="user"
+                  data-toggle="select2"
                   id="project-owner"
                   name="owner"
-                  type="text"
+                  style={{ minWidth: 220 }}
                   value={formState.ownerName}
                   onChange={(event) =>
                     setFormState((current) => ({
@@ -705,7 +728,17 @@ export function ProjectNewPage(props: {
                       ownerName: event.target.value,
                     }))
                   }
-                />
+                >
+                  {ownerOptions.map((option) => (
+                    <option
+                      data-type={option.organization ? "group" : "user"}
+                      key={option.ownerName}
+                      value={option.ownerName}
+                    >
+                      {option.ownerName}
+                    </option>
+                  ))}
+                </select>
               </dd>
               <dt>
                 <label htmlFor="project-name">

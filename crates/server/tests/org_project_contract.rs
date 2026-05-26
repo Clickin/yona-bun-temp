@@ -732,6 +732,44 @@ async fn project_create_and_settings_mutations_persist_legacy_menu_checkboxes() 
 }
 
 #[tokio::test]
+async fn project_create_form_options_expose_legacy_owner_selector_choices() {
+    let (app, _) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
+    create_organization(
+        app.clone(),
+        &admin_cookie,
+        &admin_csrf,
+        "weblabs",
+        "web labs",
+    )
+    .await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/api/v1/projects/form-options?owner=weblabs")
+                .header(http::header::COOKIE, &admin_cookie)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+    let json: serde_json::Value =
+        serde_json::from_str(&response_json(response).await).expect("form options json");
+    assert_eq!(json["selectedOwnerName"], "weblabs");
+    assert_eq!(json["ownerOptions"][0]["ownerName"], "admin");
+    assert_eq!(json["ownerOptions"][0]["organization"], false);
+    assert_eq!(json["ownerOptions"][0]["selected"], false);
+    assert_eq!(json["ownerOptions"][1]["ownerName"], "weblabs");
+    assert_eq!(json["ownerOptions"][1]["organization"], true);
+    assert_eq!(json["ownerOptions"][1]["selected"], true);
+}
+
+#[tokio::test]
 async fn project_detail_enrollment_favorites_recent_and_workspace_overview_round_trip() {
     let app = build_app().await;
 

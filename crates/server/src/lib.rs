@@ -11684,6 +11684,27 @@ struct RestProjectCreateBody {
 }
 
 #[derive(Deserialize)]
+struct RestProjectCreateFormOptionsQuery {
+    owner: Option<String>,
+}
+
+#[derive(Serialize)]
+struct RestProjectCreateOwnerOption {
+    #[serde(rename = "ownerName")]
+    owner_name: String,
+    organization: bool,
+    selected: bool,
+}
+
+#[derive(Serialize)]
+struct RestProjectCreateFormOptionsResponse {
+    #[serde(rename = "ownerOptions")]
+    owner_options: Vec<RestProjectCreateOwnerOption>,
+    #[serde(rename = "selectedOwnerName")]
+    selected_owner_name: String,
+}
+
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RestProjectUpdateBody {
     board: Option<bool>,
@@ -14123,6 +14144,16 @@ fn build_rest_org_project_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap| {
                     let service = service.clone();
                     async move { rest_list_projects(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/projects/form-options",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap, Query(query): Query<RestProjectCreateFormOptionsQuery>| {
+                    let service = service.clone();
+                    async move { rest_project_create_form_options(headers, query, service).await }
                 }
             }),
         )
@@ -18045,6 +18076,80 @@ async fn rest_create_project(
         .await?;
     }
     Ok(rest_json_response(payload, ctx))
+}
+
+async fn rest_project_create_form_options(
+    headers: HeaderMap,
+    query: RestProjectCreateFormOptionsQuery,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    let actor_id = session.user_id.ok_or_else(|| {
+        RestRouteError::from_connect_error(ConnectError::unauthenticated(
+            "missing authenticated session",
+        ))
+    })?;
+    let PilotBackend::Repository(repository) = &service.backend else {
+        return Err(RestRouteError::not_implemented(
+            "project create form options require repository backend",
+        ));
+    };
+    let actor = repository
+        .find_user_by_id(actor_id)
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?
+        .ok_or_else(|| {
+            RestRouteError::from_connect_error(ConnectError::unauthenticated(
+                "missing authenticated user",
+            ))
+        })?;
+
+    let mut owner_names = Vec::new();
+    owner_names.push((actor.login_id.clone(), false));
+    let organizations = repository
+        .list_organizations()
+        .await
+        .map_err(internal_error)
+        .map_err(RestRouteError::from_connect_error)?;
+    for organization in organizations {
+        let Some(authorization) = repository
+            .read_organization_authorization(&organization.organization_name, Some(actor_id))
+            .await
+            .map_err(internal_error)
+            .map_err(RestRouteError::from_connect_error)?
+        else {
+            continue;
+        };
+        if can_create_organization_project(authorization.viewer.is_organization_admin) {
+            owner_names.push((authorization.organization.organization_name, true));
+        }
+    }
+
+    let requested_owner = query.owner.unwrap_or_default();
+    let selected_owner_name = owner_names
+        .iter()
+        .find(|(owner_name, _)| {
+            normalize_identifier(owner_name) == normalize_identifier(&requested_owner)
+        })
+        .map(|(owner_name, _)| owner_name.clone())
+        .unwrap_or_else(|| actor.login_id.clone());
+    let owner_options = owner_names
+        .into_iter()
+        .map(|(owner_name, organization)| RestProjectCreateOwnerOption {
+            selected: normalize_identifier(&owner_name)
+                == normalize_identifier(&selected_owner_name),
+            owner_name,
+            organization,
+        })
+        .collect();
+
+    Ok(Json(RestProjectCreateFormOptionsResponse {
+        owner_options,
+        selected_owner_name,
+    })
+    .into_response())
 }
 
 async fn rest_read_project_detail(
