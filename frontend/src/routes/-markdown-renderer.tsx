@@ -86,6 +86,7 @@ type MarkdownTableRecord = {
 
 type MarkdownListItem = {
   checked?: boolean;
+  children?: MarkdownListRecord[];
   key: string;
   task: boolean;
   text: string;
@@ -95,6 +96,14 @@ type MarkdownListRecord = {
   items: MarkdownListItem[];
   ordered: boolean;
   start?: number;
+};
+
+type ParsedMarkdownListLine = {
+  indent: number;
+  key: string;
+  ordered: boolean;
+  start?: number;
+  text: string;
 };
 
 type MarkdownTaskStats = {
@@ -808,30 +817,83 @@ function parseMarkdownList(lines: MarkdownLineRecord[]): MarkdownListRecord | nu
   if (lines.length === 0) {
     return null;
   }
-  const unorderedItems: MarkdownListItem[] = [];
-  const orderedItems: MarkdownListItem[] = [];
-  for (const line of lines) {
-    const unorderedMatch = /^\s*[-*+]\s+(.+)$/.exec(line.text);
-    if (unorderedMatch) {
-      unorderedItems.push(parseMarkdownListItem(line.key, unorderedMatch[1] ?? ""));
-      continue;
-    }
-    const orderedMatch = /^\s*(\d+)[.)]\s+(.+)$/.exec(line.text);
-    if (orderedMatch) {
-      orderedItems.push(parseMarkdownListItem(line.key, orderedMatch[2] ?? ""));
-      continue;
-    }
+  const parsedLines = lines.map(parseMarkdownListLine);
+  if (parsedLines.some((line) => line === null)) {
     return null;
   }
-  if (unorderedItems.length === lines.length) {
-    return { items: unorderedItems, ordered: false };
+  const firstLine = parsedLines[0];
+  if (!firstLine) {
+    return null;
   }
-  if (orderedItems.length === lines.length) {
-    const firstOrderedMatch = /^\s*(\d+)[.)]/.exec(lines[0]?.text ?? "");
-    const start = Number.parseInt(firstOrderedMatch?.[1] ?? "1", 10);
-    return { items: orderedItems, ordered: true, start };
+  const span = parseMarkdownListAt(parsedLines as ParsedMarkdownListLine[], 0, firstLine.indent);
+  if (!span || span.nextIndex !== parsedLines.length) {
+    return null;
   }
-  return null;
+  return span.list;
+}
+
+function parseMarkdownListLine(line: MarkdownLineRecord): ParsedMarkdownListLine | null {
+  const match = /^(\s*)([-*+]|\d+[.)])\s+(.+)$/.exec(line.text);
+  if (!match) {
+    return null;
+  }
+  const marker = match[2] ?? "";
+  const ordered = /^\d/.test(marker);
+  return {
+    indent: (match[1] ?? "").replace(/\t/g, "    ").length,
+    key: line.key,
+    ordered,
+    start: ordered ? Number.parseInt(marker, 10) : undefined,
+    text: match[3] ?? "",
+  };
+}
+
+function parseMarkdownListAt(
+  lines: ParsedMarkdownListLine[],
+  startIndex: number,
+  indent: number,
+): { list: MarkdownListRecord; nextIndex: number } | null {
+  const firstLine = lines[startIndex];
+  if (!firstLine || firstLine.indent !== indent) {
+    return null;
+  }
+  const items: MarkdownListItem[] = [];
+  let index = startIndex;
+  while (index < lines.length) {
+    const line = lines[index];
+    if (!line || line.indent < indent) {
+      break;
+    }
+    if (line.indent > indent) {
+      const parent = items.at(-1);
+      if (!parent) {
+        return null;
+      }
+      const nested = parseMarkdownListAt(lines, index, line.indent);
+      if (!nested) {
+        return null;
+      }
+      parent.children = [...(parent.children ?? []), nested.list];
+      index = nested.nextIndex;
+      continue;
+    }
+    if (line.ordered !== firstLine.ordered) {
+      break;
+    }
+    items.push(parseMarkdownListItem(line.key, line.text));
+    index += 1;
+  }
+  if (items.length === 0) {
+    return null;
+  }
+  return {
+    list: {
+      items,
+      ordered: firstLine.ordered,
+      start: firstLine.start,
+    },
+    nextIndex: index,
+  };
 }
 
 function parseMarkdownListItem(key: string, rawText: string): MarkdownListItem {
@@ -880,6 +942,38 @@ function MarkdownTasklistBar(props: { stats: MarkdownTaskStats }) {
   );
 }
 
+function MarkdownList(props: { context?: MarkdownContext; list: MarkdownListRecord }) {
+  const children = props.list.items.map((item) => (
+    <li className={item.task ? "task-list-item" : undefined} key={item.key}>
+      {item.task ? (
+        <input
+          checked={item.checked}
+          className="task-list-item-checkbox"
+          disabled
+          readOnly
+          type="checkbox"
+        />
+      ) : null}
+      {item.task ? " " : null}
+      <MarkdownInline context={props.context} line={item.text} />
+      {item.children?.map((child) => (
+        <MarkdownList
+          context={props.context}
+          key={`${item.key}-child-${child.ordered ? "ol" : "ul"}-${child.start ?? 1}-${child.items[0]?.key ?? "empty"}`}
+          list={child}
+        />
+      ))}
+    </li>
+  ));
+  return props.list.ordered ? (
+    <ol start={props.list.start && props.list.start !== 1 ? props.list.start : undefined}>
+      {children}
+    </ol>
+  ) : (
+    <ul>{children}</ul>
+  );
+}
+
 function parseMarkdownBlockquote(lines: MarkdownLineRecord[]): MarkdownBlockquoteRecord[] | null {
   if (lines.length === 0) {
     return null;
@@ -900,7 +994,7 @@ function markdownLineStartsBlock(line: string): boolean {
     markdownLineIsHorizontalRule(line) ||
     markdownLineIsIndentedCode(line) ||
     /^ {0,3}#{1,6}(?=\s|$)/.test(line) ||
-    /^ {0,3}(?:[*+-]|\d+[.)])\s+/.test(line)
+    /^\s*(?:[*+-]|\d+[.)])\s+/.test(line)
   );
 }
 
@@ -1019,12 +1113,12 @@ function MarkdownBlockSequence(props: {
       index += tableSpan.consumedLineCount;
       continue;
     }
-    if (/^ {0,3}(?:[*+-]|\d+[.)])\s+/.test(line.text)) {
+    if (/^\s*(?:[*+-]|\d+[.)])\s+/.test(line.text)) {
       const listLines = [line];
       index += 1;
       while (index < lineCount) {
         const nextLine = props.lines[index];
-        if (!nextLine || !/^ {0,3}(?:[*+-]|\d+[.)])\s+/.test(nextLine.text)) {
+        if (!nextLine || !/^\s*(?:[*+-]|\d+[.)])\s+/.test(nextLine.text)) {
           break;
         }
         listLines.push(nextLine);
@@ -1217,26 +1311,7 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   }
   const list = parseMarkdownList(lines);
   if (list) {
-    const children = list.items.map((item) => (
-      <li className={item.task ? "task-list-item" : undefined} key={item.key}>
-        {item.task ? (
-          <input
-            checked={item.checked}
-            className="task-list-item-checkbox"
-            disabled
-            readOnly
-            type="checkbox"
-          />
-        ) : null}
-        {item.task ? " " : null}
-        <MarkdownInline context={props.context} line={item.text} />
-      </li>
-    ));
-    return list.ordered ? (
-      <ol start={list.start && list.start !== 1 ? list.start : undefined}>{children}</ol>
-    ) : (
-      <ul>{children}</ul>
-    );
+    return <MarkdownList context={props.context} list={list} />;
   }
   const blockquote = parseMarkdownBlockquote(lines);
   if (blockquote) {

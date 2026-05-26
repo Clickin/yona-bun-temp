@@ -839,6 +839,17 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<li>fourth</li>");
   });
 
+  it("renders nested smart lists like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"- parent\n  - **child**\n- next"} />,
+    );
+
+    expect(html).toContain(
+      "<ul><li>parent<ul><li><strong>child</strong></li></ul></li><li>next</li></ul>",
+    );
+    expect(html).not.toContain("<li>parent</li><li><strong>child</strong></li>");
+  });
+
   it("renders task-list checkboxes like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- [ ] open\n- [x] **done**\n- [X] done upper"} />,
