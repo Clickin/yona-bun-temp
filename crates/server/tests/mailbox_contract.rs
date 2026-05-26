@@ -6,7 +6,7 @@ use yona_rust_persistence::{
     comment_thread, email, original_email, AppRepository, CreateIssueCommentViaEmailInput,
     CreateIssueViaEmailInput, CreatePostingCommentViaEmailInput, CreatePostingInput,
     CreateProjectInput, CreateReviewCommentViaEmailInput, CreateUserInput,
-    MailboxReplyTargetRecord, PostingMutationInput,
+    MailboxActionExecutionInput, MailboxReplyTargetRecord, PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 
@@ -252,6 +252,48 @@ async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_res
     assert_eq!(actions[2].project_name, "projectWithoutThread");
     assert_eq!(actions[2].resource_type, None);
     assert_eq!(actions[2].resource_id, None);
+
+    let execution = repo
+        .execute_mailbox_resource_actions(
+            &actions,
+            MailboxActionExecutionInput {
+                actor_display_name: member.display_name.clone(),
+                actor_id: member.id,
+                actor_login_id: member.login_id.clone(),
+                body_markdown: "reply execution body".to_string(),
+                message_id: "<message-id-execution@domain>".to_string(),
+                title: "execution title".to_string(),
+            },
+        )
+        .await
+        .unwrap();
+    assert_eq!(execution.len(), 3);
+    assert_eq!(execution[0].status, "created");
+    assert_eq!(execution[1].status, "created");
+    assert_eq!(execution[2].status, "created");
+    let executed_review_thread = repo
+        .find_mailbox_reply_targets_by_message_ids(&["<message-id-execution@domain>".to_string()])
+        .await
+        .unwrap();
+    assert_eq!(executed_review_thread.len(), 1);
+    assert!(executed_review_thread
+        .iter()
+        .any(|target| target.resource_type == "REVIEW_COMMENT"));
+    let created_issue = repo
+        .read_issue_detail("yobi", "projectWithoutThread", 1)
+        .await
+        .unwrap()
+        .expect("created issue from fallback");
+    assert_eq!(created_issue.title, "execution title");
+    assert!(
+        !original_email_exists(
+            &db,
+            "ISSUE_POST",
+            created_issue.id,
+            "<message-id-execution@domain>"
+        )
+        .await
+    );
 
     let reply_targets = repo
         .find_mailbox_reply_targets_by_message_ids(&[

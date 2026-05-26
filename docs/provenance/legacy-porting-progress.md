@@ -347,6 +347,7 @@ Interpretation:
 - [x] Mailbox Message-ID-left direct resource-path fallback parity
 - [x] Mailbox recipient detail resource-path lookup parity
 - [x] Mailbox DB-backed resource action planning parity for legacy `EmailHandler.createResources`
+- [x] Mailbox DB-backed resource action execution parity before raw IMAP ingestion
 - [x] Mailbox DB-backed `CreationViaEmailTest` resource creation parity for issue, issue comment, board comment, and review comment
 - [ ] Mailbox/reply threading parity
 

@@ -686,6 +686,26 @@ pub struct MailboxResourceActionRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MailboxActionExecutionInput {
+    pub actor_display_name: String,
+    pub actor_id: i64,
+    pub actor_login_id: String,
+    pub body_markdown: String,
+    pub message_id: String,
+    pub title: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MailboxActionExecutionRecord {
+    pub action: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub resource_id: Option<i64>,
+    pub resource_type: Option<String>,
+    pub status: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpdateIssueCommentInput {
     pub actor_id: i64,
     pub attachment_ids: Vec<i64>,

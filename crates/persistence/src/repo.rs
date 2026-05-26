@@ -12,10 +12,11 @@ use crate::repo_types::{
     IssueAttachmentRecord, IssueCommentOriginRecord, IssueCommentRecord, IssueCommentVoterRecord,
     IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter, IssueMentionUserRecord,
     IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueMutationInput, IssueRecord,
-    IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, MailboxReplyTargetRecord,
-    MailboxResourceActionRecord, MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter,
-    MilestoneMutationInput, NotificationActorRecord, NotificationItemRecord,
-    NotificationListRecord, NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
+    IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, MailboxActionExecutionInput,
+    MailboxActionExecutionRecord, MailboxReplyTargetRecord, MailboxResourceActionRecord,
+    MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
+    NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
+    NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
     OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
     OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
     OrganizationMemberRecord, OrganizationPostingListFilter, OrganizationPostingListRecord,
@@ -105,6 +106,20 @@ fn mailbox_resource_path_from_detail_local(detail: &str) -> Option<&str> {
     parts.next()?;
     let resource_path = parts.next()?;
     (!resource_path.is_empty()).then_some(resource_path)
+}
+
+fn mailbox_execution_record(
+    action: &MailboxResourceActionRecord,
+    status: &str,
+) -> MailboxActionExecutionRecord {
+    MailboxActionExecutionRecord {
+        action: action.action.clone(),
+        owner_name: action.owner_name.clone(),
+        project_name: action.project_name.clone(),
+        resource_id: action.resource_id,
+        resource_type: action.resource_type.clone(),
+        status: status.to_string(),
+    }
 }
 
 fn login_id_matches_configured_guest_prefix(login_id: &str) -> bool {
@@ -8884,6 +8899,162 @@ impl AppRepository {
             }
         }
         Ok(actions)
+    }
+
+    pub async fn execute_mailbox_resource_actions(
+        &self,
+        actions: &[MailboxResourceActionRecord],
+        input: MailboxActionExecutionInput,
+    ) -> Result<Vec<MailboxActionExecutionRecord>, DbErr> {
+        let mut records = Vec::new();
+        let mut message_id_recorded = false;
+        for action in actions {
+            let message_id = if message_id_recorded {
+                String::new()
+            } else {
+                input.message_id.clone()
+            };
+            let status = match action.action.as_str() {
+                "create_issue" => self
+                    .create_issue_via_email(CreateIssueViaEmailInput {
+                        actor_display_name: input.actor_display_name.clone(),
+                        actor_id: input.actor_id,
+                        actor_login_id: input.actor_login_id.clone(),
+                        body_markdown: input.body_markdown.clone(),
+                        message_id,
+                        owner_name: action.owner_name.clone(),
+                        project_name: action.project_name.clone(),
+                        title: input.title.clone(),
+                    })
+                    .await?
+                    .map(|_| "created")
+                    .unwrap_or("missing_target"),
+                "create_issue_comment" => {
+                    let Some(issue_number) = self.mailbox_action_issue_number(action).await? else {
+                        records.push(mailbox_execution_record(action, "missing_target"));
+                        continue;
+                    };
+                    self.create_issue_comment_via_email(CreateIssueCommentViaEmailInput {
+                        actor_display_name: input.actor_display_name.clone(),
+                        actor_id: input.actor_id,
+                        actor_login_id: input.actor_login_id.clone(),
+                        contents_markdown: input.body_markdown.clone(),
+                        issue_number,
+                        message_id,
+                        owner_name: action.owner_name.clone(),
+                        project_name: action.project_name.clone(),
+                    })
+                    .await?
+                    .map(|_| "created")
+                    .unwrap_or("missing_target")
+                }
+                "create_posting_comment" => {
+                    let Some(post_number) = self.mailbox_action_post_number(action).await? else {
+                        records.push(mailbox_execution_record(action, "missing_target"));
+                        continue;
+                    };
+                    self.create_posting_comment_via_email(CreatePostingCommentViaEmailInput {
+                        actor_display_name: input.actor_display_name.clone(),
+                        actor_id: input.actor_id,
+                        actor_login_id: input.actor_login_id.clone(),
+                        contents_markdown: input.body_markdown.clone(),
+                        message_id,
+                        owner_name: action.owner_name.clone(),
+                        post_number,
+                        project_name: action.project_name.clone(),
+                    })
+                    .await?
+                    .map(|_| "created")
+                    .unwrap_or("missing_target")
+                }
+                "create_review_comment" => {
+                    let Some(thread_id) = action.resource_id else {
+                        records.push(mailbox_execution_record(action, "missing_target"));
+                        continue;
+                    };
+                    self.create_review_comment_via_email(CreateReviewCommentViaEmailInput {
+                        actor_display_name: input.actor_display_name.clone(),
+                        actor_id: input.actor_id,
+                        actor_login_id: input.actor_login_id.clone(),
+                        contents_markdown: input.body_markdown.clone(),
+                        message_id,
+                        thread_id,
+                    })
+                    .await?
+                    .map(|_| "created")
+                    .unwrap_or("missing_target")
+                }
+                "ignore_resource" => "ignored",
+                _ => "unsupported",
+            };
+            if status == "created" && !message_id_recorded {
+                message_id_recorded = true;
+            }
+            records.push(mailbox_execution_record(action, status));
+        }
+        Ok(records)
+    }
+
+    async fn mailbox_action_issue_number(
+        &self,
+        action: &MailboxResourceActionRecord,
+    ) -> Result<Option<i64>, DbErr> {
+        let Some(resource_id) = action.resource_id else {
+            return Ok(None);
+        };
+        match action.resource_type.as_deref() {
+            Some("issue_post") => Ok(issue::Entity::find_by_id(resource_id)
+                .one(&self.db)
+                .await?
+                .and_then(|row| row.number)),
+            Some("issue_comment") => {
+                let Some(comment) = issue_comment::Entity::find_by_id(resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(issue_id) = comment.issue_id else {
+                    return Ok(None);
+                };
+                Ok(issue::Entity::find_by_id(issue_id)
+                    .one(&self.db)
+                    .await?
+                    .and_then(|row| row.number))
+            }
+            _ => Ok(None),
+        }
+    }
+
+    async fn mailbox_action_post_number(
+        &self,
+        action: &MailboxResourceActionRecord,
+    ) -> Result<Option<i64>, DbErr> {
+        let Some(resource_id) = action.resource_id else {
+            return Ok(None);
+        };
+        match action.resource_type.as_deref() {
+            Some("board_post") => Ok(posting::Entity::find_by_id(resource_id)
+                .one(&self.db)
+                .await?
+                .and_then(|row| row.number)),
+            Some("nonissue_comment") => {
+                let Some(comment) = posting_comment::Entity::find_by_id(resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(posting_id) = comment.posting_id else {
+                    return Ok(None);
+                };
+                Ok(posting::Entity::find_by_id(posting_id)
+                    .one(&self.db)
+                    .await?
+                    .and_then(|row| row.number))
+            }
+            _ => Ok(None),
+        }
     }
 
     async fn mailbox_action_for_target(
