@@ -3257,6 +3257,67 @@ async fn svn_protocol_external_client_can_mkdir_and_commit() {
 }
 
 #[tokio::test]
+async fn svn_protocol_external_client_can_mkdir_direct_url() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping external SVN direct URL mkdir smoke because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello before direct URL svn mkdir\n").expect("seed svn readme");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let direct_url = format!("{base_url}/yona/svn/owner/projectYobi/trunk/direct-url");
+    let mkdir_output = tokio::task::spawn_blocking(move || {
+        run_svn_capture(
+            &[
+                "mkdir",
+                "--non-interactive",
+                "--username",
+                "owner",
+                "--password",
+                "doorpass1",
+                "-m",
+                "external svn direct URL mkdir smoke",
+                direct_url.as_str(),
+            ],
+            None,
+        )
+    })
+    .await
+    .expect("svn direct URL mkdir task");
+    assert!(
+        mkdir_output.status.success(),
+        "svn mkdir URL should commit directly against the mounted DAV boundary\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&mkdir_output.stdout),
+        String::from_utf8_lossy(&mkdir_output.stderr)
+    );
+
+    let tree =
+        yona_rust_vcs::svn_list_tree(&repo_path, None, "trunk").expect("read committed tree");
+    assert!(
+        tree.entries
+            .iter()
+            .any(|entry| entry.is_dir && entry.path == "trunk/direct-url"),
+        "svn direct URL mkdir should create trunk/direct-url; tree: {:?}",
+        tree.entries
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
 async fn svn_protocol_external_client_can_propset_and_commit() {
     if !svn_tools_available() || !svn_client_available() {
         eprintln!(
