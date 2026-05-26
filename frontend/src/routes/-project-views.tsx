@@ -906,6 +906,8 @@ export function ProjectNewPage(props: {
 }
 
 export function ProjectImportPage(props: {
+  basePath?: string;
+  csrfToken?: string;
   defaultProjectMenus?: string[];
   defaultProjectScope?: string;
   ownerOptions?: ProjectCreateOwnerOption[];
@@ -959,21 +961,26 @@ export function ProjectImportPage(props: {
       ? [{ organization: false, ownerName: selectedOwnerName, selected: true }]
       : [];
   const createFormHref = `/projectform?owner=${encodeURIComponent(formState.ownerName)}`;
+  const actionBasePath = props.basePath?.replace(/\/+$/, "") ?? "";
+  const importAction = `${actionBasePath}/_import`;
 
   return (
     <div className="page-wrap-outer">
       <div className="project-page-wrap">
         <div className="form-wrap new-project">
           <form
-            action="/importProject"
+            action={importAction}
             className="frm-wrap"
             id="importGit"
             method="post"
             onSubmit={(event) => {
-              event.preventDefault();
-              props.onImportProject?.(formState);
+              if (props.onImportProject) {
+                event.preventDefault();
+                props.onImportProject(formState);
+              }
             }}
           >
+            <input name="csrfToken" type="hidden" value={props.csrfToken ?? ""} />
             <legend>
               project.import.from.git
               <span>

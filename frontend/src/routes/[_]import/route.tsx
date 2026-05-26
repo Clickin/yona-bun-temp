@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_import")({
 });
 
 function ProjectImportRouteComponent() {
-  const { bootstrapping, runtimeConfig, setErrorMessage } = useAppRuntime();
+  const { bootstrapping, csrfToken, runtimeConfig, setErrorMessage } = useAppRuntime();
   const canRender = useRequireAuthenticatedRoute("/_import");
   const [formOptions, setFormOptions] = React.useState<ProjectCreateFormOptionsResponse | null>(
     null,
@@ -53,12 +53,11 @@ function ProjectImportRouteComponent() {
 
   return (
     <ProjectImportPage
+      basePath={runtimeConfig.basePath}
       defaultProjectMenus={runtimeConfig.projectDefaultMenus}
       defaultProjectScope={runtimeConfig.projectDefaultScope}
+      csrfToken={csrfToken}
       ownerOptions={formOptions.ownerOptions}
-      onImportProject={() => {
-        setErrorMessage("Project import mutation is deferred.");
-      }}
       selectedOwnerName={formOptions.selectedOwnerName}
     />
   );

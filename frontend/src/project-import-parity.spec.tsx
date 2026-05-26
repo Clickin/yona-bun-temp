@@ -9,6 +9,7 @@ describe("project import parity", () => {
   it("renders the legacy git import form shell with owner handoff", () => {
     const html = renderToStaticMarkup(
       <ProjectImportPage
+        csrfToken="csrf-123"
         ownerOptions={[
           { organization: false, ownerName: "admin", selected: false },
           { organization: true, ownerName: "weblabs", selected: true },
@@ -21,7 +22,10 @@ describe("project import parity", () => {
     expect(html).toContain('class="project-page-wrap"');
     expect(html).toContain('class="form-wrap new-project"');
     expect(html).toContain('id="importGit"');
+    expect(html).toContain('action="/_import"');
     expect(html).toContain('class="frm-wrap"');
+    expect(html).toContain('name="csrfToken"');
+    expect(html).toContain('value="csrf-123"');
     expect(html).toContain('id="url"');
     expect(html).toContain('name="url"');
     expect(html).toContain('id="useRepoAuth"');
@@ -48,6 +52,8 @@ describe("project import parity", () => {
     expect(routeSource).toContain('createFileRoute("/_import")');
     expect(routeSource).toContain("readProjectCreateFormOptionsRest");
     expect(routeSource).toContain("ProjectImportPage");
+    expect(routeSource).toContain("csrfToken={csrfToken}");
+    expect(routeSource).not.toContain("Project import mutation is deferred.");
     expect(routeSource).not.toContain("PlaceholderPage");
   });
 });

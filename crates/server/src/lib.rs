@@ -446,6 +446,9 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let site_delete_project_backend = route_backend.clone();
     let site_delete_project_session_manager = session_manager.clone();
     let site_delete_project_base_path = base_path.clone();
+    let project_import_session_manager = session_manager.clone();
+    let project_import_backend = route_backend.clone();
+    let project_import_base_path = base_path.clone();
     let rest_router = build_rest_router(pilot_service.clone());
 
     let mut base_router = Router::new()
@@ -537,6 +540,21 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                     direct_legacy_user_email_validation(
                         query,
                         signup_email_validator_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/_import",
+            post(move |headers: HeaderMap, Form(form): Form<HashMap<String, String>>| {
+                async move {
+                    direct_import_project(
+                        headers,
+                        form,
+                        project_import_session_manager.clone(),
+                        project_import_backend.clone(),
+                        project_import_base_path.clone(),
                     )
                     .await
                 }
@@ -9505,6 +9523,186 @@ async fn direct_legacy_user_email_validation(
     };
 
     Json(DirectUserEmailValidationResponse { is_exist }).into_response()
+}
+
+async fn direct_import_project(
+    headers: HeaderMap,
+    form: HashMap<String, String>,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+    base_path: String,
+) -> Response {
+    let headers = headers_with_form_csrf(headers, &form);
+    let session = match require_session(&session_manager, &headers) {
+        Ok(session) => session,
+        Err(_) => return direct_plain_response(StatusCode::FORBIDDEN, "forbidden"),
+    };
+    if require_valid_csrf(&session_manager, &headers, &session).is_err() {
+        return direct_plain_response(StatusCode::FORBIDDEN, "forbidden");
+    }
+    let Some(actor_id) = session.user_id else {
+        return direct_plain_response(StatusCode::FORBIDDEN, "forbidden");
+    };
+    let PilotBackend::Repository(repository) = &backend else {
+        return RestRouteError::not_implemented("project import requires repository backend")
+            .into_response();
+    };
+
+    let source_url = direct_form_value(&form, "url");
+    if source_url.is_empty() {
+        return direct_plain_response(StatusCode::BAD_REQUEST, "project.import.error.empty.url");
+    }
+    let owner_name = direct_form_value(&form, "owner");
+    let project_name = direct_form_value(&form, "name");
+    let overview = direct_form_value(&form, "overview");
+    if !is_valid_project_name(&project_name) || overview.len() > 255 {
+        return direct_plain_response(StatusCode::BAD_REQUEST, "project.name.alert");
+    }
+    let identifier_exists = match repository
+        .project_identifier_exists(&owner_name, &project_name)
+        .await
+    {
+        Ok(exists) => exists,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    if identifier_exists {
+        return direct_plain_response(StatusCode::BAD_REQUEST, "project.name.duplicate");
+    }
+
+    let request_scope = direct_form_value(&form, "projectScope");
+    let default_scope;
+    let scope_value = if request_scope.is_empty() {
+        default_scope = configured_project_default_scope();
+        default_scope.as_str()
+    } else {
+        request_scope.as_str()
+    };
+    let scope = match map_project_scope(scope_value) {
+        Ok(scope) => scope,
+        Err(_) => return direct_plain_response(StatusCode::BAD_REQUEST, "invalid project scope"),
+    };
+
+    let actor = match repository.find_user_by_id(actor_id).await {
+        Ok(Some(actor)) => actor,
+        Ok(None) => return direct_plain_response(StatusCode::FORBIDDEN, "forbidden"),
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let organization = match repository
+        .read_organization_authorization(&owner_name, Some(actor_id))
+        .await
+    {
+        Ok(organization) => organization,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+    let created = if let Some(organization) = organization {
+        if !can_create_organization_project(organization.viewer.is_organization_admin) {
+            return direct_plain_response(StatusCode::FORBIDDEN, "forbidden");
+        }
+        repository
+            .create_project(persistence::CreateProjectInput {
+                organization_id: Some(organization.organization.id),
+                owner_name: organization.organization.organization_name,
+                overview: Some(overview.clone()),
+                project_name: project_name.clone(),
+                project_scope: scope.as_str().to_string(),
+            })
+            .await
+    } else {
+        if !can_create_personal_project(Some(&actor.login_id), &owner_name) {
+            return direct_plain_response(StatusCode::BAD_REQUEST, "project.owner.invalid");
+        }
+        repository
+            .create_project(persistence::CreateProjectInput {
+                organization_id: None,
+                owner_name: owner_name.clone(),
+                overview: Some(overview.clone()),
+                project_name: project_name.clone(),
+                project_scope: scope.as_str().to_string(),
+            })
+            .await
+    };
+    let created = match created {
+        Ok(created) => created,
+        Err(error) => return RestRouteError::internal(error.to_string()).into_response(),
+    };
+
+    let repo_path = yona_rust_vcs::repository_path(&yona_data_root(), created.id);
+    let clone_result = {
+        let _guard = match repository_provisioning_lock().lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                return RestRouteError::internal("repository provisioning lock poisoned")
+                    .into_response()
+            }
+        };
+        yona_rust_vcs::clone_bare_repository_from_source(&source_url, &repo_path)
+    };
+    if let Err(error) = clone_result {
+        let _ = repository
+            .delete_project_by_owner_and_name(&created.owner_name, &created.project_name)
+            .await;
+        let _ = yona_rust_vcs::delete_repository(&repo_path);
+        return direct_plain_response(
+            StatusCode::BAD_REQUEST,
+            &format!("project.import.error.invalid.url: {error}"),
+        );
+    }
+
+    if let Err(error) = repository
+        .add_project_membership(created.id, actor_id, "manager")
+        .await
+    {
+        let _ = repository
+            .delete_project_by_owner_and_name(&created.owner_name, &created.project_name)
+            .await;
+        let _ = yona_rust_vcs::delete_repository(&repo_path);
+        return RestRouteError::internal(error.to_string()).into_response();
+    }
+    if let Some(menu_settings) = direct_project_menu_settings_from_form(&form) {
+        if let Err(error) = repository
+            .set_project_menu_settings(created.id, menu_settings)
+            .await
+        {
+            return RestRouteError::internal(error.to_string()).into_response();
+        }
+    }
+
+    redirect_to(
+        &base_path,
+        &format!("/{}/{}", created.owner_name, created.project_name),
+    )
+}
+
+fn direct_form_value(form: &HashMap<String, String>, key: &str) -> String {
+    form.get(key)
+        .map(|value| value.trim())
+        .unwrap_or_default()
+        .to_string()
+}
+
+fn direct_project_menu_settings_from_form(
+    form: &HashMap<String, String>,
+) -> Option<persistence::ProjectMenuSettingsRecord> {
+    let checked = |name: &str| form.get(name).map(|value| direct_form_checked(value));
+    rest_project_menu_settings(
+        checked("code"),
+        checked("issue"),
+        checked("pullRequest"),
+        checked("review"),
+        checked("milestone"),
+        checked("board"),
+    )
+}
+
+fn direct_form_checked(value: &str) -> bool {
+    matches!(
+        value.trim().to_ascii_lowercase().as_str(),
+        "true" | "on" | "yes" | "1"
+    )
+}
+
+fn direct_plain_response(status: StatusCode, body: &str) -> Response {
+    (status, body.to_string()).into_response()
 }
 
 fn is_legacy_reserved_user_name(name: &str) -> bool {

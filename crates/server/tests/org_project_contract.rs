@@ -199,6 +199,80 @@ fn run_git(args: &[&str], cwd: Option<&Path>) {
     );
 }
 
+fn git_output(args: &[&str], cwd: Option<&Path>) -> String {
+    let mut command = Command::new("git");
+    command.args(args);
+    if let Some(cwd) = cwd {
+        command.current_dir(cwd);
+    }
+    let output = command.output().expect("run git");
+    assert!(
+        output.status.success(),
+        "git {:?} failed\nstdout: {}\nstderr: {}",
+        args,
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).to_string()
+}
+
+fn form_escape(value: &str) -> String {
+    let mut encoded = String::new();
+    for byte in value.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                encoded.push(byte as char);
+            }
+            b' ' => encoded.push('+'),
+            _ => encoded.push_str(&format!("%{byte:02X}")),
+        }
+    }
+    encoded
+}
+
+fn seed_source_bare_repository(repo_path: &Path, readme: &str) {
+    run_git(&["init", "--bare", repo_path.to_str().unwrap()], None);
+    let work = tempdir().expect("source work repo");
+    fs::write(work.path().join("README.md"), readme).expect("source readme");
+    run_git(
+        &[
+            "--git-dir",
+            repo_path.to_str().unwrap(),
+            "--work-tree",
+            work.path().to_str().unwrap(),
+            "add",
+            ".",
+        ],
+        None,
+    );
+    run_git(
+        &[
+            "--git-dir",
+            repo_path.to_str().unwrap(),
+            "--work-tree",
+            work.path().to_str().unwrap(),
+            "-c",
+            "user.email=author@example.com",
+            "-c",
+            "user.name=Author",
+            "commit",
+            "-m",
+            "Seed import source",
+        ],
+        None,
+    );
+    run_git(
+        &[
+            "--git-dir",
+            repo_path.to_str().unwrap(),
+            "branch",
+            "-M",
+            "main",
+        ],
+        None,
+    );
+}
+
 fn seed_bare_repository_readme(yona_data: &Path, project_id: i64, readme: &str) {
     let repo_root = yona_data.join("repo");
     fs::create_dir_all(&repo_root).expect("repo root");
@@ -253,6 +327,118 @@ fn seed_bare_repository_readme(yona_data: &Path, project_id: i64, readme: &str) 
         ],
         None,
     );
+}
+
+#[tokio::test]
+async fn project_import_direct_route_clones_git_repository_and_preserves_legacy_errors() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let source_dir = tempdir().expect("source repo tempdir");
+    let source_repo = source_dir.path().join("source.git");
+    seed_source_bare_repository(&source_repo, "# Imported\n");
+
+    let (app, app_repo) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie) = bootstrap(app.clone()).await;
+    register_user(app.clone(), &admin_cookie, &admin_csrf, "admin").await;
+
+    let import_body = format!(
+        "url={}&owner=admin&name=imported&overview=Imported&projectScope=PUBLIC&vcs=GIT&code=true&issue=true&pullRequest=true&review=true&milestone=true&board=true&csrfToken={}",
+        form_escape(source_repo.to_str().expect("source repo path")),
+        form_escape(&admin_csrf)
+    );
+    let imported = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/_import")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .header(http::header::COOKIE, &admin_cookie)
+                .body(Body::from(import_body.clone()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(imported.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        imported
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/admin/imported")
+    );
+
+    let authorization = app_repo
+        .read_project_authorization("admin", "imported", None)
+        .await
+        .expect("read imported project")
+        .expect("imported project exists");
+    let imported_repo = repository_path(data_dir.path(), authorization.project.id);
+    assert!(
+        imported_repo.exists(),
+        "import should clone source repository into ID-based bare Git storage"
+    );
+    let readme = git_output(
+        &[
+            "--git-dir",
+            imported_repo.to_str().unwrap(),
+            "show",
+            "HEAD:README.md",
+        ],
+        None,
+    );
+    assert_eq!(readme, "# Imported\n");
+
+    let duplicate = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/_import")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .header(http::header::COOKIE, &admin_cookie)
+                .body(Body::from(import_body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(duplicate.status(), StatusCode::BAD_REQUEST);
+    assert!(response_json(duplicate)
+        .await
+        .contains("project.name.duplicate"));
+
+    let no_url = app
+        .oneshot(
+            Request::builder()
+                .method(Method::POST)
+                .uri("/yona/_import")
+                .header(
+                    http::header::CONTENT_TYPE,
+                    "application/x-www-form-urlencoded",
+                )
+                .header(http::header::COOKIE, &admin_cookie)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::from(
+                    "owner=admin&name=missing-url&projectScope=PUBLIC&vcs=GIT",
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(no_url.status(), StatusCode::BAD_REQUEST);
+    assert!(response_json(no_url)
+        .await
+        .contains("project.import.error.empty.url"));
+    std::env::remove_var("YONA_DATA");
 }
 
 #[tokio::test]

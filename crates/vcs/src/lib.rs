@@ -1457,6 +1457,17 @@ pub fn clone_bare_repository(source_repo_path: &Path, repo_path: &Path) -> Resul
     if !source_repo_path.exists() || !source_repo_path.is_dir() {
         return Err(VcsError::NotFound);
     }
+    clone_bare_repository_from_source(
+        source_repo_path.to_str().ok_or(VcsError::InvalidPath)?,
+        repo_path,
+    )
+}
+
+pub fn clone_bare_repository_from_source(source: &str, repo_path: &Path) -> Result<(), VcsError> {
+    let source = source.trim();
+    if source.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
     if repo_path.exists() {
         return Err(VcsError::FilesystemFailed(format!(
             "{} already exists",
@@ -1470,7 +1481,7 @@ pub fn clone_bare_repository(source_repo_path: &Path, repo_path: &Path) -> Resul
 
     let output = Command::new("git")
         .args(["clone", "--bare"])
-        .arg(source_repo_path)
+        .arg(source)
         .arg(repo_path)
         .output()
         .map_err(|_| VcsError::GitUnavailable)?;
