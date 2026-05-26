@@ -903,6 +903,23 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("first<br/>continuation");
   });
 
+  it("keeps task-list checkboxes inside loose-list first paragraphs like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"- [x] done\n\n  more detail\n- [ ] open"} />,
+    );
+
+    expect(html).toContain('class="task-list-item"');
+    expect(html).toContain(
+      '<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox" checked=""/> done</p><p>more detail</p></li>',
+    );
+    expect(html).toContain(
+      '<li class="task-list-item"><p><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox"/> open</p></li>',
+    );
+    expect(html).not.toContain(
+      '<li class="task-list-item"><input class="task-list-item-checkbox" disabled="" readOnly="" type="checkbox" checked=""/> <p>',
+    );
+  });
+
   it("renders task-list checkboxes like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- [ ] open\n- [x] **done**\n- [X] done upper"} />,

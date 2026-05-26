@@ -1032,20 +1032,14 @@ function MarkdownTasklistBar(props: { stats: MarkdownTaskStats }) {
 function MarkdownList(props: { context?: MarkdownContext; list: MarkdownListRecord }) {
   const children = props.list.items.map((item) => (
     <li className={item.task ? "task-list-item" : undefined} key={item.key}>
-      {item.task ? (
-        <input
-          checked={item.checked}
-          className="task-list-item-checkbox"
-          disabled
-          readOnly
-          type="checkbox"
-        />
-      ) : null}
-      {item.task ? " " : null}
       {props.list.loose ? (
         <MarkdownLooseListItem context={props.context} item={item} />
       ) : (
-        <MarkdownInlineLines context={props.context} text={item.text} />
+        <>
+          <MarkdownTaskCheckbox item={item} />
+          {item.task ? " " : null}
+          <MarkdownInlineLines context={props.context} text={item.text} />
+        </>
       )}
       {item.children?.map((child) => (
         <MarkdownList
@@ -1065,6 +1059,21 @@ function MarkdownList(props: { context?: MarkdownContext; list: MarkdownListReco
   );
 }
 
+function MarkdownTaskCheckbox(props: { item: MarkdownListItem }) {
+  if (!props.item.task) {
+    return null;
+  }
+  return (
+    <input
+      checked={props.item.checked}
+      className="task-list-item-checkbox"
+      disabled
+      readOnly
+      type="checkbox"
+    />
+  );
+}
+
 function MarkdownLooseListItem(props: { context?: MarkdownContext; item: MarkdownListItem }) {
   const paragraphs: { key: string; text: string }[] = [];
   let offset = 0;
@@ -1079,6 +1088,12 @@ function MarkdownLooseListItem(props: { context?: MarkdownContext; item: Markdow
     <>
       {paragraphs.map((paragraph) => (
         <p key={paragraph.key}>
+          {paragraph === paragraphs[0] ? (
+            <>
+              <MarkdownTaskCheckbox item={props.item} />
+              {props.item.task ? " " : null}
+            </>
+          ) : null}
           <MarkdownInlineLines context={props.context} text={paragraph.text} />
         </p>
       ))}
