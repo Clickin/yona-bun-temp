@@ -2236,7 +2236,7 @@ async fn svn_protocol_external_client_can_propset_and_commit() {
         vec![
             "checkout".to_string(),
             "--non-interactive".to_string(),
-            svn_url,
+            svn_url.clone(),
             checkout_dir.path().to_string_lossy().to_string(),
         ],
         None,
@@ -2250,6 +2250,17 @@ async fn svn_protocol_external_client_can_propset_and_commit() {
             "--non-interactive".to_string(),
             "yona:test".to_string(),
             "external-prop".to_string(),
+            readme.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    run_svn_blocking(
+        vec![
+            "propset".to_string(),
+            "--non-interactive".to_string(),
+            "reviewed".to_string(),
+            "external-reviewed".to_string(),
             readme.to_string_lossy().to_string(),
         ],
         None,
@@ -2280,12 +2291,102 @@ async fn svn_protocol_external_client_can_propset_and_commit() {
         "svn propset commit should persist yona:test; properties: {:?}",
         properties
     );
+    assert!(
+        properties
+            .iter()
+            .any(|property| property.name == "reviewed" && property.value == "external-reviewed"),
+        "svn propset commit should persist reviewed; properties: {:?}",
+        properties
+    );
+    run_svn_blocking(
+        vec![
+            "update".to_string(),
+            "--non-interactive".to_string(),
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    let propget_output = tokio::task::spawn_blocking({
+        let readme = readme.clone();
+        move || {
+            run_svn_capture(
+                &[
+                    "propget",
+                    "--non-interactive",
+                    "yona:test",
+                    readme.to_string_lossy().as_ref(),
+                ],
+                None,
+            )
+        }
+    })
+    .await
+    .expect("svn propget task");
+    assert!(
+        propget_output.status.success(),
+        "svn propget should read the committed custom property\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&propget_output.stdout),
+        String::from_utf8_lossy(&propget_output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&propget_output.stdout).trim(),
+        "external-prop"
+    );
+    let fresh_checkout = tempdir().expect("svn fresh checkout tempdir");
+    run_svn_blocking(
+        vec![
+            "checkout".to_string(),
+            "--non-interactive".to_string(),
+            svn_url.clone(),
+            fresh_checkout.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    let fresh_readme = fresh_checkout.path().join("trunk").join("README.md");
+    let remote_propget_output = tokio::task::spawn_blocking({
+        let fresh_readme = fresh_readme.clone();
+        move || {
+            run_svn_capture(
+                &[
+                    "propget",
+                    "--non-interactive",
+                    "reviewed",
+                    fresh_readme.to_string_lossy().as_ref(),
+                ],
+                None,
+            )
+        }
+    })
+    .await
+    .expect("svn fresh checkout propget task");
+    assert!(
+        remote_propget_output.status.success(),
+        "fresh svn checkout should materialize the committed XML-safe custom property\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&remote_propget_output.stdout),
+        String::from_utf8_lossy(&remote_propget_output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&remote_propget_output.stdout).trim(),
+        "external-reviewed"
+    );
 
     run_svn_blocking(
         vec![
             "propdel".to_string(),
             "--non-interactive".to_string(),
             "yona:test".to_string(),
+            readme.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    run_svn_blocking(
+        vec![
+            "propdel".to_string(),
+            "--non-interactive".to_string(),
+            "reviewed".to_string(),
             readme.to_string_lossy().to_string(),
         ],
         None,
@@ -2312,8 +2413,8 @@ async fn svn_protocol_external_client_can_propset_and_commit() {
     assert!(
         properties
             .iter()
-            .all(|property| property.name != "yona:test"),
-        "svn propdel commit should remove yona:test; properties: {:?}",
+            .all(|property| property.name != "yona:test" && property.name != "reviewed"),
+        "svn propdel commit should remove yona:test and reviewed; properties: {:?}",
         properties
     );
 
