@@ -11061,6 +11061,7 @@ struct RestSiteImportProjectItem {
 struct RestSiteExportPostItem {
     author_login_id: String,
     body_markdown: String,
+    comments: Vec<RestSiteExportCommentItem>,
     labels: Vec<RestSiteExportLabelItem>,
     notice: bool,
     owner_name: String,
@@ -11076,12 +11077,20 @@ struct RestSiteExportIssueItem {
     assignee_login_id: String,
     author_login_id: String,
     body_markdown: String,
+    comments: Vec<RestSiteExportCommentItem>,
     issue_number: String,
     labels: Vec<RestSiteExportLabelItem>,
     owner_name: String,
     project_name: String,
     state: String,
     title: String,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", default)]
+struct RestSiteExportCommentItem {
+    author_login_id: String,
+    contents_markdown: String,
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -16726,11 +16735,11 @@ async fn rest_import_site_data(
             &post.labels,
         )
         .await?;
-        repository
+        let created = repository
             .create_posting(persistence::CreatePostingInput {
-                actor_display_name: actor.display_name,
+                actor_display_name: actor.display_name.clone(),
                 actor_id: actor.id,
-                actor_login_id: actor.login_id,
+                actor_login_id: actor.login_id.clone(),
                 owner_name: post.owner_name.trim().to_string(),
                 project_name: post.project_name.trim().to_string(),
                 values: persistence::PostingMutationInput {
@@ -16744,6 +16753,19 @@ async fn rest_import_site_data(
             })
             .await
             .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        let Some(created) = created else {
+            skipped_posts += 1;
+            continue;
+        };
+        rest_site_import_post_comments(
+            repository,
+            &post.owner_name,
+            &post.project_name,
+            created.post_number,
+            &post.comments,
+            &actor,
+        )
+        .await?;
         imported_posts += 1;
     }
 
@@ -16774,7 +16796,7 @@ async fn rest_import_site_data(
         .await?;
         let created = repository
             .create_issue(persistence::CreateIssueInput {
-                actor_display_name: actor.display_name,
+                actor_display_name: actor.display_name.clone(),
                 actor_id: actor.id,
                 actor_login_id: actor.login_id.clone(),
                 owner_name: issue.owner_name.trim().to_string(),
@@ -16807,6 +16829,15 @@ async fn rest_import_site_data(
                 .await
                 .map_err(|error| RestRouteError::internal(error.to_string()))?;
         }
+        rest_site_import_issue_comments(
+            repository,
+            &issue.owner_name,
+            &issue.project_name,
+            created.issue_number,
+            &issue.comments,
+            &actor,
+        )
+        .await?;
         imported_issues += 1;
     }
 
@@ -16821,6 +16852,90 @@ async fn rest_import_site_data(
         skipped_users,
         unsupported_sections: Vec::new(),
     }))
+}
+
+async fn rest_site_import_post_comments(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    post_number: i64,
+    comments: &[RestSiteExportCommentItem],
+    fallback_actor: &persistence::AppUserRecord,
+) -> Result<(), RestRouteError> {
+    for comment in comments {
+        let contents_markdown = comment.contents_markdown.trim();
+        if contents_markdown.is_empty() {
+            continue;
+        }
+        let actor =
+            rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
+                .await?;
+        repository
+            .create_posting_comment(persistence::CreatePostingCommentInput {
+                actor_display_name: actor.display_name,
+                actor_id: actor.id,
+                actor_login_id: actor.login_id,
+                attachment_ids: vec![],
+                contents_markdown: contents_markdown.to_string(),
+                owner_name: owner_name.trim().to_string(),
+                post_number,
+                project_name: project_name.trim().to_string(),
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    }
+    Ok(())
+}
+
+async fn rest_site_import_issue_comments(
+    repository: &PilotRepository,
+    owner_name: &str,
+    project_name: &str,
+    issue_number: i64,
+    comments: &[RestSiteExportCommentItem],
+    fallback_actor: &persistence::AppUserRecord,
+) -> Result<(), RestRouteError> {
+    for comment in comments {
+        let contents_markdown = comment.contents_markdown.trim();
+        if contents_markdown.is_empty() {
+            continue;
+        }
+        let actor =
+            rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
+                .await?;
+        repository
+            .create_issue_comment(persistence::CreateIssueCommentInput {
+                actor_display_name: actor.display_name,
+                actor_id: actor.id,
+                actor_login_id: actor.login_id,
+                attachment_ids: vec![],
+                contents_markdown: contents_markdown.to_string(),
+                issue_number,
+                owner_name: owner_name.trim().to_string(),
+                parent_comment_id: None,
+                project_name: project_name.trim().to_string(),
+            })
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+    }
+    Ok(())
+}
+
+async fn rest_site_import_comment_actor(
+    repository: &PilotRepository,
+    preferred_login_id: &str,
+    fallback_actor: &persistence::AppUserRecord,
+) -> Result<persistence::AppUserRecord, RestRouteError> {
+    if !preferred_login_id.trim().is_empty() {
+        if let Some(user) = repository
+            .find_user_by_login_id(preferred_login_id.trim())
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?
+        {
+            return Ok(user);
+        }
+    }
+    Ok(fallback_actor.clone())
 }
 
 async fn rest_site_import_label_ids(
@@ -21480,6 +21595,11 @@ fn rest_site_export_post_from_record(
     RestSiteExportPostItem {
         author_login_id: record.author_login_id.clone(),
         body_markdown: record.body_markdown.clone(),
+        comments: record
+            .comments
+            .iter()
+            .map(rest_site_export_post_comment_from_record)
+            .collect(),
         labels: record
             .labels
             .iter()
@@ -21501,6 +21621,11 @@ fn rest_site_export_issue_from_record(
         assignee_login_id: record.assignee_login_id.clone(),
         author_login_id: record.author_login_id.clone(),
         body_markdown: record.body_markdown.clone(),
+        comments: record
+            .comments
+            .iter()
+            .map(rest_site_export_issue_comment_from_record)
+            .collect(),
         issue_number: record.issue_number.to_string(),
         labels: record
             .labels
@@ -21511,6 +21636,24 @@ fn rest_site_export_issue_from_record(
         project_name: record.project_name.clone(),
         state: record.state.clone(),
         title: record.title.clone(),
+    }
+}
+
+fn rest_site_export_post_comment_from_record(
+    record: &persistence::PostingCommentRecord,
+) -> RestSiteExportCommentItem {
+    RestSiteExportCommentItem {
+        author_login_id: record.author_login_id.clone(),
+        contents_markdown: record.contents_markdown.clone(),
+    }
+}
+
+fn rest_site_export_issue_comment_from_record(
+    record: &persistence::IssueCommentRecord,
+) -> RestSiteExportCommentItem {
+    RestSiteExportCommentItem {
+        author_login_id: record.author_login_id.clone(),
+        contents_markdown: record.contents_markdown.clone(),
     }
 }
 

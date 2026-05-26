@@ -10,8 +10,8 @@ use std::sync::{Mutex, OnceLock};
 use tower::ServiceExt;
 use yona_rust_integrations::{clear_test_outbox, snapshot_test_outbox};
 use yona_rust_persistence::{
-    attachment, project_user, site_admin, AppRepository, CreateIssueInput, CreatePostingInput,
-    IssueMutationInput, PostingMutationInput,
+    attachment, project_user, site_admin, AppRepository, CreateIssueCommentInput, CreateIssueInput,
+    CreatePostingCommentInput, CreatePostingInput, IssueMutationInput, PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
@@ -694,6 +694,19 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
     .await
     .expect("create export posting")
     .expect("posting created");
+    repo.create_posting_comment(CreatePostingCommentInput {
+        actor_display_name: "Member Name".to_string(),
+        actor_id: member_id,
+        actor_login_id: "member".to_string(),
+        attachment_ids: vec![],
+        contents_markdown: "legacy data export post comment".to_string(),
+        owner_name: "member".to_string(),
+        post_number: 1,
+        project_name: "dataproj".to_string(),
+    })
+    .await
+    .expect("create export posting comment")
+    .expect("posting comment created");
     repo.create_issue(CreateIssueInput {
         actor_display_name: "Member Name".to_string(),
         actor_id: member_id,
@@ -712,6 +725,20 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
     .await
     .expect("create export issue")
     .expect("issue created");
+    repo.create_issue_comment(CreateIssueCommentInput {
+        actor_display_name: "Member Name".to_string(),
+        actor_id: member_id,
+        actor_login_id: "member".to_string(),
+        attachment_ids: vec![],
+        contents_markdown: "legacy data export issue comment".to_string(),
+        issue_number: 1,
+        owner_name: "member".to_string(),
+        parent_comment_id: None,
+        project_name: "dataproj".to_string(),
+    })
+    .await
+    .expect("create export issue comment")
+    .expect("issue comment created");
 
     let unauthenticated = rest_get(app.clone(), "/yona/sites/export", None).await;
     assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
@@ -749,16 +776,24 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         payload["posts"][0]["bodyMarkdown"],
         "legacy data export post"
     );
+    assert_eq!(
+        payload["posts"][0]["comments"][0]["contentsMarkdown"],
+        "legacy data export post comment"
+    );
     assert_eq!(payload["issues"][0]["title"], "Data export issue");
     assert_eq!(
         payload["issues"][0]["bodyMarkdown"],
         "legacy data export issue"
     );
+    assert_eq!(
+        payload["issues"][0]["comments"][0]["contentsMarkdown"],
+        "legacy data export issue comment"
+    );
 }
 
 #[tokio::test]
 async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
-    let (app, _repo, db) = build_app_with_repository().await;
+    let (app, repo, db) = build_app_with_repository().await;
     let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
     mark_site_admin(&db, admin_id).await;
@@ -780,6 +815,10 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
         "posts": [{
             "authorLoginId": "imported",
             "bodyMarkdown": "restored post body",
+            "comments": [{
+                "authorLoginId": "imported",
+                "contentsMarkdown": "restored post comment"
+            }],
             "labels": [{
                 "categoryIsExclusive": false,
                 "categoryName": "Type",
@@ -796,6 +835,10 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
             "assigneeLoginId": "",
             "authorLoginId": "imported",
             "bodyMarkdown": "restored issue body",
+            "comments": [{
+                "authorLoginId": "imported",
+                "contentsMarkdown": "restored issue comment"
+            }],
             "ownerName": "imported",
             "projectName": "restored",
             "labels": [{
@@ -897,6 +940,16 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
     assert_eq!(posts["posts"][0]["title"], "Restored post");
     assert_eq!(posts["posts"][0]["labels"][0]["name"], "Notice");
     assert_eq!(posts["posts"][0]["labels"][0]["categoryName"], "Type");
+    let post_detail = repo
+        .read_posting_detail_for_viewer("imported", "restored", 1, None)
+        .await
+        .expect("read imported post")
+        .expect("imported post exists");
+    assert_eq!(post_detail.comments.len(), 1);
+    assert_eq!(
+        post_detail.comments[0].contents_markdown,
+        "restored post comment"
+    );
 
     let issues = response_json(
         rest_get(
@@ -910,6 +963,16 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
     assert_eq!(issues["issues"][0]["title"], "Restored issue");
     assert_eq!(issues["issues"][0]["labels"][0]["name"], "Bug");
     assert_eq!(issues["issues"][0]["labels"][0]["categoryName"], "Type");
+    let issue_detail = repo
+        .read_issue_detail("imported", "restored", 1)
+        .await
+        .expect("read imported issue")
+        .expect("imported issue exists");
+    assert_eq!(issue_detail.comments.len(), 1);
+    assert_eq!(
+        issue_detail.comments[0].contents_markdown,
+        "restored issue comment"
+    );
 }
 
 #[tokio::test]
