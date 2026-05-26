@@ -963,6 +963,36 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     let response = direct_request_with_body(
         app.clone(),
         propfind,
+        "/svn/owner/projectYobi/trunk",
+        None,
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:prop>
+    <D:creationdate/>
+    <D:creator-displayname/>
+  </D:prop>
+</D:propfind>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:creationdate>")
+            && text.contains("</D:creationdate>")
+            && text.contains("<D:creator-displayname>")
+            && text.contains("</D:creator-displayname>")
+            && !text.contains("<D:checked-in>")
+            && !text.contains("<S:repository-uuid>"),
+        "SVN collection PROPFIND should expose requested revision provenance metadata only: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body(
+        app.clone(),
+        propfind,
         &format!("/svn/owner/projectYobi/!svn/bln/{revision}"),
         None,
         Body::from(
@@ -1123,6 +1153,36 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
                 "/yona/svn/owner/projectYobi/!svn/bc/{revision}/trunk/"
             )),
         "SVN baseline collection PROPFIND depth=0 should only expose the requested collection: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body(
+        app.clone(),
+        propfind,
+        &format!("/svn/owner/projectYobi/!svn/bc/{revision}/trunk"),
+        None,
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:prop>
+    <D:creationdate/>
+    <D:creator-displayname/>
+  </D:prop>
+</D:propfind>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:creationdate>")
+            && text.contains("</D:creationdate>")
+            && text.contains("<D:creator-displayname>")
+            && text.contains("</D:creator-displayname>")
+            && !text.contains("<D:checked-in>")
+            && !text.contains("<S:repository-uuid>"),
+        "SVN baseline collection PROPFIND should expose requested revision provenance metadata only: {text}"
     );
 
     let report = Method::from_bytes(b"REPORT").expect("REPORT method");

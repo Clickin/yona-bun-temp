@@ -3189,6 +3189,9 @@ fn svn_protocol_tree_propfind_response(
             }
         },
     };
+    let provenance = version_revision.and_then(|revision| {
+        svn_protocol_revision_provenance(repo_path, route, Some(revision), request)
+    });
     Some(svn_protocol_propfind_tree_response(
         route,
         &tree,
@@ -3197,6 +3200,7 @@ fn svn_protocol_tree_propfind_response(
         yona_rust_vcs::svn_repository_uuid(repo_path)
             .ok()
             .as_deref(),
+        provenance.as_ref(),
         request,
     ))
 }
@@ -3207,6 +3211,7 @@ fn svn_protocol_propfind_tree_response(
     version_revision: Option<i64>,
     include_children: bool,
     repository_uuid: Option<&str>,
+    provenance: Option<&SvnProtocolRevisionProvenance>,
     request: &str,
 ) -> Response {
     let mut responses = String::new();
@@ -3217,6 +3222,7 @@ fn svn_protocol_propfind_tree_response(
         &tree.path,
         version_revision,
         repository_uuid,
+        provenance,
         request,
     ));
     if let Some(alias_href) = collection_href.strip_suffix('/') {
@@ -3226,6 +3232,7 @@ fn svn_protocol_propfind_tree_response(
             &tree.path,
             version_revision,
             repository_uuid,
+            provenance,
             request,
         ));
     }
@@ -3239,6 +3246,7 @@ fn svn_protocol_propfind_tree_response(
                     &entry.path,
                     version_revision,
                     repository_uuid,
+                    provenance,
                     request,
                 ));
             } else {
@@ -3327,6 +3335,7 @@ fn svn_protocol_propfind_collection_item(
     path: &str,
     version_revision: Option<i64>,
     repository_uuid: Option<&str>,
+    provenance: Option<&SvnProtocolRevisionProvenance>,
     request: &str,
 ) -> String {
     if svn_protocol_propfind_is_propname(request) {
@@ -3349,6 +3358,14 @@ fn svn_protocol_propfind_collection_item(
         let baseline_relative_path = (!path.trim_matches('/').is_empty())
             .then_some("        <S:baseline-relative-path/>\n")
             .unwrap_or_default();
+        let creationdate = provenance
+            .is_some()
+            .then_some("        <D:creationdate/>\n")
+            .unwrap_or_default();
+        let creator_displayname = provenance
+            .is_some()
+            .then_some("        <D:creator-displayname/>\n")
+            .unwrap_or_default();
         return format!(
             r#"  <D:response>
     <D:href>{}</D:href>
@@ -3356,7 +3373,7 @@ fn svn_protocol_propfind_collection_item(
       <D:prop>
         <D:resourcetype/>
 {version_name}{checked_in}{baseline_collection}{repository_uuid}        <D:version-controlled-configuration/>
-{baseline_relative_path}      </D:prop>
+{baseline_relative_path}{creationdate}{creator_displayname}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
   </D:response>
@@ -3435,12 +3452,32 @@ fn svn_protocol_propfind_collection_item(
     } else {
         String::new()
     };
+    let creationdate = svn_protocol_propfind_wants(request, "creationdate")
+        .then_some(provenance)
+        .flatten()
+        .map(|metadata| {
+            format!(
+                "        <D:creationdate>{}</D:creationdate>\n",
+                xml_escape(&metadata.creationdate)
+            )
+        })
+        .unwrap_or_default();
+    let creator_displayname = svn_protocol_propfind_wants(request, "creator-displayname")
+        .then_some(provenance)
+        .flatten()
+        .map(|metadata| {
+            format!(
+                "        <D:creator-displayname>{}</D:creator-displayname>\n",
+                xml_escape(&metadata.creator_displayname)
+            )
+        })
+        .unwrap_or_default();
     format!(
         r#"  <D:response>
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
-{resourcetype}{version_name}{checked_in}{baseline_collection}{repository_uuid}{version_controlled_configuration}{baseline_relative_path}
+{resourcetype}{version_name}{checked_in}{baseline_collection}{repository_uuid}{version_controlled_configuration}{baseline_relative_path}{creationdate}{creator_displayname}
       </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
