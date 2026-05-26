@@ -3104,13 +3104,22 @@ fn svn_protocol_propfind_file_item(
     repository_uuid: Option<&str>,
     request: &str,
 ) -> String {
-    let content_length = content_length
+    let resourcetype = svn_protocol_propfind_wants(request, "resourcetype")
+        .then_some("        <D:resourcetype/>\n")
+        .unwrap_or_default();
+    let content_length = svn_protocol_propfind_wants(request, "getcontentlength")
+        .then_some(content_length)
+        .flatten()
         .map(|length| format!("        <D:getcontentlength>{length}</D:getcontentlength>\n"))
         .unwrap_or_default();
-    let version_name = version_revision
+    let version_name = svn_protocol_propfind_wants(request, "version-name")
+        .then_some(version_revision)
+        .flatten()
         .map(|revision| format!("        <D:version-name>{revision}</D:version-name>\n"))
         .unwrap_or_default();
-    let checked_in = version_href
+    let checked_in = svn_protocol_propfind_wants(request, "checked-in")
+        .then_some(version_href)
+        .flatten()
         .map(|href| {
             format!(
                 "        <D:checked-in><D:href>{}</D:href></D:checked-in>\n",
@@ -3118,7 +3127,9 @@ fn svn_protocol_propfind_file_item(
             )
         })
         .unwrap_or_default();
-    let baseline_collection = version_revision
+    let baseline_collection = svn_protocol_propfind_wants(request, "baseline-collection")
+        .then_some(version_revision)
+        .flatten()
         .map(|revision| {
             format!(
                 "        <D:baseline-collection><D:href>{}</D:href></D:baseline-collection>\n",
@@ -3126,7 +3137,9 @@ fn svn_protocol_propfind_file_item(
             )
         })
         .unwrap_or_default();
-    let baseline_relative_path = baseline_relative_path
+    let baseline_relative_path = svn_protocol_propfind_wants(request, "baseline-relative-path")
+        .then_some(baseline_relative_path)
+        .flatten()
         .map(|path| {
             format!(
                 "        <S:baseline-relative-path>{}</S:baseline-relative-path>\n",
@@ -3135,7 +3148,9 @@ fn svn_protocol_propfind_file_item(
         })
         .unwrap_or_default();
     let vcc_href = format!("{}/!svn/vcc/default", svn_protocol_project_href(route));
-    let repository_uuid = repository_uuid
+    let repository_uuid = svn_protocol_propfind_wants(request, "repository-uuid")
+        .then_some(repository_uuid)
+        .flatten()
         .map(|uuid| {
             format!(
                 "        <S:repository-uuid>{}</S:repository-uuid>\n",
@@ -3143,6 +3158,17 @@ fn svn_protocol_propfind_file_item(
             )
         })
         .unwrap_or_default();
+    let version_controlled_configuration = if svn_protocol_propfind_wants(
+        request,
+        "version-controlled-configuration",
+    ) {
+        format!(
+                "        <D:version-controlled-configuration><D:href>{}</D:href></D:version-controlled-configuration>\n",
+                xml_escape(&vcc_href)
+            )
+    } else {
+        String::new()
+    };
     let property_items = svn_protocol_property_items_for_request(properties, request);
     let deadprop_count = if property_items.is_empty() {
         String::new()
@@ -3157,15 +3183,13 @@ fn svn_protocol_propfind_file_item(
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
-        <D:resourcetype/>
-{content_length}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}        <D:version-controlled-configuration><D:href>{}</D:href></D:version-controlled-configuration>
+{resourcetype}{content_length}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{version_controlled_configuration}
 {deadprop_count}{property_items}{lock_discovery}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
   </D:response>
 "#,
-        xml_escape(href),
-        xml_escape(&vcc_href)
+        xml_escape(href)
     )
 }
 

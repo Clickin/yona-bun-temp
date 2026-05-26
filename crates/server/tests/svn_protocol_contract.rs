@@ -1526,6 +1526,38 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "SVN file PROPFIND should expose executable-backed regular properties: {text}"
     );
 
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body(
+        app.clone(),
+        propfind,
+        "/svn/owner/projectYobi/trunk/README.md",
+        None,
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:" xmlns:S="http://subversion.tigris.org/xmlns/dav/">
+  <D:prop>
+    <D:resourcetype/>
+    <S:baseline-relative-path/>
+    <S:repository-uuid/>
+  </D:prop>
+</D:propfind>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:resourcetype/>")
+            && text.contains("<S:baseline-relative-path>trunk/README.md</S:baseline-relative-path>")
+            && text.contains("<S:repository-uuid>")
+            && !text.contains("<D:getcontentlength>")
+            && !text.contains("<D:checked-in>")
+            && !text.contains("<D:version-controlled-configuration>")
+            && !text.contains("<C:reviewed>true</C:reviewed>"),
+        "SVN file PROPFIND should only return requested metadata unless allprop was requested: {text}"
+    );
+
     let response = direct_request_with_body(
         app.clone(),
         proppatch,
