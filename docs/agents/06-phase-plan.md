@@ -137,6 +137,7 @@
 - Phase 3N latest edge fix: normal and revision-pinned baseline collection `PROPFIND` now exposes requested `creationdate`, `creator-displayname`, and RFC1123 `getlastmodified` on collection and child-file responses from executable-backed revision metadata without falling back to unrelated allprop fields.
 - Phase 3N latest edge fix: executable-backed `log-report`, `file-revs-report`, and `list-report` now return client-parseable Subversion ISO revision dates; `file-revs-report` also emits full-text svndiff0 `txdelta` content so actual external `svn ls --verbose`, `svn cat`, `svn log`, and `svn blame` smokes pass over the mounted HTTP boundary.
 - Phase 3N latest edge fix: root/VCC/file `PROPFIND` now honors Subversion `Label` revision selection and `update-report` emits `send-all` full-text txdelta payloads with final MD5 metadata, so actual external `svn cat -r` and `svn diff` smokes pass over the mounted HTTP boundary.
+- Phase 3N latest edge fix: the external update smoke now also covers `svn status -u` remote-change detection before `svn update`, keeping the update-report/status editor path pinned to the stock local SVN client.
 
 ## Phase 4: 풀 리퀘스트와 리뷰
 

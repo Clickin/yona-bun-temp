@@ -2733,6 +2733,29 @@ async fn svn_protocol_external_client_can_update_after_remote_commit() {
     )
     .await;
 
+    let status_output = tokio::task::spawn_blocking({
+        let reader_checkout = reader_checkout.path().to_path_buf();
+        move || {
+            run_svn_capture(
+                &["status", "--non-interactive", "-u"],
+                Some(&reader_checkout),
+            )
+        }
+    })
+    .await
+    .expect("svn status -u task");
+    assert!(
+        status_output.status.success(),
+        "svn status -u should report remote changes before update\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&status_output.stdout),
+        String::from_utf8_lossy(&status_output.stderr)
+    );
+    let status_stdout = String::from_utf8_lossy(&status_output.stdout);
+    assert!(
+        status_stdout.contains('*') && status_stdout.contains("README.md"),
+        "svn status -u should mark README as remotely changed\nstdout: {status_stdout}"
+    );
+
     run_svn_blocking(
         vec![
             "update".to_string(),
