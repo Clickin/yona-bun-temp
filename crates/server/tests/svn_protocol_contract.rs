@@ -494,6 +494,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     assert!(
         text.contains("<D:multistatus")
             && text.contains("<D:collection/>")
+            && text.contains("<D:displayname>projectYobi</D:displayname>")
             && text.contains(
                 "<D:version-controlled-configuration><D:href>/yona/svn/owner/projectYobi/!svn/vcc/default</D:href></D:version-controlled-configuration>"
             ),
@@ -531,6 +532,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
         text.contains("<D:resourcetype/>")
+            && text.contains("<D:displayname/>")
             && text.contains("<D:version-name/>")
             && text.contains("<S:repository-uuid/>")
             && text.contains("<D:version-controlled-configuration/>")
@@ -568,6 +570,10 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             "SVN default VCC PROPFIND should include executable-backed youngest revision metadata: {text}"
         );
         assert!(
+            text.contains("<D:displayname>default</D:displayname>"),
+            "SVN default VCC PROPFIND should include display name metadata: {text}"
+        );
+        assert!(
             text.contains(&format!(
                 "<D:checked-in><D:href>/yona/svn/owner/projectYobi/!svn/bln/{revision}</D:href></D:checked-in>"
             )),
@@ -600,6 +606,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
         let text = String::from_utf8(body.to_vec()).unwrap();
         assert!(
             text.contains("<D:resourcetype><D:baseline/></D:resourcetype>")
+                && text.contains(&format!("<D:displayname>{revision}</D:displayname>"))
                 && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
                 && text.contains(&format!(
                     "<D:baseline-collection><D:href>/yona/svn/owner/projectYobi/!svn/bc/{revision}</D:href></D:baseline-collection>"
@@ -626,6 +633,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
         let text = String::from_utf8(body.to_vec()).unwrap();
         assert!(
             text.contains("<D:resourcetype/>")
+                && text.contains("<D:displayname/>")
                 && text.contains("<D:version-name/>")
                 && text.contains("<D:baseline-collection/>")
                 && text.contains("<S:repository-uuid/>")
@@ -645,6 +653,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
 <D:propfind xmlns:D="DAV:">
   <D:prop>
     <D:resourcetype/>
+    <D:displayname/>
   </D:prop>
 </D:propfind>"#,
             ),
@@ -655,6 +664,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
         let text = String::from_utf8(body.to_vec()).unwrap();
         assert!(
             text.contains("<D:resourcetype><D:baseline/></D:resourcetype>")
+                && text.contains(&format!("<D:displayname>{revision}</D:displayname>"))
                 && !text.contains("<D:version-name>")
                 && !text.contains("<D:baseline-collection>"),
             "SVN baseline resource PROPFIND should only return explicitly requested metadata: {text}"
@@ -680,6 +690,7 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
         text.contains("<D:resourcetype/>")
+            && text.contains("<D:displayname/>")
             && text.contains("<D:version-name/>")
             && text.contains("<S:repository-uuid/>")
             && text.contains("<D:checked-in/>")
@@ -842,6 +853,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
         text.contains("<D:resourcetype/>")
+            && text.contains("<D:displayname>README.md</D:displayname>")
             && text.contains("<D:getcontentlength>15</D:getcontentlength>")
             && text.contains("<D:getcontenttype>application/octet-stream</D:getcontenttype>")
             && text.contains(&format!(
@@ -909,6 +921,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
         text.contains("<D:resourcetype/>")
+            && text.contains("<D:displayname>README.md</D:displayname>")
             && text.contains("<D:getcontentlength>15</D:getcontentlength>")
             && text.contains("<D:getcontenttype>application/octet-stream</D:getcontenttype>")
             && text.contains(&format!(
@@ -939,6 +952,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert!(
         text.contains("/yona/svn/owner/projectYobi/trunk/")
             && text.contains("<D:resourcetype><D:collection/></D:resourcetype>")
+            && text.contains("<D:displayname>trunk</D:displayname>")
             && text.contains("/yona/svn/owner/projectYobi/trunk/README.md")
             && text.contains("<D:resourcetype/>")
             && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
@@ -970,6 +984,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert!(
         text.contains("/yona/svn/owner/projectYobi/trunk/")
             && text.contains("<D:resourcetype/>")
+            && text.contains("<D:displayname/>")
             && text.contains("<D:version-name/>")
             && text.contains("<D:checked-in/>")
             && text.contains("<D:baseline-collection/>")
@@ -993,6 +1008,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     <D:creationdate/>
     <D:creator-displayname/>
     <D:getlastmodified/>
+    <D:displayname/>
     <D:getcontenttype/>
     <D:getetag/>
   </D:prop>
@@ -1012,6 +1028,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && readme_response.contains("</D:creator-displayname>")
             && readme_response.contains("<D:getlastmodified>")
             && readme_response.contains("GMT</D:getlastmodified>")
+            && readme_response.contains("<D:displayname>README.md</D:displayname>")
             && readme_response.contains(
                 "<D:getcontenttype>application/octet-stream</D:getcontenttype>"
             )
@@ -1068,6 +1085,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     <D:creationdate/>
     <D:creator-displayname/>
     <D:getlastmodified/>
+    <D:displayname/>
     <D:getcontenttype/>
     <D:getetag/>
   </D:prop>
@@ -1101,6 +1119,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     <D:creationdate/>
     <D:creator-displayname/>
     <D:getlastmodified/>
+    <D:displayname/>
     <D:getcontenttype/>
     <D:getetag/>
   </D:prop>
@@ -1116,6 +1135,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && text.contains("</D:creationdate>")
             && text.contains("<D:creator-displayname>")
             && text.contains("</D:creator-displayname>")
+            && text.contains("<D:displayname>README.md</D:displayname>")
             && text.contains("<D:getcontenttype>application/octet-stream</D:getcontenttype>")
             && text.contains(&format!(
                 "<D:getetag>&quot;{revision}:trunk/README.md&quot;</D:getetag>"
@@ -1171,6 +1191,8 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert!(
         text.contains("/yona/svn/owner/projectYobi/")
             && text.contains("<D:resourcetype><D:collection/></D:resourcetype>")
+            && text.contains(&format!("<D:displayname>{revision}</D:displayname>"))
+            && text.contains("<D:displayname>trunk</D:displayname>")
             && text.contains(&format!(
                 "/yona/svn/owner/projectYobi/!svn/bc/{revision}/trunk/"
             )),
@@ -1212,6 +1234,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     <D:creationdate/>
     <D:creator-displayname/>
     <D:getlastmodified/>
+    <D:displayname/>
     <D:getcontenttype/>
     <D:getetag/>
   </D:prop>
@@ -1233,6 +1256,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && readme_response.contains("</D:creator-displayname>")
             && readme_response.contains("<D:getlastmodified>")
             && readme_response.contains("GMT</D:getlastmodified>")
+            && readme_response.contains("<D:displayname>README.md</D:displayname>")
             && readme_response.contains(
                 "<D:getcontenttype>application/octet-stream</D:getcontenttype>"
             )
@@ -2028,6 +2052,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     );
     assert!(
         text.contains("<D:resourcetype/>")
+            && text.contains("<D:displayname/>")
             && text.contains("<D:getcontentlength/>")
             && text.contains("<D:getcontenttype/>")
             && text.contains("<D:getetag/>")
@@ -2052,6 +2077,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
 <D:propfind xmlns:D="DAV:" xmlns:S="http://subversion.tigris.org/xmlns/dav/">
   <D:prop>
     <D:resourcetype/>
+    <D:displayname/>
     <D:getcontenttype/>
     <D:getetag/>
     <S:baseline-relative-path/>
@@ -2066,6 +2092,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     let text = String::from_utf8(body.to_vec()).unwrap();
     assert!(
         text.contains("<D:resourcetype/>")
+            && text.contains("<D:displayname>README.md</D:displayname>")
             && text.contains("<D:getcontenttype>application/octet-stream</D:getcontenttype>")
             && text.contains("<D:getetag>&quot;")
             && text.contains(":trunk/README.md&quot;</D:getetag>")

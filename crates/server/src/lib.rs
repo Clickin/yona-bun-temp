@@ -2685,6 +2685,7 @@ fn svn_protocol_propfind_collection_response(
         }
     });
     if svn_protocol_propfind_is_propname(request) {
+        let displayname = "        <D:displayname/>\n";
         let version_name = youngest_revision
             .is_some()
             .then_some("        <D:version-name/>\n")
@@ -2729,7 +2730,7 @@ fn svn_protocol_propfind_collection_response(
     <D:propstat>
       <D:prop>
         <D:resourcetype/>
-{version_name}{repository_uuid}{checked_in}{version_controlled_configuration}{baseline_collection}{baseline_relative_path}{creationdate}{creator_displayname}{getlastmodified}      </D:prop>
+{displayname}{version_name}{repository_uuid}{checked_in}{version_controlled_configuration}{baseline_collection}{baseline_relative_path}{creationdate}{creator_displayname}{getlastmodified}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
   </D:response>
@@ -2852,6 +2853,7 @@ fn svn_protocol_propfind_collection_response(
     } else {
         ""
     };
+    let displayname = svn_protocol_displayname_item(href, request);
     let body = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
 <D:multistatus xmlns:D="DAV:" xmlns:S="http://subversion.tigris.org/xmlns/dav/">
@@ -2860,6 +2862,7 @@ fn svn_protocol_propfind_collection_response(
     <D:propstat>
       <D:prop>
 {resourcetype}
+{displayname}
 {version_name}
 {repository_uuid}
 {checked_in}
@@ -2952,11 +2955,12 @@ fn svn_protocol_baseline_propfind_response(
         None
     };
     let prop_items = if svn_protocol_propfind_is_propname(request) {
-        "        <D:resourcetype/>\n        <D:version-name/>\n        <D:baseline-collection/>\n        <D:creationdate/>\n        <D:creator-displayname/>\n        <D:getlastmodified/>\n        <S:repository-uuid/>\n".to_string()
+        "        <D:resourcetype/>\n        <D:displayname/>\n        <D:version-name/>\n        <D:baseline-collection/>\n        <D:creationdate/>\n        <D:creator-displayname/>\n        <D:getlastmodified/>\n        <S:repository-uuid/>\n".to_string()
     } else {
         let resourcetype = svn_protocol_propfind_wants(request, "resourcetype")
             .then_some("        <D:resourcetype><D:baseline/></D:resourcetype>\n")
             .unwrap_or_default();
+        let displayname = svn_protocol_displayname_item(&href, request);
         let version_name = svn_protocol_propfind_wants(request, "version-name")
             .then_some(format!(
                 "        <D:version-name>{revision}</D:version-name>\n"
@@ -3024,7 +3028,7 @@ fn svn_protocol_baseline_propfind_response(
             })
             .unwrap_or_default();
         format!(
-            "{resourcetype}{version_name}{baseline_collection_item}{creationdate}{creator_displayname}{getlastmodified}{repository_uuid}"
+            "{resourcetype}{displayname}{version_name}{baseline_collection_item}{creationdate}{creator_displayname}{getlastmodified}{repository_uuid}"
         )
     };
     let body = format!(
@@ -3377,6 +3381,7 @@ fn svn_protocol_propfind_collection_item(
     request: &str,
 ) -> String {
     if svn_protocol_propfind_is_propname(request) {
+        let displayname = "        <D:displayname/>\n";
         let version_name = version_revision
             .is_some()
             .then_some("        <D:version-name/>\n")
@@ -3414,7 +3419,7 @@ fn svn_protocol_propfind_collection_item(
     <D:propstat>
       <D:prop>
         <D:resourcetype/>
-{version_name}{checked_in}{baseline_collection}{repository_uuid}        <D:version-controlled-configuration/>
+{displayname}{version_name}{checked_in}{baseline_collection}{repository_uuid}        <D:version-controlled-configuration/>
 {baseline_relative_path}{creationdate}{creator_displayname}{getlastmodified}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
@@ -3483,6 +3488,7 @@ fn svn_protocol_propfind_collection_item(
     } else {
         ""
     };
+    let displayname = svn_protocol_displayname_item(href, request);
     let version_controlled_configuration = if svn_protocol_propfind_wants(
         request,
         "version-controlled-configuration",
@@ -3529,7 +3535,7 @@ fn svn_protocol_propfind_collection_item(
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
-{resourcetype}{version_name}{checked_in}{baseline_collection}{repository_uuid}{version_controlled_configuration}{baseline_relative_path}{creationdate}{creator_displayname}{getlastmodified}
+{resourcetype}{displayname}{version_name}{checked_in}{baseline_collection}{repository_uuid}{version_controlled_configuration}{baseline_relative_path}{creationdate}{creator_displayname}{getlastmodified}
       </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
@@ -3557,6 +3563,7 @@ fn svn_protocol_propfind_file_item(
             .is_some()
             .then_some("        <D:getcontentlength/>\n")
             .unwrap_or_default();
+        let displayname = "        <D:displayname/>\n";
         let content_type = "        <D:getcontenttype/>\n";
         let etag = svn_protocol_file_etag(version_revision, baseline_relative_path)
             .is_some()
@@ -3601,7 +3608,7 @@ fn svn_protocol_propfind_file_item(
     <D:propstat>
       <D:prop>
         <D:resourcetype/>
-{content_length}{content_type}{etag}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}        <D:version-controlled-configuration/>
+{displayname}{content_length}{content_type}{etag}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}        <D:version-controlled-configuration/>
 {property_items}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
@@ -3613,6 +3620,7 @@ fn svn_protocol_propfind_file_item(
     let resourcetype = svn_protocol_propfind_wants(request, "resourcetype")
         .then_some("        <D:resourcetype/>\n")
         .unwrap_or_default();
+    let displayname = svn_protocol_displayname_item(href, request);
     let content_length = svn_protocol_propfind_wants(request, "getcontentlength")
         .then_some(content_length)
         .flatten()
@@ -3726,7 +3734,7 @@ fn svn_protocol_propfind_file_item(
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
-{resourcetype}{content_length}{content_type}{etag}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}{version_controlled_configuration}
+{resourcetype}{displayname}{content_length}{content_type}{etag}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}{version_controlled_configuration}
 {deadprop_count}{property_items}{lock_discovery}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
@@ -3734,6 +3742,25 @@ fn svn_protocol_propfind_file_item(
 "#,
         xml_escape(href)
     )
+}
+
+fn svn_protocol_displayname_item(href: &str, request: &str) -> String {
+    if !svn_protocol_propfind_wants(request, "displayname") {
+        return String::new();
+    }
+    let displayname = href
+        .trim_end_matches('/')
+        .rsplit('/')
+        .find(|segment| !segment.is_empty())
+        .unwrap_or_default();
+    if displayname.is_empty() {
+        String::new()
+    } else {
+        format!(
+            "        <D:displayname>{}</D:displayname>\n",
+            xml_escape(displayname)
+        )
+    }
 }
 
 fn svn_protocol_file_etag(
