@@ -4260,7 +4260,7 @@ impl AppRepository {
         .await?;
         self.replace_posting_labels(updated.id, project_record.id, &input.values.label_ids)
             .await?;
-        self.bind_attachments(
+        self.sync_attachments(
             BOARD_POST_ATTACHMENT_CONTAINER,
             updated.id,
             &input.values.attachment_ids,
@@ -4511,7 +4511,7 @@ impl AppRepository {
             PostingMentionNotificationMode::All,
         )
         .await?;
-        self.bind_attachments(
+        self.sync_attachments(
             BOARD_COMMENT_ATTACHMENT_CONTAINER,
             updated.id,
             &input.attachment_ids,

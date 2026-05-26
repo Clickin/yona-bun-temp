@@ -11,7 +11,8 @@ use yona_rust_persistence::{
     site_admin, AppRepository, CreateIssueCommentInput, CreateIssueInput,
     CreatePostingCommentInput, CreatePostingInput, CreateProjectInput, CreatePullRequestInput,
     CreatePullRequestResult, IssueMutationInput, MilestoneMutationInput, PostingMutationInput,
-    PullRequestMutationInput, UpdateIssueCommentInput, UpdateIssueInput, UpdatePullRequestInput,
+    PullRequestMutationInput, UpdateIssueCommentInput, UpdateIssueInput, UpdatePostingCommentInput,
+    UpdatePostingInput, UpdatePullRequestInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
@@ -968,6 +969,48 @@ async fn attachment_binding_uses_legacy_container_type_names() {
     assert_eq!(board_file.container_type, "BOARD_POST");
     assert_eq!(board_file.container_id, posting.id);
 
+    let replacement_board_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "replacement-board-post-attachment.png",
+    )
+    .await;
+    repository
+        .update_posting(UpdatePostingInput {
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            owner_name: "owner".to_string(),
+            post_number: posting.post_number,
+            project_name: "projectYobi".to_string(),
+            values: PostingMutationInput {
+                attachment_ids: vec![replacement_board_file_id],
+                body_markdown: "updated board body".to_string(),
+                label_ids: Vec::new(),
+                notice: false,
+                readme: false,
+                title: "Updated board post with attachment".to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("updated posting");
+    assert!(
+        repository
+            .read_attachment_by_id(board_file_id)
+            .await
+            .unwrap()
+            .is_none(),
+        "board post edit should remove omitted legacy BOARD_POST attachments"
+    );
+    let replacement_board_file = repository
+        .read_attachment_by_id(replacement_board_file_id)
+        .await
+        .unwrap()
+        .expect("replacement board file");
+    assert_eq!(replacement_board_file.container_type, "BOARD_POST");
+    assert_eq!(replacement_board_file.container_id, posting.id);
+
     let board_comment_file_id = upload_image_file(
         app.clone(),
         &cookie_header,
@@ -997,6 +1040,48 @@ async fn attachment_binding_uses_legacy_container_type_names() {
         .expect("board comment file");
     assert_eq!(board_comment_file.container_type, "NONISSUE_COMMENT");
     assert_eq!(board_comment_file.container_id, board_comment_id);
+
+    let replacement_board_comment_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "replacement-board-comment-attachment.png",
+    )
+    .await;
+    repository
+        .update_posting_comment(UpdatePostingCommentInput {
+            actor_id: owner_id,
+            attachment_ids: vec![replacement_board_comment_file_id],
+            comment_id: board_comment_id,
+            contents_markdown: "updated board comment body".to_string(),
+            owner_name: "owner".to_string(),
+            post_number: posting.post_number,
+            project_name: "projectYobi".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("updated posting comment");
+    assert!(
+        repository
+            .read_attachment_by_id(board_comment_file_id)
+            .await
+            .unwrap()
+            .is_none(),
+        "board comment edit should remove omitted legacy NONISSUE_COMMENT attachments"
+    );
+    let replacement_board_comment_file = repository
+        .read_attachment_by_id(replacement_board_comment_file_id)
+        .await
+        .unwrap()
+        .expect("replacement board comment file");
+    assert_eq!(
+        replacement_board_comment_file.container_type,
+        "NONISSUE_COMMENT"
+    );
+    assert_eq!(
+        replacement_board_comment_file.container_id,
+        board_comment_id
+    );
 
     let other_milestone_file_id = upload_image_file(
         app.clone(),

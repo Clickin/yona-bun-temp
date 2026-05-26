@@ -374,10 +374,11 @@ Interpretation:
 - [x] Avatar attachment flow
 - [x] Issue attachment binding and edit sync
 - [x] Issue comment attachment binding and edit sync
+- [x] Board post/comment attachment binding and edit sync
 - [x] Milestone attachment binding
 - [x] PR body attachment binding and edit sync
 - [x] File delete authorization, including legacy `POST /files/:id/` `_method=delete` alias
-- [~] Full container type parity across issue/board/PR/project (legacy enum names and current-user temporary binding for issue/board/PR/milestone are covered; issue/PR edit sync removes omitted body/comment attachments; project logo/deferred containers remain)
+- [~] Full container type parity across issue/board/PR/project (legacy enum names and current-user temporary binding for issue/board/PR/milestone are covered; issue/board/PR edit sync removes omitted body/comment attachments; project logo/deferred containers remain)
 - [x] Global file size policy parity
 - [x] MIME validation/detection parity for uploaded attachments
 
