@@ -147,6 +147,22 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<p>Indented Setext");
   });
 
+  it("deduplicates repeated heading ids like legacy marked slugger", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"# Repeat\n\n## Repeat\n\nRepeat\n-----"} />,
+    );
+
+    expect(html).toContain(
+      '<h1 id="repeat">Repeat<a class="head-anchor" href="#repeat">#</a></h1>',
+    );
+    expect(html).toContain(
+      '<h2 id="repeat-1">Repeat<a class="head-anchor" href="#repeat-1">#</a></h2>',
+    );
+    expect(html).toContain(
+      '<h2 id="repeat-2">Repeat<a class="head-anchor" href="#repeat-2">#</a></h2>',
+    );
+  });
+
   it("renders fenced code blocks like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"``` rust\nlet value = 1;\n#1 stays text\n```"} />,

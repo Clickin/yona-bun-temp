@@ -89,7 +89,7 @@
 - Attachment binding now preserves legacy container names for issue, issue comment, board post/comment, milestone, PR body, project-logo, and organization-logo resources; issue body/comment, board post/comment, milestone, and PR edit sync removes omitted legacy attachment rows while keeping replacement uploads actor-owned, and project/organization settings return promoted logos through detail/container/public-directory `logoUrl`.
 - Markdown task-list progress now counts both unordered and ordered GFM task-list items while preserving the React-side disabled checkbox rendering path.
 - Markdown smart-list rendering now preserves legacy marked nested child lists instead of flattening indented list items into top-level siblings.
-- Markdown fenced code blocks now reuse the code-browser `syntax-token` span highlighter in React while keeping server Markdown rendering disabled.
+- Markdown repeated heading ids now follow the legacy marked slugger de-duplication behavior, and fenced code blocks reuse the code-browser `syntax-token` span highlighter in React while keeping server Markdown rendering disabled.
 - Markdown smart-list rendering now keeps marked-style indented continuation lines inside the owning list item instead of falling back to a plain paragraph.
 - Markdown blockquote rendering now recognizes nested fenced-code blocks before inline code-span normalization, preserving marked-style block structure and React-side syntax tokens.
 - Markdown smart-list rendering now also keeps blank-line-separated indented continuations inside the active list item instead of splitting them into a following paragraph.

@@ -52,6 +52,7 @@ type MarkdownContext = {
   basePath?: string;
   breaks?: boolean;
   commitReferenceMap?: Map<string, MarkdownCommitReference>;
+  headingSlugCounts?: Map<string, number>;
   issueReferenceMap?: Map<string, MarkdownIssueReference>;
   mentionReferenceMap?: Map<string, MarkdownMentionReference>;
   ownerName?: string;
@@ -1438,8 +1439,19 @@ function slugifyHeadingId(value: string): string {
     .replace(/\s+/g, "-");
 }
 
+function nextHeadingId(context: MarkdownContext | undefined, value: string): string {
+  const slug = slugifyHeadingId(value);
+  const slugCounts = context?.headingSlugCounts;
+  if (!slugCounts) {
+    return slug;
+  }
+  const currentCount = slugCounts.get(slug) ?? 0;
+  slugCounts.set(slug, currentCount + 1);
+  return currentCount === 0 ? slug : `${slug}-${currentCount}`;
+}
+
 function MarkdownHeading(props: { context?: MarkdownContext; level: number; text: string }) {
-  const id = slugifyHeadingId(props.text);
+  const id = nextHeadingId(props.context, props.text);
   const children = (
     <>
       <MarkdownInline context={props.context} line={props.text} />
@@ -1657,6 +1669,7 @@ export function MarkdownRenderer(props: {
     basePath: props.basePath,
     breaks,
     commitReferenceMap,
+    headingSlugCounts: new Map<string, number>(),
     issueReferenceMap,
     mentionReferenceMap,
     ownerName: props.ownerName,
