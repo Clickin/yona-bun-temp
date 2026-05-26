@@ -18,8 +18,8 @@ use yona_rust_persistence::{
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
     create_router_with_app_repository, deliver_due_notification_mails,
-    deliver_notification_mail_scheduler_tick, notification_mail_scheduler_config_from_env,
-    NotificationMailSchedulerConfig, RuntimeConfig,
+    deliver_notification_mail_scheduler_tick, notification_mail_add_noreferrer_to_external_links,
+    notification_mail_scheduler_config_from_env, NotificationMailSchedulerConfig, RuntimeConfig,
 };
 
 mod rest_test_support;
@@ -27,6 +27,25 @@ mod rest_test_support;
 fn notification_mail_env_lock() -> &'static Mutex<()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(()))
+}
+
+#[test]
+fn notification_contract_mail_links_add_noreferrer_like_legacy() {
+    let html = concat!(
+        "<a href=\"http://y/foo/bar\">external link</a>",
+        "<a href=\"http://y/foo/bar\" rel=\"nofollow\">external link</a>",
+        "<a href=\"http://yobi.io/foo/bar\">internal link</a>",
+        "<a href=\"/foo/bar\">relative link</a>",
+        "<a href=\"http://yobi.io/%ag\">malformed link</a>",
+    );
+
+    let rendered = notification_mail_add_noreferrer_to_external_links(html, "http://yobi.io");
+
+    assert!(rendered.contains("<a href=\"http://y/foo/bar\" rel=\" noreferrer\">"));
+    assert!(rendered.contains("<a href=\"http://y/foo/bar\" rel=\"nofollow noreferrer\">"));
+    assert!(rendered.contains("<a href=\"http://yobi.io/foo/bar\">internal link</a>"));
+    assert!(rendered.contains("<a href=\"/foo/bar\">relative link</a>"));
+    assert!(rendered.contains("<a href=\"http://yobi.io/%ag\" rel=\" noreferrer\">"));
 }
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {

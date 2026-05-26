@@ -7358,6 +7358,138 @@ fn notification_mail_content(
     (subject, body)
 }
 
+pub fn notification_mail_add_noreferrer_to_external_links(
+    html: &str,
+    public_origin: &str,
+) -> String {
+    let public_host = host_from_absolute_url(public_origin);
+    let mut rendered = String::with_capacity(html.len());
+    let mut cursor = 0;
+    while let Some(relative_start) = html[cursor..].find("<a") {
+        let tag_start = cursor + relative_start;
+        rendered.push_str(&html[cursor..tag_start]);
+        let Some(relative_end) = html[tag_start..].find('>') else {
+            rendered.push_str(&html[tag_start..]);
+            return rendered;
+        };
+        let tag_end = tag_start + relative_end + 1;
+        let tag = &html[tag_start..tag_end];
+        rendered.push_str(&notification_mail_link_tag_with_noreferrer(
+            tag,
+            public_host.as_deref(),
+        ));
+        cursor = tag_end;
+    }
+    rendered.push_str(&html[cursor..]);
+    rendered
+}
+
+fn notification_mail_link_tag_with_noreferrer(tag: &str, public_host: Option<&str>) -> String {
+    let Some(href) = html_attr_value(tag, "href") else {
+        return tag.to_string();
+    };
+    if !notification_mail_link_is_external(&href, public_host) {
+        return tag.to_string();
+    }
+    if let Some((rel_start, rel_end, rel_value)) = html_attr_span(tag, "rel") {
+        if rel_value
+            .split_whitespace()
+            .any(|value| value.eq_ignore_ascii_case("noreferrer"))
+        {
+            return tag.to_string();
+        }
+        let mut updated = String::with_capacity(tag.len() + " noreferrer".len());
+        updated.push_str(&tag[..rel_start]);
+        updated.push_str(&format!("rel=\"{} noreferrer\"", rel_value));
+        updated.push_str(&tag[rel_end..]);
+        return updated;
+    }
+    let insert_at = tag.rfind('>').unwrap_or(tag.len());
+    let mut updated = String::with_capacity(tag.len() + " rel=\" noreferrer\"".len());
+    updated.push_str(&tag[..insert_at]);
+    updated.push_str(" rel=\" noreferrer\"");
+    updated.push_str(&tag[insert_at..]);
+    updated
+}
+
+fn notification_mail_link_is_external(href: &str, public_host: Option<&str>) -> bool {
+    let trimmed = href.trim();
+    let lower = trimmed.to_ascii_lowercase();
+    if !(lower.starts_with("http://") || lower.starts_with("https://")) {
+        return false;
+    }
+    if absolute_url_has_malformed_percent_escape(trimmed) {
+        return true;
+    }
+    let Some(href_host) = host_from_absolute_url(trimmed) else {
+        return true;
+    };
+    public_host
+        .map(|host| !href_host.eq_ignore_ascii_case(host))
+        .unwrap_or(true)
+}
+
+fn absolute_url_has_malformed_percent_escape(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'%' {
+            if index + 2 >= bytes.len()
+                || !bytes[index + 1].is_ascii_hexdigit()
+                || !bytes[index + 2].is_ascii_hexdigit()
+            {
+                return true;
+            }
+            index += 3;
+        } else {
+            index += 1;
+        }
+    }
+    false
+}
+
+fn host_from_absolute_url(value: &str) -> Option<String> {
+    let trimmed = value.trim();
+    let scheme_end = trimmed.find("://")?;
+    let host_start = scheme_end + 3;
+    let host_end = trimmed[host_start..]
+        .find(['/', '?', '#'])
+        .map(|offset| host_start + offset)
+        .unwrap_or(trimmed.len());
+    let host = trimmed[host_start..host_end]
+        .rsplit('@')
+        .next()
+        .unwrap_or_default()
+        .split(':')
+        .next()
+        .unwrap_or_default()
+        .trim();
+    (!host.is_empty()).then(|| host.to_ascii_lowercase())
+}
+
+fn html_attr_value(tag: &str, name: &str) -> Option<String> {
+    html_attr_span(tag, name).map(|(_, _, value)| value)
+}
+
+fn html_attr_span(tag: &str, name: &str) -> Option<(usize, usize, String)> {
+    let lower = tag.to_ascii_lowercase();
+    let needle = format!("{}=", name.to_ascii_lowercase());
+    let attr_start = lower.find(&needle)?;
+    let value_start = attr_start + needle.len();
+    let quote = tag.as_bytes().get(value_start).copied()?;
+    if quote != b'"' && quote != b'\'' {
+        return None;
+    }
+    let value_body_start = value_start + 1;
+    let value_body_end = tag[value_body_start..].find(quote as char)? + value_body_start;
+    let attr_end = value_body_end + 1;
+    Some((
+        attr_start,
+        attr_end,
+        tag[value_body_start..value_body_end].to_string(),
+    ))
+}
+
 pub async fn deliver_due_notification_mails(
     repository: &PilotRepository,
     now: DateTime,
