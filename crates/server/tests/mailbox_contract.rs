@@ -5,7 +5,8 @@ use sea_orm::{
 use yona_rust_persistence::{
     comment_thread, email, original_email, AppRepository, CreateIssueCommentViaEmailInput,
     CreateIssueViaEmailInput, CreatePostingCommentViaEmailInput, CreatePostingInput,
-    CreateProjectInput, CreateReviewCommentViaEmailInput, CreateUserInput, PostingMutationInput,
+    CreateProjectInput, CreateReviewCommentViaEmailInput, CreateUserInput,
+    MailboxReplyTargetRecord, PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 
@@ -211,6 +212,46 @@ async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_res
         )
         .await
     );
+
+    let empty_project = repo
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "yobi".to_string(),
+            overview: None,
+            project_name: "projectWithoutThread".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+    let actions = repo
+        .plan_mailbox_resource_actions(
+            &[project.clone(), empty_project.clone()],
+            &[
+                MailboxReplyTargetRecord {
+                    resource_id: review_comment.id,
+                    resource_type: "review_comment".to_string(),
+                },
+                MailboxReplyTargetRecord {
+                    resource_id: issue.id,
+                    resource_type: "issue_post".to_string(),
+                },
+            ],
+        )
+        .await
+        .unwrap();
+    assert_eq!(actions.len(), 3);
+    assert_eq!(actions[0].action, "create_review_comment");
+    assert_eq!(actions[0].owner_name, "yobi");
+    assert_eq!(actions[0].project_name, "projectYobi");
+    assert_eq!(actions[0].resource_type.as_deref(), Some("comment_thread"));
+    assert_eq!(actions[0].resource_id, Some(thread.id));
+    assert_eq!(actions[1].action, "create_issue_comment");
+    assert_eq!(actions[1].resource_type.as_deref(), Some("issue_post"));
+    assert_eq!(actions[1].resource_id, Some(issue.id));
+    assert_eq!(actions[2].action, "create_issue");
+    assert_eq!(actions[2].project_name, "projectWithoutThread");
+    assert_eq!(actions[2].resource_type, None);
+    assert_eq!(actions[2].resource_id, None);
 
     let reply_targets = repo
         .find_mailbox_reply_targets_by_message_ids(&[

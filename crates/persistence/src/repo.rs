@@ -13,9 +13,9 @@ use crate::repo_types::{
     IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter, IssueMentionUserRecord,
     IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueMutationInput, IssueRecord,
     IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, MailboxReplyTargetRecord,
-    MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
-    NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
-    NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
+    MailboxResourceActionRecord, MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter,
+    MilestoneMutationInput, NotificationActorRecord, NotificationItemRecord,
+    NotificationListRecord, NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
     OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
     OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
     OrganizationMemberRecord, OrganizationPostingListFilter, OrganizationPostingListRecord,
@@ -8856,6 +8856,187 @@ impl AppRepository {
             }
         }
         Ok(targets)
+    }
+
+    pub async fn plan_mailbox_resource_actions(
+        &self,
+        projects: &[ProjectRecord],
+        targets: &[MailboxReplyTargetRecord],
+    ) -> Result<Vec<MailboxResourceActionRecord>, DbErr> {
+        let mut actions = Vec::new();
+        for project in projects {
+            let mut handled = false;
+            for target in targets {
+                let Some(action) = self.mailbox_action_for_target(project, target).await? else {
+                    continue;
+                };
+                handled = true;
+                actions.push(action);
+            }
+            if !handled {
+                actions.push(MailboxResourceActionRecord {
+                    action: "create_issue".to_string(),
+                    owner_name: project.owner_name.clone(),
+                    project_name: project.project_name.clone(),
+                    resource_id: None,
+                    resource_type: None,
+                });
+            }
+        }
+        Ok(actions)
+    }
+
+    async fn mailbox_action_for_target(
+        &self,
+        project: &ProjectRecord,
+        target: &MailboxReplyTargetRecord,
+    ) -> Result<Option<MailboxResourceActionRecord>, DbErr> {
+        let Some((project_id, resource_type, resource_id, action)) =
+            self.mailbox_target_action_metadata(target).await?
+        else {
+            return Ok(None);
+        };
+        if project_id != project.id {
+            return Ok(None);
+        }
+        Ok(Some(MailboxResourceActionRecord {
+            action,
+            owner_name: project.owner_name.clone(),
+            project_name: project.project_name.clone(),
+            resource_id: Some(resource_id),
+            resource_type: Some(resource_type),
+        }))
+    }
+
+    async fn mailbox_target_action_metadata(
+        &self,
+        target: &MailboxReplyTargetRecord,
+    ) -> Result<Option<(i64, String, i64, String)>, DbErr> {
+        match target.resource_type.as_str() {
+            "issue_post" => {
+                let Some(row) = issue::Entity::find_by_id(target.resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(project_id) = row.project_id else {
+                    return Ok(None);
+                };
+                Ok(Some((
+                    project_id,
+                    target.resource_type.clone(),
+                    target.resource_id,
+                    "create_issue_comment".to_string(),
+                )))
+            }
+            "issue_comment" => {
+                let Some(row) = issue_comment::Entity::find_by_id(target.resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                Ok(Some((
+                    row.project_id,
+                    target.resource_type.clone(),
+                    target.resource_id,
+                    "create_issue_comment".to_string(),
+                )))
+            }
+            "board_post" => {
+                let Some(row) = posting::Entity::find_by_id(target.resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(project_id) = row.project_id else {
+                    return Ok(None);
+                };
+                Ok(Some((
+                    project_id,
+                    target.resource_type.clone(),
+                    target.resource_id,
+                    "create_posting_comment".to_string(),
+                )))
+            }
+            "nonissue_comment" => {
+                let Some(row) = posting_comment::Entity::find_by_id(target.resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                Ok(Some((
+                    row.project_id,
+                    target.resource_type.clone(),
+                    target.resource_id,
+                    "create_posting_comment".to_string(),
+                )))
+            }
+            "comment_thread" => {
+                let Some(row) = comment_thread::Entity::find_by_id(target.resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(project_id) = row.project_id else {
+                    return Ok(None);
+                };
+                Ok(Some((
+                    project_id,
+                    target.resource_type.clone(),
+                    target.resource_id,
+                    "create_review_comment".to_string(),
+                )))
+            }
+            "review_comment" => {
+                let Some(row) = review_comment::Entity::find_by_id(target.resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(thread_id) = row.thread_id else {
+                    return Ok(None);
+                };
+                let Some(thread) = comment_thread::Entity::find_by_id(thread_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(project_id) = thread.project_id else {
+                    return Ok(None);
+                };
+                Ok(Some((
+                    project_id,
+                    "comment_thread".to_string(),
+                    thread_id,
+                    "create_review_comment".to_string(),
+                )))
+            }
+            "pull_request" => {
+                let Some(row) = pull_request::Entity::find_by_id(target.resource_id)
+                    .one(&self.db)
+                    .await?
+                else {
+                    return Ok(None);
+                };
+                let Some(project_id) = row.to_project_id else {
+                    return Ok(None);
+                };
+                Ok(Some((
+                    project_id,
+                    target.resource_type.clone(),
+                    target.resource_id,
+                    "ignore_resource".to_string(),
+                )))
+            }
+            _ => Ok(None),
+        }
     }
 
     async fn mailbox_reply_target_from_message_id_left(

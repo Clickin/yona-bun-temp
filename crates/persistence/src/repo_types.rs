@@ -677,6 +677,15 @@ pub struct MailboxReplyTargetRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MailboxResourceActionRecord {
+    pub action: String,
+    pub owner_name: String,
+    pub project_name: String,
+    pub resource_id: Option<i64>,
+    pub resource_type: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpdateIssueCommentInput {
     pub actor_id: i64,
     pub attachment_ids: Vec<i64>,
