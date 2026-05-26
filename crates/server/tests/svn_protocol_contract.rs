@@ -2442,6 +2442,60 @@ async fn svn_protocol_external_client_can_propset_and_commit() {
         String::from_utf8_lossy(&remote_propget_output.stdout).trim(),
         "external-reviewed"
     );
+    let direct_url_propget_output = tokio::task::spawn_blocking({
+        let direct_readme_url = format!("{svn_url}/trunk/README.md");
+        move || {
+            run_svn_capture(
+                &[
+                    "propget",
+                    "--non-interactive",
+                    "reviewed",
+                    direct_readme_url.as_str(),
+                ],
+                None,
+            )
+        }
+    })
+    .await
+    .expect("svn direct URL propget task");
+    assert!(
+        direct_url_propget_output.status.success(),
+        "direct URL svn propget should read the committed XML-safe custom property\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&direct_url_propget_output.stdout),
+        String::from_utf8_lossy(&direct_url_propget_output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&direct_url_propget_output.stdout).trim(),
+        "external-reviewed"
+    );
+    let direct_url_proplist_output = tokio::task::spawn_blocking({
+        let direct_readme_url = format!("{svn_url}/trunk/README.md");
+        move || {
+            run_svn_capture(
+                &[
+                    "proplist",
+                    "--non-interactive",
+                    "--verbose",
+                    direct_readme_url.as_str(),
+                ],
+                None,
+            )
+        }
+    })
+    .await
+    .expect("svn direct URL proplist task");
+    assert!(
+        direct_url_proplist_output.status.success(),
+        "direct URL svn proplist should read committed custom properties\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&direct_url_proplist_output.stdout),
+        String::from_utf8_lossy(&direct_url_proplist_output.stderr)
+    );
+    let direct_url_proplist_stdout = String::from_utf8_lossy(&direct_url_proplist_output.stdout);
+    assert!(
+        direct_url_proplist_stdout.contains("reviewed")
+            && direct_url_proplist_stdout.contains("external-reviewed"),
+        "direct URL svn proplist should include reviewed property and value: {direct_url_proplist_stdout}"
+    );
 
     run_svn_blocking(
         vec![

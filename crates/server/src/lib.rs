@@ -2351,7 +2351,12 @@ async fn direct_svn_protocol_request(
     if method == "OPTIONS" {
         let youngest_revision = yona_rust_vcs::svn_youngest_revision(&repo_path).ok();
         let repository_uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).ok();
-        return svn_protocol_options_response(&route, youngest_revision, repository_uuid);
+        return svn_protocol_options_response(
+            &repo_path,
+            &route,
+            youngest_revision,
+            repository_uuid,
+        );
     }
     if method == "PROPFIND" && route.svn_path.is_empty() {
         let body_bytes = match body.collect().await {
@@ -2500,6 +2505,7 @@ async fn direct_svn_protocol_request(
 }
 
 fn svn_protocol_options_response(
+    repo_path: &StdPath,
     route: &SvnProtocolRoute,
     youngest_revision: Option<i64>,
     repository_uuid: Option<String>,
@@ -2541,7 +2547,26 @@ fn svn_protocol_options_response(
             response.headers_mut().insert("svn-repository-uuid", value);
         }
     }
+    if svn_protocol_options_targets_file(repo_path, route) {
+        // Subversion expects this HTTP-v2 header to be a server-relative URI;
+        // absolute URLs trip VisualSVN 1.14 direct-file property commands.
+        let repository_root_uri = base_path_href(
+            &route.base_path,
+            &format!("/svn/{}/{}", route.owner_name, route.project_name),
+        );
+        if let Ok(value) = HeaderValue::from_str(&repository_root_uri) {
+            response.headers_mut().insert("svn-repository-root", value);
+        }
+    }
     response
+}
+
+fn svn_protocol_options_targets_file(repo_path: &StdPath, route: &SvnProtocolRoute) -> bool {
+    let path = route.svn_path.trim_matches('/');
+    if path.is_empty() || path.starts_with("!svn/") {
+        return false;
+    }
+    yona_rust_vcs::svn_cat_file(repo_path, None, path).is_ok()
 }
 
 fn svn_protocol_root_propfind_response(
