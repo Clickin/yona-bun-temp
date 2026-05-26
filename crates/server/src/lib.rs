@@ -4026,6 +4026,20 @@ fn svn_protocol_propfind_tree_href(
             svn_protocol_project_href(route)
         );
     }
+    if trimmed.starts_with("!svn/vcc/default/") {
+        let path = path.trim_matches('/');
+        let suffix = if path.is_empty() {
+            String::new()
+        } else if collection {
+            format!("/{path}/")
+        } else {
+            format!("/{path}")
+        };
+        return format!(
+            "{}/!svn/vcc/default{suffix}",
+            svn_protocol_project_href(route)
+        );
+    }
     svn_protocol_href(route, path, collection)
 }
 
@@ -6371,6 +6385,9 @@ fn svn_protocol_file_lookup(svn_path: &str) -> Option<(Option<i64>, String)> {
     if let Some(rest) = trimmed.strip_prefix("!svn/wrk/") {
         let (_, path) = rest.split_once('/').unwrap_or((rest, ""));
         return Some((None, path.to_string()));
+    }
+    if let Some(rest) = trimmed.strip_prefix("!svn/vcc/default/") {
+        return Some((None, rest.to_string()));
     }
     if let Some(rest) = trimmed.strip_prefix("!svn/rvr/") {
         return svn_protocol_revision_path(rest);

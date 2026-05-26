@@ -145,6 +145,7 @@
 - Phase 3N latest edge fix: root/default VCC/baseline `PROPFIND` now exposes `DAV:supported-report-set` discovery for the implemented SVN REPORT surface without leaking unrelated requested-property fields.
 - Phase 3N verification refresh: with local `svn` 1.14.5 installed, `cargo test -p yona-rust-pilot-server --test svn_protocol_contract` passes all 19 SVN protocol/external-client smokes; remaining SVN follow-up stays narrowed to broader VCC/baseline PROPFIND edge completeness.
 - Phase 3N latest edge fix: root/default VCC `PROPFIND` now exposes `DAV:activity-collection-set` discovery for DeltaV commit choreography while preserving requested-property filtering.
+- Phase 3N latest edge fix: default VCC child file and collection `PROPFIND` paths such as `!svn/vcc/default/trunk/README.md` and `!svn/vcc/default/trunk` now resolve through executable-backed head metadata while preserving the requested default-VCC href shape for parent and child resources.
 
 ## Phase 4: 풀 리퀘스트와 리뷰
 

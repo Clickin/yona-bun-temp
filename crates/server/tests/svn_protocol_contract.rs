@@ -1038,6 +1038,66 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     );
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body(
+        app.clone(),
+        propfind,
+        "/svn/owner/projectYobi/!svn/vcc/default/trunk/README.md",
+        None,
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:" xmlns:S="http://subversion.tigris.org/xmlns/dav/">
+  <D:prop>
+    <D:version-controlled-configuration/>
+    <D:checked-in/>
+    <D:baseline-collection/>
+    <D:resourcetype/>
+    <S:baseline-relative-path/>
+  </D:prop>
+</D:propfind>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("/yona/svn/owner/projectYobi/!svn/vcc/default/trunk/README.md")
+            && text.contains("<D:resourcetype/>")
+            && text.contains(&format!(
+                "<D:checked-in><D:href>/yona/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md</D:href></D:checked-in>"
+            ))
+            && text.contains("<D:version-controlled-configuration><D:href>/yona/svn/owner/projectYobi/!svn/vcc/default</D:href></D:version-controlled-configuration>")
+            && text.contains(&format!(
+                "<D:baseline-collection><D:href>/yona/svn/owner/projectYobi/!svn/bc/{revision}/</D:href></D:baseline-collection>"
+            ))
+            && text
+                .contains("<S:baseline-relative-path>trunk/README.md</S:baseline-relative-path>"),
+        "SVN VCC file PROPFIND should resolve default-VCC child paths to version metadata: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request(
+        app.clone(),
+        propfind,
+        "/svn/owner/projectYobi/!svn/vcc/default/trunk",
+        None,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("/yona/svn/owner/projectYobi/!svn/vcc/default/trunk/")
+            && text.contains("<D:resourcetype><D:collection/></D:resourcetype>")
+            && text.contains("<D:displayname>trunk</D:displayname>")
+            && text.contains("/yona/svn/owner/projectYobi/!svn/vcc/default/trunk/README.md")
+            && text.contains(&format!(
+                "<D:href>/yona/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md</D:href>"
+            )),
+        "SVN VCC collection PROPFIND should preserve default-VCC child hrefs and version metadata: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
     let response = direct_request(
         app.clone(),
         propfind,
