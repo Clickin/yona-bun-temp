@@ -2349,6 +2349,24 @@ impl AppRepository {
             .await
     }
 
+    pub async fn restore_issue_history(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        issue_number: i64,
+        history_markdown: &str,
+    ) -> Result<bool, DbErr> {
+        let Some((_project_record, issue_model)) = self
+            .read_project_issue_model(owner_name, project_name, issue_number)
+            .await?
+        else {
+            return Ok(false);
+        };
+        self.write_text_column("issue", "history", issue_model.id, history_markdown)
+            .await?;
+        Ok(true)
+    }
+
     pub async fn read_issue_detail_for_viewer(
         &self,
         owner_name: &str,
@@ -4119,6 +4137,24 @@ impl AppRepository {
         self.posting_record_from_model(model, &project, viewer_id)
             .await
             .map(Some)
+    }
+
+    pub async fn restore_posting_history(
+        &self,
+        owner_name: &str,
+        project_name: &str,
+        post_number: i64,
+        history_markdown: &str,
+    ) -> Result<bool, DbErr> {
+        let Some((_project_record, posting_model)) = self
+            .read_project_posting_model(owner_name, project_name, post_number)
+            .await?
+        else {
+            return Ok(false);
+        };
+        self.write_text_column("posting", "history", posting_model.id, history_markdown)
+            .await?;
+        Ok(true)
     }
 
     pub async fn create_posting(
@@ -11553,7 +11589,7 @@ impl AppRepository {
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
             comments,
             has_voted,
-            history_markdown: model.history.unwrap_or_default(),
+            history_markdown: self.read_text_column("issue", "history", model.id).await?,
             id: model.id,
             is_favorited,
             is_watching,
@@ -12656,7 +12692,9 @@ impl AppRepository {
             comment_count: model.num_of_comments.unwrap_or_default().max(0) as u32,
             comments: self.list_posting_comments(model.id).await?,
             created_label: format_workspace_date_label(model.created_date),
-            history_markdown: model.history.unwrap_or_default(),
+            history_markdown: self
+                .read_text_column("posting", "history", model.id)
+                .await?,
             id: model.id,
             is_watching,
             labels: self.list_posting_labels(model.id).await?,

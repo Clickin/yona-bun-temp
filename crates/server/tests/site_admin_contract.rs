@@ -819,6 +819,7 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
                 "authorLoginId": "imported",
                 "contentsMarkdown": "restored post comment"
             }],
+            "historyMarkdown": "previous post body",
             "labels": [{
                 "categoryIsExclusive": false,
                 "categoryName": "Type",
@@ -839,6 +840,7 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
                 "authorLoginId": "imported",
                 "contentsMarkdown": "restored issue comment"
             }],
+            "historyMarkdown": "previous issue body",
             "ownerName": "imported",
             "projectName": "restored",
             "labels": [{
@@ -950,6 +952,7 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
         post_detail.comments[0].contents_markdown,
         "restored post comment"
     );
+    assert_eq!(post_detail.history_markdown, "previous post body");
 
     let issues = response_json(
         rest_get(
@@ -973,6 +976,7 @@ async fn site_admin_import_restores_supported_yobi_data_snapshot_sections() {
         issue_detail.comments[0].contents_markdown,
         "restored issue comment"
     );
+    assert_eq!(issue_detail.history_markdown, "previous issue body");
 }
 
 #[tokio::test]

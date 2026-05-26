@@ -11062,6 +11062,7 @@ struct RestSiteExportPostItem {
     author_login_id: String,
     body_markdown: String,
     comments: Vec<RestSiteExportCommentItem>,
+    history_markdown: String,
     labels: Vec<RestSiteExportLabelItem>,
     notice: bool,
     owner_name: String,
@@ -11078,6 +11079,7 @@ struct RestSiteExportIssueItem {
     author_login_id: String,
     body_markdown: String,
     comments: Vec<RestSiteExportCommentItem>,
+    history_markdown: String,
     issue_number: String,
     labels: Vec<RestSiteExportLabelItem>,
     owner_name: String,
@@ -16757,6 +16759,17 @@ async fn rest_import_site_data(
             skipped_posts += 1;
             continue;
         };
+        if !post.history_markdown.trim().is_empty() {
+            repository
+                .restore_posting_history(
+                    &post.owner_name,
+                    &post.project_name,
+                    created.post_number,
+                    &post.history_markdown,
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        }
         rest_site_import_post_comments(
             repository,
             &post.owner_name,
@@ -16816,6 +16829,17 @@ async fn rest_import_site_data(
             skipped_issues += 1;
             continue;
         };
+        if !issue.history_markdown.trim().is_empty() {
+            repository
+                .restore_issue_history(
+                    &issue.owner_name,
+                    &issue.project_name,
+                    created.issue_number,
+                    &issue.history_markdown,
+                )
+                .await
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        }
         if issue.state.trim().eq_ignore_ascii_case("closed") {
             repository
                 .update_issue_state_as_actor(
@@ -21600,6 +21624,7 @@ fn rest_site_export_post_from_record(
             .iter()
             .map(rest_site_export_post_comment_from_record)
             .collect(),
+        history_markdown: record.history_markdown.clone(),
         labels: record
             .labels
             .iter()
@@ -21626,6 +21651,7 @@ fn rest_site_export_issue_from_record(
             .iter()
             .map(rest_site_export_issue_comment_from_record)
             .collect(),
+        history_markdown: record.history_markdown.clone(),
         issue_number: record.issue_number.to_string(),
         labels: record
             .labels
