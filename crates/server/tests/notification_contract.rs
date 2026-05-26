@@ -727,10 +727,18 @@ async fn notification_contract_delivers_due_mail_rows_to_receivers() {
     assert_eq!(outbox.len(), 1);
     assert_eq!(outbox[0].to, "watcher@example.com");
     assert_eq!(outbox[0].subject, "Mail fan-out watched issue");
+    assert!(outbox[0].body.contains("<div style=\"font-family:"));
+    assert!(outbox[0]
+        .body
+        .contains("<hr style=\"border:0; border-bottom:1px solid #ddd; margin:20px 0;\">"));
     assert!(outbox[0].body.contains("notification.issue.closed"));
     assert!(outbox[0]
         .body
-        .contains("https://yona.example/yona/owner/projectYobi/issue/1"));
+        .contains("<a href=\"https://yona.example/yona/owner/projectYobi/issue/1\" target=\"_blank\">View it on Yona</a>"));
+    assert!(outbox[0]
+        .body
+        .contains("<a href=\"https://yona.example/yona/user/editform/notifications\" target=\"_blank\" style=\"color:#4399e2; text-decoration:underline;\">Notification settings</a>"));
+    assert!(!outbox[0].body.contains("rel=\" noreferrer\""));
     clear_test_outbox();
     std::env::remove_var("YONA_NOTIFICATION_MAIL_HIDE_ADDRESS");
 }

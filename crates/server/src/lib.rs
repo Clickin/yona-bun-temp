@@ -7344,18 +7344,51 @@ fn notification_mail_partial_recipient_size(hide_addresses: bool, recipient_coun
 fn notification_mail_content(
     item: &persistence::NotificationItemRecord,
     target_url: &str,
+    public_origin: &str,
+    base_path: &str,
 ) -> (String, String) {
     let subject = if item.target_title.is_empty() {
         item.message.clone()
     } else {
         item.target_title.clone()
     };
-    let body = if target_url.is_empty() {
-        format!("{}\n\n{}", item.message, item.target_title)
-    } else {
-        format!("{}\n\n{}\n{}", item.message, item.target_title, target_url)
-    };
+    let body = notification_mail_add_noreferrer_to_external_links(
+        &notification_mail_legacy_body(item, target_url, public_origin, base_path),
+        public_origin,
+    );
     (subject, body)
+}
+
+fn notification_mail_legacy_body(
+    item: &persistence::NotificationItemRecord,
+    target_url: &str,
+    public_origin: &str,
+    base_path: &str,
+) -> String {
+    let settings_url = absolute_app_url(public_origin, base_path, "/user/editform/notifications");
+    let settings_link = notification_mail_footer_link(&settings_url, "Notification settings");
+    let target_link = if target_url.is_empty() {
+        String::new()
+    } else {
+        format!(
+            "\n\n<a href=\"{}\" target=\"_blank\">View it on {}</a>\n",
+            escape_html_attr(target_url),
+            escape_html_text(&configured_site_name())
+        )
+    };
+
+    format!(
+        "<div style=\"font-family:'Helvetica Neue','Helvetica','Arial','나눔고딕','NanumGothic','NanumGothicOTF','Apple SD Gothic Neo','맑은 고딕',sans-serif;\">\n  {}\n</div>\n\n<hr style=\"border:0; border-bottom:1px solid #ddd; margin:20px 0;\">\n{}\n<div style=\"max-width:410px;margin-top:20px;color:#989898;text-align:justify;word-break:break-all;font-size:11px;font-family:'Helvetica Neue','Helvetica','Arial','나눔고딕','NanumGothic','NanumGothicOTF','Apple SD Gothic Neo','맑은 고딕',sans-serif;\">change settings at {} if you want to mute this.</div>\n",
+        item.message, target_link, settings_link
+    )
+}
+
+fn notification_mail_footer_link(link: &str, anchor_text: &str) -> String {
+    format!(
+        "<a href=\"{}\" target=\"_blank\" style=\"color:#4399e2; text-decoration:underline;\">{}</a>",
+        escape_html_attr(link),
+        escape_html_text(anchor_text)
+    )
 }
 
 pub fn notification_mail_add_noreferrer_to_external_links(
@@ -7538,7 +7571,8 @@ pub async fn deliver_due_notification_mails(
             } else {
                 absolute_app_url(&public_origin, base_path, &item.target_path)
             };
-            let (subject, body) = notification_mail_content(&item, &target_url);
+            let (subject, body) =
+                notification_mail_content(&item, &target_url, &public_origin, base_path);
             for recipient_chunk in bcc.chunks(partial_recipient_size) {
                 deliver(OutboundMail {
                     bcc: recipient_chunk.to_vec(),
@@ -7559,7 +7593,8 @@ pub async fn deliver_due_notification_mails(
         } else {
             absolute_app_url(&public_origin, base_path, &delivery.item.target_path)
         };
-        let (subject, body) = notification_mail_content(&delivery.item, &target_url);
+        let (subject, body) =
+            notification_mail_content(&delivery.item, &target_url, &public_origin, base_path);
         deliver(OutboundMail {
             bcc: Vec::new(),
             body,
