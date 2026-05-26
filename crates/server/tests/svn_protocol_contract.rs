@@ -671,6 +671,8 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             && text.contains("<S:repository-uuid/>")
             && text.contains("<D:checked-in/>")
             && text.contains("<D:baseline-collection/>")
+            && text.contains("<D:creationdate/>")
+            && text.contains("<D:creator-displayname/>")
             && !text.contains("<D:collection/>")
             && !text.contains("<D:href>/yona/svn/owner/projectYobi/!svn/bln/"),
         "SVN VCC PROPFIND propname should expose live property names without values: {text}"
@@ -987,6 +989,36 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
             && text.contains("</S:repository-uuid>")
             && !text.contains("<D:baseline-collection>"),
         "SVN baseline resource PROPFIND should expose requested revision provenance metadata only: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body(
+        app.clone(),
+        propfind,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:prop>
+    <D:creationdate/>
+    <D:creator-displayname/>
+  </D:prop>
+</D:propfind>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:creationdate>")
+            && text.contains("</D:creationdate>")
+            && text.contains("<D:creator-displayname>")
+            && text.contains("</D:creator-displayname>")
+            && !text.contains("<D:checked-in>")
+            && !text.contains("<S:repository-uuid>"),
+        "SVN VCC PROPFIND should expose requested latest-revision author/date metadata only: {text}"
     );
 
     let nested_revision = seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");

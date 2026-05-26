@@ -2370,6 +2370,7 @@ async fn direct_svn_protocol_request(
         let repository_uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).ok();
         return svn_protocol_root_propfind_response(
             &route,
+            &repo_path,
             youngest_revision,
             repository_uuid,
             &request,
@@ -2387,6 +2388,7 @@ async fn direct_svn_protocol_request(
         let repository_uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).ok();
         return svn_protocol_collection_propfind_response(
             &route,
+            &repo_path,
             youngest_revision,
             repository_uuid,
             &request,
@@ -2585,6 +2587,7 @@ fn svn_protocol_options_targets_file(repo_path: &StdPath, route: &SvnProtocolRou
 
 fn svn_protocol_root_propfind_response(
     route: &SvnProtocolRoute,
+    repo_path: &StdPath,
     youngest_revision: Option<i64>,
     repository_uuid: Option<String>,
     request: &str,
@@ -2599,12 +2602,14 @@ fn svn_protocol_root_propfind_response(
         repository_uuid,
         checked_in_href.as_deref(),
         Some(&vcc_href),
+        svn_protocol_revision_provenance(repo_path, route, youngest_revision, request).as_ref(),
         request,
     )
 }
 
 fn svn_protocol_collection_propfind_response(
     route: &SvnProtocolRoute,
+    repo_path: &StdPath,
     youngest_revision: Option<i64>,
     repository_uuid: Option<String>,
     request: &str,
@@ -2622,8 +2627,41 @@ fn svn_protocol_collection_propfind_response(
         repository_uuid,
         checked_in_href.as_deref(),
         None,
+        svn_protocol_revision_provenance(repo_path, route, youngest_revision, request).as_ref(),
         request,
     )
+}
+
+struct SvnProtocolRevisionProvenance {
+    creationdate: String,
+    creator_displayname: String,
+}
+
+fn svn_protocol_revision_provenance(
+    repo_path: &StdPath,
+    route: &SvnProtocolRoute,
+    revision: Option<i64>,
+    request: &str,
+) -> Option<SvnProtocolRevisionProvenance> {
+    let revision = revision?;
+    if !(svn_protocol_propfind_is_propname(request)
+        || svn_protocol_propfind_wants(request, "creationdate")
+        || svn_protocol_propfind_wants(request, "creator-displayname"))
+    {
+        return None;
+    }
+    match yona_rust_vcs::svn_log_entries(repo_path, revision, revision, 1) {
+        Ok(mut entries) => entries.pop().map(|entry| SvnProtocolRevisionProvenance {
+            creationdate: entry.date,
+            creator_displayname: entry.author,
+        }),
+        Err(VcsError::NotFound) | Err(VcsError::InvalidPath) => None,
+        Err(VcsError::SvnLookUnavailable) => None,
+        Err(error) => {
+            tracing::warn!(?error, route = ?route.svn_path, "failed to read SVN revision provenance for PROPFIND");
+            None
+        }
+    }
 }
 
 fn svn_protocol_propfind_collection_response(
@@ -2632,6 +2670,7 @@ fn svn_protocol_propfind_collection_response(
     repository_uuid: Option<String>,
     checked_in_href: Option<&str>,
     vcc_href: Option<&str>,
+    provenance: Option<&SvnProtocolRevisionProvenance>,
     request: &str,
 ) -> Response {
     let baseline_collection_href = checked_in_href.map(|href| {
@@ -2667,6 +2706,14 @@ fn svn_protocol_propfind_collection_response(
             .is_some()
             .then_some("        <S:baseline-relative-path/>\n")
             .unwrap_or_default();
+        let creationdate = provenance
+            .is_some()
+            .then_some("        <D:creationdate/>\n")
+            .unwrap_or_default();
+        let creator_displayname = provenance
+            .is_some()
+            .then_some("        <D:creator-displayname/>\n")
+            .unwrap_or_default();
         let body = format!(
             r#"<?xml version="1.0" encoding="utf-8"?>
 <D:multistatus xmlns:D="DAV:" xmlns:S="http://subversion.tigris.org/xmlns/dav/">
@@ -2675,7 +2722,7 @@ fn svn_protocol_propfind_collection_response(
     <D:propstat>
       <D:prop>
         <D:resourcetype/>
-{version_name}{repository_uuid}{checked_in}{version_controlled_configuration}{baseline_collection}{baseline_relative_path}      </D:prop>
+{version_name}{repository_uuid}{checked_in}{version_controlled_configuration}{baseline_collection}{baseline_relative_path}{creationdate}{creator_displayname}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
   </D:response>
@@ -2748,6 +2795,34 @@ fn svn_protocol_propfind_collection_response(
         } else {
             ""
         };
+    let creationdate = svn_protocol_propfind_wants(request, "creationdate")
+        .then_some(
+            provenance
+                .map(|metadata| metadata.creationdate.as_str())
+                .unwrap_or_default(),
+        )
+        .filter(|value| !value.trim().is_empty())
+        .map(|value| {
+            format!(
+                "        <D:creationdate>{}</D:creationdate>\n",
+                xml_escape(value)
+            )
+        })
+        .unwrap_or_default();
+    let creator_displayname = svn_protocol_propfind_wants(request, "creator-displayname")
+        .then_some(
+            provenance
+                .map(|metadata| metadata.creator_displayname.as_str())
+                .unwrap_or_default(),
+        )
+        .filter(|value| !value.trim().is_empty())
+        .map(|value| {
+            format!(
+                "        <D:creator-displayname>{}</D:creator-displayname>\n",
+                xml_escape(value)
+            )
+        })
+        .unwrap_or_default();
     let resourcetype = if request.trim().is_empty()
         || svn_protocol_propfind_wants(request, "resourcetype")
         || svn_protocol_propfind_wants(request, "allprop")
@@ -2770,6 +2845,8 @@ fn svn_protocol_propfind_collection_response(
 {version_controlled_configuration}
 {baseline_collection}
 {baseline_relative_path}
+{creationdate}
+{creator_displayname}
       </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
