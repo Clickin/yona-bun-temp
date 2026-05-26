@@ -374,9 +374,9 @@ Interpretation:
 - [x] Avatar attachment flow
 - [~] Issue attachment binding
 - [~] Issue comment attachment binding
-- [~] Milestone attachment binding
+- [x] Milestone attachment binding
 - [x] File delete authorization, including legacy `POST /files/:id/` `_method=delete` alias
-- [~] Full container type parity across issue/board/PR/project (legacy enum names and current-user temporary binding for issue/board/PR/milestone; project logo/deferred containers remain)
+- [~] Full container type parity across issue/board/PR/project (legacy enum names and current-user temporary binding for issue/board/PR/milestone are covered; project logo/deferred containers remain)
 - [x] Global file size policy parity
 - [x] MIME validation/detection parity for uploaded attachments
 

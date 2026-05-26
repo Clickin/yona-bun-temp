@@ -26152,6 +26152,7 @@ fn parse_attachment_ids(value: &str) -> Vec<i64> {
 fn direct_milestone_input_from_form(
     owner: &str,
     project: &str,
+    actor_id: Option<i64>,
     form: &HashMap<String, String>,
 ) -> Result<persistence::MilestoneMutationInput, ConnectError> {
     let title = form_value(form, &["title"]).trim().to_string();
@@ -26161,6 +26162,7 @@ fn direct_milestone_input_from_form(
         ));
     }
     Ok(persistence::MilestoneMutationInput {
+        actor_id,
         attachment_ids: parse_attachment_ids(form_value(
             form,
             &["attachmentIds", "attachment_ids"],
@@ -26195,7 +26197,7 @@ async fn direct_create_project_milestone(
     let PilotBackend::Repository(repository) = backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    if let Err(response) = direct_project_update_allowed(
+    let session = match direct_project_update_allowed(
         &headers,
         &owner,
         &project,
@@ -26205,9 +26207,10 @@ async fn direct_create_project_milestone(
     )
     .await
     {
-        return response;
-    }
-    let input = match direct_milestone_input_from_form(&owner, &project, &form) {
+        Ok(session) => session,
+        Err(response) => return response,
+    };
+    let input = match direct_milestone_input_from_form(&owner, &project, session.user_id, &form) {
         Ok(input) => input,
         Err(error) => return connect_error_to_status(error),
     };
@@ -26242,7 +26245,7 @@ async fn direct_update_project_milestone(
     let PilotBackend::Repository(repository) = backend else {
         return StatusCode::NOT_FOUND.into_response();
     };
-    if let Err(response) = direct_project_update_allowed(
+    let session = match direct_project_update_allowed(
         &headers,
         &owner,
         &project,
@@ -26252,9 +26255,10 @@ async fn direct_update_project_milestone(
     )
     .await
     {
-        return response;
-    }
-    let input = match direct_milestone_input_from_form(&owner, &project, &form) {
+        Ok(session) => session,
+        Err(response) => return response,
+    };
+    let input = match direct_milestone_input_from_form(&owner, &project, session.user_id, &form) {
         Ok(input) => input,
         Err(error) => return connect_error_to_status(error),
     };
@@ -28692,6 +28696,7 @@ fn milestone_list_filter_from_request(
 fn milestone_mutation_input(
     owner_name: &str,
     project_name: &str,
+    actor_id: Option<i64>,
     title: &str,
     contents_markdown: &str,
     due_date: &str,
@@ -28705,6 +28710,7 @@ fn milestone_mutation_input(
         ));
     }
     Ok(persistence::MilestoneMutationInput {
+        actor_id,
         attachment_ids: attachment_ids.to_vec(),
         contents_markdown: contents_markdown.to_string(),
         due_date: parse_milestone_due_date(due_date)?,
@@ -34099,6 +34105,7 @@ impl PilotServiceImpl {
         let input = milestone_mutation_input(
             request.owner_name,
             request.project_name,
+            session.user_id,
             request.title,
             request.contents_markdown,
             request.due_date,
@@ -34171,6 +34178,7 @@ impl PilotServiceImpl {
         let input = milestone_mutation_input(
             request.owner_name,
             request.project_name,
+            session.user_id,
             request.title,
             request.contents_markdown,
             request.due_date,

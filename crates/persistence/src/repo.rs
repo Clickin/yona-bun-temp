@@ -5287,7 +5287,7 @@ impl AppRepository {
             MILESTONE_ATTACHMENT_CONTAINER,
             created.id,
             &input.attachment_ids,
-            None,
+            input.actor_id,
         )
         .await?;
         self.issue_milestone_record(created, &project)
@@ -5325,7 +5325,7 @@ impl AppRepository {
             MILESTONE_ATTACHMENT_CONTAINER,
             updated.id,
             &input.values.attachment_ids,
-            None,
+            input.values.actor_id,
         )
         .await?;
         self.issue_milestone_record(updated, &project)

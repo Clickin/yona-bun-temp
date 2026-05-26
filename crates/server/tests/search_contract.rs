@@ -343,6 +343,7 @@ async fn seed_search_rows(
     .unwrap()
     .expect("post comment");
     repo.create_project_milestone(MilestoneMutationInput {
+        actor_id: Some(owner_id),
         attachment_ids: Vec::new(),
         contents_markdown: "Needle milestone body".to_string(),
         due_date: Some(days_ago_datetime(3)),

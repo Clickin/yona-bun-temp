@@ -10,7 +10,7 @@ use tower::ServiceExt;
 use yona_rust_persistence::{
     site_admin, AppRepository, CreateIssueCommentInput, CreateIssueInput,
     CreatePostingCommentInput, CreatePostingInput, CreateProjectInput, IssueMutationInput,
-    PostingMutationInput,
+    MilestoneMutationInput, PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{
@@ -910,6 +910,87 @@ async fn attachment_binding_uses_legacy_container_type_names() {
         .expect("board comment file");
     assert_eq!(board_comment_file.container_type, "NONISSUE_COMMENT");
     assert_eq!(board_comment_file.container_id, board_comment_id);
+
+    let other_milestone_file_id = upload_image_file(
+        app.clone(),
+        &other_cookie_header,
+        &other_csrf,
+        "other-milestone-attachment.png",
+    )
+    .await;
+    let milestone_file_id = upload_image_file(
+        app.clone(),
+        &cookie_header,
+        &csrf,
+        "milestone-attachment.png",
+    )
+    .await;
+    let milestone = repository
+        .create_project_milestone(MilestoneMutationInput {
+            actor_id: Some(owner_id),
+            attachment_ids: vec![other_milestone_file_id, milestone_file_id],
+            contents_markdown: "milestone body".to_string(),
+            due_date: None,
+            owner_name: "owner".to_string(),
+            project_name: "projectYobi".to_string(),
+            state: "open".to_string(),
+            title: "Milestone with attachment".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("milestone");
+    assert_eq!(milestone.attachments.len(), 1);
+    assert_eq!(milestone.attachments[0].id, milestone_file_id);
+    let other_milestone_file = repository
+        .read_attachment_by_id(other_milestone_file_id)
+        .await
+        .unwrap()
+        .expect("other milestone file");
+    assert_eq!(other_milestone_file.container_type, "USER");
+    assert_eq!(other_milestone_file.container_id, other_id);
+    let milestone_file = repository
+        .read_attachment_by_id(milestone_file_id)
+        .await
+        .unwrap()
+        .expect("milestone file");
+    assert_eq!(milestone_file.container_type, "MILESTONE");
+    assert_eq!(milestone_file.container_id, milestone.id);
+
+    let milestone_file_list = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri(format!(
+                    "/yona/files?containerType=MILESTONE&containerId={}",
+                    milestone.id
+                ))
+                .header(http::header::COOKIE, &cookie_header)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(milestone_file_list.status(), StatusCode::OK);
+    let milestone_file_list_body = milestone_file_list
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes();
+    let milestone_file_list_json: serde_json::Value =
+        serde_json::from_slice(&milestone_file_list_body).unwrap();
+    assert_eq!(
+        milestone_file_list_json["attachments"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    assert_eq!(
+        milestone_file_list_json["attachments"][0]["id"],
+        milestone_file_id
+    );
 }
 
 #[tokio::test]

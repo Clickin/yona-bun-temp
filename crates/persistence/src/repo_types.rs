@@ -534,6 +534,7 @@ pub struct MilestoneListFilter {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MilestoneMutationInput {
+    pub actor_id: Option<i64>,
     pub attachment_ids: Vec<i64>,
     pub contents_markdown: String,
     pub due_date: Option<DateTime>,
