@@ -751,20 +751,50 @@ export function ProjectNewPage(props: {
               <div className="row-fluid">
                 <div className="span2 right-txt mt10">project.shareOption</div>
                 <div className="span10">
-                  <select
-                    name="projectScope"
-                    value={formState.projectScope}
-                    onChange={(event) =>
-                      setFormState((current) => ({
-                        ...current,
-                        projectScope: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="public">public</option>
-                    <option value="protected">protected</option>
-                    <option value="private">private</option>
-                  </select>
+                  <ul className="unstyled project-scopes mt10">
+                    {[
+                      {
+                        id: "public",
+                        label: "project.public",
+                        notice: "project.public.notice",
+                      },
+                      {
+                        id: "protected",
+                        label: "project.protected",
+                        notice: "project.protected.notice",
+                      },
+                      {
+                        id: "private",
+                        label: "project.private",
+                        notice: "project.private.notice",
+                      },
+                    ].map((scope) => (
+                      <li
+                        className={scope.id === "public" ? undefined : "mt10"}
+                        id={scope.id === "protected" ? "opt-protected" : undefined}
+                        key={scope.id}
+                      >
+                        <input
+                          checked={formState.projectScope === scope.id}
+                          className="radio-btn pull-left"
+                          id={scope.id}
+                          name="projectScope"
+                          onChange={() =>
+                            setFormState((current) => ({
+                              ...current,
+                              projectScope: scope.id,
+                            }))
+                          }
+                          type="radio"
+                          value={scope.id.toUpperCase()}
+                        />
+                        <label htmlFor={scope.id}>
+                          <strong className="ml5">{scope.label}</strong>
+                          <p className="note">{scope.notice}</p>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
               <hr />

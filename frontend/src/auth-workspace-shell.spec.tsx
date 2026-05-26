@@ -80,8 +80,9 @@ describe("auth and workspace views", () => {
   it("uses the configured project default scope on the create project form", () => {
     const html = renderToStaticMarkup(<ProjectNewPage defaultProjectScope="private" />);
 
-    expect(html).toContain('<select name="projectScope">');
-    expect(html).toContain('<option value="private" selected="">private</option>');
+    expect(html).toContain('id="private"');
+    expect(html).toContain('name="projectScope"');
+    expect(html).toContain('checked="" value="PRIVATE"');
   });
 
   it("renders the legacy create project form shell and field anchors", () => {
@@ -103,6 +104,23 @@ describe("auth and workspace views", () => {
     expect(html).toContain('name="vcs"');
     expect(html).toContain('id="svn"');
     expect(html).toContain('class="actions mt20"');
+  });
+
+  it("renders legacy project scope radio anchors on the create project form", () => {
+    const html = renderToStaticMarkup(<ProjectNewPage />);
+
+    expect(html).toContain('class="unstyled project-scopes mt10"');
+    expect(html).toContain('id="public"');
+    expect(html).toContain('name="projectScope"');
+    expect(html).toContain('value="PUBLIC"');
+    expect(html).toContain('id="protected"');
+    expect(html).toContain('value="PROTECTED"');
+    expect(html).toContain('id="private"');
+    expect(html).toContain('value="PRIVATE"');
+    expect(html).toContain("project.public.notice");
+    expect(html).toContain("project.protected.notice");
+    expect(html).toContain("project.private.notice");
+    expect(html).not.toContain('<select name="projectScope"');
   });
 
   it("uses configured legacy project default menus on the create project form", () => {
