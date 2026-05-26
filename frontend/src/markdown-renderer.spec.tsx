@@ -879,6 +879,19 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("<p>continuation with");
   });
 
+  it("keeps blank-line continuations inside list items like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"- first\n\n  continuation with **style**\n- second"} />,
+    );
+
+    expect(html).toContain("<ul>");
+    expect(html).toContain("<li>first");
+    expect(html).toContain("continuation with <strong>style</strong>");
+    expect(html).toContain("<li>second</li>");
+    expect(html).not.toContain("<p>continuation with");
+    expect(html).not.toContain("<p>- second</p>");
+  });
+
   it("renders task-list checkboxes like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"- [ ] open\n- [x] **done**\n- [X] done upper"} />,

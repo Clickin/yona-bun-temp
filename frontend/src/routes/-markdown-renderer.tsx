@@ -684,7 +684,10 @@ function MarkdownInline(props: { context?: MarkdownContext; line: string }) {
 }
 
 function paragraphBlocks(markdown: string): MarkdownBlockRecord[] {
-  const source = markdown.replace(/\r\n?/g, "\n").replace(/^\n+/g, "");
+  const source = normalizeLooseListContinuationLines(markdown.replace(/\r\n?/g, "\n")).replace(
+    /^\n+/g,
+    "",
+  );
   const terminalNewline = /\n+$/.test(source);
   const normalized = source.replace(/\n+$/g, "");
   if (!normalized) {
@@ -702,6 +705,40 @@ function paragraphBlocks(markdown: string): MarkdownBlockRecord[] {
     offset += text.length + 2;
   }
   return blocks;
+}
+
+function normalizeLooseListContinuationLines(markdown: string): string {
+  const lines = markdown.split("\n");
+  const normalized: string[] = [];
+  let activeListIndent: number | null = null;
+  for (const [index, line] of lines.entries()) {
+    const listLine = parseMarkdownListLine({ key: `normalize-${index}`, text: line });
+    if (listLine) {
+      activeListIndent = listLine.indent;
+      normalized.push(line);
+      continue;
+    }
+    if (/^\s*$/.test(line)) {
+      const nextLine = lines[index + 1] ?? "";
+      const nextIndentMatch = /^(\s+)\S/.exec(nextLine);
+      const nextIndent = nextIndentMatch
+        ? (nextIndentMatch[1] ?? "").replace(/\t/g, "    ").length
+        : null;
+      if (activeListIndent !== null && nextIndent !== null && nextIndent > activeListIndent) {
+        continue;
+      }
+      normalized.push(line);
+      continue;
+    }
+    const continuationMatch = /^(\s+)\S/.exec(line);
+    if (activeListIndent !== null && continuationMatch) {
+      normalized.push(line);
+      continue;
+    }
+    activeListIndent = null;
+    normalized.push(line);
+  }
+  return normalized.join("\n");
 }
 
 function markdownLines(block: string): MarkdownLineRecord[] {
