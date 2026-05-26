@@ -2476,6 +2476,103 @@ async fn svn_protocol_external_client_can_blame_public_file() {
 }
 
 #[tokio::test]
+async fn svn_protocol_external_client_can_diff_public_file() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!("skipping external SVN diff smoke because svnadmin/svnlook/svn is unavailable");
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let base_revision =
+        seed_svn_readme(&repo_path, "hello before external svn diff\n").expect("seed svn readme");
+    let target_revision = yona_rust_vcs::svn_put_file(
+        &repo_path,
+        "trunk/README.md",
+        b"hello after external svn diff\n",
+        "external svn diff fixture",
+    )
+    .expect("seed svn diff target revision");
+    assert!(
+        target_revision > base_revision,
+        "diff fixture should advance the repository revision"
+    );
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let readme_url = format!("{base_url}/yona/svn/owner/projectYobi/trunk/README.md");
+    let base_cat_output = tokio::task::spawn_blocking({
+        let readme_url = readme_url.clone();
+        let base_revision = base_revision.to_string();
+        move || {
+            run_svn_capture(
+                &[
+                    "cat",
+                    "--non-interactive",
+                    "-r",
+                    base_revision.as_str(),
+                    readme_url.as_str(),
+                ],
+                None,
+            )
+        }
+    })
+    .await
+    .expect("svn cat base revision task");
+    assert!(
+        base_cat_output.status.success(),
+        "svn cat should read the base revision\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&base_cat_output.stdout),
+        String::from_utf8_lossy(&base_cat_output.stderr)
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&base_cat_output.stdout),
+        "hello before external svn diff\n"
+    );
+
+    let old_readme_url =
+        format!("{base_url}/yona/svn/owner/projectYobi/trunk/README.md@{base_revision}");
+    let new_readme_url =
+        format!("{base_url}/yona/svn/owner/projectYobi/trunk/README.md@{target_revision}");
+    let diff_output = tokio::task::spawn_blocking(move || {
+        run_svn_capture(
+            &[
+                "diff",
+                "--non-interactive",
+                "--old",
+                old_readme_url.as_str(),
+                "--new",
+                new_readme_url.as_str(),
+            ],
+            None,
+        )
+    })
+    .await
+    .expect("svn diff task");
+    assert!(
+        diff_output.status.success(),
+        "svn diff should consume update-report deltas\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&diff_output.stdout),
+        String::from_utf8_lossy(&diff_output.stderr)
+    );
+    let diff_stdout = String::from_utf8_lossy(&diff_output.stdout);
+    assert!(
+        diff_stdout.contains("-hello before external svn diff")
+            && diff_stdout.contains("+hello after external svn diff"),
+        "svn diff should expose old and new README contents\nstdout: {diff_stdout}"
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
 async fn svn_protocol_external_client_can_checkout_public_project() {
     if !svn_tools_available() || !svn_client_available() {
         eprintln!(
