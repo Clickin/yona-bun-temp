@@ -175,6 +175,21 @@ async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_res
     assert_eq!(reply_targets[0].resource_id, issue_comment.id);
     assert_eq!(reply_targets[1].resource_type, "REVIEW_COMMENT");
     assert_eq!(reply_targets[1].resource_id, review_comment.id);
+
+    let path_fallback_targets = repo
+        .find_mailbox_reply_targets_by_message_ids(&[
+            format!("<issue_post/{}@yona.local>", issue.id),
+            format!("<comment_thread/{}@yona.local>", thread.id),
+            "<issue_post/not-a-number@yona.local>".to_string(),
+            "<unknown/1@yona.local>".to_string(),
+        ])
+        .await
+        .unwrap();
+    assert_eq!(path_fallback_targets.len(), 2);
+    assert_eq!(path_fallback_targets[0].resource_type, "issue_post");
+    assert_eq!(path_fallback_targets[0].resource_id, issue.id);
+    assert_eq!(path_fallback_targets[1].resource_type, "comment_thread");
+    assert_eq!(path_fallback_targets[1].resource_id, thread.id);
 }
 
 #[tokio::test]

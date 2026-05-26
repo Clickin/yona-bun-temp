@@ -78,6 +78,16 @@ fn normalize_identity(value: &str) -> String {
     value.trim().to_ascii_lowercase()
 }
 
+fn mailbox_message_id_left_local(message_id: &str) -> Option<String> {
+    let left_angle = message_id.find('<')?;
+    let at_sign = message_id[left_angle + 1..]
+        .find('@')
+        .map(|offset| left_angle + 1 + offset)?;
+    let left = message_id[left_angle + 1..at_sign].trim();
+    let left = left.strip_prefix('/').unwrap_or(left).to_string();
+    (!left.is_empty()).then_some(left)
+}
+
 fn login_id_matches_configured_guest_prefix(login_id: &str) -> bool {
     let normalized_login_id = normalize_identity(login_id);
     if normalized_login_id.is_empty() {
@@ -8687,6 +8697,7 @@ impl AppRepository {
                 .order_by_asc(original_email::Column::Id)
                 .all(&self.db)
                 .await?;
+            let had_exact_rows = !rows.is_empty();
             for row in rows {
                 let Some(resource_type) = row.resource_type else {
                     continue;
@@ -8705,9 +8716,84 @@ impl AppRepository {
                     });
                 }
             }
+            if had_exact_rows {
+                continue;
+            }
+            if let Some(target) = self
+                .mailbox_reply_target_from_message_id_left(message_id)
+                .await?
+            {
+                if seen.insert((target.resource_type.clone(), target.resource_id)) {
+                    targets.push(target);
+                }
+            }
         }
 
         Ok(targets)
+    }
+
+    async fn mailbox_reply_target_from_message_id_left(
+        &self,
+        message_id: &str,
+    ) -> Result<Option<MailboxReplyTargetRecord>, DbErr> {
+        let Some(left) = mailbox_message_id_left_local(message_id) else {
+            return Ok(None);
+        };
+        let Some((resource_type, resource_id)) = left.split_once('/') else {
+            return Ok(None);
+        };
+        let Some(resource_id) = resource_id.parse::<i64>().ok() else {
+            return Ok(None);
+        };
+        if !self
+            .mailbox_reply_resource_exists(resource_type, resource_id)
+            .await?
+        {
+            return Ok(None);
+        }
+
+        Ok(Some(MailboxReplyTargetRecord {
+            resource_id,
+            resource_type: resource_type.to_string(),
+        }))
+    }
+
+    async fn mailbox_reply_resource_exists(
+        &self,
+        resource_type: &str,
+        resource_id: i64,
+    ) -> Result<bool, DbErr> {
+        match resource_type {
+            "issue_post" => Ok(issue::Entity::find_by_id(resource_id)
+                .one(&self.db)
+                .await?
+                .is_some()),
+            "issue_comment" => Ok(issue_comment::Entity::find_by_id(resource_id)
+                .one(&self.db)
+                .await?
+                .is_some()),
+            "board_post" => Ok(posting::Entity::find_by_id(resource_id)
+                .one(&self.db)
+                .await?
+                .is_some()),
+            "nonissue_comment" => Ok(posting_comment::Entity::find_by_id(resource_id)
+                .one(&self.db)
+                .await?
+                .is_some()),
+            "comment_thread" => Ok(comment_thread::Entity::find_by_id(resource_id)
+                .one(&self.db)
+                .await?
+                .is_some()),
+            "review_comment" => Ok(review_comment::Entity::find_by_id(resource_id)
+                .one(&self.db)
+                .await?
+                .is_some()),
+            "pull_request" => Ok(pull_request::Entity::find_by_id(resource_id)
+                .one(&self.db)
+                .await?
+                .is_some()),
+            _ => Ok(false),
+        }
     }
 
     pub async fn update_commit_discussion_thread_state(
