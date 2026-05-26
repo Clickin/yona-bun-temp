@@ -170,8 +170,25 @@ describe("auth and workspace views", () => {
       />,
     );
 
-    expect(html).toContain('<select name="projectScope">');
-    expect(html).toContain('<option value="protected" selected="">protected</option>');
+    expect(html).toContain('class="page-wrap-outer"');
+    expect(html).toContain('class="project-page-wrap"');
+    expect(html).toContain('class="nav nav-tabs"');
+    expect(html).toContain('id="saveSetting"');
+    expect(html).toContain('class="nm"');
+    expect(html).toContain('class="bubble-wrap gray"');
+    expect(html).toContain('class="box-wrap top clearfix frm-wrap"');
+    expect(html).toContain('class="setting-box left"');
+    expect(html).toContain('class="setting-box right"');
+    expect(html).toContain('id="project-name"');
+    expect(html).toContain('name="name"');
+    expect(html).toContain('id="project-desc"');
+    expect(html).toContain('name="overview"');
+    expect(html).toContain('id="protected"');
+    expect(html).toContain('name="projectScope"');
+    expect(html).toContain('checked="" value="PROTECTED"');
+    expect(html).not.toContain('<select name="projectScope">');
+    expect(html).toContain('id="codeAccessibleMemberOnly"');
+    expect(html).toContain('id="codeAccessibleAnyone"');
     expect(html).toContain('id="menuSettingCode"');
     expect(html).toContain('name="code" checked=""');
     expect(html).toContain('id="menuSettingIssue"');
@@ -193,6 +210,9 @@ describe("auth and workspace views", () => {
     expect(html).toContain('data-name="defaultReviewerCount"');
     expect(html).toContain('name="defaultReviewerCount"');
     expect(html).toContain('<option value="2" selected="">2</option>');
+    expect(html).toContain('class="box-wrap bottom"');
+    expect(html).toContain('id="save"');
+    expect(html).toContain("button.save");
   });
 
   it("renders the canonical signup shell with legacy labels and login link", () => {

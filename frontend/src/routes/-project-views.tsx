@@ -2405,6 +2405,7 @@ export function ProjectSettingsPage(props: {
     defaultReviewerCount: Math.max(1, detail.defaultReviewerCount ?? 1),
     isUsingReviewerCount: detail.isUsingReviewerCount ?? false,
     overview: detail.overview,
+    projectName: detail.projectName,
     projectScope: detail.projectScope,
     ...projectMenuSettingsFromDetail(detail),
   });
@@ -2414,176 +2415,303 @@ export function ProjectSettingsPage(props: {
       defaultReviewerCount: Math.max(1, detail.defaultReviewerCount ?? 1),
       isUsingReviewerCount: detail.isUsingReviewerCount ?? false,
       overview: detail.overview,
+      projectName: detail.projectName,
       projectScope: detail.projectScope,
       ...projectMenuSettingsFromDetail(detail),
     });
   }, [detail]);
   const maxReviewerCount = Math.max(1, detail.maxReviewerCount ?? 1);
   const reviewerCountOptions = Array.from({ length: maxReviewerCount }, (_, index) => index + 1);
+  const projectScopes = [
+    { id: "public", label: "project.public", value: "PUBLIC" },
+    { id: "protected", label: "project.protected", value: "PROTECTED" },
+    { id: "private", label: "project.private", value: "PRIVATE" },
+  ];
 
   return (
     <main className="app-shell">
-      <p className="eyebrow">Yona Rust Project</p>
-      <h1>Project settings</h1>
       <ProjectMenu detail={detail} runtimeConfig={props.runtimeConfig} />
-      <form
-        className="runtime-grid"
-        onSubmit={(event) => {
-          event.preventDefault();
-          props.onUpdateProjectSettings?.({
-            board: formState.board,
-            code: formState.code,
-            defaultReviewerCount: formState.defaultReviewerCount,
-            issue: formState.issue,
-            isUsingReviewerCount: formState.isUsingReviewerCount,
-            milestone: formState.milestone,
-            overview: formState.overview,
-            ownerName: detail.ownerName,
-            pullRequest: formState.pullRequest,
-            projectName: detail.projectName,
-            projectScope: formState.projectScope,
-            review: formState.review,
-          });
-        }}
-      >
-        <label>
-          <span>Project location</span>
-          <input
-            readOnly
-            name="projectSlug"
-            type="text"
-            value={`${detail.ownerName}/${detail.projectName}`}
+      <div className="page-wrap-outer">
+        <div className="project-page-wrap">
+          <ProjectSettingsSubMenu
+            active="setting"
+            detail={detail}
+            runtimeConfig={props.runtimeConfig}
           />
-        </label>
-        <label>
-          <span>Project name</span>
-          <input name="projectName" readOnly type="text" value={detail.projectName} />
-        </label>
-        <label>
-          <span>Overview</span>
-          <textarea
-            name="overview"
-            value={formState.overview}
-            onChange={(event) =>
-              setFormState((current) => ({
-                ...current,
-                overview: event.target.value,
-              }))
-            }
-          />
-        </label>
-        <label>
-          <span>Visibility</span>
-          <select
-            name="projectScope"
-            value={formState.projectScope}
-            onChange={(event) =>
-              setFormState((current) => ({
-                ...current,
-                projectScope: event.target.value,
-              }))
-            }
+          <form
+            className="nm"
+            encType="multipart/form-data"
+            id="saveSetting"
+            method="post"
+            onSubmit={(event) => {
+              event.preventDefault();
+              props.onUpdateProjectSettings?.({
+                board: formState.board,
+                code: formState.code,
+                defaultReviewerCount: formState.defaultReviewerCount,
+                issue: formState.issue,
+                isUsingReviewerCount: formState.isUsingReviewerCount,
+                milestone: formState.milestone,
+                overview: formState.overview,
+                ownerName: detail.ownerName,
+                pullRequest: formState.pullRequest,
+                projectName: formState.projectName,
+                projectScope: formState.projectScope,
+                review: formState.review,
+              });
+            }}
           >
-            <option value="public">public</option>
-            <option value="protected">protected</option>
-            <option value="private">private</option>
-          </select>
-        </label>
-        <section className="menu-setting-wrap">
-          <h2>Menu settings</h2>
-          {PROJECT_MENU_SETTINGS.map((item) => (
-            <label className="checkbox" htmlFor={item.id} key={item.key}>
-              <input
-                checked={formState[item.key]}
-                id={item.id}
-                name={item.name}
-                onChange={(event) =>
-                  setFormState((current) => ({
-                    ...current,
-                    [item.key]: event.target.checked,
-                  }))
-                }
-                type="checkbox"
-              />
-              {item.label}
-            </label>
-          ))}
-        </section>
-        <p>Code access is members only: {(detail.codeMemberOnly ?? false) ? "Yes" : "No"}</p>
-        <section className="box-wrap middle reviewer-count-wrap" id="reviewerCountSettingPanel">
-          <div className="cu-label vmiddle">project.reviewer.count</div>
-          <input
-            checked={formState.isUsingReviewerCount}
-            className="radio-btn"
-            data-action="show"
-            data-toggle="reviewer-count"
-            id="reviewerCountEnable"
-            name="isUsingReviewerCount"
-            onChange={() =>
-              setFormState((current) => ({
-                ...current,
-                isUsingReviewerCount: true,
-              }))
-            }
-            type="radio"
-            value="true"
-          />
-          <label className="bg-radiobtn label-public" htmlFor="reviewerCountEnable">
-            project.reviewer.count.enable
-          </label>
-          <input
-            checked={!formState.isUsingReviewerCount}
-            className="radio-btn"
-            data-action="hide"
-            data-toggle="reviewer-count"
-            id="reviewerCountDisable"
-            name="isUsingReviewerCount"
-            onChange={() =>
-              setFormState((current) => ({
-                ...current,
-                isUsingReviewerCount: false,
-              }))
-            }
-            type="radio"
-            value="false"
-          />
-          <label className="bg-radiobtn label-private" htmlFor="reviewerCountDisable">
-            project.reviewer.count.disable
-          </label>
-          <div
-            data-value={formState.isUsingReviewerCount ? "true" : "false"}
-            id="welReviewerCount"
-            style={{ display: formState.isUsingReviewerCount ? undefined : "none" }}
-          >
-            <div
-              className="btn-group branches"
-              data-id="project-reviewer-count"
-              data-name="defaultReviewerCount"
-            >
-              <span className="d-label">{formState.defaultReviewerCount}</span>
-              <select
-                id="project-reviewer-count"
-                name="defaultReviewerCount"
-                onChange={(event) =>
-                  setFormState((current) => ({
-                    ...current,
-                    defaultReviewerCount: Number(event.target.value),
-                  }))
-                }
-                value={Math.min(formState.defaultReviewerCount, maxReviewerCount)}
-              >
-                {reviewerCountOptions.map((count) => (
-                  <option key={count} value={count}>
-                    {count}
-                  </option>
-                ))}
-              </select>
+            <div className="bubble-wrap gray" style={{ overflow: "visible" }}>
+              <div className="box-wrap top clearfix frm-wrap" style={{ paddingTop: 20 }}>
+                <div className="setting-box left">
+                  <div className="logo-wrap" />
+                  <div className="logo-desc">
+                    <ul className="unstyled descs">
+                      <li>
+                        <strong>project.logo</strong>
+                      </li>
+                      <li>
+                        project.logo.type <span className="point">bmp, jpg, gif, png</span>
+                      </li>
+                      <li>
+                        project.logo.maxFileSize <span className="point">5MB</span>
+                      </li>
+                      <li>
+                        <div className="btn-wrap">
+                          <div className="nbtn medium white fake-file-wrap">
+                            <i className="yobicon-upload" /> button.upload
+                            <input
+                              accept="image/*"
+                              className="file"
+                              id="logoPath"
+                              name="logoPath"
+                              type="file"
+                            />
+                          </div>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <dl className="setting-box right">
+                  <dt>
+                    <label htmlFor="project-name">project.name.placeholder</label>
+                  </dt>
+                  <dd>
+                    <input
+                      data-content="project.transfer.description6"
+                      data-placement="left"
+                      data-trigger="focus"
+                      id="project-name"
+                      maxLength={250}
+                      name="name"
+                      value={formState.projectName}
+                      onChange={(event) =>
+                        setFormState((current) => ({
+                          ...current,
+                          projectName: event.target.value,
+                        }))
+                      }
+                    />
+                    <br />
+                  </dd>
+                  <dt>
+                    <label htmlFor="project-desc">project.description.placeholder</label>
+                  </dt>
+                  <dd>
+                    <textarea
+                      className="textarea"
+                      id="project-desc"
+                      maxLength={250}
+                      name="overview"
+                      value={formState.overview}
+                      onChange={(event) =>
+                        setFormState((current) => ({
+                          ...current,
+                          overview: event.target.value,
+                        }))
+                      }
+                    />
+                  </dd>
+                </dl>
+              </div>
+
+              <div className="box-wrap middle">
+                <div className="cu-label">project.shareOption</div>
+                <div className="cu-desc">
+                  {projectScopes.map((scope) => (
+                    <React.Fragment key={scope.id}>
+                      <input
+                        checked={formState.projectScope === scope.id}
+                        className="radio-btn"
+                        id={scope.id}
+                        name="projectScope"
+                        type="radio"
+                        value={scope.value}
+                        onChange={() =>
+                          setFormState((current) => ({
+                            ...current,
+                            projectScope: scope.id,
+                          }))
+                        }
+                      />
+                      <label className={`bg-radiobtn label-${scope.id}`} htmlFor={scope.id}>
+                        {scope.label}
+                      </label>
+                    </React.Fragment>
+                  ))}
+                  <span className="note">project.private.notice</span>
+                </div>
+              </div>
+
+              <div className="box-wrap middle">
+                <div className="cu-label">project.codeAccessible</div>
+                <div className="cu-desc">
+                  <input
+                    checked={detail.codeMemberOnly === true}
+                    className="radio-btn"
+                    id="codeAccessibleMemberOnly"
+                    name="isCodeAccessibleMemberOnly"
+                    readOnly
+                    type="radio"
+                    value="true"
+                  />
+                  <label className="bg-radiobtn label-public" htmlFor="codeAccessibleMemberOnly">
+                    button.yes
+                  </label>
+                  <input
+                    checked={detail.codeMemberOnly !== true}
+                    className="radio-btn"
+                    id="codeAccessibleAnyone"
+                    name="isCodeAccessibleMemberOnly"
+                    readOnly
+                    type="radio"
+                    value="false"
+                  />
+                  <label className="bg-radiobtn label-private" htmlFor="codeAccessibleAnyone">
+                    button.no
+                  </label>
+                  <span className="note" />
+                </div>
+              </div>
+
+              <div className="box-wrap middle reviewer-count-wrap" id="reviewerCountSettingPanel">
+                <div className="cu-label vmiddle">project.reviewer.count</div>
+                <div className="cu-desc">
+                  <input
+                    checked={formState.isUsingReviewerCount}
+                    className="radio-btn"
+                    data-action="show"
+                    data-toggle="reviewer-count"
+                    id="reviewerCountEnable"
+                    name="isUsingReviewerCount"
+                    type="radio"
+                    value="true"
+                    onChange={() =>
+                      setFormState((current) => ({
+                        ...current,
+                        isUsingReviewerCount: true,
+                      }))
+                    }
+                  />
+                  <label className="bg-radiobtn label-public" htmlFor="reviewerCountEnable">
+                    project.reviewer.count.enable
+                  </label>
+                  <input
+                    checked={!formState.isUsingReviewerCount}
+                    className="radio-btn"
+                    data-action="hide"
+                    data-toggle="reviewer-count"
+                    id="reviewerCountDisable"
+                    name="isUsingReviewerCount"
+                    type="radio"
+                    value="false"
+                    onChange={() =>
+                      setFormState((current) => ({
+                        ...current,
+                        isUsingReviewerCount: false,
+                      }))
+                    }
+                  />
+                  <label className="bg-radiobtn label-private" htmlFor="reviewerCountDisable">
+                    project.reviewer.count.disable
+                  </label>
+                  <div
+                    className={formState.isUsingReviewerCount ? undefined : "hide"}
+                    data-value={formState.isUsingReviewerCount ? "true" : "false"}
+                    id="welReviewerCount"
+                  >
+                    <div
+                      className="btn-group branches"
+                      data-id="project-reviewer-count"
+                      data-name="defaultReviewerCount"
+                    >
+                      <span className="d-label">{formState.defaultReviewerCount}</span>
+                      <select
+                        id="project-reviewer-count"
+                        name="defaultReviewerCount"
+                        value={Math.min(formState.defaultReviewerCount, maxReviewerCount)}
+                        onChange={(event) =>
+                          setFormState((current) => ({
+                            ...current,
+                            defaultReviewerCount: Number(event.target.value),
+                          }))
+                        }
+                      >
+                        {reviewerCountOptions.map((count) => (
+                          <option key={count} value={count}>
+                            {count}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <span className="note ml10">project.reviewer.count.description</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="box-wrap middle">
+                <div className="cu-label vmiddle">project.menu.setting</div>
+                <div className="cu-desc">
+                  {PROJECT_MENU_SETTINGS.map((item) => (
+                    <label
+                      className="bg-radiobtn label-public inline-list"
+                      htmlFor={item.id}
+                      key={item.key}
+                    >
+                      <input
+                        checked={formState[item.key]}
+                        className="radio-btn"
+                        id={item.id}
+                        name={item.name}
+                        type="checkbox"
+                        value="true"
+                        onChange={(event) =>
+                          setFormState((current) => ({
+                            ...current,
+                            [item.key]: event.target.checked,
+                          }))
+                        }
+                      />
+                      {item.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
-            <span className="note ml10">project.reviewer.count.description</span>
-          </div>
-        </section>
-        <button type="submit">{props.pending ? "Saving…" : "Save project"}</button>
-      </form>
+            <div className="box-wrap bottom">
+              <button
+                className="ybtn ybtn-success"
+                disabled={props.pending}
+                id="save"
+                type="submit"
+              >
+                button.save
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </main>
   );
 }

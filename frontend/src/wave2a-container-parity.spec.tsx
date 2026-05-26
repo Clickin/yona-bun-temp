@@ -219,13 +219,19 @@ describe("wave 2A container parity", () => {
       showReview: true,
       viewerCanUpdate: true,
     } as never);
-    expect(projectSettingsHtml).toContain("Project settings");
-    expect(projectSettingsHtml).toContain("Menu settings");
-    expect(projectSettingsHtml).toContain("Code access is members only");
-    expect(projectSettingsHtml).toContain("Issues");
-    expect(projectSettingsHtml).toContain("Pull requests");
-    expect(projectSettingsHtml).toContain("Reviews");
-    expect(projectSettingsHtml).toContain("Milestones");
-    expect(projectSettingsHtml).toContain("Boards");
+    expect(projectSettingsHtml).toContain('id="saveSetting"');
+    expect(projectSettingsHtml).toContain('class="bubble-wrap gray"');
+    expect(projectSettingsHtml).toContain('class="box-wrap top clearfix frm-wrap"');
+    expect(projectSettingsHtml).toContain('class="setting-box left"');
+    expect(projectSettingsHtml).toContain('class="setting-box right"');
+    expect(projectSettingsHtml).toContain('id="project-name"');
+    expect(projectSettingsHtml).toContain('id="project-desc"');
+    expect(projectSettingsHtml).toContain('id="codeAccessibleMemberOnly"');
+    expect(projectSettingsHtml).toContain('id="menuSettingIssue"');
+    expect(projectSettingsHtml).toContain('id="menuSettingPullRequest"');
+    expect(projectSettingsHtml).toContain('id="menuSettingReview"');
+    expect(projectSettingsHtml).toContain('id="menuSettingMilestone"');
+    expect(projectSettingsHtml).toContain('id="menuSettingBoard"');
+    expect(projectSettingsHtml).toContain('id="save"');
   });
 });

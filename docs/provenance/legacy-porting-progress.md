@@ -148,6 +148,7 @@ Interpretation:
 - [x] Project transfer request/accept/mail
 - [x] Project default scope configuration (`project.default.scope.when.create` / `YONA_PROJECT_DEFAULT_SCOPE`)
 - [x] Project default menu configuration and create/settings checkbox persistence (`project.creation.default.menus` / `YONA_PROJECT_DEFAULT_MENUS`)
+- [x] Project settings legacy shell anchors (`project/setting.scala.html`: `#saveSetting`, `.bubble-wrap.gray`, `.setting-box`, project scope/code-access radios, reviewer count panel, menu checkbox layout, `#save`)
 - [~] Git/SVN type change shell, metadata toggle, README flag clear, and repository reset
 - [x] Project statistics under-construction shell
 - [x] Project home legacy header/menu/page shell anchors
