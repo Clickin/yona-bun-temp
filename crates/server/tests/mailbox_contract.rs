@@ -318,3 +318,76 @@ async fn mailbox_sender_lookup_matches_legacy_from_address_order() {
         .unwrap()
         .is_none());
 }
+
+#[tokio::test]
+async fn mailbox_project_targets_follow_legacy_detail_and_read_filtering() {
+    let (repo, _) = build_repository().await;
+    let member = repo
+        .create_user(CreateUserInput {
+            display_name: "Mailbox Member".to_string(),
+            email_address: "member@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "member".to_string(),
+            password_hash: "pw".to_string(),
+        })
+        .await
+        .unwrap();
+    let outsider = repo
+        .create_user(CreateUserInput {
+            display_name: "Mailbox Outsider".to_string(),
+            email_address: "outsider@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "outsider".to_string(),
+            password_hash: "pw".to_string(),
+        })
+        .await
+        .unwrap();
+
+    let public_project = repo
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "mailbox".to_string(),
+            overview: None,
+            project_name: "public".to_string(),
+            project_scope: "public".to_string(),
+        })
+        .await
+        .unwrap();
+    let private_project = repo
+        .create_project(CreateProjectInput {
+            organization_id: None,
+            owner_name: "mailbox".to_string(),
+            overview: None,
+            project_name: "private".to_string(),
+            project_scope: "private".to_string(),
+        })
+        .await
+        .unwrap();
+    repo.add_project_membership(private_project.id, member.id, "member")
+        .await
+        .unwrap();
+
+    let details = vec![
+        "help".to_string(),
+        "mailbox/public".to_string(),
+        "mailbox/private/issue/1".to_string(),
+        "mailbox/public".to_string(),
+        "missing/project".to_string(),
+    ];
+    let member_targets = repo
+        .find_mailbox_project_targets_by_details(member.id, &details)
+        .await
+        .unwrap();
+    assert_eq!(member_targets.len(), 2);
+    assert_eq!(member_targets[0].id, public_project.id);
+    assert_eq!(member_targets[1].id, private_project.id);
+
+    let outsider_targets = repo
+        .find_mailbox_project_targets_by_details(outsider.id, &details)
+        .await
+        .unwrap();
+    assert_eq!(outsider_targets.len(), 1);
+    assert_eq!(outsider_targets[0].id, public_project.id);
+}

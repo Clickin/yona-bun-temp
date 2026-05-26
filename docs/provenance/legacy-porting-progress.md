@@ -340,6 +340,7 @@ Interpretation:
 - [x] Mailbox plus-address detail parser and Message-ID left-part parser parity
 - [x] Mailbox `In-Reply-To`/`References` Message-ID token parser parity
 - [x] Mailbox IMAP-recipient detail routing and project/resource detail parser parity
+- [x] Mailbox READ-filtered project target lookup parity
 - [x] Mailbox sender lookup parity for legacy From-address order, primary emails, and valid workspace emails
 - [x] Mailbox MIME content selection parity for text, alternative, related, root-part, and joined multipart cases
 - [x] Mailbox exact `original_email.message_id` reply target lookup parity

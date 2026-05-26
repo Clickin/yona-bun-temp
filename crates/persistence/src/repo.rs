@@ -89,6 +89,16 @@ fn mailbox_message_id_left_local(message_id: &str) -> Option<String> {
     (!left.is_empty()).then_some(left)
 }
 
+fn mailbox_project_detail_local(detail: &str) -> Option<(String, String)> {
+    let mut parts = detail.split('/');
+    let owner_name = parts.next()?;
+    let project_name = parts.next()?;
+    if owner_name.is_empty() || project_name.is_empty() {
+        return None;
+    }
+    Some((owner_name.to_string(), project_name.to_string()))
+}
+
 fn login_id_matches_configured_guest_prefix(login_id: &str) -> bool {
     let normalized_login_id = normalize_identity(login_id);
     if normalized_login_id.is_empty() {
@@ -1070,6 +1080,36 @@ impl AppRepository {
         }
 
         Ok(None)
+    }
+
+    pub async fn find_mailbox_project_targets_by_details(
+        &self,
+        actor_id: i64,
+        details: &[String],
+    ) -> Result<Vec<ProjectRecord>, DbErr> {
+        let mut projects = Vec::new();
+        let mut seen_project_ids = HashSet::new();
+        for detail in details {
+            let Some((owner_name, project_name)) = mailbox_project_detail_local(detail) else {
+                continue;
+            };
+            let Some(project) = self
+                .read_project_by_owner_and_name(&owner_name, &project_name)
+                .await?
+            else {
+                continue;
+            };
+            if !self
+                .search_project_visible_for_actor(&project, Some(actor_id))
+                .await?
+            {
+                continue;
+            }
+            if seen_project_ids.insert(project.id) {
+                projects.push(project);
+            }
+        }
+        Ok(projects)
     }
 
     pub async fn user_login_id_exists(&self, login_id: &str) -> Result<bool, DbErr> {
