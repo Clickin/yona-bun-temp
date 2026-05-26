@@ -1785,8 +1785,9 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
                 r#"<S:file-rev path="/trunk/README.md" rev="{revision}">"#
             ))
             && text.contains(r#"<S:rev-prop name="svn:author">"#)
+            && text.contains("<S:txdelta>")
             && text.contains("<S:rev-prop name=\"svn:log\">seed svn readme</S:rev-prop>"),
-        "SVN file-revs REPORT should expose executable-backed file revision metadata: {text}"
+        "SVN file-revs REPORT should expose executable-backed file revision metadata and content delta: {text}"
     );
 
     let mergeinfo_revision =
@@ -2424,6 +2425,51 @@ async fn svn_protocol_external_client_can_ls_cat_and_log_public_project() {
     assert!(
         !log_stdout.contains("invalid date"),
         "svn log should receive client-parseable repository dates\nstdout: {log_stdout}"
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
+async fn svn_protocol_external_client_can_blame_public_file() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!("skipping external SVN blame smoke because svnadmin/svnlook/svn is unavailable");
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello from external svn blame\n").expect("seed svn readme");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let readme_url = format!("{base_url}/yona/svn/owner/projectYobi/trunk/README.md");
+    let blame_output = tokio::task::spawn_blocking(move || {
+        run_svn_capture(&["blame", "--non-interactive", readme_url.as_str()], None)
+    })
+    .await
+    .expect("svn blame task");
+    assert!(
+        blame_output.status.success(),
+        "svn blame should consume file-revs REPORT metadata\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&blame_output.stdout),
+        String::from_utf8_lossy(&blame_output.stderr)
+    );
+    let blame_stdout = String::from_utf8_lossy(&blame_output.stdout);
+    assert!(
+        blame_stdout.contains("hello from external svn blame"),
+        "svn blame should annotate the seeded file contents\nstdout: {blame_stdout}"
+    );
+    assert!(
+        !blame_stdout.contains("invalid date"),
+        "svn blame should receive client-parseable revision dates\nstdout: {blame_stdout}"
     );
 
     let _ = shutdown.send(());

@@ -4265,7 +4265,9 @@ fn svn_protocol_file_revs_report_response(
     let mut file_revs = String::new();
     for entry in entries {
         match yona_rust_vcs::svn_cat_file(repo_path, Some(entry.revision), &file_path) {
-            Ok(_) => file_revs.push_str(&svn_protocol_file_rev_item(&file_path, &entry)),
+            Ok(contents) => {
+                file_revs.push_str(&svn_protocol_file_rev_item(&file_path, &entry, &contents))
+            }
             Err(VcsError::NotFound) => {}
             Err(VcsError::InvalidPath) => {
                 return svn_protocol_status_response(StatusCode::BAD_REQUEST)
@@ -5384,20 +5386,57 @@ fn svn_protocol_log_item(entry: &yona_rust_vcs::SvnLogEntry) -> String {
     )
 }
 
-fn svn_protocol_file_rev_item(path: &str, entry: &yona_rust_vcs::SvnLogEntry) -> String {
+fn svn_protocol_file_rev_item(
+    path: &str,
+    entry: &yona_rust_vcs::SvnLogEntry,
+    contents: &[u8],
+) -> String {
+    let txdelta = general_purpose::STANDARD.encode(svn_protocol_svndiff0_fulltext(contents));
     format!(
         r#"  <S:file-rev path="/{}" rev="{}">
     <S:rev-prop name="svn:author">{}</S:rev-prop>
     <S:rev-prop name="svn:date">{}</S:rev-prop>
     <S:rev-prop name="svn:log">{}</S:rev-prop>
+    <S:txdelta>{}</S:txdelta>
   </S:file-rev>
 "#,
         xml_escape(path.trim_matches('/')),
         entry.revision,
         xml_escape(&entry.author),
         xml_escape(&svn_protocol_committed_date(&entry.date)),
-        xml_escape(&entry.message)
+        xml_escape(&entry.message),
+        txdelta
     )
+}
+
+fn svn_protocol_svndiff0_fulltext(contents: &[u8]) -> Vec<u8> {
+    let mut encoded = b"SVN\0".to_vec();
+    let mut instructions = Vec::new();
+    if !contents.is_empty() {
+        instructions.push(0x80);
+        svn_protocol_push_svndiff_int(&mut instructions, contents.len());
+    }
+    for value in [0, 0, contents.len(), instructions.len(), contents.len()] {
+        svn_protocol_push_svndiff_int(&mut encoded, value);
+    }
+    encoded.extend_from_slice(&instructions);
+    encoded.extend_from_slice(contents);
+    encoded
+}
+
+fn svn_protocol_push_svndiff_int(output: &mut Vec<u8>, value: usize) {
+    let mut groups = Vec::new();
+    let mut remaining = value;
+    groups.push((remaining & 0x7f) as u8);
+    remaining >>= 7;
+    while remaining > 0 {
+        groups.push((remaining & 0x7f) as u8);
+        remaining >>= 7;
+    }
+    for (index, group) in groups.iter().rev().enumerate() {
+        let has_more = index + 1 < groups.len();
+        output.push(if has_more { *group | 0x80 } else { *group });
+    }
 }
 
 fn svn_protocol_replay_included(path: &str, filter_path: Option<&str>) -> bool {
