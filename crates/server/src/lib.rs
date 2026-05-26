@@ -3414,6 +3414,8 @@ fn svn_protocol_update_report_response(
         .unwrap_or_default();
     let update_path = join_svn_report_path(&base_path, &requested_path);
     let depth = svn_protocol_update_depth(request);
+    let start_empty = svn_protocol_update_start_empty(request);
+    let base_revision = svn_protocol_update_entry_revision(request).unwrap_or(target_revision);
     let recursive = depth.eq_ignore_ascii_case("infinity") || depth.eq_ignore_ascii_case("unknown");
     let tree_result = if recursive {
         yona_rust_vcs::svn_list_tree_recursive(repo_path, Some(target_revision), &update_path)
@@ -3456,8 +3458,10 @@ fn svn_protocol_update_report_response(
             &tree.entries,
             &update_path,
             target_revision,
+            base_revision,
             &revision_log,
             2,
+            start_empty,
         )
     } else {
         let mut entries = String::new();
@@ -3483,8 +3487,10 @@ fn svn_protocol_update_report_response(
                     route,
                     entry,
                     target_revision,
+                    base_revision,
                     &revision_log,
                     2,
+                    start_empty,
                 ));
             }
         }
@@ -4707,8 +4713,10 @@ fn svn_protocol_update_entries_recursive(
     entries: &[yona_rust_vcs::SvnTreeEntry],
     parent_path: &str,
     revision: i64,
+    base_revision: i64,
     revision_log: &yona_rust_vcs::SvnLogEntry,
     indent_level: usize,
+    start_empty: bool,
 ) -> String {
     let parent_path = parent_path.trim_matches('/');
     let child_names = entries
@@ -4741,14 +4749,26 @@ fn svn_protocol_update_entries_recursive(
                 entries,
                 &child_path,
                 revision,
+                base_revision,
                 revision_log,
                 indent_level + 1,
+                start_empty,
             );
+            let directory_element = if start_empty {
+                "add-directory"
+            } else {
+                "open-directory"
+            };
+            let revision_attribute = if start_empty {
+                String::new()
+            } else {
+                format!(r#" rev="{base_revision}""#)
+            };
             output.push_str(&format!(
-                r#"{indent}<S:add-directory name="{}" bc-url="{}">
+                r#"{indent}<S:{directory_element} name="{}"{revision_attribute} bc-url="{}">
 {child_indent}<D:checked-in><D:href>{}</D:href></D:checked-in>
 {}
-{}{indent}</S:add-directory>
+{}{indent}</S:{directory_element}>
 "#,
                 xml_escape(&name),
                 xml_escape(&svn_protocol_baseline_collection_href(
@@ -4765,8 +4785,10 @@ fn svn_protocol_update_entries_recursive(
                 route,
                 entry,
                 revision,
+                base_revision,
                 revision_log,
                 indent_level,
+                start_empty,
             ));
         }
     }
@@ -4790,8 +4812,10 @@ fn svn_protocol_update_file_entry(
     route: &SvnProtocolRoute,
     entry: &yona_rust_vcs::SvnTreeEntry,
     revision: i64,
+    base_revision: i64,
     revision_log: &yona_rust_vcs::SvnLogEntry,
     indent_level: usize,
+    start_empty: bool,
 ) -> String {
     let indent = "  ".repeat(indent_level);
     let child_indent = "  ".repeat(indent_level + 1);
@@ -4802,13 +4826,19 @@ fn svn_protocol_update_file_entry(
         .next()
         .unwrap_or(entry.path.as_str());
     let version_href = svn_protocol_version_href(route, revision, entry.path.trim_matches('/'));
+    let file_element = if start_empty { "add-file" } else { "open-file" };
+    let revision_attribute = if start_empty {
+        String::new()
+    } else {
+        format!(r#" rev="{base_revision}""#)
+    };
     format!(
-        r#"{indent}<S:add-file name="{}">
+        r#"{indent}<S:{file_element} name="{}"{revision_attribute}>
 {child_indent}<D:checked-in><D:href>{}</D:href></D:checked-in>
 {}
 {child_indent}<S:baseline-relative-path>{}</S:baseline-relative-path>
 {child_indent}<S:fetch-file/>
-{indent}</S:add-file>
+{indent}</S:{file_element}>
 "#,
         xml_escape(name),
         xml_escape(&version_href),
@@ -4916,6 +4946,24 @@ fn svn_protocol_update_depth(request: &str) -> String {
         return "files".to_string();
     }
     "infinity".to_string()
+}
+
+fn svn_protocol_update_start_empty(request: &str) -> bool {
+    if !request.contains("<S:entry") {
+        return true;
+    }
+    request.contains("start-empty=\"true\"") || request.contains("start-empty='true'")
+}
+
+fn svn_protocol_update_entry_revision(request: &str) -> Option<i64> {
+    let entry_start = request.find("<S:entry")?;
+    let entry_end = request[entry_start..].find('>')? + entry_start;
+    let entry = &request[entry_start..entry_end];
+    ["rev=\"", "rev='"].iter().find_map(|marker| {
+        let value = entry.split_once(marker)?.1;
+        let quote = if *marker == "rev=\"" { '"' } else { '\'' };
+        value.split_once(quote)?.0.parse::<i64>().ok()
+    })
 }
 
 fn svn_protocol_replay_operation(
