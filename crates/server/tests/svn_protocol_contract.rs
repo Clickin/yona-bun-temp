@@ -3375,6 +3375,72 @@ async fn svn_protocol_external_client_can_mkdir_direct_url() {
 }
 
 #[tokio::test]
+async fn svn_protocol_external_client_can_import_direct_url() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping external SVN direct URL import smoke because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello before direct URL svn import\n").expect("seed svn readme");
+
+    let import_dir = tempdir().expect("svn import tempdir");
+    std::fs::write(
+        import_dir.path().join("IMPORTED.txt"),
+        "hello from direct URL svn import\n",
+    )
+    .expect("write import file");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let import_url = format!("{base_url}/yona/svn/owner/projectYobi/trunk/imported");
+    let import_output = tokio::task::spawn_blocking({
+        let import_path = import_dir.path().to_path_buf();
+        move || {
+            run_svn_capture(
+                &[
+                    "import",
+                    "--non-interactive",
+                    "--username",
+                    "owner",
+                    "--password",
+                    "doorpass1",
+                    "-m",
+                    "external svn direct URL import smoke",
+                    import_path.to_string_lossy().as_ref(),
+                    import_url.as_str(),
+                ],
+                None,
+            )
+        }
+    })
+    .await
+    .expect("svn direct URL import task");
+    assert!(
+        import_output.status.success(),
+        "svn import PATH URL should commit directly against the mounted DAV boundary\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&import_output.stdout),
+        String::from_utf8_lossy(&import_output.stderr)
+    );
+
+    let imported = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/imported/IMPORTED.txt")
+        .expect("read direct URL imported file");
+    assert_eq!(imported, b"hello from direct URL svn import\n");
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
 async fn svn_protocol_external_client_can_propset_and_commit() {
     if !svn_tools_available() || !svn_client_available() {
         eprintln!(
