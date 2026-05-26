@@ -2,6 +2,7 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, Database, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
     Set,
 };
+use yona_rust_integrations::{MailboxMimePart, MailboxParsedMessageInput};
 use yona_rust_persistence::{
     comment_thread, email, original_email, AppRepository, CreateIssueCommentViaEmailInput,
     CreateIssueViaEmailInput, CreatePostingCommentViaEmailInput, CreatePostingInput,
@@ -10,6 +11,7 @@ use yona_rust_persistence::{
     PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
+use yona_rust_pilot_server::process_mailbox_parsed_message;
 
 async fn build_repository() -> (AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -276,6 +278,38 @@ async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_res
         .unwrap();
     assert_eq!(normalized_targets.len(), 1);
     assert_eq!(normalized_targets[0].resource_type, "REVIEW_COMMENT");
+
+    let parsed = process_mailbox_parsed_message(
+        &repo,
+        MailboxParsedMessageInput {
+            from_addresses: vec!["member@example.com".to_string()],
+            imap_address: "noreply@yona.local".to_string(),
+            in_reply_to: Some("<message-id-3@domain>".to_string()),
+            message_id: "<message-id-parsed@domain>".to_string(),
+            recipients: vec!["noreply+yobi/projectYobi@yona.local".to_string()],
+            references: Vec::new(),
+            root_part: MailboxMimePart {
+                body: "parsed reply body".to_string(),
+                content_id: None,
+                content_type: "text/plain; charset=UTF-8".to_string(),
+                parts: Vec::new(),
+            },
+            subject: "parsed title".to_string(),
+        },
+    )
+    .await
+    .unwrap();
+    assert_eq!(parsed.status, "processed");
+    assert_eq!(parsed.sender_id, Some(member.id));
+    assert_eq!(parsed.actions.len(), 1);
+    assert_eq!(parsed.actions[0].action, "create_review_comment");
+    assert_eq!(parsed.actions[0].status, "created");
+    let parsed_targets = repo
+        .find_mailbox_reply_targets_by_message_ids(&["<message-id-parsed@domain>".to_string()])
+        .await
+        .unwrap();
+    assert_eq!(parsed_targets.len(), 1);
+    assert_eq!(parsed_targets[0].resource_type, "REVIEW_COMMENT");
 
     let no_sender = repo
         .process_mailbox_normalized_message(MailboxNormalizedMessageInput {

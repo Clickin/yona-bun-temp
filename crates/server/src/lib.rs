@@ -63,6 +63,23 @@ pub mod embedded_assets {
 
 static SITE_UPDATE_NOTIFICATION_WATCHED: AtomicBool = AtomicBool::new(true);
 
+pub async fn process_mailbox_parsed_message(
+    repository: &yona_rust_persistence::AppRepository,
+    input: yona_rust_integrations::MailboxParsedMessageInput,
+) -> Result<yona_rust_persistence::MailboxNormalizedMessageResult, sea_orm::DbErr> {
+    let normalized = yona_rust_integrations::mailbox_normalize_parsed_message(input);
+    repository
+        .process_mailbox_normalized_message(yona_rust_persistence::MailboxNormalizedMessageInput {
+            body_markdown: normalized.body_markdown,
+            from_addresses: normalized.from_addresses,
+            message_id: normalized.message_id,
+            recipient_details: normalized.recipient_details,
+            reply_message_ids: normalized.reply_message_ids,
+            title: normalized.title,
+        })
+        .await
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum ErrorCode {
     InvalidArgument,
