@@ -74,7 +74,7 @@
 
 ## Project Configuration Note
 
-- Project creation now persists `YONA_PROJECT_DEFAULT_MENUS` (`project.creation.default.menus`) into the new `project_menu_setting` row, renders the legacy `project/create.scala.html` shell and create-form field anchors including `#project-owner` select2 user/group owner options, `.project-scopes`, `#public`, `#protected`, `#private`, `#vcs`, and `#svn`, and forwards selected VCS through `/api/v1`. `/api/v1/projects/form-options` supplies the current user plus creatable organization owners and preserves `?owner=` preselection. Direct SVN project creation validates `svnadmin`, provisions executable-backed `<project_id>.svn` storage, stores `vcs = Subversion`, and leaves the legacy settings checkbox layout as the remaining project-surface polish item.
+- Project creation now persists `YONA_PROJECT_DEFAULT_MENUS` (`project.creation.default.menus`) into the new `project_menu_setting` row, renders the legacy `project/create.scala.html` shell and create-form field anchors including `#project-owner` select2 user/group owner options, `.project-scopes`, `#public`, `#protected`, `#private`, `#vcs`, and `#svn`, and forwards selected VCS through `/api/v1`. `/api/v1/projects/form-options` supplies the current user plus creatable organization owners and preserves `?owner=` preselection, `/projects/new?owner=` keeps that owner when redirecting to `/projectform`, and the import CTA carries the selected owner as `/_import?owner=<selected>`. Direct SVN project creation validates `svnadmin`, provisions executable-backed `<project_id>.svn` storage, stores `vcs = Subversion`, and leaves the legacy settings checkbox layout as the remaining project-surface polish item.
 
 ## Auth, Route, And Mail Notes
 

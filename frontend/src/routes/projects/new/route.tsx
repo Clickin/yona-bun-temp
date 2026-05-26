@@ -18,5 +18,11 @@ function ProjectsNewRouteComponent() {
     );
   }
 
-  return <RedirectPage basePath={runtimeConfig.basePath} to="/projectform" />;
+  const owner =
+    typeof window === "undefined"
+      ? ""
+      : new URLSearchParams(window.location.search).get("owner") || "";
+  const query = owner ? `?owner=${encodeURIComponent(owner)}` : "";
+
+  return <RedirectPage basePath={runtimeConfig.basePath} to={`/projectform${query}`} />;
 }

@@ -684,6 +684,7 @@ export function ProjectNewPage(props: {
     : selectedOwnerName
       ? [{ organization: false, ownerName: selectedOwnerName, selected: true }]
       : [];
+  const importFormHref = `/_import?owner=${encodeURIComponent(formState.ownerName)}`;
 
   return (
     <div className="page-wrap-outer">
@@ -702,7 +703,7 @@ export function ProjectNewPage(props: {
               title.newProject
               <span>
                 <small>project.import.or &nbsp; </small>
-                <a className="ybtn ybtn-small nm" href="/_import">
+                <a className="ybtn ybtn-small nm" href={importFormHref}>
                   <strong>project.import.from.git</strong>
                 </a>
               </span>

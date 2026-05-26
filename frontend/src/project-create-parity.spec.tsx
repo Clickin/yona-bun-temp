@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -25,6 +27,20 @@ describe("project create parity", () => {
     expect(html).toContain('value="weblabs" selected=""');
   });
 
+  it("keeps the selected owner on the legacy import form link", () => {
+    const html = renderToStaticMarkup(
+      <ProjectNewPage
+        ownerOptions={[
+          { organization: false, ownerName: "admin", selected: false },
+          { organization: true, ownerName: "weblabs", selected: true },
+        ]}
+        selectedOwnerName="weblabs"
+      />,
+    );
+
+    expect(html).toContain('href="/_import?owner=weblabs"');
+  });
+
   it("renders legacy project scope radios instead of a select", () => {
     const html = renderToStaticMarkup(<ProjectNewPage defaultProjectScope="private" />);
 
@@ -39,5 +55,16 @@ describe("project create parity", () => {
     expect(html).toContain("project.protected.notice");
     expect(html).toContain("project.private.notice");
     expect(html).not.toContain('<select name="projectScope"');
+  });
+
+  it("preserves owner query when redirecting the legacy new project alias", () => {
+    const routeSource = readFileSync(
+      join(process.cwd(), "src/routes/projects/new/route.tsx"),
+      "utf8",
+    );
+
+    expect(routeSource).toContain('new URLSearchParams(window.location.search).get("owner")');
+    expect(routeSource).toContain("encodeURIComponent(owner)");
+    expect(routeSource).toContain("to={`/projectform${query}`}");
   });
 });
