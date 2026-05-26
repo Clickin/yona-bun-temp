@@ -905,6 +905,338 @@ export function ProjectNewPage(props: {
   );
 }
 
+export function ProjectImportPage(props: {
+  defaultProjectMenus?: string[];
+  defaultProjectScope?: string;
+  ownerOptions?: ProjectCreateOwnerOption[];
+  onImportProject?: (input: {
+    authId: string;
+    authPw: string;
+    board: boolean;
+    code: boolean;
+    issue: boolean;
+    milestone: boolean;
+    ownerName: string;
+    overview: string;
+    pullRequest: boolean;
+    projectName: string;
+    projectScope: string;
+    review: boolean;
+    url: string;
+    vcs: string;
+  }) => void;
+  pending?: boolean;
+  selectedOwnerName?: string;
+}) {
+  const selectedOwnerName =
+    props.selectedOwnerName ||
+    props.ownerOptions?.find((option) => option.selected)?.ownerName ||
+    props.ownerOptions?.[0]?.ownerName ||
+    "";
+  const [repoAuthOpen, setRepoAuthOpen] = React.useState(false);
+  const [formState, setFormState] = React.useState({
+    authId: "",
+    authPw: "",
+    ownerName: selectedOwnerName,
+    overview: "",
+    projectName: "",
+    projectScope: normalizeProjectDefaultScope(props.defaultProjectScope),
+    url: "",
+    vcs: "GIT",
+    ...defaultProjectMenuSettings(props.defaultProjectMenus),
+  });
+
+  React.useEffect(() => {
+    setFormState((current) => ({
+      ...current,
+      ownerName: selectedOwnerName,
+    }));
+  }, [selectedOwnerName]);
+
+  const ownerOptions = props.ownerOptions?.length
+    ? props.ownerOptions
+    : selectedOwnerName
+      ? [{ organization: false, ownerName: selectedOwnerName, selected: true }]
+      : [];
+  const createFormHref = `/projectform?owner=${encodeURIComponent(formState.ownerName)}`;
+
+  return (
+    <div className="page-wrap-outer">
+      <div className="project-page-wrap">
+        <div className="form-wrap new-project">
+          <form
+            action="/importProject"
+            className="frm-wrap"
+            id="importGit"
+            method="post"
+            onSubmit={(event) => {
+              event.preventDefault();
+              props.onImportProject?.(formState);
+            }}
+          >
+            <legend>
+              project.import.from.git
+              <span>
+                <small>project.import.or &nbsp; </small>
+                <a className="ybtn ybtn-small nm" href={createFormHref}>
+                  <strong>title.newProject</strong>
+                </a>
+              </span>
+            </legend>
+            <dl>
+              <dt>
+                <label htmlFor="url">
+                  project.git.url <strong className="orange-txt">*</strong>
+                </label>
+              </dt>
+              <dd>
+                <input
+                  className="text"
+                  id="url"
+                  name="url"
+                  placeholder="project.git.url.alert"
+                  type="text"
+                  value={formState.url}
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      url: event.target.value,
+                    }))
+                  }
+                />
+              </dd>
+              <dt />
+              <dd>
+                <label className="checkbox" htmlFor="useRepoAuth">
+                  <input
+                    checked={repoAuthOpen}
+                    id="useRepoAuth"
+                    type="checkbox"
+                    onChange={(event) => setRepoAuthOpen(event.target.checked)}
+                  />
+                  project.git.useRepoAuth
+                </label>
+                <div
+                  className="repo-auth-wrap"
+                  id="repoAuth"
+                  style={{ display: repoAuthOpen ? undefined : "none" }}
+                >
+                  <input
+                    className="text"
+                    name="authId"
+                    placeholder="user.loginId"
+                    type="text"
+                    value={formState.authId}
+                    onChange={(event) =>
+                      setFormState((current) => ({
+                        ...current,
+                        authId: event.target.value,
+                      }))
+                    }
+                  />
+                  <input
+                    className="text"
+                    name="authPw"
+                    placeholder="user.password"
+                    type="password"
+                    value={formState.authPw}
+                    onChange={(event) =>
+                      setFormState((current) => ({
+                        ...current,
+                        authPw: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </dd>
+              <dt>
+                <label htmlFor="project-owner">
+                  project.owner <strong className="orange-txt">*</strong>
+                </label>
+              </dt>
+              <dd>
+                <select
+                  className="mb10"
+                  data-format="user"
+                  data-toggle="select2"
+                  id="project-owner"
+                  name="owner"
+                  style={{ minWidth: 220 }}
+                  value={formState.ownerName}
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      ownerName: event.target.value,
+                    }))
+                  }
+                >
+                  {ownerOptions.map((option) => (
+                    <option
+                      data-type={option.organization ? "group" : "user"}
+                      key={option.ownerName}
+                      value={option.ownerName}
+                    >
+                      {option.ownerName}
+                    </option>
+                  ))}
+                </select>
+              </dd>
+              <dt>
+                <label htmlFor="project-name">
+                  project.name <strong className="orange-txt">*</strong>
+                </label>
+              </dt>
+              <dd>
+                <input
+                  className="text"
+                  id="project-name"
+                  maxLength={250}
+                  name="name"
+                  placeholder="project.name.placeholder"
+                  type="text"
+                  value={formState.projectName}
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      projectName: event.target.value,
+                    }))
+                  }
+                />
+              </dd>
+              <dt>
+                <label htmlFor="description">project.description</label>
+              </dt>
+              <dd>
+                <textarea
+                  className="text textarea.span4"
+                  id="description"
+                  name="overview"
+                  value={formState.overview}
+                  onChange={(event) =>
+                    setFormState((current) => ({
+                      ...current,
+                      overview: event.target.value,
+                    }))
+                  }
+                />
+              </dd>
+            </dl>
+            <div className="advanced-options">
+              <div className="row-fluid">
+                <div className="span2 right-txt mt10">project.shareOption</div>
+                <div className="span10">
+                  <ul className="unstyled project-scopes mt10">
+                    {[
+                      {
+                        id: "public",
+                        label: "project.public",
+                        notice: "project.public.notice",
+                      },
+                      {
+                        id: "protected",
+                        label: "project.protected",
+                        notice: "project.protected.notice",
+                      },
+                      {
+                        id: "private",
+                        label: "project.private",
+                        notice: "project.private.notice",
+                      },
+                    ].map((scope) => (
+                      <li
+                        className={scope.id === "public" ? undefined : "mt10"}
+                        id={scope.id === "protected" ? "opt-protected" : undefined}
+                        key={scope.id}
+                      >
+                        <input
+                          checked={formState.projectScope === scope.id}
+                          className="radio-btn pull-left"
+                          id={scope.id}
+                          name="projectScope"
+                          type="radio"
+                          value={scope.id.toUpperCase()}
+                          onChange={() =>
+                            setFormState((current) => ({
+                              ...current,
+                              projectScope: scope.id,
+                            }))
+                          }
+                        />
+                        <label htmlFor={scope.id}>
+                          <strong className="ml5">{scope.label}</strong>
+                          <p className="note">{scope.notice}</p>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <hr />
+              <div className="row-fluid">
+                <div className="span2 right-txt mt10">
+                  <label htmlFor="vcs">project.vcs</label>
+                </div>
+                <div className="span10 cu-desc">
+                  <select
+                    className="mb10 mt5"
+                    data-dropdown-css-class="select2-without-searchbox"
+                    data-toggle="select2"
+                    disabled
+                    id="vcs"
+                    name="vcs"
+                    style={{ minWidth: 220 }}
+                    defaultValue={formState.vcs}
+                  >
+                    <option value="GIT">Git</option>
+                  </select>
+                  <input name="vcs" type="hidden" value={formState.vcs} />
+                </div>
+              </div>
+              <hr />
+              <div className="row-fluid">
+                <div className="span2 right-txt">project.menu.setting</div>
+                <div className="span10">
+                  {PROJECT_MENU_SETTINGS.map((item) => (
+                    <label
+                      className="bg-radiobtn label-public inline-list"
+                      htmlFor={item.id}
+                      key={item.key}
+                    >
+                      <input
+                        checked={formState[item.key]}
+                        className="radio-btn"
+                        id={item.id}
+                        name={item.name}
+                        type="checkbox"
+                        value="true"
+                        onChange={(event) =>
+                          setFormState((current) => ({
+                            ...current,
+                            [item.key]: event.target.checked,
+                          }))
+                        }
+                      />
+                      {item.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="actions mt20">
+              <button className="ybtn ybtn-primary" disabled={props.pending} type="submit">
+                project.create
+              </button>
+              <a className="ybtn" href="/">
+                button.cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ProjectDetailPage(props: {
   detail: ProjectDetailViewModel | null | undefined;
   readmePost?: BoardPostDetail | null;

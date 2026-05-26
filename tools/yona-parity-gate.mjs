@@ -336,6 +336,7 @@ const DOMAIN_BUCKETS = [
     status: "partial",
     implementationPatterns: [
       /^frontend\/src\/routes\/-directory-views\.tsx$/i,
+      /^frontend\/src\/routes\/\[_\]import\/route\.tsx$/i,
       /^frontend\/.*project/i,
       /^crates\/(?:domain|persistence|server)\/.*(project|enrollment)/i,
     ],
