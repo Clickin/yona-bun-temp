@@ -2,8 +2,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { resolveRuntimeConfig } from "./runtime-config";
-import { CodeCommitDetailPage, type CodeCommitDetailViewModel } from "./routes/-code-views";
-import type { ProjectDetailViewModel } from "./routes/-view-models";
+import {
+  CodeBrowserPage,
+  CodeCommitDetailPage,
+  type CodeCommitDetailViewModel,
+} from "./routes/-code-views";
+import type { CodeBrowserViewModel, ProjectDetailViewModel } from "./routes/-view-models";
 
 const runtimeConfig = resolveRuntimeConfig({ basePath: "/yona" });
 
@@ -63,7 +67,38 @@ const commitDetail: CodeCommitDetailViewModel = {
   threads: [],
 };
 
+const codeBrowser: CodeBrowserViewModel = {
+  branches: [{ name: "main" }],
+  breadcrumbs: [],
+  entries: [],
+  file: {
+    isBinary: false,
+    isTooLarge: false,
+    mimeType: "text/x-rust",
+    name: "main.rs",
+    path: "src/main.rs",
+    size: 29,
+    text: "fn main() {\n  let value = 1;\n}",
+  },
+  noHead: false,
+  ownerName: "owner",
+  path: "src/main.rs",
+  projectName: "projectYobi",
+  selectedBranch: "main",
+};
+
 describe("CodeCommitDetailPage", () => {
+  it("renders code browser file syntax tokens through the shared highlighter", () => {
+    const html = renderToStaticMarkup(
+      <CodeBrowserPage code={codeBrowser} detail={projectDetail} runtimeConfig={runtimeConfig} />,
+    );
+
+    expect(html).toContain('id="showCode"');
+    expect(html).toContain('class="syntax-token syntax-keyword">fn</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">let</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1</span>');
+  });
+
   it("renders legacy commit diff file stats and inline comment anchors", () => {
     const html = renderToStaticMarkup(
       <CodeCommitDetailPage

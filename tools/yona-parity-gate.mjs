@@ -118,6 +118,7 @@ const DOMAIN_BUCKETS = [
     implementationPatterns: [
       /^crates\/server\/src\/lib\.rs$/i,
       /^frontend\/src\/routes\/-markdown-renderer\.tsx$/i,
+      /^frontend\/src\/routes\/-syntax-highlighting\.tsx$/i,
     ],
     testKeywords: [
       "markdown",
@@ -555,7 +556,9 @@ function matchesKeyword(filePath, keywords) {
 }
 
 function classifyCapability(filePath, changedFiles = []) {
-  const markdownBucket = DOMAIN_BUCKETS.find((bucket) => bucket.id === "project-markdown-rendering");
+  const markdownBucket = DOMAIN_BUCKETS.find(
+    (bucket) => bucket.id === "project-markdown-rendering",
+  );
   if (
     markdownBucket &&
     isMarkdownSurfaceOptIn(filePath, changedFiles) &&

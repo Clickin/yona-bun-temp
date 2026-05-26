@@ -154,8 +154,9 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain("<pre><code");
     expect(html).toContain('class="rust"');
-    expect(html).toContain("let value = 1;");
-    expect(html).toContain("#1 stays text");
+    expect(html).toContain('class="syntax-token syntax-keyword">let</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1</span>');
+    expect(html).toContain('#<span class="syntax-token syntax-number">1</span>');
     expect(html).not.toContain("issueLink");
   });
 
@@ -166,9 +167,21 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain("<pre><code");
     expect(html).toContain('class="rust"');
-    expect(html).toContain("let value = &#x27;#1&#x27;;");
+    expect(html).toContain('class="syntax-token syntax-keyword">let</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&#x27;#1&#x27;</span>');
     expect(html).not.toContain("linenos");
     expect(html).not.toContain("issueLink");
+  });
+
+  it("token-highlights fenced code blocks on the React side like legacy code views", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"``` rust\nfn main() {\n  let value = 1;\n}\n```"} />,
+    );
+
+    expect(html).toContain('class="syntax-token syntax-keyword">fn</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">let</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1</span>');
+    expect(html).toContain('class="syntax-token syntax-punctuation">{</span>');
   });
 
   it("accepts fenced code language without a separating space like legacy marked", () => {
@@ -178,7 +191,8 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain("<pre><code");
     expect(html).toContain('class="js"');
-    expect(html).toContain("const value = &#x27;#1&#x27;;");
+    expect(html).toContain('class="syntax-token syntax-keyword">const</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&#x27;#1&#x27;</span>');
     expect(html).not.toContain("issueLink");
     expect(html).not.toContain("```js");
   });
@@ -190,8 +204,9 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain("<pre><code");
     expect(html).toContain('class="js"');
-    expect(html).toContain("const value = &#x27;#1&#x27;;");
-    expect(html).toContain("  nested();");
+    expect(html).toContain('class="syntax-token syntax-keyword">const</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&#x27;#1&#x27;</span>');
+    expect(html).toContain('  <span class="syntax-token syntax-identifier">nested</span>');
     expect(html).not.toContain("    nested();");
     expect(html).not.toContain("issueLink");
   });
@@ -203,8 +218,9 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain("<pre><code");
     expect(html).toContain('class="js"');
-    expect(html).toContain("const value = &#x27;#1&#x27;;");
-    expect(html).toContain("#1 stays text");
+    expect(html).toContain('class="syntax-token syntax-keyword">const</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&#x27;#1&#x27;</span>');
+    expect(html).toContain('#<span class="syntax-token syntax-number">1</span>');
     expect(html).not.toContain("issueLink");
     expect(html).not.toContain("```js");
   });
@@ -216,7 +232,8 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain("<pre><code");
     expect(html).toContain('class="js"');
-    expect(html).toContain("const value = &#x27;#1&#x27;;");
+    expect(html).toContain('class="syntax-token syntax-keyword">const</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&#x27;#1&#x27;</span>');
     expect(html).not.toContain("issueLink");
     expect(html).not.toContain("~~~");
   });
@@ -229,7 +246,8 @@ describe("MarkdownRenderer", () => {
     );
 
     expect(html).toContain("<pre><code");
-    expect(html).toContain("[guide]: https://example.com/docs");
+    expect(html).toContain('class="syntax-token syntax-identifier">guide</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">https</span>');
     expect(html).toContain("[docs][guide]");
     expect(html).not.toContain('<a href="https://example.com/docs">docs</a>');
   });

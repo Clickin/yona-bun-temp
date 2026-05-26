@@ -240,6 +240,7 @@ test("maps PR and code Markdown renderer changes with focused evidence", () => {
 test("maps Markdown tasklist surface opt-ins to the renderer capability", () => {
   const result = runGate([
     "frontend/src/routes/-markdown-renderer.tsx",
+    "frontend/src/routes/-syntax-highlighting.tsx",
     "frontend/src/routes/-board-views.tsx",
     "frontend/src/routes/-issue-views.tsx",
     "frontend/src/markdown-renderer.spec.tsx",

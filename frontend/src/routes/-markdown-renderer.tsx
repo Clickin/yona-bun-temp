@@ -1,5 +1,7 @@
 import * as React from "react";
 
+import { highlightCodeBlock } from "./-syntax-highlighting";
+
 type MarkdownInlinePart =
   | { kind: "code"; key: string; value: string }
   | { kind: "delete"; key: string; value: string }
@@ -1278,7 +1280,9 @@ function MarkdownBlock(props: { block: MarkdownBlockRecord; context?: MarkdownCo
   if (codeBlock) {
     return (
       <pre>
-        <code className={codeBlock.language}>{codeBlock.code}</code>
+        <code className={codeBlock.language}>
+          {highlightCodeBlock(codeBlock.code, codeBlock.language)}
+        </code>
       </pre>
     );
   }
