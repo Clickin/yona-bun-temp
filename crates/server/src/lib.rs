@@ -2375,7 +2375,15 @@ async fn direct_svn_protocol_request(
         return svn_protocol_baseline_propfind_response(&repo_path, &route);
     }
     if method == "PROPFIND" {
-        if let Some(response) = svn_protocol_tree_propfind_response(&repo_path, &route) {
+        let include_children = parts
+            .headers
+            .get("depth")
+            .and_then(|value| value.to_str().ok())
+            .map(|value| value.trim() != "0")
+            .unwrap_or(true);
+        if let Some(response) =
+            svn_protocol_tree_propfind_response(&repo_path, &route, include_children)
+        {
             return response;
         }
         return svn_protocol_file_propfind_response(&repo_path, &route);
@@ -2561,6 +2569,14 @@ fn svn_protocol_propfind_collection_response(
     vcc_href: Option<&str>,
     request: &str,
 ) -> Response {
+    let baseline_collection_href = checked_in_href.map(|href| {
+        let href = href.replace("/!svn/bln/", "/!svn/bc/");
+        if href.ends_with('/') {
+            href
+        } else {
+            format!("{href}/")
+        }
+    });
     let version_name = (svn_protocol_propfind_wants(request, "version-name")
         || svn_protocol_propfind_wants(request, "allprop"))
     .then_some(youngest_revision)
@@ -2602,6 +2618,17 @@ fn svn_protocol_propfind_collection_response(
             )
         })
         .unwrap_or_default();
+    let baseline_collection = (svn_protocol_propfind_wants(request, "baseline-collection")
+        || svn_protocol_propfind_wants(request, "allprop"))
+    .then_some(baseline_collection_href.as_deref())
+    .flatten()
+    .map(|href| {
+        format!(
+            "        <D:baseline-collection><D:href>{}</D:href></D:baseline-collection>\n",
+            xml_escape(href)
+        )
+    })
+    .unwrap_or_default();
     let baseline_relative_path =
         if vcc_href.is_some() && svn_protocol_propfind_wants(request, "baseline-relative-path") {
             "        <S:baseline-relative-path></S:baseline-relative-path>\n"
@@ -2628,6 +2655,7 @@ fn svn_protocol_propfind_collection_response(
 {repository_uuid}
 {checked_in}
 {version_controlled_configuration}
+{baseline_collection}
 {baseline_relative_path}
       </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
@@ -2705,7 +2733,7 @@ fn svn_protocol_file_response(
     route: &SvnProtocolRoute,
     head_only: bool,
 ) -> Response {
-    let Some((revision, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+    let Some((revision, path)) = svn_protocol_file_lookup_for_route(route) else {
         return svn_protocol_not_implemented_response(
             route,
             if head_only { "HEAD" } else { "GET" },
@@ -2745,7 +2773,7 @@ fn svn_protocol_file_response(
 }
 
 fn svn_protocol_file_propfind_response(repo_path: &StdPath, route: &SvnProtocolRoute) -> Response {
-    let Some((revision, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+    let Some((revision, path)) = svn_protocol_file_lookup_for_route(route) else {
         return svn_protocol_not_implemented_response(route, "PROPFIND");
     };
     let bytes = match yona_rust_vcs::svn_cat_file(repo_path, revision, &path) {
@@ -2812,6 +2840,7 @@ fn svn_protocol_file_propfind_response(repo_path: &StdPath, route: &SvnProtocolR
         None
     };
     svn_protocol_propfind_file_response(
+        route,
         &href,
         bytes.len(),
         version_revision,
@@ -2825,8 +2854,9 @@ fn svn_protocol_file_propfind_response(repo_path: &StdPath, route: &SvnProtocolR
 fn svn_protocol_tree_propfind_response(
     repo_path: &StdPath,
     route: &SvnProtocolRoute,
+    include_children: bool,
 ) -> Option<Response> {
-    let (revision, path) = svn_protocol_file_lookup(&route.svn_path)?;
+    let (revision, path) = svn_protocol_file_lookup_for_route(route)?;
     let tree = match yona_rust_vcs::svn_list_tree(repo_path, revision, &path) {
         Ok(tree) => tree,
         Err(VcsError::NotFound) => return None,
@@ -2859,6 +2889,7 @@ fn svn_protocol_tree_propfind_response(
         route,
         &tree,
         version_revision,
+        include_children,
     ))
 }
 
@@ -2866,32 +2897,54 @@ fn svn_protocol_propfind_tree_response(
     route: &SvnProtocolRoute,
     tree: &yona_rust_vcs::SvnTree,
     version_revision: Option<i64>,
+    include_children: bool,
 ) -> Response {
     let mut responses = String::new();
-    let collection_href = svn_protocol_href(route, &tree.path, true);
-    responses.push_str(&svn_protocol_propfind_collection_item(&collection_href));
-    for entry in &tree.entries {
-        let href = svn_protocol_href(route, &entry.path, entry.is_dir);
-        if entry.is_dir {
-            responses.push_str(&svn_protocol_propfind_collection_item(&href));
-        } else {
-            let version_href = version_revision.map(|revision| {
-                format!(
-                    "{}/!svn/ver/{}/{}",
-                    svn_protocol_project_href(route),
-                    revision,
-                    entry.path.trim_matches('/')
-                )
-            });
-            responses.push_str(&svn_protocol_propfind_file_item(
-                &href,
-                None,
-                version_revision,
-                version_href.as_deref(),
-                Some(&entry.path),
-                &[],
-                None,
-            ));
+    let collection_href = svn_protocol_propfind_tree_href(route, &tree.path, true);
+    responses.push_str(&svn_protocol_propfind_collection_item(
+        route,
+        &collection_href,
+        &tree.path,
+        version_revision,
+    ));
+    if let Some(alias_href) = collection_href.strip_suffix('/') {
+        responses.push_str(&svn_protocol_propfind_collection_item(
+            route,
+            alias_href,
+            &tree.path,
+            version_revision,
+        ));
+    }
+    if include_children {
+        for entry in &tree.entries {
+            let href = svn_protocol_propfind_tree_href(route, &entry.path, entry.is_dir);
+            if entry.is_dir {
+                responses.push_str(&svn_protocol_propfind_collection_item(
+                    route,
+                    &href,
+                    &entry.path,
+                    version_revision,
+                ));
+            } else {
+                let version_href = version_revision.map(|revision| {
+                    format!(
+                        "{}/!svn/ver/{}/{}",
+                        svn_protocol_project_href(route),
+                        revision,
+                        entry.path.trim_matches('/')
+                    )
+                });
+                responses.push_str(&svn_protocol_propfind_file_item(
+                    route,
+                    &href,
+                    None,
+                    version_revision,
+                    version_href.as_deref(),
+                    Some(&entry.path),
+                    &[],
+                    None,
+                ));
+            }
         }
     }
     let body = format!(
@@ -2909,6 +2962,7 @@ fn svn_protocol_propfind_tree_response(
 }
 
 fn svn_protocol_propfind_file_response(
+    route: &SvnProtocolRoute,
     href: &str,
     content_length: usize,
     version_revision: Option<i64>,
@@ -2918,6 +2972,7 @@ fn svn_protocol_propfind_file_response(
     lock: Option<(&SvnProtocolRoute, &yona_rust_vcs::SvnLock)>,
 ) -> Response {
     let item = svn_protocol_propfind_file_item(
+        route,
         href,
         Some(content_length),
         version_revision,
@@ -2941,23 +2996,61 @@ fn svn_protocol_propfind_file_response(
     response
 }
 
-fn svn_protocol_propfind_collection_item(href: &str) -> String {
+fn svn_protocol_propfind_collection_item(
+    route: &SvnProtocolRoute,
+    href: &str,
+    path: &str,
+    version_revision: Option<i64>,
+) -> String {
+    let checked_in = version_revision
+        .map(|revision| {
+            format!(
+                "        <D:checked-in><D:href>{}</D:href></D:checked-in>\n",
+                xml_escape(&svn_protocol_version_href(route, revision, path))
+            )
+        })
+        .unwrap_or_default();
+    let baseline_collection = version_revision
+        .map(|revision| {
+            format!(
+                "        <D:baseline-collection><D:href>{}</D:href></D:baseline-collection>\n",
+                xml_escape(&svn_protocol_baseline_collection_href(route, revision, ""))
+            )
+        })
+        .unwrap_or_default();
+    let version_name = version_revision
+        .map(|revision| format!("        <D:version-name>{revision}</D:version-name>\n"))
+        .unwrap_or_default();
+    let vcc_href = format!("{}/!svn/vcc/default", svn_protocol_project_href(route));
+    let baseline_relative_path = path.trim_matches('/');
+    let baseline_relative_path = if baseline_relative_path.is_empty() {
+        String::new()
+    } else {
+        format!(
+            "        <S:baseline-relative-path>{}</S:baseline-relative-path>\n",
+            xml_escape(baseline_relative_path)
+        )
+    };
     format!(
         r#"  <D:response>
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
         <D:resourcetype><D:collection/></D:resourcetype>
+{version_name}{checked_in}{baseline_collection}        <D:version-controlled-configuration><D:href>{}</D:href></D:version-controlled-configuration>
+{baseline_relative_path}
       </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
   </D:response>
 "#,
-        xml_escape(href)
+        xml_escape(href),
+        xml_escape(&vcc_href)
     )
 }
 
 fn svn_protocol_propfind_file_item(
+    route: &SvnProtocolRoute,
     href: &str,
     content_length: Option<usize>,
     version_revision: Option<i64>,
@@ -2977,6 +3070,14 @@ fn svn_protocol_propfind_file_item(
             format!(
                 "        <D:checked-in><D:href>{}</D:href></D:checked-in>\n",
                 xml_escape(href)
+            )
+        })
+        .unwrap_or_default();
+    let baseline_collection = version_revision
+        .map(|revision| {
+            format!(
+                "        <D:baseline-collection><D:href>{}</D:href></D:baseline-collection>\n",
+                xml_escape(&svn_protocol_baseline_collection_href(route, revision, ""))
             )
         })
         .unwrap_or_default();
@@ -3003,7 +3104,7 @@ fn svn_protocol_propfind_file_item(
     <D:propstat>
       <D:prop>
         <D:resourcetype/>
-{content_length}{version_name}{checked_in}{baseline_relative_path}{deadprop_count}{property_items}{lock_discovery}      </D:prop>
+{content_length}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{deadprop_count}{property_items}{lock_discovery}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
   </D:response>
@@ -3063,6 +3164,39 @@ fn svn_protocol_href(route: &SvnProtocolRoute, path: &str, collection: bool) -> 
         format!("/{clean_path}")
     };
     format!("{}{}", svn_protocol_project_href(route), suffix)
+}
+
+fn svn_protocol_propfind_tree_href(
+    route: &SvnProtocolRoute,
+    path: &str,
+    collection: bool,
+) -> String {
+    let trimmed = route.svn_path.trim_matches('/');
+    let version_prefix = trimmed
+        .strip_prefix("!svn/ver/")
+        .and_then(|rest| rest.split('/').next())
+        .and_then(|revision| revision.parse::<i64>().ok())
+        .map(|revision| ("ver", revision));
+    let baseline_prefix = trimmed
+        .strip_prefix("!svn/bc/")
+        .and_then(|rest| rest.split('/').next())
+        .and_then(|revision| revision.parse::<i64>().ok())
+        .map(|revision| ("bc", revision));
+    if let Some((kind, revision)) = version_prefix.or(baseline_prefix) {
+        let path = path.trim_matches('/');
+        let suffix = if path.is_empty() {
+            String::new()
+        } else if collection {
+            format!("/{path}/")
+        } else {
+            format!("/{path}")
+        };
+        return format!(
+            "{}/!svn/{kind}/{revision}{suffix}",
+            svn_protocol_project_href(route)
+        );
+    }
+    svn_protocol_href(route, path, collection)
 }
 
 fn svn_protocol_propfind_wants(request: &str, property_name: &str) -> bool {
@@ -3272,7 +3406,7 @@ fn svn_protocol_update_report_response(
     let requested_path = svn_protocol_xml_text(request, "src-path")
         .map(|path| svn_protocol_repo_relative_request_path(route, &path))
         .unwrap_or_default();
-    let base_path = svn_protocol_file_lookup(&route.svn_path)
+    let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
     let update_path = join_svn_report_path(&base_path, &requested_path);
@@ -3392,7 +3526,7 @@ fn svn_protocol_file_revs_report_response(
     let start_revision = svn_protocol_xml_i64(request, "start-revision").unwrap_or(0);
     let end_revision = svn_protocol_xml_i64(request, "end-revision").unwrap_or(youngest_revision);
     let requested_path = svn_protocol_xml_text(request, "path").unwrap_or_default();
-    let base_path = svn_protocol_file_lookup(&route.svn_path)
+    let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
     let file_path = join_svn_report_path(&base_path, &requested_path);
@@ -3446,7 +3580,7 @@ fn svn_protocol_replay_report_response(
     request: &str,
 ) -> Response {
     let revision = match svn_protocol_xml_i64(request, "revision")
-        .or_else(|| svn_protocol_file_lookup(&route.svn_path).and_then(|(revision, _)| revision))
+        .or_else(|| svn_protocol_file_lookup_for_route(route).and_then(|(revision, _)| revision))
     {
         Some(revision) => revision,
         None => match yona_rust_vcs::svn_youngest_revision(repo_path) {
@@ -3464,7 +3598,7 @@ fn svn_protocol_replay_report_response(
     let include_path = svn_protocol_xml_text(request, "include-path")
         .map(|path| path.trim_matches('/').to_string())
         .filter(|path| !path.is_empty());
-    let base_path = svn_protocol_file_lookup(&route.svn_path)
+    let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path.trim_matches('/').to_string())
         .filter(|path| !path.is_empty());
     let filter_path = include_path.or(base_path);
@@ -3519,7 +3653,7 @@ fn svn_protocol_mergeinfo_report_response(
             }
         },
     };
-    let base_path = svn_protocol_file_lookup(&route.svn_path)
+    let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
     let requested_paths = svn_protocol_xml_sections(request, "path");
@@ -3589,7 +3723,7 @@ fn svn_protocol_get_deleted_rev_report_response(
             }
         },
     };
-    let base_path = svn_protocol_file_lookup(&route.svn_path)
+    let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
     let path = join_svn_report_path(&base_path, &requested_path);
@@ -3643,7 +3777,7 @@ fn svn_protocol_list_report_response(
         },
     };
     let requested_path = svn_protocol_xml_text(request, "path").unwrap_or_default();
-    let base_path = svn_protocol_file_lookup(&route.svn_path)
+    let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
     let list_path = join_svn_report_path(&base_path, &requested_path);
@@ -3701,7 +3835,7 @@ fn svn_protocol_get_locks_report_response(
     repo_path: &StdPath,
     route: &SvnProtocolRoute,
 ) -> Response {
-    let path = svn_protocol_file_lookup(&route.svn_path)
+    let path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
     let lock = match yona_rust_vcs::svn_lock(repo_path, &path) {
@@ -3752,7 +3886,7 @@ fn svn_protocol_inherited_props_report_response(
         },
     };
     let requested_path = svn_protocol_xml_text(request, "path").unwrap_or_default();
-    let base_path = svn_protocol_file_lookup(&route.svn_path)
+    let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
     let path = join_svn_report_path(&base_path, &requested_path);
@@ -3803,7 +3937,7 @@ fn svn_protocol_checkout_response(route: &SvnProtocolRoute, body: &Bytes) -> Res
     let working_path = if route.svn_path == "!svn/vcc/default" {
         String::new()
     } else {
-        let Some((_, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+        let Some((_, path)) = svn_protocol_file_lookup_for_route(route) else {
             return svn_protocol_status_response(StatusCode::BAD_REQUEST);
         };
         path
@@ -3846,9 +3980,12 @@ fn svn_protocol_merge_response(
             return RestRouteError::from_connect_error(internal_error(error)).into_response()
         }
     };
-    let latest_entry = match yona_rust_vcs::svn_log_entries(repo_path, revision, revision, 1) {
-        Ok(mut entries) => entries.pop(),
-        Err(VcsError::NotFound) => None,
+    let merge_path = svn_protocol_file_lookup_for_route(route)
+        .map(|(_, path)| path)
+        .unwrap_or_default();
+    let changed_paths = match yona_rust_vcs::svn_changed_paths(repo_path, revision) {
+        Ok(paths) => paths,
+        Err(VcsError::NotFound) => Vec::new(),
         Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
         Err(VcsError::SvnLookUnavailable) => {
             return svn_protocol_not_implemented_response(route, "MERGE")
@@ -3857,62 +3994,79 @@ fn svn_protocol_merge_response(
             return RestRouteError::from_connect_error(internal_error(error)).into_response()
         }
     };
-    let date = latest_entry
-        .as_ref()
-        .map(|entry| entry.date.as_str())
-        .filter(|date| !date.is_empty())
-        .map(|date| {
-            format!(
-                "          <D:creationdate>{}</D:creationdate>\n",
-                xml_escape(date)
-            )
-        })
-        .unwrap_or_default();
-    let author = latest_entry
-        .as_ref()
-        .map(|entry| entry.author.as_str())
-        .filter(|author| !author.is_empty())
-        .map(|author| {
-            format!(
-                "          <D:creator-displayname>{}</D:creator-displayname>\n",
-                xml_escape(author)
-            )
-        })
-        .unwrap_or_default();
-    let root_href = format!("{}/", svn_protocol_project_href(route));
-    let checked_in_href = format!("{}/!svn/ver/{revision}/", svn_protocol_project_href(route));
-    let body = format!(
-        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\
-<D:merge-response xmlns:D=\"DAV:\" xmlns:S=\"svn:\">\n\
-  <D:updated-set>\n\
-    <D:response>\n\
-      <D:href>{}</D:href>\n\
+    let mut updated_responses = String::new();
+    let project_href = base_path_href(
+        &route.base_path,
+        &format!("/svn/{}/{}", route.owner_name, route.project_name),
+    );
+    updated_responses.push_str(&format!(
+        "    <D:response>\n\
+      <D:href>{}/!svn/bln/{revision}</D:href>\n\
       <D:propstat>\n\
         <D:prop>\n\
           <D:resourcetype><D:baseline/></D:resourcetype>\n\
           <D:version-name>{revision}</D:version-name>\n\
-{date}{author}\
         </D:prop>\n\
         <D:status>HTTP/1.1 200 OK</D:status>\n\
       </D:propstat>\n\
-    </D:response>\n\
-    <D:response>\n\
+    </D:response>\n",
+        xml_escape(&project_href)
+    ));
+    for changed_path in changed_paths.iter().filter(|changed_path| {
+        let path = changed_path.path.trim_matches('/');
+        let merge_path = merge_path.trim_matches('/');
+        merge_path.is_empty() || path == merge_path || path.starts_with(&format!("{merge_path}/"))
+    }) {
+        let path = changed_path.path.trim_matches('/');
+        let href = svn_protocol_merge_href(&project_href, path, changed_path.is_dir);
+        let checked_in_href = svn_protocol_merge_version_href(&project_href, revision, path);
+        let resourcetype = if changed_path.is_dir {
+            "<D:resourcetype><D:collection/></D:resourcetype>"
+        } else {
+            "<D:resourcetype/>"
+        };
+        updated_responses.push_str(&format!(
+            "    <D:response>\n\
+      <D:href>{}</D:href>\n\
+      <D:propstat>\n\
+        <D:prop>\n\
+          <D:checked-in><D:href>{}</D:href></D:checked-in>\n\
+          {resourcetype}\n\
+          <D:version-name>{revision}</D:version-name>\n\
+        </D:prop>\n\
+        <D:status>HTTP/1.1 200 OK</D:status>\n\
+      </D:propstat>\n\
+    </D:response>\n",
+            xml_escape(&href),
+            xml_escape(&checked_in_href)
+        ));
+    }
+    if updated_responses.is_empty() {
+        let href = svn_protocol_merge_href(&project_href, &merge_path, true);
+        let checked_in_href = svn_protocol_merge_version_href(&project_href, revision, &merge_path);
+        updated_responses.push_str(&format!(
+            "    <D:response>\n\
       <D:href>{}</D:href>\n\
       <D:propstat>\n\
         <D:prop>\n\
           <D:checked-in><D:href>{}</D:href></D:checked-in>\n\
           <D:resourcetype><D:collection/></D:resourcetype>\n\
           <D:version-name>{revision}</D:version-name>\n\
-{date}{author}\
         </D:prop>\n\
         <D:status>HTTP/1.1 200 OK</D:status>\n\
       </D:propstat>\n\
-    </D:response>\n\
+    </D:response>\n",
+            xml_escape(&href),
+            xml_escape(&checked_in_href)
+        ));
+    }
+    let body = format!(
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\
+<D:merge-response xmlns:D=\"DAV:\" xmlns:S=\"svn:\">\n\
+  <D:updated-set>\n\
+{updated_responses}\
   </D:updated-set>\n\
-</D:merge-response>\n",
-        xml_escape(&root_href),
-        xml_escape(&root_href),
-        xml_escape(&checked_in_href)
+</D:merge-response>\n"
     );
     let mut response = (StatusCode::OK, body).into_response();
     add_svn_dav_headers(&mut response);
@@ -3935,7 +4089,7 @@ fn svn_protocol_put_response(
     let Some(actor) = principal else {
         return smart_http_basic_challenge_response();
     };
-    let Some((revision, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+    let Some((revision, path)) = svn_protocol_file_lookup_for_route(route) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     if revision.is_some() || path.trim().is_empty() {
@@ -3951,8 +4105,19 @@ fn svn_protocol_put_response(
             return RestRouteError::from_connect_error(internal_error(error)).into_response()
         }
     };
+    let contents = match svn_protocol_put_contents(repo_path, &path, body) {
+        Ok(contents) => contents,
+        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
+        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
+        Err(VcsError::SvnLookUnavailable) => {
+            return svn_protocol_not_implemented_response(route, "PUT")
+        }
+        Err(error) => {
+            return RestRouteError::from_connect_error(internal_error(error)).into_response()
+        }
+    };
     let message = format!("Update {path} through WebDAV by {}", actor.login_id);
-    match yona_rust_vcs::svn_put_file(repo_path, &path, body, &message) {
+    match yona_rust_vcs::svn_put_file(repo_path, &path, &contents, &message) {
         Ok(revision) => {
             let status = if existed {
                 StatusCode::NO_CONTENT
@@ -3984,7 +4149,7 @@ fn svn_protocol_mkcol_response(
     let Some(actor) = principal else {
         return smart_http_basic_challenge_response();
     };
-    let Some((revision, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+    let Some((revision, path)) = svn_protocol_file_lookup_for_route(route) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     if revision.is_some() || path.trim().is_empty() {
@@ -4019,7 +4184,20 @@ fn svn_protocol_proppatch_response(
     let Some(actor) = principal else {
         return smart_http_basic_challenge_response();
     };
-    let Some((revision, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+    if svn_protocol_working_activity_id(&route.svn_path).is_some() {
+        let mut response = (
+            StatusCode::MULTI_STATUS,
+            svn_protocol_proppatch_multistatus(route, "", &[]),
+        )
+            .into_response();
+        add_svn_dav_headers(&mut response);
+        response.headers_mut().insert(
+            http::header::CONTENT_TYPE,
+            HeaderValue::from_static("application/xml; charset=utf-8"),
+        );
+        return response;
+    }
+    let Some((revision, path)) = svn_protocol_file_lookup_for_route(route) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     if revision.is_some() || path.trim().is_empty() {
@@ -4067,7 +4245,7 @@ fn svn_protocol_delete_response(
     let Some(actor) = principal else {
         return smart_http_basic_challenge_response();
     };
-    let Some((revision, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+    let Some((revision, path)) = svn_protocol_file_lookup_for_route(route) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     if revision.is_some() || path.trim().is_empty() {
@@ -4091,6 +4269,118 @@ fn svn_protocol_delete_response(
     }
 }
 
+fn svn_protocol_put_contents(
+    repo_path: &StdPath,
+    path: &str,
+    body: &Bytes,
+) -> Result<Bytes, VcsError> {
+    if !body.starts_with(b"SVN\0") {
+        return Ok(body.clone());
+    }
+    let source = match yona_rust_vcs::svn_cat_file(repo_path, None, path) {
+        Ok(bytes) => bytes,
+        Err(VcsError::NotFound) => Vec::new(),
+        Err(error) => return Err(error),
+    };
+    svn_protocol_apply_svndiff0(&source, body).map(Bytes::from)
+}
+
+fn svn_protocol_apply_svndiff0(source: &[u8], body: &[u8]) -> Result<Vec<u8>, VcsError> {
+    if !body.starts_with(b"SVN\0") {
+        return Err(VcsError::InvalidPath);
+    }
+    let mut cursor = 4;
+    let mut target = Vec::new();
+    while cursor < body.len() {
+        let source_offset = svn_protocol_svndiff_int(body, &mut cursor)?;
+        let source_length = svn_protocol_svndiff_int(body, &mut cursor)?;
+        let target_length = svn_protocol_svndiff_int(body, &mut cursor)?;
+        let instructions_length = svn_protocol_svndiff_int(body, &mut cursor)?;
+        let new_data_length = svn_protocol_svndiff_int(body, &mut cursor)?;
+        if cursor + instructions_length + new_data_length > body.len() {
+            return Err(VcsError::InvalidPath);
+        }
+        let instructions = &body[cursor..cursor + instructions_length];
+        cursor += instructions_length;
+        let new_data = &body[cursor..cursor + new_data_length];
+        cursor += new_data_length;
+        let source_end = source_offset
+            .checked_add(source_length)
+            .ok_or(VcsError::InvalidPath)?;
+        if source_end > source.len() {
+            return Err(VcsError::InvalidPath);
+        }
+        let source_view = &source[source_offset..source_end];
+        let window_start = target.len();
+        let mut instruction_cursor = 0usize;
+        let mut new_data_cursor = 0usize;
+        while instruction_cursor < instructions.len() {
+            let instruction = instructions[instruction_cursor];
+            instruction_cursor += 1;
+            let op = instruction >> 6;
+            let inline_length = (instruction & 0x3f) as usize;
+            let length = if inline_length == 0 {
+                svn_protocol_svndiff_int(instructions, &mut instruction_cursor)?
+            } else {
+                inline_length
+            };
+            match op {
+                0 => {
+                    let offset = svn_protocol_svndiff_int(instructions, &mut instruction_cursor)?;
+                    let end = offset.checked_add(length).ok_or(VcsError::InvalidPath)?;
+                    if end > source_view.len() {
+                        return Err(VcsError::InvalidPath);
+                    }
+                    target.extend_from_slice(&source_view[offset..end]);
+                }
+                1 => {
+                    let offset = svn_protocol_svndiff_int(instructions, &mut instruction_cursor)?;
+                    let start = window_start
+                        .checked_add(offset)
+                        .ok_or(VcsError::InvalidPath)?;
+                    let end = start.checked_add(length).ok_or(VcsError::InvalidPath)?;
+                    if end > target.len() {
+                        return Err(VcsError::InvalidPath);
+                    }
+                    let copied = target[start..end].to_vec();
+                    target.extend_from_slice(&copied);
+                }
+                2 => {
+                    let end = new_data_cursor
+                        .checked_add(length)
+                        .ok_or(VcsError::InvalidPath)?;
+                    if end > new_data.len() {
+                        return Err(VcsError::InvalidPath);
+                    }
+                    target.extend_from_slice(&new_data[new_data_cursor..end]);
+                    new_data_cursor = end;
+                }
+                _ => return Err(VcsError::InvalidPath),
+            }
+        }
+        if target.len() - window_start != target_length || new_data_cursor != new_data.len() {
+            return Err(VcsError::InvalidPath);
+        }
+    }
+    Ok(target)
+}
+
+fn svn_protocol_svndiff_int(bytes: &[u8], cursor: &mut usize) -> Result<usize, VcsError> {
+    let mut value = 0usize;
+    loop {
+        let byte = *bytes.get(*cursor).ok_or(VcsError::InvalidPath)?;
+        *cursor += 1;
+        value = value
+            .checked_shl(7)
+            .ok_or(VcsError::InvalidPath)?
+            .checked_add((byte & 0x7f) as usize)
+            .ok_or(VcsError::InvalidPath)?;
+        if byte & 0x80 == 0 {
+            return Ok(value);
+        }
+    }
+}
+
 fn svn_protocol_lock_response(
     repo_path: &StdPath,
     route: &SvnProtocolRoute,
@@ -4100,7 +4390,7 @@ fn svn_protocol_lock_response(
     let Some(actor) = principal else {
         return smart_http_basic_challenge_response();
     };
-    let Some((_, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+    let Some((_, path)) = svn_protocol_file_lookup_for_route(route) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     let request = String::from_utf8_lossy(body);
@@ -4150,7 +4440,7 @@ fn svn_protocol_unlock_response(
     let Some(actor) = principal else {
         return smart_http_basic_challenge_response();
     };
-    let Some((_, path)) = svn_protocol_file_lookup(&route.svn_path) else {
+    let Some((_, path)) = svn_protocol_file_lookup_for_route(route) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     let Some(token) = svn_protocol_lock_token_header(headers) else {
@@ -4177,7 +4467,7 @@ fn svn_protocol_get_locations_report_response(
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
     let requested_path = svn_protocol_xml_text(request, "path").unwrap_or_default();
-    let base_path = svn_protocol_file_lookup(&route.svn_path)
+    let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
     let location_path = join_svn_report_path(&base_path, &requested_path);
@@ -4228,7 +4518,7 @@ fn svn_protocol_get_location_segments_report_response(
     };
     let end_revision = svn_protocol_xml_i64(request, "end-revision").unwrap_or(start_revision);
     let requested_path = svn_protocol_xml_text(request, "path").unwrap_or_default();
-    let base_path = svn_protocol_file_lookup(&route.svn_path)
+    let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
     let location_path = join_svn_report_path(&base_path, &requested_path);
@@ -4512,6 +4802,27 @@ fn svn_protocol_version_href(route: &SvnProtocolRoute, revision: i64, path: &str
             "{}/!svn/ver/{revision}/{path}",
             svn_protocol_project_href(route)
         )
+    }
+}
+
+fn svn_protocol_merge_href(project_href: &str, path: &str, collection: bool) -> String {
+    let path = path.trim_matches('/');
+    if path.is_empty() {
+        return format!("{project_href}/");
+    }
+    if collection {
+        format!("{project_href}/{path}/")
+    } else {
+        format!("{project_href}/{path}")
+    }
+}
+
+fn svn_protocol_merge_version_href(project_href: &str, revision: i64, path: &str) -> String {
+    let path = path.trim_matches('/');
+    if path.is_empty() {
+        format!("{project_href}/!svn/ver/{revision}/")
+    } else {
+        format!("{project_href}/!svn/ver/{revision}/{path}")
     }
 }
 
@@ -4897,6 +5208,25 @@ fn svn_protocol_file_lookup(svn_path: &str) -> Option<(Option<i64>, String)> {
     Some((None, trimmed.to_string()))
 }
 
+fn svn_protocol_file_lookup_for_route(route: &SvnProtocolRoute) -> Option<(Option<i64>, String)> {
+    let (revision, path) = svn_protocol_file_lookup(&route.svn_path)?;
+    Some((
+        revision,
+        svn_protocol_strip_project_path_alias(route, &path),
+    ))
+}
+
+fn svn_protocol_strip_project_path_alias(route: &SvnProtocolRoute, path: &str) -> String {
+    let trimmed = path.trim_matches('/');
+    if trimmed == route.project_name {
+        return String::new();
+    }
+    if let Some(stripped) = trimmed.strip_prefix(&format!("{}/", route.project_name)) {
+        return stripped.to_string();
+    }
+    path.to_string()
+}
+
 fn svn_protocol_revision_path(rest: &str) -> Option<(Option<i64>, String)> {
     let (revision, path) = rest.split_once('/').unwrap_or((rest, ""));
     let revision = revision.parse::<i64>().ok()?;
@@ -4905,6 +5235,22 @@ fn svn_protocol_revision_path(rest: &str) -> Option<(Option<i64>, String)> {
 
 fn svn_protocol_activity_id(value: &str) -> Option<String> {
     let marker = "!svn/act/";
+    let rest = value.split(marker).nth(1)?;
+    let activity_id = rest
+        .trim_start_matches('/')
+        .split(['/', '?', '#'])
+        .next()
+        .unwrap_or_default()
+        .trim();
+    if activity_id.is_empty() {
+        None
+    } else {
+        Some(activity_id.to_string())
+    }
+}
+
+fn svn_protocol_working_activity_id(value: &str) -> Option<String> {
+    let marker = "!svn/wrk/";
     let rest = value.split(marker).nth(1)?;
     let activity_id = rest
         .trim_start_matches('/')

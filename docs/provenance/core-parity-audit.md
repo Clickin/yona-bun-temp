@@ -36,6 +36,8 @@
 
 ## Known SPEC-Level Deviations
 
+- 2026-05-26 SVN executable bridge status: actual VisualSVN-compatible local `svn info`, `svn checkout`, and single-file `svn commit` update now pass over the mounted `/svn/$path` HTTP boundary. Remaining SVN gaps are narrowed to PROPFIND/property completeness and the broader add/delete/mkdir/property/lock write-client matrix.
+
 | Legacy surface                       | Rust surface                                      | Treatment                                                                                                                                 | Rationale                                                                                                                |
 | ------------------------------------ | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | Current user's workspace at `/:user` | `/me`; public profile at `/:user`                 | Keep `/me` as the current-user workspace shortcut; keep restored public profile `/:user` as the legacy single-segment profile route.       | The Rust workspace shell already uses `/me`, and public profile parity now has separate route/body evidence.             |
