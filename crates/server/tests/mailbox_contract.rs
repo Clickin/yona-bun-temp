@@ -6,7 +6,8 @@ use yona_rust_persistence::{
     comment_thread, email, original_email, AppRepository, CreateIssueCommentViaEmailInput,
     CreateIssueViaEmailInput, CreatePostingCommentViaEmailInput, CreatePostingInput,
     CreateProjectInput, CreateReviewCommentViaEmailInput, CreateUserInput,
-    MailboxActionExecutionInput, MailboxReplyTargetRecord, PostingMutationInput,
+    MailboxActionExecutionInput, MailboxNormalizedMessageInput, MailboxReplyTargetRecord,
+    PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
 
@@ -252,6 +253,59 @@ async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_res
     assert_eq!(actions[2].project_name, "projectWithoutThread");
     assert_eq!(actions[2].resource_type, None);
     assert_eq!(actions[2].resource_id, None);
+
+    let normalized = repo
+        .process_mailbox_normalized_message(MailboxNormalizedMessageInput {
+            body_markdown: "normalized reply body".to_string(),
+            from_addresses: vec!["MEMBER@example.com".to_string()],
+            message_id: "<message-id-normalized@domain>".to_string(),
+            recipient_details: vec!["yobi/projectYobi".to_string()],
+            reply_message_ids: vec!["<message-id-3@domain>".to_string()],
+            title: "normalized title".to_string(),
+        })
+        .await
+        .unwrap();
+    assert_eq!(normalized.status, "processed");
+    assert_eq!(normalized.sender_id, Some(member.id));
+    assert_eq!(normalized.actions.len(), 1);
+    assert_eq!(normalized.actions[0].action, "create_review_comment");
+    assert_eq!(normalized.actions[0].status, "created");
+    let normalized_targets = repo
+        .find_mailbox_reply_targets_by_message_ids(&["<message-id-normalized@domain>".to_string()])
+        .await
+        .unwrap();
+    assert_eq!(normalized_targets.len(), 1);
+    assert_eq!(normalized_targets[0].resource_type, "REVIEW_COMMENT");
+
+    let no_sender = repo
+        .process_mailbox_normalized_message(MailboxNormalizedMessageInput {
+            body_markdown: "body".to_string(),
+            from_addresses: vec!["missing@example.com".to_string()],
+            message_id: "<message-id-no-sender@domain>".to_string(),
+            recipient_details: vec!["yobi/projectYobi".to_string()],
+            reply_message_ids: Vec::new(),
+            title: "title".to_string(),
+        })
+        .await
+        .unwrap();
+    assert_eq!(no_sender.status, "no_sender");
+    assert_eq!(no_sender.sender_id, None);
+    assert!(no_sender.actions.is_empty());
+
+    let no_project = repo
+        .process_mailbox_normalized_message(MailboxNormalizedMessageInput {
+            body_markdown: "body".to_string(),
+            from_addresses: vec!["member@example.com".to_string()],
+            message_id: "<message-id-no-project@domain>".to_string(),
+            recipient_details: vec!["help".to_string(), "missing/project".to_string()],
+            reply_message_ids: Vec::new(),
+            title: "title".to_string(),
+        })
+        .await
+        .unwrap();
+    assert_eq!(no_project.status, "no_project");
+    assert_eq!(no_project.sender_id, Some(member.id));
+    assert!(no_project.actions.is_empty());
 
     let execution = repo
         .execute_mailbox_resource_actions(

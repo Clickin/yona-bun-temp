@@ -13,19 +13,19 @@ use crate::repo_types::{
     IssueLabelCategoryRecord, IssueLabelRecord, IssueListFilter, IssueMentionUserRecord,
     IssueMentionUserSearchRecord, IssueMilestoneRecord, IssueMutationInput, IssueRecord,
     IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord, MailboxActionExecutionInput,
-    MailboxActionExecutionRecord, MailboxReplyTargetRecord, MailboxResourceActionRecord,
-    MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
-    NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
-    NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
-    OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
-    OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
-    OrganizationMemberRecord, OrganizationPostingListFilter, OrganizationPostingListRecord,
-    OrganizationPostingProjectOptionRecord, OrganizationRecord, OrganizationViewerRecord,
-    PostingCommentRecord, PostingListFilter, PostingRecord, ProjectAuthorizationRecord,
-    ProjectDashboardAssigneeRecord, ProjectDashboardLabelRecord, ProjectEnrollmentRequestRecord,
-    ProjectHomeHistoryItemRecord, ProjectIssueListItemRecord, ProjectIssueListRecord,
-    ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord, ProjectListEntry,
-    ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
+    MailboxActionExecutionRecord, MailboxNormalizedMessageInput, MailboxNormalizedMessageResult,
+    MailboxReplyTargetRecord, MailboxResourceActionRecord, MassUpdateIssuesInput,
+    MentionSyncResult, MilestoneListFilter, MilestoneMutationInput, NotificationActorRecord,
+    NotificationItemRecord, NotificationListRecord, NotificationMailDeliveryRecord,
+    OrganizationAuthorizationRecord, OrganizationEnrollmentRequestRecord,
+    OrganizationIssueListFilter, OrganizationIssueListRecord, OrganizationIssueProjectOptionRecord,
+    OrganizationMemberDirectoryRecord, OrganizationMemberRecord, OrganizationPostingListFilter,
+    OrganizationPostingListRecord, OrganizationPostingProjectOptionRecord, OrganizationRecord,
+    OrganizationViewerRecord, PostingCommentRecord, PostingListFilter, PostingRecord,
+    ProjectAuthorizationRecord, ProjectDashboardAssigneeRecord, ProjectDashboardLabelRecord,
+    ProjectEnrollmentRequestRecord, ProjectHomeHistoryItemRecord, ProjectIssueListItemRecord,
+    ProjectIssueListRecord, ProjectIssueReferenceRecord, ProjectIssueReferenceSearchRecord,
+    ProjectListEntry, ProjectMemberDirectoryRecord, ProjectMemberRecord, ProjectMenuSettingsRecord,
     ProjectMilestoneSummaryRecord, ProjectPostingListItemRecord, ProjectPostingListRecord,
     ProjectRecord, ProjectTransferRecord, ProjectTransferRequestInput, ProjectViewerRecord,
     ProjectWatcherListRecord, ProjectWatcherRecord, ProjectWebhookDeliveryRecord,
@@ -120,6 +120,21 @@ fn mailbox_execution_record(
         resource_type: action.resource_type.clone(),
         status: status.to_string(),
     }
+}
+
+fn mailbox_canonical_resource_type(resource_type: &str) -> String {
+    let resource_type = resource_type.trim();
+    match resource_type {
+        "ISSUE_POST" => "issue_post",
+        "ISSUE_COMMENT" => "issue_comment",
+        "BOARD_POST" => "board_post",
+        "NONISSUE_COMMENT" => "nonissue_comment",
+        "COMMENT_THREAD" => "comment_thread",
+        "REVIEW_COMMENT" => "review_comment",
+        "PULL_REQUEST" => "pull_request",
+        value => return value.to_ascii_lowercase(),
+    }
+    .to_string()
 }
 
 fn login_id_matches_configured_guest_prefix(login_id: &str) -> bool {
@@ -8995,6 +9010,83 @@ impl AppRepository {
         Ok(records)
     }
 
+    pub async fn process_mailbox_normalized_message(
+        &self,
+        input: MailboxNormalizedMessageInput,
+    ) -> Result<MailboxNormalizedMessageResult, DbErr> {
+        let Some(sender) = self
+            .find_mailbox_sender_by_from_addresses(&input.from_addresses)
+            .await?
+        else {
+            return Ok(MailboxNormalizedMessageResult {
+                actions: Vec::new(),
+                sender_id: None,
+                status: "no_sender".to_string(),
+            });
+        };
+        let projects = self
+            .find_mailbox_project_targets_by_details(sender.id, &input.recipient_details)
+            .await?;
+        if projects.is_empty() {
+            return Ok(MailboxNormalizedMessageResult {
+                actions: Vec::new(),
+                sender_id: Some(sender.id),
+                status: "no_project".to_string(),
+            });
+        }
+
+        let mut targets = self
+            .find_mailbox_reply_targets_by_message_ids(&input.reply_message_ids)
+            .await?;
+        let mut seen_targets: HashSet<(String, i64)> = targets
+            .iter()
+            .map(|target| {
+                (
+                    mailbox_canonical_resource_type(&target.resource_type),
+                    target.resource_id,
+                )
+            })
+            .collect();
+        for target in self
+            .find_mailbox_reply_targets_by_details(&input.recipient_details)
+            .await?
+        {
+            if seen_targets.insert((
+                mailbox_canonical_resource_type(&target.resource_type),
+                target.resource_id,
+            )) {
+                targets.push(target);
+            }
+        }
+
+        let actions = self
+            .plan_mailbox_resource_actions(&projects, &targets)
+            .await?;
+        let executed = self
+            .execute_mailbox_resource_actions(
+                &actions,
+                MailboxActionExecutionInput {
+                    actor_display_name: sender.display_name.clone(),
+                    actor_id: sender.id,
+                    actor_login_id: sender.login_id.clone(),
+                    body_markdown: input.body_markdown,
+                    message_id: input.message_id,
+                    title: input.title,
+                },
+            )
+            .await?;
+        let status = if executed.is_empty() {
+            "no_action"
+        } else {
+            "processed"
+        };
+        Ok(MailboxNormalizedMessageResult {
+            actions: executed,
+            sender_id: Some(sender.id),
+            status: status.to_string(),
+        })
+    }
+
     async fn mailbox_action_issue_number(
         &self,
         action: &MailboxResourceActionRecord,
@@ -9083,7 +9175,8 @@ impl AppRepository {
         &self,
         target: &MailboxReplyTargetRecord,
     ) -> Result<Option<(i64, String, i64, String)>, DbErr> {
-        match target.resource_type.as_str() {
+        let resource_type = mailbox_canonical_resource_type(&target.resource_type);
+        match resource_type.as_str() {
             "issue_post" => {
                 let Some(row) = issue::Entity::find_by_id(target.resource_id)
                     .one(&self.db)
@@ -9096,7 +9189,7 @@ impl AppRepository {
                 };
                 Ok(Some((
                     project_id,
-                    target.resource_type.clone(),
+                    resource_type,
                     target.resource_id,
                     "create_issue_comment".to_string(),
                 )))
@@ -9110,7 +9203,7 @@ impl AppRepository {
                 };
                 Ok(Some((
                     row.project_id,
-                    target.resource_type.clone(),
+                    resource_type,
                     target.resource_id,
                     "create_issue_comment".to_string(),
                 )))
@@ -9127,7 +9220,7 @@ impl AppRepository {
                 };
                 Ok(Some((
                     project_id,
-                    target.resource_type.clone(),
+                    resource_type,
                     target.resource_id,
                     "create_posting_comment".to_string(),
                 )))
@@ -9141,7 +9234,7 @@ impl AppRepository {
                 };
                 Ok(Some((
                     row.project_id,
-                    target.resource_type.clone(),
+                    resource_type,
                     target.resource_id,
                     "create_posting_comment".to_string(),
                 )))
@@ -9158,7 +9251,7 @@ impl AppRepository {
                 };
                 Ok(Some((
                     project_id,
-                    target.resource_type.clone(),
+                    resource_type,
                     target.resource_id,
                     "create_review_comment".to_string(),
                 )))
@@ -9201,7 +9294,7 @@ impl AppRepository {
                 };
                 Ok(Some((
                     project_id,
-                    target.resource_type.clone(),
+                    resource_type,
                     target.resource_id,
                     "ignore_resource".to_string(),
                 )))

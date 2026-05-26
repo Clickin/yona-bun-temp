@@ -706,6 +706,23 @@ pub struct MailboxActionExecutionRecord {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MailboxNormalizedMessageInput {
+    pub body_markdown: String,
+    pub from_addresses: Vec<String>,
+    pub message_id: String,
+    pub recipient_details: Vec<String>,
+    pub reply_message_ids: Vec<String>,
+    pub title: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MailboxNormalizedMessageResult {
+    pub actions: Vec<MailboxActionExecutionRecord>,
+    pub sender_id: Option<i64>,
+    pub status: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpdateIssueCommentInput {
     pub actor_id: i64,
     pub attachment_ids: Vec<i64>,
