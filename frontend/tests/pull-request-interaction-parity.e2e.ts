@@ -239,6 +239,30 @@ test.beforeEach(async ({ page }) => {
   );
 
   await page.route(
+    /\/api\/v1\/owners\/admin\/projects\/projectYobi\/pull-requests\/merge-result(?:\?.*)?$/,
+    async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({
+          commits: [
+            {
+              authorDateLabel: "2026-05-03",
+              authorEmail: "reviewer@example.com",
+              commitId: "abcdef123456",
+              commitMessage: "Change src/lib.rs",
+              commitShortId: "abcdef1",
+              state: "CURRENT",
+            },
+          ],
+          conflict: false,
+          noHead: false,
+        }),
+        headers: restJsonHeaders,
+        status: 200,
+      });
+    },
+  );
+
+  await page.route(
     /\/api\/v1\/owners\/admin\/projects\/projectYobi\/pull-requests\/9(?:\/.*)?$/,
     async (route) => {
       const url = new URL(route.request().url());
@@ -560,7 +584,9 @@ test("covers create/edit forms and PR interaction actions without placeholders",
   await expect(page.locator("#fromBranch")).toHaveValue("topic/pr");
   await expect(page.locator("#toProjectId")).toHaveValue("1");
   await expect(page.locator("#toBranch")).toHaveValue("main");
-  await expect(page.locator("#__commits .num-badge")).toHaveText("0");
+  await expect(page.locator("#__commits .num-badge")).toHaveText("1");
+  await expect(page.locator("#mergeResult")).toHaveAttribute("data-conflict", "false");
+  await expect(page.locator("#mergeResult .code-table.commits")).toContainText("Change src/lib.rs");
   await expect(page.getByText("File-based route placeholder")).toHaveCount(0);
 
   await page.locator("#pullRequestState").fill("Created interaction parity");

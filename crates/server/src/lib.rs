@@ -12284,6 +12284,14 @@ struct RestPullRequestChangesResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RestPullRequestMergeResultResponse {
+    commits: Vec<RestPullRequestCommit>,
+    conflict: bool,
+    no_head: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RestPullRequestChangedFile {
     path: String,
     patch: String,
@@ -14285,6 +14293,27 @@ fn build_rest_pull_request_router(service: PilotServiceImpl) -> Router {
                     let service = service.clone();
                     async move {
                         rest_read_pull_request_create_form_options(
+                            headers,
+                            owner_name,
+                            project_name,
+                            query,
+                            service,
+                        )
+                        .await
+                    }
+                }
+            }),
+        )
+        .route(
+            "/owners/{owner_name}/projects/{project_name}/pull-requests/merge-result",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap,
+                      Path((owner_name, project_name)): Path<(String, String)>,
+                      Query(query): Query<RestPullRequestFormQuery>| {
+                    let service = service.clone();
+                    async move {
+                        rest_read_pull_request_merge_result(
                             headers,
                             owner_name,
                             project_name,
@@ -21376,6 +21405,71 @@ async fn rest_read_pull_request_edit_form_options(
                 ..option
             })
             .collect(),
+    }))
+}
+
+async fn rest_read_pull_request_merge_result(
+    headers: HeaderMap,
+    owner_name: String,
+    project_name: String,
+    query: RestPullRequestFormQuery,
+    service: PilotServiceImpl,
+) -> Result<Json<RestPullRequestMergeResultResponse>, RestRouteError> {
+    let session = require_session(&service.session_manager, &headers)
+        .map_err(RestRouteError::from_connect_error)?;
+    let repository = rest_repository(&service)?;
+    let actor = require_authenticated_user(repository, session.user_id)
+        .await
+        .map_err(RestRouteError::from_connect_error)?;
+    let route_authorization =
+        rest_require_project_code_read(repository, &owner_name, &project_name, Some(actor.id))
+            .await?;
+    let from_project_id = if query.from_project_id > 0 {
+        query.from_project_id
+    } else {
+        route_authorization.project.id
+    };
+    let to_project_id = if query.to_project_id > 0 {
+        query.to_project_id
+    } else {
+        route_authorization.project.id
+    };
+    if route_authorization.project.id != to_project_id {
+        return Err(RestRouteError::bad_request(
+            "pull request target project does not match route",
+        ));
+    }
+    let from_authorization =
+        rest_require_pull_request_option_project(repository, from_project_id, Some(actor.id))
+            .await?;
+    let to_authorization =
+        rest_require_pull_request_option_project(repository, to_project_id, Some(actor.id)).await?;
+    let (_, selected_from_branch) =
+        rest_pull_request_branch_options(&from_authorization.project, &query.from_branch)?;
+    let (_, selected_to_branch) =
+        rest_pull_request_branch_options(&to_authorization.project, &query.to_branch)?;
+
+    let source_repo_path =
+        yona_rust_vcs::repository_path(&yona_data_root(), from_authorization.project.id);
+    let target_repo_path =
+        yona_rust_vcs::repository_path(&yona_data_root(), to_authorization.project.id);
+    let preview = yona_rust_vcs::preview_pull_request_merge(
+        &source_repo_path,
+        &target_repo_path,
+        &selected_from_branch,
+        &selected_to_branch,
+    )
+    .map_err(rest_pull_request_branch_error)?;
+    Ok(Json(RestPullRequestMergeResultResponse {
+        commits: preview
+            .commits
+            .into_iter()
+            .map(|record| {
+                rest_pull_request_commit_from_vcs_record_with_state(record, &HashMap::new())
+            })
+            .collect(),
+        conflict: preview.conflict,
+        no_head: preview.no_head,
     }))
 }
 

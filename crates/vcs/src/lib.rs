@@ -262,6 +262,13 @@ pub struct PullRequestMergeResult {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PullRequestMergePreview {
+    pub commits: Vec<PullRequestDiffCommitRecord>,
+    pub conflict: bool,
+    pub no_head: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SvnTreeEntry {
     pub path: String,
     pub is_dir: bool,
@@ -2253,6 +2260,88 @@ pub fn merge_pull_request(
     })
 }
 
+pub fn preview_pull_request_merge(
+    source_repo_path: &Path,
+    target_repo_path: &Path,
+    from_branch: &str,
+    to_branch: &str,
+) -> Result<PullRequestMergePreview, VcsError> {
+    if !source_repo_path.exists() || !target_repo_path.exists() {
+        return Err(VcsError::NotFound);
+    }
+    let from_branch = normalize_branch_name(from_branch)?;
+    let to_branch = normalize_branch_name(to_branch)?;
+    let source_branches = list_branches(source_repo_path)?;
+    let target_branches = list_branches(target_repo_path)?;
+    if !branch_exists(&source_branches, &from_branch)
+        || !branch_exists(&target_branches, &to_branch)
+        || !has_head(source_repo_path)
+        || !has_head(target_repo_path)
+    {
+        return Err(VcsError::NotFound);
+    }
+
+    let source_ref = format!("refs/heads/{from_branch}");
+    let target_ref = format!("refs/heads/{to_branch}");
+    let work_dir = TempWorkDir::create("merge-preview")?;
+    git_worktree_output(work_dir.path(), &["init"])?;
+    git_worktree_output(
+        work_dir.path(),
+        &["config", "user.email", "yona@example.invalid"],
+    )?;
+    git_worktree_output(work_dir.path(), &["config", "user.name", "Yona"])?;
+    git_worktree_output_with_path(
+        work_dir.path(),
+        &["remote", "add", "target"],
+        target_repo_path,
+    )?;
+    git_worktree_output(
+        work_dir.path(),
+        &[
+            "fetch",
+            "target",
+            &format!("+{target_ref}:refs/remotes/target/{to_branch}"),
+        ],
+    )?;
+    let checkout_target = format!("refs/remotes/target/{to_branch}");
+    git_worktree_output(
+        work_dir.path(),
+        &["checkout", "-B", &to_branch, &checkout_target],
+    )?;
+    git_worktree_output_with_path(
+        work_dir.path(),
+        &["remote", "add", "pull-request-source"],
+        source_repo_path,
+    )?;
+    git_worktree_output(
+        work_dir.path(),
+        &[
+            "fetch",
+            "pull-request-source",
+            &format!("+{source_ref}:refs/remotes/pull-request-source/{from_branch}"),
+        ],
+    )?;
+
+    let merge_target = format!("refs/remotes/pull-request-source/{from_branch}");
+    let commits =
+        list_pull_request_commits_in_worktree(work_dir.path(), &to_branch, &merge_target)?;
+    let conflict = match git_worktree_output(
+        work_dir.path(),
+        &["merge", "--no-ff", "--no-edit", &merge_target],
+    ) {
+        Ok(_) => false,
+        Err(VcsError::GitFailed(message)) if is_merge_conflict_output(&message) => true,
+        Err(error) => return Err(error),
+    };
+    let _ = git_worktree_output(work_dir.path(), &["merge", "--abort"]);
+
+    Ok(PullRequestMergePreview {
+        commits,
+        conflict,
+        no_head: false,
+    })
+}
+
 pub fn read_pull_request_diff(
     repo_path: &Path,
     from_branch: &str,
@@ -2595,7 +2684,33 @@ fn list_pull_request_commits(
             &range,
         ],
     )?;
-    Ok(output
+    Ok(parse_pull_request_commit_records(&output)
+        .into_iter()
+        .collect())
+}
+
+fn list_pull_request_commits_in_worktree(
+    work_tree_path: &Path,
+    base_revision: &str,
+    head_revision: &str,
+) -> Result<Vec<PullRequestDiffCommitRecord>, VcsError> {
+    let range = format!("{base_revision}..{head_revision}");
+    let output = git_worktree_output(
+        work_tree_path,
+        &[
+            "log",
+            "--format=%H%x1f%h%x1f%s%x1f%ae%x1f%ad",
+            "--date=short",
+            &range,
+        ],
+    )?;
+    Ok(parse_pull_request_commit_records(&output)
+        .into_iter()
+        .collect())
+}
+
+fn parse_pull_request_commit_records(output: &str) -> Vec<PullRequestDiffCommitRecord> {
+    output
         .lines()
         .filter_map(|line| {
             let mut parts = line.split('\x1f');
@@ -2612,7 +2727,7 @@ fn list_pull_request_commits(
                 commit_short_id,
             })
         })
-        .collect())
+        .collect()
 }
 
 fn list_history_commits(
@@ -2898,7 +3013,7 @@ fn git_output(repo_path: &Path, args: &[&str]) -> Result<String, VcsError> {
 }
 
 fn git_clone_repository(source_repo_path: &Path, work_tree_path: &Path) -> Result<(), VcsError> {
-    let output = Command::new("git")
+    let output = git_command()
         .arg("clone")
         .arg(source_repo_path)
         .arg(work_tree_path)
@@ -2933,7 +3048,7 @@ fn git_worktree_bytes(
     args: impl IntoIterator<Item = OsString>,
 ) -> Result<Vec<u8>, VcsError> {
     let args = args.into_iter().collect::<Vec<_>>();
-    let mut command = Command::new("git");
+    let mut command = git_command();
     command
         .arg("-C")
         .arg(work_tree_path)
@@ -2945,7 +3060,7 @@ fn git_worktree_bytes(
 }
 
 fn git_bytes(repo_path: &Path, args: &[&str]) -> Result<Vec<u8>, VcsError> {
-    let mut command = Command::new("git");
+    let mut command = git_command();
     command
         .arg("--git-dir")
         .arg(repo_path)
@@ -2954,6 +3069,12 @@ fn git_bytes(repo_path: &Path, args: &[&str]) -> Result<Vec<u8>, VcsError> {
         .stderr(Stdio::piped())
         .stdout(Stdio::piped());
     command_bytes(command, Duration::from_secs(5))
+}
+
+fn git_command() -> Command {
+    let mut command = Command::new("git");
+    command.env_remove("GIT_DIR").env_remove("GIT_WORK_TREE");
+    command
 }
 
 fn command_bytes(mut command: Command, timeout: Duration) -> Result<Vec<u8>, VcsError> {

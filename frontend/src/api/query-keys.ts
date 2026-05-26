@@ -53,6 +53,22 @@ export const apiQueryKeys = {
         "form-options",
         input,
       ] as const,
+    pullRequestMergeResult: (
+      ownerName: string,
+      projectName: string,
+      input: {
+        fromBranch: string;
+        fromProjectId: number;
+        toBranch: string;
+        toProjectId: number;
+      },
+    ) =>
+      [
+        ...apiQueryKeys.project.base(ownerName, projectName),
+        "pull-requests",
+        "merge-result",
+        input,
+      ] as const,
     pullRequestEditFormOptions: (
       ownerName: string,
       projectName: string,

@@ -629,6 +629,10 @@ describe("file-route parity harness", () => {
     expect(pullRequestViewsSource).toContain('id="pullRequestState"');
     expect(pullRequestViewsSource).toContain('id="status"');
     expect(pullRequestViewsSource).toContain('id="__commits"');
+    expect(pullRequestViewsSource).toContain('id="mergeResult"');
+    expect(pullRequestViewsSource).toContain("data-merge-result-url");
+    expect(pullRequestViewsSource).toContain("data-conflict");
+    expect(pullRequestViewsSource).toContain('id="numOfCommits"');
     expect(pullRequestViewsSource).toContain("comment-thread-wrap");
     expect(pullRequestViewsSource).toContain("data-via-email");
     expect(pullRequestViewsSource).toContain("thread-actrow");

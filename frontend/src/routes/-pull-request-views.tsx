@@ -1,4 +1,6 @@
 import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { pullRequestMergeResultQueryOptions } from "../api/pull-requests";
 import type {
   OrganizationPullRequestListQuery,
   PullRequestChangedFile,
@@ -616,6 +618,24 @@ export function ProjectPullRequestFormPage(props: {
   const [attachmentIds, setAttachmentIds] = React.useState<number[]>([]);
   const [submitting, setSubmitting] = React.useState(false);
   const editMode = props.mode === "edit";
+  const mergeResultEnabled =
+    fromProjectId > 0 && toProjectId > 0 && fromBranch.trim() !== "" && toBranch.trim() !== "";
+  const mergeResultQuery = useQuery({
+    ...pullRequestMergeResultQueryOptions(props.runtimeConfig, {
+      ownerName: detail.ownerName,
+      projectName: detail.projectName,
+      query: {
+        fromBranch,
+        fromProjectId,
+        toBranch,
+        toProjectId,
+      },
+    }),
+    enabled: mergeResultEnabled,
+    retry: false,
+  });
+  const mergeResult = mergeResultQuery.data;
+  const formCommitCount = mergeResult?.commits.length ?? initialPullRequest?.commits.length ?? 0;
 
   React.useEffect(() => {
     if (!options) {
@@ -770,9 +790,86 @@ export function ProjectPullRequestFormPage(props: {
                   value={bodyMarkdown}
                 />
               </label>
-              <div id="__commits">
-                <span className="num-badge">{initialPullRequest?.commits.length ?? 0}</span>
+              <div
+                className="code-browse-wrap tab-pane active"
+                data-merge-result-url={buildProjectHref(
+                  props.runtimeConfig,
+                  detail.ownerName,
+                  detail.projectName,
+                  "newPullRequest/mergeResult",
+                )}
+                id="__commits"
+              >
+                <span className="num-badge vmiddle-inline" id="numOfCommits">
+                  {formCommitCount}
+                </span>
                 <span> commits</span>
+                <div
+                  className="code-browser-wrap"
+                  data-commits={formCommitCount}
+                  data-conflict={mergeResult ? String(mergeResult.conflict) : "false"}
+                  data-pullrequest-body={bodyMarkdown}
+                  data-pullrequest-title={title}
+                  id="mergeResult"
+                >
+                  {mergeResultQuery.isError ? (
+                    <div>
+                      <h5>pullRequest.diff.noChanges</h5>
+                    </div>
+                  ) : mergeResult?.commits.length ? (
+                    <div className="commit-wrap">
+                      <table className="code-table commits">
+                        <thead className="thead">
+                          <tr>
+                            <td className="commit-id">
+                              <strong>@</strong>
+                            </td>
+                            <td className="messages">
+                              <strong>code.commitMsg</strong>
+                            </td>
+                            <td className="date">
+                              <strong>code.commitDate</strong>
+                            </td>
+                            <td className="author">
+                              <strong>code.author</strong>
+                            </td>
+                          </tr>
+                        </thead>
+                        <tbody className="tbody">
+                          {mergeResult.commits.map((commit) => (
+                            <tr key={commit.commitId}>
+                              <td className="commit-id">
+                                <a
+                                  href={buildProjectHref(
+                                    props.runtimeConfig,
+                                    detail.ownerName,
+                                    detail.projectName,
+                                    `code/${commit.commitId}`,
+                                  )}
+                                >
+                                  {commit.commitShortId}
+                                </a>
+                              </td>
+                              <td className="messages">{commit.commitMessage}</td>
+                              <td className="date" title={commit.authorDateLabel}>
+                                {commit.authorDateLabel}
+                              </td>
+                              <td className={`author ${commit.authorEmail}`}>
+                                <div className="avatar-wrap">
+                                  <span>{commit.authorEmail}</span>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div>
+                      <h5>pullRequest.diff.noChanges</h5>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="actions">
                 <button className="ybtn ybtn-success" disabled={submitting} type="submit">

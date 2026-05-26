@@ -930,6 +930,23 @@ async fn pull_request_interaction_surface_mutates_state_review_comments_threads_
         .iter()
         .any(|branch| branch["name"] == "main" && branch["selected"] == true));
 
+    let merge_result = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/owners/owner/projects/projectYobi/pull-requests/merge-result?fromBranch=topic/pr&toBranch=main",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(merge_result["conflict"], false);
+    assert_eq!(merge_result["noHead"], false);
+    assert!(merge_result["commits"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|commit| commit["commitMessage"] == "topic"));
+
     let invalid_create = rest_json(
         app.clone(),
         Method::POST,

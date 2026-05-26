@@ -206,6 +206,12 @@ export type PullRequestFormOptionsResponse = {
 
 export type PullRequestFormOptionsQuery = Partial<PullRequestFormSelected>;
 
+export type PullRequestMergeResultResponse = {
+  commits: PullRequestCommit[];
+  conflict: boolean;
+  noHead: boolean;
+};
+
 export type PullRequestCreateInput = ProjectScopeInput & {
   attachmentIds?: number[];
   bodyMarkdown: string;
@@ -525,6 +531,23 @@ function normalizeFormOptions(
   };
 }
 
+function normalizeMergeResult(
+  response: Partial<PullRequestMergeResultResponse>,
+): PullRequestMergeResultResponse {
+  return {
+    commits: (response.commits ?? []).map((commit) => ({
+      authorDateLabel: commit.authorDateLabel ?? "",
+      authorEmail: commit.authorEmail ?? "",
+      commitId: commit.commitId ?? "",
+      commitMessage: commit.commitMessage ?? "",
+      commitShortId: commit.commitShortId ?? "",
+      state: commit.state ?? "CURRENT",
+    })),
+    conflict: response.conflict ?? false,
+    noHead: response.noHead ?? false,
+  };
+}
+
 function createPullRequestBody(input: PullRequestCreateInput) {
   return {
     attachmentIds: input.attachmentIds ?? [],
@@ -619,6 +642,19 @@ export async function readPullRequestEditFormOptions(
     { fetchImpl, method: "GET" },
   );
   return normalizeFormOptions(payload);
+}
+
+export async function readPullRequestMergeResult(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectScopeInput & { query: PullRequestFormOptionsQuery },
+  fetchImpl: typeof fetch = fetch,
+): Promise<PullRequestMergeResultResponse> {
+  const payload = await restFetch<Partial<PullRequestMergeResultResponse>>(
+    runtimeConfig,
+    `${projectPath(input)}/pull-requests/merge-result${pullRequestFormOptionsSearch(input.query)}`,
+    { fetchImpl, method: "GET" },
+  );
+  return normalizeMergeResult(payload);
 }
 
 export async function readPullRequestDetail(
@@ -935,6 +971,26 @@ export function pullRequestEditFormOptionsQueryOptions(
       input.ownerName,
       input.projectName,
       pullRequestNumber,
+    ),
+  });
+}
+
+export function pullRequestMergeResultQueryOptions(
+  runtimeConfig: RuntimeConfig,
+  input: ProjectScopeInput & { query: PullRequestFormSelected },
+) {
+  const normalizedQuery = {
+    fromBranch: input.query.fromBranch,
+    fromProjectId: input.query.fromProjectId,
+    toBranch: input.query.toBranch,
+    toProjectId: input.query.toProjectId,
+  };
+  return queryOptions({
+    queryFn: () => readPullRequestMergeResult(runtimeConfig, input),
+    queryKey: apiQueryKeys.project.pullRequestMergeResult(
+      input.ownerName,
+      input.projectName,
+      normalizedQuery,
     ),
   });
 }
