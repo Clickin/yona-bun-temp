@@ -1,5 +1,6 @@
 use yona_rust_integrations::{
-    mailbox_extract_content, mailbox_message_id_left, EmailAddressWithDetail, MailboxMimePart,
+    mailbox_extract_content, mailbox_message_id_left, mailbox_parse_message_ids,
+    EmailAddressWithDetail, MailboxMimePart,
 };
 
 #[test]
@@ -28,6 +29,21 @@ fn mailbox_message_id_left_matches_legacy_imap_message_util() {
     );
     assert_eq!(mailbox_message_id_left("<@yona.local>"), None);
     assert_eq!(mailbox_message_id_left("missing-at-sign"), None);
+}
+
+#[test]
+fn mailbox_message_id_header_parsing_matches_legacy_email_handler() {
+    assert_eq!(
+        mailbox_parse_message_ids(
+            "abc (comment) <first@example.com> folded text <second@example.com>"
+        ),
+        vec![
+            "<first@example.com>".to_string(),
+            "<second@example.com>".to_string()
+        ]
+    );
+    assert!(mailbox_parse_message_ids("missing angle").is_empty());
+    assert!(mailbox_parse_message_ids("<unterminated").is_empty());
 }
 
 #[test]

@@ -12,9 +12,9 @@ use crate::repo_types::{
     IssueCommentRecord, IssueCommentVoterRecord, IssueLabelCategoryRecord, IssueLabelRecord,
     IssueListFilter, IssueMentionUserRecord, IssueMentionUserSearchRecord, IssueMilestoneRecord,
     IssueMutationInput, IssueRecord, IssueShareStatus, IssueSharerRecord, IssueTimelineItemRecord,
-    MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter, MilestoneMutationInput,
-    NotificationActorRecord, NotificationItemRecord, NotificationListRecord,
-    NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
+    MailboxReplyTargetRecord, MassUpdateIssuesInput, MentionSyncResult, MilestoneListFilter,
+    MilestoneMutationInput, NotificationActorRecord, NotificationItemRecord,
+    NotificationListRecord, NotificationMailDeliveryRecord, OrganizationAuthorizationRecord,
     OrganizationEnrollmentRequestRecord, OrganizationIssueListFilter, OrganizationIssueListRecord,
     OrganizationIssueProjectOptionRecord, OrganizationMemberDirectoryRecord,
     OrganizationMemberRecord, OrganizationPostingListFilter, OrganizationPostingListRecord,
@@ -8669,6 +8669,45 @@ impl AppRepository {
         .insert(&self.db)
         .await?;
         Ok(())
+    }
+
+    pub async fn find_mailbox_reply_targets_by_message_ids(
+        &self,
+        message_ids: &[String],
+    ) -> Result<Vec<MailboxReplyTargetRecord>, DbErr> {
+        let mut targets = Vec::new();
+        let mut seen = HashSet::new();
+        for message_id in message_ids {
+            let message_id = message_id.trim();
+            if message_id.is_empty() {
+                continue;
+            }
+            let rows = original_email::Entity::find()
+                .filter(original_email::Column::MessageId.eq(Some(message_id.to_string())))
+                .order_by_asc(original_email::Column::Id)
+                .all(&self.db)
+                .await?;
+            for row in rows {
+                let Some(resource_type) = row.resource_type else {
+                    continue;
+                };
+                let Some(resource_id) = row
+                    .resource_id
+                    .as_deref()
+                    .and_then(|value| value.parse::<i64>().ok())
+                else {
+                    continue;
+                };
+                if seen.insert((resource_type.clone(), resource_id)) {
+                    targets.push(MailboxReplyTargetRecord {
+                        resource_id,
+                        resource_type,
+                    });
+                }
+            }
+        }
+
+        Ok(targets)
     }
 
     pub async fn update_commit_discussion_thread_state(

@@ -78,6 +78,20 @@ pub fn mailbox_message_id_left(message_id: &str) -> Option<String> {
     (!left.is_empty()).then_some(left)
 }
 
+pub fn mailbox_parse_message_ids(header_value: &str) -> Vec<String> {
+    let mut ids = Vec::new();
+    let mut rest = header_value;
+    while let Some(start) = rest.find('<') {
+        let after_start = &rest[start..];
+        let Some(end) = after_start.find('>') else {
+            break;
+        };
+        ids.push(after_start[..=end].to_string());
+        rest = &after_start[end + 1..];
+    }
+    ids
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MailboxMimePart {
     pub body: String,

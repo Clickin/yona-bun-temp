@@ -671,6 +671,12 @@ pub struct CreateIssueCommentViaEmailInput {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MailboxReplyTargetRecord {
+    pub resource_id: i64,
+    pub resource_type: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpdateIssueCommentInput {
     pub actor_id: i64,
     pub attachment_ids: Vec<i64>,

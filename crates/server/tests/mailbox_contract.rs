@@ -161,6 +161,20 @@ async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_res
         )
         .await
     );
+
+    let reply_targets = repo
+        .find_mailbox_reply_targets_by_message_ids(&[
+            "<message-id-2@domain>".to_string(),
+            "<message-id-3@domain>".to_string(),
+            "<message-id-2@domain>".to_string(),
+        ])
+        .await
+        .unwrap();
+    assert_eq!(reply_targets.len(), 2);
+    assert_eq!(reply_targets[0].resource_type, "ISSUE_COMMENT");
+    assert_eq!(reply_targets[0].resource_id, issue_comment.id);
+    assert_eq!(reply_targets[1].resource_type, "REVIEW_COMMENT");
+    assert_eq!(reply_targets[1].resource_id, review_comment.id);
 }
 
 #[tokio::test]
