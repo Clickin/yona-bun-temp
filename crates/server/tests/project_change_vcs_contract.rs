@@ -314,4 +314,35 @@ async fn project_change_vcs_follows_legacy_update_gate_and_resets_repository() {
         readme_count, 0,
         "legacy changeVCS clears the DB-backed README posting flag"
     );
+
+    let changed_back = ok_json(
+        rest(
+            app.clone(),
+            Method::POST,
+            "/yona/api/v1/owners/owner/projects/projectYobi/change-vcs",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(changed_back["currentVcs"], "GIT");
+    assert_eq!(changed_back["nextVcs"], "Subversion");
+    assert_eq!(changed_back["redirectPath"], "/owner/projectYobi");
+    assert!(
+        repo_path.exists(),
+        "change VCS back to Git should create fresh bare Git repository storage"
+    );
+    assert!(
+        !svn_repo_path.exists(),
+        "change VCS back to Git should remove previous SVN repository storage"
+    );
+
+    let stored_back = project::Entity::find_by_id(project.id)
+        .one(&db)
+        .await
+        .expect("read project")
+        .expect("project row");
+    assert_eq!(stored_back.vcs.as_deref(), Some("GIT"));
 }
