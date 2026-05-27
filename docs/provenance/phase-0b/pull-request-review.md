@@ -121,7 +121,8 @@
   payload. Branch delete/restore is not implied by accept.
 - If the native merge detects a conflict during accept, the PR is marked conflict,
   merge accept is disabled, visible conflict help is rendered, and no merge
-  event/webhook is emitted. In-app conflict resolution remains deferred.
+  event/webhook is emitted. Legacy evidence shows manual resolution through
+  `.howto-resolve-conflict` and refresh, not a separate in-app conflict editor.
 
 ## Source Branch Lifecycle Rules
 
@@ -166,7 +167,6 @@
 
 ## Explicit Phase 4 Deferrals
 
-- in-app merge conflict resolution workflow
 - multi-line ranged inline review selection polish
 - diff composition and PR event timeline
 - legacy external `/-_-api/v1/**` compatibility
