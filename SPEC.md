@@ -851,7 +851,7 @@ legacy external `/-_-api/v1/**` compatibility는 이번 app runtime batch에서 
 | PR 상세                    | 커밋 목록, 변경 파일, 댓글/타임라인  | Phase 4A read + Phase 4B interaction 구현 | 4     |
 | PR diff 보기               | 파일별 unified diff, 인라인 코멘트   | diff read + specific commit changes route/filter + selected commit `.commitInfo`/`.commitMsg.mt5` metadata + side-aware single/multi-line ranged inline create/edit/delete + PRIOR commit/review-card outdated marker 구현 | 4     |
 | PR 상태 관리               | open → merged / closed, 재열기       | close/reopen + reviewer-threshold-gated conflict-free merge accept 구현 | 4     |
-| Merge 실행                 | fast-forward / merge commit / squash | reviewer threshold 통과 후 native `git merge --no-ff` happy path 구현; squash/strategy 선택은 gap | 4     |
+| Merge 실행                 | legacy accept button                 | reviewer threshold 통과 후 native `git merge --no-ff` 구현; legacy route/view evidence has no squash/strategy selector | 4     |
 | Merge 충돌 처리            | 충돌 시 알림, 수동 해결 안내         | native merge conflict 감지, PR conflict 표시, merge 비활성화 + legacy `.howto-resolve-conflict` 수동 해결 절차 안내 구현; 별도 in-app conflict editor는 legacy 근거 없음 | 4     |
 | 리뷰 승인/철회             | 리뷰어가 승인/철회                   | Phase 4B 구현 | 4     |
 | 리뷰 상태 카운트           | 필수 reviewer 수와 부족 reviewer 수 표시 | required/lacking/reviewed detail projection 구현 | 4     |

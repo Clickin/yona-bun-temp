@@ -296,7 +296,7 @@ Interpretation:
 - [x] Project review list read and legacy `format=xls` Excel-compatible export
 - [x] Organization PR open/closed aggregate read
 - [x] Open/close/reopen
-- [~] Merge: reviewer-threshold-gated conflict-free native merge accept implemented; squash/strategy selection remains a gap
+- [x] Merge: reviewer-threshold-gated conflict-free native merge accept implemented; legacy route/view evidence exposes only `#btnAccept` and no squash/strategy selector
 - [x] Merge conflict handling: native conflict detection, PR conflict state, create/edit non-mutating merge preview, merge disable, and legacy `.howto-resolve-conflict` contributor guide implemented; no separate in-app conflict editor route/test is present in legacy evidence
 - [x] Reviewer lifecycle: legacy has no separate per-PR assignment route beyond review/unreview, and reviewer threshold projection/settings are implemented
 - [x] Required/lacking reviewer status projection

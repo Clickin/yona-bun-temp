@@ -107,6 +107,10 @@
 
 - App runtime exposes `/api/v1/owners/:owner/projects/:project/pull-requests/:number/accept`
   and the legacy direct `POST /:owner/:project/pullRequest/:number/accept` redirect route.
+- Legacy routing and `git/partial_info.scala.html` expose one accept action
+  (`#btnAccept`) and no squash or merge-strategy selector, so the Rust port
+  treats native merge accept as the parity surface instead of adding non-legacy
+  strategy controls.
 - Accept requires CSRF, an authenticated user, readable project detail, and the
   same detail permission projection as close/reopen (`canUpdateState`).
 - Accept follows legacy `PullRequestApp.accept`: when the target project uses
