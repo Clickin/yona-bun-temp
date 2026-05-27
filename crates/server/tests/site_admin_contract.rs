@@ -1891,6 +1891,65 @@ async fn site_admin_update_status_discovers_live_metadata_when_configured() {
 }
 
 #[tokio::test]
+async fn site_admin_update_download_redirects_through_app_owned_routes() {
+    let _guard = site_update_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    clear_site_update_env();
+    std::env::set_var("YONA_CURRENT_VERSION", "9.9.8");
+    std::env::set_var("YONA_UPDATE_LATEST_VERSION", "v9.9.9");
+    std::env::set_var(
+        "YONA_UPDATE_RELEASE_URL",
+        "https://downloads.example.test/yona/v9.9.9",
+    );
+
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (_member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let unauthenticated = rest_get(app.clone(), "/yona/api/v1/site/update/download", None).await;
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let forbidden = rest_get(
+        app.clone(),
+        "/yona/api/v1/site/update/download",
+        Some(&member_cookie),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let rest_download = rest_get(
+        app.clone(),
+        "/yona/api/v1/site/update/download",
+        Some(&admin_cookie),
+    )
+    .await;
+    assert_eq!(rest_download.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response_location(&rest_download),
+        "https://downloads.example.test/yona/v9.9.9"
+    );
+
+    let direct_forbidden = rest_get(
+        app.clone(),
+        "/yona/sites/update/download",
+        Some(&member_cookie),
+    )
+    .await;
+    assert_eq!(direct_forbidden.status(), StatusCode::FORBIDDEN);
+
+    let direct_download = rest_get(app, "/yona/sites/update/download", Some(&admin_cookie)).await;
+    assert_eq!(direct_download.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response_location(&direct_download),
+        "https://downloads.example.test/yona/v9.9.9"
+    );
+
+    clear_site_update_env();
+}
+
+#[tokio::test]
 async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
     let _guard = smtp_env_lock()
         .lock()

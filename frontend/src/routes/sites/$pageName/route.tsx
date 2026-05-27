@@ -1497,7 +1497,6 @@ function SiteAdminUpdatePage({
   const branchError = response?.error ?? error;
   const versionToUpdate = response?.versionToUpdate ?? null;
   const currentVersion = response?.currentVersion ?? "";
-  const releaseUrl = response?.releaseUrl ?? "#";
   return (
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
@@ -1518,7 +1517,10 @@ function SiteAdminUpdatePage({
               {versionToUpdate ? (
                 <p>
                   <strong>{`site.update.isAvailable ${versionToUpdate}`}</strong>{" "}
-                  <a className="ybtn ybtn-success" href={releaseUrl}>
+                  <a
+                    className="ybtn ybtn-success"
+                    href={appHref(runtimeConfig, "/sites/update/download")}
+                  >
                     site.update.download
                   </a>
                 </p>

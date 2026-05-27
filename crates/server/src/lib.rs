@@ -441,6 +441,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let direct_unwatch_base_path = base_path.clone();
     let site_unwatch_update_backend = route_backend.clone();
     let site_unwatch_update_session_manager = session_manager.clone();
+    let site_update_download_backend = route_backend.clone();
+    let site_update_download_session_manager = session_manager.clone();
     let site_toggle_admin_backend = route_backend.clone();
     let site_toggle_admin_session_manager = session_manager.clone();
     let site_toggle_admin_base_path = base_path.clone();
@@ -970,6 +972,19 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         headers,
                         site_unwatch_update_session_manager.clone(),
                         site_unwatch_update_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/update/download",
+            get(move |headers: HeaderMap| {
+                async move {
+                    direct_download_site_update(
+                        headers,
+                        site_update_download_session_manager.clone(),
+                        site_update_download_backend.clone(),
                     )
                     .await
                 }
@@ -9352,6 +9367,26 @@ async fn direct_unwatch_site_update(
     }
 }
 
+async fn direct_download_site_update(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_require_site_admin_repository(&service, &headers, false).await {
+        Ok(_) => match rest_site_update_download_redirect() {
+            Ok(redirect) => redirect.into_response(),
+            Err(error) => error.into_response(),
+        },
+        Err(error) => error.into_response(),
+    }
+}
+
 fn direct_site_mail_list_body(body: &[u8]) -> RestSiteMailListBody {
     if let Ok(body) = serde_json::from_slice::<RestSiteMailListBody>(body) {
         return body;
@@ -13243,6 +13278,16 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/site/update/download",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_download_site_update(headers, service).await }
+                }
+            }),
+        )
+        .route(
             "/site/mail",
             get({
                 let service = service.clone();
@@ -16943,6 +16988,14 @@ async fn rest_read_site_update(
     Ok(Json(rest_site_update_response()))
 }
 
+async fn rest_download_site_update(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Redirect, RestRouteError> {
+    rest_require_site_admin_repository(&service, &headers, false).await?;
+    rest_site_update_download_redirect()
+}
+
 async fn rest_export_site_data(
     headers: HeaderMap,
     service: PilotServiceImpl,
@@ -17635,6 +17688,31 @@ fn rest_site_update_response() -> RestSiteUpdateResponse {
         release_url,
         version_to_update,
     }
+}
+
+fn rest_site_update_download_redirect() -> Result<Redirect, RestRouteError> {
+    let response = rest_site_update_response();
+    if let Some(error) = response.error {
+        return Err(RestRouteError::bad_request(error));
+    }
+    if response.version_to_update.is_none() {
+        return Err(RestRouteError::not_found("site.update.isNotNecessary"));
+    }
+    let release_url = response
+        .release_url
+        .ok_or_else(|| RestRouteError::not_found("site.update.releaseUrl.notFound"))?;
+    if !site_update_release_url_is_redirectable(&release_url) {
+        return Err(RestRouteError::bad_request(
+            "site.update.download.invalidUrl",
+        ));
+    }
+    Ok(Redirect::to(&release_url))
+}
+
+fn site_update_release_url_is_redirectable(release_url: &str) -> bool {
+    let normalized = release_url.trim().to_ascii_lowercase();
+    (normalized.starts_with("https://") || normalized.starts_with("http://"))
+        && !release_url.chars().any(|ch| ch == '\r' || ch == '\n')
 }
 
 struct SiteUpdateMetadata {

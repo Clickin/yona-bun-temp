@@ -106,7 +106,7 @@ test("site admin update renders the legacy download branch when a version is ava
   await expect(page.getByText("site.update.isAvailable 1.1.0")).toBeVisible();
   await expect(page.getByText("site.update.currentVersion 1.0.0")).toBeVisible();
   await expect(page.getByText("site.update.isNotNecessary")).toHaveCount(0);
-  await expect(
-    page.locator('a.ybtn.ybtn-success[href="https://example.test/yona-1.1.0"]'),
-  ).toHaveText("site.update.download");
+  await expect(page.locator('a.ybtn.ybtn-success[href="/yona/sites/update/download"]')).toHaveText(
+    "site.update.download",
+  );
 });
