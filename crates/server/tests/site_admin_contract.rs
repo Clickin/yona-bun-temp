@@ -29,6 +29,11 @@ fn site_update_env_lock() -> &'static Mutex<()> {
     LOCK.get_or_init(|| Mutex::new(()))
 }
 
+fn yona_data_env_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
+
 fn clear_site_update_env() {
     for name in [
         "YONA_CURRENT_VERSION",
@@ -311,6 +316,17 @@ async fn insert_attachment(
     .insert(db)
     .await
     .expect("attachment insert")
+}
+
+fn write_uploaded_test_file(
+    data_dir: &tempfile::TempDir,
+    attachment: &attachment::Model,
+    bytes: &[u8],
+) {
+    let hash = attachment.hash.as_deref().expect("attachment hash");
+    let upload_dir = data_dir.path().join("uploads");
+    std::fs::create_dir_all(&upload_dir).expect("upload dir");
+    std::fs::write(upload_dir.join(hash), bytes).expect("upload bytes");
 }
 
 fn user<'a>(payload: &'a Value, login_id: &str) -> &'a Value {
@@ -683,6 +699,11 @@ async fn site_admin_unwatch_update_alias_follows_legacy_route() {
 
 #[tokio::test]
 async fn site_admin_export_download_follows_legacy_site_data_route() {
+    let _data_guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempfile::tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
     let (app, repo, db) = build_app_with_repository().await;
     let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (member_csrf, member_cookie, member_id) = register_user(app.clone(), "member").await;
@@ -732,6 +753,18 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         "text/plain",
     )
     .await;
+    write_uploaded_test_file(&data_dir, &export_post_attachment, b"post-export-binary");
+    write_uploaded_test_file(
+        &data_dir,
+        &export_post_comment_attachment,
+        b"post-comment-export-binary",
+    );
+    write_uploaded_test_file(&data_dir, &export_issue_attachment, b"issue-export-binary");
+    write_uploaded_test_file(
+        &data_dir,
+        &export_issue_comment_attachment,
+        b"issue-comment-export-binary",
+    );
     let milestone = repo
         .create_project_milestone(MilestoneMutationInput {
             actor_id: Some(member_id),
@@ -856,12 +889,20 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
     );
     assert_eq!(payload["posts"][0]["attachments"][0]["size"], 256);
     assert_eq!(
+        payload["posts"][0]["attachments"][0]["contentBase64"],
+        "cG9zdC1leHBvcnQtYmluYXJ5"
+    );
+    assert_eq!(
         payload["posts"][0]["comments"][0]["contentsMarkdown"],
         "legacy data export post comment"
     );
     assert_eq!(
         payload["posts"][0]["comments"][0]["attachments"][0]["name"],
         "post-comment-export.txt"
+    );
+    assert_eq!(
+        payload["posts"][0]["comments"][0]["attachments"][0]["contentBase64"],
+        "cG9zdC1jb21tZW50LWV4cG9ydC1iaW5hcnk="
     );
     assert_eq!(payload["issues"][0]["title"], "Data export issue");
     assert_eq!(payload["issues"][0]["milestoneTitle"], "Export milestone");
@@ -879,6 +920,10 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
     );
     assert_eq!(payload["issues"][0]["attachments"][0]["size"], 256);
     assert_eq!(
+        payload["issues"][0]["attachments"][0]["contentBase64"],
+        "aXNzdWUtZXhwb3J0LWJpbmFyeQ=="
+    );
+    assert_eq!(
         payload["issues"][0]["comments"][0]["contentsMarkdown"],
         "legacy data export issue comment"
     );
@@ -886,6 +931,11 @@ async fn site_admin_export_download_follows_legacy_site_data_route() {
         payload["issues"][0]["comments"][0]["attachments"][0]["name"],
         "issue-comment-export.txt"
     );
+    assert_eq!(
+        payload["issues"][0]["comments"][0]["attachments"][0]["contentBase64"],
+        "aXNzdWUtY29tbWVudC1leHBvcnQtYmluYXJ5"
+    );
+    std::env::remove_var("YONA_DATA");
 }
 
 #[tokio::test]
@@ -1220,6 +1270,102 @@ async fn site_admin_import_rebinds_existing_attachment_ids_from_yobi_data_snapsh
         issue_detail.comments[0].attachments[0].name,
         "issue-comment-import.txt"
     );
+}
+
+#[tokio::test]
+async fn site_admin_import_restores_portable_attachment_content_from_yobi_data_snapshot() {
+    let _data_guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempfile::tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, db) = build_app_with_repository().await;
+    let (admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+    create_project(
+        app.clone(),
+        &member_cookie,
+        &member_csrf,
+        "member",
+        "portable",
+    )
+    .await;
+
+    let payload = json!({
+        "format": "yobi-data",
+        "users": [],
+        "projects": [],
+        "posts": [{
+            "authorLoginId": "member",
+            "attachments": [{
+                "contentBase64": "cG9ydGFibGUtcG9zdC1maWxl",
+                "mimeType": "text/plain",
+                "name": "portable-post.txt",
+                "size": 18
+            }],
+            "bodyMarkdown": "post with portable attachment",
+            "comments": [{
+                "attachments": [{
+                    "contentBase64": "cG9ydGFibGUtY29tbWVudC1maWxl",
+                    "mimeType": "text/plain",
+                    "name": "portable-comment.txt",
+                    "size": 21
+                }],
+                "authorLoginId": "member",
+                "contentsMarkdown": "comment with portable attachment"
+            }],
+            "ownerName": "member",
+            "projectName": "portable",
+            "title": "Portable attached post"
+        }],
+        "issues": []
+    });
+
+    let response = rest_raw_post(
+        app,
+        "/yona/sites/import",
+        Some(&admin_cookie),
+        Some(&admin_csrf),
+        "application/json",
+        &payload.to_string(),
+    )
+    .await;
+    let imported = response_json(response).await;
+    assert_eq!(imported["importedPosts"], 1);
+
+    let post_detail = repo
+        .read_posting_detail_for_viewer("member", "portable", 1, None)
+        .await
+        .expect("read imported post")
+        .expect("imported post exists");
+    assert_eq!(post_detail.attachments[0].name, "portable-post.txt");
+    let post_attachment = repo
+        .read_attachment_by_id(post_detail.attachments[0].id)
+        .await
+        .expect("read post attachment")
+        .expect("post attachment exists");
+    let post_hash = post_attachment.hash.as_str();
+    assert_eq!(
+        std::fs::read(data_dir.path().join("uploads").join(post_hash)).expect("post bytes"),
+        b"portable-post-file"
+    );
+
+    assert_eq!(
+        post_detail.comments[0].attachments[0].name,
+        "portable-comment.txt"
+    );
+    let comment_attachment = repo
+        .read_attachment_by_id(post_detail.comments[0].attachments[0].id)
+        .await
+        .expect("read comment attachment")
+        .expect("comment attachment exists");
+    let comment_hash = comment_attachment.hash.as_str();
+    assert_eq!(
+        std::fs::read(data_dir.path().join("uploads").join(comment_hash)).expect("comment bytes"),
+        b"portable-comment-file"
+    );
+    std::env::remove_var("YONA_DATA");
 }
 
 #[tokio::test]

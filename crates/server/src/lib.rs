@@ -11405,6 +11405,8 @@ struct RestSiteExportCommentItem {
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", default)]
 struct RestSiteExportAttachmentItem {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    content_base64: Option<String>,
     id: i64,
     mime_type: String,
     name: String,
@@ -17140,7 +17142,12 @@ async fn rest_import_site_data(
                 owner_name: post.owner_name.trim().to_string(),
                 project_name: post.project_name.trim().to_string(),
                 values: persistence::PostingMutationInput {
-                    attachment_ids: rest_site_import_attachment_ids(&post.attachments),
+                    attachment_ids: rest_site_import_attachment_ids(
+                        repository,
+                        &actor,
+                        &post.attachments,
+                    )
+                    .await?,
                     body_markdown: post.body_markdown,
                     label_ids,
                     notice: post.notice,
@@ -17219,7 +17226,12 @@ async fn rest_import_site_data(
                 project_name: issue.project_name.trim().to_string(),
                 values: persistence::IssueMutationInput {
                     assignee_login_id: empty_string_as_none(issue.assignee_login_id.trim()),
-                    attachment_ids: rest_site_import_attachment_ids(&issue.attachments),
+                    attachment_ids: rest_site_import_attachment_ids(
+                        repository,
+                        &actor,
+                        &issue.attachments,
+                    )
+                    .await?,
                     body_markdown: issue.body_markdown,
                     label_ids,
                     milestone_id,
@@ -17297,12 +17309,14 @@ async fn rest_site_import_post_comments(
         let actor =
             rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
                 .await?;
+        let attachment_ids =
+            rest_site_import_attachment_ids(repository, &actor, &comment.attachments).await?;
         repository
             .create_posting_comment(persistence::CreatePostingCommentInput {
-                actor_display_name: actor.display_name,
+                actor_display_name: actor.display_name.clone(),
                 actor_id: actor.id,
-                actor_login_id: actor.login_id,
-                attachment_ids: rest_site_import_attachment_ids(&comment.attachments),
+                actor_login_id: actor.login_id.clone(),
+                attachment_ids,
                 contents_markdown: contents_markdown.to_string(),
                 owner_name: owner_name.trim().to_string(),
                 post_number,
@@ -17330,12 +17344,14 @@ async fn rest_site_import_issue_comments(
         let actor =
             rest_site_import_comment_actor(repository, &comment.author_login_id, fallback_actor)
                 .await?;
+        let attachment_ids =
+            rest_site_import_attachment_ids(repository, &actor, &comment.attachments).await?;
         repository
             .create_issue_comment(persistence::CreateIssueCommentInput {
-                actor_display_name: actor.display_name,
+                actor_display_name: actor.display_name.clone(),
                 actor_id: actor.id,
-                actor_login_id: actor.login_id,
-                attachment_ids: rest_site_import_attachment_ids(&comment.attachments),
+                actor_login_id: actor.login_id.clone(),
+                attachment_ids,
                 contents_markdown: contents_markdown.to_string(),
                 issue_number,
                 owner_name: owner_name.trim().to_string(),
@@ -17365,11 +17381,67 @@ async fn rest_site_import_comment_actor(
     Ok(fallback_actor.clone())
 }
 
-fn rest_site_import_attachment_ids(attachments: &[RestSiteExportAttachmentItem]) -> Vec<i64> {
-    attachments
-        .iter()
-        .filter_map(|attachment| (attachment.id > 0).then_some(attachment.id))
-        .collect()
+async fn rest_site_import_attachment_ids(
+    repository: &PilotRepository,
+    actor: &persistence::AppUserRecord,
+    attachments: &[RestSiteExportAttachmentItem],
+) -> Result<Vec<i64>, RestRouteError> {
+    let mut attachment_ids = Vec::new();
+    for attachment in attachments {
+        if attachment.id > 0 {
+            attachment_ids.push(attachment.id);
+            continue;
+        }
+        let Some(content_base64) = attachment
+            .content_base64
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        else {
+            continue;
+        };
+        let bytes = general_purpose::STANDARD
+            .decode(content_base64)
+            .map_err(|_| RestRouteError::bad_request("site.import.attachment.invalidContent"))?;
+        if bytes.len() > max_uploaded_file_size() {
+            return Err(RestRouteError::bad_request(
+                "site.import.attachment.tooLarge",
+            ));
+        }
+        let file_name = attachment
+            .name
+            .trim()
+            .is_empty()
+            .then(|| "attachment.bin".to_string())
+            .unwrap_or_else(|| attachment.name.trim().to_string());
+        let mime_type = attachment
+            .mime_type
+            .trim()
+            .is_empty()
+            .then(|| detect_upload_mime_type(&file_name, None, &bytes))
+            .unwrap_or_else(|| attachment.mime_type.trim().to_string());
+        let hash = random_storage_token();
+        let path = uploaded_file_path(&hash);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        }
+        std::fs::write(&path, &bytes)
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        let created = repository
+            .create_user_attachment_upload(
+                actor.id,
+                &actor.login_id,
+                &file_name,
+                &mime_type,
+                bytes.len() as i64,
+                &hash,
+            )
+            .await
+            .map_err(|error| RestRouteError::internal(error.to_string()))?;
+        attachment_ids.push(created.id);
+    }
+    Ok(attachment_ids)
 }
 
 async fn rest_site_import_label_ids(
@@ -22519,11 +22591,24 @@ fn rest_site_export_attachment_from_record(
     record: &persistence::IssueAttachmentRecord,
 ) -> RestSiteExportAttachmentItem {
     RestSiteExportAttachmentItem {
+        content_base64: rest_site_export_attachment_content_base64(record),
         id: record.id,
         mime_type: record.mime_type.clone(),
         name: record.name.clone(),
         size: record.size,
     }
+}
+
+fn rest_site_export_attachment_content_base64(
+    record: &persistence::IssueAttachmentRecord,
+) -> Option<String> {
+    let hash = record.hash.trim();
+    if hash.is_empty() {
+        return None;
+    }
+    std::fs::read(uploaded_file_path(hash))
+        .ok()
+        .map(|bytes| general_purpose::STANDARD.encode(bytes))
 }
 
 fn rest_site_export_label_from_record(

@@ -13160,6 +13160,7 @@ impl AppRepository {
             .await?
             .into_iter()
             .map(|row| IssueAttachmentRecord {
+                hash: row.hash.unwrap_or_default(),
                 id: row.id,
                 mime_type: row.mime_type.unwrap_or_default(),
                 name: row.name.unwrap_or_default(),
