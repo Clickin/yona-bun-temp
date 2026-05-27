@@ -11,7 +11,7 @@ use yona_rust_persistence::{
     PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::process_mailbox_parsed_message;
+use yona_rust_pilot_server::{process_mailbox_parsed_message, process_mailbox_raw_message};
 
 async fn build_repository() -> (AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -310,6 +310,43 @@ async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_res
         .unwrap();
     assert_eq!(parsed_targets.len(), 1);
     assert_eq!(parsed_targets[0].resource_type, "REVIEW_COMMENT");
+
+    let raw = process_mailbox_raw_message(
+        &repo,
+        concat!(
+            "Message-ID: <message-id-raw@domain>\r\n",
+            "Subject: raw title\r\n",
+            "From: Mailbox Member <member@example.com>\r\n",
+            "To: noreply+yobi/projectYobi@yona.local\r\n",
+            "In-Reply-To: <message-id-3@domain>\r\n",
+            "Content-Type: multipart/alternative; boundary=\"raw-boundary\"\r\n",
+            "\r\n",
+            "--raw-boundary\r\n",
+            "Content-Type: text/html; charset=UTF-8\r\n",
+            "\r\n",
+            "<p>raw html body</p>\r\n",
+            "--raw-boundary\r\n",
+            "Content-Type: text/plain; charset=UTF-8\r\n",
+            "Content-Transfer-Encoding: quoted-printable\r\n",
+            "\r\n",
+            "raw=20reply=20body\r\n",
+            "--raw-boundary--\r\n",
+        ),
+        "noreply@yona.local",
+    )
+    .await
+    .unwrap();
+    assert_eq!(raw.status, "processed");
+    assert_eq!(raw.sender_id, Some(member.id));
+    assert_eq!(raw.actions.len(), 1);
+    assert_eq!(raw.actions[0].action, "create_review_comment");
+    assert_eq!(raw.actions[0].status, "created");
+    let raw_targets = repo
+        .find_mailbox_reply_targets_by_message_ids(&["<message-id-raw@domain>".to_string()])
+        .await
+        .unwrap();
+    assert_eq!(raw_targets.len(), 1);
+    assert_eq!(raw_targets[0].resource_type, "REVIEW_COMMENT");
 
     let no_sender = repo
         .process_mailbox_normalized_message(MailboxNormalizedMessageInput {

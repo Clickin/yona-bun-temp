@@ -1,8 +1,8 @@
 use yona_rust_integrations::{
     mailbox_collect_thread_message_ids, mailbox_extract_content, mailbox_message_id_left,
-    mailbox_normalize_parsed_message, mailbox_parse_message_ids, mailbox_project_detail,
-    mailbox_recipients_to_yona, mailbox_resource_path_from_detail, EmailAddressWithDetail,
-    MailboxMimePart, MailboxParsedMessageInput,
+    mailbox_normalize_parsed_message, mailbox_parse_message_ids, mailbox_parse_raw_message,
+    mailbox_project_detail, mailbox_recipients_to_yona, mailbox_resource_path_from_detail,
+    EmailAddressWithDetail, MailboxMimePart, MailboxParsedMessageInput,
 };
 
 #[test]
@@ -203,6 +203,62 @@ fn mailbox_parsed_message_normalization_collects_legacy_routing_inputs() {
             "<first@example.com>".to_string(),
             "<second@example.com>".to_string(),
             "<third@example.com>".to_string(),
+        ]
+    );
+}
+
+#[test]
+fn mailbox_raw_message_parsing_feeds_legacy_normalization_inputs() {
+    let parsed = mailbox_parse_raw_message(
+        concat!(
+            "Message-ID: <raw-message@example.com>\r\n",
+            "Subject: Raw\r\n",
+            " subject\r\n",
+            "From: Mailbox Member <member@example.com>\r\n",
+            "To: noreply+yobi/projectYobi/comment_thread/1@yona.local\r\n",
+            "Cc: Other <other@example.com>\r\n",
+            "In-Reply-To: <reply@example.com>\r\n",
+            "References: <first@example.com> <reply@example.com>\r\n",
+            "Content-Type: multipart/alternative; boundary=\"mail-boundary\"\r\n",
+            "\r\n",
+            "--mail-boundary\r\n",
+            "Content-Type: text/html; charset=UTF-8\r\n",
+            "\r\n",
+            "<p>html body</p>\r\n",
+            "--mail-boundary\r\n",
+            "Content-Type: text/plain; charset=UTF-8\r\n",
+            "Content-Transfer-Encoding: quoted-printable\r\n",
+            "\r\n",
+            "plain=20body=\r\n",
+            " continued\r\n",
+            "--mail-boundary--\r\n",
+        ),
+        "noreply@yona.local",
+    )
+    .expect("raw message");
+
+    assert_eq!(parsed.subject, "Raw subject");
+    assert_eq!(parsed.message_id, "<raw-message@example.com>");
+    assert_eq!(parsed.from_addresses, vec!["member@example.com"]);
+    assert_eq!(
+        parsed.recipients,
+        vec![
+            "noreply+yobi/projectYobi/comment_thread/1@yona.local".to_string(),
+            "other@example.com".to_string(),
+        ]
+    );
+
+    let normalized = mailbox_normalize_parsed_message(parsed);
+    assert_eq!(normalized.body_markdown, "plain body continued");
+    assert_eq!(
+        normalized.recipient_details,
+        vec!["yobi/projectYobi/comment_thread/1".to_string()]
+    );
+    assert_eq!(
+        normalized.reply_message_ids,
+        vec![
+            "<reply@example.com>".to_string(),
+            "<first@example.com>".to_string()
         ]
     );
 }

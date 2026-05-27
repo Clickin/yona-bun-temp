@@ -80,6 +80,18 @@ pub async fn process_mailbox_parsed_message(
         .await
 }
 
+pub async fn process_mailbox_raw_message(
+    repository: &yona_rust_persistence::AppRepository,
+    raw_message: &str,
+    imap_address: &str,
+) -> Result<yona_rust_persistence::MailboxNormalizedMessageResult, String> {
+    let parsed = yona_rust_integrations::mailbox_parse_raw_message(raw_message, imap_address)
+        .ok_or_else(|| "raw mailbox message is missing a Message-ID header".to_string())?;
+    process_mailbox_parsed_message(repository, parsed)
+        .await
+        .map_err(|error| error.to_string())
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum ErrorCode {
     InvalidArgument,
