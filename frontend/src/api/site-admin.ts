@@ -136,6 +136,14 @@ export interface SiteDiagnosticsResponse {
   errors: string[];
 }
 
+export interface SiteUpdateResponse {
+  currentVersion: string;
+  error: string | null;
+  message: string;
+  releaseUrl: string | null;
+  versionToUpdate: string | null;
+}
+
 export interface SiteMailOptionsResponse {
   notConfiguredItems: string[];
   sender: string;
@@ -253,6 +261,16 @@ export function readSiteMailRest(
   fetchImpl: typeof fetch = fetch,
 ): Promise<SiteMailOptionsResponse> {
   return restFetch<SiteMailOptionsResponse>(runtimeConfig, "/site/mail", {
+    fetchImpl,
+    method: "GET",
+  });
+}
+
+export function readSiteUpdateRest(
+  runtimeConfig: RuntimeConfig,
+  fetchImpl: typeof fetch = fetch,
+): Promise<SiteUpdateResponse> {
+  return restFetch<SiteUpdateResponse>(runtimeConfig, "/site/update", {
     fetchImpl,
     method: "GET",
   });
@@ -418,5 +436,12 @@ export function siteMailOptionsQueryOptions(runtimeConfig: RuntimeConfig) {
   return queryOptions({
     queryFn: () => readSiteMailRest(runtimeConfig),
     queryKey: apiQueryKeys.siteAdmin.mail(),
+  });
+}
+
+export function siteUpdateQueryOptions(runtimeConfig: RuntimeConfig) {
+  return queryOptions({
+    queryFn: () => readSiteUpdateRest(runtimeConfig),
+    queryKey: apiQueryKeys.siteAdmin.update(),
   });
 }

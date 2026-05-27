@@ -13,6 +13,7 @@ import {
   siteProjectsQueryOptions,
   resetSiteUserPasswordRest,
   sendSiteMailRest,
+  siteUpdateQueryOptions,
   siteUsersQueryOptions,
   type SiteDiagnosticsResponse,
   type SiteIssue,
@@ -31,6 +32,7 @@ import {
   type SiteProject,
   type SiteProjectListInput,
   type SiteProjectListResponse,
+  type SiteUpdateResponse,
   type SiteUser,
   type SiteUserListInput,
   type SiteUserListResponse,
@@ -365,6 +367,10 @@ function SiteUpdateRoute({
   runtimeConfig: RuntimeConfig;
 }) {
   const canRender = useRequireAuthenticatedRoute(href);
+  const query = useQuery({
+    ...siteUpdateQueryOptions(runtimeConfig),
+    enabled: canRender && currentIsSiteAdmin,
+  });
 
   if (bootstrapping || !canRender) {
     return (
@@ -377,7 +383,13 @@ function SiteUpdateRoute({
     return <ForbiddenPage href="/sites/update" />;
   }
 
-  return <SiteAdminUpdatePage runtimeConfig={runtimeConfig} />;
+  return (
+    <SiteAdminUpdatePage
+      error={query.error instanceof Error ? query.error.message : null}
+      response={query.data}
+      runtimeConfig={runtimeConfig}
+    />
+  );
 }
 
 function SiteUserListRoute({
@@ -1473,7 +1485,19 @@ function SiteAdminDataPage({
   );
 }
 
-function SiteAdminUpdatePage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }) {
+function SiteAdminUpdatePage({
+  error,
+  response,
+  runtimeConfig,
+}: {
+  error: string | null;
+  response: SiteUpdateResponse | undefined;
+  runtimeConfig: RuntimeConfig;
+}) {
+  const branchError = response?.error ?? error;
+  const versionToUpdate = response?.versionToUpdate ?? null;
+  const currentVersion = response?.currentVersion ?? "";
+  const releaseUrl = response?.releaseUrl ?? "#";
   return (
     <main className="app-shell site-admin-page">
       <div className="site-breadcrumb-outer">
@@ -1491,7 +1515,22 @@ function SiteAdminUpdatePage({ runtimeConfig }: { runtimeConfig: RuntimeConfig }
               <div className="title_area">
                 <h2 className="pull-left">Update</h2>
               </div>
-              <p>site.update.isNotNecessary</p>
+              {versionToUpdate ? (
+                <p>
+                  <strong>{`site.update.isAvailable ${versionToUpdate}`}</strong>{" "}
+                  <a className="ybtn ybtn-success" href={releaseUrl}>
+                    site.update.download
+                  </a>
+                </p>
+              ) : null}
+              {currentVersion ? <p>{`site.update.currentVersion ${currentVersion}`}</p> : null}
+              {!versionToUpdate && !branchError ? <p>site.update.isNotNecessary</p> : null}
+              {branchError ? (
+                <>
+                  <p>site.update.error</p>
+                  <pre>{branchError}</pre>
+                </>
+              ) : null}
             </div>
           </div>
         </div>

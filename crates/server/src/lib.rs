@@ -11247,6 +11247,16 @@ struct RestSiteDiagnosticsResponse {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RestSiteUpdateResponse {
+    current_version: String,
+    error: Option<String>,
+    message: String,
+    release_url: Option<String>,
+    version_to_update: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RestSiteMailOptionsResponse {
     not_configured_items: Vec<String>,
     sender: String,
@@ -13219,6 +13229,16 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
                 move |headers: HeaderMap| {
                     let service = service.clone();
                     async move { rest_read_site_diagnostics(headers, service).await }
+                }
+            }),
+        )
+        .route(
+            "/site/update",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_read_site_update(headers, service).await }
                 }
             }),
         )
@@ -16915,6 +16935,14 @@ async fn rest_read_site_diagnostics(
     }))
 }
 
+async fn rest_read_site_update(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Json<RestSiteUpdateResponse>, RestRouteError> {
+    rest_require_site_admin_repository(&service, &headers, false).await?;
+    Ok(Json(rest_site_update_response()))
+}
+
 async fn rest_export_site_data(
     headers: HeaderMap,
     service: PilotServiceImpl,
@@ -17539,6 +17567,50 @@ fn rest_site_mail_options(sent: bool) -> RestSiteMailOptionsResponse {
         not_configured_items: site_mail_not_configured_items(),
         sender: default_smtp_from(),
         sent,
+    }
+}
+
+fn rest_site_update_response() -> RestSiteUpdateResponse {
+    let current_version = std::env::var("YONA_CURRENT_VERSION")
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| env!("CARGO_PKG_VERSION").to_string());
+    let error = std::env::var("YONA_UPDATE_ERROR")
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty());
+    let version_to_update = if error.is_none() {
+        std::env::var("YONA_UPDATE_LATEST_VERSION")
+            .or_else(|_| std::env::var("YONA_UPDATE_VERSION"))
+            .ok()
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty() && value != &current_version)
+    } else {
+        None
+    };
+    let release_url = version_to_update.as_ref().map(|version| {
+        std::env::var("YONA_UPDATE_RELEASE_URL")
+            .ok()
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty())
+            .unwrap_or_else(|| {
+                format!("https://github.com/yona-projects/yona/releases/tag/{version}")
+            })
+    });
+    let message = if version_to_update.is_some() {
+        "site.update.isAvailable"
+    } else {
+        "site.update.isNotNecessary"
+    }
+    .to_string();
+
+    RestSiteUpdateResponse {
+        current_version,
+        error,
+        message,
+        release_url,
+        version_to_update,
     }
 }
 

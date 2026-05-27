@@ -191,6 +191,7 @@ export const apiQueryKeys = {
     issues: (input: { page: number; state: string }) =>
       [...apiQueryKeys.siteAdmin.issuesBase(), input] as const,
     mail: () => [...apiQueryKeys.v1(), "site", "mail"] as const,
+    update: () => [...apiQueryKeys.v1(), "site", "update"] as const,
     postsBase: () => [...apiQueryKeys.v1(), "site", "posts"] as const,
     posts: (input: { page: number }) => [...apiQueryKeys.siteAdmin.postsBase(), input] as const,
     projectsBase: () => [...apiQueryKeys.v1(), "site", "projects"] as const,

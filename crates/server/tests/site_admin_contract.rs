@@ -1797,6 +1797,40 @@ async fn site_admin_diagnostics_are_site_admin_only_and_report_legacy_error_list
 }
 
 #[tokio::test]
+async fn site_admin_update_status_follows_legacy_update_view_branches() {
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (_member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let unauthenticated = rest_get(app.clone(), "/yona/api/v1/site/update", None).await;
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let forbidden = rest_get(
+        app.clone(),
+        "/yona/api/v1/site/update",
+        Some(&member_cookie),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let payload =
+        response_json(rest_get(app, "/yona/api/v1/site/update", Some(&admin_cookie)).await).await;
+    assert!(
+        payload["currentVersion"]
+            .as_str()
+            .expect("current version")
+            .trim()
+            .len()
+            > 0
+    );
+    assert_eq!(payload["message"], "site.update.isNotNecessary");
+    assert!(payload["versionToUpdate"].is_null());
+    assert!(payload["releaseUrl"].is_null());
+    assert!(payload["error"].is_null());
+}
+
+#[tokio::test]
 async fn site_admin_mail_send_and_recipient_lookup_follow_legacy_surface() {
     let _guard = smtp_env_lock()
         .lock()

@@ -56,6 +56,19 @@ test.beforeEach(async ({ page }) => {
       status: 200,
     });
   });
+  await page.route(apiV1Route("/site/update"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        currentVersion: "1.0.0",
+        error: null,
+        message: "site.update.isNotNecessary",
+        releaseUrl: null,
+        versionToUpdate: null,
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
 });
 
 test("site admin update preserves legacy shell without placeholder fallback", async ({ page }) => {
@@ -66,6 +79,34 @@ test("site admin update preserves legacy shell without placeholder fallback", as
   await expect(page.locator(".site-setting-wrap")).toBeVisible();
   await expect(page.locator(".site-setting-nav li.active a")).toHaveText("Update");
   await expect(page.locator(".title_area h2.pull-left")).toHaveText("Update");
+  await expect(page.getByText("site.update.currentVersion 1.0.0")).toBeVisible();
   await expect(page.getByText("site.update.isNotNecessary")).toBeVisible();
   await expect(page.getByText("File-based route placeholder")).toHaveCount(0);
+});
+
+test("site admin update renders the legacy download branch when a version is available", async ({
+  page,
+}) => {
+  await page.route(apiV1Route("/site/update"), async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        currentVersion: "1.0.0",
+        error: null,
+        message: "site.update.isAvailable",
+        releaseUrl: "https://example.test/yona-1.1.0",
+        versionToUpdate: "1.1.0",
+      }),
+      headers: restJsonHeaders,
+      status: 200,
+    });
+  });
+
+  await page.goto("/yona/sites/update");
+
+  await expect(page.getByText("site.update.isAvailable 1.1.0")).toBeVisible();
+  await expect(page.getByText("site.update.currentVersion 1.0.0")).toBeVisible();
+  await expect(page.getByText("site.update.isNotNecessary")).toHaveCount(0);
+  await expect(
+    page.locator('a.ybtn.ybtn-success[href="https://example.test/yona-1.1.0"]'),
+  ).toHaveText("site.update.download");
 });
