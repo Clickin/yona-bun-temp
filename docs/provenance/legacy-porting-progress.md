@@ -346,7 +346,7 @@ Interpretation:
 - [x] Mailbox READ-filtered project target lookup parity
 - [x] Mailbox sender lookup parity for legacy From-address order, primary emails, and valid workspace emails
 - [x] Mailbox MIME content selection parity for text, alternative, related, root-part, and joined multipart cases
-- [x] Mailbox raw RFC822 header/MIME ingestion before app-level orchestration
+- [x] Mailbox raw RFC822 header/MIME ingestion before app-level orchestration, including quoted-printable and base64 transfer decoding
 - [x] Mailbox parsed-message normalization after raw/parsed ingestion
 - [x] Mailbox app-level parsed/raw-message processing bridge
 - [x] Mailbox exact `original_email.message_id` reply target lookup parity

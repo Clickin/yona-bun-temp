@@ -6,6 +6,7 @@ use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
+use base64::{engine::general_purpose, Engine as _};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 
@@ -375,8 +376,20 @@ fn mailbox_decode_transfer_body(body: &str, transfer_encoding: Option<&str>) -> 
         .as_str()
     {
         "quoted-printable" => mailbox_decode_quoted_printable(body),
+        "base64" => mailbox_decode_base64(body),
         _ => body.to_string(),
     }
+}
+
+fn mailbox_decode_base64(body: &str) -> String {
+    let compact = body
+        .chars()
+        .filter(|character| !character.is_ascii_whitespace())
+        .collect::<String>();
+    general_purpose::STANDARD
+        .decode(compact.as_bytes())
+        .map(|bytes| String::from_utf8_lossy(&bytes).to_string())
+        .unwrap_or_else(|_| body.to_string())
 }
 
 fn mailbox_decode_quoted_printable(body: &str) -> String {

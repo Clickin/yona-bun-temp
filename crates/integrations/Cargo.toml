@@ -5,4 +5,5 @@ license.workspace = true
 version.workspace = true
 
 [dependencies]
+base64.workspace = true
 lettre.workspace = true

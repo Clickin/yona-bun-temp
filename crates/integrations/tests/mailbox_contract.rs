@@ -263,6 +263,32 @@ fn mailbox_raw_message_parsing_feeds_legacy_normalization_inputs() {
     );
 }
 
+#[test]
+fn mailbox_raw_message_parsing_decodes_base64_transfer_bodies_like_javamail() {
+    let parsed = mailbox_parse_raw_message(
+        concat!(
+            "Message-ID: <raw-base64@example.com>\r\n",
+            "Subject: Base64 raw\r\n",
+            "From: Mailbox Member <member@example.com>\r\n",
+            "To: noreply+yobi/projectYobi@yona.local\r\n",
+            "Content-Type: text/plain; charset=UTF-8\r\n",
+            "Content-Transfer-Encoding: base64\r\n",
+            "\r\n",
+            "YmFzZTY0IHJlcGx5\r\n",
+            "IGJvZHk=\r\n",
+        ),
+        "noreply@yona.local",
+    )
+    .expect("raw base64 message");
+
+    let normalized = mailbox_normalize_parsed_message(parsed);
+    assert_eq!(normalized.body_markdown, "base64 reply body");
+    assert_eq!(
+        normalized.recipient_details,
+        vec!["yobi/projectYobi".to_string()]
+    );
+}
+
 fn text(content_type: &str, body: &str) -> MailboxMimePart {
     MailboxMimePart {
         body: body.to_string(),
