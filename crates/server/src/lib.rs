@@ -17576,16 +17576,34 @@ fn rest_site_update_response() -> RestSiteUpdateResponse {
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| env!("CARGO_PKG_VERSION").to_string());
-    let error = std::env::var("YONA_UPDATE_ERROR")
+    let mut error = std::env::var("YONA_UPDATE_ERROR")
         .ok()
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty());
+    let discovered_update = if error.is_none() {
+        match site_update_metadata_from_env() {
+            Ok(metadata) => metadata,
+            Err(metadata_error) => {
+                error = Some(metadata_error);
+                None
+            }
+        }
+    } else {
+        None
+    };
     let version_to_update = if error.is_none() {
-        std::env::var("YONA_UPDATE_LATEST_VERSION")
+        let configured_version = std::env::var("YONA_UPDATE_LATEST_VERSION")
             .or_else(|_| std::env::var("YONA_UPDATE_VERSION"))
             .ok()
             .map(|value| value.trim().to_string())
-            .filter(|value| !value.is_empty() && value != &current_version)
+            .filter(|value| !value.is_empty());
+        configured_version
+            .or_else(|| {
+                discovered_update
+                    .as_ref()
+                    .map(|metadata| metadata.version.clone())
+            })
+            .filter(|value| !site_update_versions_equal(value, &current_version))
     } else {
         None
     };
@@ -17594,6 +17612,11 @@ fn rest_site_update_response() -> RestSiteUpdateResponse {
             .ok()
             .map(|value| value.trim().to_string())
             .filter(|value| !value.is_empty())
+            .or_else(|| {
+                discovered_update
+                    .as_ref()
+                    .and_then(|metadata| metadata.release_url.clone())
+            })
             .unwrap_or_else(|| {
                 format!("https://github.com/yona-projects/yona/releases/tag/{version}")
             })
@@ -17612,6 +17635,154 @@ fn rest_site_update_response() -> RestSiteUpdateResponse {
         release_url,
         version_to_update,
     }
+}
+
+struct SiteUpdateMetadata {
+    release_url: Option<String>,
+    version: String,
+}
+
+fn site_update_metadata_from_env() -> Result<Option<SiteUpdateMetadata>, String> {
+    let Some(location) =
+        configured_env_value(&["YONA_UPDATE_METADATA_URL", "YONA_UPDATE_METADATA_FILE"])
+    else {
+        return Ok(None);
+    };
+    let payload = site_update_metadata_payload(&location)?;
+    let value: serde_json::Value = serde_json::from_str(&payload)
+        .map_err(|error| format!("site.update.metadata.invalidJson: {error}"))?;
+    let version = site_update_metadata_field(
+        &value,
+        &[
+            "version",
+            "latestVersion",
+            "latest_version",
+            "tagName",
+            "tag_name",
+            "name",
+        ],
+    )
+    .ok_or_else(|| "site.update.metadata.missingVersion".to_string())?;
+    let release_url = site_update_metadata_field(
+        &value,
+        &[
+            "releaseUrl",
+            "release_url",
+            "htmlUrl",
+            "html_url",
+            "downloadUrl",
+            "download_url",
+        ],
+    );
+    Ok(Some(SiteUpdateMetadata {
+        release_url,
+        version,
+    }))
+}
+
+fn site_update_metadata_payload(location: &str) -> Result<String, String> {
+    let location = location.trim();
+    if location.is_empty() {
+        return Err("site.update.metadata.emptyLocation".to_string());
+    }
+    if let Some(path) = location.strip_prefix("file://") {
+        return std::fs::read_to_string(path)
+            .map_err(|error| format!("site.update.metadata.readFailed: {error}"));
+    }
+    if location.starts_with("http://") {
+        return site_update_plain_http_get(location);
+    }
+    if location.contains("://") {
+        return Err("site.update.metadata.unsupportedScheme".to_string());
+    }
+    std::fs::read_to_string(location)
+        .map_err(|error| format!("site.update.metadata.readFailed: {error}"))
+}
+
+fn site_update_metadata_field(value: &serde_json::Value, names: &[&str]) -> Option<String> {
+    names.iter().find_map(|name| {
+        value
+            .get(*name)
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(ToString::to_string)
+    })
+}
+
+fn site_update_versions_equal(left: &str, right: &str) -> bool {
+    left.trim().trim_start_matches(['v', 'V']) == right.trim().trim_start_matches(['v', 'V'])
+}
+
+struct SiteUpdatePlainHttpUrl {
+    host: String,
+    path: String,
+    port: u16,
+}
+
+fn site_update_plain_http_get(url: &str) -> Result<String, String> {
+    let parsed = site_update_parse_plain_http_url(url)?;
+    let address = std::net::ToSocketAddrs::to_socket_addrs(&(parsed.host.as_str(), parsed.port))
+        .map_err(|error| format!("site.update.metadata.resolveFailed: {error}"))?
+        .next()
+        .ok_or_else(|| "site.update.metadata.resolveFailed: no address".to_string())?;
+    let mut stream = std::net::TcpStream::connect_timeout(&address, Duration::from_secs(5))
+        .map_err(|error| format!("site.update.metadata.connectFailed: {error}"))?;
+    stream
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .map_err(|error| format!("site.update.metadata.timeoutFailed: {error}"))?;
+    stream
+        .set_write_timeout(Some(Duration::from_secs(5)))
+        .map_err(|error| format!("site.update.metadata.timeoutFailed: {error}"))?;
+    let request = format!(
+        "GET {} HTTP/1.1\r\nHost: {}\r\nUser-Agent: Yona-Rust-Update-Checker\r\nAccept: application/json\r\nConnection: close\r\n\r\n",
+        parsed.path, parsed.host
+    );
+    std::io::Write::write_all(&mut stream, request.as_bytes())
+        .map_err(|error| format!("site.update.metadata.writeFailed: {error}"))?;
+    let mut response = String::new();
+    std::io::Read::read_to_string(&mut stream, &mut response)
+        .map_err(|error| format!("site.update.metadata.readFailed: {error}"))?;
+    let (head, body) = response
+        .split_once("\r\n\r\n")
+        .ok_or_else(|| "site.update.metadata.invalidHttpResponse".to_string())?;
+    let status_line = head.lines().next().unwrap_or_default();
+    if !status_line.contains(" 2") {
+        return Err(format!(
+            "site.update.metadata.httpStatus: {}",
+            status_line.trim()
+        ));
+    }
+    Ok(body.to_string())
+}
+
+fn site_update_parse_plain_http_url(url: &str) -> Result<SiteUpdatePlainHttpUrl, String> {
+    let without_scheme = url
+        .strip_prefix("http://")
+        .ok_or_else(|| "site.update.metadata.unsupportedScheme".to_string())?;
+    let (authority, raw_path) = without_scheme
+        .split_once('/')
+        .unwrap_or((without_scheme, ""));
+    if authority.is_empty() || authority.contains('@') {
+        return Err("site.update.metadata.invalidHost".to_string());
+    }
+    let (host, port) = if let Some((host, port)) = authority.rsplit_once(':') {
+        let port = port
+            .parse::<u16>()
+            .map_err(|_| "site.update.metadata.invalidPort".to_string())?;
+        (host.to_string(), port)
+    } else {
+        (authority.to_string(), 80)
+    };
+    if host.trim().is_empty() {
+        return Err("site.update.metadata.invalidHost".to_string());
+    }
+    let path = if raw_path.is_empty() {
+        "/".to_string()
+    } else {
+        format!("/{raw_path}")
+    };
+    Ok(SiteUpdatePlainHttpUrl { host, path, port })
 }
 
 fn site_mail_not_configured_items() -> Vec<String> {

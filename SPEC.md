@@ -163,6 +163,7 @@ Deferred 기능의 설정 키는 1차 PoC에서 **설정 호환성**과 **기능
 - `YONA_LANGS`: 설정은 파싱하고 browser runtime config의 `supportedLanguages`로 보존한다. 1차 PoC에서는 legacy copy parity를 우선하며 동적 i18n runtime 전환은 deferred다.
 - `YONA_PROJECT_DEFAULT_MENUS`: 설정은 프로젝트 생성 시 `project_menu_setting` 기본 row와 create-form checkbox 기본값에 반영한다. settings 화면은 legacy menu checkbox mutation으로 `project_menu_setting`을 갱신한다.
 - `YONA_SMTP_HOST`, `YONA_SMTP_PORT`, `YONA_SMTP_SSL`, `YONA_SMTP_USER`, `YONA_SMTP_PASSWORD`: Rust mail 설정/발송 경로에서 기존 `SMTP_*` 이름과 함께 인식한다. `YONA_SMTP_SSL=true`는 legacy `smtp.ssl=true`처럼 SMTPS wrapper transport를 사용하고, 명시적 false는 plain SMTP transport를 사용한다. notification mail body는 legacy `notificationMail.scala.html`의 HTML shell, view link, resource-specific `/unwatch?resource.type=...&resource.id=...` footer link, settings footer link, and external-link `noreferrer` policy를 따른다. mailbox/reply threading은 mail delivery follow-up이다.
+- `YONA_UPDATE_METADATA_URL` / `YONA_UPDATE_METADATA_FILE`: site update 화면에서 JSON metadata의 `version`/`tag_name`과 `releaseUrl`/`html_url`을 읽어 live update-available branch를 채운다. 명시적 `YONA_UPDATE_LATEST_VERSION` / `YONA_UPDATE_VERSION` / `YONA_UPDATE_RELEASE_URL` override가 있으면 우선한다.
 - `YONA_WEBHOOK_DELIVERY_RETRIES`: webhook transient delivery failure retry count로 사용한다. legacy-compatible `WEBHOOK_DELIVERY_RETRIES` alias도 인식하며 runaway retry를 막기 위해 최대 5회로 제한한다. HTTPS/TLS delivery hardening은 별도 follow-up이다.
 - deferred 기능과 연결된 설정은 명시된 no-op/fallback/warning 동작 없이 조용히 무시하면 안 된다.
 
@@ -1077,7 +1078,7 @@ GET   /sites/export            → 데이터 익스포트
 | 메일 설정/테스트       | SMTP 테스트, 대량 메일             | ✅ 구현(`/sites/mail`, `/sites/massmail`, `/sites/mailList`, `/api/v1/site/mail*`) | 6     |
 | 시스템 진단            | Diagnostic.checkAll 오류 목록      | ✅ 구현(`/sites/diagnostic`, `/api/v1/site/diagnostics`) | 6     |
 | 데이터 임포트/익스포트 | 전체 데이터 백업/복원              | export download implemented (`/sites/export`) with post/issue/comment attachment metadata and issue milestone titles; `/sites/import` restores supported `yobi-data` user/project/post/issue body metadata plus post/issue label, comment, body-history, milestone-title, and existing attachment-id relationships from JSON or multipart upload; portable binary attachment archive restore remains deferred | 2차   |
-| 업데이트 확인          | 새 버전 확인                       | configured update status/download link implemented (`/sites/update`, `/api/v1/site/update`); remote live version discovery/download orchestration deferred | 2차   |
+| 업데이트 확인          | 새 버전 확인                       | configured update status/download link plus metadata discovery implemented (`/sites/update`, `/api/v1/site/update`); binary download orchestration deferred | 2차   |
 
 #### 검수 기준
 
@@ -1092,7 +1093,7 @@ GET   /sites/export            → 데이터 익스포트
 - [x] 이슈 목록: site admin 전용 `/api/v1/site/issues`, `open`/`closed` tabs, 30-item pagination, legacy `/sites/issueList` shell/sidebar/list/link anchors
 - [x] 시스템 진단: site admin 전용 `/api/v1/site/diagnostics`, legacy `/sites/diagnostic` shell/sidebar/title area, no-error message, error count, and `<pre>` error rows
 - [x] 메일 테스트/대량 메일: site admin 전용 `/api/v1/site/mail`, `/api/v1/site/mail/test`, `/api/v1/site/mail-list`, legacy `/sites/mail` form shell, `/sites/massmail` recipient lookup/mailto shell, and direct `/sites/mailList` form-urlencoded JSON-array recipient resolver
-- [x] 업데이트 화면: `/sites/update` is site-admin-gated and preserves the legacy `site/update.scala.html` sidebar/title/no-update/update-available/error branches over `/api/v1/site/update`; direct legacy `POST /sites/unwatchUpdate` is site-admin/CSRF-gated and hides the in-process update notification flag; remote live version discovery/download orchestration remains deferred
+- [x] 업데이트 화면: `/sites/update` is site-admin-gated and preserves the legacy `site/update.scala.html` sidebar/title/no-update/update-available/error branches over `/api/v1/site/update`; direct legacy `POST /sites/unwatchUpdate` is site-admin/CSRF-gated and hides the in-process update notification flag; configured `YONA_UPDATE_METADATA_URL` / `YONA_UPDATE_METADATA_FILE` JSON discovery fills the live update-available branch. Binary download orchestration remains deferred
 - [~] 데이터 관리 화면/export/import: `/sites/data` is site-admin-gated and preserves the legacy `site/data.scala.html` title, warning list, export anchor, multipart import form, and `name="data"` file input; `/sites/export` is site-admin-gated and downloads a `yobi-data-*.json` app-runtime snapshot with user/project/post/issue body metadata plus post/issue label, comment, body-history, issue milestone-title, and post/issue/comment attachment metadata; `/sites/import` is site-admin/CSRF-gated and restores supported `yobi-data` user/project/post/issue body metadata plus post/issue label, comment, body-history, milestone-title, and existing attachment-id relationships from JSON or multipart upload. Portable binary attachment archive restore remains deferred.
 
 ---

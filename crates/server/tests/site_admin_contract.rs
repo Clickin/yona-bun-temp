@@ -24,6 +24,25 @@ fn smtp_env_lock() -> &'static Mutex<()> {
     LOCK.get_or_init(|| Mutex::new(()))
 }
 
+fn site_update_env_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
+
+fn clear_site_update_env() {
+    for name in [
+        "YONA_CURRENT_VERSION",
+        "YONA_UPDATE_ERROR",
+        "YONA_UPDATE_LATEST_VERSION",
+        "YONA_UPDATE_METADATA_FILE",
+        "YONA_UPDATE_METADATA_URL",
+        "YONA_UPDATE_RELEASE_URL",
+        "YONA_UPDATE_VERSION",
+    ] {
+        std::env::remove_var(name);
+    }
+}
+
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
         .await
@@ -1798,6 +1817,10 @@ async fn site_admin_diagnostics_are_site_admin_only_and_report_legacy_error_list
 
 #[tokio::test]
 async fn site_admin_update_status_follows_legacy_update_view_branches() {
+    let _guard = site_update_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    clear_site_update_env();
     let (app, _repo, db) = build_app_with_repository().await;
     let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
     let (_member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
@@ -1828,6 +1851,43 @@ async fn site_admin_update_status_follows_legacy_update_view_branches() {
     assert!(payload["versionToUpdate"].is_null());
     assert!(payload["releaseUrl"].is_null());
     assert!(payload["error"].is_null());
+}
+
+#[tokio::test]
+async fn site_admin_update_status_discovers_live_metadata_when_configured() {
+    let _guard = site_update_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    clear_site_update_env();
+    let metadata_dir = tempfile::tempdir().expect("metadata tempdir");
+    let metadata_path = metadata_dir.path().join("latest.json");
+    std::fs::write(
+        &metadata_path,
+        r#"{"tag_name":"v9.9.9","html_url":"https://downloads.example.test/yona/v9.9.9"}"#,
+    )
+    .expect("write metadata");
+    std::env::set_var("YONA_CURRENT_VERSION", "9.9.8");
+    std::env::set_var(
+        "YONA_UPDATE_METADATA_URL",
+        format!("file://{}", metadata_path.display()),
+    );
+
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let payload =
+        response_json(rest_get(app, "/yona/api/v1/site/update", Some(&admin_cookie)).await).await;
+    assert_eq!(payload["currentVersion"], "9.9.8");
+    assert_eq!(payload["message"], "site.update.isAvailable");
+    assert_eq!(payload["versionToUpdate"], "v9.9.9");
+    assert_eq!(
+        payload["releaseUrl"],
+        "https://downloads.example.test/yona/v9.9.9"
+    );
+    assert!(payload["error"].is_null());
+
+    clear_site_update_env();
 }
 
 #[tokio::test]
