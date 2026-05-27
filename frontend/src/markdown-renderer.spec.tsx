@@ -200,6 +200,48 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-punctuation">{</span>');
   });
 
+  it("recognizes legacy code language aliases and JVM keywords in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```rs",
+          "pub fn main() {",
+          "  let value = 1;",
+          "}",
+          "```",
+          "",
+          "```java",
+          "package models;",
+          "public final class Issue {}",
+          "```",
+          "",
+          "```scala",
+          "object Issue {",
+          "  val state = true",
+          "}",
+          "```",
+          "",
+          "```ts",
+          "export type IssueState = 'open';",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="rs">');
+    expect(html).toContain('class="syntax-token syntax-keyword">pub</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">fn</span>');
+    expect(html).toContain('<code class="java">');
+    expect(html).toContain('class="syntax-token syntax-keyword">package</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">final</span>');
+    expect(html).toContain('<code class="scala">');
+    expect(html).toContain('class="syntax-token syntax-keyword">object</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">val</span>');
+    expect(html).toContain('<code class="ts">');
+    expect(html).toContain('class="syntax-token syntax-keyword">export</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">type</span>');
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,
