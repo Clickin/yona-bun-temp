@@ -462,7 +462,7 @@ POST  /:owner/:project/changeVCS      → VCS 변경
 | -------------------- | -------------------------------------------------- | ----------------- | ----- |
 | 프로젝트 목록 (공개) | 검색, 페이지네이션(10개), 메타데이터, 로고, 멤버수 | ✅ 구현           | 1     |
 | 프로젝트 생성        | owner 선택(개인/조직), 이름, VCS 타입, 공개범위    | ✅ legacy shell + VCS 구현 | 1     |
-| Git 프로젝트 가져오기 | 원격 Git URL, 저장소 인증, owner, 이름, 공개범위    | 🔶 legacy form shell 구현, clone mutation deferred | 3     |
+| Git 프로젝트 가져오기 | 원격 Git URL, 저장소 인증, owner, 이름, 공개범위    | ✅ legacy shell + native clone mutation 구현 | 3     |
 | 프로젝트 홈          | overview(README), 최근 활동, 코드 링크             | ✅ 기본 구현(`tabId` history/dashboard shell 보강) | 1     |
 | 프로젝트 설정        | 이름/설명/공개범위 변경, 메뉴 토글                 | ✅ 구현           | 1     |
 | 프로젝트 삭제        | 확인 + 삭제                                        | ✅ 구현           | 2     |
