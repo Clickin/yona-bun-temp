@@ -2,7 +2,7 @@
 
 use std::collections::VecDeque;
 use std::io::{Read, Write};
-use std::net::{TcpStream, ToSocketAddrs};
+use std::net::{IpAddr, TcpStream, ToSocketAddrs};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
@@ -668,6 +668,15 @@ pub fn webhook_delivery_retry_count_from_env() -> usize {
         .min(5)
 }
 
+pub fn webhook_private_network_delivery_allowed() -> bool {
+    configured_env_value(&[
+        "YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
+        "WEBHOOK_ALLOW_PRIVATE_NETWORKS",
+    ])
+    .map(|value| parse_bool_env_value(&value))
+    .unwrap_or(false)
+}
+
 pub fn smtp_delivery_config_from_env() -> SmtpDeliveryConfig {
     let ssl_enabled = smtp_ssl_enabled_from_env();
     SmtpDeliveryConfig {
@@ -793,11 +802,18 @@ fn post_webhook_over_plain_http(
     record: &WebhookDeliveryRecord,
 ) -> Result<WebhookDeliveryOutcome, String> {
     let parsed = parse_plain_http_url(&record.payload_url)?;
-    let address = (parsed.host.as_str(), parsed.port)
+    let addresses = (parsed.host.as_str(), parsed.port)
         .to_socket_addrs()
         .map_err(|error| format!("webhook address resolution failed: {error}"))?
-        .next()
-        .ok_or_else(|| "webhook address resolution returned no endpoints".to_string())?;
+        .collect::<Vec<_>>();
+    if addresses.is_empty() {
+        return Err("webhook address resolution returned no endpoints".to_string());
+    }
+    let allow_private_networks = webhook_private_network_delivery_allowed();
+    let address = addresses
+        .into_iter()
+        .find(|address| webhook_endpoint_allowed(address.ip(), allow_private_networks))
+        .ok_or_else(|| "webhook delivery refused private or unsafe endpoints".to_string())?;
     let mut stream = TcpStream::connect_timeout(&address, Duration::from_secs(5))
         .map_err(|error| format!("webhook connection failed: {error}"))?;
     stream
@@ -833,6 +849,28 @@ fn post_webhook_over_plain_http(
         })
     } else {
         Err(format!("webhook request failed: {status}"))
+    }
+}
+
+fn webhook_endpoint_allowed(address: IpAddr, allow_private_networks: bool) -> bool {
+    if allow_private_networks {
+        return true;
+    }
+    match address {
+        IpAddr::V4(address) => {
+            !(address.is_loopback()
+                || address.is_private()
+                || address.is_link_local()
+                || address.is_unspecified()
+                || address.is_multicast())
+        }
+        IpAddr::V6(address) => {
+            !(address.is_loopback()
+                || address.is_unique_local()
+                || address.is_unicast_link_local()
+                || address.is_unspecified()
+                || address.is_multicast())
+        }
     }
 }
 
@@ -899,4 +937,70 @@ fn parse_bool_env_value(value: &str) -> bool {
         value.trim().to_ascii_lowercase().as_str(),
         "1" | "true" | "yes" | "on"
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+    use std::sync::{Mutex, OnceLock};
+
+    use super::{webhook_endpoint_allowed, webhook_private_network_delivery_allowed};
+
+    fn webhook_env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
+
+    fn clear_webhook_private_network_env() {
+        std::env::remove_var("YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS");
+        std::env::remove_var("WEBHOOK_ALLOW_PRIVATE_NETWORKS");
+    }
+
+    #[test]
+    fn webhook_endpoint_blocks_private_networks_by_default() {
+        assert!(!webhook_endpoint_allowed(
+            IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
+            false
+        ));
+        assert!(!webhook_endpoint_allowed(
+            IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1)),
+            false
+        ));
+        assert!(!webhook_endpoint_allowed(
+            IpAddr::V6(Ipv6Addr::LOCALHOST),
+            false
+        ));
+        assert!(webhook_endpoint_allowed(
+            IpAddr::V4(Ipv4Addr::new(93, 184, 216, 34)),
+            false
+        ));
+    }
+
+    #[test]
+    fn webhook_private_network_delivery_env_uses_yona_alias() {
+        let _guard = webhook_env_lock().lock().unwrap();
+        clear_webhook_private_network_env();
+        assert!(!webhook_private_network_delivery_allowed());
+
+        std::env::set_var("YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "true");
+        assert!(webhook_private_network_delivery_allowed());
+
+        std::env::remove_var("YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS");
+        std::env::set_var("WEBHOOK_ALLOW_PRIVATE_NETWORKS", "on");
+        assert!(webhook_private_network_delivery_allowed());
+
+        clear_webhook_private_network_env();
+    }
+
+    #[test]
+    fn webhook_endpoint_allows_private_networks_when_configured() {
+        assert!(webhook_endpoint_allowed(
+            IpAddr::V4(Ipv4Addr::new(192, 168, 1, 10)),
+            true
+        ));
+        assert!(webhook_endpoint_allowed(
+            IpAddr::V6(Ipv6Addr::LOCALHOST),
+            true
+        ));
+    }
 }
