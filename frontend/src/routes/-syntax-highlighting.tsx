@@ -298,6 +298,76 @@ const rubyKeywords = new Set([
   "yield",
 ]);
 
+const phpKeywords = new Set([
+  "abstract",
+  "and",
+  "array",
+  "as",
+  "break",
+  "case",
+  "catch",
+  "class",
+  "clone",
+  "const",
+  "continue",
+  "declare",
+  "default",
+  "die",
+  "do",
+  "echo",
+  "else",
+  "elseif",
+  "empty",
+  "enddeclare",
+  "endfor",
+  "endforeach",
+  "endif",
+  "endswitch",
+  "endwhile",
+  "eval",
+  "exit",
+  "extends",
+  "false",
+  "final",
+  "finally",
+  "for",
+  "foreach",
+  "function",
+  "global",
+  "goto",
+  "if",
+  "implements",
+  "include",
+  "include_once",
+  "instanceof",
+  "interface",
+  "isset",
+  "list",
+  "namespace",
+  "new",
+  "null",
+  "or",
+  "print",
+  "private",
+  "protected",
+  "public",
+  "require",
+  "require_once",
+  "return",
+  "static",
+  "switch",
+  "throw",
+  "trait",
+  "true",
+  "try",
+  "unset",
+  "use",
+  "var",
+  "while",
+  "xor",
+  "yield",
+]);
+
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
 
 export function highlightCodeBlock(code: string, language: string | undefined) {
@@ -381,6 +451,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "rb") {
     return "ruby";
   }
+  if (["php", "php3", "php4", "php5", "php6"].includes(normalized)) {
+    return "php";
+  }
   return normalized;
 }
 
@@ -395,6 +468,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "shell" && shellKeywords.has(token)) ||
     (language === "sql" && sqlKeywords.has(token.toLowerCase())) ||
     (language === "ruby" && rubyKeywords.has(token)) ||
+    (language === "php" && phpKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );
 }

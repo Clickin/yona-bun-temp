@@ -309,6 +309,29 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
   });
 
+  it("recognizes legacy Highlight.js PHP language aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```php3",
+          "<?php",
+          "function render_issue($issue) {",
+          "  echo true;",
+          "  return null;",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="php3">');
+    expect(html).toContain('class="syntax-token syntax-keyword">function</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">echo</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">null</span>');
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,
