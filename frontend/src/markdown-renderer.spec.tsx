@@ -332,6 +332,29 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">null</span>');
   });
 
+  it("recognizes legacy Highlight.js C++ language aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```hpp",
+          "template <typename T>",
+          "constexpr T value() noexcept {",
+          "  return static_cast<T>(0);",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="hpp">');
+    expect(html).toContain('class="syntax-token syntax-keyword">template</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">typename</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">constexpr</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">noexcept</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">static_cast</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,
