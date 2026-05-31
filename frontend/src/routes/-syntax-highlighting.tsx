@@ -140,6 +140,44 @@ const scalaKeywords = new Set([
   "yield",
 ]);
 
+const pythonKeywords = new Set([
+  "False",
+  "None",
+  "True",
+  "and",
+  "as",
+  "assert",
+  "async",
+  "await",
+  "break",
+  "class",
+  "continue",
+  "def",
+  "del",
+  "elif",
+  "else",
+  "except",
+  "finally",
+  "for",
+  "from",
+  "global",
+  "if",
+  "import",
+  "in",
+  "is",
+  "lambda",
+  "nonlocal",
+  "not",
+  "or",
+  "pass",
+  "raise",
+  "return",
+  "try",
+  "while",
+  "with",
+  "yield",
+]);
+
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
 
 export function highlightCodeBlock(code: string, language: string | undefined) {
@@ -211,6 +249,9 @@ function normalizeCodeLanguage(language: string) {
   if (["less", "scss"].includes(normalized)) {
     return "css";
   }
+  if (normalized === "py") {
+    return "python";
+  }
   return normalized;
 }
 
@@ -221,6 +262,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "rust" && rustKeywords.has(token)) ||
     (language === "java" && javaKeywords.has(token)) ||
     (language === "scala" && scalaKeywords.has(token)) ||
+    (language === "python" && pythonKeywords.has(token)) ||
     (language === "css" && cssKeywords.has(token))
   );
 }

@@ -242,6 +242,22 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">type</span>');
   });
 
+  it("recognizes legacy Highlight.js python language aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```py", "def render(value):", "  return True if value else None", "```"].join(
+          "\n",
+        )}
+      />,
+    );
+
+    expect(html).toContain('<code class="py">');
+    expect(html).toContain('class="syntax-token syntax-keyword">def</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">True</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">None</span>');
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,
