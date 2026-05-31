@@ -271,7 +271,7 @@ async fn seed_search_rows(
     app: axum::Router,
     repo: &AppRepository,
     db: &DatabaseConnection,
-) -> String {
+) -> (String, i64) {
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     let (_, _, reviewer_id) = register_user(app.clone(), "reviewer").await;
     let _ = register_user(app.clone(), "needle-user").await;
@@ -357,13 +357,13 @@ async fn seed_search_rows(
     .expect("milestone");
     seed_review_comment(db, repo, owner_id, reviewer_id).await;
 
-    owner_cookie
+    (owner_cookie, owner_id)
 }
 
 #[tokio::test]
 async fn global_search_returns_legacy_counts_auto_issue_and_snippet_metadata() {
     let (app, repo, db) = build_app_with_repository().await;
-    let owner_cookie = seed_search_rows(app.clone(), &repo, &db).await;
+    let (owner_cookie, _) = seed_search_rows(app.clone(), &repo, &db).await;
 
     let payload = response_json(
         rest_get(
@@ -402,9 +402,47 @@ async fn global_search_returns_legacy_counts_auto_issue_and_snippet_metadata() {
 }
 
 #[tokio::test]
+async fn issue_search_ranks_title_matches_before_newer_body_only_matches() {
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_cookie, owner_id) = seed_search_rows(app.clone(), &repo, &db).await;
+
+    repo.create_issue(CreateIssueInput {
+        actor_display_name: "owner".to_string(),
+        actor_id: owner_id,
+        actor_login_id: "owner".to_string(),
+        owner_name: "owner".to_string(),
+        project_name: "projectYobi".to_string(),
+        values: IssueMutationInput {
+            assignee_login_id: None,
+            attachment_ids: Vec::new(),
+            body_markdown: "Needle appears only in this newer body".to_string(),
+            label_ids: Vec::new(),
+            milestone_id: None,
+            title: "Recent unrelated issue".to_string(),
+        },
+    })
+    .await
+    .unwrap()
+    .expect("newer body-only issue");
+
+    let payload = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/search?keyword=Needle&searchType=issue&pageNum=1",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(payload["items"][0]["title"], "Needle issue title");
+    assert_eq!(payload["items"][1]["title"], "Recent unrelated issue");
+}
+
+#[tokio::test]
 async fn scoped_search_rejects_invalid_project_type_and_returns_review_links() {
     let (app, repo, db) = build_app_with_repository().await;
-    let owner_cookie = seed_search_rows(app.clone(), &repo, &db).await;
+    let (owner_cookie, _) = seed_search_rows(app.clone(), &repo, &db).await;
 
     let invalid = rest_get(
         app.clone(),

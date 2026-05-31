@@ -72,8 +72,8 @@ use sea_orm::{
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, SystemTime};
 use yona_rust_search::{
-    keyword_matches, make_snippets, resolve_search_type, SearchSnippet, SearchType,
-    SearchTypeCounts,
+    keyword_matches, make_snippets, relevance_score, resolve_search_type, SearchSnippet,
+    SearchType, SearchTypeCounts,
 };
 
 fn normalize_identity(value: &str) -> String {
@@ -1733,7 +1733,7 @@ impl AppRepository {
             .order_by_desc(issue::Column::Id)
             .all(&self.db)
             .await?;
-        let mut items = Vec::new();
+        let mut ranked_items = Vec::new();
         for row in rows {
             let Some(project) = self.search_project_for_id(row.project_id).await? else {
                 continue;
@@ -1757,28 +1757,37 @@ impl AppRepository {
                 continue;
             }
             let snippets = self.search_snippets(&title, &body, &input.keyword);
-            items.push(SearchItemRecord {
-                author_label: row.author_name.unwrap_or_default(),
-                author_login_id: row.author_login_id.unwrap_or_default(),
-                created_label: format_workspace_date_label(row.created_date),
-                href: format!(
-                    "/{}/{}/issue/{}",
-                    project.owner_name,
-                    project.project_name,
-                    row.number.unwrap_or_default()
-                ),
-                id: row.id.to_string(),
-                number: row.number.unwrap_or_default().to_string(),
-                owner_name: project.owner_name,
-                project_name: project.project_name,
-                snippets,
-                state: issue_state_from_raw(row.state),
-                title,
-                r#type: "issue".to_string(),
-                updated_label: format_workspace_date_label(row.updated_date.or(row.created_date)),
-            });
+            let score = relevance_score(&title, &body, &input.keyword);
+            let ordinal = ranked_items.len();
+            ranked_items.push((
+                score,
+                ordinal,
+                SearchItemRecord {
+                    author_label: row.author_name.unwrap_or_default(),
+                    author_login_id: row.author_login_id.unwrap_or_default(),
+                    created_label: format_workspace_date_label(row.created_date),
+                    href: format!(
+                        "/{}/{}/issue/{}",
+                        project.owner_name,
+                        project.project_name,
+                        row.number.unwrap_or_default()
+                    ),
+                    id: row.id.to_string(),
+                    number: row.number.unwrap_or_default().to_string(),
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                    snippets,
+                    state: issue_state_from_raw(row.state),
+                    title,
+                    r#type: "issue".to_string(),
+                    updated_label: format_workspace_date_label(
+                        row.updated_date.or(row.created_date),
+                    ),
+                },
+            ));
         }
-        Ok(items)
+        ranked_items.sort_by(|left, right| right.0.cmp(&left.0).then_with(|| left.1.cmp(&right.1)));
+        Ok(ranked_items.into_iter().map(|(_, _, item)| item).collect())
     }
 
     async fn search_user_items(

@@ -103,6 +103,25 @@ pub fn keyword_matches(value: &str, keyword: &str) -> bool {
     !keyword.is_empty() && value.to_lowercase().contains(&keyword.to_lowercase())
 }
 
+pub fn relevance_score(title: &str, body: &str, keyword: &str) -> u32 {
+    const TITLE_MATCH_WEIGHT: u32 = 100;
+    count_keyword_matches(title, keyword) * TITLE_MATCH_WEIGHT
+        + count_keyword_matches(body, keyword)
+}
+
+fn count_keyword_matches(value: &str, keyword: &str) -> u32 {
+    let keyword = keyword.trim().to_lowercase();
+    if keyword.is_empty() {
+        return 0;
+    }
+    value
+        .to_lowercase()
+        .match_indices(&keyword)
+        .count()
+        .try_into()
+        .unwrap_or(u32::MAX)
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchHighlight {
@@ -238,5 +257,17 @@ mod tests {
     fn keyword_matching_is_case_insensitive_without_regex_interpretation() {
         assert!(keyword_matches("Use [literal] Search", "[LITERAL]"));
         assert!(!keyword_matches("Use literal Search", "[literal]"));
+    }
+
+    #[test]
+    fn relevance_score_prioritizes_title_hits_over_body_hits() {
+        assert!(
+            relevance_score("Needle title", "", "needle")
+                > relevance_score("", "Needle body", "needle")
+        );
+        assert!(
+            relevance_score("", "Needle Needle", "needle")
+                > relevance_score("", "Needle", "needle")
+        );
     }
 }
