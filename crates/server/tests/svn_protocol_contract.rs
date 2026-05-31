@@ -1638,7 +1638,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert!(
         text.contains("<S:get-location-segments-report")
             && text.contains(&format!(
-                r#"<S:location-segment path="/trunk" range-start="{revision}" range-end="{revision}"/>"#
+                r#"<S:location-segment path="trunk" range-start="{revision}" range-end="{revision}"/>"#
             )),
         "SVN get-location-segments REPORT should return the path segment for the requested revision range: {text}"
     );
@@ -2903,6 +2903,96 @@ async fn svn_protocol_external_client_can_checkout_public_project() {
         )
     });
     assert_eq!(contents, "hello from external svn checkout\n");
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
+async fn svn_protocol_external_client_can_switch_working_copy_directory() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!("skipping external SVN switch smoke because svnadmin/svnlook/svn is unavailable");
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello from trunk before svn switch\n").expect("seed svn readme");
+    yona_rust_vcs::svn_copy_path(
+        &repo_path,
+        None,
+        "trunk",
+        "branch-switch",
+        "seed switch branch",
+    )
+    .expect("seed switch branch copy");
+    yona_rust_vcs::svn_put_file(
+        &repo_path,
+        "branch-switch/README.md",
+        b"hello from branch after svn switch\n",
+        "seed switch branch contents",
+    )
+    .expect("seed switch branch contents");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let trunk_url = format!("{base_url}/yona/svn/owner/projectYobi/trunk");
+    let branch_url = format!("{base_url}/yona/svn/owner/projectYobi/branch-switch");
+    let checkout_dir = tempdir().expect("svn switch checkout tempdir");
+    run_svn_blocking(
+        vec![
+            "checkout".to_string(),
+            "--non-interactive".to_string(),
+            trunk_url,
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    run_svn_blocking(
+        vec![
+            "switch".to_string(),
+            "--non-interactive".to_string(),
+            branch_url.clone(),
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let readme = checkout_dir.path().join("README.md");
+    let contents = std::fs::read_to_string(&readme).unwrap_or_else(|error| {
+        panic!(
+            "switch should materialize branch README at {}; error: {error}; paths: {:?}",
+            readme.display(),
+            list_relative_paths(checkout_dir.path())
+        )
+    });
+    assert_eq!(contents, "hello from branch after svn switch\n");
+    let info_output = tokio::task::spawn_blocking({
+        let checkout_path = checkout_dir.path().to_path_buf();
+        move || run_svn_capture(&["info", "--non-interactive"], Some(&checkout_path))
+    })
+    .await
+    .expect("svn switch info task");
+    assert!(
+        info_output.status.success(),
+        "svn info should succeed after switch\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&info_output.stdout),
+        String::from_utf8_lossy(&info_output.stderr)
+    );
+    let info_stdout = String::from_utf8_lossy(&info_output.stdout);
+    assert!(
+        info_stdout.contains(&format!("URL: {branch_url}")),
+        "svn info should report switched URL\nstdout: {info_stdout}"
+    );
 
     let _ = shutdown.send(());
 }
@@ -4343,6 +4433,69 @@ async fn svn_protocol_external_client_can_move_direct_url() {
     assert!(
         matches!(original, Err(yona_rust_vcs::VcsError::NotFound)),
         "svn direct URL move should remove the original README.md"
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
+async fn svn_protocol_external_client_can_move_directory_direct_url() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping external SVN direct URL directory move smoke because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello before direct URL svn directory move\n")
+        .expect("seed svn readme");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let source_url = format!("{base_url}/yona/svn/owner/projectYobi/trunk");
+    let moved_url = format!("{base_url}/yona/svn/owner/projectYobi/trunk-moved");
+    let move_output = tokio::task::spawn_blocking(move || {
+        run_svn_capture(
+            &[
+                "move",
+                "--non-interactive",
+                "--username",
+                "owner",
+                "--password",
+                "doorpass1",
+                "-m",
+                "external svn direct URL directory move smoke",
+                source_url.as_str(),
+                moved_url.as_str(),
+            ],
+            None,
+        )
+    })
+    .await
+    .expect("svn direct URL directory move task");
+    assert!(
+        move_output.status.success(),
+        "svn move URL URL should move directories against the mounted DAV boundary\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&move_output.stdout),
+        String::from_utf8_lossy(&move_output.stderr)
+    );
+
+    let moved = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk-moved/README.md")
+        .expect("read direct URL moved directory file");
+    assert_eq!(moved, b"hello before direct URL svn directory move\n");
+    let original = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
+    assert!(
+        matches!(original, Err(yona_rust_vcs::VcsError::NotFound)),
+        "svn direct URL directory move should remove the original trunk/README.md"
     );
 
     let _ = shutdown.send(());

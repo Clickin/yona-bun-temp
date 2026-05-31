@@ -301,6 +301,8 @@ pub struct SvnChangedPath {
     pub path: String,
     pub is_dir: bool,
     pub action: SvnChangedAction,
+    pub copy_from_path: Option<String>,
+    pub copy_from_revision: Option<i64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -676,7 +678,7 @@ pub fn svn_changed_paths(repo_path: &Path, revision: i64) -> Result<Vec<SvnChang
     }
 
     let output = svn_command("svnlook")
-        .args(["changed", "-r", &revision.to_string()])
+        .args(["changed", "--copy-info", "-r", &revision.to_string()])
         .arg(repo_path)
         .output()
         .map_err(|_| VcsError::SvnLookUnavailable)?;
@@ -1295,8 +1297,15 @@ fn parse_svnlook_lock(path: &str, output: &str) -> Option<SvnLock> {
 
 fn parse_svnlook_changed(output: &str) -> Result<Vec<SvnChangedPath>, VcsError> {
     let mut paths = Vec::new();
-    for line in output.lines() {
+    let lines = output.lines().collect::<Vec<_>>();
+    let mut index = 0;
+    while index < lines.len() {
+        let line = lines[index];
+        index += 1;
         if line.trim().is_empty() {
+            continue;
+        }
+        if parse_svnlook_copy_info(line)?.is_some() {
             continue;
         }
         let mut columns = line.chars();
@@ -1315,13 +1324,41 @@ fn parse_svnlook_changed(output: &str) -> Result<Vec<SvnChangedPath>, VcsError> 
         if clean_path.is_empty() {
             continue;
         }
+        let mut copy_from_path = None;
+        let mut copy_from_revision = None;
+        if let Some(next_line) = lines.get(index) {
+            if let Some(copy_info) = parse_svnlook_copy_info(next_line)? {
+                copy_from_path = Some(copy_info.0);
+                copy_from_revision = Some(copy_info.1);
+                index += 1;
+            }
+        }
         paths.push(SvnChangedPath {
             path: clean_path,
             is_dir: raw_path.ends_with('/'),
             action,
+            copy_from_path,
+            copy_from_revision,
         });
     }
     Ok(paths)
+}
+
+fn parse_svnlook_copy_info(line: &str) -> Result<Option<(String, i64)>, VcsError> {
+    let trimmed = line.trim();
+    let Some(rest) = trimmed
+        .strip_prefix("(from ")
+        .and_then(|value| value.strip_suffix(')'))
+    else {
+        return Ok(None);
+    };
+    let Some((path, revision)) = rest.rsplit_once(":r") else {
+        return Ok(None);
+    };
+    let revision = revision
+        .parse::<i64>()
+        .map_err(|_| VcsError::SvnLookFailed(format!("invalid copy revision: {line}")))?;
+    Ok(Some((normalize_repo_path(path)?, revision)))
 }
 
 fn svn_lock_comment_file(label: &str) -> Result<PathBuf, VcsError> {
@@ -3280,28 +3317,55 @@ mod tests {
                     path: "trunk".to_string(),
                     is_dir: true,
                     action: SvnChangedAction::Added,
+                    copy_from_path: None,
+                    copy_from_revision: None,
                 },
                 SvnChangedPath {
                     path: "trunk/README.md".to_string(),
                     is_dir: false,
                     action: SvnChangedAction::Added,
+                    copy_from_path: None,
+                    copy_from_revision: None,
                 },
                 SvnChangedPath {
                     path: "trunk".to_string(),
                     is_dir: true,
                     action: SvnChangedAction::Modified,
+                    copy_from_path: None,
+                    copy_from_revision: None,
                 },
                 SvnChangedPath {
                     path: "old.txt".to_string(),
                     is_dir: false,
                     action: SvnChangedAction::Deleted,
+                    copy_from_path: None,
+                    copy_from_revision: None,
                 },
                 SvnChangedPath {
                     path: "moved.txt".to_string(),
                     is_dir: false,
                     action: SvnChangedAction::Replaced,
+                    copy_from_path: None,
+                    copy_from_revision: None,
                 },
             ]
+        );
+    }
+
+    #[test]
+    fn parse_svnlook_changed_reads_copy_info() {
+        let changed = parse_svnlook_changed("A + branch-switch/\n    (from trunk/:r1)\n")
+            .expect("parse changed copy output");
+
+        assert_eq!(
+            changed,
+            vec![SvnChangedPath {
+                path: "branch-switch".to_string(),
+                is_dir: true,
+                action: SvnChangedAction::Added,
+                copy_from_path: Some("trunk".to_string()),
+                copy_from_revision: Some(1),
+            }]
         );
     }
 }

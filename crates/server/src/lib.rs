@@ -4304,9 +4304,14 @@ fn svn_protocol_update_report_response(
             }
         },
     };
-    let requested_path = svn_protocol_xml_text(request, "src-path")
-        .map(|path| svn_protocol_repo_relative_request_path(route, &path))
-        .unwrap_or_default();
+    let requested_path = if request.contains("<S:update-target>") {
+        svn_protocol_xml_text(request, "src-path")
+    } else {
+        svn_protocol_xml_text(request, "dst-path")
+            .or_else(|| svn_protocol_xml_text(request, "src-path"))
+    }
+    .map(|path| svn_protocol_repo_relative_request_path(route, &path))
+    .unwrap_or_default();
     let base_path = svn_protocol_file_lookup_for_route(route)
         .map(|(_, path)| path)
         .unwrap_or_default();
@@ -5540,11 +5545,35 @@ fn svn_protocol_get_location_segments_report_response(
             }
         };
     let segment = if exists {
-        format!(
-            r#"  <S:location-segment path="/{}" range-start="{start_revision}" range-end="{end_revision}"/>
+        match svn_protocol_location_segments(
+            repo_path,
+            &location_path,
+            start_revision,
+            end_revision,
+        ) {
+            Ok(segments) => segments
+                .into_iter()
+                .map(|segment| {
+                    format!(
+                        r#"  <S:location-segment path="{}" range-start="{}" range-end="{}"/>
 "#,
-            xml_escape(location_path.trim_matches('/'))
-        )
+                        xml_escape(segment.path.trim_matches('/')),
+                        segment.range_start,
+                        segment.range_end
+                    )
+                })
+                .collect::<String>(),
+            Err(VcsError::NotFound) => String::new(),
+            Err(VcsError::InvalidPath) => {
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+            }
+            Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "REPORT")
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        }
     } else {
         String::new()
     };
@@ -5560,6 +5589,59 @@ fn svn_protocol_get_location_segments_report_response(
         HeaderValue::from_static("application/xml; charset=utf-8"),
     );
     response
+}
+
+struct SvnLocationSegment {
+    path: String,
+    range_start: i64,
+    range_end: i64,
+}
+
+fn svn_protocol_location_segments(
+    repo_path: &StdPath,
+    path: &str,
+    start_revision: i64,
+    end_revision: i64,
+) -> Result<Vec<SvnLocationSegment>, VcsError> {
+    if start_revision < 0 || end_revision < 0 {
+        return Err(VcsError::InvalidPath);
+    }
+    let mut segments = Vec::new();
+    let mut current_path = path.trim_matches('/').to_string();
+    let mut current_range_end = start_revision;
+    let mut revision = start_revision;
+    while revision >= end_revision && revision > 0 {
+        let copy = yona_rust_vcs::svn_changed_paths(repo_path, revision)?
+            .into_iter()
+            .find(|changed_path| {
+                changed_path.path.trim_matches('/') == current_path.trim_matches('/')
+                    && changed_path.copy_from_path.is_some()
+                    && changed_path.copy_from_revision.is_some()
+            });
+        if let Some(copy) = copy {
+            segments.push(SvnLocationSegment {
+                path: current_path.clone(),
+                range_start: revision,
+                range_end: current_range_end,
+            });
+            current_path = copy.copy_from_path.unwrap_or_default();
+            current_range_end = copy
+                .copy_from_revision
+                .unwrap_or(revision.saturating_sub(1));
+            revision = current_range_end;
+            continue;
+        }
+        revision -= 1;
+    }
+    let range_start = end_revision.max(1);
+    if current_range_end >= range_start {
+        segments.push(SvnLocationSegment {
+            path: current_path,
+            range_start,
+            range_end: current_range_end,
+        });
+    }
+    Ok(segments)
 }
 
 fn svn_protocol_lock_item(lock: &yona_rust_vcs::SvnLock) -> String {
