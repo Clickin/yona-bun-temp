@@ -145,7 +145,13 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i6
     (csrf, cookie_header, actor_id)
 }
 
-async fn create_project(app: axum::Router, cookie: &str, csrf: &str, scope: &str) {
+async fn create_named_project(
+    app: axum::Router,
+    cookie: &str,
+    csrf: &str,
+    project_name: &str,
+    scope: &str,
+) {
     response_json(
         rpc(
             app,
@@ -154,7 +160,7 @@ async fn create_project(app: axum::Router, cookie: &str, csrf: &str, scope: &str
             Some(csrf),
             json!({
                 "ownerName": "owner",
-                "projectName": "projectYobi",
+                "projectName": project_name,
                 "overview": "Needle project overview",
                 "projectScope": scope
             }),
@@ -162,6 +168,10 @@ async fn create_project(app: axum::Router, cookie: &str, csrf: &str, scope: &str
         .await,
     )
     .await;
+}
+
+async fn create_project(app: axum::Router, cookie: &str, csrf: &str, scope: &str) {
+    create_named_project(app, cookie, csrf, "projectYobi", scope).await;
 }
 
 async fn write_text_column(
@@ -475,6 +485,84 @@ async fn post_search_ranks_title_matches_before_newer_body_only_matches() {
 
     assert_eq!(payload["items"][0]["title"], "Needle post title");
     assert_eq!(payload["items"][1]["title"], "Recent unrelated post");
+}
+
+#[tokio::test]
+async fn post_search_visibility_matches_legacy_public_and_private_acl() {
+    let (app, repo, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    create_named_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "publicSearch",
+        "public",
+    )
+    .await;
+    create_named_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "privateSearch",
+        "private",
+    )
+    .await;
+
+    for (project_name, title) in [
+        ("publicSearch", "ScopeNeedle public post"),
+        ("privateSearch", "ScopeNeedle private post"),
+    ] {
+        repo.create_posting(CreatePostingInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: project_name.to_string(),
+            values: PostingMutationInput {
+                attachment_ids: Vec::new(),
+                body_markdown: format!("ScopeNeedle body for {project_name}"),
+                label_ids: Vec::new(),
+                notice: false,
+                readme: false,
+                title: title.to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("post");
+    }
+
+    let anonymous = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/search?keyword=ScopeNeedle&searchType=post&pageNum=1",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(anonymous["counts"]["posts"], 1);
+    assert_eq!(anonymous["items"][0]["projectName"], "publicSearch");
+    assert_eq!(anonymous["items"][0]["title"], "ScopeNeedle public post");
+
+    let owner = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/search?keyword=ScopeNeedle&searchType=post&pageNum=1",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(owner["counts"]["posts"], 2);
+    let titles = owner["items"]
+        .as_array()
+        .expect("owner post search items")
+        .iter()
+        .map(|item| item["title"].as_str().unwrap_or_default())
+        .collect::<Vec<_>>();
+    assert!(titles.contains(&"ScopeNeedle public post"));
+    assert!(titles.contains(&"ScopeNeedle private post"));
 }
 
 #[tokio::test]

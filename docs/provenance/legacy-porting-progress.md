@@ -323,6 +323,7 @@ Interpretation:
 - [x] Result grouping/counts
 - [x] Pagination/snippets/access filtering
 - [x] Legacy Korean snippet window and overlap behavior borrowed from `SearchResultTests`
+- [x] Legacy post search public/private ACL behavior borrowed from `SearchTests`
 - [ ] Full-text/index-backed search, async indexing, and index-backed ranking beyond the lightweight scorer
 - [ ] Legacy external search API compatibility (separate migrator/deferred scope)
 
