@@ -2464,6 +2464,130 @@ async fn review_search_protected_visibility_matches_legacy_org_membership_acl() 
 }
 
 #[tokio::test]
+async fn organization_review_search_matches_legacy_group_scope_and_visibility() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, org_member_cookie, org_member_id) =
+        register_user(app.clone(), "review-scope-org-member").await;
+    let (_, _, reviewer_id) = register_user(app.clone(), "review-scope-reviewer").await;
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateOrganization",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "organizationName": "review-scope-labs",
+                "description": "Review scope labs"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let organization = repo
+        .read_organization_by_name("review-scope-labs")
+        .await
+        .unwrap()
+        .expect("organization");
+    repo.add_organization_membership(organization.id, org_member_id, "org_member")
+        .await
+        .unwrap();
+
+    for (owner_name, project_name, scope, title, comment, number) in [
+        (
+            "review-scope-labs",
+            "reviewScopePublic",
+            "public",
+            "ReviewGroupScopeNeedle public org pull request",
+            "ReviewGroupScopeNeedle public org review",
+            41,
+        ),
+        (
+            "review-scope-labs",
+            "reviewScopeProtected",
+            "protected",
+            "ReviewGroupScopeNeedle protected org pull request",
+            "ReviewGroupScopeNeedle protected org review",
+            42,
+        ),
+        (
+            "owner",
+            "reviewScopePersonal",
+            "public",
+            "ReviewGroupScopeNeedle public personal pull request",
+            "ReviewGroupScopeNeedle public personal review",
+            43,
+        ),
+    ] {
+        create_named_owner_project(
+            app.clone(),
+            &owner_cookie,
+            &owner_csrf,
+            owner_name,
+            project_name,
+            scope,
+        )
+        .await;
+        seed_project_review_comment(
+            &db,
+            &repo,
+            ReviewCommentSeed {
+                owner_name,
+                project_name,
+                pull_request_title: title,
+                comment_contents: comment,
+                number,
+            },
+            owner_id,
+            reviewer_id,
+        )
+        .await;
+    }
+
+    let anonymous = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/organizations/review-scope-labs/search?keyword=ReviewGroupScopeNeedle&searchType=review&pageNum=1",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(anonymous["scope"], "organization");
+    assert_eq!(
+        anonymous["context"]["organizationName"],
+        "review-scope-labs"
+    );
+    assert_eq!(anonymous["counts"]["reviews"], 1);
+    assert_eq!(anonymous["items"][0]["projectName"], "reviewScopePublic");
+    assert_eq!(anonymous["items"][0]["type"], "review");
+
+    let org_member = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/organizations/review-scope-labs/search?keyword=ReviewGroupScopeNeedle&searchType=review&pageNum=1",
+            Some(&org_member_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(org_member["counts"]["reviews"], 2);
+    let projects = org_member["items"]
+        .as_array()
+        .expect("org member scoped review search items")
+        .iter()
+        .map(|item| item["projectName"].as_str().unwrap_or_default())
+        .collect::<Vec<_>>();
+    assert!(projects.contains(&"reviewScopePublic"));
+    assert!(projects.contains(&"reviewScopeProtected"));
+    assert!(!projects.contains(&"reviewScopePersonal"));
+}
+
+#[tokio::test]
 async fn scoped_search_rejects_invalid_project_type_and_returns_review_links() {
     let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
