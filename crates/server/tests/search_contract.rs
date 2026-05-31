@@ -243,6 +243,7 @@ async fn seed_review_comment(
         db,
         repo,
         ReviewCommentSeed {
+            owner_name: "owner",
             project_name: "projectYobi",
             pull_request_title: "Needle review pull request",
             comment_contents: "Needle review comment",
@@ -255,6 +256,7 @@ async fn seed_review_comment(
 }
 
 struct ReviewCommentSeed<'a> {
+    owner_name: &'a str,
     project_name: &'a str,
     pull_request_title: &'a str,
     comment_contents: &'a str,
@@ -269,7 +271,7 @@ async fn seed_project_review_comment(
     reviewer_id: i64,
 ) {
     let project = repo
-        .read_project_by_owner_and_name("owner", seed.project_name)
+        .read_project_by_owner_and_name(seed.owner_name, seed.project_name)
         .await
         .unwrap()
         .expect("project");
@@ -1667,6 +1669,7 @@ async fn review_search_visibility_matches_legacy_public_and_private_acl() {
             &db,
             &repo,
             ReviewCommentSeed {
+                owner_name: "owner",
                 project_name,
                 pull_request_title: title,
                 comment_contents: comment,
@@ -1709,6 +1712,117 @@ async fn review_search_visibility_matches_legacy_public_and_private_acl() {
         .collect::<Vec<_>>();
     assert!(projects.contains(&"publicReviews"));
     assert!(projects.contains(&"privateReviews"));
+}
+
+#[tokio::test]
+async fn review_search_protected_visibility_matches_legacy_org_membership_acl() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, org_member_cookie, org_member_id) =
+        register_user(app.clone(), "review-org-member").await;
+    let (_, outsider_cookie, _) = register_user(app.clone(), "review-outsider").await;
+    let (_, _, reviewer_id) = register_user(app.clone(), "protected-reviewer").await;
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateOrganization",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "organizationName": "review-labs",
+                "description": "Review labs"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let organization = repo
+        .read_organization_by_name("review-labs")
+        .await
+        .unwrap()
+        .expect("organization");
+    repo.add_organization_membership(organization.id, org_member_id, "org_member")
+        .await
+        .unwrap();
+
+    for (project_name, scope, title, comment, number) in [
+        (
+            "publicProtectedReviews",
+            "public",
+            "ReviewProtectedNeedle public pull request",
+            "ReviewProtectedNeedle public review comment",
+            31,
+        ),
+        (
+            "protectedReviews",
+            "protected",
+            "ReviewProtectedNeedle protected pull request",
+            "ReviewProtectedNeedle protected review comment",
+            32,
+        ),
+    ] {
+        create_named_owner_project(
+            app.clone(),
+            &owner_cookie,
+            &owner_csrf,
+            "review-labs",
+            project_name,
+            scope,
+        )
+        .await;
+        seed_project_review_comment(
+            &db,
+            &repo,
+            ReviewCommentSeed {
+                owner_name: "review-labs",
+                project_name,
+                pull_request_title: title,
+                comment_contents: comment,
+                number,
+            },
+            owner_id,
+            reviewer_id,
+        )
+        .await;
+    }
+
+    for cookie in [None, Some(outsider_cookie.as_str())] {
+        let payload = response_json(
+            rest_get(
+                app.clone(),
+                "/yona/api/v1/search?keyword=ReviewProtectedNeedle&searchType=review&pageNum=1",
+                cookie,
+            )
+            .await,
+        )
+        .await;
+        assert_eq!(payload["counts"]["reviews"], 1);
+        assert_eq!(payload["items"][0]["projectName"], "publicProtectedReviews");
+        assert_eq!(payload["items"][0]["type"], "review");
+    }
+
+    let org_member = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/search?keyword=ReviewProtectedNeedle&searchType=review&pageNum=1",
+            Some(&org_member_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(org_member["counts"]["reviews"], 2);
+    let projects = org_member["items"]
+        .as_array()
+        .expect("org member review search items")
+        .iter()
+        .map(|item| item["projectName"].as_str().unwrap_or_default())
+        .collect::<Vec<_>>();
+    assert!(projects.contains(&"publicProtectedReviews"));
+    assert!(projects.contains(&"protectedReviews"));
 }
 
 #[tokio::test]
