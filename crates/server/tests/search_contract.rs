@@ -1163,6 +1163,117 @@ async fn milestone_search_visibility_matches_legacy_public_and_private_acl() {
 }
 
 #[tokio::test]
+async fn milestone_search_protected_visibility_matches_legacy_org_membership_acl() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, org_member_cookie, org_member_id) =
+        register_user(app.clone(), "milestone-org-member").await;
+    let (_, outsider_cookie, _) = register_user(app.clone(), "milestone-outsider").await;
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateOrganization",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "organizationName": "milestone-labs",
+                "description": "Milestone labs"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let organization = repo
+        .read_organization_by_name("milestone-labs")
+        .await
+        .unwrap()
+        .expect("organization");
+    repo.add_organization_membership(organization.id, org_member_id, "org_member")
+        .await
+        .unwrap();
+
+    for (project_name, scope, title) in [
+        (
+            "publicProtectedMilestones",
+            "public",
+            "MilestoneProtectedNeedle public milestone",
+        ),
+        (
+            "protectedMilestones",
+            "protected",
+            "MilestoneProtectedNeedle protected milestone",
+        ),
+    ] {
+        create_named_owner_project(
+            app.clone(),
+            &owner_cookie,
+            &owner_csrf,
+            "milestone-labs",
+            project_name,
+            scope,
+        )
+        .await;
+        repo.create_project_milestone(MilestoneMutationInput {
+            actor_id: Some(owner_id),
+            attachment_ids: Vec::new(),
+            contents_markdown: format!("MilestoneProtectedNeedle body for {project_name}"),
+            due_date: Some(days_ago_datetime(2)),
+            owner_name: "milestone-labs".to_string(),
+            project_name: project_name.to_string(),
+            state: "open".to_string(),
+            title: title.to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("milestone");
+    }
+
+    for cookie in [None, Some(outsider_cookie.as_str())] {
+        let payload = response_json(
+            rest_get(
+                app.clone(),
+                "/yona/api/v1/search?keyword=MilestoneProtectedNeedle&searchType=milestone&pageNum=1",
+                cookie,
+            )
+            .await,
+        )
+        .await;
+        assert_eq!(payload["counts"]["milestones"], 1);
+        assert_eq!(
+            payload["items"][0]["projectName"],
+            "publicProtectedMilestones"
+        );
+        assert_eq!(
+            payload["items"][0]["title"],
+            "MilestoneProtectedNeedle public milestone"
+        );
+    }
+
+    let org_member = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/search?keyword=MilestoneProtectedNeedle&searchType=milestone&pageNum=1",
+            Some(&org_member_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(org_member["counts"]["milestones"], 2);
+    let titles = org_member["items"]
+        .as_array()
+        .expect("org member milestone search items")
+        .iter()
+        .map(|item| item["title"].as_str().unwrap_or_default())
+        .collect::<Vec<_>>();
+    assert!(titles.contains(&"MilestoneProtectedNeedle public milestone"));
+    assert!(titles.contains(&"MilestoneProtectedNeedle protected milestone"));
+}
+
+#[tokio::test]
 async fn issue_comment_search_visibility_matches_legacy_public_and_private_acl() {
     let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
