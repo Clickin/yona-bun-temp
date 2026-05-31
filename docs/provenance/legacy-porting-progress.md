@@ -327,7 +327,7 @@ Interpretation:
 - [x] Legacy Korean snippet window and overlap behavior borrowed from `SearchResultTests`
 - [x] Legacy issue, issue-comment, post, post-comment, milestone, and review search public/private ACL behavior borrowed from `SearchTests`
 - [x] Legacy protected project issue/issue-comment/post/post-comment/milestone/review search ACL borrowed from `SearchTests`: anonymous/outsider users see public resources only, while organization members also see protected resources.
-- [x] Legacy project-scoped issue/issue-comment/post/milestone search borrowed from `SearchTests`: read-authorized public/protected/private project searches stay bound to the selected project and return matching resources.
+- [x] Legacy project-scoped issue/issue-comment/post/post-comment/milestone search borrowed from `SearchTests`: read-authorized public/protected/private project searches stay bound to the selected project and return matching resources.
 - [x] Legacy organization-scoped issue/issue-comment/post/post-comment/milestone/review search borrowed from `SearchTests`: group search excludes matching personal projects and applies public/protected organization visibility.
 - [x] Legacy user search by login ID and display name borrowed from `SearchTests.findUsersByLoginId` / `findUsersByName`
 - [ ] Full-text/index-backed search, async indexing, and index-backed ranking beyond the lightweight scorer
