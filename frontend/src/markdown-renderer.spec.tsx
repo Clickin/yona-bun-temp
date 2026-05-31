@@ -293,6 +293,22 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">desc</span>');
   });
 
+  it("recognizes legacy Highlight.js Ruby language aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```rb", "class Issue", "  def open?", "    true", "  end", "end", "```"].join(
+          "\n",
+        )}
+      />,
+    );
+
+    expect(html).toContain('<code class="rb">');
+    expect(html).toContain('class="syntax-token syntax-keyword">class</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">def</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,

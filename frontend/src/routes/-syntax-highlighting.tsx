@@ -259,6 +259,45 @@ const sqlKeywords = new Set([
   "where",
 ]);
 
+const rubyKeywords = new Set([
+  "alias",
+  "and",
+  "begin",
+  "break",
+  "case",
+  "class",
+  "def",
+  "defined",
+  "do",
+  "else",
+  "elsif",
+  "end",
+  "ensure",
+  "false",
+  "for",
+  "if",
+  "in",
+  "module",
+  "next",
+  "nil",
+  "not",
+  "or",
+  "redo",
+  "rescue",
+  "retry",
+  "return",
+  "self",
+  "super",
+  "then",
+  "true",
+  "undef",
+  "unless",
+  "until",
+  "when",
+  "while",
+  "yield",
+]);
+
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
 
 export function highlightCodeBlock(code: string, language: string | undefined) {
@@ -339,6 +378,9 @@ function normalizeCodeLanguage(language: string) {
   if (["mysql", "pgsql", "postgresql", "sql"].includes(normalized)) {
     return "sql";
   }
+  if (normalized === "rb") {
+    return "ruby";
+  }
   return normalized;
 }
 
@@ -352,6 +394,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "python" && pythonKeywords.has(token)) ||
     (language === "shell" && shellKeywords.has(token)) ||
     (language === "sql" && sqlKeywords.has(token.toLowerCase())) ||
+    (language === "ruby" && rubyKeywords.has(token)) ||
     (language === "css" && cssKeywords.has(token))
   );
 }
