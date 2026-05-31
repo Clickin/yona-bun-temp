@@ -845,6 +845,13 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             .and_then(|value| value.to_str().ok()),
         Some("DAV")
     );
+    assert_eq!(
+        response
+            .headers()
+            .get("svn-repository-mergeinfo")
+            .and_then(|value| value.to_str().ok()),
+        Some("yes")
+    );
     assert!(
         response
             .headers()
@@ -2712,6 +2719,63 @@ async fn svn_protocol_external_client_can_log_verbose_public_project() {
     assert!(
         log_stdout.contains("seed svn nested tree"),
         "svn log --verbose should include the nested fixture commit message\nstdout: {log_stdout}"
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
+async fn svn_protocol_external_client_can_read_mergeinfo() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping external SVN mergeinfo smoke because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello before external svn mergeinfo\n").expect("seed svn readme");
+    yona_rust_vcs::svn_copy_path(&repo_path, None, "trunk", "topic", "seed mergeinfo branch")
+        .expect("seed mergeinfo branch");
+    seed_svn_mergeinfo(&repo_path, "trunk", "/topic:2").expect("seed svn mergeinfo");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let trunk_url = format!("{base_url}/yona/svn/owner/projectYobi/trunk");
+    let branch_url = format!("{base_url}/yona/svn/owner/projectYobi/topic");
+    let mergeinfo_output = tokio::task::spawn_blocking(move || {
+        run_svn_capture(
+            &[
+                "mergeinfo",
+                "--non-interactive",
+                "--show-revs",
+                "merged",
+                branch_url.as_str(),
+                trunk_url.as_str(),
+            ],
+            None,
+        )
+    })
+    .await
+    .expect("svn mergeinfo task");
+    assert!(
+        mergeinfo_output.status.success(),
+        "svn mergeinfo should consume mergeinfo-report metadata\nstdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&mergeinfo_output.stdout),
+        String::from_utf8_lossy(&mergeinfo_output.stderr)
+    );
+    let mergeinfo_stdout = String::from_utf8_lossy(&mergeinfo_output.stdout);
+    assert!(
+        mergeinfo_stdout.contains("r2"),
+        "svn mergeinfo should expose the merged branch revision\nstdout: {mergeinfo_stdout}"
     );
 
     let _ = shutdown.send(());

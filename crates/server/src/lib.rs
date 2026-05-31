@@ -2662,6 +2662,9 @@ fn svn_protocol_options_response(
             response.headers_mut().insert("svn-repository-uuid", value);
         }
     }
+    response
+        .headers_mut()
+        .insert("svn-repository-mergeinfo", HeaderValue::from_static("yes"));
     if svn_protocol_options_targets_file(repo_path, route) {
         // Subversion expects this HTTP-v2 header to be a server-relative URI;
         // absolute URLs trip VisualSVN 1.14 direct-file property commands.
@@ -4634,7 +4637,12 @@ fn svn_protocol_mergeinfo_report_response(
                         .into_response()
                 }
             };
-        items.push_str(&svn_protocol_mergeinfo_item(&path, &mergeinfo));
+        let response_path = if base_path.is_empty() {
+            path.as_str()
+        } else {
+            requested_path.trim_matches('/')
+        };
+        items.push_str(&svn_protocol_mergeinfo_item(response_path, &mergeinfo));
     }
 
     let body = format!(
@@ -6232,13 +6240,18 @@ fn svn_protocol_replay_operation(
 }
 
 fn svn_protocol_mergeinfo_item(path: &str, mergeinfo: &str) -> String {
+    let response_path = if path.trim_matches('/').is_empty() {
+        String::new()
+    } else {
+        format!("/{}", xml_escape(path.trim_matches('/')))
+    };
     format!(
         r#"  <S:mergeinfo-item>
-    <S:mergeinfo-path>/{}</S:mergeinfo-path>
+    <S:mergeinfo-path>{}</S:mergeinfo-path>
     <S:mergeinfo-info>{}</S:mergeinfo-info>
   </S:mergeinfo-item>
 "#,
-        xml_escape(path.trim_matches('/')),
+        response_path,
         xml_escape(mergeinfo)
     )
 }
