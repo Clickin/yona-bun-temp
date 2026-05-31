@@ -78,6 +78,16 @@ async fn response_text(response: Response<Body>) -> String {
     .unwrap()
 }
 
+async fn response_bytes(response: Response<Body>) -> Vec<u8> {
+    response
+        .into_body()
+        .collect()
+        .await
+        .unwrap()
+        .to_bytes()
+        .to_vec()
+}
+
 async fn response_json(response: Response<Body>) -> Value {
     let status = response.status();
     let text = response_text(response).await;
@@ -327,6 +337,29 @@ fn write_uploaded_test_file(
     let upload_dir = data_dir.path().join("uploads");
     std::fs::create_dir_all(&upload_dir).expect("upload dir");
     std::fs::write(upload_dir.join(hash), bytes).expect("upload bytes");
+}
+
+fn spawn_update_asset_server(path: &str, content_type: &str, body: &'static [u8]) -> String {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("update asset listener");
+    let address = listener.local_addr().expect("update asset address");
+    let path = path.to_string();
+    let url_path = path.clone();
+    let content_type = content_type.to_string();
+    std::thread::spawn(move || {
+        let Ok((mut stream, _)) = listener.accept() else {
+            return;
+        };
+        let mut buffer = [0_u8; 1024];
+        let _ = std::io::Read::read(&mut stream, &mut buffer);
+        let response = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            body.len()
+        );
+        let _ = std::io::Write::write_all(&mut stream, response.as_bytes());
+        let _ = std::io::Write::write_all(&mut stream, body);
+        let _ = path;
+    });
+    format!("http://{address}{url_path}")
 }
 
 fn user<'a>(payload: &'a Value, login_id: &str) -> &'a Value {
@@ -2091,6 +2124,64 @@ async fn site_admin_update_download_redirects_through_app_owned_routes() {
         response_location(&direct_download),
         "https://downloads.example.test/yona/v9.9.9"
     );
+
+    clear_site_update_env();
+}
+
+#[tokio::test]
+async fn site_admin_update_download_file_proxies_configured_plain_http_binary() {
+    let _guard = site_update_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    clear_site_update_env();
+    let release_url = spawn_update_asset_server(
+        "/releases/yona-9.9.9.zip",
+        "application/zip",
+        b"portable-yona-update",
+    );
+    std::env::set_var("YONA_CURRENT_VERSION", "9.9.8");
+    std::env::set_var("YONA_UPDATE_LATEST_VERSION", "v9.9.9");
+    std::env::set_var("YONA_UPDATE_RELEASE_URL", release_url);
+
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    let (_member_csrf, member_cookie, _member_id) = register_user(app.clone(), "member").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let unauthenticated =
+        rest_get(app.clone(), "/yona/api/v1/site/update/download-file", None).await;
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+
+    let forbidden = rest_get(
+        app.clone(),
+        "/yona/api/v1/site/update/download-file",
+        Some(&member_cookie),
+    )
+    .await;
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+
+    let rest_download = rest_get(
+        app.clone(),
+        "/yona/api/v1/site/update/download-file",
+        Some(&admin_cookie),
+    )
+    .await;
+    assert_eq!(rest_download.status(), StatusCode::OK);
+    assert_eq!(
+        rest_download
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .unwrap(),
+        "application/zip"
+    );
+    assert!(rest_download
+        .headers()
+        .get(http::header::CONTENT_DISPOSITION)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .contains("yona-9.9.9.zip"));
+    assert_eq!(response_bytes(rest_download).await, b"portable-yona-update");
 
     clear_site_update_env();
 }

@@ -1519,7 +1519,7 @@ function SiteAdminUpdatePage({
                   <strong>{`site.update.isAvailable ${versionToUpdate}`}</strong>{" "}
                   <a
                     className="ybtn ybtn-success"
-                    href={appHref(runtimeConfig, "/sites/update/download")}
+                    href={appHref(runtimeConfig, "/sites/update/download-file")}
                   >
                     site.update.download
                   </a>

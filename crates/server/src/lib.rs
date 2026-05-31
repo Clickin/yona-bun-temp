@@ -443,6 +443,8 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let site_unwatch_update_session_manager = session_manager.clone();
     let site_update_download_backend = route_backend.clone();
     let site_update_download_session_manager = session_manager.clone();
+    let site_update_download_file_backend = route_backend.clone();
+    let site_update_download_file_session_manager = session_manager.clone();
     let site_toggle_admin_backend = route_backend.clone();
     let site_toggle_admin_session_manager = session_manager.clone();
     let site_toggle_admin_base_path = base_path.clone();
@@ -985,6 +987,19 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
                         headers,
                         site_update_download_session_manager.clone(),
                         site_update_download_backend.clone(),
+                    )
+                    .await
+                }
+            }),
+        )
+        .route(
+            "/sites/update/download-file",
+            get(move |headers: HeaderMap| {
+                async move {
+                    direct_download_site_update_file(
+                        headers,
+                        site_update_download_file_session_manager.clone(),
+                        site_update_download_file_backend.clone(),
                     )
                     .await
                 }
@@ -9387,6 +9402,26 @@ async fn direct_download_site_update(
     }
 }
 
+async fn direct_download_site_update_file(
+    headers: HeaderMap,
+    session_manager: SessionManager,
+    backend: PilotBackend,
+) -> Response {
+    let service = PilotServiceImpl {
+        base_path: String::new(),
+        public_origin: String::new(),
+        session_manager,
+        backend,
+    };
+    match rest_require_site_admin_repository(&service, &headers, false).await {
+        Ok(_) => match rest_site_update_download_file_response() {
+            Ok(response) => response,
+            Err(error) => error.into_response(),
+        },
+        Err(error) => error.into_response(),
+    }
+}
+
 fn direct_site_mail_list_body(body: &[u8]) -> RestSiteMailListBody {
     if let Ok(body) = serde_json::from_slice::<RestSiteMailListBody>(body) {
         return body;
@@ -13290,6 +13325,16 @@ fn build_rest_router(service: PilotServiceImpl) -> Router {
             }),
         )
         .route(
+            "/site/update/download-file",
+            get({
+                let service = service.clone();
+                move |headers: HeaderMap| {
+                    let service = service.clone();
+                    async move { rest_download_site_update_file(headers, service).await }
+                }
+            }),
+        )
+        .route(
             "/site/mail",
             get({
                 let service = service.clone();
@@ -16998,6 +17043,14 @@ async fn rest_download_site_update(
     rest_site_update_download_redirect()
 }
 
+async fn rest_download_site_update_file(
+    headers: HeaderMap,
+    service: PilotServiceImpl,
+) -> Result<Response, RestRouteError> {
+    rest_require_site_admin_repository(&service, &headers, false).await?;
+    rest_site_update_download_file_response()
+}
+
 async fn rest_export_site_data(
     headers: HeaderMap,
     service: PilotServiceImpl,
@@ -17781,10 +17834,79 @@ fn rest_site_update_download_redirect() -> Result<Redirect, RestRouteError> {
     Ok(Redirect::to(&release_url))
 }
 
+fn rest_site_update_download_file_response() -> Result<Response, RestRouteError> {
+    let response = rest_site_update_response();
+    if let Some(error) = response.error {
+        return Err(RestRouteError::bad_request(error));
+    }
+    if response.version_to_update.is_none() {
+        return Err(RestRouteError::not_found("site.update.isNotNecessary"));
+    }
+    let release_url = response
+        .release_url
+        .ok_or_else(|| RestRouteError::not_found("site.update.releaseUrl.notFound"))?;
+    let payload = site_update_download_payload(&release_url)?;
+    let mut response = Bytes::from(payload.bytes).into_response();
+    if let Ok(header_value) = HeaderValue::from_str(&payload.content_type) {
+        response
+            .headers_mut()
+            .insert(http::header::CONTENT_TYPE, header_value);
+    }
+    let disposition = format!(
+        "attachment; {}",
+        legacy_content_disposition_filename(&payload.file_name)
+    );
+    if let Ok(header_value) = HeaderValue::from_str(&disposition) {
+        response
+            .headers_mut()
+            .insert(http::header::CONTENT_DISPOSITION, header_value);
+    }
+    Ok(response)
+}
+
 fn site_update_release_url_is_redirectable(release_url: &str) -> bool {
     let normalized = release_url.trim().to_ascii_lowercase();
     (normalized.starts_with("https://") || normalized.starts_with("http://"))
         && !release_url.chars().any(|ch| ch == '\r' || ch == '\n')
+}
+
+struct SiteUpdateDownloadPayload {
+    bytes: Vec<u8>,
+    content_type: String,
+    file_name: String,
+}
+
+fn site_update_download_payload(
+    release_url: &str,
+) -> Result<SiteUpdateDownloadPayload, RestRouteError> {
+    let release_url = release_url.trim();
+    if let Some(path) = release_url.strip_prefix("file://") {
+        let bytes = std::fs::read(path).map_err(|error| {
+            RestRouteError::bad_request(format!("site.update.download.readFailed: {error}"))
+        })?;
+        let file_name = StdPath::new(path)
+            .file_name()
+            .and_then(|value| value.to_str())
+            .filter(|value| !value.trim().is_empty())
+            .unwrap_or("yona-update.bin")
+            .to_string();
+        return Ok(SiteUpdateDownloadPayload {
+            bytes,
+            content_type: "application/octet-stream".to_string(),
+            file_name,
+        });
+    }
+    if release_url.starts_with("http://") {
+        return site_update_plain_http_get_bytes(release_url).map_err(RestRouteError::bad_request);
+    }
+    if release_url.starts_with("https://") {
+        return Err(RestRouteError::not_implemented(
+            "site.update.download.httpsFetchDeferred",
+        ));
+    }
+    Err(RestRouteError::bad_request(
+        "site.update.download.unsupportedScheme",
+    ))
 }
 
 struct SiteUpdateMetadata {
@@ -17871,6 +17993,12 @@ struct SiteUpdatePlainHttpUrl {
 }
 
 fn site_update_plain_http_get(url: &str) -> Result<String, String> {
+    let payload = site_update_plain_http_get_bytes(url)?;
+    String::from_utf8(payload.bytes)
+        .map_err(|error| format!("site.update.metadata.invalidUtf8: {error}"))
+}
+
+fn site_update_plain_http_get_bytes(url: &str) -> Result<SiteUpdateDownloadPayload, String> {
     let parsed = site_update_parse_plain_http_url(url)?;
     let address = std::net::ToSocketAddrs::to_socket_addrs(&(parsed.host.as_str(), parsed.port))
         .map_err(|error| format!("site.update.metadata.resolveFailed: {error}"))?
@@ -17885,17 +18013,21 @@ fn site_update_plain_http_get(url: &str) -> Result<String, String> {
         .set_write_timeout(Some(Duration::from_secs(5)))
         .map_err(|error| format!("site.update.metadata.timeoutFailed: {error}"))?;
     let request = format!(
-        "GET {} HTTP/1.1\r\nHost: {}\r\nUser-Agent: Yona-Rust-Update-Checker\r\nAccept: application/json\r\nConnection: close\r\n\r\n",
+        "GET {} HTTP/1.1\r\nHost: {}\r\nUser-Agent: Yona-Rust-Update-Checker\r\nAccept: */*\r\nConnection: close\r\n\r\n",
         parsed.path, parsed.host
     );
     std::io::Write::write_all(&mut stream, request.as_bytes())
         .map_err(|error| format!("site.update.metadata.writeFailed: {error}"))?;
-    let mut response = String::new();
-    std::io::Read::read_to_string(&mut stream, &mut response)
+    let mut response = Vec::new();
+    std::io::Read::read_to_end(&mut stream, &mut response)
         .map_err(|error| format!("site.update.metadata.readFailed: {error}"))?;
-    let (head, body) = response
-        .split_once("\r\n\r\n")
+    let header_end = response
+        .windows(4)
+        .position(|window| window == b"\r\n\r\n")
         .ok_or_else(|| "site.update.metadata.invalidHttpResponse".to_string())?;
+    let (head, body) = response.split_at(header_end);
+    let body = body[4..].to_vec();
+    let head = String::from_utf8_lossy(head);
     let status_line = head.lines().next().unwrap_or_default();
     if !status_line.contains(" 2") {
         return Err(format!(
@@ -17903,7 +18035,27 @@ fn site_update_plain_http_get(url: &str) -> Result<String, String> {
             status_line.trim()
         ));
     }
-    Ok(body.to_string())
+    let content_type = head
+        .lines()
+        .filter_map(|line| line.split_once(':'))
+        .find_map(|(name, value)| {
+            name.eq_ignore_ascii_case("content-type")
+                .then(|| value.trim().to_string())
+        })
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "application/octet-stream".to_string());
+    let file_name = parsed
+        .path
+        .rsplit('/')
+        .next()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or("yona-update.bin")
+        .to_string();
+    Ok(SiteUpdateDownloadPayload {
+        bytes: body,
+        content_type,
+        file_name,
+    })
 }
 
 fn site_update_parse_plain_http_url(url: &str) -> Result<SiteUpdatePlainHttpUrl, String> {
