@@ -178,6 +178,45 @@ const pythonKeywords = new Set([
   "yield",
 ]);
 
+const shellKeywords = new Set([
+  "alias",
+  "bg",
+  "break",
+  "case",
+  "cd",
+  "command",
+  "continue",
+  "do",
+  "done",
+  "echo",
+  "elif",
+  "else",
+  "esac",
+  "eval",
+  "exec",
+  "exit",
+  "export",
+  "fg",
+  "fi",
+  "for",
+  "function",
+  "if",
+  "in",
+  "local",
+  "printf",
+  "read",
+  "readonly",
+  "return",
+  "set",
+  "shift",
+  "source",
+  "test",
+  "then",
+  "trap",
+  "until",
+  "while",
+]);
+
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
 
 export function highlightCodeBlock(code: string, language: string | undefined) {
@@ -252,6 +291,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "py") {
     return "python";
   }
+  if (["bash", "sh", "shell", "zsh"].includes(normalized)) {
+    return "shell";
+  }
   return normalized;
 }
 
@@ -263,6 +305,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "java" && javaKeywords.has(token)) ||
     (language === "scala" && scalaKeywords.has(token)) ||
     (language === "python" && pythonKeywords.has(token)) ||
+    (language === "shell" && shellKeywords.has(token)) ||
     (language === "css" && cssKeywords.has(token))
   );
 }

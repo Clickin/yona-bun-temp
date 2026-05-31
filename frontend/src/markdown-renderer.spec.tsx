@@ -258,6 +258,20 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">None</span>');
   });
 
+  it("recognizes legacy Highlight.js shell language aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```sh", "if test -f build.sh; then", "  echo ready", "fi", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="sh">');
+    expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">then</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">echo</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">fi</span>');
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,
