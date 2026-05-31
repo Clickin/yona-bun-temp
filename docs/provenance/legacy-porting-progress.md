@@ -326,7 +326,7 @@ Interpretation:
 - [x] Pagination/snippets/access filtering
 - [x] Legacy Korean snippet window and overlap behavior borrowed from `SearchResultTests`
 - [x] Legacy issue, issue-comment, post, post-comment, milestone, and review search public/private ACL behavior borrowed from `SearchTests`
-- [x] Legacy protected project issue/issue-comment/post/milestone search ACL borrowed from `SearchTests`: anonymous/outsider users see public resources only, while organization members also see protected resources.
+- [x] Legacy protected project issue/issue-comment/post/post-comment/milestone search ACL borrowed from `SearchTests`: anonymous/outsider users see public resources only, while organization members also see protected resources.
 - [x] Legacy user search by login ID and display name borrowed from `SearchTests.findUsersByLoginId` / `findUsersByName`
 - [ ] Full-text/index-backed search, async indexing, and index-backed ranking beyond the lightweight scorer
 - [ ] Legacy external search API compatibility (separate migrator/deferred scope)

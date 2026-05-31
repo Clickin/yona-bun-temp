@@ -1084,6 +1084,133 @@ async fn post_comment_search_visibility_matches_legacy_public_and_private_acl() 
 }
 
 #[tokio::test]
+async fn post_comment_search_protected_visibility_matches_legacy_org_membership_acl() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, org_member_cookie, org_member_id) =
+        register_user(app.clone(), "post-comment-org-member").await;
+    let (_, outsider_cookie, _) = register_user(app.clone(), "post-comment-outsider").await;
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateOrganization",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "organizationName": "post-comment-labs",
+                "description": "Post comment labs"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let organization = repo
+        .read_organization_by_name("post-comment-labs")
+        .await
+        .unwrap()
+        .expect("organization");
+    repo.add_organization_membership(organization.id, org_member_id, "org_member")
+        .await
+        .unwrap();
+
+    for (project_name, scope, comment) in [
+        (
+            "publicProtectedPostComments",
+            "public",
+            "PostCommentProtectedNeedle public comment",
+        ),
+        (
+            "protectedPostComments",
+            "protected",
+            "PostCommentProtectedNeedle protected comment",
+        ),
+    ] {
+        create_named_owner_project(
+            app.clone(),
+            &owner_cookie,
+            &owner_csrf,
+            "post-comment-labs",
+            project_name,
+            scope,
+        )
+        .await;
+        let post = repo
+            .create_posting(CreatePostingInput {
+                actor_display_name: "owner".to_string(),
+                actor_id: owner_id,
+                actor_login_id: "owner".to_string(),
+                owner_name: "post-comment-labs".to_string(),
+                project_name: project_name.to_string(),
+                values: PostingMutationInput {
+                    attachment_ids: Vec::new(),
+                    body_markdown: format!("PostCommentProtectedNeedle post {project_name}"),
+                    label_ids: Vec::new(),
+                    notice: false,
+                    readme: false,
+                    title: format!("PostCommentProtectedNeedle post {project_name}"),
+                },
+            })
+            .await
+            .unwrap()
+            .expect("post");
+        repo.create_posting_comment(CreatePostingCommentInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            attachment_ids: Vec::new(),
+            contents_markdown: comment.to_string(),
+            owner_name: "post-comment-labs".to_string(),
+            post_number: post.post_number,
+            project_name: project_name.to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("post comment");
+    }
+
+    for cookie in [None, Some(outsider_cookie.as_str())] {
+        let payload = response_json(
+            rest_get(
+                app.clone(),
+                "/yona/api/v1/search?keyword=PostCommentProtectedNeedle&searchType=post_comment&pageNum=1",
+                cookie,
+            )
+            .await,
+        )
+        .await;
+        assert_eq!(payload["counts"]["postComments"], 1);
+        assert_eq!(
+            payload["items"][0]["projectName"],
+            "publicProtectedPostComments"
+        );
+        assert_eq!(payload["items"][0]["type"], "post_comment");
+    }
+
+    let org_member = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/search?keyword=PostCommentProtectedNeedle&searchType=post_comment&pageNum=1",
+            Some(&org_member_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(org_member["counts"]["postComments"], 2);
+    let projects = org_member["items"]
+        .as_array()
+        .expect("org member post comment search items")
+        .iter()
+        .map(|item| item["projectName"].as_str().unwrap_or_default())
+        .collect::<Vec<_>>();
+    assert!(projects.contains(&"publicProtectedPostComments"));
+    assert!(projects.contains(&"protectedPostComments"));
+}
+
+#[tokio::test]
 async fn milestone_search_visibility_matches_legacy_public_and_private_acl() {
     let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
