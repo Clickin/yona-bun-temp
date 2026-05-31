@@ -566,6 +566,98 @@ async fn post_search_visibility_matches_legacy_public_and_private_acl() {
 }
 
 #[tokio::test]
+async fn post_comment_search_visibility_matches_legacy_public_and_private_acl() {
+    let (app, repo, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    create_named_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "publicComments",
+        "public",
+    )
+    .await;
+    create_named_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "privateComments",
+        "private",
+    )
+    .await;
+
+    for (project_name, comment) in [
+        ("publicComments", "CommentNeedle public comment"),
+        ("privateComments", "CommentNeedle private comment"),
+    ] {
+        let post = repo
+            .create_posting(CreatePostingInput {
+                actor_display_name: "owner".to_string(),
+                actor_id: owner_id,
+                actor_login_id: "owner".to_string(),
+                owner_name: "owner".to_string(),
+                project_name: project_name.to_string(),
+                values: PostingMutationInput {
+                    attachment_ids: Vec::new(),
+                    body_markdown: format!("CommentNeedle post body for {project_name}"),
+                    label_ids: Vec::new(),
+                    notice: false,
+                    readme: false,
+                    title: format!("CommentNeedle post {project_name}"),
+                },
+            })
+            .await
+            .unwrap()
+            .expect("post");
+        repo.create_posting_comment(CreatePostingCommentInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            attachment_ids: Vec::new(),
+            contents_markdown: comment.to_string(),
+            owner_name: "owner".to_string(),
+            post_number: post.post_number,
+            project_name: project_name.to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("post comment");
+    }
+
+    let anonymous = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/search?keyword=CommentNeedle&searchType=post_comment&pageNum=1",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(anonymous["counts"]["postComments"], 1);
+    assert_eq!(anonymous["items"][0]["projectName"], "publicComments");
+    assert_eq!(anonymous["items"][0]["type"], "post_comment");
+
+    let owner = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/search?keyword=CommentNeedle&searchType=post_comment&pageNum=1",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(owner["counts"]["postComments"], 2);
+    let projects = owner["items"]
+        .as_array()
+        .expect("owner post comment search items")
+        .iter()
+        .map(|item| item["projectName"].as_str().unwrap_or_default())
+        .collect::<Vec<_>>();
+    assert!(projects.contains(&"publicComments"));
+    assert!(projects.contains(&"privateComments"));
+}
+
+#[tokio::test]
 async fn scoped_search_rejects_invalid_project_type_and_returns_review_links() {
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_cookie, _) = seed_search_rows(app.clone(), &repo, &db).await;
