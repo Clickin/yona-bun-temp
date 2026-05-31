@@ -125,6 +125,14 @@ async fn rest_get(app: axum::Router, uri: &str, cookie_header: Option<&str>) -> 
 }
 
 async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i64) {
+    register_user_with_name(app, login_id, login_id).await
+}
+
+async fn register_user_with_name(
+    app: axum::Router,
+    login_id: &str,
+    name: &str,
+) -> (String, String, i64) {
     let (csrf, cookie_header) = bootstrap(app.clone()).await;
     let response = rpc(
         app,
@@ -133,7 +141,7 @@ async fn register_user(app: axum::Router, login_id: &str) -> (String, String, i6
         Some(&csrf),
         json!({
             "loginId": login_id,
-            "name": login_id,
+            "name": name,
             "emailAddress": format!("{login_id}@example.com"),
             "password": "doorpass1",
             "retypedPassword": "doorpass1"
@@ -449,6 +457,43 @@ async fn global_search_returns_legacy_counts_auto_issue_and_snippet_metadata() {
         payload["items"][0]["snippets"][0]["highlights"][0]["start"],
         0
     );
+}
+
+#[tokio::test]
+async fn user_search_matches_legacy_login_id_and_name_lookup() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, _, _) = build_app_with_repository().await;
+    register_user_with_name(app.clone(), "doortts", "suwon").await;
+
+    let by_login_id = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/search?keyword=door&searchType=user&pageNum=1",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(by_login_id["counts"]["users"], 1);
+    assert_eq!(by_login_id["items"][0]["type"], "user");
+    assert_eq!(by_login_id["items"][0]["title"], "suwon");
+    assert_eq!(by_login_id["items"][0]["href"], "/users/doortts");
+
+    let by_name = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/search?keyword=suwon&searchType=user&pageNum=1",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(by_name["counts"]["users"], 1);
+    assert_eq!(by_name["items"][0]["type"], "user");
+    assert_eq!(by_name["items"][0]["title"], "suwon");
+    assert_eq!(by_name["items"][0]["href"], "/users/doortts");
 }
 
 #[tokio::test]
