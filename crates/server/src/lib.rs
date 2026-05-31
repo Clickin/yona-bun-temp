@@ -4386,10 +4386,35 @@ fn svn_protocol_update_report_response(
                 .next()
                 .unwrap_or(entry.path.as_str());
             if entry.is_dir {
+                let indent = "    ";
+                let child_indent = "      ";
+                let directory_element = if start_empty {
+                    "add-directory"
+                } else {
+                    "open-directory"
+                };
+                let revision_attribute = if start_empty {
+                    String::new()
+                } else {
+                    format!(r#" rev="{base_revision}""#)
+                };
                 entries.push_str(&format!(
-                    r#"    <S:add-directory name="{}"/>
+                    r#"{indent}<S:{directory_element} name="{}"{revision_attribute} bc-url="{}">
+{child_indent}<D:checked-in><D:href>{}</D:href></D:checked-in>
+{}{indent}</S:{directory_element}>
 "#,
-                    xml_escape(name)
+                    xml_escape(name),
+                    xml_escape(&svn_protocol_baseline_collection_href(
+                        route,
+                        target_revision,
+                        entry.path.trim_matches('/')
+                    )),
+                    xml_escape(&svn_protocol_version_href(
+                        route,
+                        target_revision,
+                        entry.path.trim_matches('/')
+                    )),
+                    svn_protocol_update_entry_props(&revision_log, 3)
                 ));
             } else {
                 let inline_delta = if inline_text_deltas {
