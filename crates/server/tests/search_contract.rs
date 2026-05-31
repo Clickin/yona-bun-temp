@@ -1112,6 +1112,127 @@ async fn organization_post_search_matches_legacy_group_scope_and_visibility() {
 }
 
 #[tokio::test]
+async fn organization_issue_search_matches_legacy_group_scope_and_visibility() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, org_member_cookie, org_member_id) =
+        register_user(app.clone(), "issue-scope-org-member").await;
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateOrganization",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "organizationName": "issue-scope-labs",
+                "description": "Issue scope labs"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let organization = repo
+        .read_organization_by_name("issue-scope-labs")
+        .await
+        .unwrap()
+        .expect("organization");
+    repo.add_organization_membership(organization.id, org_member_id, "org_member")
+        .await
+        .unwrap();
+
+    for (owner_name, project_name, scope, title) in [
+        (
+            "issue-scope-labs",
+            "issueScopePublic",
+            "public",
+            "IssueGroupScopeNeedle public org issue",
+        ),
+        (
+            "issue-scope-labs",
+            "issueScopeProtected",
+            "protected",
+            "IssueGroupScopeNeedle protected org issue",
+        ),
+        (
+            "owner",
+            "issueScopePersonal",
+            "public",
+            "IssueGroupScopeNeedle public personal issue",
+        ),
+    ] {
+        create_named_owner_project(
+            app.clone(),
+            &owner_cookie,
+            &owner_csrf,
+            owner_name,
+            project_name,
+            scope,
+        )
+        .await;
+        repo.create_issue(CreateIssueInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            owner_name: owner_name.to_string(),
+            project_name: project_name.to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: None,
+                attachment_ids: Vec::new(),
+                body_markdown: format!("IssueGroupScopeNeedle body for {project_name}"),
+                label_ids: Vec::new(),
+                milestone_id: None,
+                title: title.to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("issue");
+    }
+
+    let anonymous = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/organizations/issue-scope-labs/search?keyword=IssueGroupScopeNeedle&searchType=issue&pageNum=1",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(anonymous["scope"], "organization");
+    assert_eq!(anonymous["context"]["organizationName"], "issue-scope-labs");
+    assert_eq!(anonymous["counts"]["issues"], 1);
+    assert_eq!(anonymous["items"][0]["projectName"], "issueScopePublic");
+    assert_eq!(
+        anonymous["items"][0]["title"],
+        "IssueGroupScopeNeedle public org issue"
+    );
+
+    let org_member = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/organizations/issue-scope-labs/search?keyword=IssueGroupScopeNeedle&searchType=issue&pageNum=1",
+            Some(&org_member_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(org_member["counts"]["issues"], 2);
+    let titles = org_member["items"]
+        .as_array()
+        .expect("org member scoped issue search items")
+        .iter()
+        .map(|item| item["title"].as_str().unwrap_or_default())
+        .collect::<Vec<_>>();
+    assert!(titles.contains(&"IssueGroupScopeNeedle public org issue"));
+    assert!(titles.contains(&"IssueGroupScopeNeedle protected org issue"));
+    assert!(!titles.contains(&"IssueGroupScopeNeedle public personal issue"));
+}
+
+#[tokio::test]
 async fn post_comment_search_visibility_matches_legacy_public_and_private_acl() {
     let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
