@@ -2571,6 +2571,164 @@ async fn issue_comment_search_protected_visibility_matches_legacy_org_membership
 }
 
 #[tokio::test]
+async fn project_issue_comment_search_matches_legacy_project_scope_visibility() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, org_member_cookie, org_member_id) =
+        register_user(app.clone(), "project-issue-comment-org-member").await;
+    let (_, private_member_cookie, private_member_id) =
+        register_user(app.clone(), "project-issue-comment-private-member").await;
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateOrganization",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "organizationName": "project-issue-comment-labs",
+                "description": "Project issue comment labs"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let organization = repo
+        .read_organization_by_name("project-issue-comment-labs")
+        .await
+        .unwrap()
+        .expect("organization");
+    repo.add_organization_membership(organization.id, org_member_id, "org_member")
+        .await
+        .unwrap();
+
+    for (owner_name, project_name, scope, comment) in [
+        (
+            "project-issue-comment-labs",
+            "projectIssueCommentScopePublic",
+            "public",
+            "ProjectIssueCommentScopeNeedle public comment",
+        ),
+        (
+            "project-issue-comment-labs",
+            "projectIssueCommentScopeProtected",
+            "protected",
+            "ProjectIssueCommentScopeNeedle protected comment",
+        ),
+        (
+            "owner",
+            "projectIssueCommentScopePrivate",
+            "private",
+            "ProjectIssueCommentScopeNeedle private comment",
+        ),
+    ] {
+        create_named_owner_project(
+            app.clone(),
+            &owner_cookie,
+            &owner_csrf,
+            owner_name,
+            project_name,
+            scope,
+        )
+        .await;
+        let issue = repo
+            .create_issue(CreateIssueInput {
+                actor_display_name: "owner".to_string(),
+                actor_id: owner_id,
+                actor_login_id: "owner".to_string(),
+                owner_name: owner_name.to_string(),
+                project_name: project_name.to_string(),
+                values: IssueMutationInput {
+                    assignee_login_id: None,
+                    attachment_ids: Vec::new(),
+                    body_markdown: format!("ProjectIssueCommentScopeNeedle issue {project_name}"),
+                    label_ids: Vec::new(),
+                    milestone_id: None,
+                    title: format!("ProjectIssueCommentScopeNeedle issue {project_name}"),
+                },
+            })
+            .await
+            .unwrap()
+            .expect("issue");
+        repo.create_issue_comment(CreateIssueCommentInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            attachment_ids: Vec::new(),
+            contents_markdown: comment.to_string(),
+            issue_number: issue.issue_number,
+            owner_name: owner_name.to_string(),
+            parent_comment_id: None,
+            project_name: project_name.to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("issue comment");
+    }
+
+    let private_project = repo
+        .read_project_by_owner_and_name("owner", "projectIssueCommentScopePrivate")
+        .await
+        .unwrap()
+        .expect("private project");
+    repo.add_project_membership(private_project.id, private_member_id, "member")
+        .await
+        .unwrap();
+
+    let public = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/projects/project-issue-comment-labs/projectIssueCommentScopePublic/search?keyword=ProjectIssueCommentScopeNeedle&searchType=issue_comment&pageNum=1",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(public["scope"], "project");
+    assert_eq!(public["counts"]["issueComments"], 1);
+    assert_eq!(
+        public["items"][0]["projectName"],
+        "projectIssueCommentScopePublic"
+    );
+    assert_eq!(public["items"][0]["type"], "issue_comment");
+
+    let protected = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/projects/project-issue-comment-labs/projectIssueCommentScopeProtected/search?keyword=ProjectIssueCommentScopeNeedle&searchType=issue_comment&pageNum=1",
+            Some(&org_member_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(protected["counts"]["issueComments"], 1);
+    assert_eq!(
+        protected["items"][0]["projectName"],
+        "projectIssueCommentScopeProtected"
+    );
+    assert_eq!(protected["items"][0]["type"], "issue_comment");
+
+    let private = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/projects/owner/projectIssueCommentScopePrivate/search?keyword=ProjectIssueCommentScopeNeedle&searchType=issue_comment&pageNum=1",
+            Some(&private_member_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(private["counts"]["issueComments"], 1);
+    assert_eq!(
+        private["items"][0]["projectName"],
+        "projectIssueCommentScopePrivate"
+    );
+    assert_eq!(private["items"][0]["type"], "issue_comment");
+}
+
+#[tokio::test]
 async fn organization_issue_comment_search_matches_legacy_group_scope_and_visibility() {
     let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
