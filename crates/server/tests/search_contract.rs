@@ -1455,6 +1455,144 @@ async fn post_comment_search_protected_visibility_matches_legacy_org_membership_
 }
 
 #[tokio::test]
+async fn organization_post_comment_search_matches_legacy_group_scope_and_visibility() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, org_member_cookie, org_member_id) =
+        register_user(app.clone(), "post-comment-scope-org-member").await;
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateOrganization",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "organizationName": "post-comment-scope-labs",
+                "description": "Post comment scope labs"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let organization = repo
+        .read_organization_by_name("post-comment-scope-labs")
+        .await
+        .unwrap()
+        .expect("organization");
+    repo.add_organization_membership(organization.id, org_member_id, "org_member")
+        .await
+        .unwrap();
+
+    for (owner_name, project_name, scope, comment) in [
+        (
+            "post-comment-scope-labs",
+            "postCommentScopePublic",
+            "public",
+            "PostCommentGroupScopeNeedle public org comment",
+        ),
+        (
+            "post-comment-scope-labs",
+            "postCommentScopeProtected",
+            "protected",
+            "PostCommentGroupScopeNeedle protected org comment",
+        ),
+        (
+            "owner",
+            "postCommentScopePersonal",
+            "public",
+            "PostCommentGroupScopeNeedle public personal comment",
+        ),
+    ] {
+        create_named_owner_project(
+            app.clone(),
+            &owner_cookie,
+            &owner_csrf,
+            owner_name,
+            project_name,
+            scope,
+        )
+        .await;
+        let post = repo
+            .create_posting(CreatePostingInput {
+                actor_display_name: "owner".to_string(),
+                actor_id: owner_id,
+                actor_login_id: "owner".to_string(),
+                owner_name: owner_name.to_string(),
+                project_name: project_name.to_string(),
+                values: PostingMutationInput {
+                    attachment_ids: Vec::new(),
+                    body_markdown: format!("PostCommentGroupScopeNeedle post {project_name}"),
+                    label_ids: Vec::new(),
+                    notice: false,
+                    readme: false,
+                    title: format!("PostCommentGroupScopeNeedle post {project_name}"),
+                },
+            })
+            .await
+            .unwrap()
+            .expect("post");
+        repo.create_posting_comment(CreatePostingCommentInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            attachment_ids: Vec::new(),
+            contents_markdown: comment.to_string(),
+            owner_name: owner_name.to_string(),
+            post_number: post.post_number,
+            project_name: project_name.to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("post comment");
+    }
+
+    let anonymous = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/organizations/post-comment-scope-labs/search?keyword=PostCommentGroupScopeNeedle&searchType=post_comment&pageNum=1",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(anonymous["scope"], "organization");
+    assert_eq!(
+        anonymous["context"]["organizationName"],
+        "post-comment-scope-labs"
+    );
+    assert_eq!(anonymous["counts"]["postComments"], 1);
+    assert_eq!(
+        anonymous["items"][0]["projectName"],
+        "postCommentScopePublic"
+    );
+    assert_eq!(anonymous["items"][0]["type"], "post_comment");
+
+    let org_member = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/organizations/post-comment-scope-labs/search?keyword=PostCommentGroupScopeNeedle&searchType=post_comment&pageNum=1",
+            Some(&org_member_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(org_member["counts"]["postComments"], 2);
+    let projects = org_member["items"]
+        .as_array()
+        .expect("org member scoped post comment search items")
+        .iter()
+        .map(|item| item["projectName"].as_str().unwrap_or_default())
+        .collect::<Vec<_>>();
+    assert!(projects.contains(&"postCommentScopePublic"));
+    assert!(projects.contains(&"postCommentScopeProtected"));
+    assert!(!projects.contains(&"postCommentScopePersonal"));
+}
+
+#[tokio::test]
 async fn milestone_search_visibility_matches_legacy_public_and_private_acl() {
     let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
