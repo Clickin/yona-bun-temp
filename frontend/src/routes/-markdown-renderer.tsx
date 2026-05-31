@@ -1129,12 +1129,12 @@ function parseMarkdownBlockquote(lines: MarkdownLineRecord[]): MarkdownBlockquot
     return null;
   }
   const quoteLines: MarkdownBlockquoteRecord[] = [];
-  for (const line of lines) {
+  for (const [index, line] of lines.entries()) {
     const match = /^\s*>\s?(.*)$/.exec(line.text);
-    if (!match) {
+    if (!match && index === 0) {
       return null;
     }
-    quoteLines.push({ key: line.key, text: match[1] ?? "" });
+    quoteLines.push({ key: line.key, text: match ? (match[1] ?? "") : line.text });
   }
   return quoteLines;
 }

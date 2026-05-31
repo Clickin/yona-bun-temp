@@ -1059,6 +1059,17 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain("<del>style</del>");
   });
 
+  it("keeps lazy blockquote continuations inside the quote like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown={"> quoted\ncontinued with **style**"} />,
+    );
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain("<p>quoted<br/>continued with <strong>style</strong></p>");
+    expect(html).not.toContain("<p>&gt; quoted");
+    expect(html).not.toContain("</blockquote><p>continued");
+  });
+
   it("parses Markdown blocks inside blockquotes like legacy marked", () => {
     const html = renderToStaticMarkup(<MarkdownRenderer markdown={"> # Quoted\n> - item"} />);
 
