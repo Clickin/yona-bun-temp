@@ -471,6 +471,9 @@ function syntaxTokenClass(token: string, language: string) {
   if (token.startsWith("//") || token.startsWith("/*")) {
     return "syntax-comment";
   }
+  if (normalizedLanguage === "xml" && isXmlNameToken(token)) {
+    return "syntax-keyword";
+  }
   if (token.startsWith('"') || token.startsWith("'")) {
     return "syntax-string";
   }
@@ -521,7 +524,14 @@ function normalizeCodeLanguage(language: string) {
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
+  if (["atom", "html", "plist", "rss", "xhtml", "xjb", "xml", "xsd", "xsl"].includes(normalized)) {
+    return "xml";
+  }
   return normalized;
+}
+
+function isXmlNameToken(token: string) {
+  return /^[A-Za-z][A-Za-z0-9._:-]*$/.test(token);
 }
 
 function isCodeKeyword(token: string, language: string) {

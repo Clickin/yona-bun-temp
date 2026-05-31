@@ -368,6 +368,20 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">null</span>');
   });
 
+  it("recognizes legacy Highlight.js XML and HTML language aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```html", '<div class="issue" data-state="open">Hello</div>', "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="html">');
+    expect(html).toContain('class="syntax-token syntax-keyword">div</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">class</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&quot;issue&quot;</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&quot;open&quot;</span>');
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,
