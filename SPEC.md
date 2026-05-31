@@ -910,7 +910,7 @@ GET   /organizations/:name/search            → 조직 내 검색
 - [x] 검색 대상: Issue, Project, Posting, IssueComment, PostingComment, Milestone, ReviewComment, User
 - [x] 각 결과 항목: 프로젝트명, 제목/내용 스니펫, 작성자, 날짜 표시
 
-**Phase 5C 구현 메모**: app runtime REST는 `/api/v1/search`, `/api/v1/projects/:owner/:project/search`, `/api/v1/organizations/:organization/search`만 제공한다. `keyword`와 `searchType`는 required이고 invalid/missing query는 400이다. `searchType=auto`는 legacy order대로 result type을 선택하며, project scope에서는 `project` type을 제외한다. 결과 목록은 title hit와 hit count를 우선하는 lightweight relevance score로 정렬하고 동점은 기존 legacy/date order를 유지한다. `/-_-api/v1/**` legacy external search compatibility, full-text index, async indexing, index-backed ranking 개선은 별도 migrator/deferred scope다.
+**Phase 5C 구현 메모**: app runtime REST는 `/api/v1/search`, `/api/v1/projects/:owner/:project/search`, `/api/v1/organizations/:organization/search`만 제공한다. `keyword`와 `searchType`는 required이고 invalid/missing query는 400이다. `searchType=auto`는 legacy order대로 result type을 선택하며, project scope에서는 `project` type을 제외한다. 결과 목록은 title hit와 hit count를 우선하는 lightweight relevance score로 정렬하고 동점은 기존 legacy/date order를 유지한다. Snippet window/overlap 동작은 legacy `SearchResultTests`의 한국어 예제를 Rust search crate 회귀 테스트로 고정했다. `/-_-api/v1/**` legacy external search compatibility, full-text index, async indexing, index-backed ranking 개선은 별도 migrator/deferred scope다.
 
 ---
 
