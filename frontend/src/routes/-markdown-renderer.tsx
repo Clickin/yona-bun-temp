@@ -180,6 +180,7 @@ const referenceLabelOnlyPattern = new RegExp(`^ {0,3}\\[${referenceLabelPattern}
 const referenceTargetOnlyPattern = new RegExp(
   `^ {0,3}\\[${referenceLabelPattern}\\]:\\s*(?:${referenceTargetPattern})\\s*$`,
 );
+const inlineTargetPattern = `<[^>\\s]+>|(?:\\\\${escapedMarkdownPunctuationClass}|\\([^()\\s]*\\)|[^)\\\\\\s])+`;
 const referenceTitleOnlyPattern =
   /^\s*(?:"(?:\\"|[^"\\])*"|'(?:\\'|[^'\\])*'|\((?:\\\)|[^)\\])*\))\s*$/;
 const referenceDefinitionPattern = new RegExp(
@@ -569,8 +570,10 @@ function parseTextWithAutolinks(
 function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownInlinePart[] {
   const parts: MarkdownInlinePart[] = [];
   let index = 0;
-  const inlinePattern =
-    /\\([^\w\s])|(!?)\[([^\]]*)\]\((<[^>\s]+>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_`{|}~]|[^)\\\s])+)(?:\s+(?:"((?:\\"|[^"\\])*)"|'((?:\\'|[^'\\])*)'|\(((?:\\\)|[^)\\])*)\)))?\)|(!?)\[((?:\\(?:\[|\])|[^\]\\[])+)\]\[((?:\\(?:\[|\])|[^\]\\[])*)\]|(!?)\[((?:\\(?:\[|\])|[^\]\\[])+)\](?:\[\])?|\*\*\*(?<strongEmAst>[^*\n]+)\*\*\*|___(?<strongEmUnd>[^_\n]+)___|\*\*(?<strongAst>[^*\n]+)\*\*|__(?<strongUnd>[^_\n]+)__|~~(?<deleteText>[^~\n]+)~~|(?<codeFence>`+)(?<codeText>[^`]|[^`][\s\S]*?[^`])\k<codeFence>(?!`)|\*(?<emphasisAst>[^*\n]+)\*|_(?<emphasisUnd>[^_\n]+)_/g;
+  const inlinePattern = new RegExp(
+    `\\\\([^\\w\\s])|(!?)\\[([^\\]]*)\\]\\((${inlineTargetPattern})(?:\\s+(?:"((?:\\\\"|[^"\\\\])*)"|'((?:\\\\'|[^'\\\\])*)'|\\(((?:\\\\\\)|[^)\\\\])*)\\)))?\\)|(!?)\\[((?:\\\\(?:\\[|\\])|[^\\]\\\\[])+)\\]\\[((?:\\\\(?:\\[|\\])|[^\\]\\\\[])*)\\]|(!?)\\[((?:\\\\(?:\\[|\\])|[^\\]\\\\[])+)\\](?:\\[\\])?|\\*\\*\\*(?<strongEmAst>[^*\\n]+)\\*\\*\\*|___(?<strongEmUnd>[^_\\n]+)___|\\*\\*(?<strongAst>[^*\\n]+)\\*\\*|__(?<strongUnd>[^_\\n]+)__|~~(?<deleteText>[^~\\n]+)~~|(?<codeFence>\`+)(?<codeText>[^\`]|[^\`][\\s\\S]*?[^\`])\\k<codeFence>(?!\`)|\\*(?<emphasisAst>[^*\\n]+)\\*|_(?<emphasisUnd>[^_\\n]+)_`,
+    "g",
+  );
   for (const match of line.matchAll(inlinePattern)) {
     const start = match.index ?? 0;
     const groups = match.groups;
