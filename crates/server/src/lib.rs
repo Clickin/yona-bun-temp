@@ -4881,14 +4881,15 @@ fn svn_protocol_checkout_response(route: &SvnProtocolRoute, body: &Bytes) -> Res
     let Some(activity_id) = svn_protocol_activity_id(&activity_href) else {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     };
-    let working_path = if route.svn_path == "!svn/vcc/default" {
-        String::new()
-    } else {
-        let Some((_, path)) = svn_protocol_file_lookup_for_route(route) else {
-            return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+    let working_path =
+        if route.svn_path == "!svn/vcc/default" || route.svn_path.starts_with("!svn/bln/") {
+            String::new()
+        } else {
+            let Some((_, path)) = svn_protocol_file_lookup_for_route(route) else {
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST);
+            };
+            path
         };
-        path
-    };
     let mut location = format!(
         "{}/!svn/wrk/{}",
         svn_protocol_project_href(route),
@@ -5114,22 +5115,17 @@ fn svn_protocol_copy_response(
     if destination_revision.is_some() || destination_path.trim().is_empty() {
         return svn_protocol_status_response(StatusCode::BAD_REQUEST);
     }
-    let contents = match yona_rust_vcs::svn_cat_file(repo_path, source_revision, &source_path) {
-        Ok(contents) => contents,
-        Err(VcsError::NotFound) => return svn_protocol_status_response(StatusCode::NOT_FOUND),
-        Err(VcsError::InvalidPath) => return svn_protocol_status_response(StatusCode::BAD_REQUEST),
-        Err(VcsError::SvnLookUnavailable) => {
-            return svn_protocol_not_implemented_response(route, "COPY")
-        }
-        Err(error) => {
-            return RestRouteError::from_connect_error(internal_error(error)).into_response()
-        }
-    };
     let message = format!(
         "Copy {source_path} to {destination_path} through WebDAV by {}",
         actor.login_id
     );
-    match yona_rust_vcs::svn_put_file(repo_path, &destination_path, &contents, &message) {
+    match yona_rust_vcs::svn_copy_path(
+        repo_path,
+        source_revision,
+        &source_path,
+        &destination_path,
+        &message,
+    ) {
         Ok(revision) => {
             let mut response = StatusCode::CREATED.into_response();
             add_svn_dav_headers(&mut response);

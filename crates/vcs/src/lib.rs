@@ -1092,6 +1092,57 @@ pub fn svn_make_collection(repo_path: &Path, path: &str, message: &str) -> Resul
     svn_youngest_revision(repo_path)
 }
 
+pub fn svn_copy_path(
+    repo_path: &Path,
+    source_revision: Option<i64>,
+    source_path: &str,
+    destination_path: &str,
+    message: &str,
+) -> Result<i64, VcsError> {
+    if !repo_path.exists() || !repo_path.is_dir() {
+        return Err(VcsError::NotFound);
+    }
+    let clean_source = normalize_repo_path(source_path)?;
+    let clean_destination = normalize_repo_path(destination_path)?;
+    if clean_source.is_empty() || clean_destination.is_empty() {
+        return Err(VcsError::InvalidPath);
+    }
+    let work_dir = svn_temp_work_dir("copy")?;
+    let cleanup = WorkDirCleanup {
+        path: work_dir.clone(),
+    };
+    run_svn_command(
+        svn_command("svn")
+            .arg("checkout")
+            .arg(svn_file_url(repo_path))
+            .arg(&work_dir),
+    )?;
+
+    let mut source_url = svn_file_url(repo_path);
+    source_url.push('/');
+    source_url.push_str(&clean_source);
+    if let Some(revision) = source_revision {
+        source_url.push('@');
+        source_url.push_str(&revision.to_string());
+    }
+    let target_path = work_dir.join(&clean_destination);
+    run_svn_command(
+        svn_command("svn")
+            .arg("copy")
+            .arg(source_url)
+            .arg(&target_path),
+    )?;
+    run_svn_command(
+        svn_command("svn")
+            .arg("commit")
+            .arg("-m")
+            .arg(message)
+            .arg(&target_path),
+    )?;
+    drop(cleanup);
+    svn_youngest_revision(repo_path)
+}
+
 pub fn svn_patch_properties(
     repo_path: &Path,
     path: &str,
