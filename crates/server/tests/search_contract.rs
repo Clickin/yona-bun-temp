@@ -205,14 +205,43 @@ async fn seed_review_comment(
     project_owner_id: i64,
     reviewer_id: i64,
 ) {
+    seed_project_review_comment(
+        db,
+        repo,
+        ReviewCommentSeed {
+            project_name: "projectYobi",
+            pull_request_title: "Needle review pull request",
+            comment_contents: "Needle review comment",
+            number: 7,
+        },
+        project_owner_id,
+        reviewer_id,
+    )
+    .await;
+}
+
+struct ReviewCommentSeed<'a> {
+    project_name: &'a str,
+    pull_request_title: &'a str,
+    comment_contents: &'a str,
+    number: i64,
+}
+
+async fn seed_project_review_comment(
+    db: &DatabaseConnection,
+    repo: &AppRepository,
+    seed: ReviewCommentSeed<'_>,
+    project_owner_id: i64,
+    reviewer_id: i64,
+) {
     let project = repo
-        .read_project_by_owner_and_name("owner", "projectYobi")
+        .read_project_by_owner_and_name("owner", seed.project_name)
         .await
         .unwrap()
         .expect("project");
     let pull_request = pull_request::ActiveModel {
         id: NotSet,
-        title: Set(Some("Needle review pull request".to_string())),
+        title: Set(Some(seed.pull_request_title.to_string())),
         to_project_id: Set(Some(project.id)),
         from_project_id: Set(Some(project.id)),
         to_branch: Set(Some("main".to_string())),
@@ -228,7 +257,7 @@ async fn seed_review_comment(
         last_commit_id: Set(Some("abcdef123456".to_string())),
         merged_commit_id_from: Set(None),
         merged_commit_id_to: Set(None),
-        number: Set(Some(7)),
+        number: Set(Some(seed.number)),
     }
     .insert(db)
     .await
@@ -238,7 +267,7 @@ async fn seed_review_comment(
         "pull_request",
         "body",
         pull_request.id,
-        "Needle review body",
+        seed.pull_request_title,
     )
     .await;
     let thread = comment_thread::ActiveModel {
@@ -280,7 +309,7 @@ async fn seed_review_comment(
         "review_comment",
         "contents",
         comment.id,
-        "Needle review comment",
+        seed.comment_contents,
     )
     .await;
 }
@@ -934,6 +963,93 @@ async fn issue_comment_search_visibility_matches_legacy_public_and_private_acl()
         .collect::<Vec<_>>();
     assert!(projects.contains(&"publicIssueComments"));
     assert!(projects.contains(&"privateIssueComments"));
+}
+
+#[tokio::test]
+async fn review_search_visibility_matches_legacy_public_and_private_acl() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, _, reviewer_id) = register_user(app.clone(), "reviewer").await;
+    create_named_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "publicReviews",
+        "public",
+    )
+    .await;
+    create_named_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "privateReviews",
+        "private",
+    )
+    .await;
+
+    for (project_name, title, comment, number) in [
+        (
+            "publicReviews",
+            "ReviewNeedle public pull request",
+            "ReviewNeedle public review comment",
+            21,
+        ),
+        (
+            "privateReviews",
+            "ReviewNeedle private pull request",
+            "ReviewNeedle private review comment",
+            22,
+        ),
+    ] {
+        seed_project_review_comment(
+            &db,
+            &repo,
+            ReviewCommentSeed {
+                project_name,
+                pull_request_title: title,
+                comment_contents: comment,
+                number,
+            },
+            owner_id,
+            reviewer_id,
+        )
+        .await;
+    }
+
+    let anonymous = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/search?keyword=ReviewNeedle&searchType=review&pageNum=1",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(anonymous["counts"]["reviews"], 1);
+    assert_eq!(anonymous["items"][0]["projectName"], "publicReviews");
+    assert_eq!(anonymous["items"][0]["type"], "review");
+
+    let owner = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/search?keyword=ReviewNeedle&searchType=review&pageNum=1",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(owner["counts"]["reviews"], 2);
+    let projects = owner["items"]
+        .as_array()
+        .expect("owner review search items")
+        .iter()
+        .map(|item| item["projectName"].as_str().unwrap_or_default())
+        .collect::<Vec<_>>();
+    assert!(projects.contains(&"publicReviews"));
+    assert!(projects.contains(&"privateReviews"));
 }
 
 #[tokio::test]
