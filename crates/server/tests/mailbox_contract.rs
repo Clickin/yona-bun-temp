@@ -545,6 +545,87 @@ async fn mailbox_sender_lookup_matches_legacy_from_address_order() {
 }
 
 #[tokio::test]
+async fn mailbox_processing_keeps_message_id_idempotent() {
+    let (repo, _) = build_repository().await;
+    let member = repo
+        .create_user(CreateUserInput {
+            display_name: "Mailbox Member".to_string(),
+            email_address: "member@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "member".to_string(),
+            password_hash: "pw".to_string(),
+        })
+        .await
+        .unwrap();
+    repo.create_project(CreateProjectInput {
+        organization_id: None,
+        owner_name: "mailbox".to_string(),
+        overview: None,
+        project_name: "projectYobi".to_string(),
+        project_scope: "public".to_string(),
+    })
+    .await
+    .unwrap();
+    let issue = repo
+        .create_issue_via_email(CreateIssueViaEmailInput {
+            actor_display_name: member.display_name.clone(),
+            actor_id: member.id,
+            actor_login_id: member.login_id.clone(),
+            body_markdown: "seed body".to_string(),
+            message_id: "<seed-message@domain>".to_string(),
+            owner_name: "mailbox".to_string(),
+            project_name: "projectYobi".to_string(),
+            title: "seed title".to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("seed issue via email");
+
+    let first = repo
+        .process_mailbox_normalized_message(MailboxNormalizedMessageInput {
+            body_markdown: "reply body".to_string(),
+            from_addresses: vec!["member@example.com".to_string()],
+            message_id: "<duplicate-message@domain>".to_string(),
+            recipient_details: vec!["mailbox/projectYobi".to_string()],
+            reply_message_ids: vec!["<seed-message@domain>".to_string()],
+            title: "reply title".to_string(),
+        })
+        .await
+        .unwrap();
+    assert_eq!(first.status, "processed");
+    assert_eq!(first.actions.len(), 1);
+    assert_eq!(first.actions[0].status, "created");
+
+    let second = repo
+        .process_mailbox_normalized_message(MailboxNormalizedMessageInput {
+            body_markdown: "reply body".to_string(),
+            from_addresses: vec!["member@example.com".to_string()],
+            message_id: "<duplicate-message@domain>".to_string(),
+            recipient_details: vec!["mailbox/projectYobi".to_string()],
+            reply_message_ids: vec!["<seed-message@domain>".to_string()],
+            title: "reply title".to_string(),
+        })
+        .await
+        .unwrap();
+    assert_eq!(second.status, "duplicate");
+    assert_eq!(second.sender_id, Some(member.id));
+    assert!(second.actions.is_empty());
+
+    let detail = repo
+        .read_issue_detail("mailbox", "projectYobi", issue.issue_number)
+        .await
+        .unwrap()
+        .expect("issue detail");
+    let reply_comments = detail
+        .comments
+        .iter()
+        .filter(|comment| comment.contents_markdown == "reply body")
+        .count();
+    assert_eq!(reply_comments, 1);
+}
+
+#[tokio::test]
 async fn mailbox_project_targets_follow_legacy_detail_and_read_filtering() {
     let (repo, _) = build_repository().await;
     let member = repo

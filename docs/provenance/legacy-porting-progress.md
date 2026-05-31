@@ -355,6 +355,7 @@ Interpretation:
 - [x] Mailbox DB-backed resource action planning parity for legacy `EmailHandler.createResources`
 - [x] Mailbox DB-backed resource action execution parity
 - [x] Mailbox normalized-message orchestration
+- [x] Mailbox duplicate inbound Message-ID idempotency before resource creation
 - [x] Mailbox DB-backed `CreationViaEmailTest` resource creation parity for issue, issue comment, board comment, and review comment
 - [ ] Mailbox/reply threading parity
 

@@ -8909,6 +8909,18 @@ impl AppRepository {
         Ok(())
     }
 
+    async fn mailbox_message_id_already_recorded(&self, message_id: &str) -> Result<bool, DbErr> {
+        let message_id = message_id.trim();
+        if message_id.is_empty() {
+            return Ok(false);
+        }
+        original_email::Entity::find()
+            .filter(original_email::Column::MessageId.eq(Some(message_id.to_string())))
+            .one(&self.db)
+            .await
+            .map(|row| row.is_some())
+    }
+
     pub async fn find_mailbox_reply_targets_by_message_ids(
         &self,
         message_ids: &[String],
@@ -9128,6 +9140,16 @@ impl AppRepository {
                 status: "no_sender".to_string(),
             });
         };
+        if self
+            .mailbox_message_id_already_recorded(&input.message_id)
+            .await?
+        {
+            return Ok(MailboxNormalizedMessageResult {
+                actions: Vec::new(),
+                sender_id: Some(sender.id),
+                status: "duplicate".to_string(),
+            });
+        }
         let projects = self
             .find_mailbox_project_targets_by_details(sender.id, &input.recipient_details)
             .await?;
