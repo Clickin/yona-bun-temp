@@ -762,6 +762,85 @@ async fn post_comment_search_visibility_matches_legacy_public_and_private_acl() 
 }
 
 #[tokio::test]
+async fn milestone_search_visibility_matches_legacy_public_and_private_acl() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    create_named_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "publicMilestones",
+        "public",
+    )
+    .await;
+    create_named_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "privateMilestones",
+        "private",
+    )
+    .await;
+
+    for (project_name, title) in [
+        ("publicMilestones", "MilestoneNeedle public milestone"),
+        ("privateMilestones", "MilestoneNeedle private milestone"),
+    ] {
+        repo.create_project_milestone(MilestoneMutationInput {
+            actor_id: Some(owner_id),
+            attachment_ids: Vec::new(),
+            contents_markdown: format!("MilestoneNeedle body for {project_name}"),
+            due_date: Some(days_ago_datetime(2)),
+            owner_name: "owner".to_string(),
+            project_name: project_name.to_string(),
+            state: "open".to_string(),
+            title: title.to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("milestone");
+    }
+
+    let anonymous = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/search?keyword=MilestoneNeedle&searchType=milestone&pageNum=1",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(anonymous["counts"]["milestones"], 1);
+    assert_eq!(anonymous["items"][0]["projectName"], "publicMilestones");
+    assert_eq!(
+        anonymous["items"][0]["title"],
+        "MilestoneNeedle public milestone"
+    );
+
+    let owner = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/search?keyword=MilestoneNeedle&searchType=milestone&pageNum=1",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(owner["counts"]["milestones"], 2);
+    let titles = owner["items"]
+        .as_array()
+        .expect("owner milestone search items")
+        .iter()
+        .map(|item| item["title"].as_str().unwrap_or_default())
+        .collect::<Vec<_>>();
+    assert!(titles.contains(&"MilestoneNeedle public milestone"));
+    assert!(titles.contains(&"MilestoneNeedle private milestone"));
+}
+
+#[tokio::test]
 async fn issue_comment_search_visibility_matches_legacy_public_and_private_acl() {
     let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
