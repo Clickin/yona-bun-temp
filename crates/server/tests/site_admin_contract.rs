@@ -43,6 +43,7 @@ fn clear_site_update_env() {
         "YONA_UPDATE_METADATA_URL",
         "YONA_UPDATE_RELEASE_URL",
         "YONA_UPDATE_VERSION",
+        "YONA_UPDATE_HTTPS_FETCH_COMMAND",
     ] {
         std::env::remove_var(name);
     }
@@ -2166,7 +2167,80 @@ async fn site_admin_update_download_file_proxies_configured_plain_http_binary() 
         Some(&admin_cookie),
     )
     .await;
-    assert_eq!(rest_download.status(), StatusCode::OK);
+    if rest_download.status() != StatusCode::OK {
+        panic!(
+            "expected HTTPS update download to succeed, got {}: {}",
+            rest_download.status(),
+            response_text(rest_download).await
+        );
+    }
+    assert_eq!(
+        rest_download
+            .headers()
+            .get(http::header::CONTENT_TYPE)
+            .unwrap(),
+        "application/zip"
+    );
+    assert!(rest_download
+        .headers()
+        .get(http::header::CONTENT_DISPOSITION)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .contains("yona-9.9.9.zip"));
+    assert_eq!(response_bytes(rest_download).await, b"portable-yona-update");
+
+    clear_site_update_env();
+}
+
+#[tokio::test]
+async fn site_admin_update_download_file_proxies_configured_https_binary() {
+    let _guard = site_update_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    clear_site_update_env();
+    let fake_curl_dir = tempfile::tempdir().expect("fake curl tempdir");
+    let fake_curl = fake_curl_dir.path().join("fake-curl.ps1");
+    std::fs::write(
+        &fake_curl,
+        r#"
+param([Parameter(ValueFromRemainingArguments=$true)][object[]]$Remaining)
+$bytes = [Text.Encoding]::ASCII.GetBytes("HTTP/1.1 200 OK`r`nContent-Type: application/zip`r`n`r`nportable-yona-update")
+[Console]::OpenStandardOutput().Write($bytes, 0, $bytes.Length)
+"#,
+    )
+    .expect("write fake curl");
+    std::env::set_var("YONA_CURRENT_VERSION", "9.9.8");
+    std::env::set_var("YONA_UPDATE_LATEST_VERSION", "v9.9.9");
+    std::env::set_var(
+        "YONA_UPDATE_RELEASE_URL",
+        "https://downloads.example.test/releases/yona-9.9.9.zip",
+    );
+    std::env::set_var(
+        "YONA_UPDATE_HTTPS_FETCH_COMMAND",
+        format!(
+            "powershell -NoProfile -ExecutionPolicy Bypass -File {}",
+            fake_curl.display()
+        ),
+    );
+
+    let (app, _repo, db) = build_app_with_repository().await;
+    let (_admin_csrf, admin_cookie, admin_id) = register_user(app.clone(), "siteboss").await;
+    mark_site_admin(&db, admin_id).await;
+
+    let rest_download = rest_get(
+        app,
+        "/yona/api/v1/site/update/download-file",
+        Some(&admin_cookie),
+    )
+    .await;
+    if rest_download.status() != StatusCode::OK {
+        panic!(
+            "expected HTTPS update download to succeed, got {}: {}",
+            rest_download.status(),
+            response_text(rest_download).await
+        );
+    }
     assert_eq!(
         rest_download
             .headers()

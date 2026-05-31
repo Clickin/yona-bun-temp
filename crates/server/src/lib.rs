@@ -24,6 +24,7 @@ use session::{SessionConfig, SessionManager};
 use std::{
     collections::HashMap,
     path::{Path as StdPath, PathBuf},
+    process::Command,
     sync::{
         atomic::{AtomicBool, Ordering},
         Mutex, OnceLock,
@@ -17900,9 +17901,7 @@ fn site_update_download_payload(
         return site_update_plain_http_get_bytes(release_url).map_err(RestRouteError::bad_request);
     }
     if release_url.starts_with("https://") {
-        return Err(RestRouteError::not_implemented(
-            "site.update.download.httpsFetchDeferred",
-        ));
+        return site_update_https_get_bytes(release_url).map_err(RestRouteError::bad_request);
     }
     Err(RestRouteError::bad_request(
         "site.update.download.unsupportedScheme",
@@ -18046,6 +18045,111 @@ fn site_update_plain_http_get_bytes(url: &str) -> Result<SiteUpdateDownloadPaylo
         .unwrap_or_else(|| "application/octet-stream".to_string());
     let file_name = parsed
         .path
+        .rsplit('/')
+        .next()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or("yona-update.bin")
+        .to_string();
+    Ok(SiteUpdateDownloadPayload {
+        bytes: body,
+        content_type,
+        file_name,
+    })
+}
+
+fn site_update_https_get_bytes(url: &str) -> Result<SiteUpdateDownloadPayload, String> {
+    let (program, args) = site_update_https_fetch_command(url)?;
+    let output = Command::new(&program)
+        .args(&args)
+        .output()
+        .map_err(|error| format!("site.update.download.httpsFetchFailed: {error}"))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let reason = stderr.trim();
+        return Err(if reason.is_empty() {
+            format!(
+                "site.update.download.httpsFetchFailed: exit status {}",
+                output.status
+            )
+        } else {
+            format!("site.update.download.httpsFetchFailed: {reason}")
+        });
+    }
+    site_update_payload_from_http_response_bytes(url, &output.stdout)
+}
+
+fn site_update_https_fetch_command(url: &str) -> Result<(String, Vec<String>), String> {
+    let configured = std::env::var("YONA_UPDATE_HTTPS_FETCH_COMMAND")
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty());
+    if let Some(configured) = configured {
+        let mut parts = configured.split_whitespace();
+        let program = parts
+            .next()
+            .ok_or_else(|| "site.update.download.httpsFetchCommandEmpty".to_string())?
+            .to_string();
+        let mut args: Vec<String> = parts.map(ToString::to_string).collect();
+        args.push(url.to_string());
+        return Ok((program, args));
+    }
+    Ok((
+        "curl".to_string(),
+        [
+            "--fail",
+            "--location",
+            "--silent",
+            "--show-error",
+            "--max-time",
+            "30",
+            "--dump-header",
+            "-",
+            "--output",
+            "-",
+            url,
+        ]
+        .into_iter()
+        .map(ToString::to_string)
+        .collect(),
+    ))
+}
+
+fn site_update_payload_from_http_response_bytes(
+    url: &str,
+    response: &[u8],
+) -> Result<SiteUpdateDownloadPayload, String> {
+    let header_end = response
+        .windows(4)
+        .rposition(|window| window == b"\r\n\r\n")
+        .ok_or_else(|| "site.update.metadata.invalidHttpResponse".to_string())?;
+    let (head, body) = response.split_at(header_end);
+    let body = body[4..].to_vec();
+    let head = String::from_utf8_lossy(head);
+    let status_line = head
+        .lines()
+        .filter(|line| line.starts_with("HTTP/"))
+        .next_back()
+        .unwrap_or_default();
+    if !status_line.contains(" 2") {
+        return Err(format!(
+            "site.update.metadata.httpStatus: {}",
+            status_line.trim()
+        ));
+    }
+    let content_type = head
+        .lines()
+        .filter_map(|line| line.split_once(':'))
+        .rev()
+        .find_map(|(name, value)| {
+            name.eq_ignore_ascii_case("content-type")
+                .then(|| value.trim().to_string())
+        })
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "application/octet-stream".to_string());
+    let file_name = url
+        .split('?')
+        .next()
+        .unwrap_or(url)
         .rsplit('/')
         .next()
         .filter(|value| !value.trim().is_empty())
