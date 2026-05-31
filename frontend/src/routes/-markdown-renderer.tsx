@@ -1134,9 +1134,38 @@ function parseMarkdownBlockquote(lines: MarkdownLineRecord[]): MarkdownBlockquot
     if (!match && index === 0) {
       return null;
     }
-    quoteLines.push({ key: line.key, text: match ? (match[1] ?? "") : line.text });
+    quoteLines.push({
+      key: line.key,
+      text: match ? (match[1] ?? "") : blockquoteLazyContinuationText(line.text, quoteLines),
+    });
   }
   return quoteLines;
+}
+
+function blockquoteLazyContinuationText(text: string, quoteLines: MarkdownBlockquoteRecord[]) {
+  const listIndent = activeBlockquoteListIndent(quoteLines);
+  if (listIndent === null) {
+    return text;
+  }
+  return `${" ".repeat(listIndent + 2)}${text}`;
+}
+
+function activeBlockquoteListIndent(quoteLines: MarkdownBlockquoteRecord[]) {
+  for (let index = quoteLines.length - 1; index >= 0; index -= 1) {
+    const line = quoteLines[index];
+    if (!line) {
+      continue;
+    }
+    const listLine = parseMarkdownListLine({ key: line.key, text: line.text });
+    if (listLine) {
+      return listLine.indent;
+    }
+    if (/^\s+\S/.test(line.text) || line.text.trim() === "") {
+      continue;
+    }
+    return null;
+  }
+  return null;
 }
 
 function markdownLineStartsBlock(line: string): boolean {
