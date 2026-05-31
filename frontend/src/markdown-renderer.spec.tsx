@@ -951,6 +951,18 @@ describe("MarkdownRenderer", () => {
     );
   });
 
+  it("renders extended bare email autolinks like legacy marked GFM", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown="Mail support@example_domain.com and keep support@example_domain." />,
+    );
+
+    expect(html).toContain(
+      '<a href="mailto:support@example_domain.com">support@example_domain.com</a>',
+    );
+    expect(html).toContain("support@example_domain.");
+    expect(html).not.toContain('href="mailto:support@example_domain."');
+  });
+
   it("trims trailing punctuation from bare URLs like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown="See (https://example.com/docs), then https://example.com/end." />,

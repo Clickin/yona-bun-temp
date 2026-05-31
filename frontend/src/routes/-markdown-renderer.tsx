@@ -186,6 +186,11 @@ const referenceTitleOnlyPattern =
 const referenceDefinitionPattern = new RegExp(
   `^ {0,3}\\[(${referenceLabelPattern})\\]:\\s*(${referenceTargetPattern})(?:\\s+(?:"((?:\\\\"|[^"\\\\])*)"|'((?:\\\\'|[^'\\\\])*)'|\\(((?:\\\\\\)|[^)\\\\])*)\\)))?\\s*$`,
 );
+const bareEmailPattern = String.raw`[A-Za-z0-9._+-]+@[A-Za-z0-9-_]+(?:\.[A-Za-z0-9-_]*[A-Za-z0-9])+(?![-_])`;
+const bareUrlPattern = String.raw`(?:[Hh][Tt][Tt][Pp][Ss]?|[Ff][Tt][Pp]):\/\/[^\s<]+|[Ww][Ww][Ww]\.[^\s<]+`;
+const bareAutolinkPattern = `${bareUrlPattern}|${bareEmailPattern}`;
+const angleAutolinkPattern = String.raw`<(?:(?:[Hh][Tt][Tt][Pp][Ss]?|[Ff][Tt][Pp]):\/\/[^\s<>]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>`;
+const bareEmailRegex = new RegExp(`^${bareEmailPattern}$`);
 
 const openingFencePattern = /^( {0,3})(`{3,}|~{3,})(?:[ \t]*([A-Za-z0-9_+.-]+)(?:[ \t]+.*)?)?\s*$/;
 const looseListBreakMarker = "\u0000loose-list-break\u0000";
@@ -402,8 +407,10 @@ function parseTextWithAutolinks(
   const basePath = normalizeBasePath(context?.basePath);
   const ownerName = context?.ownerName ?? "";
   const projectName = context?.projectName ?? "";
-  const autolinkPattern =
-    /(^|[^\w/@#.-])(<(?:(?:[Hh][Tt][Tt][Pp][Ss]?|[Ff][Tt][Pp]):\/\/[^\s<>]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+@[0-9A-Fa-f]{40}|[A-Za-z0-9_.-]+@[0-9A-Fa-f]{40}|@[0-9A-Fa-f]{40}|[0-9A-Fa-f]{40}|@[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+|@[A-Za-z0-9_.-]+|[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+#[0-9]+|[A-Za-z0-9_.-]+#[0-9]+|#[0-9]+|[Hh][Tt][Tt][Pp][Ss]?:\/\/[^\s<]+|[Ff][Tt][Pp]:\/\/[^\s<]+|[Ww][Ww][Ww]\.[^\s<]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/g;
+  const autolinkPattern = new RegExp(
+    `(^|[^\\w/@#.-])(<(?:(?:[Hh][Tt][Tt][Pp][Ss]?|[Ff][Tt][Pp]):\\/\\/[^\\s<>]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,})>|[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+@[0-9A-Fa-f]{40}|[A-Za-z0-9_.-]+@[0-9A-Fa-f]{40}|@[0-9A-Fa-f]{40}|[0-9A-Fa-f]{40}|@[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+|@[A-Za-z0-9_.-]+|[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+#[0-9]+|[A-Za-z0-9_.-]+#[0-9]+|#[0-9]+|${bareAutolinkPattern})`,
+    "g",
+  );
   let index = 0;
   for (const match of text.matchAll(autolinkPattern)) {
     const matchStart = match.index ?? 0;
@@ -551,7 +558,7 @@ function parseTextWithAutolinks(
       const { label, suffix } = splitBareAutolinkToken(token);
       const target = /^www\./i.test(label)
         ? `http://${label}`
-        : /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(label)
+        : bareEmailRegex.test(label)
           ? `mailto:${label}`
           : label;
       parts.push({ kind: "link", key, label, target });
@@ -571,7 +578,7 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
   const parts: MarkdownInlinePart[] = [];
   let index = 0;
   const inlinePattern = new RegExp(
-    `\\\\([^\\w\\s])|(!?)\\[([^\\]]*)\\]\\((${inlineTargetPattern})(?:\\s+(?:"((?:\\\\"|[^"\\\\])*)"|'((?:\\\\'|[^'\\\\])*)'|\\(((?:\\\\\\)|[^)\\\\])*)\\)))?\\)|(!?)\\[((?:\\\\(?:\\[|\\])|[^\\]\\\\[])+)\\]\\[((?:\\\\(?:\\[|\\])|[^\\]\\\\[])*)\\]|(!?)\\[((?:\\\\(?:\\[|\\])|[^\\]\\\\[])+)\\](?:\\[\\])?|\\*\\*\\*(?<strongEmAst>[^*\\n]+)\\*\\*\\*|___(?<strongEmUnd>[^_\\n]+)___|\\*\\*(?<strongAst>[^*\\n]+)\\*\\*|__(?<strongUnd>[^_\\n]+)__|~~(?<deleteText>[^~\\n]+)~~|(?<codeFence>\`+)(?<codeText>[^\`]|[^\`][\\s\\S]*?[^\`])\\k<codeFence>(?!\`)|\\*(?<emphasisAst>[^*\\n]+)\\*|_(?<emphasisUnd>[^_\\n]+)_`,
+    `\\\\([^\\w\\s])|(!?)\\[([^\\]]*)\\]\\((${inlineTargetPattern})(?:\\s+(?:"((?:\\\\"|[^"\\\\])*)"|'((?:\\\\'|[^'\\\\])*)'|\\(((?:\\\\\\)|[^)\\\\])*)\\)))?\\)|(!?)\\[((?:\\\\(?:\\[|\\])|[^\\]\\\\[])+)\\]\\[((?:\\\\(?:\\[|\\])|[^\\]\\\\[])*)\\]|(!?)\\[((?:\\\\(?:\\[|\\])|[^\\]\\\\[])+)\\](?:\\[\\])?|\\*\\*\\*(?<strongEmAst>[^*\\n]+)\\*\\*\\*|___(?<strongEmUnd>[^_\\n]+)___|\\*\\*(?<strongAst>[^*\\n]+)\\*\\*|__(?<strongUnd>[^_\\n]+)__|~~(?<deleteText>[^~\\n]+)~~|(?<codeFence>\`+)(?<codeText>[^\`]|[^\`][\\s\\S]*?[^\`])\\k<codeFence>(?!\`)|(?<angleAutolink>${angleAutolinkPattern})|(?<bareAutolink>${bareAutolinkPattern})|\\*(?<emphasisAst>[^*\\n]+)\\*|_(?<emphasisUnd>[^_\\n]+)_`,
     "g",
   );
   for (const match of line.matchAll(inlinePattern)) {
@@ -630,6 +637,14 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
         key: `code-${start}`,
         value: normalizeCodeSpan(groups.codeText),
       });
+    } else if (groups?.angleAutolink !== undefined || groups?.bareAutolink !== undefined) {
+      parts.push(
+        ...parseTextWithAutolinks(
+          groups.angleAutolink ?? groups.bareAutolink ?? "",
+          `autolink-${start}`,
+          context,
+        ),
+      );
     } else if (groups?.emphasisAst !== undefined || groups?.emphasisUnd !== undefined) {
       parts.push({
         kind: "emphasis",
