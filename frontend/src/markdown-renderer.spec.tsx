@@ -272,6 +272,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">fi</span>');
   });
 
+  it("recognizes legacy Highlight.js SQL keywords in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```sql",
+          "select id from issues where state = 'open'",
+          "order by created_at desc",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="sql">');
+    expect(html).toContain('class="syntax-token syntax-keyword">select</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">from</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">where</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">order</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">by</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">desc</span>');
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,

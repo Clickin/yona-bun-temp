@@ -217,6 +217,48 @@ const shellKeywords = new Set([
   "while",
 ]);
 
+const sqlKeywords = new Set([
+  "alter",
+  "and",
+  "asc",
+  "as",
+  "by",
+  "create",
+  "delete",
+  "desc",
+  "distinct",
+  "drop",
+  "exists",
+  "from",
+  "group",
+  "having",
+  "in",
+  "index",
+  "inner",
+  "insert",
+  "into",
+  "is",
+  "join",
+  "left",
+  "like",
+  "limit",
+  "not",
+  "null",
+  "offset",
+  "on",
+  "or",
+  "order",
+  "outer",
+  "right",
+  "select",
+  "set",
+  "table",
+  "union",
+  "update",
+  "values",
+  "where",
+]);
+
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
 
 export function highlightCodeBlock(code: string, language: string | undefined) {
@@ -294,6 +336,9 @@ function normalizeCodeLanguage(language: string) {
   if (["bash", "sh", "shell", "zsh"].includes(normalized)) {
     return "shell";
   }
+  if (["mysql", "pgsql", "postgresql", "sql"].includes(normalized)) {
+    return "sql";
+  }
   return normalized;
 }
 
@@ -306,6 +351,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "scala" && scalaKeywords.has(token)) ||
     (language === "python" && pythonKeywords.has(token)) ||
     (language === "shell" && shellKeywords.has(token)) ||
+    (language === "sql" && sqlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );
 }
