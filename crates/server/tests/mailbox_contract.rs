@@ -453,6 +453,8 @@ async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_res
         .find_mailbox_reply_targets_by_details(&[
             format!("yobi/projectYobi/comment_thread/{}", thread.id),
             format!("yobi/projectYobi/issue_post/{}", issue.id),
+            format!("yobi/projectYobi/COMMENT_THREAD/{}", thread.id),
+            format!("yobi/projectYobi/ISSUE_POST/{}", issue.id),
             format!("yobi/projectYobi/comment_thread/{}", thread.id),
             "yobi/projectYobi/issue_post/not-a-number".to_string(),
             "yobi/projectYobi/unknown/1".to_string(),
@@ -465,6 +467,22 @@ async fn mailbox_creation_via_email_creates_issue_comment_and_review_comment_res
     assert_eq!(detail_targets[0].resource_id, thread.id);
     assert_eq!(detail_targets[1].resource_type, "issue_post");
     assert_eq!(detail_targets[1].resource_id, issue.id);
+
+    let legacy_enum_detail_targets = repo
+        .find_mailbox_reply_targets_by_details(&[
+            format!("yobi/projectYobi/COMMENT_THREAD/{}", thread.id),
+            format!("yobi/projectYobi/ISSUE_POST/{}", issue.id),
+        ])
+        .await
+        .unwrap();
+    assert_eq!(legacy_enum_detail_targets.len(), 2);
+    assert_eq!(
+        legacy_enum_detail_targets[0].resource_type,
+        "comment_thread"
+    );
+    assert_eq!(legacy_enum_detail_targets[0].resource_id, thread.id);
+    assert_eq!(legacy_enum_detail_targets[1].resource_type, "issue_post");
+    assert_eq!(legacy_enum_detail_targets[1].resource_id, issue.id);
 }
 
 #[tokio::test]

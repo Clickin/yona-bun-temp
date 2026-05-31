@@ -8985,19 +8985,20 @@ impl AppRepository {
             let Some((resource_type, resource_id)) = resource_path.split_once('/') else {
                 continue;
             };
+            let resource_type = mailbox_canonical_resource_type(resource_type);
             let Some(resource_id) = resource_id.parse::<i64>().ok() else {
                 continue;
             };
             if !self
-                .mailbox_reply_resource_exists(resource_type, resource_id)
+                .mailbox_reply_resource_exists(&resource_type, resource_id)
                 .await?
             {
                 continue;
             }
-            if seen.insert((resource_type.to_string(), resource_id)) {
+            if seen.insert((resource_type.clone(), resource_id)) {
                 targets.push(MailboxReplyTargetRecord {
                     resource_id,
-                    resource_type: resource_type.to_string(),
+                    resource_type,
                 });
             }
         }
@@ -9439,11 +9440,12 @@ impl AppRepository {
         let Some((resource_type, resource_id)) = left.split_once('/') else {
             return Ok(None);
         };
+        let resource_type = mailbox_canonical_resource_type(resource_type);
         let Some(resource_id) = resource_id.parse::<i64>().ok() else {
             return Ok(None);
         };
         if !self
-            .mailbox_reply_resource_exists(resource_type, resource_id)
+            .mailbox_reply_resource_exists(&resource_type, resource_id)
             .await?
         {
             return Ok(None);
@@ -9451,7 +9453,7 @@ impl AppRepository {
 
         Ok(Some(MailboxReplyTargetRecord {
             resource_id,
-            resource_type: resource_type.to_string(),
+            resource_type,
         }))
     }
 
