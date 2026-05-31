@@ -427,6 +427,8 @@ const cppKeywords = new Set([
   "volatile",
 ]);
 
+const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
+
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
 
 export function highlightCodeBlock(code: string, language: string | undefined) {
@@ -516,6 +518,9 @@ function normalizeCodeLanguage(language: string) {
   if (["c", "cc", "cpp", "c++", "h", "h++", "hpp"].includes(normalized)) {
     return "cpp";
   }
+  if (["yaml", "yml"].includes(normalized)) {
+    return "yaml";
+  }
   return normalized;
 }
 
@@ -532,6 +537,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "ruby" && rubyKeywords.has(token)) ||
     (language === "php" && phpKeywords.has(token.toLowerCase())) ||
     (language === "cpp" && cppKeywords.has(token)) ||
+    (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );
 }

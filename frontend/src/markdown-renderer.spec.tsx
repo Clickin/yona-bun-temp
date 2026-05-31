@@ -355,6 +355,19 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
   });
 
+  it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```yml", "enabled: yes", "archived: no", "deleted: null", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="yml">');
+    expect(html).toContain('class="syntax-token syntax-keyword">yes</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">no</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">null</span>');
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,

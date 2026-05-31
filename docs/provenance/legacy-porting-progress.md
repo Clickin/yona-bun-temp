@@ -444,6 +444,7 @@ Interpretation:
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Ruby aliases (`rb`/`ruby`) for Ruby keywords
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js PHP aliases (`php`/`php3`/`php4`/`php5`/`php6`) for PHP keywords
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js C/C++ aliases (`c`/`cc`/`h`/`c++`/`h++`/`hpp`) for C++ keywords
+- [x] React-side fenced code highlighting recognizes legacy Highlight.js YAML aliases (`yml`/`YAML`/`yaml`) for YAML literals
 - [x] Code-browser Markdown files render in React with legacy `.codebrowser-markdown` while the REST payload rewrites local `./...` image paths to the project file route as Markdown
 - [x] Project-home Git README fallback renders in React with the legacy readme body wrapper and `breaks: false` soft-line behavior while the REST payload rewrites local images/normal links to project file/code routes as Markdown
 - [x] Legacy `POST /markdown/:owner/:project` preview renderer validates project read access and returns Markdown source for React-side preview rendering instead of server-rendered HTML
