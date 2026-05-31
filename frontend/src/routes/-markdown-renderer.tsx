@@ -403,7 +403,7 @@ function parseTextWithAutolinks(
   const ownerName = context?.ownerName ?? "";
   const projectName = context?.projectName ?? "";
   const autolinkPattern =
-    /(^|[^\w/@#.-])(<(?:(?:[Hh][Tt][Tt][Pp][Ss]?|[Ff][Tt][Pp]):\/\/[^\s<>]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+@[0-9A-Fa-f]{40}|[A-Za-z0-9_.-]+@[0-9A-Fa-f]{40}|@[0-9A-Fa-f]{40}|[0-9A-Fa-f]{40}|@[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+|@[A-Za-z0-9_.-]+|[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+#[0-9]+|[A-Za-z0-9_.-]+#[0-9]+|#[0-9]+|https?:\/\/[^\s<]+|ftp:\/\/[^\s<]+|www\.[^\s<]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/g;
+    /(^|[^\w/@#.-])(<(?:(?:[Hh][Tt][Tt][Pp][Ss]?|[Ff][Tt][Pp]):\/\/[^\s<>]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})>|[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+@[0-9A-Fa-f]{40}|[A-Za-z0-9_.-]+@[0-9A-Fa-f]{40}|@[0-9A-Fa-f]{40}|[0-9A-Fa-f]{40}|@[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+|@[A-Za-z0-9_.-]+|[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+#[0-9]+|[A-Za-z0-9_.-]+#[0-9]+|#[0-9]+|[Hh][Tt][Tt][Pp][Ss]?:\/\/[^\s<]+|[Ff][Tt][Pp]:\/\/[^\s<]+|[Ww][Ww][Ww]\.[^\s<]+|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/g;
   let index = 0;
   for (const match of text.matchAll(autolinkPattern)) {
     const matchStart = match.index ?? 0;
@@ -549,7 +549,7 @@ function parseTextWithAutolinks(
       }
     } else {
       const { label, suffix } = splitBareAutolinkToken(token);
-      const target = label.startsWith("www.")
+      const target = /^www\./i.test(label)
         ? `http://${label}`
         : /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(label)
           ? `mailto:${label}`

@@ -931,14 +931,24 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("&lt;help@example.com&gt;");
   });
 
-  it("renders uppercase angle-bracket URL autolinks like legacy marked", () => {
+  it("renders uppercase URL autolinks like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown="See <HTTP://EXAMPLE.COM> and plain HTTP://EXAMPLE.COM" />,
     );
 
     expect(html).toContain('<a href="HTTP://EXAMPLE.COM">HTTP://EXAMPLE.COM</a>');
-    expect(html).toContain(" plain HTTP://EXAMPLE.COM");
-    expect(html).not.toContain('href="HTTP://EXAMPLE.COM">plain');
+    expect(html).toContain('plain <a href="HTTP://EXAMPLE.COM">HTTP://EXAMPLE.COM</a>');
+  });
+
+  it("renders uppercase bare URL schemes like legacy marked GFM", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown="See HTTP://EXAMPLE.COM and FTP://FILES.EXAMPLE.COM/archive.zip" />,
+    );
+
+    expect(html).toContain('<a href="HTTP://EXAMPLE.COM">HTTP://EXAMPLE.COM</a>');
+    expect(html).toContain(
+      '<a href="FTP://FILES.EXAMPLE.COM/archive.zip">FTP://FILES.EXAMPLE.COM/archive.zip</a>',
+    );
   });
 
   it("trims trailing punctuation from bare URLs like legacy marked", () => {

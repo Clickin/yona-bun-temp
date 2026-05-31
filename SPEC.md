@@ -1633,6 +1633,6 @@ Debug-only test note: `debug_assertions` 빌드에서는 과거 method-name 기�
 - Migrator/export/import: legacy external `/-_-api/v1/**` compatibility beyond the direct `hello` health check, including issue API parity, is a separate product/tool deliverable rather than app server scope
 - Webhook follow-up: optional signature compatibility if external evidence requires it
 - Admin follow-up: site-admin user/project/post/issue/mail/diagnostic/update/data surfaces are implemented; remaining admin gaps are outside the update binary proxy slice
-- Markdown follow-up: full legacy/GFM extension parity, remaining autolink edge cases if legacy evidence requires them, and full Highlight.js-equivalent language coverage
+- Markdown follow-up: full legacy/GFM extension parity after marked-style case-insensitive bare URL scheme autolinks, remaining autolink edge cases if legacy evidence requires them, and full Highlight.js-equivalent language coverage
 
 ---
