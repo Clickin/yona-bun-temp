@@ -515,6 +515,17 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("__strong__");
   });
 
+  it("renders triple emphasis like legacy marked", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer markdown="Keep ***both*** and ___also both___ text" />,
+    );
+
+    expect(html).toContain("<strong><em>both</em></strong>");
+    expect(html).toContain("<strong><em>also both</em></strong>");
+    expect(html).not.toContain("***both***");
+    expect(html).not.toContain("___also both___");
+  });
+
   it("parses inline Markdown inside emphasis tokens like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown="**https://example.com** *`code`* ~~www.example.com~~" />,

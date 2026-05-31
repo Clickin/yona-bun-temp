@@ -570,9 +570,10 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
   const parts: MarkdownInlinePart[] = [];
   let index = 0;
   const inlinePattern =
-    /\\([^\w\s])|(!?)\[([^\]]*)\]\((<[^>\s]+>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_`{|}~]|[^)\\\s])+)(?:\s+(?:"((?:\\"|[^"\\])*)"|'((?:\\'|[^'\\])*)'|\(((?:\\\)|[^)\\])*)\)))?\)|(!?)\[((?:\\(?:\[|\])|[^\]\\[])+)\]\[((?:\\(?:\[|\])|[^\]\\[])*)\]|(!?)\[((?:\\(?:\[|\])|[^\]\\[])+)\](?:\[\])?|\*\*(?<strongAst>[^*\n]+)\*\*|__(?<strongUnd>[^_\n]+)__|~~(?<deleteText>[^~\n]+)~~|(?<codeFence>`+)(?<codeText>[^`]|[^`][\s\S]*?[^`])\k<codeFence>(?!`)|\*(?<emphasisAst>[^*\n]+)\*|_(?<emphasisUnd>[^_\n]+)_/g;
+    /\\([^\w\s])|(!?)\[([^\]]*)\]\((<[^>\s]+>|(?:\\[!"#$%&'()*+,\-./:;<=>?@[\]\\^_`{|}~]|[^)\\\s])+)(?:\s+(?:"((?:\\"|[^"\\])*)"|'((?:\\'|[^'\\])*)'|\(((?:\\\)|[^)\\])*)\)))?\)|(!?)\[((?:\\(?:\[|\])|[^\]\\[])+)\]\[((?:\\(?:\[|\])|[^\]\\[])*)\]|(!?)\[((?:\\(?:\[|\])|[^\]\\[])+)\](?:\[\])?|\*\*\*(?<strongEmAst>[^*\n]+)\*\*\*|___(?<strongEmUnd>[^_\n]+)___|\*\*(?<strongAst>[^*\n]+)\*\*|__(?<strongUnd>[^_\n]+)__|~~(?<deleteText>[^~\n]+)~~|(?<codeFence>`+)(?<codeText>[^`]|[^`][\s\S]*?[^`])\k<codeFence>(?!`)|\*(?<emphasisAst>[^*\n]+)\*|_(?<emphasisUnd>[^_\n]+)_/g;
   for (const match of line.matchAll(inlinePattern)) {
     const start = match.index ?? 0;
+    const groups = match.groups;
     if (start > index) {
       parts.push(...parseTextWithAutolinks(line.slice(index, start), `text-${index}`, context));
     }
@@ -603,25 +604,34 @@ function parseInlineMarkdown(line: string, context?: MarkdownContext): MarkdownI
       } else {
         parts.push({ kind: "text", key: `text-${start}`, value: match[0] ?? "" });
       }
-    } else if (match.groups?.strongAst !== undefined || match.groups?.strongUnd !== undefined) {
+    } else if (groups?.strongEmAst !== undefined || groups?.strongEmUnd !== undefined) {
+      const strongEmAst = groups.strongEmAst;
+      const strongEmUnd = groups.strongEmUnd;
+      const emphasisDelimiter = strongEmAst !== undefined ? "*" : "_";
+      parts.push({
+        kind: "strong",
+        key: `strong-emphasis-${start}`,
+        value: `${emphasisDelimiter}${strongEmAst ?? strongEmUnd ?? ""}${emphasisDelimiter}`,
+      });
+    } else if (groups?.strongAst !== undefined || groups?.strongUnd !== undefined) {
       parts.push({
         kind: "strong",
         key: `strong-${start}`,
-        value: match.groups.strongAst ?? match.groups.strongUnd ?? "",
+        value: groups.strongAst ?? groups.strongUnd ?? "",
       });
-    } else if (match.groups?.deleteText !== undefined) {
-      parts.push({ kind: "delete", key: `delete-${start}`, value: match.groups.deleteText });
-    } else if (match.groups?.codeText !== undefined) {
+    } else if (groups?.deleteText !== undefined) {
+      parts.push({ kind: "delete", key: `delete-${start}`, value: groups.deleteText });
+    } else if (groups?.codeText !== undefined) {
       parts.push({
         kind: "code",
         key: `code-${start}`,
-        value: normalizeCodeSpan(match.groups.codeText),
+        value: normalizeCodeSpan(groups.codeText),
       });
-    } else if (match.groups?.emphasisAst !== undefined || match.groups?.emphasisUnd !== undefined) {
+    } else if (groups?.emphasisAst !== undefined || groups?.emphasisUnd !== undefined) {
       parts.push({
         kind: "emphasis",
         key: `emphasis-${start}`,
-        value: match.groups.emphasisAst ?? match.groups.emphasisUnd ?? "",
+        value: groups.emphasisAst ?? groups.emphasisUnd ?? "",
       });
     } else {
       parts.push({ kind: "text", key: `text-${start}`, value: match[0] ?? "" });
