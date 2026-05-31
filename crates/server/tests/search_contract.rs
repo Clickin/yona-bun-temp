@@ -760,6 +760,155 @@ async fn issue_search_protected_visibility_matches_legacy_org_membership_acl() {
 }
 
 #[tokio::test]
+async fn project_issue_search_matches_legacy_project_scope_visibility() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, org_member_cookie, org_member_id) =
+        register_user(app.clone(), "project-issue-org-member").await;
+    let (_, private_member_cookie, private_member_id) =
+        register_user(app.clone(), "project-issue-private-member").await;
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateOrganization",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "organizationName": "project-issue-labs",
+                "description": "Project issue labs"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let organization = repo
+        .read_organization_by_name("project-issue-labs")
+        .await
+        .unwrap()
+        .expect("organization");
+    repo.add_organization_membership(organization.id, org_member_id, "org_member")
+        .await
+        .unwrap();
+
+    for (owner_name, project_name, scope, title) in [
+        (
+            "project-issue-labs",
+            "projectIssueScopePublic",
+            "public",
+            "ProjectIssueScopeNeedle public issue",
+        ),
+        (
+            "project-issue-labs",
+            "projectIssueScopeProtected",
+            "protected",
+            "ProjectIssueScopeNeedle protected issue",
+        ),
+        (
+            "owner",
+            "projectIssueScopePrivate",
+            "private",
+            "ProjectIssueScopeNeedle private issue",
+        ),
+    ] {
+        create_named_owner_project(
+            app.clone(),
+            &owner_cookie,
+            &owner_csrf,
+            owner_name,
+            project_name,
+            scope,
+        )
+        .await;
+        repo.create_issue(CreateIssueInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            owner_name: owner_name.to_string(),
+            project_name: project_name.to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: None,
+                attachment_ids: Vec::new(),
+                body_markdown: format!("ProjectIssueScopeNeedle body for {project_name}"),
+                label_ids: Vec::new(),
+                milestone_id: None,
+                title: title.to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("issue");
+    }
+
+    let private_project = repo
+        .read_project_by_owner_and_name("owner", "projectIssueScopePrivate")
+        .await
+        .unwrap()
+        .expect("private project");
+    repo.add_project_membership(private_project.id, private_member_id, "member")
+        .await
+        .unwrap();
+
+    let public = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/projects/project-issue-labs/projectIssueScopePublic/search?keyword=ProjectIssueScopeNeedle&searchType=issue&pageNum=1",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(public["scope"], "project");
+    assert_eq!(public["counts"]["issues"], 1);
+    assert_eq!(public["items"][0]["projectName"], "projectIssueScopePublic");
+    assert_eq!(
+        public["items"][0]["title"],
+        "ProjectIssueScopeNeedle public issue"
+    );
+
+    let protected = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/projects/project-issue-labs/projectIssueScopeProtected/search?keyword=ProjectIssueScopeNeedle&searchType=issue&pageNum=1",
+            Some(&org_member_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(protected["counts"]["issues"], 1);
+    assert_eq!(
+        protected["items"][0]["projectName"],
+        "projectIssueScopeProtected"
+    );
+    assert_eq!(
+        protected["items"][0]["title"],
+        "ProjectIssueScopeNeedle protected issue"
+    );
+
+    let private = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/projects/owner/projectIssueScopePrivate/search?keyword=ProjectIssueScopeNeedle&searchType=issue&pageNum=1",
+            Some(&private_member_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(private["counts"]["issues"], 1);
+    assert_eq!(
+        private["items"][0]["projectName"],
+        "projectIssueScopePrivate"
+    );
+    assert_eq!(
+        private["items"][0]["title"],
+        "ProjectIssueScopeNeedle private issue"
+    );
+}
+
+#[tokio::test]
 async fn post_search_ranks_title_matches_before_newer_body_only_matches() {
     let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
