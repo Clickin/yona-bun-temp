@@ -170,6 +170,13 @@ fn user_state_from_confirmed(is_confirmed: bool) -> Option<String> {
     Some(if is_confirmed { "active" } else { "locked" }.to_string())
 }
 
+fn finish_ranked_search_items(
+    mut ranked_items: Vec<(u32, usize, SearchItemRecord)>,
+) -> Vec<SearchItemRecord> {
+    ranked_items.sort_by(|left, right| right.0.cmp(&left.0).then_with(|| left.1.cmp(&right.1)));
+    ranked_items.into_iter().map(|(_, _, item)| item).collect()
+}
+
 fn issue_assignable_user_matches(user: &n4user::Model, query: &str, search_type: &str) -> bool {
     let query = query.trim();
     let normalized_query = normalize_identity(query);
@@ -1786,8 +1793,7 @@ impl AppRepository {
                 },
             ));
         }
-        ranked_items.sort_by(|left, right| right.0.cmp(&left.0).then_with(|| left.1.cmp(&right.1)));
-        Ok(ranked_items.into_iter().map(|(_, _, item)| item).collect())
+        Ok(finish_ranked_search_items(ranked_items))
     }
 
     async fn search_user_items(
@@ -1800,7 +1806,7 @@ impl AppRepository {
             .order_by_asc(n4user::Column::LoginId)
             .all(&self.db)
             .await?;
-        let mut items = Vec::new();
+        let mut ranked_items = Vec::new();
         for row in rows {
             if !n4user_is_active(&row) {
                 continue;
@@ -1826,30 +1832,40 @@ impl AppRepository {
                 continue;
             }
             let snippets = self.search_snippets(&display_name, &email, &input.keyword);
-            items.push(SearchItemRecord {
-                author_label: display_name.clone(),
-                author_login_id: login_id.clone(),
-                created_label: format_workspace_date_label(row.created_date),
-                href: format!("/users/{login_id}"),
-                id: row.id.to_string(),
-                number: String::new(),
-                owner_name: String::new(),
-                project_name: String::new(),
-                snippets,
-                state: row.state.unwrap_or_default(),
-                title: display_name,
-                r#type: "user".to_string(),
-                updated_label: String::new(),
-            });
+            let score = relevance_score(
+                &display_name,
+                &[login_id.as_str(), email.as_str(), english_name.as_str()].join(" "),
+                &input.keyword,
+            );
+            let ordinal = ranked_items.len();
+            ranked_items.push((
+                score,
+                ordinal,
+                SearchItemRecord {
+                    author_label: display_name.clone(),
+                    author_login_id: login_id.clone(),
+                    created_label: format_workspace_date_label(row.created_date),
+                    href: format!("/users/{login_id}"),
+                    id: row.id.to_string(),
+                    number: String::new(),
+                    owner_name: String::new(),
+                    project_name: String::new(),
+                    snippets,
+                    state: row.state.unwrap_or_default(),
+                    title: display_name,
+                    r#type: "user".to_string(),
+                    updated_label: String::new(),
+                },
+            ));
         }
-        Ok(items)
+        Ok(finish_ranked_search_items(ranked_items))
     }
 
     async fn search_project_items(
         &self,
         input: &SearchRepositoryInput,
     ) -> Result<Vec<SearchItemRecord>, DbErr> {
-        let mut items = Vec::new();
+        let mut ranked_items = Vec::new();
         for project in self.list_projects().await? {
             if !self.search_project_matches_scope(&project, input)
                 || !self
@@ -1866,23 +1882,29 @@ impl AppRepository {
                 continue;
             }
             let snippets = self.search_snippets(&title, &overview, &input.keyword);
-            items.push(SearchItemRecord {
-                author_label: project.owner_name.clone(),
-                author_login_id: project.owner_name.clone(),
-                created_label: format_workspace_date_label(project.created_date),
-                href: format!("/{}/{}", project.owner_name, project.project_name),
-                id: project.id.to_string(),
-                number: String::new(),
-                owner_name: project.owner_name,
-                project_name: project.project_name,
-                snippets,
-                state: project.project_scope,
-                title,
-                r#type: "project".to_string(),
-                updated_label: format_workspace_date_label(project.last_pushed_date),
-            });
+            let score = relevance_score(&title, &overview, &input.keyword);
+            let ordinal = ranked_items.len();
+            ranked_items.push((
+                score,
+                ordinal,
+                SearchItemRecord {
+                    author_label: project.owner_name.clone(),
+                    author_login_id: project.owner_name.clone(),
+                    created_label: format_workspace_date_label(project.created_date),
+                    href: format!("/{}/{}", project.owner_name, project.project_name),
+                    id: project.id.to_string(),
+                    number: String::new(),
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                    snippets,
+                    state: project.project_scope,
+                    title,
+                    r#type: "project".to_string(),
+                    updated_label: format_workspace_date_label(project.last_pushed_date),
+                },
+            ));
         }
-        Ok(items)
+        Ok(finish_ranked_search_items(ranked_items))
     }
 
     async fn search_post_items(
@@ -1894,7 +1916,7 @@ impl AppRepository {
             .order_by_desc(posting::Column::Id)
             .all(&self.db)
             .await?;
-        let mut items = Vec::new();
+        let mut ranked_items = Vec::new();
         for row in rows {
             let Some(project) = self.search_project_for_id(row.project_id).await? else {
                 continue;
@@ -1912,28 +1934,36 @@ impl AppRepository {
                 continue;
             }
             let snippets = self.search_snippets(&title, &body, &input.keyword);
-            items.push(SearchItemRecord {
-                author_label: row.author_name.unwrap_or_default(),
-                author_login_id: row.author_login_id.unwrap_or_default(),
-                created_label: format_workspace_date_label(row.created_date),
-                href: format!(
-                    "/{}/{}/post/{}",
-                    project.owner_name,
-                    project.project_name,
-                    row.number.unwrap_or_default()
-                ),
-                id: row.id.to_string(),
-                number: row.number.unwrap_or_default().to_string(),
-                owner_name: project.owner_name,
-                project_name: project.project_name,
-                snippets,
-                state: String::new(),
-                title,
-                r#type: "post".to_string(),
-                updated_label: format_workspace_date_label(row.updated_date.or(row.created_date)),
-            });
+            let score = relevance_score(&title, &body, &input.keyword);
+            let ordinal = ranked_items.len();
+            ranked_items.push((
+                score,
+                ordinal,
+                SearchItemRecord {
+                    author_label: row.author_name.unwrap_or_default(),
+                    author_login_id: row.author_login_id.unwrap_or_default(),
+                    created_label: format_workspace_date_label(row.created_date),
+                    href: format!(
+                        "/{}/{}/post/{}",
+                        project.owner_name,
+                        project.project_name,
+                        row.number.unwrap_or_default()
+                    ),
+                    id: row.id.to_string(),
+                    number: row.number.unwrap_or_default().to_string(),
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                    snippets,
+                    state: String::new(),
+                    title,
+                    r#type: "post".to_string(),
+                    updated_label: format_workspace_date_label(
+                        row.updated_date.or(row.created_date),
+                    ),
+                },
+            ));
         }
-        Ok(items)
+        Ok(finish_ranked_search_items(ranked_items))
     }
 
     async fn search_milestone_items(
@@ -1945,7 +1975,7 @@ impl AppRepository {
             .order_by_desc(milestone::Column::Id)
             .all(&self.db)
             .await?;
-        let mut items = Vec::new();
+        let mut ranked_items = Vec::new();
         for row in rows {
             let Some(project) = self.search_project_for_id(row.project_id).await? else {
                 continue;
@@ -1967,26 +1997,32 @@ impl AppRepository {
                 continue;
             }
             let snippets = self.search_snippets(&title, &contents, &input.keyword);
-            items.push(SearchItemRecord {
-                author_label: String::new(),
-                author_login_id: String::new(),
-                created_label: String::new(),
-                href: format!(
-                    "/{}/{}/milestone/{}",
-                    project.owner_name, project.project_name, row.id
-                ),
-                id: row.id.to_string(),
-                number: row.id.to_string(),
-                owner_name: project.owner_name,
-                project_name: project.project_name,
-                snippets,
-                state: issue_state_from_raw(row.state),
-                title,
-                r#type: "milestone".to_string(),
-                updated_label: format_workspace_date_label(row.due_date),
-            });
+            let score = relevance_score(&title, &contents, &input.keyword);
+            let ordinal = ranked_items.len();
+            ranked_items.push((
+                score,
+                ordinal,
+                SearchItemRecord {
+                    author_label: String::new(),
+                    author_login_id: String::new(),
+                    created_label: String::new(),
+                    href: format!(
+                        "/{}/{}/milestone/{}",
+                        project.owner_name, project.project_name, row.id
+                    ),
+                    id: row.id.to_string(),
+                    number: row.id.to_string(),
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                    snippets,
+                    state: issue_state_from_raw(row.state),
+                    title,
+                    r#type: "milestone".to_string(),
+                    updated_label: format_workspace_date_label(row.due_date),
+                },
+            ));
         }
-        Ok(items)
+        Ok(finish_ranked_search_items(ranked_items))
     }
 
     async fn search_issue_comment_items(
@@ -1998,7 +2034,7 @@ impl AppRepository {
             .order_by_desc(issue_comment::Column::Id)
             .all(&self.db)
             .await?;
-        let mut items = Vec::new();
+        let mut ranked_items = Vec::new();
         for row in rows {
             let Some(issue_id) = row.issue_id else {
                 continue;
@@ -2023,29 +2059,35 @@ impl AppRepository {
                 continue;
             }
             let title = format!("Re) {}", issue.title.unwrap_or_default());
-            items.push(SearchItemRecord {
-                author_label: row.author_name.unwrap_or_default(),
-                author_login_id: row.author_login_id.unwrap_or_default(),
-                created_label: format_workspace_date_label(row.created_date),
-                href: format!(
-                    "/{}/{}/issue/{}#comment-{}",
-                    project.owner_name,
-                    project.project_name,
-                    issue.number.unwrap_or_default(),
-                    row.id
-                ),
-                id: row.id.to_string(),
-                number: issue.number.unwrap_or_default().to_string(),
-                owner_name: project.owner_name,
-                project_name: project.project_name,
-                snippets: make_snippets(&contents, &input.keyword, 40),
-                state: issue_state_from_raw(issue.state),
-                title,
-                r#type: "issue_comment".to_string(),
-                updated_label: String::new(),
-            });
+            let score = relevance_score("", &contents, &input.keyword);
+            let ordinal = ranked_items.len();
+            ranked_items.push((
+                score,
+                ordinal,
+                SearchItemRecord {
+                    author_label: row.author_name.unwrap_or_default(),
+                    author_login_id: row.author_login_id.unwrap_or_default(),
+                    created_label: format_workspace_date_label(row.created_date),
+                    href: format!(
+                        "/{}/{}/issue/{}#comment-{}",
+                        project.owner_name,
+                        project.project_name,
+                        issue.number.unwrap_or_default(),
+                        row.id
+                    ),
+                    id: row.id.to_string(),
+                    number: issue.number.unwrap_or_default().to_string(),
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                    snippets: make_snippets(&contents, &input.keyword, 40),
+                    state: issue_state_from_raw(issue.state),
+                    title,
+                    r#type: "issue_comment".to_string(),
+                    updated_label: String::new(),
+                },
+            ));
         }
-        Ok(items)
+        Ok(finish_ranked_search_items(ranked_items))
     }
 
     async fn search_post_comment_items(
@@ -2057,7 +2099,7 @@ impl AppRepository {
             .order_by_desc(posting_comment::Column::Id)
             .all(&self.db)
             .await?;
-        let mut items = Vec::new();
+        let mut ranked_items = Vec::new();
         for row in rows {
             let Some(posting_id) = row.posting_id else {
                 continue;
@@ -2085,29 +2127,35 @@ impl AppRepository {
                 continue;
             }
             let title = format!("Re) {}", posting.title.unwrap_or_default());
-            items.push(SearchItemRecord {
-                author_label: row.author_name.unwrap_or_default(),
-                author_login_id: row.author_login_id.unwrap_or_default(),
-                created_label: format_workspace_date_label(row.created_date),
-                href: format!(
-                    "/{}/{}/post/{}#comment-{}",
-                    project.owner_name,
-                    project.project_name,
-                    posting.number.unwrap_or_default(),
-                    row.id
-                ),
-                id: row.id.to_string(),
-                number: posting.number.unwrap_or_default().to_string(),
-                owner_name: project.owner_name,
-                project_name: project.project_name,
-                snippets: make_snippets(&contents, &input.keyword, 40),
-                state: String::new(),
-                title,
-                r#type: "post_comment".to_string(),
-                updated_label: String::new(),
-            });
+            let score = relevance_score("", &contents, &input.keyword);
+            let ordinal = ranked_items.len();
+            ranked_items.push((
+                score,
+                ordinal,
+                SearchItemRecord {
+                    author_label: row.author_name.unwrap_or_default(),
+                    author_login_id: row.author_login_id.unwrap_or_default(),
+                    created_label: format_workspace_date_label(row.created_date),
+                    href: format!(
+                        "/{}/{}/post/{}#comment-{}",
+                        project.owner_name,
+                        project.project_name,
+                        posting.number.unwrap_or_default(),
+                        row.id
+                    ),
+                    id: row.id.to_string(),
+                    number: posting.number.unwrap_or_default().to_string(),
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                    snippets: make_snippets(&contents, &input.keyword, 40),
+                    state: String::new(),
+                    title,
+                    r#type: "post_comment".to_string(),
+                    updated_label: String::new(),
+                },
+            ));
         }
-        Ok(items)
+        Ok(finish_ranked_search_items(ranked_items))
     }
 
     async fn search_review_items(
@@ -2119,7 +2167,7 @@ impl AppRepository {
             .order_by_desc(review_comment::Column::Id)
             .all(&self.db)
             .await?;
-        let mut items = Vec::new();
+        let mut ranked_items = Vec::new();
         for row in rows {
             let Some(thread_id) = row.thread_id else {
                 continue;
@@ -2160,29 +2208,38 @@ impl AppRepository {
                 continue;
             }
             let snippets = self.search_snippets(&pull_title, &contents, &input.keyword);
-            items.push(SearchItemRecord {
-                author_label: row.author_name.unwrap_or_default(),
-                author_login_id: row.author_login_id.unwrap_or_default(),
-                created_label: format_workspace_date_label(row.created_date),
-                href: format!(
-                    "/{}/{}/pullRequest/{}#comment-{}",
-                    project.owner_name,
-                    project.project_name,
-                    pull_request.number.unwrap_or_default(),
-                    row.id
-                ),
-                id: row.id.to_string(),
-                number: pull_request.number.unwrap_or_default().to_string(),
-                owner_name: project.owner_name,
-                project_name: project.project_name,
-                snippets,
-                state: pull_request_state_from_raw(pull_request.state, pull_request.is_conflict),
-                title: format!("Re) {pull_title}"),
-                r#type: "review".to_string(),
-                updated_label: String::new(),
-            });
+            let score = relevance_score(&pull_title, &contents, &input.keyword);
+            let ordinal = ranked_items.len();
+            ranked_items.push((
+                score,
+                ordinal,
+                SearchItemRecord {
+                    author_label: row.author_name.unwrap_or_default(),
+                    author_login_id: row.author_login_id.unwrap_or_default(),
+                    created_label: format_workspace_date_label(row.created_date),
+                    href: format!(
+                        "/{}/{}/pullRequest/{}#comment-{}",
+                        project.owner_name,
+                        project.project_name,
+                        pull_request.number.unwrap_or_default(),
+                        row.id
+                    ),
+                    id: row.id.to_string(),
+                    number: pull_request.number.unwrap_or_default().to_string(),
+                    owner_name: project.owner_name,
+                    project_name: project.project_name,
+                    snippets,
+                    state: pull_request_state_from_raw(
+                        pull_request.state,
+                        pull_request.is_conflict,
+                    ),
+                    title: format!("Re) {pull_title}"),
+                    r#type: "review".to_string(),
+                    updated_label: String::new(),
+                },
+            ));
         }
-        Ok(items)
+        Ok(finish_ranked_search_items(ranked_items))
     }
 
     async fn search_project_for_id(
