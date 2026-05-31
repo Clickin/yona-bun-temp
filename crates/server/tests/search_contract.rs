@@ -6,7 +6,10 @@ use sea_orm::{
     ActiveModelTrait, ConnectionTrait, Database, DatabaseConnection, NotSet, Set, Statement,
 };
 use serde_json::{json, Value};
+use std::sync::OnceLock;
 use std::time::{Duration, SystemTime};
+use tempfile::tempdir;
+use tokio::sync::Mutex;
 use tower::ServiceExt;
 use yona_rust_persistence::{
     comment_thread, pull_request, review_comment, AppRepository, CreateIssueCommentInput,
@@ -17,6 +20,11 @@ use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
 
 mod rest_test_support;
+
+fn yona_data_env_lock() -> &'static Mutex<()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
 
 async fn build_app_with_repository() -> (axum::Router, AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -372,6 +380,9 @@ async fn seed_search_rows(
 
 #[tokio::test]
 async fn global_search_returns_legacy_counts_auto_issue_and_snippet_metadata() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_cookie, _) = seed_search_rows(app.clone(), &repo, &db).await;
 
@@ -413,6 +424,9 @@ async fn global_search_returns_legacy_counts_auto_issue_and_snippet_metadata() {
 
 #[tokio::test]
 async fn issue_search_ranks_title_matches_before_newer_body_only_matches() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_cookie, owner_id) = seed_search_rows(app.clone(), &repo, &db).await;
 
@@ -450,7 +464,91 @@ async fn issue_search_ranks_title_matches_before_newer_body_only_matches() {
 }
 
 #[tokio::test]
+async fn issue_search_visibility_matches_legacy_public_and_private_acl() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    create_named_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "publicIssues",
+        "public",
+    )
+    .await;
+    create_named_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "privateIssues",
+        "private",
+    )
+    .await;
+
+    for (project_name, title) in [
+        ("publicIssues", "IssueNeedle public issue"),
+        ("privateIssues", "IssueNeedle private issue"),
+    ] {
+        repo.create_issue(CreateIssueInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            owner_name: "owner".to_string(),
+            project_name: project_name.to_string(),
+            values: IssueMutationInput {
+                assignee_login_id: None,
+                attachment_ids: Vec::new(),
+                body_markdown: format!("IssueNeedle body for {project_name}"),
+                label_ids: Vec::new(),
+                milestone_id: None,
+                title: title.to_string(),
+            },
+        })
+        .await
+        .unwrap()
+        .expect("issue");
+    }
+
+    let anonymous = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/search?keyword=IssueNeedle&searchType=issue&pageNum=1",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(anonymous["counts"]["issues"], 1);
+    assert_eq!(anonymous["items"][0]["projectName"], "publicIssues");
+    assert_eq!(anonymous["items"][0]["title"], "IssueNeedle public issue");
+
+    let owner = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/search?keyword=IssueNeedle&searchType=issue&pageNum=1",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(owner["counts"]["issues"], 2);
+    let titles = owner["items"]
+        .as_array()
+        .expect("owner issue search items")
+        .iter()
+        .map(|item| item["title"].as_str().unwrap_or_default())
+        .collect::<Vec<_>>();
+    assert!(titles.contains(&"IssueNeedle public issue"));
+    assert!(titles.contains(&"IssueNeedle private issue"));
+}
+
+#[tokio::test]
 async fn post_search_ranks_title_matches_before_newer_body_only_matches() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_cookie, owner_id) = seed_search_rows(app.clone(), &repo, &db).await;
 
@@ -489,6 +587,9 @@ async fn post_search_ranks_title_matches_before_newer_body_only_matches() {
 
 #[tokio::test]
 async fn post_search_visibility_matches_legacy_public_and_private_acl() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
     let (app, repo, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     create_named_project(
@@ -567,6 +668,9 @@ async fn post_search_visibility_matches_legacy_public_and_private_acl() {
 
 #[tokio::test]
 async fn post_comment_search_visibility_matches_legacy_public_and_private_acl() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
     let (app, repo, _) = build_app_with_repository().await;
     let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
     create_named_project(
@@ -658,7 +762,106 @@ async fn post_comment_search_visibility_matches_legacy_public_and_private_acl() 
 }
 
 #[tokio::test]
+async fn issue_comment_search_visibility_matches_legacy_public_and_private_acl() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    create_named_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "publicIssueComments",
+        "public",
+    )
+    .await;
+    create_named_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "privateIssueComments",
+        "private",
+    )
+    .await;
+
+    for (project_name, comment) in [
+        ("publicIssueComments", "IssueCommentNeedle public comment"),
+        ("privateIssueComments", "IssueCommentNeedle private comment"),
+    ] {
+        let issue = repo
+            .create_issue(CreateIssueInput {
+                actor_display_name: "owner".to_string(),
+                actor_id: owner_id,
+                actor_login_id: "owner".to_string(),
+                owner_name: "owner".to_string(),
+                project_name: project_name.to_string(),
+                values: IssueMutationInput {
+                    assignee_login_id: None,
+                    attachment_ids: Vec::new(),
+                    body_markdown: format!("IssueCommentNeedle issue body for {project_name}"),
+                    label_ids: Vec::new(),
+                    milestone_id: None,
+                    title: format!("IssueCommentNeedle issue {project_name}"),
+                },
+            })
+            .await
+            .unwrap()
+            .expect("issue");
+        repo.create_issue_comment(CreateIssueCommentInput {
+            actor_display_name: "owner".to_string(),
+            actor_id: owner_id,
+            actor_login_id: "owner".to_string(),
+            attachment_ids: Vec::new(),
+            contents_markdown: comment.to_string(),
+            issue_number: issue.issue_number,
+            owner_name: "owner".to_string(),
+            parent_comment_id: None,
+            project_name: project_name.to_string(),
+        })
+        .await
+        .unwrap()
+        .expect("issue comment");
+    }
+
+    let anonymous = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/search?keyword=IssueCommentNeedle&searchType=issue_comment&pageNum=1",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(anonymous["counts"]["issueComments"], 1);
+    assert_eq!(anonymous["items"][0]["projectName"], "publicIssueComments");
+    assert_eq!(anonymous["items"][0]["type"], "issue_comment");
+
+    let owner = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/search?keyword=IssueCommentNeedle&searchType=issue_comment&pageNum=1",
+            Some(&owner_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(owner["counts"]["issueComments"], 2);
+    let projects = owner["items"]
+        .as_array()
+        .expect("owner issue comment search items")
+        .iter()
+        .map(|item| item["projectName"].as_str().unwrap_or_default())
+        .collect::<Vec<_>>();
+    assert!(projects.contains(&"publicIssueComments"));
+    assert!(projects.contains(&"privateIssueComments"));
+}
+
+#[tokio::test]
 async fn scoped_search_rejects_invalid_project_type_and_returns_review_links() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
     let (app, repo, db) = build_app_with_repository().await;
     let (owner_cookie, _) = seed_search_rows(app.clone(), &repo, &db).await;
 
