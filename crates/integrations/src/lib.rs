@@ -3,6 +3,7 @@
 use std::collections::VecDeque;
 use std::io::{Read, Write};
 use std::net::{IpAddr, TcpStream, ToSocketAddrs};
+use std::process::{Command, Stdio};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
@@ -775,6 +776,9 @@ fn deliver_webhook_once(record: &WebhookDeliveryRecord) -> Result<WebhookDeliver
         };
     }
 
+    if record.payload_url.starts_with("https://") {
+        return post_webhook_over_https(record);
+    }
     post_webhook_over_plain_http(record)
 }
 
@@ -852,6 +856,121 @@ fn post_webhook_over_plain_http(
     }
 }
 
+fn post_webhook_over_https(
+    record: &WebhookDeliveryRecord,
+) -> Result<WebhookDeliveryOutcome, String> {
+    let parsed = parse_webhook_https_url(&record.payload_url)?;
+    ensure_webhook_endpoint_allowed(&parsed.host, parsed.port)?;
+    let (program, args) = webhook_https_delivery_command(record)?;
+    let mut child = Command::new(&program)
+        .args(&args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| format!("webhook HTTPS delivery failed: {error}"))?;
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin
+            .write_all(record.body.as_bytes())
+            .map_err(|error| format!("webhook HTTPS request write failed: {error}"))?;
+    }
+    let output = child
+        .wait_with_output()
+        .map_err(|error| format!("webhook HTTPS delivery failed: {error}"))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let reason = stderr.trim();
+        return Err(if reason.is_empty() {
+            format!(
+                "webhook HTTPS delivery failed: exit status {}",
+                output.status
+            )
+        } else {
+            format!("webhook HTTPS delivery failed: {reason}")
+        });
+    }
+    webhook_outcome_from_http_response_bytes(&output.stdout)
+}
+
+fn webhook_https_delivery_command(
+    record: &WebhookDeliveryRecord,
+) -> Result<(String, Vec<String>), String> {
+    if let Some(configured) = configured_env_value(&[
+        "YONA_WEBHOOK_HTTPS_DELIVERY_COMMAND",
+        "WEBHOOK_HTTPS_DELIVERY_COMMAND",
+    ]) {
+        let mut parts = configured.split_whitespace();
+        let program = parts
+            .next()
+            .ok_or_else(|| "webhook HTTPS delivery command is empty".to_string())?
+            .to_string();
+        let mut args: Vec<String> = parts.map(ToString::to_string).collect();
+        args.push(record.payload_url.clone());
+        return Ok((program, args));
+    }
+
+    let mut args = vec![
+        "--fail".to_string(),
+        "--location".to_string(),
+        "--silent".to_string(),
+        "--show-error".to_string(),
+        "--max-time".to_string(),
+        "30".to_string(),
+        "--dump-header".to_string(),
+        "-".to_string(),
+        "--output".to_string(),
+        "-".to_string(),
+        "--request".to_string(),
+        "POST".to_string(),
+        "--data-binary".to_string(),
+        "@-".to_string(),
+    ];
+    for header in &record.headers {
+        args.push("--header".to_string());
+        args.push(format!("{}: {}", header.name, header.value));
+    }
+    args.push(record.payload_url.clone());
+    Ok(("curl".to_string(), args))
+}
+
+fn webhook_outcome_from_http_response_bytes(
+    response: &[u8],
+) -> Result<WebhookDeliveryOutcome, String> {
+    let header_end = response
+        .windows(4)
+        .rposition(|window| window == b"\r\n\r\n")
+        .ok_or_else(|| "webhook HTTPS response was not HTTP-like".to_string())?;
+    let (head, body) = response.split_at(header_end);
+    let head = String::from_utf8_lossy(head);
+    let status = head
+        .lines()
+        .filter(|line| line.starts_with("HTTP/"))
+        .next_back()
+        .unwrap_or_default();
+    if !status.contains(" 2") {
+        return Err(format!("webhook request failed: {}", status.trim()));
+    }
+    Ok(WebhookDeliveryOutcome {
+        response_body: Some(String::from_utf8_lossy(&body[4..]).to_string()),
+    })
+}
+
+fn ensure_webhook_endpoint_allowed(host: &str, port: u16) -> Result<(), String> {
+    let addresses = (host, port)
+        .to_socket_addrs()
+        .map_err(|error| format!("webhook address resolution failed: {error}"))?
+        .collect::<Vec<_>>();
+    if addresses.is_empty() {
+        return Err("webhook address resolution returned no endpoints".to_string());
+    }
+    let allow_private_networks = webhook_private_network_delivery_allowed();
+    addresses
+        .into_iter()
+        .find(|address| webhook_endpoint_allowed(address.ip(), allow_private_networks))
+        .map(|_| ())
+        .ok_or_else(|| "webhook delivery refused private or unsafe endpoints".to_string())
+}
+
 fn webhook_endpoint_allowed(address: IpAddr, allow_private_networks: bool) -> bool {
     if allow_private_networks {
         return true;
@@ -886,6 +1005,35 @@ struct PlainHttpUrl {
     host_header: String,
     path: String,
     port: u16,
+}
+
+struct HttpsWebhookUrl {
+    host: String,
+    port: u16,
+}
+
+fn parse_webhook_https_url(value: &str) -> Result<HttpsWebhookUrl, String> {
+    let Some(rest) = value.strip_prefix("https://") else {
+        return Err("webhook HTTPS delivery requires https:// URLs".to_string());
+    };
+    let authority = rest
+        .split_once('/')
+        .map(|(authority, _)| authority)
+        .unwrap_or(rest);
+    if authority.is_empty() || authority.contains('@') {
+        return Err("webhook payload URL host is invalid".to_string());
+    }
+    let (host, port) = authority
+        .rsplit_once(':')
+        .and_then(|(host, port)| port.parse::<u16>().ok().map(|port| (host, port)))
+        .unwrap_or((authority, 443));
+    if host.is_empty() {
+        return Err("webhook payload URL host is invalid".to_string());
+    }
+    Ok(HttpsWebhookUrl {
+        host: host.to_string(),
+        port,
+    })
 }
 
 fn parse_plain_http_url(value: &str) -> Result<PlainHttpUrl, String> {
@@ -944,7 +1092,10 @@ mod tests {
     use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
     use std::sync::{Mutex, OnceLock};
 
-    use super::{webhook_endpoint_allowed, webhook_private_network_delivery_allowed};
+    use super::{
+        webhook_endpoint_allowed, webhook_headers, webhook_https_delivery_command,
+        webhook_private_network_delivery_allowed, WebhookDeliveryRecord,
+    };
 
     fn webhook_env_lock() -> &'static Mutex<()> {
         static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
@@ -954,6 +1105,8 @@ mod tests {
     fn clear_webhook_private_network_env() {
         std::env::remove_var("YONA_WEBHOOK_ALLOW_PRIVATE_NETWORKS");
         std::env::remove_var("WEBHOOK_ALLOW_PRIVATE_NETWORKS");
+        std::env::remove_var("YONA_WEBHOOK_HTTPS_DELIVERY_COMMAND");
+        std::env::remove_var("WEBHOOK_HTTPS_DELIVERY_COMMAND");
     }
 
     #[test]
@@ -1002,5 +1155,40 @@ mod tests {
             IpAddr::V6(Ipv6Addr::LOCALHOST),
             true
         ));
+    }
+
+    #[test]
+    fn webhook_https_default_command_preserves_legacy_headers_and_body_stdin() {
+        let _guard = webhook_env_lock().lock().unwrap();
+        clear_webhook_private_network_env();
+        let record = WebhookDeliveryRecord {
+            body: "{\"text\":\"hello\"}".to_string(),
+            event_type: "NEW_ISSUE".to_string(),
+            headers: webhook_headers("s3"),
+            payload_url: "https://hooks.example/yona".to_string(),
+            webhook_type: "SIMPLE".to_string(),
+        };
+
+        let (program, args) = webhook_https_delivery_command(&record).expect("default command");
+
+        assert_eq!(program, "curl");
+        assert!(args
+            .windows(2)
+            .any(|pair| pair[0] == "--data-binary" && pair[1] == "@-"));
+        assert!(args
+            .windows(2)
+            .any(|pair| { pair[0] == "--header" && pair[1] == "Content-Type: application/json" }));
+        assert!(args
+            .windows(2)
+            .any(|pair| pair[0] == "--header" && pair[1] == "User-Agent: Yobi-Hookshot"));
+        assert!(args
+            .windows(2)
+            .any(|pair| { pair[0] == "--header" && pair[1] == "Authorization: token s3 " }));
+        assert_eq!(
+            args.last().map(String::as_str),
+            Some("https://hooks.example/yona")
+        );
+
+        clear_webhook_private_network_env();
     }
 }
