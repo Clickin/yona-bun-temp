@@ -1796,9 +1796,11 @@ export function highlightCodeLine(line: string, language: string) {
                                 ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|-?\b0[xX][0-9A-Fa-f]+\b|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                                 : normalizedLanguage === "elixir"
                                   ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b0[0-7_]+\b|\b0[xX][0-9A-Fa-f_]+\b|\b[1-9][0-9_]*(?:\.[0-9_]+)?\b|\b[0_]\b|\b[A-Za-z_][A-Za-z0-9_]*[!?]?\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-                                  : normalizedLanguage === "javascript"
-                                    ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b0[bB][01]+\b|\b0[oO][0-7]+\b|\b0[xX][0-9A-Fa-f]+\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-                                    : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
+                                  : normalizedLanguage === "haskell"
+                                    ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|--.*$|\{-[\s\S]*?-\}|-?\b0[xX][0-9A-Fa-f]+\b|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_']*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                                    : normalizedLanguage === "javascript"
+                                      ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b0[bB][01]+\b|\b0[oO][0-7]+\b|\b0[xX][0-9A-Fa-f]+\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                                      : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   for (const match of line.matchAll(tokenPattern)) {
@@ -1871,6 +1873,7 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
     (normalizedLanguage === "scala" && /^-?(?:\d|\.\d)/.test(token)) ||
     (normalizedLanguage === "go" && /^-?(?:\d|\.\d)/.test(token)) ||
     (normalizedLanguage === "csharp" && /^-?(?:\d|\.\d)/.test(token)) ||
+    (normalizedLanguage === "haskell" && /^-?(?:\d|\.\d)/.test(token)) ||
     (normalizedLanguage === "accesslog" && isAccesslogAddressToken(token))
   ) {
     return "syntax-number";
