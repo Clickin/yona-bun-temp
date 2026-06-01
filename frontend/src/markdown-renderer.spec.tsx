@@ -1395,6 +1395,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
   });
 
+  it("recognizes legacy Highlight.js C++ numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```cpp",
+          "auto mask = 0b1010'0101;",
+          "auto port = 0xFF'00UL;",
+          "auto ratio = .25f;",
+          "auto distance = -1.5e-2;",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="cpp">');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010&#x27;0101</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF&#x27;00</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.25f</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
+  });
+
   it("recognizes legacy Highlight.js Objective-C aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
