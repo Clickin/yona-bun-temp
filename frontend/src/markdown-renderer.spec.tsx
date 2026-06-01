@@ -1693,6 +1693,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">continue</span>');
   });
 
+  it("recognizes legacy Highlight.js AWK hash comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```awk", "# legacy comment", 'BEGIN { print "ok" }', "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="awk">');
+    expect(html).toContain('class="syntax-token syntax-comment"># legacy comment</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">BEGIN</span>');
+  });
+
   it("recognizes legacy Highlight.js TeX language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
