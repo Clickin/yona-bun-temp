@@ -845,6 +845,29 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">STOP</span>');
   });
 
+  it("recognizes legacy Highlight.js Basic comments and numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```basic",
+          "10 REM render counts",
+          "20 PRINT &HFF",
+          "30 PRINT &O755",
+          "40 PRINT 123.5#",
+          "50 ' done",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="basic">');
+    expect(html).toContain('class="syntax-token syntax-comment">REM render counts</span>');
+    expect(html).toContain('class="syntax-token syntax-number">&amp;HFF</span>');
+    expect(html).toContain('class="syntax-token syntax-number">&amp;O755</span>');
+    expect(html).toContain('class="syntax-token syntax-number">123.5#</span>');
+    expect(html).toContain('class="syntax-token syntax-comment">&#x27; done</span>');
+  });
+
   it("recognizes legacy Highlight.js AsciiDoc language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
