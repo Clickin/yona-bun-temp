@@ -2527,6 +2527,30 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("issueLink");
   });
 
+  it("uses legacy Highlight.js CSS sublanguage inside XML style blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```html",
+          "<style>",
+          ".board #main:hover { color: #fff; }",
+          "</style>",
+          "<div>Yona</div>",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="html">');
+    expect(html).toContain('class="syntax-token syntax-keyword">style</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">.board</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">#main</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">:hover</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">color</span>');
+    expect(html).toContain('class="syntax-token syntax-number">#fff</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">div</span>');
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,

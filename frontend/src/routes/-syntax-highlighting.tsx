@@ -1790,9 +1790,15 @@ export function highlightCodeBlock(code: string, language: string | undefined) {
   }
   if (normalizedLanguage === "xml") {
     let inCdataBlock = false;
+    let inStyleBlock = false;
     return lines.flatMap((line, lineIndex) => {
-      const result = highlightXmlCodeLine(line, language ?? "", inCdataBlock, lineIndex);
+      const result = highlightXmlCodeLine(line, language ?? "", {
+        inCdataBlock,
+        inStyleBlock,
+        lineIndex,
+      });
       inCdataBlock = result.inCdataBlock;
+      inStyleBlock = result.inStyleBlock;
       return lineIndex === lines.length - 1 ? result.nodes : [...result.nodes, "\n"];
     });
   }
@@ -1805,58 +1811,112 @@ export function highlightCodeBlock(code: string, language: string | undefined) {
 function highlightXmlCodeLine(
   line: string,
   language: string,
-  inCdataBlock: boolean,
-  lineIndex: number,
+  state: { inCdataBlock: boolean; inStyleBlock: boolean; lineIndex: number },
 ) {
   const nodes: React.ReactNode[] = [];
   let cursor = 0;
-  let stillInCdataBlock = inCdataBlock;
+  let stillInCdataBlock = state.inCdataBlock;
+  let stillInStyleBlock = state.inStyleBlock;
 
   if (line.length === 0 && stillInCdataBlock) {
     return {
       inCdataBlock: true,
-      nodes: [xmlCdataSpan("\u00a0", lineIndex, 0)],
+      inStyleBlock: stillInStyleBlock,
+      nodes: [xmlCdataSpan("\u00a0", state.lineIndex, 0)],
+    };
+  }
+
+  if (line.length === 0 && stillInStyleBlock) {
+    return {
+      inCdataBlock: stillInCdataBlock,
+      inStyleBlock: true,
+      nodes: highlightCodeLine("\u00a0", "css"),
     };
   }
 
   while (cursor < line.length) {
-    if (!stillInCdataBlock) {
+    if (stillInCdataBlock) {
+      const cdataEnd = findXmlCdataEnd(line, cursor);
+      if (cdataEnd === -1) {
+        nodes.push(xmlCdataSpan(line.length > 0 ? line : "\u00a0", state.lineIndex, cursor));
+        cursor = line.length;
+        break;
+      }
+      const cdataEndOffset = cdataEnd + "]]>".length;
+      nodes.push(xmlCdataSpan(line.slice(cursor, cdataEndOffset), state.lineIndex, cursor));
+      stillInCdataBlock = false;
+      cursor = cdataEndOffset;
+      continue;
+    }
+
+    if (stillInStyleBlock) {
+      const styleEnd = findXmlStyleEnd(line, cursor);
+      if (styleEnd === -1) {
+        nodes.push(...highlightCodeLine(line.slice(cursor), "css"));
+        cursor = line.length;
+        break;
+      }
+      if (styleEnd > cursor) {
+        nodes.push(...highlightCodeLine(line.slice(cursor, styleEnd), "css"));
+      }
+      const styleEndTagClose = findXmlTagClose(line, styleEnd);
+      if (styleEndTagClose === -1) {
+        nodes.push(...highlightCodeLine(line.slice(styleEnd), language));
+        cursor = line.length;
+        stillInStyleBlock = false;
+        break;
+      }
+      const styleEndTagCloseOffset = styleEndTagClose + 1;
+      nodes.push(...highlightCodeLine(line.slice(styleEnd, styleEndTagCloseOffset), language));
+      cursor = styleEndTagCloseOffset;
+      stillInStyleBlock = false;
+      continue;
+    }
+
+    if (!stillInCdataBlock && !stillInStyleBlock) {
       const cdataStart = findXmlCdataStart(line, cursor);
-      if (cdataStart === -1) {
+      const styleStart = findXmlStyleStart(line, cursor);
+      const nextSpecialStart = nearestXmlSpecialStart(cdataStart, styleStart);
+      if (nextSpecialStart === -1) {
         nodes.push(...highlightCodeLine(line.slice(cursor), language));
         cursor = line.length;
         break;
       }
-      if (cdataStart > cursor) {
-        nodes.push(...highlightCodeLine(line.slice(cursor, cdataStart), language));
+      if (nextSpecialStart > cursor) {
+        nodes.push(...highlightCodeLine(line.slice(cursor, nextSpecialStart), language));
+      }
+      if (nextSpecialStart === styleStart) {
+        const styleStartTagClose = findXmlTagClose(line, styleStart);
+        if (styleStartTagClose === -1) {
+          nodes.push(...highlightCodeLine(line.slice(styleStart), language));
+          cursor = line.length;
+          break;
+        }
+        const styleStartTagCloseOffset = styleStartTagClose + 1;
+        nodes.push(
+          ...highlightCodeLine(line.slice(styleStart, styleStartTagCloseOffset), language),
+        );
+        cursor = styleStartTagCloseOffset;
+        stillInStyleBlock = true;
+        continue;
       }
       const cdataEnd = findXmlCdataEnd(line, cdataStart + "<![CDATA[".length);
       if (cdataEnd === -1) {
-        nodes.push(xmlCdataSpan(line.slice(cdataStart), lineIndex, cdataStart));
+        nodes.push(xmlCdataSpan(line.slice(cdataStart), state.lineIndex, cdataStart));
         stillInCdataBlock = true;
         cursor = line.length;
         break;
       }
       const cdataEndOffset = cdataEnd + "]]>".length;
-      nodes.push(xmlCdataSpan(line.slice(cdataStart, cdataEndOffset), lineIndex, cdataStart));
+      nodes.push(xmlCdataSpan(line.slice(cdataStart, cdataEndOffset), state.lineIndex, cdataStart));
       cursor = cdataEndOffset;
       continue;
     }
-
-    const cdataEnd = findXmlCdataEnd(line, cursor);
-    if (cdataEnd === -1) {
-      nodes.push(xmlCdataSpan(line.length > 0 ? line : "\u00a0", lineIndex, cursor));
-      cursor = line.length;
-      break;
-    }
-    const cdataEndOffset = cdataEnd + "]]>".length;
-    nodes.push(xmlCdataSpan(line.slice(cursor, cdataEndOffset), lineIndex, cursor));
-    stillInCdataBlock = false;
-    cursor = cdataEndOffset;
   }
 
   return {
     inCdataBlock: stillInCdataBlock,
+    inStyleBlock: stillInStyleBlock,
     nodes: nodes.length > 0 ? nodes : ["\u00a0"],
   };
 }
@@ -1877,9 +1937,31 @@ function findXmlCdataEnd(line: string, cursor: number) {
   return findXmlCdataDelimiter(line, cursor, /\]\]>/g);
 }
 
+function findXmlStyleStart(line: string, cursor: number) {
+  return findXmlCdataDelimiter(line, cursor, /<style(?=\s|>|$)/gi);
+}
+
+function findXmlStyleEnd(line: string, cursor: number) {
+  return findXmlCdataDelimiter(line, cursor, /<\/style(?=\s|>|$)/gi);
+}
+
+function findXmlTagClose(line: string, cursor: number) {
+  return findXmlCdataDelimiter(line, cursor, />/g);
+}
+
 function findXmlCdataDelimiter(line: string, cursor: number, delimiterPattern: RegExp) {
   delimiterPattern.lastIndex = cursor;
   return delimiterPattern.exec(line)?.index ?? -1;
+}
+
+function nearestXmlSpecialStart(left: number, right: number) {
+  if (left === -1) {
+    return right;
+  }
+  if (right === -1) {
+    return left;
+  }
+  return Math.min(left, right);
 }
 
 export function highlightCodeLine(line: string, language: string) {
