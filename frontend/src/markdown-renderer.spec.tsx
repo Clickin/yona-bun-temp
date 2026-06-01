@@ -1096,6 +1096,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">delay</span>');
   });
 
+  it("recognizes legacy Highlight.js Arduino comments and numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```arduino",
+          "// pin mask",
+          "int mask = 0xFF;",
+          "float ratio = .25e+2;",
+          "/* ready */",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="arduino">');
+    expect(html).toContain('class="syntax-token syntax-comment">// pin mask</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+    expect(html).toContain('class="syntax-token syntax-comment">/* ready */</span>');
+  });
+
   it("recognizes legacy Highlight.js Dockerfile aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
