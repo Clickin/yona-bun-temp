@@ -3671,6 +3671,7 @@ fn svn_protocol_propfind_collection_item(
             .is_some()
             .then_some("        <D:getlastmodified/>\n")
             .unwrap_or_default();
+        let supported_report_set = "        <D:supported-report-set/>\n";
         return format!(
             r#"  <D:response>
     <D:href>{}</D:href>
@@ -3678,7 +3679,7 @@ fn svn_protocol_propfind_collection_item(
       <D:prop>
         <D:resourcetype/>
 {displayname}{supportedlock}{version_name}{checked_in}{baseline_collection}{repository_uuid}        <D:version-controlled-configuration/>
-{baseline_relative_path}{creationdate}{creator_displayname}{getlastmodified}      </D:prop>
+{baseline_relative_path}{creationdate}{creator_displayname}{getlastmodified}{supported_report_set}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
   </D:response>
@@ -3748,6 +3749,7 @@ fn svn_protocol_propfind_collection_item(
     };
     let displayname = svn_protocol_displayname_item(href, request);
     let supportedlock = svn_protocol_supportedlock_item(request);
+    let supported_report_set = svn_protocol_supported_report_set_item(request);
     let version_controlled_configuration = if svn_protocol_propfind_wants(
         request,
         "version-controlled-configuration",
@@ -3794,7 +3796,7 @@ fn svn_protocol_propfind_collection_item(
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
-{resourcetype}{displayname}{supportedlock}{version_name}{checked_in}{baseline_collection}{repository_uuid}{version_controlled_configuration}{baseline_relative_path}{creationdate}{creator_displayname}{getlastmodified}
+{resourcetype}{displayname}{supportedlock}{version_name}{checked_in}{baseline_collection}{repository_uuid}{version_controlled_configuration}{baseline_relative_path}{creationdate}{creator_displayname}{getlastmodified}{supported_report_set}
       </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>

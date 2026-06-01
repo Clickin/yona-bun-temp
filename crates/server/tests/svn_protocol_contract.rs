@@ -1478,6 +1478,36 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     );
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body_and_header(
+        app.clone(),
+        propfind,
+        &format!("/svn/owner/projectYobi/!svn/bc/{revision}/trunk"),
+        None,
+        "depth",
+        "0",
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:prop>
+    <D:supported-report-set/>
+  </D:prop>
+</D:propfind>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:supported-report-set>")
+            && text.contains("<S:log-report/>")
+            && text.contains("<S:update-report/>")
+            && text.contains("<S:list-report/>")
+            && !text.contains("<D:displayname>README.md</D:displayname>"),
+        "SVN baseline collection PROPFIND should expose requested supported REPORT capabilities on the collection itself: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
     let response = direct_request_with_body(
         app.clone(),
         propfind,
