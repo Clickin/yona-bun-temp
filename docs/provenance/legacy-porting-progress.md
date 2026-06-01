@@ -17,7 +17,7 @@ Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace/public profile, organization/project ownership, issue-tracker core behavior, Git read/admin surfaces, PR/review interaction surfaces including create/edit merge preflight, and board/posting core app behavior.
 - SVN executable bridge parity now has current local `svn`/`svnadmin`/`svnlook` 1.14.5 verification: `svn_protocol_contract` passes all 35 mounted DAV/external-client smokes.
-- The largest remaining gaps are still board/posting follow-ups, IMAP polling/full mailbox reply threading, optional webhook signature compatibility if external evidence requires it, full-text/indexed search hardening, broader VCC/baseline PROPFIND edge completeness beyond the mounted auth/DAV, and separate migrator/external API compatibility.
+- The largest remaining gaps are still board/posting follow-ups, IMAP server polling, optional webhook signature compatibility if external evidence requires it, full-text/indexed search hardening, broader VCC/baseline PROPFIND edge completeness beyond the mounted auth/DAV, and separate migrator/external API compatibility.
 - Percentages are approximate. Update them only when a slice lands with tests and provenance updates.
 
 ## Update Protocol
@@ -342,7 +342,7 @@ Interpretation:
 - [x] Notification event list and legacy `/notification` + `/notifications` route shell parity
 - [~] Issue/post/comment event notifications: mention/direct notification rows and single/mass-update issue state-change receiver fan-out exist, list messages follow legacy `NotificationEvent.getMessage` direct payload/state projection, and full mail/delivery parity remains
 - [~] PR/review notifications: PR receivers now include review comment authors via legacy watcher participation and active users mentioned in the PR body, and list projection uses legacy PR state/review/thread message keys/icons; full mail/delivery parity remains
-- [~] Email notification fan-out parity: startup scheduler, due-row outbound fan-out, allowed sending-domain filtering, BCC hide-address mode, recipientLimit partitioning, preferred-language receiver grouping, legacy `NotificationMail.handleLinks` external-link `noreferrer` handling, and the legacy `notificationMail.scala.html` HTML shell/view-link/resource-unwatch/settings-footer body exist; mailbox/reply threading remains
+- [~] Email notification fan-out parity: startup scheduler, due-row outbound fan-out, allowed sending-domain filtering, BCC hide-address mode, recipientLimit partitioning, preferred-language receiver grouping, legacy `NotificationMail.handleLinks` external-link `noreferrer` handling, and the legacy `notificationMail.scala.html` HTML shell/view-link/resource-unwatch/settings-footer body exist; IMAP server polling remains
 - [x] BCC mode
 - [x] Notification interval batching scheduler and queue/drain helper
 - [x] Draft-time merge
@@ -367,7 +367,8 @@ Interpretation:
 - [x] Mailbox normalized-message orchestration
 - [x] Mailbox duplicate inbound Message-ID idempotency before resource creation
 - [x] Mailbox DB-backed `CreationViaEmailTest` resource creation parity for issue, issue comment, board comment, and review comment
-- [ ] Mailbox/reply threading parity
+- [x] Mailbox/reply threading parity across exact `original_email`, Message-ID-left resource fallback, recipient-detail resource lookup, action planning/execution, duplicate inbound Message-ID idempotency, and parsed/raw message processing bridge
+- [ ] IMAP server polling runtime
 
 ## Webhooks
 
