@@ -383,6 +383,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
   });
 
+  it("recognizes legacy Highlight.js Clojure aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```clj",
+          "(def render-state",
+          "  (letfn [(open? [state] (fn? state))]",
+          "    (doseq [item items]",
+          '      (println "open"))))',
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="clj">');
+    expect(html).toContain('class="syntax-token syntax-keyword">def</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">letfn</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">fn?</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">doseq</span>');
+  });
+
   it("recognizes legacy Highlight.js CMake aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

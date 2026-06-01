@@ -1155,6 +1155,31 @@ const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
 
+const clojureKeywords = new Set([
+  "->",
+  "->>",
+  "apply",
+  "case",
+  "cond",
+  "def",
+  "defn",
+  "do",
+  "doseq",
+  "false",
+  "fn",
+  "fn?",
+  "if",
+  "if-let",
+  "if-not",
+  "let",
+  "letfn",
+  "map",
+  "nil",
+  "println",
+  "true",
+  "when",
+]);
+
 export function highlightCodeBlock(code: string, language: string | undefined) {
   const lines = code.split("\n");
   return lines.flatMap((line, lineIndex) => {
@@ -1164,10 +1189,13 @@ export function highlightCodeBlock(code: string, language: string | undefined) {
 }
 
 export function highlightCodeLine(line: string, language: string) {
+  const normalizedLanguage = normalizeCodeLanguage(language);
   const tokenPattern =
-    normalizeCodeLanguage(language) === "powershell"
+    normalizedLanguage === "powershell"
       ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-      : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
+      : normalizedLanguage === "clojure"
+        ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|;.*$|\b\d+(?:\.\d+)?\b|[A-Za-z_*+\-<>=!?][A-Za-z0-9_*+\-<>=!?]*|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+        : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   for (const match of line.matchAll(tokenPattern)) {
@@ -1250,6 +1278,9 @@ function normalizeCodeLanguage(language: string) {
   }
   if (normalized === "lua") {
     return "lua";
+  }
+  if (["clj", "clojure"].includes(normalized)) {
+    return "clojure";
   }
   if (["cmake", "cmake.in"].includes(normalized)) {
     return "cmake";
@@ -1364,6 +1395,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "elixir" && elixirKeywords.has(token)) ||
     (language === "haskell" && haskellKeywords.has(token)) ||
     (language === "lua" && luaKeywords.has(token)) ||
+    (language === "clojure" && clojureKeywords.has(token)) ||
     (language === "cmake" && cmakeKeywords.has(token.toLowerCase())) ||
     (language === "gradle" && gradleKeywords.has(token.toLowerCase())) ||
     (language === "makefile" && makefileKeywords.has(token.toLowerCase())) ||
