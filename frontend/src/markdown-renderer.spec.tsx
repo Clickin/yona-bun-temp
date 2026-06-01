@@ -935,6 +935,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">fi</span>');
   });
 
+  it("recognizes legacy Highlight.js shell hash comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```bash", "# deploy preview", "echo ready", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="bash">');
+    expect(html).toContain('class="syntax-token syntax-comment"># deploy preview</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">echo</span>');
+  });
+
   it("recognizes legacy Highlight.js SQL keywords in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
