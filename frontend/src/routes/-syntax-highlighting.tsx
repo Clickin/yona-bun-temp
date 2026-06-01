@@ -2047,6 +2047,9 @@ function nearestXmlSpecialStart(left: number, right: number) {
 }
 
 function xmlScriptBlockLanguage(openingTag: string) {
+  if (/type\s*=\s*["'][^"']*(?:xml|rss|atom|svg|mathml)[^"']*["']/i.test(openingTag)) {
+    return "xml";
+  }
   return /type\s*=\s*["'][^"']*(?:handlebars|htmlbars|x-handlebars-template)[^"']*["']/i.test(
     openingTag,
   ) || /\b(?:handlebars|htmlbars)\b/i.test(openingTag)

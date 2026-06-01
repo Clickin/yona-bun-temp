@@ -2605,6 +2605,30 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">div</span>');
   });
 
+  it("uses legacy Highlight.js XML sublanguage inside XML script data blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```html",
+          '<script type="text/xml">',
+          '<project name="yona"><issue>#1</issue></project>',
+          "</script>",
+          "<div>Yona</div>",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="html">');
+    expect(html).toContain('class="syntax-token syntax-keyword">script</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&quot;text/xml&quot;</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">project</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">issue</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&quot;yona&quot;</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">div</span>');
+    expect(html).not.toContain("issueLink");
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,
