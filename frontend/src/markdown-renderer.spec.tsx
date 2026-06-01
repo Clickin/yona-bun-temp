@@ -1053,6 +1053,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
   });
 
+  it("recognizes legacy Highlight.js Ruby line comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```rb", "# legacy comment", "class Issue", "end", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="rb">');
+    expect(html).toContain('class="syntax-token syntax-comment"># legacy comment</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">class</span>');
+  });
+
   it("recognizes legacy Highlight.js PHP language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

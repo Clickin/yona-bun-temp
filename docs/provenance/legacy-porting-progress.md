@@ -461,7 +461,7 @@ Interpretation:
 - [x] React-side fenced code highlighting recognizes the legacy Highlight.js `py`/`python` alias surface for Python keywords
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js shell aliases (`sh`/`bash`/`shell`/`zsh`/`console`) for shell keywords and hash comments
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js SQL keyword/comment coverage
-- [x] React-side fenced code highlighting recognizes legacy Highlight.js Ruby aliases (`rb`/`ruby`) for Ruby keywords
+- [x] React-side fenced code highlighting recognizes legacy Highlight.js Ruby aliases (`rb`/`ruby`) for Ruby keywords and comments
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js PHP aliases (`php`/`php3`/`php4`/`php5`/`php6`) for PHP keywords
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js C/C++ aliases (`c`/`cc`/`h`/`c++`/`h++`/`hpp`) for C++ keywords
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Go aliases (`go`/`golang`) for Go keywords
