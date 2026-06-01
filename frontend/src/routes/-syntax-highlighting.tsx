@@ -1757,6 +1757,25 @@ const clojureKeywords = new Set([
 
 export function highlightCodeBlock(code: string, language: string | undefined) {
   const lines = code.split("\n");
+  const normalizedLanguage = normalizeCodeLanguage(language ?? "");
+  if (normalizedLanguage === "asciidoc") {
+    let inCommentBlock = false;
+    return lines.flatMap((line, lineIndex) => {
+      const isCommentBoundary = /^\/{4,}\s*$/.test(line);
+      const isCommentLine = inCommentBlock || isCommentBoundary;
+      const nodes = isCommentLine
+        ? [
+            <span className="syntax-token syntax-comment" key={`asciidoc-comment-${lineIndex}`}>
+              {line.length > 0 ? line : "\u00a0"}
+            </span>,
+          ]
+        : highlightCodeLine(line, language ?? "");
+      if (isCommentBoundary) {
+        inCommentBlock = !inCommentBlock;
+      }
+      return lineIndex === lines.length - 1 ? nodes : [...nodes, "\n"];
+    });
+  }
   return lines.flatMap((line, lineIndex) => {
     const nodes = highlightCodeLine(line, language ?? "");
     return lineIndex === lines.length - 1 ? nodes : [...nodes, "\n"];

@@ -925,6 +925,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">WARNING</span>');
   });
 
+  it("recognizes legacy Highlight.js AsciiDoc comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```adoc",
+          "// keep legacy layout",
+          "////",
+          "legacy block comment",
+          "////",
+          "NOTE: Keep the legacy screen flow",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="adoc">');
+    expect(html).toContain('class="syntax-token syntax-comment">// keep legacy layout</span>');
+    expect(html).toContain('class="syntax-token syntax-comment">legacy block comment</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">NOTE</span>');
+  });
+
   it("recognizes legacy Highlight.js python language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
