@@ -1798,7 +1798,7 @@ export function highlightCodeLine(line: string, language: string) {
           : normalizedLanguage === "django"
             ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\{#[^}\n]*#\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
             : normalizedLanguage === "python"
-              ? /((?:fr|rf|f)"(?:\\.|[^"\\])*"|(?:fr|rf|f)'(?:\\.|[^'\\])*'|"""(?:\\.|[\s\S])*?"""|'''(?:\\.|[\s\S])*?'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^(?:>>>|\.\.\.)|^[\t ]*@[A-Za-z_][A-Za-z0-9_.]*|#.*$|\b0[oO][0-7]+[lLjJ]?\b|\b0[xX][0-9A-Fa-f]+[lLjJ]?\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?[lLjJ]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+              ? /((?:fr|rf|f)"(?:\\.|[^"\\])*"|(?:fr|rf|f)'(?:\\.|[^'\\])*'|"""(?:\\.|[\s\S])*?"""|'''(?:\\.|[\s\S])*?'''|(?:u|r|ur|b|br)"(?:\\.|[^"\\])*"|(?:u|r|ur|b|br)'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^(?:>>>|\.\.\.)|^[\t ]*@[A-Za-z_][A-Za-z0-9_.]*|#.*$|\b0[oO][0-7]+[lLjJ]?\b|\b0[xX][0-9A-Fa-f]+[lLjJ]?\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?[lLjJ]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
               : normalizedLanguage === "shell"
                 ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
                 : normalizedLanguage === "accesslog"
@@ -1989,6 +1989,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   }
   if (normalizedLanguage === "css" && isCssStructuralToken(token, line, tokenStart)) {
     return "syntax-keyword";
+  }
+  if (normalizedLanguage === "python" && pythonPrefixedStringIsString(token)) {
+    return "syntax-string";
   }
   if (token.startsWith('"') || token.startsWith("'")) {
     return "syntax-string";
@@ -2224,6 +2227,10 @@ function pythonDecoratorIsMeta(token: string, tokenStart: number) {
 
 function pythonFStringIsInterpolated(token: string) {
   return /^(?:fr|rf|f)(["'])[\s\S]*\{[^}\n]+\}[\s\S]*\1$/i.test(token);
+}
+
+function pythonPrefixedStringIsString(token: string) {
+  return /^(?:fr|rf|f|u|r|ur|b|br)(["'])[\s\S]*\1$/i.test(token);
 }
 
 function pythonFStringTokenParts(token: string, line: string, tokenStart: number) {

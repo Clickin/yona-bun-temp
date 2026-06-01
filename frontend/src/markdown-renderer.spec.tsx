@@ -1094,6 +1094,25 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">Ellipsis</span>');
   });
 
+  it("recognizes legacy Highlight.js Python prefixed strings in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```python",
+          'raw = r"c:\\path"',
+          "blob = br'data'",
+          "label = u'name'",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="python">');
+    expect(html).toContain('class="syntax-token syntax-string">r&quot;c:\\path&quot;</span>');
+    expect(html).toContain('class="syntax-token syntax-string">br&#x27;data&#x27;</span>');
+    expect(html).toContain('class="syntax-token syntax-string">u&#x27;name&#x27;</span>');
+  });
+
   it("recognizes legacy Highlight.js shell language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
