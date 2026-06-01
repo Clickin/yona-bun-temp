@@ -378,6 +378,25 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
   });
 
+  it("recognizes legacy Highlight.js Go numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```go",
+          "var color = 0xFF",
+          "var ratio = -1.5e-2",
+          "var imaginary = 42i",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="go">');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">42i</span>');
+  });
+
   it("recognizes legacy Highlight.js C# language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
