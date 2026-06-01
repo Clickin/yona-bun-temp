@@ -1858,12 +1858,15 @@ export function highlightCodeLine(line: string, language: string) {
                                                                             "tex"
                                                                           ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|%.*$|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#\\]+)/g
                                                                           : normalizedLanguage ===
-                                                                              "awk"
-                                                                            ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\$[A-Za-z0-9_#@]+|\$\{[^}\n]*\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
+                                                                              "elm"
+                                                                            ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|--.*$|\{-[\s\S]*?-\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_']*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                                                                             : normalizedLanguage ===
-                                                                                "javascript"
-                                                                              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b0[bB][01]+\b|\b0[oO][0-7]+\b|\b0[xX][0-9A-Fa-f]+\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-                                                                              : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
+                                                                                "awk"
+                                                                              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\$[A-Za-z0-9_#@]+|\$\{[^}\n]*\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
+                                                                              : normalizedLanguage ===
+                                                                                  "javascript"
+                                                                                ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b0[bB][01]+\b|\b0[oO][0-7]+\b|\b0[xX][0-9A-Fa-f]+\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                                                                                : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   for (const match of line.matchAll(tokenPattern)) {
@@ -1907,6 +1910,7 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
     (normalizedLanguage === "erlang" && token.startsWith("%")) ||
     (normalizedLanguage === "matlab" && token.startsWith("%")) ||
     (normalizedLanguage === "tex" && token.startsWith("%")) ||
+    (normalizedLanguage === "elm" && (token.startsWith("--") || token.startsWith("{-"))) ||
     (normalizedLanguage === "perl" && token.startsWith("#")) ||
     (normalizedLanguage === "coffeescript" && token.startsWith("#")) ||
     (normalizedLanguage === "dockerfile" && token.startsWith("#")) ||

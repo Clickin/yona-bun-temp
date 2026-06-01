@@ -1576,6 +1576,24 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">in</span>');
   });
 
+  it("recognizes legacy Highlight.js Elm comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```elm",
+          "-- legacy comment",
+          "{- block comment -}",
+          'main = text "done"',
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="elm">');
+    expect(html).toContain('class="syntax-token syntax-comment">-- legacy comment</span>');
+    expect(html).toContain('class="syntax-token syntax-comment">{- block comment -}</span>');
+  });
+
   it("recognizes legacy Highlight.js Erlang aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
