@@ -489,6 +489,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-number">1_000.25</span>');
   });
 
+  it("recognizes legacy Highlight.js Elixir hash comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```elixir", "# legacy comment", "def run, do: true", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="elixir">');
+    expect(html).toContain('class="syntax-token syntax-comment"># legacy comment</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">def</span>');
+  });
+
   it("recognizes legacy Highlight.js Haskell aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

@@ -1857,6 +1857,7 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
     token.startsWith("//") ||
     token.startsWith("/*") ||
     (normalizedLanguage === "lua" && token.startsWith("--")) ||
+    (normalizedLanguage === "elixir" && token.startsWith("#")) ||
     (normalizedLanguage === "cmake" && token.startsWith("#")) ||
     (normalizedLanguage === "makefile" && token.startsWith("#")) ||
     (normalizedLanguage === "shell" && token.startsWith("#")) ||
