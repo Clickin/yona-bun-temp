@@ -1222,6 +1222,32 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
   });
 
+  it("recognizes legacy Highlight.js Django and Jinja language aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```jinja",
+          '{% extends "base.html" %}',
+          "{% if user.is_active %}",
+          '{{ user.name|default_if_none:"Anonymous"|truncatewords:2 }}',
+          "{% else %}",
+          '{% include "login.html" %}',
+          "{% endif %}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="jinja">');
+    expect(html).toContain('class="syntax-token syntax-keyword">extends</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">default_if_none</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">truncatewords</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">else</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">include</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">endif</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
