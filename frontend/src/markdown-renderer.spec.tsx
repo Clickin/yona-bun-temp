@@ -1585,6 +1585,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">of</span>');
   });
 
+  it("recognizes legacy Highlight.js Erlang percent comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```erl", "% legacy comment", "receive after 1 -> false end", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="erl">');
+    expect(html).toContain('class="syntax-token syntax-comment">% legacy comment</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">receive</span>');
+  });
+
   it("recognizes legacy Highlight.js R language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
