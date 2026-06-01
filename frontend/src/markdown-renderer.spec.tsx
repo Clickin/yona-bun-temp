@@ -821,6 +821,26 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">RewriteRule</span>');
   });
 
+  it("recognizes legacy Highlight.js HTTP aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```https",
+          "GET /api/v1/projects HTTP/1.1",
+          "Host: yona.example",
+          "HTTP/1.1 200 OK",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="https">');
+    expect(html).toContain('class="syntax-token syntax-keyword">GET</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">HTTP</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">Host</span>');
+    expect(html).toContain('class="syntax-token syntax-number">200</span>');
+  });
+
   it("recognizes legacy Highlight.js ini aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

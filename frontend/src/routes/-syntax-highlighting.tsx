@@ -1050,6 +1050,20 @@ const apacheKeywords = new Set([
   "sethandler",
 ]);
 
+const httpKeywords = new Set([
+  "CONNECT",
+  "DELETE",
+  "GET",
+  "HEAD",
+  "Host",
+  "HTTP",
+  "OPTIONS",
+  "PATCH",
+  "POST",
+  "PUT",
+  "TRACE",
+]);
+
 const iniKeywords = new Set(["no", "off", "on", "yes"]);
 
 const powershellKeywords = new Set([
@@ -1284,6 +1298,9 @@ function normalizeCodeLanguage(language: string) {
   if (["apache", "apacheconf"].includes(normalized)) {
     return "apache";
   }
+  if (["http", "https"].includes(normalized)) {
+    return "http";
+  }
   if (["ini", "toml"].includes(normalized)) {
     return "ini";
   }
@@ -1344,6 +1361,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "dockerfile" && dockerfileKeywords.has(token.toUpperCase())) ||
     (language === "nginx" && nginxKeywords.has(token.toLowerCase())) ||
     (language === "apache" && apacheKeywords.has(token.toLowerCase())) ||
+    (language === "http" && httpKeywords.has(token)) ||
     (language === "ini" && iniKeywords.has(token.toLowerCase())) ||
     (language === "powershell" && powershellKeywords.has(token.toLowerCase())) ||
     (language === "dos" && dosKeywords.has(token.toLowerCase())) ||
