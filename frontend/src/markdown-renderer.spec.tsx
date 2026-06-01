@@ -1279,6 +1279,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">RewriteRule</span>');
   });
 
+  it("recognizes legacy Highlight.js Apache hash comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```apache",
+          "# preserve legacy redirects",
+          "Listen 80",
+          "RewriteEngine On",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="apache">');
+    expect(html).toContain(
+      'class="syntax-token syntax-comment"># preserve legacy redirects</span>',
+    );
+    expect(html).toContain('class="syntax-token syntax-keyword">Listen</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">RewriteEngine</span>');
+  });
+
   it("recognizes legacy Highlight.js HTTP aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
