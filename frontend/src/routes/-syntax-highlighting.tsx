@@ -1726,7 +1726,7 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "py") {
     return "python";
   }
-  if (["bash", "sh", "shell", "zsh"].includes(normalized)) {
+  if (["bash", "console", "sh", "shell", "zsh"].includes(normalized)) {
     return "shell";
   }
   if (["mysql", "pgsql", "postgresql", "sql"].includes(normalized)) {

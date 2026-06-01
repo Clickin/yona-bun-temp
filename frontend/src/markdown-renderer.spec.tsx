@@ -602,6 +602,22 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">fi</span>');
   });
 
+  it("recognizes legacy Highlight.js shell console alias in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```console", "if test -f build.sh; then", "  echo ready", "fi", "```"].join(
+          "\n",
+        )}
+      />,
+    );
+
+    expect(html).toContain('<code class="console">');
+    expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">then</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">echo</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">fi</span>');
+  });
+
   it("recognizes legacy Highlight.js SQL keywords in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
