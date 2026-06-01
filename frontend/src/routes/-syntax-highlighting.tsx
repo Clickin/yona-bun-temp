@@ -1652,7 +1652,15 @@ const accesslogKeywords = new Set([
 
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
-const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
+const cssKeywords = new Set([
+  "charset",
+  "important",
+  "keyframes",
+  "media",
+  "none",
+  "page",
+  "supports",
+]);
 
 const clojureKeywords = new Set([
   "->",
@@ -1706,7 +1714,9 @@ export function highlightCodeLine(line: string, language: string) {
                   ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b[A-Z]{0,2}\d*:[A-Z]{0,2}\d*\b|\b[A-Z]{1,2}\d+\b|\b\d+(?:\.\d+)?%?|\b[A-Za-z][A-Za-z0-9_.]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                   : normalizedLanguage === "markdown"
                     ? /(`[^`\n]+`|\*\*[^*\n]+\*\*|__[^_\n]+__|\*[^*\n]+\*|_[^_\n]+_|\[[^\]\n]+\]|\([^)\n]+\)|^#{1,6}|^>|^[-*+]|\d+\.|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
-                    : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
+                    : normalizedLanguage === "css"
+                      ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\*.*?\*\/|\[[^\]\n]+\]|@[A-Za-z-]+|#[A-Za-z0-9_-]+|\.[A-Za-z0-9_-]+|::?[A-Za-z0-9_-]+(?:\([^)\n]*\))?|\b\d+(?:\.\d+)?(?:%|[A-Za-z]+)?\b|\b[A-Za-z-][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                      : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   for (const match of line.matchAll(tokenPattern)) {
@@ -1763,6 +1773,12 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   }
   if (normalizedLanguage === "markdown") {
     return markdownTokenClass(token);
+  }
+  if (normalizedLanguage === "css" && /^#[0-9A-Fa-f]{3,8}$/.test(token)) {
+    return "syntax-number";
+  }
+  if (normalizedLanguage === "css" && isCssStructuralToken(token, line, tokenStart)) {
+    return "syntax-keyword";
   }
   if (token.startsWith('"') || token.startsWith("'")) {
     return "syntax-string";
@@ -1990,6 +2006,17 @@ function markdownTokenClass(token: string) {
     return "syntax-punctuation";
   }
   return "syntax-identifier";
+}
+
+function isCssStructuralToken(token: string, line: string, tokenStart: number) {
+  if (/^(@[A-Za-z-]+|[#.][A-Za-z0-9_-]+|\[[^\]\n]+\]|::?[A-Za-z0-9_-]+)/.test(token)) {
+    return true;
+  }
+  if (cssKeywords.has(token.toLowerCase())) {
+    return true;
+  }
+  const after = line.slice(tokenStart + token.length);
+  return /^[A-Za-z-][A-Za-z0-9_-]*$/.test(token) && /^\s*:/.test(after);
 }
 
 function isCodeKeyword(token: string, language: string) {

@@ -450,6 +450,34 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-string">`code`</span>');
   });
 
+  it("recognizes legacy Highlight.js CSS-family selector tokens in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```scss",
+          "@media screen { .board #main:hover { color: #fff; margin-top: 1px; } }",
+          '.item[data-state="open"] { display: none; }',
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="scss">');
+    expect(html).toContain('class="syntax-token syntax-keyword">@media</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">.board</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">#main</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">:hover</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">color</span>');
+    expect(html).toContain('class="syntax-token syntax-number">#fff</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">margin-top</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1px</span>');
+    expect(html).toContain(
+      'class="syntax-token syntax-keyword">[data-state=&quot;open&quot;]</span>',
+    );
+    expect(html).toContain('class="syntax-token syntax-keyword">display</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">none</span>');
+  });
+
   it("recognizes legacy Highlight.js CMake aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
