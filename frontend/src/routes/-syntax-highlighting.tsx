@@ -1802,7 +1802,7 @@ export function highlightCodeLine(line: string, language: string) {
                   : normalizedLanguage === "clojure-repl"
                     ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^([\w.-]+|\s*#_)=>|;.*$|\b\d+(?:\.\d+)?\b|[A-Za-z_*+\-<>=!?][A-Za-z0-9_*+\-<>=!?]*|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                     : normalizedLanguage === "haml"
-                      ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|!!!|%[A-Za-z][A-Za-z0-9_-]*|#[A-Za-z0-9_-]+|\.[A-Za-z0-9_-]+|[A-Za-z_][A-Za-z0-9_-]*|\b\d+(?:\.\d+)?\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                      ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^\s*(?:!=#|=#|-#|\/).*$|!!!|%[A-Za-z][A-Za-z0-9_-]*|#[A-Za-z0-9_-]+|\.[A-Za-z0-9_-]+|[A-Za-z_][A-Za-z0-9_-]*|\b\d+(?:\.\d+)?\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                       : normalizedLanguage === "cmake"
                         ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
                         : normalizedLanguage === "excel"
@@ -1939,6 +1939,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   }
   if (normalizedLanguage === "haml" && isHamlStructuralToken(token, line, tokenStart)) {
     return "syntax-keyword";
+  }
+  if (normalizedLanguage === "haml" && /^(?:!=#|=#|-#|\/)/.test(token.trimStart())) {
+    return "syntax-comment";
   }
   if (normalizedLanguage === "clojure-repl" && clojureReplPromptIsMeta(token, tokenStart)) {
     return "syntax-keyword";

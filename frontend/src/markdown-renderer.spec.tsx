@@ -2003,6 +2003,25 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">.title</span>');
   });
 
+  it("recognizes legacy Highlight.js Haml comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```haml",
+          "-# legacy comment",
+          "/ rendered comment",
+          "%p= project.name",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="haml">');
+    expect(html).toContain('class="syntax-token syntax-comment">-# legacy comment</span>');
+    expect(html).toContain('class="syntax-token syntax-comment">/ rendered comment</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">%p</span>');
+  });
+
   it("recognizes legacy Highlight.js Excel aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
