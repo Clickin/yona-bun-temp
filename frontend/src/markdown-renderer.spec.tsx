@@ -383,6 +383,31 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
   });
 
+  it("recognizes legacy Highlight.js CMake aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```cmake.in",
+          "cmake_minimum_required(VERSION 3.20)",
+          "PROJECT(YonaPort)",
+          "add_executable(yona main.cpp)",
+          "if(ON)",
+          "  target_link_libraries(yona PRIVATE core)",
+          "endif()",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="cmake.in">');
+    expect(html).toContain('class="syntax-token syntax-keyword">cmake_minimum_required</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">PROJECT</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">add_executable</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">ON</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">target_link_libraries</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">endif</span>');
+  });
+
   it("recognizes legacy Highlight.js python language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

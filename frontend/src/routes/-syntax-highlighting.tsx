@@ -363,6 +363,66 @@ const luaKeywords = new Set([
   "while",
 ]);
 
+const cmakeKeywords = new Set([
+  "add_custom_command",
+  "add_custom_target",
+  "add_definitions",
+  "add_dependencies",
+  "add_executable",
+  "add_library",
+  "add_subdirectory",
+  "add_test",
+  "and",
+  "break",
+  "cmake_minimum_required",
+  "cmake_policy",
+  "configure_file",
+  "else",
+  "elseif",
+  "enable_language",
+  "enable_testing",
+  "endforeach",
+  "endfunction",
+  "endif",
+  "endmacro",
+  "endwhile",
+  "execute_process",
+  "export",
+  "false",
+  "find_file",
+  "find_library",
+  "find_package",
+  "find_path",
+  "find_program",
+  "foreach",
+  "function",
+  "greater",
+  "if",
+  "include",
+  "include_directories",
+  "install",
+  "less",
+  "macro",
+  "matches",
+  "message",
+  "off",
+  "on",
+  "option",
+  "or",
+  "project",
+  "return",
+  "set",
+  "set_property",
+  "string",
+  "strequal",
+  "strgreater",
+  "strless",
+  "target_link_libraries",
+  "true",
+  "unset",
+  "while",
+]);
+
 const pythonKeywords = new Set([
   "False",
   "None",
@@ -738,6 +798,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "lua") {
     return "lua";
   }
+  if (["cmake", "cmake.in"].includes(normalized)) {
+    return "cmake";
+  }
   if (["less", "scss"].includes(normalized)) {
     return "css";
   }
@@ -784,6 +847,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "elixir" && elixirKeywords.has(token)) ||
     (language === "haskell" && haskellKeywords.has(token)) ||
     (language === "lua" && luaKeywords.has(token)) ||
+    (language === "cmake" && cmakeKeywords.has(token.toLowerCase())) ||
     (language === "python" && pythonKeywords.has(token)) ||
     (language === "shell" && shellKeywords.has(token)) ||
     (language === "sql" && sqlKeywords.has(token.toLowerCase())) ||
