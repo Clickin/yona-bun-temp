@@ -1361,6 +1361,30 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">declare</span>');
   });
 
+  it("recognizes legacy Highlight.js Haml language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```haml",
+          "!!! 5",
+          '%section#main.board(data-state="open")',
+          "  %h1.title= project.name",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="haml">');
+    expect(html).toContain('class="syntax-token syntax-keyword">!!!</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">%section</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">#main</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">.board</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">data-state</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&quot;open&quot;</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">%h1</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">.title</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

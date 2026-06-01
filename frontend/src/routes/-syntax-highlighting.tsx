@@ -1676,7 +1676,9 @@ export function highlightCodeLine(line: string, language: string) {
           ? /(\b\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?\b|\b\d+\b|\b(?:GET|POST|HEAD|PUT|DELETE|CONNECT|OPTIONS|PATCH|TRACE)\b|\[[^\]\n]*\]|[A-Za-z][A-Za-z0-9._/-]*|[{}()[\].,;:"+\-*/%=<>!&|?]+)/g
           : normalizedLanguage === "clojure"
             ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|;.*$|\b\d+(?:\.\d+)?\b|[A-Za-z_*+\-<>=!?][A-Za-z0-9_*+\-<>=!?]*|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-            : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
+            : normalizedLanguage === "haml"
+              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|!!!|%[A-Za-z][A-Za-z0-9_-]*|#[A-Za-z0-9_-]+|\.[A-Za-z0-9_-]+|[A-Za-z_][A-Za-z0-9_-]*|\b\d+(?:\.\d+)?\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+              : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   for (const match of line.matchAll(tokenPattern)) {
@@ -1721,6 +1723,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   }
   if (normalizedLanguage === "accesslog" && /^\[.*\]$/.test(token)) {
     return "syntax-string";
+  }
+  if (normalizedLanguage === "haml" && isHamlStructuralToken(token, line, tokenStart)) {
+    return "syntax-keyword";
   }
   if (token.startsWith('"') || token.startsWith("'")) {
     return "syntax-string";
@@ -1777,6 +1782,9 @@ function normalizeCodeLanguage(language: string) {
   }
   if (normalized === "llvm") {
     return "llvm";
+  }
+  if (normalized === "haml") {
+    return "haml";
   }
   if (["makefile", "mk", "mak"].includes(normalized)) {
     return "makefile";
@@ -1901,6 +1909,18 @@ function jsonStringTokenIsObjectKey(line: string, tokenStart: number, token: str
 function diffLineMarkerIsChange(token: string, line: string, tokenStart: number) {
   const marker = token[0];
   return tokenStart === 0 && ["+", "-", "!"].includes(marker) && line.startsWith(marker);
+}
+
+function isHamlStructuralToken(token: string, line: string, tokenStart: number) {
+  if (token === "!!!" || /^%[A-Za-z][A-Za-z0-9_-]*$/.test(token)) {
+    return true;
+  }
+  if (/^[.#][A-Za-z0-9_-]+$/.test(token)) {
+    return true;
+  }
+  const before = line.slice(0, tokenStart);
+  const after = line.slice(tokenStart + token.length);
+  return /[(\s]$/.test(before) && /^\s*=/.test(after);
 }
 
 function isCodeKeyword(token: string, language: string) {
