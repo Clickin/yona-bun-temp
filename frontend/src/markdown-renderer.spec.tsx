@@ -1762,6 +1762,21 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
   });
 
+  it("recognizes legacy Highlight.js TeX percent comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```tex", "% legacy comment", "\\section{Intro}", "\\textbf{Yona}", "```"].join(
+          "\n",
+        )}
+      />,
+    );
+
+    expect(html).toContain('<code class="tex">');
+    expect(html).toContain('class="syntax-token syntax-comment">% legacy comment</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">section</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">textbf</span>');
+  });
+
   it("recognizes legacy Highlight.js Django and Jinja language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
