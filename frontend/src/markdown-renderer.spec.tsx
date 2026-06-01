@@ -1301,6 +1301,22 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">class</span>');
   });
 
+  it("recognizes legacy Highlight.js Ruby numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```rb", "mask = 0xFF", "mode = 0755", "size = 1_024", "empty = 0", "```"].join(
+          "\n",
+        )}
+      />,
+    );
+
+    expect(html).toContain('<code class="rb">');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0755</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_024</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0</span>');
+  });
+
   it("recognizes legacy Highlight.js PHP language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
