@@ -664,6 +664,33 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
   });
 
+  it("recognizes legacy Highlight.js Arduino language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```arduino",
+          "void setup() {",
+          "  pinMode(13, OUTPUT);",
+          "}",
+          "void loop() {",
+          "  digitalWrite(13, HIGH);",
+          "  delay(1000);",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="arduino">');
+    expect(html).toContain('class="syntax-token syntax-keyword">setup</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">pinMode</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">OUTPUT</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">loop</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">digitalWrite</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">HIGH</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">delay</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

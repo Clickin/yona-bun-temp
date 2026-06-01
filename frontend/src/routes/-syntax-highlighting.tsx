@@ -860,6 +860,20 @@ const cppKeywords = new Set([
   "volatile",
 ]);
 
+const arduinoKeywords = new Set([
+  "HIGH",
+  "LOW",
+  "OUTPUT",
+  "INPUT",
+  "INPUT_PULLUP",
+  "delay",
+  "digitalRead",
+  "digitalWrite",
+  "loop",
+  "pinMode",
+  "setup",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -987,6 +1001,9 @@ function normalizeCodeLanguage(language: string) {
   if (["c", "cc", "cpp", "c++", "h", "h++", "hpp"].includes(normalized)) {
     return "cpp";
   }
+  if (normalized === "arduino") {
+    return "arduino";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1024,6 +1041,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "ruby" && rubyKeywords.has(token)) ||
     (language === "php" && phpKeywords.has(token.toLowerCase())) ||
     (language === "cpp" && cppKeywords.has(token)) ||
+    (language === "arduino" && (cppKeywords.has(token) || arduinoKeywords.has(token))) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );
