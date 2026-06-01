@@ -1802,18 +1802,21 @@ export function highlightCodeBlock(code: string, language: string | undefined) {
   }
   if (normalizedLanguage === "xml") {
     let inCdataBlock = false;
+    let inPhpProcessingInstruction = false;
     let inScriptBlock = false;
     let inStyleBlock = false;
     let scriptBlockLanguage = "javascript";
     return lines.flatMap((line, lineIndex) => {
       const result = highlightXmlCodeLine(line, language ?? "", {
         inCdataBlock,
+        inPhpProcessingInstruction,
         inScriptBlock,
         inStyleBlock,
         lineIndex,
         scriptBlockLanguage,
       });
       inCdataBlock = result.inCdataBlock;
+      inPhpProcessingInstruction = result.inPhpProcessingInstruction;
       inScriptBlock = result.inScriptBlock;
       inStyleBlock = result.inStyleBlock;
       scriptBlockLanguage = result.scriptBlockLanguage;
@@ -1831,6 +1834,7 @@ function highlightXmlCodeLine(
   language: string,
   state: {
     inCdataBlock: boolean;
+    inPhpProcessingInstruction: boolean;
     inScriptBlock: boolean;
     inStyleBlock: boolean;
     lineIndex: number;
@@ -1840,6 +1844,7 @@ function highlightXmlCodeLine(
   const nodes: React.ReactNode[] = [];
   let cursor = 0;
   let stillInCdataBlock = state.inCdataBlock;
+  let stillInPhpProcessingInstruction = state.inPhpProcessingInstruction;
   let stillInScriptBlock = state.inScriptBlock;
   let stillInStyleBlock = state.inStyleBlock;
   let scriptBlockLanguage = state.scriptBlockLanguage;
@@ -1847,6 +1852,7 @@ function highlightXmlCodeLine(
   if (line.length === 0 && stillInCdataBlock) {
     return {
       inCdataBlock: true,
+      inPhpProcessingInstruction: stillInPhpProcessingInstruction,
       inScriptBlock: stillInScriptBlock,
       inStyleBlock: stillInStyleBlock,
       nodes: [xmlCdataSpan("\u00a0", state.lineIndex, 0)],
@@ -1857,6 +1863,7 @@ function highlightXmlCodeLine(
   if (line.length === 0 && stillInScriptBlock) {
     return {
       inCdataBlock: stillInCdataBlock,
+      inPhpProcessingInstruction: stillInPhpProcessingInstruction,
       inScriptBlock: true,
       inStyleBlock: stillInStyleBlock,
       nodes: highlightCodeLine("\u00a0", scriptBlockLanguage),
@@ -1867,9 +1874,21 @@ function highlightXmlCodeLine(
   if (line.length === 0 && stillInStyleBlock) {
     return {
       inCdataBlock: stillInCdataBlock,
+      inPhpProcessingInstruction: stillInPhpProcessingInstruction,
       inScriptBlock: stillInScriptBlock,
       inStyleBlock: true,
       nodes: highlightCodeLine("\u00a0", "css"),
+      scriptBlockLanguage,
+    };
+  }
+
+  if (line.length === 0 && stillInPhpProcessingInstruction) {
+    return {
+      inCdataBlock: stillInCdataBlock,
+      inPhpProcessingInstruction: true,
+      inScriptBlock: stillInScriptBlock,
+      inStyleBlock: stillInStyleBlock,
+      nodes: highlightCodeLine("\u00a0", "php"),
       scriptBlockLanguage,
     };
   }
@@ -1886,6 +1905,22 @@ function highlightXmlCodeLine(
       nodes.push(xmlCdataSpan(line.slice(cursor, cdataEndOffset), state.lineIndex, cursor));
       stillInCdataBlock = false;
       cursor = cdataEndOffset;
+      continue;
+    }
+
+    if (stillInPhpProcessingInstruction) {
+      const phpEnd = findXmlPhpProcessingInstructionEnd(line, cursor);
+      if (phpEnd === -1) {
+        nodes.push(...highlightCodeLine(line.slice(cursor), "php"));
+        cursor = line.length;
+        break;
+      }
+      if (phpEnd > cursor) {
+        nodes.push(...highlightCodeLine(line.slice(cursor, phpEnd), "php"));
+      }
+      nodes.push(xmlPunctuationSpan("?>", state.lineIndex, phpEnd));
+      cursor = phpEnd + "?>".length;
+      stillInPhpProcessingInstruction = false;
       continue;
     }
 
@@ -1937,12 +1972,19 @@ function highlightXmlCodeLine(
       continue;
     }
 
-    if (!stillInCdataBlock && !stillInScriptBlock && !stillInStyleBlock) {
+    if (
+      !stillInCdataBlock &&
+      !stillInPhpProcessingInstruction &&
+      !stillInScriptBlock &&
+      !stillInStyleBlock
+    ) {
       const cdataStart = findXmlCdataStart(line, cursor);
+      const phpStart = findXmlPhpProcessingInstructionStart(line, cursor);
       const scriptStart = findXmlScriptStart(line, cursor);
       const styleStart = findXmlStyleStart(line, cursor);
       const embeddedStart = nearestXmlSpecialStart(scriptStart, styleStart);
-      const nextSpecialStart = nearestXmlSpecialStart(cdataStart, embeddedStart);
+      const xmlLiteralStart = nearestXmlSpecialStart(cdataStart, phpStart);
+      const nextSpecialStart = nearestXmlSpecialStart(xmlLiteralStart, embeddedStart);
       if (nextSpecialStart === -1) {
         nodes.push(...highlightCodeLine(line.slice(cursor), language));
         cursor = line.length;
@@ -1984,6 +2026,12 @@ function highlightXmlCodeLine(
         stillInStyleBlock = true;
         continue;
       }
+      if (nextSpecialStart === phpStart) {
+        nodes.push(xmlPunctuationSpan("<?", state.lineIndex, phpStart));
+        cursor = phpStart + "<?".length;
+        stillInPhpProcessingInstruction = true;
+        continue;
+      }
       const cdataEnd = findXmlCdataEnd(line, cdataStart + "<![CDATA[".length);
       if (cdataEnd === -1) {
         nodes.push(xmlCdataSpan(line.slice(cdataStart), state.lineIndex, cdataStart));
@@ -2000,6 +2048,7 @@ function highlightXmlCodeLine(
 
   return {
     inCdataBlock: stillInCdataBlock,
+    inPhpProcessingInstruction: stillInPhpProcessingInstruction,
     inScriptBlock: stillInScriptBlock,
     inStyleBlock: stillInStyleBlock,
     nodes: nodes.length > 0 ? nodes : ["\u00a0"],
@@ -2015,12 +2064,31 @@ function xmlCdataSpan(token: string, lineIndex: number, tokenStart: number) {
   );
 }
 
+function xmlPunctuationSpan(token: string, lineIndex: number, tokenStart: number) {
+  return (
+    <span
+      className="syntax-token syntax-punctuation"
+      key={`xml-punctuation-${lineIndex}-${tokenStart}`}
+    >
+      {token}
+    </span>
+  );
+}
+
 function findXmlCdataStart(line: string, cursor: number) {
   return findXmlCdataDelimiter(line, cursor, /<!\[CDATA\[/g);
 }
 
 function findXmlCdataEnd(line: string, cursor: number) {
   return findXmlCdataDelimiter(line, cursor, /\]\]>/g);
+}
+
+function findXmlPhpProcessingInstructionStart(line: string, cursor: number) {
+  return findXmlCdataDelimiter(line, cursor, /<\?php(?=\s|$)/gi);
+}
+
+function findXmlPhpProcessingInstructionEnd(line: string, cursor: number) {
+  return findXmlCdataDelimiter(line, cursor, /\?>/g);
 }
 
 function findXmlStyleStart(line: string, cursor: number) {

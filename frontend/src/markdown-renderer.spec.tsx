@@ -2485,6 +2485,22 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">&lt;!DOCTYPE project&gt;</span>');
   });
 
+  it("uses legacy Highlight.js PHP sublanguage inside XML processing instructions", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```html", "<?php echo $projectName; ?>", "<div>Yona</div>", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="html">');
+    expect(html).toContain('class="syntax-token syntax-punctuation">&lt;?</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">php</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">echo</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">$projectName</span>');
+    expect(html).toContain('class="syntax-token syntax-punctuation">?&gt;</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">div</span>');
+  });
+
   it("keeps legacy Highlight.js XML CDATA blocks opaque in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
