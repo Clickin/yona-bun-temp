@@ -11,7 +11,10 @@ use yona_rust_persistence::{
     PostingMutationInput,
 };
 use yona_rust_pilot_migration::Migrator;
-use yona_rust_pilot_server::{process_mailbox_parsed_message, process_mailbox_raw_message};
+use yona_rust_pilot_server::{
+    mailbox_polling_config_from_env, poll_mailbox_scheduler_tick, process_mailbox_parsed_message,
+    process_mailbox_raw_message, MailboxPollingConfig,
+};
 
 async fn build_repository() -> (AppRepository, DatabaseConnection) {
     let db = Database::connect("sqlite::memory:")
@@ -714,4 +717,127 @@ async fn mailbox_project_targets_follow_legacy_detail_and_read_filtering() {
         .unwrap();
     assert_eq!(outsider_targets.len(), 1);
     assert_eq!(outsider_targets[0].id, public_project.id);
+}
+
+#[tokio::test]
+async fn mailbox_polling_tick_fetches_raw_messages_and_threads_replies() {
+    let (repo, _) = build_repository().await;
+    let member = repo
+        .create_user(CreateUserInput {
+            display_name: "Mailbox Member".to_string(),
+            email_address: "member@example.com".to_string(),
+            is_confirmed: true,
+            is_site_admin: false,
+            login_id: "member".to_string(),
+            password_hash: "pw".to_string(),
+        })
+        .await
+        .unwrap();
+    repo.create_project(CreateProjectInput {
+        organization_id: None,
+        owner_name: "mailbox".to_string(),
+        overview: None,
+        project_name: "projectYobi".to_string(),
+        project_scope: "public".to_string(),
+    })
+    .await
+    .unwrap();
+
+    let fake_fetch_dir = std::env::temp_dir().join(format!(
+        "yona-mailbox-fetch-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("system time")
+            .as_nanos()
+    ));
+    std::fs::create_dir_all(&fake_fetch_dir).expect("fake fetch tempdir");
+    let fake_fetch = fake_fetch_dir.join("fake-mailbox-fetch.ps1");
+    let args_path = fake_fetch_dir.join("args.txt");
+    std::fs::write(
+        &fake_fetch,
+        format!(
+            r#"
+param([Parameter(ValueFromRemainingArguments=$true)][object[]]$Remaining)
+[IO.File]::WriteAllText("{}", $Remaining -join " ")
+$first = "Message-ID: <poll-root@domain>`r`nSubject: Polled issue`r`nFrom: Mailbox Member <member@example.com>`r`nTo: noreply+mailbox/projectYobi@yona.local`r`nContent-Type: text/plain; charset=UTF-8`r`n`r`npolled issue body"
+$second = "Message-ID: <poll-reply@domain>`r`nSubject: Re: Polled issue`r`nFrom: Mailbox Member <member@example.com>`r`nTo: noreply+mailbox/projectYobi@yona.local`r`nIn-Reply-To: <poll-root@domain>`r`nContent-Type: text/plain; charset=UTF-8`r`n`r`npolled reply body"
+$payload = $first + [char]0 + $second
+$bytes = [Text.Encoding]::UTF8.GetBytes($payload)
+[Console]::OpenStandardOutput().Write($bytes, 0, $bytes.Length)
+"#,
+            args_path.display()
+        ),
+    )
+    .expect("write fake fetch");
+
+    let config = MailboxPollingConfig {
+        enabled: true,
+        fetch_command: format!(
+            "powershell -NoProfile -ExecutionPolicy Bypass -File {}",
+            fake_fetch.display()
+        ),
+        imap_address: "noreply@yona.local".to_string(),
+        initial_delay_ms: 0,
+        interval_ms: 1,
+    };
+    let results = poll_mailbox_scheduler_tick(&repo, &config)
+        .await
+        .expect("polling tick succeeds");
+    assert_eq!(results.len(), 2);
+    assert_eq!(results[0].status, "processed");
+    assert_eq!(results[0].actions[0].action, "create_issue");
+    assert_eq!(results[1].status, "processed");
+    assert_eq!(results[1].actions[0].action, "create_issue_comment");
+
+    let detail = repo
+        .read_issue_detail("mailbox", "projectYobi", 1)
+        .await
+        .unwrap()
+        .expect("polled issue detail");
+    assert_eq!(detail.author_id, Some(member.id));
+    assert_eq!(detail.title, "Polled issue");
+    assert_eq!(detail.comments.len(), 1);
+    assert_eq!(detail.comments[0].contents_markdown, "polled reply body");
+    assert!(std::fs::read_to_string(args_path)
+        .expect("captured args")
+        .contains("noreply@yona.local"));
+
+    let disabled = poll_mailbox_scheduler_tick(
+        &repo,
+        &MailboxPollingConfig {
+            enabled: false,
+            ..config
+        },
+    )
+    .await
+    .expect("disabled polling succeeds");
+    assert!(disabled.is_empty());
+    let _ = std::fs::remove_dir_all(fake_fetch_dir);
+}
+
+#[test]
+fn mailbox_polling_config_from_env_preserves_legacy_scheduler_shape() {
+    std::env::set_var("YONA_MAILBOX_POLLING_ENABLED", "true");
+    std::env::set_var("YONA_MAILBOX_POLLING_INITIAL_DELAY", "2s");
+    std::env::set_var("YONA_MAILBOX_POLLING_INTERVAL", "750ms");
+    std::env::set_var("YONA_MAILBOX_IMAP_ADDRESS", "noreply@yona.local");
+    std::env::set_var("YONA_MAILBOX_FETCH_COMMAND", "fetch-mailbox --unseen");
+
+    assert_eq!(
+        mailbox_polling_config_from_env(),
+        MailboxPollingConfig {
+            enabled: true,
+            fetch_command: "fetch-mailbox --unseen".to_string(),
+            imap_address: "noreply@yona.local".to_string(),
+            initial_delay_ms: 2_000,
+            interval_ms: 750,
+        }
+    );
+
+    std::env::remove_var("YONA_MAILBOX_POLLING_ENABLED");
+    std::env::remove_var("YONA_MAILBOX_POLLING_INITIAL_DELAY");
+    std::env::remove_var("YONA_MAILBOX_POLLING_INTERVAL");
+    std::env::remove_var("YONA_MAILBOX_IMAP_ADDRESS");
+    std::env::remove_var("YONA_MAILBOX_FETCH_COMMAND");
 }
