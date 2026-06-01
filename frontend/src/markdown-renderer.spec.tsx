@@ -702,6 +702,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">endif</span>');
   });
 
+  it("recognizes legacy Highlight.js CMake hash comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```cmake", "# configure target", "project(YonaPort)", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="cmake">');
+    expect(html).toContain('class="syntax-token syntax-comment"># configure target</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">project</span>');
+  });
+
   it("recognizes legacy Highlight.js Gradle language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
