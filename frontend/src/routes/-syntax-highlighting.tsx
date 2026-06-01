@@ -2009,6 +2009,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "sc") {
     return "scala";
   }
+  if (normalized === "jsp") {
+    return "java";
+  }
   if (["go", "golang"].includes(normalized)) {
     return "go";
   }

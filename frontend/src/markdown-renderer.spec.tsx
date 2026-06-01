@@ -284,6 +284,21 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-number">.25f</span>');
   });
 
+  it("recognizes legacy Highlight.js Java JSP aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```jsp", "public final class IssueView {", "  return true;", "}", "```"].join(
+          "\n",
+        )}
+      />,
+    );
+
+    expect(html).toContain('<code class="jsp">');
+    expect(html).toContain('class="syntax-token syntax-keyword">public</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">final</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
+  });
+
   it("recognizes legacy Highlight.js Scala numeric literals in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
