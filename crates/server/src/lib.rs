@@ -3863,6 +3863,7 @@ fn svn_protocol_propfind_file_item(
             .is_some()
             .then_some("        <D:getlastmodified/>\n")
             .unwrap_or_default();
+        let supported_report_set = "        <D:supported-report-set/>\n";
         let property_items = svn_protocol_property_name_items(properties);
         return format!(
             r#"  <D:response>
@@ -3870,7 +3871,7 @@ fn svn_protocol_propfind_file_item(
     <D:propstat>
       <D:prop>
         <D:resourcetype/>
-{displayname}{supportedlock}{content_length}{content_type}{etag}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}        <D:version-controlled-configuration/>
+{displayname}{supportedlock}{content_length}{content_type}{etag}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}{supported_report_set}        <D:version-controlled-configuration/>
 {property_items}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>
@@ -3984,6 +3985,7 @@ fn svn_protocol_propfind_file_item(
         String::new()
     };
     let property_items = svn_protocol_property_items_for_request(properties, request);
+    let supported_report_set = svn_protocol_supported_report_set_item(request);
     let deadprop_count = if property_items.is_empty() {
         String::new()
     } else {
@@ -3997,7 +3999,7 @@ fn svn_protocol_propfind_file_item(
     <D:href>{}</D:href>
     <D:propstat>
       <D:prop>
-{resourcetype}{displayname}{supportedlock}{content_length}{content_type}{etag}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}{version_controlled_configuration}
+{resourcetype}{displayname}{supportedlock}{content_length}{content_type}{etag}{version_name}{checked_in}{baseline_collection}{baseline_relative_path}{repository_uuid}{creationdate}{creator_displayname}{getlastmodified}{version_controlled_configuration}{supported_report_set}
 {deadprop_count}{property_items}{lock_discovery}      </D:prop>
       <D:status>HTTP/1.1 200 OK</D:status>
     </D:propstat>

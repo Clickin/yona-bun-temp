@@ -1048,6 +1048,34 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     let response = direct_request_with_body(
         app.clone(),
         propfind,
+        "/svn/owner/projectYobi/trunk/README.md",
+        None,
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:prop>
+    <D:supported-report-set/>
+  </D:prop>
+</D:propfind>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains("<D:supported-report-set>")
+            && text.contains("<S:file-revs-report/>")
+            && text.contains("<S:get-locks-report/>")
+            && text.contains("<S:log-report/>")
+            && !text.contains("<D:getcontentlength>"),
+        "SVN file PROPFIND should expose requested supported REPORT capabilities without falling back to allprop: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body(
+        app.clone(),
+        propfind,
         "/svn/owner/projectYobi/!svn/vcc/default/trunk/README.md",
         None,
         Body::from(
