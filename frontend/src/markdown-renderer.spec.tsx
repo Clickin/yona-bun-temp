@@ -797,6 +797,30 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">permanent</span>');
   });
 
+  it("recognizes legacy Highlight.js Apache aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```apacheconf",
+          'ServerRoot "/etc/httpd"',
+          "Listen 80",
+          'DocumentRoot "/srv/yona"',
+          "RewriteEngine On",
+          "RewriteRule ^/old$ /new [R=301,L]",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="apacheconf">');
+    expect(html).toContain('class="syntax-token syntax-keyword">ServerRoot</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">Listen</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">DocumentRoot</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">RewriteEngine</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">On</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">RewriteRule</span>');
+  });
+
   it("recognizes legacy Highlight.js ini aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

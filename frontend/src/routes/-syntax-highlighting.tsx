@@ -1028,6 +1028,28 @@ const nginxKeywords = new Set([
   "yes",
 ]);
 
+const apacheKeywords = new Set([
+  "all",
+  "allow",
+  "deny",
+  "documentroot",
+  "errordocument",
+  "header",
+  "listen",
+  "loadmodule",
+  "off",
+  "on",
+  "options",
+  "order",
+  "rewritecond",
+  "rewriteengine",
+  "rewriterule",
+  "servername",
+  "serverroot",
+  "setenv",
+  "sethandler",
+]);
+
 const iniKeywords = new Set(["no", "off", "on", "yes"]);
 
 const powershellKeywords = new Set([
@@ -1259,6 +1281,9 @@ function normalizeCodeLanguage(language: string) {
   if (["nginx", "nginxconf"].includes(normalized)) {
     return "nginx";
   }
+  if (["apache", "apacheconf"].includes(normalized)) {
+    return "apache";
+  }
   if (["ini", "toml"].includes(normalized)) {
     return "ini";
   }
@@ -1318,6 +1343,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "coffeescript" && coffeescriptKeywords.has(token)) ||
     (language === "dockerfile" && dockerfileKeywords.has(token.toUpperCase())) ||
     (language === "nginx" && nginxKeywords.has(token.toLowerCase())) ||
+    (language === "apache" && apacheKeywords.has(token.toLowerCase())) ||
     (language === "ini" && iniKeywords.has(token.toLowerCase())) ||
     (language === "powershell" && powershellKeywords.has(token.toLowerCase())) ||
     (language === "dos" && dosKeywords.has(token.toLowerCase())) ||
