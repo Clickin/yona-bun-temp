@@ -2027,6 +2027,20 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-string">&quot;open&quot;</span>');
   });
 
+  it("recognizes legacy Highlight.js XML comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```xml", "<!-- legacy layout -->", "<project>Yona</project>", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="xml">');
+    expect(html).toContain(
+      'class="syntax-token syntax-comment">&lt;!-- legacy layout --&gt;</span>',
+    );
+    expect(html).toContain('class="syntax-token syntax-keyword">project</span>');
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,
