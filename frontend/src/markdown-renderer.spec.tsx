@@ -1352,6 +1352,26 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">echo</span>');
   });
 
+  it("recognizes legacy Highlight.js PHP numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```php",
+          "<?php",
+          "$mask = 0xFF;",
+          "$flags = 0b1010;",
+          "$ratio = 1.5e-2;",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="php">');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1.5e-2</span>');
+  });
+
   it("recognizes legacy Highlight.js C++ language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
