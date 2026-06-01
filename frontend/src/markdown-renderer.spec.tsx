@@ -1072,6 +1072,36 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">in</span>');
   });
 
+  it("recognizes legacy Highlight.js Erlang aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```erl",
+          "handle(Message) ->",
+          "  receive",
+          "    {ok, Value} when Value > 0 -> fun() -> true end;",
+          "    after 1000 -> false",
+          "  end,",
+          "  case Message of",
+          "    stop -> ok",
+          "  end.",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="erl">');
+    expect(html).toContain('class="syntax-token syntax-keyword">receive</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">when</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">fun</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">after</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">false</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">case</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">of</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

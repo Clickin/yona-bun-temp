@@ -1210,6 +1210,37 @@ const elmKeywords = new Set([
   "where",
 ]);
 
+const erlangKeywords = new Set([
+  "after",
+  "and",
+  "andalso",
+  "band",
+  "begin",
+  "bnot",
+  "bor",
+  "bsl",
+  "bxor",
+  "case",
+  "catch",
+  "cond",
+  "div",
+  "end",
+  "false",
+  "fun",
+  "if",
+  "let",
+  "not",
+  "of",
+  "orelse",
+  "query",
+  "receive",
+  "rem",
+  "true",
+  "try",
+  "when",
+  "xor",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -1425,6 +1456,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "elm") {
     return "elm";
   }
+  if (["erl", "erlang"].includes(normalized)) {
+    return "erlang";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1489,6 +1523,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "swift" && swiftKeywords.has(token)) ||
     (language === "dart" && dartKeywords.has(token)) ||
     (language === "elm" && elmKeywords.has(token)) ||
+    (language === "erlang" && erlangKeywords.has(token)) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );
