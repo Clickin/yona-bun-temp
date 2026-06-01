@@ -1186,6 +1186,30 @@ const dartKeywords = new Set([
   "void",
 ]);
 
+const elmKeywords = new Set([
+  "alias",
+  "as",
+  "case",
+  "command",
+  "effect",
+  "else",
+  "exposing",
+  "if",
+  "import",
+  "in",
+  "infix",
+  "infixl",
+  "infixr",
+  "let",
+  "module",
+  "of",
+  "port",
+  "subscription",
+  "then",
+  "type",
+  "where",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -1398,6 +1422,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "dart") {
     return "dart";
   }
+  if (normalized === "elm") {
+    return "elm";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1461,6 +1488,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "kotlin" && kotlinKeywords.has(token)) ||
     (language === "swift" && swiftKeywords.has(token)) ||
     (language === "dart" && dartKeywords.has(token)) ||
+    (language === "elm" && elmKeywords.has(token)) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );

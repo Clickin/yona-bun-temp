@@ -484,6 +484,7 @@ Interpretation:
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Kotlin language keywords and built-ins
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Swift language keywords, literals, and built-ins
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Dart language keywords, literals, and built-ins
+- [x] React-side fenced code highlighting recognizes legacy Highlight.js Elm language keywords
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Objective-C aliases (`objectivec`/`objc`/`obj-c`/`mm`) for keywords, literals, and NS-family built-ins
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js YAML aliases (`yml`/`YAML`/`yaml`) for YAML literals
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js XML aliases (`xml`/`html`/`xhtml`/`rss`/`atom`/`xjb`/`xsd`/`xsl`/`plist`) for tag-name and attribute/string tokens

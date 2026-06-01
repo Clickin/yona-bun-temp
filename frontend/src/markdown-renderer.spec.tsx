@@ -1039,6 +1039,39 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">false</span>');
   });
 
+  it("recognizes legacy Highlight.js Elm language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```elm",
+          "port module Main exposing (Model, update)",
+          "import Html exposing (text)",
+          "type alias Model = { name : String }",
+          "update model =",
+          "  let",
+          "    result = case model.name of",
+          '      "" -> text "empty"',
+          "      _ -> text model.name",
+          "  in",
+          "  result",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="elm">');
+    expect(html).toContain('class="syntax-token syntax-keyword">port</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">module</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">exposing</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">import</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">type</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">alias</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">let</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">case</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">of</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">in</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
