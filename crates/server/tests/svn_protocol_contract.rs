@@ -3594,6 +3594,96 @@ async fn svn_protocol_external_client_can_update_after_remote_commit() {
 }
 
 #[tokio::test]
+async fn svn_protocol_external_client_can_update_after_remote_delete() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping external SVN delete update smoke because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello before external svn delete update\n")
+        .expect("seed svn readme");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let svn_url = format!("{base_url}/yona/svn/owner/projectYobi");
+    let writer_checkout = tempdir().expect("svn delete writer checkout tempdir");
+    let reader_checkout = tempdir().expect("svn delete reader checkout tempdir");
+    for checkout_dir in [&writer_checkout, &reader_checkout] {
+        run_svn_blocking(
+            vec![
+                "checkout".to_string(),
+                "--non-interactive".to_string(),
+                svn_url.clone(),
+                checkout_dir.path().to_string_lossy().to_string(),
+            ],
+            None,
+        )
+        .await;
+    }
+
+    let writer_readme = writer_checkout.path().join("trunk").join("README.md");
+    run_svn_blocking(
+        vec![
+            "delete".to_string(),
+            "--non-interactive".to_string(),
+            writer_readme.to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+    run_svn_blocking(
+        vec![
+            "commit".to_string(),
+            "--non-interactive".to_string(),
+            "--username".to_string(),
+            "owner".to_string(),
+            "--password".to_string(),
+            "doorpass1".to_string(),
+            "-m".to_string(),
+            "external svn delete update smoke".to_string(),
+            writer_checkout.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    run_svn_blocking(
+        vec![
+            "update".to_string(),
+            "--non-interactive".to_string(),
+            reader_checkout.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let reader_readme = reader_checkout.path().join("trunk").join("README.md");
+    assert!(
+        !reader_readme.exists(),
+        "svn update should remove files deleted in the remote repository"
+    );
+
+    let deleted = yona_rust_vcs::svn_cat_file(&repo_path, None, "trunk/README.md");
+    assert!(
+        matches!(deleted, Err(yona_rust_vcs::VcsError::NotFound)),
+        "fixture should delete README.md from the executable-backed repository"
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
 async fn svn_protocol_external_client_reports_conflict_on_update() {
     if !svn_tools_available() || !svn_client_available() {
         eprintln!(

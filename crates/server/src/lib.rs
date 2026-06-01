@@ -4474,6 +4474,28 @@ fn svn_protocol_update_report_response(
             return RestRouteError::from_connect_error(internal_error(error)).into_response()
         }
     };
+    let base_entries = if !start_empty && base_revision != target_revision {
+        let base_tree_result = if recursive {
+            yona_rust_vcs::svn_list_tree_recursive(repo_path, Some(base_revision), &update_path)
+        } else {
+            yona_rust_vcs::svn_list_tree(repo_path, Some(base_revision), &update_path)
+        };
+        match base_tree_result {
+            Ok(tree) => tree.entries,
+            Err(VcsError::NotFound) => Vec::new(),
+            Err(VcsError::InvalidPath) => {
+                return svn_protocol_status_response(StatusCode::BAD_REQUEST)
+            }
+            Err(VcsError::SvnLookUnavailable) => {
+                return svn_protocol_not_implemented_response(route, "REPORT")
+            }
+            Err(error) => {
+                return RestRouteError::from_connect_error(internal_error(error)).into_response()
+            }
+        }
+    } else {
+        Vec::new()
+    };
     let revision_log =
         match yona_rust_vcs::svn_log_entries(repo_path, target_revision, target_revision, 1) {
             Ok(mut entries) => entries.pop().unwrap_or(yona_rust_vcs::SvnLogEntry {
@@ -4497,6 +4519,7 @@ fn svn_protocol_update_report_response(
         svn_protocol_update_entries_recursive(
             route,
             &tree.entries,
+            &base_entries,
             &update_path,
             target_revision,
             base_revision,
@@ -4508,6 +4531,28 @@ fn svn_protocol_update_report_response(
         )
     } else {
         let mut entries = String::new();
+        let target_paths = tree
+            .entries
+            .iter()
+            .map(|entry| entry.path.trim_matches('/').to_string())
+            .collect::<std::collections::BTreeSet<_>>();
+        for entry in base_entries
+            .iter()
+            .filter(|entry| svn_protocol_update_depth_includes(entry, &depth))
+            .filter(|entry| !target_paths.contains(entry.path.trim_matches('/')))
+        {
+            let name = entry
+                .path
+                .trim_matches('/')
+                .rsplit('/')
+                .next()
+                .unwrap_or(entry.path.as_str());
+            entries.push_str(&format!(
+                r#"    <S:delete-entry name="{}" rev="{base_revision}"/>
+"#,
+                xml_escape(name)
+            ));
+        }
         for entry in tree
             .entries
             .iter()
@@ -5953,6 +5998,7 @@ fn svn_protocol_update_depth_includes(entry: &yona_rust_vcs::SvnTreeEntry, depth
 fn svn_protocol_update_entries_recursive(
     route: &SvnProtocolRoute,
     entries: &[yona_rust_vcs::SvnTreeEntry],
+    base_entries: &[yona_rust_vcs::SvnTreeEntry],
     parent_path: &str,
     revision: i64,
     base_revision: i64,
@@ -5966,6 +6012,11 @@ fn svn_protocol_update_entries_recursive(
     let child_names = entries
         .iter()
         .filter_map(|entry| svn_protocol_immediate_child_name(parent_path, &entry.path))
+        .chain(
+            base_entries
+                .iter()
+                .filter_map(|entry| svn_protocol_immediate_child_name(parent_path, &entry.path)),
+        )
         .collect::<std::collections::BTreeSet<_>>();
     let mut output = String::new();
     for name in child_names {
@@ -5985,12 +6036,32 @@ fn svn_protocol_update_entries_recursive(
                     .starts_with(&format!("{child_path}/"))
             })
         });
+        let base_child_exists = base_entries
+            .iter()
+            .any(|entry| entry.path.trim_matches('/') == child_path);
+        let target_child_exists = child_entry.is_some()
+            || entries.iter().any(|entry| {
+                entry
+                    .path
+                    .trim_matches('/')
+                    .starts_with(&format!("{child_path}/"))
+            });
+        if base_child_exists && !target_child_exists {
+            let indent = "  ".repeat(indent_level);
+            output.push_str(&format!(
+                r#"{indent}<S:delete-entry name="{}" rev="{base_revision}"/>
+"#,
+                xml_escape(&name)
+            ));
+            continue;
+        }
         if is_dir {
             let indent = "  ".repeat(indent_level);
             let child_indent = "  ".repeat(indent_level + 1);
             let nested = svn_protocol_update_entries_recursive(
                 route,
                 entries,
+                base_entries,
                 &child_path,
                 revision,
                 base_revision,
