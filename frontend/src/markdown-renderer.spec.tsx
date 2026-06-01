@@ -1425,6 +1425,30 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
   });
 
+  it("recognizes legacy Highlight.js CoffeeScript built-ins in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```coffee",
+          "npm install",
+          "loader = require module",
+          "console.log print global window document",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="coffee">');
+    expect(html).toContain('class="syntax-token syntax-keyword">npm</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">require</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">module</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">console</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">print</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">global</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">window</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">document</span>');
+  });
+
   it("recognizes legacy Highlight.js Arduino language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
