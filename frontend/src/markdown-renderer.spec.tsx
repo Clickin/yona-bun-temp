@@ -841,6 +841,22 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-number">200</span>');
   });
 
+  it("recognizes legacy Highlight.js JSON language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```json", '{ "enabled": true, "owner": null, "count": 3 }', "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="json">');
+    expect(html).toContain('class="syntax-token syntax-keyword">&quot;enabled&quot;</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">&quot;owner&quot;</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">null</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">&quot;count&quot;</span>');
+    expect(html).toContain('class="syntax-token syntax-number">3</span>');
+  });
+
   it("recognizes legacy Highlight.js ini aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

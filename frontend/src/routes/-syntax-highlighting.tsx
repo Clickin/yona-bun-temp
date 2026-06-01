@@ -1178,7 +1178,7 @@ export function highlightCodeLine(line: string, language: string) {
     }
     parts.push(
       <span
-        className={`syntax-token ${syntaxTokenClass(token, language)}`}
+        className={`syntax-token ${syntaxTokenClass(token, language, line, tokenStart)}`}
         key={`${token}-${tokenStart}`}
       >
         {token}
@@ -1192,12 +1192,19 @@ export function highlightCodeLine(line: string, language: string) {
   return parts.length > 0 ? parts : "\u00a0";
 }
 
-function syntaxTokenClass(token: string, language: string) {
+function syntaxTokenClass(token: string, language: string, line: string, tokenStart: number) {
   const normalizedLanguage = normalizeCodeLanguage(language);
   if (token.startsWith("//") || token.startsWith("/*")) {
     return "syntax-comment";
   }
   if (normalizedLanguage === "xml" && isXmlNameToken(token)) {
+    return "syntax-keyword";
+  }
+  if (
+    normalizedLanguage === "json" &&
+    token.startsWith('"') &&
+    jsonStringTokenIsObjectKey(line, tokenStart, token)
+  ) {
     return "syntax-keyword";
   }
   if (token.startsWith('"') || token.startsWith("'")) {
@@ -1327,6 +1334,11 @@ function normalizeCodeLanguage(language: string) {
 
 function isXmlNameToken(token: string) {
   return /^[A-Za-z][A-Za-z0-9._:-]*$/.test(token);
+}
+
+function jsonStringTokenIsObjectKey(line: string, tokenStart: number, token: string) {
+  const afterToken = line.slice(tokenStart + token.length);
+  return /^\s*:/.test(afterToken);
 }
 
 function isCodeKeyword(token: string, language: string) {
