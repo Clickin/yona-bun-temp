@@ -501,6 +501,35 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
   });
 
+  it("recognizes legacy Highlight.js Basic language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```basic",
+          "10 INPUT name$",
+          '20 IF name$ = "Yona" THEN GOSUB 100 ELSE GOTO 200',
+          "30 PRINT name$",
+          "40 END",
+          "100 RETURN",
+          "200 STOP",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="basic">');
+    expect(html).toContain('class="syntax-token syntax-keyword">INPUT</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">IF</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">THEN</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">GOSUB</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">ELSE</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">GOTO</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">PRINT</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">END</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">RETURN</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">STOP</span>');
+  });
+
   it("recognizes legacy Highlight.js python language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

@@ -533,6 +533,44 @@ const perlKeywords = new Set([
   "while",
 ]);
 
+const basicKeywords = new Set([
+  "and",
+  "call",
+  "close",
+  "data",
+  "dim",
+  "else",
+  "end",
+  "for",
+  "gosub",
+  "goto",
+  "if",
+  "input",
+  "let",
+  "line",
+  "load",
+  "next",
+  "not",
+  "on",
+  "open",
+  "or",
+  "print",
+  "randomize",
+  "read",
+  "rem",
+  "restore",
+  "return",
+  "run",
+  "save",
+  "stop",
+  "system",
+  "then",
+  "to",
+  "while",
+  "write",
+  "xor",
+]);
+
 const pythonKeywords = new Set([
   "False",
   "None",
@@ -920,6 +958,9 @@ function normalizeCodeLanguage(language: string) {
   if (["perl", "pl", "pm"].includes(normalized)) {
     return "perl";
   }
+  if (normalized === "basic") {
+    return "basic";
+  }
   if (["less", "scss"].includes(normalized)) {
     return "css";
   }
@@ -970,6 +1011,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "gradle" && gradleKeywords.has(token.toLowerCase())) ||
     (language === "makefile" && makefileKeywords.has(token.toLowerCase())) ||
     (language === "perl" && perlKeywords.has(token)) ||
+    (language === "basic" && basicKeywords.has(token.toLowerCase())) ||
     (language === "python" && pythonKeywords.has(token)) ||
     (language === "shell" && shellKeywords.has(token)) ||
     (language === "sql" && sqlKeywords.has(token.toLowerCase())) ||
