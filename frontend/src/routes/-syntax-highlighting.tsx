@@ -860,6 +860,76 @@ const cppKeywords = new Set([
   "volatile",
 ]);
 
+const objectivecKeywords = new Set([
+  "BOOL",
+  "FALSE",
+  "IBAction",
+  "IBOutlet",
+  "NO",
+  "NULL",
+  "TRUE",
+  "YES",
+  "assign",
+  "autoreleasepool",
+  "bycopy",
+  "byref",
+  "class",
+  "copy",
+  "dynamic",
+  "encode",
+  "end",
+  "id",
+  "implementation",
+  "in",
+  "inout",
+  "instancetype",
+  "interface",
+  "nil",
+  "nonatomic",
+  "oneway",
+  "optional",
+  "out",
+  "private",
+  "property",
+  "protected",
+  "protocol",
+  "public",
+  "readonly",
+  "readwrite",
+  "required",
+  "retain",
+  "selector",
+  "self",
+  "strong",
+  "super",
+  "synthesize",
+  "throw",
+  "try",
+  "weak",
+]);
+
+const objectivecBuiltInPrefixes = [
+  "AV",
+  "CA",
+  "CF",
+  "CG",
+  "CI",
+  "CL",
+  "CM",
+  "CN",
+  "CT",
+  "MK",
+  "MP",
+  "MTK",
+  "MTL",
+  "NS",
+  "SCN",
+  "SK",
+  "UI",
+  "WK",
+  "XC",
+];
+
 const arduinoKeywords = new Set([
   "HIGH",
   "LOW",
@@ -1174,6 +1244,9 @@ function normalizeCodeLanguage(language: string) {
   if (["c", "cc", "cpp", "c++", "h", "h++", "hpp"].includes(normalized)) {
     return "cpp";
   }
+  if (["mm", "obj-c", "objc", "objectivec"].includes(normalized)) {
+    return "objectivec";
+  }
   if (normalized === "arduino") {
     return "arduino";
   }
@@ -1238,6 +1311,9 @@ function isCodeKeyword(token: string, language: string) {
     (language === "ruby" && rubyKeywords.has(token)) ||
     (language === "php" && phpKeywords.has(token.toLowerCase())) ||
     (language === "cpp" && cppKeywords.has(token)) ||
+    (language === "objectivec" &&
+      (objectivecKeywords.has(token) ||
+        objectivecBuiltInPrefixes.some((prefix) => token.startsWith(prefix)))) ||
     (language === "arduino" && (cppKeywords.has(token) || arduinoKeywords.has(token))) ||
     (language === "coffeescript" && coffeescriptKeywords.has(token)) ||
     (language === "dockerfile" && dockerfileKeywords.has(token.toUpperCase())) ||

@@ -664,6 +664,33 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
   });
 
+  it("recognizes legacy Highlight.js Objective-C aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```objc",
+          "@interface YonaProject : NSObject",
+          "@property (nonatomic, strong) NSString *name;",
+          "- (BOOL)isReady {",
+          "  return YES;",
+          "}",
+          "@end",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="objc">');
+    expect(html).toContain('class="syntax-token syntax-keyword">property</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">nonatomic</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">strong</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">NSString</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">BOOL</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">YES</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
+  });
+
   it("recognizes legacy Highlight.js CoffeeScript aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
