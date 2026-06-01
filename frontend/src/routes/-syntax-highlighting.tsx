@@ -1704,7 +1704,9 @@ export function highlightCodeLine(line: string, language: string) {
                 ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|!!!|%[A-Za-z][A-Za-z0-9_-]*|#[A-Za-z0-9_-]+|\.[A-Za-z0-9_-]+|[A-Za-z_][A-Za-z0-9_-]*|\b\d+(?:\.\d+)?\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                 : normalizedLanguage === "excel"
                   ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b[A-Z]{0,2}\d*:[A-Z]{0,2}\d*\b|\b[A-Z]{1,2}\d+\b|\b\d+(?:\.\d+)?%?|\b[A-Za-z][A-Za-z0-9_.]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-                  : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
+                  : normalizedLanguage === "markdown"
+                    ? /(`[^`\n]+`|\*\*[^*\n]+\*\*|__[^_\n]+__|\*[^*\n]+\*|_[^_\n]+_|\[[^\]\n]+\]|\([^)\n]+\)|^#{1,6}|^>|^[-*+]|\d+\.|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+                    : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   for (const match of line.matchAll(tokenPattern)) {
@@ -1759,6 +1761,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   if (normalizedLanguage === "excel" && excelKeywords.has(token.toUpperCase())) {
     return "syntax-keyword";
   }
+  if (normalizedLanguage === "markdown") {
+    return markdownTokenClass(token);
+  }
   if (token.startsWith('"') || token.startsWith("'")) {
     return "syntax-string";
   }
@@ -1805,6 +1810,9 @@ function normalizeCodeLanguage(language: string) {
   }
   if (normalized === "clojure-repl") {
     return "clojure-repl";
+  }
+  if (["markdown", "md", "mkdown", "mkd"].includes(normalized)) {
+    return "markdown";
   }
   if (["cmake", "cmake.in"].includes(normalized)) {
     return "cmake";
@@ -1963,6 +1971,25 @@ function isHamlStructuralToken(token: string, line: string, tokenStart: number) 
 
 function clojureReplPromptIsMeta(token: string, tokenStart: number) {
   return tokenStart === 0 && /^([\w.-]+|\s*#_)=>$/.test(token);
+}
+
+function markdownTokenClass(token: string) {
+  if (/^(#{1,6}|>|[-*+]|\d+\.)$/.test(token)) {
+    return "syntax-keyword";
+  }
+  if (/^(`[^`\n]+`|\*\*[^*\n]+\*\*|__[^_\n]+__|\*[^*\n]+\*|_[^_\n]+_|\[[^\]\n]+\])$/.test(token)) {
+    return "syntax-string";
+  }
+  if (/^\([^)\n]+\)$/.test(token)) {
+    return "syntax-identifier";
+  }
+  if (/^\d/.test(token)) {
+    return "syntax-number";
+  }
+  if (/^[{}()[\].,;:+\-*/%=<>!&|?#]+$/.test(token)) {
+    return "syntax-punctuation";
+  }
+  return "syntax-identifier";
 }
 
 function isCodeKeyword(token: string, language: string) {

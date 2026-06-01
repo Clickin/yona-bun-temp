@@ -425,6 +425,31 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-string">&quot;open&quot;</span>');
   });
 
+  it("recognizes legacy Highlight.js Markdown aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```mkdown",
+          "# Release Notes",
+          "> quoted **strong** and *emphasis*",
+          "- [docs](https://example.com)",
+          "`code`",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="mkdown">');
+    expect(html).toContain('class="syntax-token syntax-keyword">#</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">&gt;</span>');
+    expect(html).toContain('class="syntax-token syntax-string">**strong**</span>');
+    expect(html).toContain('class="syntax-token syntax-string">*emphasis*</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">-</span>');
+    expect(html).toContain('class="syntax-token syntax-string">[docs]</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">(https://example.com)</span>');
+    expect(html).toContain('class="syntax-token syntax-string">`code`</span>');
+  });
+
   it("recognizes legacy Highlight.js CMake aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
