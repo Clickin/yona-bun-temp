@@ -1034,6 +1034,25 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">print</span>');
   });
 
+  it("recognizes legacy Highlight.js Python decorator meta lines in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```python",
+          "@app.route('/ready')",
+          "def ready():",
+          "  return True",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="python">');
+    expect(html).toContain('class="syntax-token syntax-keyword">@app.route</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">def</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
+  });
+
   it("recognizes legacy Highlight.js shell language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

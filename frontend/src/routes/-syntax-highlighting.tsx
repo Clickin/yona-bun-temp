@@ -1796,7 +1796,7 @@ export function highlightCodeLine(line: string, language: string) {
           : normalizedLanguage === "django"
             ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\{#[^}\n]*#\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
             : normalizedLanguage === "python"
-              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^(?:>>>|\.\.\.)|#.*$|\b0[oO][0-7]+[lLjJ]?\b|\b0[xX][0-9A-Fa-f]+[lLjJ]?\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?[lLjJ]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^(?:>>>|\.\.\.)|^[\t ]*@[A-Za-z_][A-Za-z0-9_.]*|#.*$|\b0[oO][0-7]+[lLjJ]?\b|\b0[xX][0-9A-Fa-f]+[lLjJ]?\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?[lLjJ]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
               : normalizedLanguage === "shell"
                 ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
                 : normalizedLanguage === "accesslog"
@@ -1966,6 +1966,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
     return "syntax-keyword";
   }
   if (normalizedLanguage === "python" && pythonReplPromptIsMeta(token, tokenStart)) {
+    return "syntax-keyword";
+  }
+  if (normalizedLanguage === "python" && pythonDecoratorIsMeta(token, tokenStart)) {
     return "syntax-keyword";
   }
   if (normalizedLanguage === "excel" && excelKeywords.has(token.toUpperCase())) {
@@ -2206,6 +2209,10 @@ function clojureReplPromptIsMeta(token: string, tokenStart: number) {
 
 function pythonReplPromptIsMeta(token: string, tokenStart: number) {
   return tokenStart === 0 && /^(>>>|\.\.\.)$/.test(token);
+}
+
+function pythonDecoratorIsMeta(token: string, tokenStart: number) {
+  return tokenStart === 0 && /^[\t ]*@[A-Za-z_][A-Za-z0-9_.]*$/.test(token);
 }
 
 function markdownTokenClass(token: string) {
