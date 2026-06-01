@@ -218,6 +218,54 @@ fn seed_svn_mergeinfo(repo_path: &std::path::Path, path: &str, mergeinfo: &str) 
     Some(yona_rust_vcs::svn_youngest_revision(repo_path).expect("read mergeinfo revision"))
 }
 
+fn seed_svn_copied_file(repo_path: &std::path::Path, source_revision: i64) -> Option<i64> {
+    if !svn_tools_available() || !svn_client_available() {
+        return None;
+    }
+    let checkout_dir = tempdir().expect("svn copy checkout tempdir");
+    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+        .arg("checkout")
+        .arg(file_url(repo_path))
+        .arg(checkout_dir.path())
+        .output()
+        .expect("run svn checkout");
+    assert!(
+        output.status.success(),
+        "svn checkout should prepare copy fixture: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let source = checkout_dir.path().join("trunk").join("README.md");
+    let copied = checkout_dir.path().join("trunk").join("README_COPY.md");
+    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+        .arg("copy")
+        .arg(&source)
+        .arg(&copied)
+        .output()
+        .expect("run svn copy");
+    assert!(
+        output.status.success(),
+        "svn copy should preserve copyfrom metadata: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let output = Command::new(yona_rust_vcs::svn_executable("svn"))
+        .args(["commit", "-m", "seed svn copied file"])
+        .arg(checkout_dir.path())
+        .output()
+        .expect("run svn commit");
+    assert!(
+        output.status.success(),
+        "svn commit should persist copy fixture: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let copied_revision =
+        yona_rust_vcs::svn_youngest_revision(repo_path).expect("read copied revision");
+    assert!(
+        copied_revision > source_revision,
+        "svn copy fixture should create a newer revision than the source"
+    );
+    Some(copied_revision)
+}
+
 fn svn_propget(repo_path: &std::path::Path, property_name: &str, path: &str) -> Option<String> {
     let output = Command::new(yona_rust_vcs::svn_executable("svn"))
         .arg("propget")
@@ -1713,6 +1761,77 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
         "SVN log REPORT should return executable-backed revision metadata: {text}"
     );
 
+    let copied_revision =
+        seed_svn_copied_file(&repo_path, nested_revision).expect("seed svn copied file");
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:log-report xmlns:S="svn:" xmlns:D="DAV:">
+  <S:start-revision>{copied_revision}</S:start-revision>
+  <S:end-revision>{copied_revision}</S:end-revision>
+  <S:discover-changed-paths/>
+  <S:path></S:path>
+</S:log-report>"#
+        )),
+    )
+    .await;
+    let status = response.status();
+    let dav_header = response
+        .headers()
+        .get("dav")
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_string);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "SVN log REPORT with changed paths should succeed: {text}"
+    );
+    assert_eq!(dav_header.as_deref(), Some("1,2"));
+    assert!(
+        text.contains(&format!(
+            r#"<S:added-path node-kind="file" copyfrom-path="/trunk/README.md" copyfrom-rev="{nested_revision}">/trunk/README_COPY.md</S:added-path>"#
+        )),
+        "SVN log REPORT discover-changed-paths should preserve copyfrom metadata for copied paths: {text}"
+    );
+
+    let report = Method::from_bytes(b"REPORT").expect("REPORT method");
+    let response = direct_request_with_body(
+        app.clone(),
+        report,
+        "/svn/owner/projectYobi/!svn/vcc/default",
+        None,
+        Body::from(format!(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<S:log-report xmlns:S="svn:" xmlns:D="DAV:">
+  <S:start-revision>{nested_revision}</S:start-revision>
+  <S:end-revision>1</S:end-revision>
+  <S:discover-changed-paths/>
+  <S:path>trunk/README.md</S:path>
+</S:log-report>"#
+        )),
+    )
+    .await;
+    let status = response.status();
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "SVN log REPORT with a path filter should succeed: {text}"
+    );
+    assert!(
+        text.contains("<D:comment>seed svn readme</D:comment>")
+            && !text.contains("<D:comment>seed svn nested tree</D:comment>"),
+        "SVN log REPORT should filter unrelated revisions when a path is requested: {text}"
+    );
+
     let report = Method::from_bytes(b"REPORT").expect("REPORT method");
     let response = direct_request_with_body(
         app.clone(),
@@ -1743,7 +1862,7 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     assert_eq!(dav_header.as_deref(), Some("1,2"));
     assert!(
         text.contains("<S:dated-rev-report")
-            && text.contains(&format!("<D:version-name>{nested_revision}</D:version-name>")),
+            && text.contains(&format!("<D:version-name>{copied_revision}</D:version-name>")),
         "SVN dated-rev REPORT should return the latest revision at or before the requested date: {text}"
     );
 

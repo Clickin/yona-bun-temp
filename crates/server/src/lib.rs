@@ -4377,16 +4377,31 @@ fn svn_protocol_log_report_response(
             }
         };
     let include_changed_paths = request.contains("discover-changed-paths");
+    let path_filter = svn_protocol_xml_text(request, "path")
+        .map(|path| path.trim_matches('/').to_string())
+        .filter(|path| !path.is_empty());
     let items = entries
         .iter()
-        .map(|entry| {
-            if include_changed_paths && entry.revision > 0 {
-                let changed_paths =
-                    yona_rust_vcs::svn_changed_paths(repo_path, entry.revision).unwrap_or_default();
+        .filter_map(|entry| {
+            let changed_paths =
+                if (include_changed_paths || path_filter.is_some()) && entry.revision > 0 {
+                    yona_rust_vcs::svn_changed_paths(repo_path, entry.revision).unwrap_or_default()
+                } else {
+                    Vec::new()
+                };
+            if let Some(path_filter) = path_filter.as_deref() {
+                if !changed_paths
+                    .iter()
+                    .any(|path| svn_protocol_log_path_included(&path.path, path_filter))
+                {
+                    return None;
+                }
+            }
+            Some(if include_changed_paths && entry.revision > 0 {
                 svn_protocol_log_item(entry, &changed_paths)
             } else {
                 svn_protocol_log_item(entry, &[])
-            }
+            })
         })
         .collect::<String>();
     let body = format!(
@@ -5936,8 +5951,18 @@ fn svn_protocol_log_changed_path_item(changed_path: &yona_rust_vcs::SvnChangedPa
         yona_rust_vcs::SvnChangedAction::Replaced => "replaced-path",
     };
     let node_kind = if changed_path.is_dir { "dir" } else { "file" };
+    let copyfrom = match (
+        changed_path.copy_from_path.as_deref(),
+        changed_path.copy_from_revision,
+    ) {
+        (Some(path), Some(revision)) => format!(
+            r#" copyfrom-path="/{}" copyfrom-rev="{revision}""#,
+            xml_escape(path.trim_matches('/'))
+        ),
+        _ => String::new(),
+    };
     format!(
-        r#"    <S:{tag_name} node-kind="{node_kind}">/{}</S:{tag_name}>
+        r#"    <S:{tag_name} node-kind="{node_kind}"{copyfrom}>/{}</S:{tag_name}>
 "#,
         xml_escape(changed_path.path.trim_matches('/'))
     )
@@ -6003,6 +6028,14 @@ fn svn_protocol_replay_included(path: &str, filter_path: Option<&str>) -> bool {
     let path = path.trim_matches('/');
     let filter_path = filter_path.trim_matches('/');
     path == filter_path || path.starts_with(&format!("{filter_path}/"))
+}
+
+fn svn_protocol_log_path_included(changed_path: &str, filter_path: &str) -> bool {
+    let changed_path = changed_path.trim_matches('/');
+    let filter_path = filter_path.trim_matches('/');
+    changed_path == filter_path
+        || changed_path.starts_with(&format!("{filter_path}/"))
+        || filter_path.starts_with(&format!("{changed_path}/"))
 }
 
 fn svn_protocol_update_depth_includes(entry: &yona_rust_vcs::SvnTreeEntry, depth: &str) -> bool {
