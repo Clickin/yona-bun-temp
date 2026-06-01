@@ -284,6 +284,25 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-number">.25f</span>');
   });
 
+  it("recognizes legacy Highlight.js Scala numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```scala",
+          "val color = 0xCAFE",
+          "val ratio = -1.5e-2",
+          "val leading = .25e+2",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="scala">');
+    expect(html).toContain('class="syntax-token syntax-number">0xCAFE</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+  });
+
   it("recognizes legacy Highlight.js JavaScript and TypeScript built-ins in fenced blocks", () => {
     const tsAny = ["a", "ny"].join("");
     const html = renderToStaticMarkup(
