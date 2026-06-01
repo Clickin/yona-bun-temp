@@ -1792,16 +1792,19 @@ export function highlightCodeBlock(code: string, language: string | undefined) {
     let inCdataBlock = false;
     let inScriptBlock = false;
     let inStyleBlock = false;
+    let scriptBlockLanguage = "javascript";
     return lines.flatMap((line, lineIndex) => {
       const result = highlightXmlCodeLine(line, language ?? "", {
         inCdataBlock,
         inScriptBlock,
         inStyleBlock,
         lineIndex,
+        scriptBlockLanguage,
       });
       inCdataBlock = result.inCdataBlock;
       inScriptBlock = result.inScriptBlock;
       inStyleBlock = result.inStyleBlock;
+      scriptBlockLanguage = result.scriptBlockLanguage;
       return lineIndex === lines.length - 1 ? result.nodes : [...result.nodes, "\n"];
     });
   }
@@ -1819,6 +1822,7 @@ function highlightXmlCodeLine(
     inScriptBlock: boolean;
     inStyleBlock: boolean;
     lineIndex: number;
+    scriptBlockLanguage: string;
   },
 ) {
   const nodes: React.ReactNode[] = [];
@@ -1826,6 +1830,7 @@ function highlightXmlCodeLine(
   let stillInCdataBlock = state.inCdataBlock;
   let stillInScriptBlock = state.inScriptBlock;
   let stillInStyleBlock = state.inStyleBlock;
+  let scriptBlockLanguage = state.scriptBlockLanguage;
 
   if (line.length === 0 && stillInCdataBlock) {
     return {
@@ -1833,6 +1838,7 @@ function highlightXmlCodeLine(
       inScriptBlock: stillInScriptBlock,
       inStyleBlock: stillInStyleBlock,
       nodes: [xmlCdataSpan("\u00a0", state.lineIndex, 0)],
+      scriptBlockLanguage,
     };
   }
 
@@ -1841,7 +1847,8 @@ function highlightXmlCodeLine(
       inCdataBlock: stillInCdataBlock,
       inScriptBlock: true,
       inStyleBlock: stillInStyleBlock,
-      nodes: highlightCodeLine("\u00a0", "javascript"),
+      nodes: highlightCodeLine("\u00a0", scriptBlockLanguage),
+      scriptBlockLanguage,
     };
   }
 
@@ -1851,6 +1858,7 @@ function highlightXmlCodeLine(
       inScriptBlock: stillInScriptBlock,
       inStyleBlock: true,
       nodes: highlightCodeLine("\u00a0", "css"),
+      scriptBlockLanguage,
     };
   }
 
@@ -1872,12 +1880,12 @@ function highlightXmlCodeLine(
     if (stillInScriptBlock) {
       const scriptEnd = findXmlScriptEnd(line, cursor);
       if (scriptEnd === -1) {
-        nodes.push(...highlightCodeLine(line.slice(cursor), "javascript"));
+        nodes.push(...highlightCodeLine(line.slice(cursor), scriptBlockLanguage));
         cursor = line.length;
         break;
       }
       if (scriptEnd > cursor) {
-        nodes.push(...highlightCodeLine(line.slice(cursor, scriptEnd), "javascript"));
+        nodes.push(...highlightCodeLine(line.slice(cursor, scriptEnd), scriptBlockLanguage));
       }
       const scriptEndTagClose = findXmlTagClose(line, scriptEnd);
       if (scriptEndTagClose === -1) {
@@ -1939,6 +1947,9 @@ function highlightXmlCodeLine(
           break;
         }
         const scriptStartTagCloseOffset = scriptStartTagClose + 1;
+        scriptBlockLanguage = xmlScriptBlockLanguage(
+          line.slice(scriptStart, scriptStartTagCloseOffset),
+        );
         nodes.push(
           ...highlightCodeLine(line.slice(scriptStart, scriptStartTagCloseOffset), language),
         );
@@ -1980,6 +1991,7 @@ function highlightXmlCodeLine(
     inScriptBlock: stillInScriptBlock,
     inStyleBlock: stillInStyleBlock,
     nodes: nodes.length > 0 ? nodes : ["\u00a0"],
+    scriptBlockLanguage,
   };
 }
 
@@ -2032,6 +2044,14 @@ function nearestXmlSpecialStart(left: number, right: number) {
     return left;
   }
   return Math.min(left, right);
+}
+
+function xmlScriptBlockLanguage(openingTag: string) {
+  return /type\s*=\s*["'][^"']*(?:handlebars|htmlbars|x-handlebars-template)[^"']*["']/i.test(
+    openingTag,
+  ) || /\b(?:handlebars|htmlbars)\b/i.test(openingTag)
+    ? "htmlbars"
+    : "javascript";
 }
 
 export function highlightCodeLine(line: string, language: string) {

@@ -2576,6 +2576,35 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">div</span>');
   });
 
+  it("uses legacy Highlight.js Handlebars sublanguage inside XML script template blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```html",
+          '<script type="text/x-handlebars-template">',
+          "{{! legacy template comment }}",
+          "{{#each-in users as |id user|}}",
+          "{{/each-in}}",
+          "</script>",
+          "<div>Yona</div>",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="html">');
+    expect(html).toContain('class="syntax-token syntax-keyword">script</span>');
+    expect(html).toContain(
+      'class="syntax-token syntax-string">&quot;text/x-handlebars-template&quot;</span>',
+    );
+    expect(html).toContain(
+      'class="syntax-token syntax-comment">{{! legacy template comment }}</span>',
+    );
+    expect(html).toContain('class="syntax-token syntax-keyword">each-in</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">as</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">div</span>');
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,
