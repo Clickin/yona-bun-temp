@@ -304,7 +304,7 @@ Interpretation:
 - [x] Merge conflict handling: native conflict detection, PR conflict state, create/edit non-mutating merge preview, merge disable, and legacy `.howto-resolve-conflict` contributor guide implemented; no separate in-app conflict editor route/test is present in legacy evidence
 - [x] Reviewer lifecycle: legacy has no separate per-PR assignment route beyond review/unreview, and reviewer threshold projection/settings are implemented
 - [x] Required/lacking reviewer status projection
-- [~] Review approve/reject
+- [x] Review approve/reject reclassified: legacy routes/tests expose review/unreview reviewer membership, not a separate approve/reject action, and Rust covers review/unreview events plus required/lacking reviewer status
 - [x] Inline review comments: side-aware single-line add/context/deleted create/edit/delete and same-file text-selection multi-line creation implemented
 - [x] Review thread lifecycle
 - [x] Fork and PR workflow: fork form/clone, reviewer-threshold-gated conflict-free merge accept, conflict-state merge disable/help, source branch cleanup/restore, and PR commit-changed lifecycle implemented
