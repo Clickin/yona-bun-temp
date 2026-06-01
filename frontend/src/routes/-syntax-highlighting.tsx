@@ -1802,7 +1802,7 @@ export function highlightCodeLine(line: string, language: string) {
       : normalizedLanguage === "htmlbars"
         ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\{\{!--.*?--\}\}|\{\{![^}\n]*\}\}|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
         : normalizedLanguage === "xml"
-          ? /("(?:(?:\\.|[^"\\])*)"|'(?:\\.|[^'\\])*'|<!--.*?-->|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_:-]*\b|<\/?|\/?>|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+          ? /("(?:(?:\\.|[^"\\])*)"|'(?:\\.|[^'\\])*'|<!--.*?-->|<!DOCTYPE[^>\n]*>|<\?\w+[^?\n]*(?:\?>|$)|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_:-]*\b|<\/?|\/?>|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
           : normalizedLanguage === "django"
             ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\{#[^}\n]*#\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
             : normalizedLanguage === "python"
@@ -1956,6 +1956,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
     return "syntax-comment";
   }
   if (normalizedLanguage === "xml" && isXmlNameToken(token)) {
+    return "syntax-keyword";
+  }
+  if (normalizedLanguage === "xml" && xmlMetaDeclarationIsKeyword(token)) {
     return "syntax-keyword";
   }
   if (
@@ -2210,6 +2213,10 @@ function normalizeCodeLanguage(language: string) {
 
 function isXmlNameToken(token: string) {
   return /^[A-Za-z][A-Za-z0-9._:-]*$/.test(token);
+}
+
+function xmlMetaDeclarationIsKeyword(token: string) {
+  return /^<!DOCTYPE[^>\n]*>$/.test(token) || /^<\?\w+[^?\n]*(?:\?>)?$/.test(token);
 }
 
 function jsonStringTokenIsObjectKey(line: string, tokenStart: number, token: string) {

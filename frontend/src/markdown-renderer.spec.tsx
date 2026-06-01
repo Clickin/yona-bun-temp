@@ -2466,6 +2466,25 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">project</span>');
   });
 
+  it("recognizes legacy Highlight.js XML meta declarations in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```xml",
+          '<?xml version="1.0"?>',
+          "<!DOCTYPE project>",
+          "<project>Yona</project>",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain(
+      'class="syntax-token syntax-keyword">&lt;?xml version=&quot;1.0&quot;?&gt;</span>',
+    );
+    expect(html).toContain('class="syntax-token syntax-keyword">&lt;!DOCTYPE project&gt;</span>');
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,
