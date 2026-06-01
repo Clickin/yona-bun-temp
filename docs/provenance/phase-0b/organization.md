@@ -11,7 +11,8 @@
 - Organization member add/edit/delete
 - Organization enroll / cancel enroll / leave / delete
 - Organization issue listing body
-- Out of scope: organization board/pull-request listing body
+- Organization board listing body
+- Organization pull-request listing body
 
 ## Legacy Sources
 
@@ -48,12 +49,14 @@
 | `Organization.updateWith`                                    | org rename updates org-owned project owner string semantics                                                                                         | `crates/persistence` repository helper + `crates/domain` service test                                  |
 | `IssueApp.organizationIssues`                                | org issue list is a visible-project-scoped cross-project inbox, not an organization-owned issue model                                               | `ListOrganizationIssues` contract + organization issue route                                           |
 | `organization/group_issue_*` views                           | org issue screen keeps organization shell, quick filters, project selector, state tabs, sort links, cross-project rows, empty state, and pagination | `frontend/src/routes/organizations/$organizationName/issues/route.tsx` and `OrganizationIssueListPage` |
+| `BoardApp.organizationBoards`                                | org board list is a visible-project-scoped cross-project posting list with project filters, search, sort, pagination, and no separate notice pinning | `organization_board_contract` + `frontend/src/routes/organizations/$organizationName/boards/route.tsx` |
+| organization pull-request links/views                        | org PR list is a visible-project-scoped open/closed pull-request aggregate                                                                          | `pull_request_read_contract` + `frontend/src/routes/organizations/$organizationName/pullrequests/route.tsx` |
 
 ## Intentional Deviations
 
 - Legacy Play routes used `/organizations/:organizationName/settingform` and `/organizations/:organizationName/setting`.
 - The current Rust/React canonical path keeps legacy `settingform`, `members`, and `deleteForm` deep links, but the surrounding implementation uses `/api/v1` REST + file routes rather than Play forms and jQuery modals.
-- Organization board/pull-request listing bodies remain follow-up gaps even though the deep-link placeholder routes stay mounted.
+- Organization board and pull-request listing bodies are no longer placeholder-only routes; they use `/api/v1` aggregation endpoints and React legacy shells. Remaining organization gaps should be tracked in their narrower feature provenance files.
 
 ## Wave 2B Delivery Note
 
@@ -62,4 +65,4 @@
 - The members view now restores legacy ordering semantics: org admins first, org members second, login-id ascending within each group, and pending enrollment requests in a separate ascending block.
 - Direct entry semantics now match legacy intent on the mounted React routes: anonymous viewers redirect to login with return-path, authenticated forbidden viewers receive a forbidden shell, and missing organizations receive a not-found shell.
 - Phase 2F restores organization issue listing body parity with visible-project aggregation, core GET filters, state tabs, project selector, sort links, empty state, and pagination.
-- Remaining gap after this packet: organization board/pull-request listing body parity still stays deferred, and project admin/watchers/webhooks/transfer/change VCS/statistics/delete remain outside this packet.
+- Follow-up after this packet: project admin/watchers/webhooks/transfer/change VCS/statistics/delete remain outside the original Wave 2B organization packet and are tracked by their narrower project/VCS provenance files.
