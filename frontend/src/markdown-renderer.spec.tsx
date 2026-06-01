@@ -1248,6 +1248,29 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">endif</span>');
   });
 
+  it("recognizes legacy Highlight.js HTMLBars built-ins in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```htmlbars",
+          "{{#each-in users as |id user|}}",
+          '{{link-to user.name "users.show" user.id}}',
+          "{{input value=user.name}}",
+          "{{query-params page=2}}",
+          "{{/each-in}}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="htmlbars">');
+    expect(html).toContain('class="syntax-token syntax-keyword">each-in</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">as</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">link-to</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">input</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">query-params</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

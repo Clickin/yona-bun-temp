@@ -1476,6 +1476,36 @@ const djangoKeywords = new Set([
   "yesno",
 ]);
 
+const htmlbarsKeywords = new Set([
+  "action",
+  "as",
+  "collection",
+  "component",
+  "concat",
+  "debugger",
+  "each",
+  "each-in",
+  "else",
+  "get",
+  "hash",
+  "if",
+  "input",
+  "link-to",
+  "loc",
+  "log",
+  "mut",
+  "outlet",
+  "partial",
+  "query-params",
+  "render",
+  "textarea",
+  "unbound",
+  "unless",
+  "with",
+  "yield",
+  "view",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -1518,9 +1548,11 @@ export function highlightCodeLine(line: string, language: string) {
   const tokenPattern =
     normalizedLanguage === "powershell"
       ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-      : normalizedLanguage === "clojure"
-        ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|;.*$|\b\d+(?:\.\d+)?\b|[A-Za-z_*+\-<>=!?][A-Za-z0-9_*+\-<>=!?]*|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-        : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
+      : normalizedLanguage === "htmlbars"
+        ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+        : normalizedLanguage === "clojure"
+          ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|;.*$|\b\d+(?:\.\d+)?\b|[A-Za-z_*+\-<>=!?][A-Za-z0-9_*+\-<>=!?]*|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+          : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   for (const match of line.matchAll(tokenPattern)) {
@@ -1709,6 +1741,9 @@ function normalizeCodeLanguage(language: string) {
   if (["django", "jinja"].includes(normalized)) {
     return "django";
   }
+  if (normalized === "htmlbars") {
+    return "htmlbars";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1779,6 +1814,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "awk" && awkKeywords.has(token)) ||
     (language === "tex" && texKeywords.has(token)) ||
     (language === "django" && djangoKeywords.has(token)) ||
+    (language === "htmlbars" && htmlbarsKeywords.has(token)) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );
