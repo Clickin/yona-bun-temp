@@ -1069,6 +1069,21 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">unless</span>');
   });
 
+  it("recognizes legacy Highlight.js CoffeeScript hash comments and numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```coffee", "# render counts", "mask = 0xFF", "ratio = .25e+2", "```"].join(
+          "\n",
+        )}
+      />,
+    );
+
+    expect(html).toContain('<code class="coffee">');
+    expect(html).toContain('class="syntax-token syntax-comment"># render counts</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+  });
+
   it("recognizes legacy Highlight.js Arduino language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
