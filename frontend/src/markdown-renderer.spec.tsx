@@ -1025,6 +1025,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">desc</span>');
   });
 
+  it("recognizes legacy Highlight.js SQL line comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```sql", "-- legacy comment", "select * from issues", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="sql">');
+    expect(html).toContain('class="syntax-token syntax-comment">-- legacy comment</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">select</span>');
+  });
+
   it("recognizes legacy Highlight.js Ruby language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
