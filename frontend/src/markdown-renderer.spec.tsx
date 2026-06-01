@@ -272,6 +272,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain(`class="syntax-token syntax-keyword">${tsAny}</span>`);
   });
 
+  it("recognizes legacy Highlight.js JavaScript numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```js",
+          "const flags = 0b1010;",
+          "const mask = 0o755;",
+          "const color = 0xFF00AA;",
+          "const ratio = 1.5e-2;",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="js">');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0o755</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF00AA</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1.5e-2</span>');
+  });
+
   it("recognizes legacy Highlight.js Go language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
