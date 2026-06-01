@@ -423,6 +423,40 @@ const cmakeKeywords = new Set([
   "while",
 ]);
 
+const gradleKeywords = new Set([
+  "allprojects",
+  "ant",
+  "artifacts",
+  "buildscript",
+  "classpath",
+  "configurations",
+  "copy",
+  "dependencies",
+  "description",
+  "destinationdir",
+  "dir",
+  "dirs",
+  "dolast",
+  "dofirst",
+  "exclude",
+  "file",
+  "filetree",
+  "flatdir",
+  "from",
+  "group",
+  "include",
+  "into",
+  "options",
+  "project",
+  "println",
+  "repositories",
+  "sourcesets",
+  "subprojects",
+  "task",
+  "targetcompatibility",
+  "type",
+]);
+
 const pythonKeywords = new Set([
   "False",
   "None",
@@ -801,6 +835,9 @@ function normalizeCodeLanguage(language: string) {
   if (["cmake", "cmake.in"].includes(normalized)) {
     return "cmake";
   }
+  if (normalized === "gradle") {
+    return "gradle";
+  }
   if (["less", "scss"].includes(normalized)) {
     return "css";
   }
@@ -848,6 +885,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "haskell" && haskellKeywords.has(token)) ||
     (language === "lua" && luaKeywords.has(token)) ||
     (language === "cmake" && cmakeKeywords.has(token.toLowerCase())) ||
+    (language === "gradle" && gradleKeywords.has(token.toLowerCase())) ||
     (language === "python" && pythonKeywords.has(token)) ||
     (language === "shell" && shellKeywords.has(token)) ||
     (language === "sql" && sqlKeywords.has(token.toLowerCase())) ||

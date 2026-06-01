@@ -408,6 +408,39 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">endif</span>');
   });
 
+  it("recognizes legacy Highlight.js Gradle language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```gradle",
+          "buildscript {",
+          "  repositories { flatDir { dirs 'libs' } }",
+          "}",
+          "task copyAssets(type: Copy) {",
+          "  from sourceSets.main.resources",
+          "  into destinationDir",
+          "  doLast { println true }",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="gradle">');
+    expect(html).toContain('class="syntax-token syntax-keyword">buildscript</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">repositories</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">flatDir</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">task</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">Copy</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">from</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">sourceSets</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">into</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">destinationDir</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">doLast</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">println</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
+  });
+
   it("recognizes legacy Highlight.js python language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
