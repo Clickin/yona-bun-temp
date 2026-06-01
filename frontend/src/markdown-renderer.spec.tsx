@@ -1917,6 +1917,25 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">false</span>');
   });
 
+  it("recognizes legacy Highlight.js Dart numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```dart",
+          "final mask = 0xCAFE;",
+          "final ratio = -1.5e-2;",
+          "final offset = .25e+2;",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="dart">');
+    expect(html).toContain('class="syntax-token syntax-number">0xCAFE</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+  });
+
   it("recognizes legacy Highlight.js Elm language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
