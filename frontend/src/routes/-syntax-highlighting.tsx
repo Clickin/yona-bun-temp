@@ -874,6 +874,29 @@ const arduinoKeywords = new Set([
   "setup",
 ]);
 
+const coffeescriptKeywords = new Set([
+  "and",
+  "as",
+  "await",
+  "by",
+  "extends",
+  "from",
+  "is",
+  "isnt",
+  "loop",
+  "no",
+  "not",
+  "of",
+  "off",
+  "on",
+  "or",
+  "then",
+  "unless",
+  "until",
+  "when",
+  "yes",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -1004,6 +1027,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "arduino") {
     return "arduino";
   }
+  if (["coffee", "coffeescript", "cson", "iced"].includes(normalized)) {
+    return "coffeescript";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1042,6 +1068,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "php" && phpKeywords.has(token.toLowerCase())) ||
     (language === "cpp" && cppKeywords.has(token)) ||
     (language === "arduino" && (cppKeywords.has(token) || arduinoKeywords.has(token))) ||
+    (language === "coffeescript" && coffeescriptKeywords.has(token)) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );

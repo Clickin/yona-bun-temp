@@ -664,6 +664,30 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
   });
 
+  it("recognizes legacy Highlight.js CoffeeScript aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```coffee",
+          "class IssueView extends View",
+          "  render: ->",
+          "    return true if @issue.open",
+          "    false unless @issue.open",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="coffee">');
+    expect(html).toContain('class="syntax-token syntax-keyword">class</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">extends</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">false</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">unless</span>');
+  });
+
   it("recognizes legacy Highlight.js Arduino language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
