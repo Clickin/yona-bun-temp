@@ -1786,9 +1786,11 @@ export function highlightCodeLine(line: string, language: string) {
                       ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\*.*?\*\/|\[[^\]\n]+\]|@[A-Za-z-]+|#[A-Za-z0-9_-]+|\.[A-Za-z0-9_-]+|::?[A-Za-z0-9_-]+(?:\([^)\n]*\))?|\b\d+(?:\.\d+)?(?:%|[A-Za-z]+)?\b|\b[A-Za-z-][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                       : normalizedLanguage === "rust"
                         ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b0[bB][01_]+(?:[iu](?:8|16|32|64|128|size))?\b|\b0[oO][0-7_]+(?:[iu](?:8|16|32|64|128|size))?\b|\b0[xX][0-9A-Fa-f_]+(?:[iu](?:8|16|32|64|128|size))?\b|\b\d[\d_]*(?:\.[0-9_]+)?(?:[eE][-+]?[0-9_]+)?(?:[iu](?:8|16|32|64|128|size)|f(?:32|64))?\b|\b[A-Za-z_][A-Za-z0-9_]*!?\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-                        : normalizedLanguage === "javascript"
-                          ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b0[bB][01]+\b|\b0[oO][0-7]+\b|\b0[xX][0-9A-Fa-f]+\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-                          : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
+                        : normalizedLanguage === "java"
+                          ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b0[bB][01][01_]*(?:[lLfF])?\b|\b0[xX][0-9A-Fa-f][0-9A-Fa-f_]*(?:[lLfF])?\b|(?:\b\d[\d_]*(?:\.[\d_]+)?|\.\d[\d_]*)(?:[eE][-+]?\d+)?[lLfF]?\b|\b[A-Za-z_$][A-Za-z0-9_$]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                          : normalizedLanguage === "javascript"
+                            ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b0[bB][01]+\b|\b0[oO][0-7]+\b|\b0[xX][0-9A-Fa-f]+\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                            : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   for (const match of line.matchAll(tokenPattern)) {
@@ -1855,7 +1857,11 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   if (token.startsWith('"') || token.startsWith("'")) {
     return "syntax-string";
   }
-  if (/^\d/.test(token) || (normalizedLanguage === "accesslog" && isAccesslogAddressToken(token))) {
+  if (
+    /^\d/.test(token) ||
+    (normalizedLanguage === "java" && /^\.\d/.test(token)) ||
+    (normalizedLanguage === "accesslog" && isAccesslogAddressToken(token))
+  ) {
     return "syntax-number";
   }
   if (isCodeKeyword(token, normalizedLanguage)) {

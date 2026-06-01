@@ -263,6 +263,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">type</span>');
   });
 
+  it("recognizes legacy Highlight.js Java numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```java",
+          "long flags = 0b1010_0101L;",
+          "int color = 0xFF_00AA;",
+          "double ratio = 1_000.5e-2F;",
+          "float precise = .25f;",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="java">');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010_0101L</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF_00AA</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000.5e-2F</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.25f</span>');
+  });
+
   it("recognizes legacy Highlight.js JavaScript and TypeScript built-ins in fenced blocks", () => {
     const tsAny = ["a", "ny"].join("");
     const html = renderToStaticMarkup(
