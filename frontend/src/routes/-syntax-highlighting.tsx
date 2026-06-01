@@ -1978,6 +1978,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   if (normalizedLanguage === "python" && pythonDecoratorIsMeta(token, tokenStart)) {
     return "syntax-keyword";
   }
+  if (normalizedLanguage === "python" && pythonDeclarationTitleIsTitle(token, line, tokenStart)) {
+    return "syntax-title";
+  }
   if (normalizedLanguage === "excel" && excelKeywords.has(token.toUpperCase())) {
     return "syntax-keyword";
   }
@@ -2223,6 +2226,13 @@ function pythonReplPromptIsMeta(token: string, tokenStart: number) {
 
 function pythonDecoratorIsMeta(token: string, tokenStart: number) {
   return tokenStart === 0 && /^[\t ]*@[A-Za-z_][A-Za-z0-9_.]*$/.test(token);
+}
+
+function pythonDeclarationTitleIsTitle(token: string, line: string, tokenStart: number) {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(token)) {
+    return false;
+  }
+  return /\b(?:def|class)\s+$/.test(line.slice(0, tokenStart));
 }
 
 function pythonFStringIsInterpolated(token: string) {

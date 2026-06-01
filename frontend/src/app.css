@@ -1858,6 +1858,11 @@ h1 {
   font-weight: 600;
 }
 
+.syntax-title {
+  color: #900;
+  font-weight: 600;
+}
+
 .syntax-string {
   color: #9a4a00;
 }
