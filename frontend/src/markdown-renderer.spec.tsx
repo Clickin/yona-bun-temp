@@ -779,6 +779,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">PHONY</span>');
   });
 
+  it("recognizes legacy Highlight.js Makefile hash comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```makefile", "# build target", "include config.mk", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="makefile">');
+    expect(html).toContain('class="syntax-token syntax-comment"># build target</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">include</span>');
+  });
+
   it("recognizes legacy Highlight.js Perl aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
