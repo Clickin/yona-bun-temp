@@ -1798,7 +1798,7 @@ export function highlightCodeLine(line: string, language: string) {
           : normalizedLanguage === "django"
             ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\{#[^}\n]*#\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
             : normalizedLanguage === "python"
-              ? /((?:fr|rf|f)"(?:\\.|[^"\\])*"|(?:fr|rf|f)'(?:\\.|[^'\\])*'|"""(?:\\.|[\s\S])*?"""|'''(?:\\.|[\s\S])*?'''|(?:u|r|ur|b|br)"(?:\\.|[^"\\])*"|(?:u|r|ur|b|br)'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^(?:>>>|\.\.\.)|^[\t ]*@[A-Za-z_][A-Za-z0-9_.]*|#.*$|\b0[bB][01]+[lLjJ]?\b|\b0[oO][0-7]+[lLjJ]?\b|\b0[xX][0-9A-Fa-f]+[lLjJ]?\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?[lLjJ]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+              ? /((?:fr|rf|f)"(?:\\.|[^"\\])*"|(?:fr|rf|f)'(?:\\.|[^'\\])*'|"""(?:\\.|[\s\S])*?"""|'''(?:\\.|[\s\S])*?'''|(?:u|r|ur|b|br)"(?:\\.|[^"\\])*"|(?:u|r|ur|b|br)'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^(?:>>>|\.\.\.)|^[\t ]*@[A-Za-z_][A-Za-z0-9_.]*|#.*$|\b0[bB][01]+[lLjJ]?\b|\b0[oO][0-7]+[lLjJ]?\b|\b0[xX][0-9A-Fa-f]+[lLjJ]?\b|(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?[lLjJ]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
               : normalizedLanguage === "shell"
                 ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
                 : normalizedLanguage === "accesslog"
@@ -2003,7 +2003,7 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
     /^\d/.test(token) ||
     (normalizedLanguage === "basic" && /^&[hHoO]/.test(token)) ||
     (normalizedLanguage === "lua" && /^-?(?:\d|\.\d)/.test(token)) ||
-    (normalizedLanguage === "java" && /^\.\d/.test(token)) ||
+    ((normalizedLanguage === "java" || normalizedLanguage === "python") && /^\.\d/.test(token)) ||
     (normalizedLanguage === "scala" && /^-?(?:\d|\.\d)/.test(token)) ||
     (normalizedLanguage === "go" && /^-?(?:\d|\.\d)/.test(token)) ||
     (normalizedLanguage === "csharp" && /^-?(?:\d|\.\d)/.test(token)) ||

@@ -1014,9 +1014,13 @@ describe("MarkdownRenderer", () => {
         markdown={[
           "```python",
           "flags = 0b1010",
+          "legacy_flags = 0b1010L",
           "mask = 0o755",
+          "legacy_mask = 0o755J",
           "color = 0xFF",
+          "legacy_color = 0xFFl",
           "ratio = 1.5e-2",
+          "threshold = .5",
           "```",
         ].join("\n")}
       />,
@@ -1024,9 +1028,13 @@ describe("MarkdownRenderer", () => {
 
     expect(html).toContain('<code class="python">');
     expect(html).toContain('class="syntax-token syntax-number">0b1010</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010L</span>');
     expect(html).toContain('class="syntax-token syntax-number">0o755</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0o755J</span>');
     expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFFl</span>');
     expect(html).toContain('class="syntax-token syntax-number">1.5e-2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.5</span>');
   });
 
   it("recognizes legacy Highlight.js Python REPL prompts in fenced blocks", () => {
