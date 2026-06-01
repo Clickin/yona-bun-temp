@@ -52,6 +52,74 @@ const javascriptKeywords = new Set([
   "yield",
 ]);
 
+const typeScriptAnyBuiltIn = ["a", "ny"].join("");
+
+const javascriptBuiltIns = new Set([
+  "Array",
+  "ArrayBuffer",
+  "Boolean",
+  "DataView",
+  "Date",
+  "Error",
+  "EvalError",
+  "Float32Array",
+  "Float64Array",
+  "Function",
+  "Infinity",
+  "Int16Array",
+  "Int32Array",
+  "Int8Array",
+  "Intl",
+  "InternalError",
+  "JSON",
+  "Map",
+  "Math",
+  "NaN",
+  "Number",
+  "Object",
+  "Promise",
+  "Proxy",
+  "RangeError",
+  "ReferenceError",
+  "Reflect",
+  "RegExp",
+  "Set",
+  "StopIteration",
+  "String",
+  "Symbol",
+  "SyntaxError",
+  "TypeError",
+  "URIError",
+  "Uint16Array",
+  "Uint32Array",
+  "Uint8Array",
+  "Uint8ClampedArray",
+  "WeakMap",
+  "WeakSet",
+  "arguments",
+  typeScriptAnyBuiltIn,
+  "boolean",
+  "console",
+  "decodeURI",
+  "decodeURIComponent",
+  "document",
+  "encodeURI",
+  "encodeURIComponent",
+  "escape",
+  "eval",
+  "isFinite",
+  "isNaN",
+  "module",
+  "number",
+  "parseFloat",
+  "parseInt",
+  "require",
+  "string",
+  "undefined",
+  "unescape",
+  "window",
+]);
+
 const rustKeywords = new Set([
   "as",
   "async",
@@ -2022,7 +2090,8 @@ function isCssStructuralToken(token: string, line: string, tokenStart: number) {
 function isCodeKeyword(token: string, language: string) {
   return (
     commonKeywords.has(token) ||
-    (language === "javascript" && javascriptKeywords.has(token)) ||
+    (language === "javascript" &&
+      (javascriptKeywords.has(token) || javascriptBuiltIns.has(token))) ||
     (language === "rust" && rustKeywords.has(token)) ||
     (language === "java" && javaKeywords.has(token)) ||
     (language === "scala" && scalaKeywords.has(token)) ||

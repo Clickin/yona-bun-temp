@@ -242,6 +242,36 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">type</span>');
   });
 
+  it("recognizes legacy Highlight.js JavaScript and TypeScript built-ins in fenced blocks", () => {
+    const tsAny = ["a", "ny"].join("");
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```javascript",
+          "const values = Array.from([1, 2]);",
+          "console.log(Promise.resolve(values));",
+          "```",
+          "",
+          "```ts",
+          "export type Loader = (input: string) => Promise<number>;",
+          "const active: boolean = true;",
+          `const payload: ${tsAny} = {};`,
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="javascript">');
+    expect(html).toContain('class="syntax-token syntax-keyword">Array</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">console</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">Promise</span>');
+    expect(html).toContain('<code class="ts">');
+    expect(html).toContain('class="syntax-token syntax-keyword">string</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">number</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">boolean</span>');
+    expect(html).toContain(`class="syntax-token syntax-keyword">${tsAny}</span>`);
+  });
+
   it("recognizes legacy Highlight.js Go language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
