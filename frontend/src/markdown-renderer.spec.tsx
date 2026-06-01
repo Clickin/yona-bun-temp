@@ -1617,6 +1617,19 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">NA</span>');
   });
 
+  it("recognizes legacy Highlight.js R hash comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```r", "# legacy comment", "if (TRUE) return(NULL)", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="r">');
+    expect(html).toContain('class="syntax-token syntax-comment"># legacy comment</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">TRUE</span>');
+  });
+
   it("recognizes legacy Highlight.js MATLAB language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
