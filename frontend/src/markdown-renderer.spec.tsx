@@ -1197,6 +1197,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">CMD</span>');
   });
 
+  it("recognizes legacy Highlight.js Dockerfile hash comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```dockerfile", "# build image", "FROM rust:1.80", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="dockerfile">');
+    expect(html).toContain('class="syntax-token syntax-comment"># build image</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">FROM</span>');
+  });
+
   it("recognizes legacy Highlight.js nginx aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
