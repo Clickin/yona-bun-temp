@@ -1803,6 +1803,26 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">endif</span>');
   });
 
+  it("recognizes legacy Highlight.js Django comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```jinja",
+          "{# legacy comment #}",
+          "{% if user.is_active %}",
+          "{{ user.name }}",
+          "{% endif %}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="jinja">');
+    expect(html).toContain('class="syntax-token syntax-comment">{# legacy comment #}</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">endif</span>');
+  });
+
   it("recognizes legacy Highlight.js HTMLBars built-ins in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
