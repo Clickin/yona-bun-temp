@@ -2004,6 +2004,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   if (normalizedLanguage === "css" && isCssStructuralToken(token, line, tokenStart)) {
     return "syntax-keyword";
   }
+  if (normalizedLanguage === "yaml" && yamlKeyIsAttribute(token, line, tokenStart)) {
+    return "syntax-keyword";
+  }
   if (normalizedLanguage === "python" && pythonPrefixedStringIsString(token)) {
     return "syntax-string";
   }
@@ -2252,6 +2255,15 @@ function pythonDeclarationParamsIsParams(token: string, line: string, tokenStart
     return false;
   }
   return /\b(?:def|class)\s+[A-Za-z_][A-Za-z0-9_]*\s*$/.test(line.slice(0, tokenStart));
+}
+
+function yamlKeyIsAttribute(token: string, line: string, tokenStart: number) {
+  if (!/^[A-Za-z_][A-Za-z0-9_-]*$/.test(token)) {
+    return false;
+  }
+  const before = line.slice(0, tokenStart);
+  const after = line.slice(tokenStart + token.length);
+  return /^(?:\s*|\s*-\s*)$/.test(before) && /^\s*:/.test(after);
 }
 
 function pythonFStringIsInterpolated(token: string) {

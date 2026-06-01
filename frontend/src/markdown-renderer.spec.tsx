@@ -2380,14 +2380,25 @@ describe("MarkdownRenderer", () => {
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={["```yml", "enabled: yes", "archived: no", "deleted: null", "```"].join("\n")}
+        markdown={[
+          "```yml",
+          "enabled: yes",
+          "archived: no",
+          "deleted: null",
+          "- service-name: api",
+          "```",
+        ].join("\n")}
       />,
     );
 
     expect(html).toContain('<code class="yml">');
+    expect(html).toContain('class="syntax-token syntax-keyword">enabled</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">yes</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">archived</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">no</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">deleted</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">null</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">service-name</span>');
   });
 
   it("recognizes legacy Highlight.js YAML hash comments in fenced blocks", () => {
