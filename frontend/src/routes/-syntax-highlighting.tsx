@@ -2075,7 +2075,7 @@ function normalizeCodeLanguage(language: string) {
   if (["mysql", "pgsql", "postgresql", "sql"].includes(normalized)) {
     return "sql";
   }
-  if (normalized === "rb") {
+  if (["gemspec", "irb", "podspec", "rb", "thor"].includes(normalized)) {
     return "ruby";
   }
   if (["php", "php3", "php4", "php5", "php6"].includes(normalized)) {

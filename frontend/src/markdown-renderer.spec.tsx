@@ -1053,6 +1053,21 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
   });
 
+  it("recognizes legacy Highlight.js Ruby package aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```gemspec", "Gem::Specification.new do |spec|", "  true", "end", "```"].join(
+          "\n",
+        )}
+      />,
+    );
+
+    expect(html).toContain('<code class="gemspec">');
+    expect(html).toContain('class="syntax-token syntax-keyword">do</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
+  });
+
   it("recognizes legacy Highlight.js Ruby line comments in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
