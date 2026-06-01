@@ -1127,6 +1127,10 @@ describe("MarkdownRenderer", () => {
           'raw = r"c:\\path"',
           "blob = br'data'",
           "label = u'name'",
+          'plain = f"""ready"""',
+          "combo = rf'''done'''",
+          'raw_block = r"""c:\\path"""',
+          "unicode_block = u'''name'''",
           "```",
         ].join("\n")}
       />,
@@ -1136,6 +1140,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-string">r&quot;c:\\path&quot;</span>');
     expect(html).toContain('class="syntax-token syntax-string">br&#x27;data&#x27;</span>');
     expect(html).toContain('class="syntax-token syntax-string">u&#x27;name&#x27;</span>');
+    expect(html).toContain(
+      'class="syntax-token syntax-string">f&quot;&quot;&quot;ready&quot;&quot;&quot;</span>',
+    );
+    expect(html).toContain(
+      'class="syntax-token syntax-string">rf&#x27;&#x27;&#x27;done&#x27;&#x27;&#x27;</span>',
+    );
+    expect(html).toContain(
+      'class="syntax-token syntax-string">r&quot;&quot;&quot;c:\\path&quot;&quot;&quot;</span>',
+    );
+    expect(html).toContain(
+      'class="syntax-token syntax-string">u&#x27;&#x27;&#x27;name&#x27;&#x27;&#x27;</span>',
+    );
   });
 
   it("recognizes legacy Highlight.js Python declaration titles in fenced blocks", () => {
