@@ -1016,6 +1016,35 @@ const kotlinKeywords = new Set([
   "when",
 ]);
 
+const swiftKeywords = new Set([
+  "Bool",
+  "Int",
+  "String",
+  "as",
+  "class",
+  "else",
+  "enum",
+  "false",
+  "for",
+  "func",
+  "guard",
+  "if",
+  "import",
+  "in",
+  "let",
+  "nil",
+  "protocol",
+  "return",
+  "self",
+  "static",
+  "struct",
+  "switch",
+  "true",
+  "typealias",
+  "var",
+  "while",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -1169,6 +1198,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "kotlin") {
     return "kotlin";
   }
+  if (normalized === "swift") {
+    return "swift";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1214,6 +1246,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "powershell" && powershellKeywords.has(token.toLowerCase())) ||
     (language === "dos" && dosKeywords.has(token.toLowerCase())) ||
     (language === "kotlin" && kotlinKeywords.has(token)) ||
+    (language === "swift" && swiftKeywords.has(token)) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );

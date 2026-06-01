@@ -861,6 +861,34 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">is</span>');
   });
 
+  it("recognizes legacy Highlight.js Swift language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```swift",
+          "struct Project {",
+          "  let name: String?",
+          "  func status(value: Int) -> Bool {",
+          "    guard value > 0 else { return false }",
+          "    return name != nil",
+          "  }",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="swift">');
+    expect(html).toContain('class="syntax-token syntax-keyword">struct</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">let</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">String</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">func</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">Int</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">Bool</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">guard</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">nil</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
