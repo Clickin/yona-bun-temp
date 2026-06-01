@@ -488,6 +488,61 @@ async fn global_search_returns_legacy_counts_auto_issue_and_snippet_metadata() {
 }
 
 #[tokio::test]
+async fn global_project_search_matches_legacy_anonymous_public_private_acl() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, _, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    create_named_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "publicProjectAclNeedle",
+        "public",
+    )
+    .await;
+    create_named_project(
+        app.clone(),
+        &owner_cookie,
+        &owner_csrf,
+        "privateProjectAclNeedle",
+        "private",
+    )
+    .await;
+
+    let anonymous = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/search?keyword=ProjectAclNeedle&searchType=project&pageNum=1",
+            None,
+        )
+        .await,
+    )
+    .await;
+
+    let project_names = anonymous["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| item["projectName"].as_str().unwrap())
+        .collect::<Vec<_>>();
+
+    assert_eq!(anonymous["scope"], "global");
+    assert_eq!(anonymous["requestedSearchType"], "project");
+    assert_eq!(anonymous["searchType"], "project");
+    assert_eq!(anonymous["counts"]["projects"], 1);
+    assert_eq!(anonymous["totalCount"], 1);
+    assert_eq!(project_names, vec!["publicProjectAclNeedle"]);
+    assert_eq!(anonymous["items"][0]["type"], "project");
+    assert_eq!(
+        anonymous["items"][0]["href"],
+        "/owner/publicProjectAclNeedle"
+    );
+    assert_eq!(anonymous["items"][0]["state"], "public");
+}
+
+#[tokio::test]
 async fn user_search_matches_legacy_login_id_and_name_lookup() {
     let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");

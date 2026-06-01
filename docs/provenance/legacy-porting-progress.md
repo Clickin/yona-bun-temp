@@ -331,6 +331,7 @@ Interpretation:
 - [x] Legacy project-scoped issue/issue-comment/post/post-comment/milestone/review search borrowed from `SearchTests`: read-authorized public/protected/private project searches stay bound to the selected project and return matching resources.
 - [x] Legacy organization-scoped issue/issue-comment/post/post-comment/milestone/review search borrowed from `SearchTests`: group search excludes matching personal projects and applies public/protected organization visibility.
 - [x] Legacy user search by login ID and display name borrowed from `SearchTests.findUsersByLoginId` / `findUsersByName`
+- [x] Legacy project search visibility borrowed from `SearchTests.findProjects`: anonymous global `searchType=project` returns matching public projects and excludes matching private projects.
 - [ ] Full-text/index-backed search, async indexing, and index-backed ranking beyond the lightweight scorer
 - [ ] Legacy external search API compatibility (separate migrator/deferred scope)
 
