@@ -1291,6 +1291,32 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-number">204</span>');
   });
 
+  it("recognizes legacy Highlight.js Groovy language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```groovy",
+          "trait Named { String name }",
+          "class Project extends BaseProject implements Serializable {",
+          "  def render(user) {",
+          "    if (user in members) { return name }",
+          "  }",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="groovy">');
+    expect(html).toContain('class="syntax-token syntax-keyword">trait</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">class</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">extends</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">implements</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">def</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">in</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

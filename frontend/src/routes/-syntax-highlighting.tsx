@@ -457,6 +457,49 @@ const gradleKeywords = new Set([
   "type",
 ]);
 
+const groovyKeywords = new Set([
+  "abstract",
+  "as",
+  "assert",
+  "break",
+  "case",
+  "catch",
+  "class",
+  "continue",
+  "def",
+  "default",
+  "else",
+  "enum",
+  "extends",
+  "final",
+  "finally",
+  "for",
+  "if",
+  "implements",
+  "import",
+  "in",
+  "instanceof",
+  "interface",
+  "new",
+  "package",
+  "private",
+  "protected",
+  "public",
+  "return",
+  "static",
+  "super",
+  "switch",
+  "synchronized",
+  "this",
+  "throw",
+  "throws",
+  "trait",
+  "transient",
+  "try",
+  "volatile",
+  "while",
+]);
+
 const makefileKeywords = new Set([
   "-include",
   "define",
@@ -1662,6 +1705,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "gradle") {
     return "gradle";
   }
+  if (normalized === "groovy") {
+    return "groovy";
+  }
   if (["makefile", "mk", "mak"].includes(normalized)) {
     return "makefile";
   }
@@ -1802,6 +1848,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "clojure" && clojureKeywords.has(token)) ||
     (language === "cmake" && cmakeKeywords.has(token.toLowerCase())) ||
     (language === "gradle" && gradleKeywords.has(token.toLowerCase())) ||
+    (language === "groovy" && groovyKeywords.has(token)) ||
     (language === "makefile" && makefileKeywords.has(token.toLowerCase())) ||
     (language === "perl" && perlKeywords.has(token)) ||
     (language === "basic" && basicKeywords.has(token.toLowerCase())) ||
