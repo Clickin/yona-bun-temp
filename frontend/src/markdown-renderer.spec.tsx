@@ -1160,18 +1160,27 @@ describe("MarkdownRenderer", () => {
     );
   });
 
-  it("recognizes legacy Highlight.js Python declaration titles in fenced blocks", () => {
+  it("recognizes legacy Highlight.js Python declaration titles and params in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={["```python", "def render(value):", "class Widget:", "```"].join("\n")}
+        markdown={[
+          "```python",
+          'def render(value, retries=3, marker="ok"):',
+          "class Widget(Base):",
+          "```",
+        ].join("\n")}
       />,
     );
 
     expect(html).toContain('<code class="python">');
     expect(html).toContain('class="syntax-token syntax-keyword">def</span>');
     expect(html).toContain('class="syntax-token syntax-title">render</span>');
+    expect(html).toContain(
+      'class="syntax-token syntax-params">(value, retries=3, marker=&quot;ok&quot;)</span>',
+    );
     expect(html).toContain('class="syntax-token syntax-keyword">class</span>');
     expect(html).toContain('class="syntax-token syntax-title">Widget</span>');
+    expect(html).toContain('class="syntax-token syntax-params">(Base)</span>');
   });
 
   it("recognizes legacy Highlight.js shell language aliases in fenced blocks", () => {

@@ -1798,7 +1798,7 @@ export function highlightCodeLine(line: string, language: string) {
           : normalizedLanguage === "django"
             ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\{#[^}\n]*#\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
             : normalizedLanguage === "python"
-              ? /((?:fr|rf|f)"""(?:\\.|[\s\S])*?"""|(?:fr|rf|f)'''(?:\\.|[\s\S])*?'''|(?:fr|rf|f)"(?:\\.|[^"\\])*"|(?:fr|rf|f)'(?:\\.|[^'\\])*'|(?:u|r|ur|b|br)"""(?:\\.|[\s\S])*?"""|(?:u|r|ur|b|br)'''(?:\\.|[\s\S])*?'''|"""(?:\\.|[\s\S])*?"""|'''(?:\\.|[\s\S])*?'''|(?:u|r|ur|b|br)"(?:\\.|[^"\\])*"|(?:u|r|ur|b|br)'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^(?:>>>|\.\.\.)|^[\t ]*@[A-Za-z_][A-Za-z0-9_.]*|#.*$|\b0[bB][01]+[lLjJ]?\b|\b0[oO][0-7]+[lLjJ]?\b|-?\b0[xX][0-9A-Fa-f]+[lLjJ]?\b|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?[lLjJ]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+              ? /((?:fr|rf|f)"""(?:\\.|[\s\S])*?"""|(?:fr|rf|f)'''(?:\\.|[\s\S])*?'''|(?:fr|rf|f)"(?:\\.|[^"\\])*"|(?:fr|rf|f)'(?:\\.|[^'\\])*'|(?:u|r|ur|b|br)"""(?:\\.|[\s\S])*?"""|(?:u|r|ur|b|br)'''(?:\\.|[\s\S])*?'''|"""(?:\\.|[\s\S])*?"""|'''(?:\\.|[\s\S])*?'''|(?:u|r|ur|b|br)"(?:\\.|[^"\\])*"|(?:u|r|ur|b|br)'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\([^)\n]*\)(?=\s*(?:->|:))|^(?:>>>|\.\.\.)|^[\t ]*@[A-Za-z_][A-Za-z0-9_.]*|#.*$|\b0[bB][01]+[lLjJ]?\b|\b0[oO][0-7]+[lLjJ]?\b|-?\b0[xX][0-9A-Fa-f]+[lLjJ]?\b|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?[lLjJ]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
               : normalizedLanguage === "shell"
                 ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
                 : normalizedLanguage === "accesslog"
@@ -1980,6 +1980,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   }
   if (normalizedLanguage === "python" && pythonDeclarationTitleIsTitle(token, line, tokenStart)) {
     return "syntax-title";
+  }
+  if (normalizedLanguage === "python" && pythonDeclarationParamsIsParams(token, line, tokenStart)) {
+    return "syntax-params";
   }
   if (normalizedLanguage === "excel" && excelKeywords.has(token.toUpperCase())) {
     return "syntax-keyword";
@@ -2234,6 +2237,13 @@ function pythonDeclarationTitleIsTitle(token: string, line: string, tokenStart: 
     return false;
   }
   return /\b(?:def|class)\s+$/.test(line.slice(0, tokenStart));
+}
+
+function pythonDeclarationParamsIsParams(token: string, line: string, tokenStart: number) {
+  if (!/^\([^)\n]*\)$/.test(token)) {
+    return false;
+  }
+  return /\b(?:def|class)\s+[A-Za-z_][A-Za-z0-9_]*\s*$/.test(line.slice(0, tokenStart));
 }
 
 function pythonFStringIsInterpolated(token: string) {

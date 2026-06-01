@@ -1863,6 +1863,10 @@ h1 {
   font-weight: 600;
 }
 
+.syntax-params {
+  color: #555;
+}
+
 .syntax-string {
   color: #9a4a00;
 }
