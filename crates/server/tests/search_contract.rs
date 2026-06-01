@@ -3224,6 +3224,152 @@ async fn review_search_protected_visibility_matches_legacy_org_membership_acl() 
 }
 
 #[tokio::test]
+async fn project_review_search_matches_legacy_project_scope_visibility() {
+    let _guard = yona_data_env_lock().lock().await;
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, owner_id) = register_user(app.clone(), "owner").await;
+    let (_, org_member_cookie, org_member_id) =
+        register_user(app.clone(), "project-review-org-member").await;
+    let (_, private_member_cookie, private_member_id) =
+        register_user(app.clone(), "project-review-private-member").await;
+    let (_, _, reviewer_id) = register_user(app.clone(), "project-review-reviewer").await;
+
+    response_json(
+        rpc(
+            app.clone(),
+            "CreateOrganization",
+            Some(&owner_cookie),
+            Some(&owner_csrf),
+            json!({
+                "organizationName": "project-review-labs",
+                "description": "Project review labs"
+            }),
+        )
+        .await,
+    )
+    .await;
+    let organization = repo
+        .read_organization_by_name("project-review-labs")
+        .await
+        .unwrap()
+        .expect("organization");
+    repo.add_organization_membership(organization.id, org_member_id, "org_member")
+        .await
+        .unwrap();
+
+    for (owner_name, project_name, scope, title, comment, number) in [
+        (
+            "project-review-labs",
+            "projectReviewScopePublic",
+            "public",
+            "ProjectReviewScopeNeedle public pull request",
+            "ProjectReviewScopeNeedle public review",
+            51,
+        ),
+        (
+            "project-review-labs",
+            "projectReviewScopeProtected",
+            "protected",
+            "ProjectReviewScopeNeedle protected pull request",
+            "ProjectReviewScopeNeedle protected review",
+            52,
+        ),
+        (
+            "owner",
+            "projectReviewScopePrivate",
+            "private",
+            "ProjectReviewScopeNeedle private pull request",
+            "ProjectReviewScopeNeedle private review",
+            53,
+        ),
+    ] {
+        create_named_owner_project(
+            app.clone(),
+            &owner_cookie,
+            &owner_csrf,
+            owner_name,
+            project_name,
+            scope,
+        )
+        .await;
+        seed_project_review_comment(
+            &db,
+            &repo,
+            ReviewCommentSeed {
+                owner_name,
+                project_name,
+                pull_request_title: title,
+                comment_contents: comment,
+                number,
+            },
+            owner_id,
+            reviewer_id,
+        )
+        .await;
+    }
+
+    let private_project = repo
+        .read_project_by_owner_and_name("owner", "projectReviewScopePrivate")
+        .await
+        .unwrap()
+        .expect("private project");
+    repo.add_project_membership(private_project.id, private_member_id, "member")
+        .await
+        .unwrap();
+
+    let public = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/projects/project-review-labs/projectReviewScopePublic/search?keyword=ProjectReviewScopeNeedle&searchType=review&pageNum=1",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(public["scope"], "project");
+    assert_eq!(public["counts"]["reviews"], 1);
+    assert_eq!(
+        public["items"][0]["projectName"],
+        "projectReviewScopePublic"
+    );
+    assert_eq!(public["items"][0]["type"], "review");
+
+    let protected = response_json(
+        rest_get(
+            app.clone(),
+            "/yona/api/v1/projects/project-review-labs/projectReviewScopeProtected/search?keyword=ProjectReviewScopeNeedle&searchType=review&pageNum=1",
+            Some(&org_member_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(protected["counts"]["reviews"], 1);
+    assert_eq!(
+        protected["items"][0]["projectName"],
+        "projectReviewScopeProtected"
+    );
+    assert_eq!(protected["items"][0]["type"], "review");
+
+    let private = response_json(
+        rest_get(
+            app,
+            "/yona/api/v1/projects/owner/projectReviewScopePrivate/search?keyword=ProjectReviewScopeNeedle&searchType=review&pageNum=1",
+            Some(&private_member_cookie),
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(private["counts"]["reviews"], 1);
+    assert_eq!(
+        private["items"][0]["projectName"],
+        "projectReviewScopePrivate"
+    );
+    assert_eq!(private["items"][0]["type"], "review");
+}
+
+#[tokio::test]
 async fn organization_review_search_matches_legacy_group_scope_and_visibility() {
     let _guard = yona_data_env_lock().lock().await;
     let data_dir = tempdir().expect("yona data tempdir");
