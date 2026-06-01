@@ -1197,6 +1197,31 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">continue</span>');
   });
 
+  it("recognizes legacy Highlight.js TeX language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```tex",
+          "\\documentclass{article}",
+          "\\begin{document}",
+          "\\section{Intro}",
+          "\\textbf{Yona} $\\alpha + \\beta$",
+          "\\end{document}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="tex">');
+    expect(html).toContain('class="syntax-token syntax-keyword">documentclass</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">begin</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">section</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">textbf</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">alpha</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">beta</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

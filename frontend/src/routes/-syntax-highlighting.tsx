@@ -1336,6 +1336,30 @@ const awkKeywords = new Set([
   "while",
 ]);
 
+const texKeywords = new Set([
+  "alpha",
+  "begin",
+  "beta",
+  "chapter",
+  "documentclass",
+  "emph",
+  "end",
+  "frac",
+  "gamma",
+  "item",
+  "itemize",
+  "label",
+  "maketitle",
+  "paragraph",
+  "ref",
+  "section",
+  "subsection",
+  "subsubsection",
+  "textbf",
+  "textit",
+  "title",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -1563,6 +1587,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "awk") {
     return "awk";
   }
+  if (["tex", "latex"].includes(normalized)) {
+    return "tex";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1631,6 +1658,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "r" && rKeywords.has(token)) ||
     (language === "matlab" && matlabKeywords.has(token)) ||
     (language === "awk" && awkKeywords.has(token)) ||
+    (language === "tex" && texKeywords.has(token)) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );
