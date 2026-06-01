@@ -1867,6 +1867,26 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">query-params</span>');
   });
 
+  it("recognizes legacy Handlebars comments in HTMLBars fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```htmlbars",
+          "{{! legacy comment }}",
+          "{{!-- block comment --}}",
+          "{{#each-in users as |id user|}}",
+          "{{/each-in}}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="htmlbars">');
+    expect(html).toContain('class="syntax-token syntax-comment">{{! legacy comment }}</span>');
+    expect(html).toContain('class="syntax-token syntax-comment">{{!-- block comment --}}</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">each-in</span>');
+  });
+
   it("recognizes legacy Highlight.js accesslog language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

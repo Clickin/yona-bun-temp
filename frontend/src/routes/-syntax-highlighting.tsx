@@ -1788,7 +1788,7 @@ export function highlightCodeLine(line: string, language: string) {
     normalizedLanguage === "powershell"
       ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
       : normalizedLanguage === "htmlbars"
-        ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+        ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\{\{!--.*?--\}\}|\{\{![^}\n]*\}\}|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
         : normalizedLanguage === "xml"
           ? /("(?:(?:\\.|[^"\\])*)"|'(?:\\.|[^'\\])*'|<!--.*?-->|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_:-]*\b|<\/?|\/?>|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
           : normalizedLanguage === "django"
@@ -1903,6 +1903,7 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
     (normalizedLanguage === "r" && token.startsWith("#")) ||
     (normalizedLanguage === "awk" && token.startsWith("#")) ||
     (normalizedLanguage === "django" && token.startsWith("{#")) ||
+    (normalizedLanguage === "htmlbars" && token.startsWith("{{!")) ||
     (normalizedLanguage === "erlang" && token.startsWith("%")) ||
     (normalizedLanguage === "matlab" && token.startsWith("%")) ||
     (normalizedLanguage === "tex" && token.startsWith("%")) ||
