@@ -795,6 +795,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
   });
 
+  it("recognizes legacy Highlight.js Perl hash comments and numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```perl",
+          "# render counts",
+          "my $mode = 0755;",
+          "my $color = 0xFF_AA;",
+          "my $total = 1_000.25;",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="perl">');
+    expect(html).toContain('class="syntax-token syntax-comment"># render counts</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0755</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF_AA</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000.25</span>');
+  });
+
   it("recognizes legacy Highlight.js Basic language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
