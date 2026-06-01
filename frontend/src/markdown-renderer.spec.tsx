@@ -715,6 +715,35 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">delay</span>');
   });
 
+  it("recognizes legacy Highlight.js Dockerfile aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```docker",
+          "FROM rust:1.80",
+          "ARG APP_HOME=/app",
+          "ENV RUST_LOG=info",
+          "WORKDIR $APP_HOME",
+          "COPY . .",
+          "RUN cargo build --release",
+          "EXPOSE 9000",
+          'CMD ["./yona"]',
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="docker">');
+    expect(html).toContain('class="syntax-token syntax-keyword">FROM</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">ARG</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">ENV</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">WORKDIR</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">COPY</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">RUN</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">EXPOSE</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">CMD</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
