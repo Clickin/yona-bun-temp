@@ -1053,6 +1053,22 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
   });
 
+  it("recognizes legacy Highlight.js Python triple-quoted strings in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```python", '"""ready"""', "value = '''done'''", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="python">');
+    expect(html).toContain(
+      'class="syntax-token syntax-string">&quot;&quot;&quot;ready&quot;&quot;&quot;</span>',
+    );
+    expect(html).toContain(
+      'class="syntax-token syntax-string">&#x27;&#x27;&#x27;done&#x27;&#x27;&#x27;</span>',
+    );
+  });
+
   it("recognizes legacy Highlight.js shell language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
