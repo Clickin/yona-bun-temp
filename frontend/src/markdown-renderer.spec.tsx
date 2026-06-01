@@ -2629,6 +2629,38 @@ describe("MarkdownRenderer", () => {
     expect(html).not.toContain("issueLink");
   });
 
+  it("uses legacy Highlight.js ActionScript sublanguage inside XML script blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```html",
+          '<script type="text/actionscript">',
+          "package {",
+          "  public class Badge extends Sprite {",
+          "    public function render():void { trace(0xCAFE); }",
+          "  }",
+          "}",
+          "</script>",
+          "<div>Yona</div>",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="html">');
+    expect(html).toContain('class="syntax-token syntax-keyword">script</span>');
+    expect(html).toContain(
+      'class="syntax-token syntax-string">&quot;text/actionscript&quot;</span>',
+    );
+    expect(html).toContain('class="syntax-token syntax-keyword">package</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">extends</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">function</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">Sprite</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">trace</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xCAFE</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">div</span>');
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,

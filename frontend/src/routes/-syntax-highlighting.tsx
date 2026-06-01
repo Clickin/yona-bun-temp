@@ -120,6 +120,18 @@ const javascriptBuiltIns = new Set([
   "window",
 ]);
 
+const actionScriptKeywords = new Set([
+  "extends",
+  "function",
+  "get",
+  "internal",
+  "override",
+  "package",
+  "set",
+]);
+
+const actionScriptBuiltIns = new Set(["Sprite", "trace"]);
+
 const rustKeywords = new Set([
   "as",
   "async",
@@ -2050,6 +2062,9 @@ function xmlScriptBlockLanguage(openingTag: string) {
   if (/type\s*=\s*["'][^"']*(?:xml|rss|atom|svg|mathml)[^"']*["']/i.test(openingTag)) {
     return "xml";
   }
+  if (/type\s*=\s*["'][^"']*(?:actionscript|ecmascript)[^"']*["']/i.test(openingTag)) {
+    return "actionscript";
+  }
   return /type\s*=\s*["'][^"']*(?:handlebars|htmlbars|x-handlebars-template)[^"']*["']/i.test(
     openingTag,
   ) || /\b(?:handlebars|htmlbars)\b/i.test(openingTag)
@@ -2151,8 +2166,12 @@ export function highlightCodeLine(line: string, language: string) {
                                                                                     : normalizedLanguage ===
                                                                                         "awk"
                                                                                       ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\$[A-Za-z0-9_#@]+|\$\{[^}\n]*\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
-                                                                                      : normalizedLanguage ===
-                                                                                          "javascript"
+                                                                                      : [
+                                                                                            "actionscript",
+                                                                                            "javascript",
+                                                                                          ].includes(
+                                                                                            normalizedLanguage,
+                                                                                          )
                                                                                         ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b0[bB][01]+\b|\b0[oO][0-7]+\b|\b0[xX][0-9A-Fa-f]+\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                                                                                         : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
   const parts: React.ReactNode[] = [];
@@ -2317,6 +2336,9 @@ function normalizeCodeLanguage(language: string) {
   }
   if (["js", "jsx", "ts", "tsx", "javascript", "typescript"].includes(normalized)) {
     return "javascript";
+  }
+  if (["as", "actionscript"].includes(normalized)) {
+    return "actionscript";
   }
   if (normalized === "sc") {
     return "scala";
@@ -2666,6 +2688,10 @@ function isCodeKeyword(token: string, language: string) {
     commonKeywords.has(token) ||
     (language === "javascript" &&
       (javascriptKeywords.has(token) || javascriptBuiltIns.has(token))) ||
+    (language === "actionscript" &&
+      (javascriptKeywords.has(token) ||
+        actionScriptKeywords.has(token) ||
+        actionScriptBuiltIns.has(token))) ||
     (language === "rust" && rustKeywords.has(token)) ||
     (language === "java" && javaKeywords.has(token)) ||
     (language === "scala" && scalaKeywords.has(token)) ||
