@@ -1333,6 +1333,34 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
   });
 
+  it("recognizes legacy Highlight.js LLVM language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```llvm",
+          'target triple = "x86_64-unknown-linux-gnu"',
+          "@counter = global i32 0",
+          "define i32 @main() attributes #0 {",
+          "  %value = load i32, ptr @counter, align 4",
+          "  ret i32 %value",
+          "}",
+          "declare void @abort()",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="llvm">');
+    expect(html).toContain('class="syntax-token syntax-keyword">target</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">global</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">define</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">attributes</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">load</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">align</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">ret</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">declare</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

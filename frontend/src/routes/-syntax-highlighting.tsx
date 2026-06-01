@@ -500,6 +500,73 @@ const groovyKeywords = new Set([
   "while",
 ]);
 
+const llvmKeywords = new Set([
+  "addrspace",
+  "addrspacecast",
+  "align",
+  "alias",
+  "alloca",
+  "alwaysinline",
+  "and",
+  "appending",
+  "argmemonly",
+  "asm",
+  "ashr",
+  "attributes",
+  "available_externally",
+  "begin",
+  "bitcast",
+  "blockaddress",
+  "br",
+  "byval",
+  "call",
+  "catch",
+  "ccc",
+  "cleanup",
+  "cold",
+  "common",
+  "constant",
+  "datalayout",
+  "declare",
+  "define",
+  "dllexport",
+  "dllimport",
+  "external",
+  "fadd",
+  "fcmp",
+  "fdiv",
+  "fence",
+  "fmul",
+  "fpext",
+  "fptrunc",
+  "free",
+  "frem",
+  "fsub",
+  "global",
+  "icmp",
+  "inbounds",
+  "internal",
+  "invoke",
+  "load",
+  "module",
+  "noreturn",
+  "nounwind",
+  "null",
+  "private",
+  "readnone",
+  "readonly",
+  "ret",
+  "select",
+  "store",
+  "target",
+  "thread_local",
+  "to",
+  "triple",
+  "undef",
+  "volatile",
+  "zeroinitializer",
+]);
+
 const makefileKeywords = new Set([
   "-include",
   "define",
@@ -1708,6 +1775,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "groovy") {
     return "groovy";
   }
+  if (normalized === "llvm") {
+    return "llvm";
+  }
   if (["makefile", "mk", "mak"].includes(normalized)) {
     return "makefile";
   }
@@ -1849,6 +1919,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "cmake" && cmakeKeywords.has(token.toLowerCase())) ||
     (language === "gradle" && gradleKeywords.has(token.toLowerCase())) ||
     (language === "groovy" && groovyKeywords.has(token)) ||
+    (language === "llvm" && llvmKeywords.has(token)) ||
     (language === "makefile" && makefileKeywords.has(token.toLowerCase())) ||
     (language === "perl" && perlKeywords.has(token)) ||
     (language === "basic" && basicKeywords.has(token.toLowerCase())) ||
