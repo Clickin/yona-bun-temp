@@ -833,6 +833,34 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">exit</span>');
   });
 
+  it("recognizes legacy Highlight.js Kotlin language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```kotlin",
+          "data class Project(val name: String)",
+          "fun status(value: Int): Boolean {",
+          "  return when (value) {",
+          "    is Int -> true",
+          "    else -> false",
+          "  }",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="kotlin">');
+    expect(html).toContain('class="syntax-token syntax-keyword">data</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">class</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">val</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">fun</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">Int</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">Boolean</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">when</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">is</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

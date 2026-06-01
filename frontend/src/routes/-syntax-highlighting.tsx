@@ -985,6 +985,37 @@ const dosKeywords = new Set([
   "setlocal",
 ]);
 
+const kotlinKeywords = new Set([
+  "Boolean",
+  "Byte",
+  "Char",
+  "Double",
+  "Float",
+  "Int",
+  "Long",
+  "Nothing",
+  "Short",
+  "String",
+  "Unit",
+  "as",
+  "class",
+  "data",
+  "else",
+  "false",
+  "fun",
+  "if",
+  "in",
+  "is",
+  "null",
+  "object",
+  "return",
+  "sealed",
+  "true",
+  "val",
+  "var",
+  "when",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -1135,6 +1166,9 @@ function normalizeCodeLanguage(language: string) {
   if (["bat", "cmd", "dos"].includes(normalized)) {
     return "dos";
   }
+  if (normalized === "kotlin") {
+    return "kotlin";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1179,6 +1213,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "ini" && iniKeywords.has(token.toLowerCase())) ||
     (language === "powershell" && powershellKeywords.has(token.toLowerCase())) ||
     (language === "dos" && dosKeywords.has(token.toLowerCase())) ||
+    (language === "kotlin" && kotlinKeywords.has(token)) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );
