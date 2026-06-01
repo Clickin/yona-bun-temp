@@ -1087,7 +1087,14 @@ describe("MarkdownRenderer", () => {
 
   it("recognizes legacy Highlight.js Python f-string interpolation in fenced blocks", () => {
     const html = renderToStaticMarkup(
-      <MarkdownRenderer markdown={["```python", 'message = f"ready {value}"', "```"].join("\n")} />,
+      <MarkdownRenderer
+        markdown={[
+          "```python",
+          'message = f"ready {value}"',
+          'details = f"""ready {value}"""',
+          "```",
+        ].join("\n")}
+      />,
     );
 
     expect(html).toContain('<code class="python">');
@@ -1096,6 +1103,8 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-identifier">value</span>');
     expect(html).toContain('class="syntax-token syntax-punctuation">}</span>');
     expect(html).toContain('class="syntax-token syntax-string">&quot;</span>');
+    expect(html).toContain('class="syntax-token syntax-string">f&quot;&quot;&quot;ready </span>');
+    expect(html).toContain('class="syntax-token syntax-string">&quot;&quot;&quot;</span>');
   });
 
   it("recognizes legacy Highlight.js Python built-ins in fenced blocks", () => {
