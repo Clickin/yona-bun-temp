@@ -1235,6 +1235,26 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">permanent</span>');
   });
 
+  it("recognizes legacy Highlight.js nginx hash comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```nginx",
+          "# route legacy traffic",
+          "server {",
+          "  listen 80;",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="nginx">');
+    expect(html).toContain('class="syntax-token syntax-comment"># route legacy traffic</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">server</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">listen</span>');
+  });
+
   it("recognizes legacy Highlight.js Apache aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
