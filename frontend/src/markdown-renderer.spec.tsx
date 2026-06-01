@@ -1088,6 +1088,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">null</span>');
   });
 
+  it("recognizes legacy Highlight.js PHP hash comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```php", "<?php", "# legacy comment", "echo true;", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="php">');
+    expect(html).toContain('class="syntax-token syntax-comment"># legacy comment</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">echo</span>');
+  });
+
   it("recognizes legacy Highlight.js C++ language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
