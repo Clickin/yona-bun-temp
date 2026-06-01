@@ -1151,6 +1151,41 @@ const swiftKeywords = new Set([
   "while",
 ]);
 
+const dartKeywords = new Set([
+  "Future",
+  "String",
+  "abstract",
+  "as",
+  "async",
+  "await",
+  "bool",
+  "class",
+  "const",
+  "dynamic",
+  "enum",
+  "export",
+  "extends",
+  "external",
+  "factory",
+  "false",
+  "final",
+  "import",
+  "in",
+  "is",
+  "library",
+  "new",
+  "null",
+  "part",
+  "required",
+  "return",
+  "static",
+  "super",
+  "this",
+  "true",
+  "var",
+  "void",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -1360,6 +1395,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "swift") {
     return "swift";
   }
+  if (normalized === "dart") {
+    return "dart";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1422,6 +1460,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "dos" && dosKeywords.has(token.toLowerCase())) ||
     (language === "kotlin" && kotlinKeywords.has(token)) ||
     (language === "swift" && swiftKeywords.has(token)) ||
+    (language === "dart" && dartKeywords.has(token)) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );

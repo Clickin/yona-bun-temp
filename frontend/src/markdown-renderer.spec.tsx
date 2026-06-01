@@ -1010,6 +1010,35 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">nil</span>');
   });
 
+  it("recognizes legacy Highlight.js Dart language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```dart",
+          "import 'dart:async';",
+          "final class IssueState {",
+          "  Future<bool> load() async {",
+          "    await Future.value(true);",
+          "    return false;",
+          "  }",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="dart">');
+    expect(html).toContain('class="syntax-token syntax-keyword">import</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">final</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">class</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">Future</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">bool</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">async</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">await</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">false</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
