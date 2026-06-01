@@ -3304,6 +3304,82 @@ async fn svn_protocol_external_client_can_deepen_depth_empty_checkout() {
 }
 
 #[tokio::test]
+async fn svn_protocol_external_client_can_shrink_checkout_depth_to_empty() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping external SVN depth-shrink smoke because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    seed_svn_readme(&repo_path, "hello from external svn depth-shrink update\n")
+        .expect("seed svn readme");
+    seed_svn_nested_tree(&repo_path).expect("seed svn nested tree");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let trunk_url = format!("{base_url}/yona/svn/owner/projectYobi/trunk");
+    let checkout_dir = tempdir().expect("svn depth-shrink checkout tempdir");
+    run_svn_blocking(
+        vec![
+            "checkout".to_string(),
+            "--non-interactive".to_string(),
+            trunk_url,
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let readme = checkout_dir.path().join("README.md");
+    let nested_guide = checkout_dir.path().join("manual").join("guide.md");
+    assert!(
+        readme.is_file() && nested_guide.is_file(),
+        "full checkout should materialize direct and nested files before shrinking depth; paths: {:?}",
+        list_relative_paths(checkout_dir.path())
+    );
+
+    run_svn_blocking(
+        vec![
+            "update".to_string(),
+            "--non-interactive".to_string(),
+            "--set-depth".to_string(),
+            "empty".to_string(),
+            checkout_dir.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    assert!(
+        checkout_dir.path().join(".svn").is_dir(),
+        "depth-shrink update should keep the working-copy root; paths: {:?}",
+        list_relative_paths(checkout_dir.path())
+    );
+    assert!(
+        !readme.exists(),
+        "depth-shrink update should remove direct files from the working copy; paths: {:?}",
+        list_relative_paths(checkout_dir.path())
+    );
+    assert!(
+        !checkout_dir.path().join("manual").exists(),
+        "depth-shrink update should remove child directories from the working copy; paths: {:?}",
+        list_relative_paths(checkout_dir.path())
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
 async fn svn_protocol_external_client_can_checkout_depth_files() {
     if !svn_tools_available() || !svn_client_available() {
         eprintln!(
