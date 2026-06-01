@@ -285,6 +285,7 @@ Interpretation:
 - [x] External `svn checkout --depth empty` smoke coverage against `/svn/$path`, proving depth-limited checkout creates only the working-copy root and suppresses direct files/directories with the installed native client.
 - [x] External `svn checkout --depth files` smoke coverage against `/svn/$path`, proving depth-limited checkout materializes direct files and suppresses child directories with the installed native client.
 - [x] External `svn checkout --depth immediates` smoke coverage against `/svn/$path`, proving non-recursive update-report directory entries expose checked-in metadata, materialize direct child directories, and suppress nested files with the installed native client.
+- [x] Local VisualSVN/Subversion 1.14.5 verification: `cargo test -p yona-rust-pilot-server --test svn_protocol_contract -- --nocapture` passes all 35 executable-backed SVN protocol and external-client smokes with `svn`, `svnadmin`, and `svnlook` installed.
 
 ## Pull Request / Review
 
