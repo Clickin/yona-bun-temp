@@ -478,6 +478,61 @@ const makefileKeywords = new Set([
   "vpath",
 ]);
 
+const perlKeywords = new Set([
+  "and",
+  "binmode",
+  "bless",
+  "break",
+  "caller",
+  "chomp",
+  "close",
+  "continue",
+  "delete",
+  "die",
+  "do",
+  "each",
+  "else",
+  "elsif",
+  "eval",
+  "exists",
+  "foreach",
+  "format",
+  "grep",
+  "if",
+  "join",
+  "last",
+  "local",
+  "map",
+  "my",
+  "next",
+  "not",
+  "open",
+  "or",
+  "our",
+  "package",
+  "pop",
+  "print",
+  "push",
+  "qw",
+  "read",
+  "redo",
+  "ref",
+  "require",
+  "return",
+  "shift",
+  "sort",
+  "split",
+  "state",
+  "sub",
+  "undef",
+  "unless",
+  "until",
+  "use",
+  "wantarray",
+  "warn",
+  "while",
+]);
+
 const pythonKeywords = new Set([
   "False",
   "None",
@@ -862,6 +917,9 @@ function normalizeCodeLanguage(language: string) {
   if (["makefile", "mk", "mak"].includes(normalized)) {
     return "makefile";
   }
+  if (["perl", "pl", "pm"].includes(normalized)) {
+    return "perl";
+  }
   if (["less", "scss"].includes(normalized)) {
     return "css";
   }
@@ -911,6 +969,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "cmake" && cmakeKeywords.has(token.toLowerCase())) ||
     (language === "gradle" && gradleKeywords.has(token.toLowerCase())) ||
     (language === "makefile" && makefileKeywords.has(token.toLowerCase())) ||
+    (language === "perl" && perlKeywords.has(token)) ||
     (language === "python" && pythonKeywords.has(token)) ||
     (language === "shell" && shellKeywords.has(token)) ||
     (language === "sql" && sqlKeywords.has(token.toLowerCase())) ||

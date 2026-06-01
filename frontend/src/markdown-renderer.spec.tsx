@@ -473,6 +473,34 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">PHONY</span>');
   });
 
+  it("recognizes legacy Highlight.js Perl aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```pl",
+          "use strict;",
+          "my @items = split /,/, 'a,b';",
+          "foreach my $item (@items) {",
+          "  if ($item) {",
+          "    print $item;",
+          "    return $item;",
+          "  }",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="pl">');
+    expect(html).toContain('class="syntax-token syntax-keyword">use</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">my</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">split</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">foreach</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">print</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
+  });
+
   it("recognizes legacy Highlight.js python language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
