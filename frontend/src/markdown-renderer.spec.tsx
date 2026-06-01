@@ -324,6 +324,35 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
   });
 
+  it("recognizes legacy Highlight.js Haskell aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```hs",
+          "module Yona.Notification where",
+          "import qualified Data.Text as Text",
+          "data State = Open | Closed deriving Show",
+          "render value = case value of",
+          '  Open -> let label = Text.pack "open" in label',
+          '  Closed -> Text.pack "closed"',
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="hs">');
+    expect(html).toContain('class="syntax-token syntax-keyword">module</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">where</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">import</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">qualified</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">data</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">deriving</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">case</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">of</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">let</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">in</span>');
+  });
+
   it("recognizes legacy Highlight.js python language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

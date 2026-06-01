@@ -297,6 +297,47 @@ const elixirKeywords = new Set([
   "while",
 ]);
 
+const haskellKeywords = new Set([
+  "as",
+  "case",
+  "ccall",
+  "cplusplus",
+  "class",
+  "data",
+  "default",
+  "deriving",
+  "do",
+  "dotnet",
+  "else",
+  "export",
+  "family",
+  "foreign",
+  "forall",
+  "hiding",
+  "if",
+  "import",
+  "in",
+  "infix",
+  "infixl",
+  "infixr",
+  "instance",
+  "jvm",
+  "let",
+  "mdo",
+  "module",
+  "newtype",
+  "of",
+  "proc",
+  "qualified",
+  "rec",
+  "safe",
+  "stdcall",
+  "then",
+  "type",
+  "unsafe",
+  "where",
+]);
+
 const pythonKeywords = new Set([
   "False",
   "None",
@@ -666,6 +707,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "elixir") {
     return "elixir";
   }
+  if (["haskell", "hs"].includes(normalized)) {
+    return "haskell";
+  }
   if (["less", "scss"].includes(normalized)) {
     return "css";
   }
@@ -710,6 +754,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "go" && goKeywords.has(token)) ||
     (language === "csharp" && csharpKeywords.has(token)) ||
     (language === "elixir" && elixirKeywords.has(token)) ||
+    (language === "haskell" && haskellKeywords.has(token)) ||
     (language === "python" && pythonKeywords.has(token)) ||
     (language === "shell" && shellKeywords.has(token)) ||
     (language === "sql" && sqlKeywords.has(token.toLowerCase())) ||
