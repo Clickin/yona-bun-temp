@@ -1402,6 +1402,31 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     );
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body_and_header(
+        app.clone(),
+        propfind,
+        &format!("/svn/owner/projectYobi/!svn/bc/{nested_revision}/trunk"),
+        None,
+        "depth",
+        "1",
+        Body::empty(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains(&format!(
+            "/yona/svn/owner/projectYobi/!svn/bc/{nested_revision}/trunk/manual/"
+        )) && text.contains(&format!(
+            "/yona/svn/owner/projectYobi/!svn/bc/{nested_revision}/trunk/README.md"
+        )) && !text.contains(&format!(
+            "/yona/svn/owner/projectYobi/!svn/bc/{nested_revision}/trunk/manual/guide.md"
+        )),
+        "SVN baseline collection PROPFIND depth=1 should expose direct children without recursive nested files: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
     let response = direct_request(
         app.clone(),
         propfind,
