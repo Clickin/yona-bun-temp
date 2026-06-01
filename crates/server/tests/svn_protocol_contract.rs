@@ -1377,6 +1377,31 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     );
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body_and_header(
+        app.clone(),
+        propfind,
+        &format!("/svn/owner/projectYobi/!svn/bc/{nested_revision}/trunk"),
+        None,
+        "depth",
+        "infinity",
+        Body::empty(),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    assert!(
+        text.contains(&format!(
+            "/yona/svn/owner/projectYobi/!svn/bc/{nested_revision}/trunk/manual/"
+        )) && text.contains(&format!(
+            "/yona/svn/owner/projectYobi/!svn/bc/{nested_revision}/trunk/manual/guide.md"
+        )) && text.contains(&format!(
+            "<D:href>/yona/svn/owner/projectYobi/!svn/ver/{nested_revision}/trunk/manual/guide.md</D:href>"
+        )),
+        "SVN baseline collection PROPFIND depth=infinity should recursively expose revision-pinned nested entries: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
     let response = direct_request(
         app.clone(),
         propfind,
