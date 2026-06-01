@@ -426,6 +426,25 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">null</span>');
   });
 
+  it("recognizes legacy Highlight.js C# numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```csharp",
+          "var color = 0xFF;",
+          "var ratio = -1.5e-2;",
+          "var leading = .25e+2;",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="csharp">');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+  });
+
   it("recognizes legacy Highlight.js Elixir language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
