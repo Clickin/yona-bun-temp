@@ -305,6 +305,34 @@ async fn read_auth_ui_capabilities_reflects_runtime_env_flags() {
 }
 
 #[tokio::test]
+async fn legacy_authenticate_provider_redirects_to_unsupported_login_state() {
+    let _guard = auth_env_lock().lock().unwrap();
+    std::env::set_var("YONA_ALLOW_ANONYMOUS_ACCESS", "false");
+    let (app, _, _) = build_auth_router().await;
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method(Method::GET)
+                .uri("/yona/authenticate/github")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    assert_eq!(
+        response
+            .headers()
+            .get(http::header::LOCATION)
+            .and_then(|value| value.to_str().ok()),
+        Some("/yona/users/loginform?error=unsupported&provider=github")
+    );
+    std::env::remove_var("YONA_ALLOW_ANONYMOUS_ACCESS");
+}
+
+#[tokio::test]
 async fn rest_auth_routes_round_trip_with_shared_session_and_error_envelope() {
     let _guard = auth_env_lock().lock().unwrap();
     std::env::remove_var("YONA_AUTH_SIGNUP_REQUIRE_CONFIRM");

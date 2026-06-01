@@ -286,6 +286,15 @@ describe("auth and workspace views", () => {
     expect(requestedHtml).toContain("Sign up requires confirmation.");
   });
 
+  it("renders unsupported social-login provider state from auth query parameters", () => {
+    const html = renderLogin({
+      routeHref: "/users/loginform?error=unsupported&provider=github",
+    });
+
+    expect(html).toContain("Social login provider is not configured.");
+    expect(html).toContain("github");
+  });
+
   it("renders verify-user success and invalid surfaces", () => {
     const successHtml = renderVerifyUser({ loginId: "door" });
     expect(successHtml).toContain("Verified User");

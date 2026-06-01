@@ -600,6 +600,7 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
     let project_import_session_manager = session_manager.clone();
     let project_import_backend = route_backend.clone();
     let project_import_base_path = base_path.clone();
+    let authenticate_base_path = base_path.clone();
     let rest_router = build_rest_router(pilot_service.clone());
 
     let mut base_router = Router::new()
@@ -616,6 +617,18 @@ fn build_router(config: RuntimeConfig, backend: PilotBackend, assets: AssetMode)
         .route(
             "/api/v1/{*rest_path}",
             any(|| async { rest_not_found_response() }),
+        )
+        .route(
+            "/authenticate/{provider}",
+            get(move |Path(provider): Path<String>| {
+                async move {
+                    direct_unsupported_authenticate_provider(
+                        provider,
+                        authenticate_base_path.clone(),
+                    )
+                    .await
+                }
+            }),
         )
         .route(
             "/logout",
@@ -2145,6 +2158,7 @@ fn anonymous_access_path_is_public(path: &str) -> bool {
         || path.starts_with("/assets/")
         || path == "/favicon.ico"
         || path == "/login"
+        || path.starts_with("/authenticate/")
         || path == "/users/loginform"
         || path == "/users/signupform"
         || path == "/forgot-password"
@@ -9870,6 +9884,19 @@ async fn direct_update_project_overview(
         Ok(_) => Json(serde_json::json!({ "overview": overview })).into_response(),
         Err(error) => error.into_response(),
     }
+}
+
+async fn direct_unsupported_authenticate_provider(provider: String, base_path: String) -> Response {
+    let provider = provider.trim();
+    let redirect_path = if provider.is_empty() {
+        "/users/loginform?error=unsupported".to_string()
+    } else {
+        format!(
+            "/users/loginform?error=unsupported&provider={}",
+            percent_encode_uri_component(provider)
+        )
+    };
+    Redirect::to(&base_path_href(&base_path, &redirect_path)).into_response()
 }
 
 const LEGACY_RESERVED_USER_NAMES: &[&str] = &[

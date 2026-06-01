@@ -61,6 +61,13 @@ export function LoginPage({
   const canRenderLocalForm = authUiCapabilities !== null && !authUiCapabilities?.socialLoginOnly;
   const loginIdPlaceholder = authUiCapabilities?.loginIdPlaceholder?.trim() || "Login ID or email";
   const passwordPlaceholder = authUiCapabilities?.passwordPlaceholder?.trim() || "Password";
+  const unsupportedProvider = searchParams.get("provider")?.trim();
+  const unsupportedAuthMessage =
+    searchParams.get("error") === "unsupported"
+      ? unsupportedProvider
+        ? `Social login provider is not configured. ${unsupportedProvider}`
+        : "Social login provider is not configured."
+      : null;
   const postSubmitMessage =
     searchParams.get("signup") === "requested"
       ? "Sign up requires confirmation."
@@ -75,6 +82,7 @@ export function LoginPage({
       <p className="eyebrow">Yona Rust Auth</p>
       <h1>Login for Yona</h1>
       <p className="lede">All-in-one software development platform.</p>
+      {unsupportedAuthMessage ? <p className="lede">{unsupportedAuthMessage}</p> : null}
       {postSubmitMessage ? <p className="lede">{postSubmitMessage}</p> : null}
       {authUiCapabilities?.emailVerificationEnabled ? (
         <p className="lede">Email verification is required.</p>
