@@ -1506,6 +1506,18 @@ const htmlbarsKeywords = new Set([
   "view",
 ]);
 
+const accesslogKeywords = new Set([
+  "CONNECT",
+  "DELETE",
+  "GET",
+  "HEAD",
+  "OPTIONS",
+  "PATCH",
+  "POST",
+  "PUT",
+  "TRACE",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -1550,9 +1562,11 @@ export function highlightCodeLine(line: string, language: string) {
       ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
       : normalizedLanguage === "htmlbars"
         ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-        : normalizedLanguage === "clojure"
-          ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|;.*$|\b\d+(?:\.\d+)?\b|[A-Za-z_*+\-<>=!?][A-Za-z0-9_*+\-<>=!?]*|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-          : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
+        : normalizedLanguage === "accesslog"
+          ? /(\b\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?\b|\b\d+\b|\b(?:GET|POST|HEAD|PUT|DELETE|CONNECT|OPTIONS|PATCH|TRACE)\b|\[[^\]\n]*\]|[A-Za-z][A-Za-z0-9._/-]*|[{}()[\].,;:"+\-*/%=<>!&|?]+)/g
+          : normalizedLanguage === "clojure"
+            ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|;.*$|\b\d+(?:\.\d+)?\b|[A-Za-z_*+\-<>=!?][A-Za-z0-9_*+\-<>=!?]*|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+            : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   for (const match of line.matchAll(tokenPattern)) {
@@ -1595,10 +1609,13 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   if (normalizedLanguage === "diff" && diffLineMarkerIsChange(token, line, tokenStart)) {
     return "syntax-keyword";
   }
+  if (normalizedLanguage === "accesslog" && /^\[.*\]$/.test(token)) {
+    return "syntax-string";
+  }
   if (token.startsWith('"') || token.startsWith("'")) {
     return "syntax-string";
   }
-  if (/^\d/.test(token)) {
+  if (/^\d/.test(token) || (normalizedLanguage === "accesslog" && isAccesslogAddressToken(token))) {
     return "syntax-number";
   }
   if (isCodeKeyword(token, normalizedLanguage)) {
@@ -1744,6 +1761,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "htmlbars") {
     return "htmlbars";
   }
+  if (normalized === "accesslog") {
+    return "accesslog";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1815,7 +1835,12 @@ function isCodeKeyword(token: string, language: string) {
     (language === "tex" && texKeywords.has(token)) ||
     (language === "django" && djangoKeywords.has(token)) ||
     (language === "htmlbars" && htmlbarsKeywords.has(token)) ||
+    (language === "accesslog" && accesslogKeywords.has(token)) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );
+}
+
+function isAccesslogAddressToken(token: string) {
+  return /^\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?$/.test(token);
 }

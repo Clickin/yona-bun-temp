@@ -1271,6 +1271,26 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">query-params</span>');
   });
 
+  it("recognizes legacy Highlight.js accesslog language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```accesslog",
+          '127.0.0.1 - - [10/Oct/2000:13:55:36 -0700] "GET /projects/yona HTTP/1.1" 200 2326',
+          '192.168.0.10 - - [10/Oct/2000:13:55:37 -0700] "PATCH /issues/1 HTTP/1.1" 204 0',
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="accesslog">');
+    expect(html).toContain('class="syntax-token syntax-number">127.0.0.1</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">GET</span>');
+    expect(html).toContain('class="syntax-token syntax-number">200</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">PATCH</span>');
+    expect(html).toContain('class="syntax-token syntax-number">204</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
