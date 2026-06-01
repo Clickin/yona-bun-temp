@@ -1134,6 +1134,38 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">NA</span>');
   });
 
+  it("recognizes legacy Highlight.js MATLAB language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```matlab",
+          "function values = render(count)",
+          "global cache",
+          "values = zeros(1, count);",
+          "for index = 1:count",
+          "  if index == 1",
+          "    values(index) = linspace(0, 1, count);",
+          "  else",
+          "    disp('skip');",
+          "  end",
+          "end",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="matlab">');
+    expect(html).toContain('class="syntax-token syntax-keyword">function</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">global</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">zeros</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">for</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">linspace</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">else</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">disp</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

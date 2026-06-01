@@ -1277,6 +1277,46 @@ const rKeywords = new Set([
   "while",
 ]);
 
+const matlabKeywords = new Set([
+  "abs",
+  "break",
+  "case",
+  "catch",
+  "ceil",
+  "classdef",
+  "continue",
+  "cos",
+  "disp",
+  "else",
+  "elseif",
+  "end",
+  "enumerated",
+  "events",
+  "eye",
+  "floor",
+  "for",
+  "function",
+  "global",
+  "if",
+  "length",
+  "linspace",
+  "log",
+  "methods",
+  "ones",
+  "otherwise",
+  "parfor",
+  "persistent",
+  "properties",
+  "rand",
+  "return",
+  "sin",
+  "sqrt",
+  "switch",
+  "try",
+  "while",
+  "zeros",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -1498,6 +1538,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "r") {
     return "r";
   }
+  if (normalized === "matlab") {
+    return "matlab";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1564,6 +1607,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "elm" && elmKeywords.has(token)) ||
     (language === "erlang" && erlangKeywords.has(token)) ||
     (language === "r" && rKeywords.has(token)) ||
+    (language === "matlab" && matlabKeywords.has(token)) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );
