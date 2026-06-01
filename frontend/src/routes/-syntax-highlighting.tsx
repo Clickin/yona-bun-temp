@@ -140,6 +140,34 @@ const scalaKeywords = new Set([
   "yield",
 ]);
 
+const goKeywords = new Set([
+  "break",
+  "case",
+  "chan",
+  "const",
+  "continue",
+  "default",
+  "defer",
+  "else",
+  "fallthrough",
+  "for",
+  "func",
+  "go",
+  "goto",
+  "if",
+  "import",
+  "interface",
+  "map",
+  "package",
+  "range",
+  "return",
+  "select",
+  "struct",
+  "switch",
+  "type",
+  "var",
+]);
+
 const pythonKeywords = new Set([
   "False",
   "None",
@@ -500,6 +528,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "sc") {
     return "scala";
   }
+  if (["go", "golang"].includes(normalized)) {
+    return "go";
+  }
   if (["less", "scss"].includes(normalized)) {
     return "css";
   }
@@ -541,6 +572,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "rust" && rustKeywords.has(token)) ||
     (language === "java" && javaKeywords.has(token)) ||
     (language === "scala" && scalaKeywords.has(token)) ||
+    (language === "go" && goKeywords.has(token)) ||
     (language === "python" && pythonKeywords.has(token)) ||
     (language === "shell" && shellKeywords.has(token)) ||
     (language === "sql" && sqlKeywords.has(token.toLowerCase())) ||

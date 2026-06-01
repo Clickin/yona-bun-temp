@@ -242,6 +242,30 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">type</span>');
   });
 
+  it("recognizes legacy Highlight.js Go language aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```golang",
+          "package main",
+          "func main() {",
+          "  defer println(true)",
+          "  go func() { select {} }()",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="golang">');
+    expect(html).toContain('class="syntax-token syntax-keyword">package</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">func</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">defer</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">go</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">select</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
+  });
+
   it("recognizes legacy Highlight.js python language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
