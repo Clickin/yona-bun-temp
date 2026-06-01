@@ -120,6 +120,7 @@
   branches, site-admin-gated download redirect, and file/plain-HTTP/HTTPS binary proxy
   exist; HTTPS fetch uses the local `curl` executable by default and can be
   overridden with `YONA_UPDATE_HTTPS_FETCH_COMMAND`.
+- SVN executable-client depth coverage now includes stock `svn update --set-depth files` from both depth-empty and full working copies, plus `svn update --set-depth exclude <child-dir>` for child-directory exclusion over the mounted `/svn/$path` boundary with local `svn`/`svnadmin`/`svnlook` 1.14.5.
 - `DESIGN.md` records the legacy Yona view/LESS source order for future frontend
   styling work and is a guardrail, not a new product surface.
 
