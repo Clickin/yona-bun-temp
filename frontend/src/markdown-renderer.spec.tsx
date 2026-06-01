@@ -474,6 +474,21 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
   });
 
+  it("recognizes legacy Highlight.js Elixir numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```elixir", "value = 0xFF_AA", "mode = 0755", "count = 1_000.25", "```"].join(
+          "\n",
+        )}
+      />,
+    );
+
+    expect(html).toContain('<code class="elixir">');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF_AA</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0755</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000.25</span>');
+  });
+
   it("recognizes legacy Highlight.js Haskell aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
