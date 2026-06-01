@@ -571,6 +571,8 @@ const basicKeywords = new Set([
   "xor",
 ]);
 
+const asciidocKeywords = new Set(["CAUTION", "IMPORTANT", "NOTE", "TIP", "WARNING"]);
+
 const pythonKeywords = new Set([
   "False",
   "None",
@@ -961,6 +963,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "basic") {
     return "basic";
   }
+  if (["adoc", "asciidoc"].includes(normalized)) {
+    return "asciidoc";
+  }
   if (["less", "scss"].includes(normalized)) {
     return "css";
   }
@@ -1012,6 +1017,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "makefile" && makefileKeywords.has(token.toLowerCase())) ||
     (language === "perl" && perlKeywords.has(token)) ||
     (language === "basic" && basicKeywords.has(token.toLowerCase())) ||
+    (language === "asciidoc" && asciidocKeywords.has(token)) ||
     (language === "python" && pythonKeywords.has(token)) ||
     (language === "shell" && shellKeywords.has(token)) ||
     (language === "sql" && sqlKeywords.has(token.toLowerCase())) ||

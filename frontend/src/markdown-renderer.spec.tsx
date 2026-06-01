@@ -530,6 +530,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">STOP</span>');
   });
 
+  it("recognizes legacy Highlight.js AsciiDoc language aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```adoc",
+          "= Yona Port",
+          ":toc:",
+          "NOTE: Keep the legacy screen flow",
+          "IMPORTANT: Render Markdown in React",
+          "WARNING: Do not redesign the UI",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="adoc">');
+    expect(html).toContain('class="syntax-token syntax-keyword">NOTE</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">IMPORTANT</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">WARNING</span>');
+  });
+
   it("recognizes legacy Highlight.js python language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
