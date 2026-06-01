@@ -16,7 +16,7 @@ Last updated: 2026-06-01
 Interpretation:
 
 - The Rust port has a solid foundation for auth, workspace/public profile, organization/project ownership, issue-tracker core behavior, Git read/admin surfaces, PR/review interaction surfaces including create/edit merge preflight, and board/posting core app behavior.
-- SVN executable bridge parity now has current local `svn`/`svnadmin`/`svnlook` 1.14.5 verification: `svn_protocol_contract` passes all 37 mounted DAV/external-client smokes, including remote-delete `svn update` working-copy removal and `svn update --set-depth infinity` checkout deepening.
+- SVN executable bridge parity now has current local `svn`/`svnadmin`/`svnlook` 1.14.5 verification: `svn_protocol_contract` passes all 38 mounted DAV/external-client smokes, including remote-delete `svn update` working-copy removal, `svn update --set-depth infinity` checkout deepening, and revision-targeted `svn update -r REV` downgrade/HEAD restore.
 - The largest remaining gaps are still board/posting follow-ups, optional webhook signature compatibility if external evidence requires it, full-text/indexed search hardening, broader VCC/baseline PROPFIND edge completeness beyond the mounted auth/DAV, and separate migrator/external API compatibility. Baseline collection `Depth: 1` direct-child and `Depth: infinity` recursive projection are now covered by the SVN protocol contract.
 - Percentages are approximate. Update them only when a slice lands with tests and provenance updates.
 
@@ -287,7 +287,7 @@ Interpretation:
 - [x] External `svn checkout --depth files` smoke coverage against `/svn/$path`, proving depth-limited checkout materializes direct files and suppresses child directories with the installed native client.
 - [x] External `svn checkout --depth immediates` smoke coverage against `/svn/$path`, proving non-recursive update-report directory entries expose checked-in metadata, materialize direct child directories, and suppress nested files with the installed native client.
 - [x] External `svn update` remote-delete smoke coverage against `/svn/$path`, proving executable-backed `update-report` emits `delete-entry` so stock SVN removes files deleted by another working copy.
-- [x] Local VisualSVN/Subversion 1.14.5 verification: `cargo test -p yona-rust-pilot-server --test svn_protocol_contract -- --nocapture` passes all 37 executable-backed SVN protocol and external-client smokes with `svn`, `svnadmin`, and `svnlook` installed.
+- [x] Local VisualSVN/Subversion 1.14.5 verification: `cargo test -p yona-rust-pilot-server --test svn_protocol_contract -- --nocapture` passes all 38 executable-backed SVN protocol and external-client smokes with `svn`, `svnadmin`, and `svnlook` installed, including revision-targeted `svn update -r REV` downgrade/HEAD restore.
 
 ## Pull Request / Review
 

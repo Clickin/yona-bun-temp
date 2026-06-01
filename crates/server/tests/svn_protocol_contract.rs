@@ -3817,6 +3817,98 @@ async fn svn_protocol_external_client_can_update_after_remote_commit() {
 }
 
 #[tokio::test]
+async fn svn_protocol_external_client_can_update_to_older_revision_and_back_to_head() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping external SVN revision update smoke because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let initial_revision = seed_svn_readme(&repo_path, "hello before revision-targeted update\n")
+        .expect("seed svn readme");
+
+    let (base_url, shutdown) = spawn_app_server(app).await;
+    let svn_url = format!("{base_url}/yona/svn/owner/projectYobi");
+    let writer_checkout = tempdir().expect("svn writer checkout tempdir");
+    let reader_checkout = tempdir().expect("svn reader checkout tempdir");
+    for checkout_dir in [&writer_checkout, &reader_checkout] {
+        run_svn_blocking(
+            vec![
+                "checkout".to_string(),
+                "--non-interactive".to_string(),
+                svn_url.clone(),
+                checkout_dir.path().to_string_lossy().to_string(),
+            ],
+            None,
+        )
+        .await;
+    }
+
+    let writer_readme = writer_checkout.path().join("trunk").join("README.md");
+    std::fs::write(&writer_readme, "hello after revision-targeted update\n")
+        .expect("edit writer checkout readme");
+    run_svn_blocking(
+        vec![
+            "commit".to_string(),
+            "--non-interactive".to_string(),
+            "--username".to_string(),
+            "owner".to_string(),
+            "--password".to_string(),
+            "doorpass1".to_string(),
+            "-m".to_string(),
+            "external svn revision-targeted update smoke".to_string(),
+            writer_checkout.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    run_svn_blocking(
+        vec![
+            "update".to_string(),
+            "--non-interactive".to_string(),
+            "-r".to_string(),
+            initial_revision.to_string(),
+            reader_checkout.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let reader_readme = reader_checkout.path().join("trunk").join("README.md");
+    let contents =
+        std::fs::read_to_string(&reader_readme).expect("read old-revision checkout readme");
+    assert_eq!(contents, "hello before revision-targeted update\n");
+
+    run_svn_blocking(
+        vec![
+            "update".to_string(),
+            "--non-interactive".to_string(),
+            reader_checkout.path().to_string_lossy().to_string(),
+        ],
+        None,
+    )
+    .await;
+
+    let contents =
+        std::fs::read_to_string(&reader_readme).expect("read head-revision checkout readme");
+    assert_eq!(contents, "hello after revision-targeted update\n");
+
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
 async fn svn_protocol_external_client_can_update_after_remote_delete() {
     if !svn_tools_available() || !svn_client_available() {
         eprintln!(
