@@ -2485,6 +2485,25 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">&lt;!DOCTYPE project&gt;</span>');
   });
 
+  it("keeps legacy Highlight.js XML CDATA blocks opaque in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```xml",
+          "<![CDATA[<project>#1</project>]]>",
+          "<project>Yona</project>",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain(
+      'class="syntax-token syntax-string">&lt;![CDATA[&lt;project&gt;#1&lt;/project&gt;]]&gt;</span>',
+    );
+    expect(html).toContain('class="syntax-token syntax-keyword">project</span>');
+    expect(html).not.toContain("issueLink");
+  });
+
   it("accepts fenced code language without a separating space like legacy marked", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer markdown={"```js\nconst value = '#1';\n```"} />,

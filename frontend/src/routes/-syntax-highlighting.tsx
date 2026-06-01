@@ -1802,7 +1802,7 @@ export function highlightCodeLine(line: string, language: string) {
       : normalizedLanguage === "htmlbars"
         ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\{\{!--.*?--\}\}|\{\{![^}\n]*\}\}|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
         : normalizedLanguage === "xml"
-          ? /("(?:(?:\\.|[^"\\])*)"|'(?:\\.|[^'\\])*'|<!--.*?-->|<!DOCTYPE[^>\n]*>|<\?\w+[^?\n]*(?:\?>|$)|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_:-]*\b|<\/?|\/?>|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+          ? /("(?:(?:\\.|[^"\\])*)"|'(?:\\.|[^'\\])*'|<!--.*?-->|<!\[CDATA\[[^\n]*?\]\]>|<!DOCTYPE[^>\n]*>|<\?\w+[^?\n]*(?:\?>|$)|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_:-]*\b|<\/?|\/?>|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
           : normalizedLanguage === "django"
             ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\{#[^}\n]*#\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
             : normalizedLanguage === "python"
@@ -1957,6 +1957,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   }
   if (normalizedLanguage === "xml" && isXmlNameToken(token)) {
     return "syntax-keyword";
+  }
+  if (normalizedLanguage === "xml" && xmlCdataTokenIsString(token)) {
+    return "syntax-string";
   }
   if (normalizedLanguage === "xml" && xmlMetaDeclarationIsKeyword(token)) {
     return "syntax-keyword";
@@ -2217,6 +2220,10 @@ function isXmlNameToken(token: string) {
 
 function xmlMetaDeclarationIsKeyword(token: string) {
   return /^<!DOCTYPE[^>\n]*>$/.test(token) || /^<\?\w+[^?\n]*(?:\?>)?$/.test(token);
+}
+
+function xmlCdataTokenIsString(token: string) {
+  return /^<!\[CDATA\[[^\n]*\]\]>$/.test(token);
 }
 
 function jsonStringTokenIsObjectKey(line: string, tokenStart: number, token: string) {

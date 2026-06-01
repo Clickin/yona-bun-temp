@@ -1171,6 +1171,7 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 원�
 - [x] YAML fenced-code highlighting recognizes legacy Highlight.js quoted and unquoted attribute keys before `:`
 - [x] YAML fenced-code highlighting recognizes legacy Highlight.js document markers, tags, anchors, aliases, and list bullets
 - [x] XML fenced-code highlighting recognizes legacy Highlight.js meta declarations such as `<?xml ...?>` and `<!DOCTYPE ...>`
+- [x] XML fenced-code highlighting keeps legacy Highlight.js CDATA blocks opaque
 - [x] XSS: `<script>` 등 위험 태그 제거
 
 ---
