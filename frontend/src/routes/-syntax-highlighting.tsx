@@ -2069,7 +2069,7 @@ function normalizeCodeLanguage(language: string) {
   if (["less", "scss"].includes(normalized)) {
     return "css";
   }
-  if (normalized === "py") {
+  if (["gyp", "py"].includes(normalized)) {
     return "python";
   }
   if (["bash", "console", "sh", "shell", "zsh"].includes(normalized)) {

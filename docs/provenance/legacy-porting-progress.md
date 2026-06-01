@@ -458,7 +458,7 @@ Interpretation:
 - [x] Basic safe inline image rendering on the project Markdown render path
 - [x] Basic indented code blocks plus backtick and tilde fenced-code block rendering with optional separating space, EOF closure, backtick-fence indent compensation, first info-string token language class preservation, and matching closing-fence length on the project Markdown render path
 - [x] React-side fenced code blocks share the code browser `syntax-token` span highlighter while preserving marked fence parsing and code opacity to issue/mention autolinks
-- [x] React-side fenced code highlighting recognizes the legacy Highlight.js `py`/`python` alias surface for Python keywords
+- [x] React-side fenced code highlighting recognizes the legacy Highlight.js `py`/`gyp`/`python` alias surface for Python keywords
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js shell aliases (`sh`/`bash`/`shell`/`zsh`/`console`) for shell keywords and hash comments
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js SQL keyword/comment coverage
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Ruby aliases (`rb`/`ruby`/`gemspec`/`podspec`/`thor`/`irb`) for Ruby keywords and comments
