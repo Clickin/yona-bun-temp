@@ -960,6 +960,16 @@ const nginxKeywords = new Set([
 
 const iniKeywords = new Set(["no", "off", "on", "yes"]);
 
+const powershellKeywords = new Set([
+  "foreach",
+  "function",
+  "get-childitem",
+  "if",
+  "in",
+  "param",
+  "return",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -974,7 +984,9 @@ export function highlightCodeBlock(code: string, language: string | undefined) {
 
 export function highlightCodeLine(line: string, language: string) {
   const tokenPattern =
-    /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
+    normalizeCodeLanguage(language) === "powershell"
+      ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+      : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   for (const match of line.matchAll(tokenPattern)) {
@@ -1102,6 +1114,9 @@ function normalizeCodeLanguage(language: string) {
   if (["ini", "toml"].includes(normalized)) {
     return "ini";
   }
+  if (["powershell", "ps"].includes(normalized)) {
+    return "powershell";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1144,6 +1159,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "dockerfile" && dockerfileKeywords.has(token.toUpperCase())) ||
     (language === "nginx" && nginxKeywords.has(token.toLowerCase())) ||
     (language === "ini" && iniKeywords.has(token.toLowerCase())) ||
+    (language === "powershell" && powershellKeywords.has(token.toLowerCase())) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );

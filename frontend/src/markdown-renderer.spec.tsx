@@ -782,6 +782,31 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">no</span>');
   });
 
+  it("recognizes legacy Highlight.js PowerShell aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```ps",
+          "function Get-YonaStatus {",
+          "  param($Path)",
+          "  foreach ($item in Get-ChildItem $Path) {",
+          "    return $item",
+          "  }",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="ps">');
+    expect(html).toContain('class="syntax-token syntax-keyword">function</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">param</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">foreach</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">in</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">Get-ChildItem</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
