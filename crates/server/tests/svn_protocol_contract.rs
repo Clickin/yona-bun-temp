@@ -736,6 +736,36 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
                 && !text.contains("<D:baseline-collection>"),
             "SVN baseline resource PROPFIND should only return explicitly requested metadata: {text}"
         );
+
+        let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+        let response = direct_request_with_body(
+            app.clone(),
+            propfind,
+            &format!("/svn/owner/projectYobi/!svn/bln/{revision}"),
+            None,
+            Body::from(
+                r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:allprop/>
+</D:propfind>"#,
+            ),
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let text = String::from_utf8(body.to_vec()).unwrap();
+        assert!(
+            text.contains("<D:resourcetype><D:baseline/></D:resourcetype>")
+                && text.contains(&format!("<D:displayname>{revision}</D:displayname>"))
+                && text.contains("<D:supportedlock>")
+                && text.contains(&format!("<D:version-name>{revision}</D:version-name>"))
+                && text.contains(&format!(
+                    "<D:baseline-collection><D:href>/yona/svn/owner/projectYobi/!svn/bc/{revision}</D:href></D:baseline-collection>"
+                ))
+                && text.contains(&format!("<S:repository-uuid>{uuid}</S:repository-uuid>"))
+                && text.contains("<D:supported-report-set>"),
+            "SVN baseline resource PROPFIND allprop should expose baseline live metadata: {text}"
+        );
     }
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
