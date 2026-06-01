@@ -1020,7 +1020,10 @@ describe("MarkdownRenderer", () => {
           "color = 0xFF",
           "legacy_color = 0xFFl",
           "ratio = 1.5e-2",
+          "debt = -1.5e-2",
           "threshold = .5",
+          "floor = -.5",
+          "offset = -0xFF",
           "```",
         ].join("\n")}
       />,
@@ -1034,7 +1037,10 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
     expect(html).toContain('class="syntax-token syntax-number">0xFFl</span>');
     expect(html).toContain('class="syntax-token syntax-number">1.5e-2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
     expect(html).toContain('class="syntax-token syntax-number">.5</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-.5</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-0xFF</span>');
   });
 
   it("recognizes legacy Highlight.js Python REPL prompts in fenced blocks", () => {
