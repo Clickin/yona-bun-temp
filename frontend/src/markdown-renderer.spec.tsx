@@ -266,6 +266,35 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
   });
 
+  it("recognizes legacy Highlight.js C# language aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```csharp",
+          "using System;",
+          "namespace Yona {",
+          "  public async Task<string> RenderAsync() {",
+          "    var ready = await LoadAsync();",
+          "    return null;",
+          "  }",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="csharp">');
+    expect(html).toContain('class="syntax-token syntax-keyword">using</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">namespace</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">public</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">async</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">string</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">var</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">await</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">null</span>');
+  });
+
   it("recognizes legacy Highlight.js python language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
