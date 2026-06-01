@@ -1867,6 +1867,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">nil</span>');
   });
 
+  it("recognizes legacy Highlight.js Swift numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```swift",
+          "let mask = 0b1010_0101",
+          "let mode = 0o755",
+          "let color = 0xFF_AA",
+          "let ratio = 1_000.5e2",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="swift">');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010_0101</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0o755</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF_AA</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000.5e2</span>');
+  });
+
   it("recognizes legacy Highlight.js Dart language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
