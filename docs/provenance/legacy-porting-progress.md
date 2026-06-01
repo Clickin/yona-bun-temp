@@ -467,6 +467,7 @@ Interpretation:
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Erlang aliases (`erlang`/`erl`) for Erlang keywords and literals
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js R language keywords and literals
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js MATLAB language keywords and built-ins
+- [x] React-side fenced code highlighting recognizes legacy Highlight.js AWK language keywords
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js CMake aliases (`cmake`/`cmake.in`) for CMake keywords
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Gradle language keywords
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Makefile aliases (`makefile`/`mk`/`mak`) for Makefile keywords

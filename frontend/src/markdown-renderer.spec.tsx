@@ -1166,6 +1166,37 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
   });
 
+  it("recognizes legacy Highlight.js AWK language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```awk",
+          "BEGIN { count = 0 }",
+          '{ if ($1 == "open") { count++; next } else { delete seen[$1] } }',
+          "END { while (count > 0) { exit } }",
+          "function render(value) {",
+          "  for (index in value) { continue }",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="awk">');
+    expect(html).toContain('class="syntax-token syntax-keyword">BEGIN</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">next</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">else</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">delete</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">END</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">while</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">exit</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">function</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">for</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">in</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">continue</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

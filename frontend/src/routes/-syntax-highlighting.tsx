@@ -1317,6 +1317,25 @@ const matlabKeywords = new Set([
   "zeros",
 ]);
 
+const awkKeywords = new Set([
+  "BEGIN",
+  "END",
+  "break",
+  "continue",
+  "delete",
+  "do",
+  "else",
+  "exit",
+  "for",
+  "func",
+  "function",
+  "if",
+  "in",
+  "next",
+  "nextfile",
+  "while",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -1541,6 +1560,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "matlab") {
     return "matlab";
   }
+  if (normalized === "awk") {
+    return "awk";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1608,6 +1630,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "erlang" && erlangKeywords.has(token)) ||
     (language === "r" && rKeywords.has(token)) ||
     (language === "matlab" && matlabKeywords.has(token)) ||
+    (language === "awk" && awkKeywords.has(token)) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );
