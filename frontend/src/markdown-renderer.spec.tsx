@@ -807,6 +807,32 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
   });
 
+  it("recognizes legacy Highlight.js DOS aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```bat",
+          "@echo off",
+          "setlocal",
+          "if exist yona.exe goto done",
+          "echo ready",
+          ":done",
+          "exit",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="bat">');
+    expect(html).toContain('class="syntax-token syntax-keyword">echo</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">off</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">setlocal</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">exist</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">goto</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">exit</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

@@ -970,6 +970,21 @@ const powershellKeywords = new Set([
   "return",
 ]);
 
+const dosKeywords = new Set([
+  "call",
+  "echo",
+  "errorlevel",
+  "exist",
+  "exit",
+  "for",
+  "goto",
+  "if",
+  "in",
+  "not",
+  "off",
+  "setlocal",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -1117,6 +1132,9 @@ function normalizeCodeLanguage(language: string) {
   if (["powershell", "ps"].includes(normalized)) {
     return "powershell";
   }
+  if (["bat", "cmd", "dos"].includes(normalized)) {
+    return "dos";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1160,6 +1178,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "nginx" && nginxKeywords.has(token.toLowerCase())) ||
     (language === "ini" && iniKeywords.has(token.toLowerCase())) ||
     (language === "powershell" && powershellKeywords.has(token.toLowerCase())) ||
+    (language === "dos" && dosKeywords.has(token.toLowerCase())) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );
