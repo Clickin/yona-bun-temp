@@ -1011,11 +1011,19 @@ describe("MarkdownRenderer", () => {
   it("recognizes legacy Highlight.js Python numeric literals in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
-        markdown={["```python", "mask = 0o755", "color = 0xFF", "ratio = 1.5e-2", "```"].join("\n")}
+        markdown={[
+          "```python",
+          "flags = 0b1010",
+          "mask = 0o755",
+          "color = 0xFF",
+          "ratio = 1.5e-2",
+          "```",
+        ].join("\n")}
       />,
     );
 
     expect(html).toContain('<code class="python">');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010</span>');
     expect(html).toContain('class="syntax-token syntax-number">0o755</span>');
     expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
     expect(html).toContain('class="syntax-token syntax-number">1.5e-2</span>');
