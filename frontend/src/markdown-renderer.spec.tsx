@@ -200,6 +200,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-punctuation">{</span>');
   });
 
+  it("recognizes legacy Highlight.js Rust numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```rust",
+          "let flags = 0b1010u32;",
+          "let mode = 0o755usize;",
+          "let color = 0xFF_u8;",
+          "let ratio = 1_000.5e-2f64;",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="rust">');
+    expect(html).toContain('class="syntax-token syntax-number">0b1010u32</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0o755usize</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF_u8</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1_000.5e-2f64</span>');
+  });
+
   it("recognizes legacy code language aliases and JVM keywords in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
