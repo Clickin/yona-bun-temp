@@ -457,6 +457,27 @@ const gradleKeywords = new Set([
   "type",
 ]);
 
+const makefileKeywords = new Set([
+  "-include",
+  "define",
+  "else",
+  "endef",
+  "endif",
+  "export",
+  "ifdef",
+  "ifeq",
+  "ifndef",
+  "ifneq",
+  "include",
+  "override",
+  "phony",
+  "private",
+  "sinclude",
+  "undefine",
+  "unexport",
+  "vpath",
+]);
+
 const pythonKeywords = new Set([
   "False",
   "None",
@@ -838,6 +859,9 @@ function normalizeCodeLanguage(language: string) {
   if (normalized === "gradle") {
     return "gradle";
   }
+  if (["makefile", "mk", "mak"].includes(normalized)) {
+    return "makefile";
+  }
   if (["less", "scss"].includes(normalized)) {
     return "css";
   }
@@ -886,6 +910,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "lua" && luaKeywords.has(token)) ||
     (language === "cmake" && cmakeKeywords.has(token.toLowerCase())) ||
     (language === "gradle" && gradleKeywords.has(token.toLowerCase())) ||
+    (language === "makefile" && makefileKeywords.has(token.toLowerCase())) ||
     (language === "python" && pythonKeywords.has(token)) ||
     (language === "shell" && shellKeywords.has(token)) ||
     (language === "sql" && sqlKeywords.has(token.toLowerCase())) ||

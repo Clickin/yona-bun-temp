@@ -441,6 +441,38 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
   });
 
+  it("recognizes legacy Highlight.js Makefile aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```mk",
+          "define banner",
+          "\t@echo building",
+          "endef",
+          "ifeq ($(MODE),release)",
+          "include config.mk",
+          "else",
+          "override MODE := debug",
+          "endif",
+          "export MODE",
+          ".PHONY: all",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="mk">');
+    expect(html).toContain('class="syntax-token syntax-keyword">define</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">endef</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">ifeq</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">include</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">else</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">override</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">endif</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">export</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">PHONY</span>');
+  });
+
   it("recognizes legacy Highlight.js python language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
