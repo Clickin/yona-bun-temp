@@ -841,6 +841,19 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-number">200</span>');
   });
 
+  it("recognizes legacy Highlight.js Diff aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```patch", "+added line", "-removed line", "!changed line", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="patch">');
+    expect(html).toContain('class="syntax-token syntax-keyword">+</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">-</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">!</span>');
+  });
+
   it("recognizes legacy Highlight.js JSON language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

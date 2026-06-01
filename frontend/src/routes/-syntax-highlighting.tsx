@@ -1207,6 +1207,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   ) {
     return "syntax-keyword";
   }
+  if (normalizedLanguage === "diff" && diffLineMarkerIsChange(token, line, tokenStart)) {
+    return "syntax-keyword";
+  }
   if (token.startsWith('"') || token.startsWith("'")) {
     return "syntax-string";
   }
@@ -1308,6 +1311,9 @@ function normalizeCodeLanguage(language: string) {
   if (["http", "https"].includes(normalized)) {
     return "http";
   }
+  if (["diff", "patch"].includes(normalized)) {
+    return "diff";
+  }
   if (["ini", "toml"].includes(normalized)) {
     return "ini";
   }
@@ -1339,6 +1345,11 @@ function isXmlNameToken(token: string) {
 function jsonStringTokenIsObjectKey(line: string, tokenStart: number, token: string) {
   const afterToken = line.slice(tokenStart + token.length);
   return /^\s*:/.test(afterToken);
+}
+
+function diffLineMarkerIsChange(token: string, line: string, tokenStart: number) {
+  const marker = token[0];
+  return tokenStart === 0 && ["+", "-", "!"].includes(marker) && line.startsWith(marker);
 }
 
 function isCodeKeyword(token: string, language: string) {
