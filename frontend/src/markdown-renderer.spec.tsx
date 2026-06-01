@@ -1786,6 +1786,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">null</span>');
   });
 
+  it("recognizes legacy Highlight.js YAML hash comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```yaml", "# deployment settings", "enabled: true", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="yaml">');
+    expect(html).toContain('class="syntax-token syntax-comment"># deployment settings</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
+  });
+
   it("recognizes legacy Highlight.js XML and HTML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

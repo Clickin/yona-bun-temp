@@ -508,7 +508,7 @@ Interpretation:
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Dart language keywords, literals, and built-ins
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Elm language keywords
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Objective-C aliases (`objectivec`/`objc`/`obj-c`/`mm`) for keywords, literals, and NS-family built-ins
-- [x] React-side fenced code highlighting recognizes legacy Highlight.js YAML aliases (`yml`/`YAML`/`yaml`) for YAML literals
+- [x] React-side fenced code highlighting recognizes legacy Highlight.js YAML aliases (`yml`/`YAML`/`yaml`) for YAML literals and hash comments
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js XML aliases (`xml`/`html`/`xhtml`/`rss`/`atom`/`xjb`/`xsd`/`xsl`/`plist`) for tag-name and attribute/string tokens
 - [x] Code-browser Markdown files render in React with legacy `.codebrowser-markdown` while the REST payload rewrites local `./...` image paths to the project file route as Markdown
 - [x] Project-home Git README fallback renders in React with the legacy readme body wrapper and `breaks: false` soft-line behavior while the REST payload rewrites local images/normal links to project file/code routes as Markdown
@@ -516,7 +516,7 @@ Interpretation:
 - [x] Readable issue references expose title/state metadata on project Markdown render paths
 - [ ] Full legacy/GFM extension parity
 - [~] Remaining legacy autolink edge-case parity if evidence requires it; `MarkdownAppTest` issue reference existence, wrapped owner-scoped issue refs, owner-scoped issue refs, and issue body/comment/history, board/project-home README/milestone/PR/commit discussion mention existence checks are covered
-- [~] Full Highlight.js-equivalent language coverage for Markdown code blocks; JavaScript/TypeScript built-in tokens, JS binary/octal/hex/exponent numeric literals, Rust binary/octal/hex/underscore/suffix/exponent numeric literals, Java binary/hex/underscore/suffix/exponent numeric literals, Scala/C#/Haskell/Arduino/CoffeeScript common Highlight.js number-mode literals, Go common number-mode plus imaginary/suffix literals, Elixir octal/hex/underscore numeric literals, Perl hash comments plus octal/hex/underscore numeric literals, shell/bash hash comments, and Basic comments plus decimal/hex/octal numeric literals are covered
+- [~] Full Highlight.js-equivalent language coverage for Markdown code blocks; JavaScript/TypeScript built-in tokens, JS binary/octal/hex/exponent numeric literals, Rust binary/octal/hex/underscore/suffix/exponent numeric literals, Java binary/hex/underscore/suffix/exponent numeric literals, Scala/C#/Haskell/Arduino/CoffeeScript common Highlight.js number-mode literals, Go common number-mode plus imaginary/suffix literals, Elixir octal/hex/underscore numeric literals, Perl hash comments plus octal/hex/underscore numeric literals, shell/bash hash comments, YAML hash comments, and Basic comments plus decimal/hex/octal numeric literals are covered
 - [x] Task checklist progress-bar integration for issue/board Markdown surfaces, including ordered task-list item counts
 
 ## REST API Compatibility
