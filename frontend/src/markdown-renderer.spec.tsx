@@ -1102,6 +1102,38 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">of</span>');
   });
 
+  it("recognizes legacy Highlight.js R language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```r",
+          "library(stats)",
+          "render <- function(values) {",
+          "  if (length(values) == 0) return(NULL)",
+          "  for (value in values) {",
+          "    if (is.na(value)) next",
+          "  }",
+          "  c(TRUE, FALSE, NA, Inf, NaN)",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="r">');
+    expect(html).toContain('class="syntax-token syntax-keyword">library</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">function</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">NULL</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">for</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">in</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">next</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">TRUE</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">FALSE</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">NA</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

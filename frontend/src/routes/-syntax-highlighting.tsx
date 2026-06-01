@@ -1241,6 +1241,42 @@ const erlangKeywords = new Set([
   "xor",
 ]);
 
+const rKeywords = new Set([
+  "...",
+  "F",
+  "FALSE",
+  "Inf",
+  "NA",
+  "NULL",
+  "NaN",
+  "T",
+  "TRUE",
+  "attach",
+  "break",
+  "detach",
+  "else",
+  "for",
+  "function",
+  "if",
+  "in",
+  "library",
+  "next",
+  "repeat",
+  "require",
+  "return",
+  "setClass",
+  "setGeneric",
+  "setGroupGeneric",
+  "setMethod",
+  "source",
+  "stop",
+  "switch",
+  "try",
+  "tryCatch",
+  "warning",
+  "while",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -1459,6 +1495,9 @@ function normalizeCodeLanguage(language: string) {
   if (["erl", "erlang"].includes(normalized)) {
     return "erlang";
   }
+  if (normalized === "r") {
+    return "r";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1524,6 +1563,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "dart" && dartKeywords.has(token)) ||
     (language === "elm" && elmKeywords.has(token)) ||
     (language === "erlang" && erlangKeywords.has(token)) ||
+    (language === "r" && rKeywords.has(token)) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );
