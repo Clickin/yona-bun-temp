@@ -1796,7 +1796,7 @@ export function highlightCodeLine(line: string, language: string) {
           : normalizedLanguage === "django"
             ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\{#[^}\n]*#\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
             : normalizedLanguage === "python"
-              ? /("""(?:\\.|[\s\S])*?"""|'''(?:\\.|[\s\S])*?'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^(?:>>>|\.\.\.)|^[\t ]*@[A-Za-z_][A-Za-z0-9_.]*|#.*$|\b0[oO][0-7]+[lLjJ]?\b|\b0[xX][0-9A-Fa-f]+[lLjJ]?\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?[lLjJ]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+              ? /((?:fr|rf|f)"(?:\\.|[^"\\])*"|(?:fr|rf|f)'(?:\\.|[^'\\])*'|"""(?:\\.|[\s\S])*?"""|'''(?:\\.|[\s\S])*?'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^(?:>>>|\.\.\.)|^[\t ]*@[A-Za-z_][A-Za-z0-9_.]*|#.*$|\b0[oO][0-7]+[lLjJ]?\b|\b0[xX][0-9A-Fa-f]+[lLjJ]?\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?[lLjJ]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
               : normalizedLanguage === "shell"
                 ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
                 : normalizedLanguage === "accesslog"
@@ -1889,6 +1889,11 @@ export function highlightCodeLine(line: string, language: string) {
     const tokenStart = match.index ?? 0;
     if (tokenStart > cursor) {
       parts.push(line.slice(cursor, tokenStart));
+    }
+    if (normalizedLanguage === "python" && pythonFStringIsInterpolated(token)) {
+      parts.push(...pythonFStringTokenParts(token, line, tokenStart));
+      cursor = tokenStart + token.length;
+      continue;
     }
     parts.push(
       <span
@@ -2213,6 +2218,70 @@ function pythonReplPromptIsMeta(token: string, tokenStart: number) {
 
 function pythonDecoratorIsMeta(token: string, tokenStart: number) {
   return tokenStart === 0 && /^[\t ]*@[A-Za-z_][A-Za-z0-9_.]*$/.test(token);
+}
+
+function pythonFStringIsInterpolated(token: string) {
+  return /^(?:fr|rf|f)(["'])[\s\S]*\{[^}\n]+\}[\s\S]*\1$/i.test(token);
+}
+
+function pythonFStringTokenParts(token: string, line: string, tokenStart: number) {
+  const match = token.match(/^((?:fr|rf|f)(["']))([\s\S]*)\2$/i);
+  if (!match) {
+    return [];
+  }
+  const prefix = match[1] ?? "";
+  const quote = match[2] ?? "";
+  const body = match[3] ?? "";
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  let stringPrefix = prefix;
+  for (const substitution of body.matchAll(/\{([^}\n]+)\}/g)) {
+    const substitutionToken = substitution[0] ?? "";
+    const substitutionStart = substitution.index ?? 0;
+    const before = body.slice(cursor, substitutionStart);
+    if (before || stringPrefix) {
+      parts.push(
+        <span className="syntax-token syntax-string" key={`${tokenStart}-fstring-${parts.length}`}>
+          {stringPrefix + before}
+        </span>,
+      );
+    }
+    parts.push(
+      <span
+        className="syntax-token syntax-punctuation"
+        key={`${tokenStart}-fstring-open-${parts.length}`}
+      >
+        {"{"}
+      </span>,
+    );
+    const expression = substitution[1] ?? "";
+    if (expression) {
+      parts.push(
+        <span
+          className={`syntax-token ${syntaxTokenClass(expression, "python", line, tokenStart + substitutionStart + 1)}`}
+          key={`${tokenStart}-fstring-expression-${parts.length}`}
+        >
+          {expression}
+        </span>,
+      );
+    }
+    parts.push(
+      <span
+        className="syntax-token syntax-punctuation"
+        key={`${tokenStart}-fstring-close-${parts.length}`}
+      >
+        {"}"}
+      </span>,
+    );
+    stringPrefix = "";
+    cursor = substitutionStart + substitutionToken.length;
+  }
+  parts.push(
+    <span className="syntax-token syntax-string" key={`${tokenStart}-fstring-tail`}>
+      {body.slice(cursor) + quote}
+    </span>,
+  );
+  return parts;
 }
 
 function markdownTokenClass(token: string) {
