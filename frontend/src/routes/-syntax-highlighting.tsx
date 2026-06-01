@@ -918,6 +918,46 @@ const dockerfileKeywords = new Set([
   "WORKDIR",
 ]);
 
+const nginxKeywords = new Set([
+  "access_log",
+  "blocked",
+  "break",
+  "crit",
+  "debug",
+  "deny",
+  "epoll",
+  "error",
+  "error_log",
+  "events",
+  "fastcgi_pass",
+  "gzip",
+  "http",
+  "include",
+  "info",
+  "kqueue",
+  "last",
+  "listen",
+  "location",
+  "none",
+  "notice",
+  "off",
+  "on",
+  "permanent",
+  "poll",
+  "proxy_pass",
+  "redirect",
+  "return",
+  "rewrite",
+  "root",
+  "rtsig",
+  "select",
+  "server",
+  "server_name",
+  "upstream",
+  "warn",
+  "yes",
+]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -1054,6 +1094,9 @@ function normalizeCodeLanguage(language: string) {
   if (["docker", "dockerfile"].includes(normalized)) {
     return "dockerfile";
   }
+  if (["nginx", "nginxconf"].includes(normalized)) {
+    return "nginx";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1094,6 +1137,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "arduino" && (cppKeywords.has(token) || arduinoKeywords.has(token))) ||
     (language === "coffeescript" && coffeescriptKeywords.has(token)) ||
     (language === "dockerfile" && dockerfileKeywords.has(token.toUpperCase())) ||
+    (language === "nginx" && nginxKeywords.has(token.toLowerCase())) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );

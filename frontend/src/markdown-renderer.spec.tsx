@@ -744,6 +744,32 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">CMD</span>');
   });
 
+  it("recognizes legacy Highlight.js nginx aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```nginxconf",
+          "server {",
+          "  listen 80;",
+          "  server_name yona.example;",
+          "  gzip on;",
+          "  rewrite ^ / permanent;",
+          "}",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="nginxconf">');
+    expect(html).toContain('class="syntax-token syntax-keyword">server</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">listen</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">server_name</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">gzip</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">on</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">rewrite</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">permanent</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
