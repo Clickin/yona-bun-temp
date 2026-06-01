@@ -1828,12 +1828,14 @@ export function highlightCodeLine(line: string, language: string) {
                                                                 ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|%.*$|\b\d+#[A-Fa-f0-9]+\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_']*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
                                                                 : normalizedLanguage === "r"
                                                                   ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`[^`]*`|#.*$|\b0[xX][0-9A-Fa-f]+[Li]?\b|\b\d+(?:\.\d*)?(?:[eE][+-]?\d*)?[Li]?\b|\.\d+(?:[eE][+-]?\d*)?\b|\b[A-Za-z.][A-Za-z0-9._]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
-                                                                  : normalizedLanguage === "awk"
-                                                                    ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\$[A-Za-z0-9_#@]+|\$\{[^}\n]*\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
-                                                                    : normalizedLanguage ===
-                                                                        "javascript"
-                                                                      ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b0[bB][01]+\b|\b0[oO][0-7]+\b|\b0[xX][0-9A-Fa-f]+\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-                                                                      : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
+                                                                  : normalizedLanguage === "matlab"
+                                                                    ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|%.*$|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+                                                                    : normalizedLanguage === "awk"
+                                                                      ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\$[A-Za-z0-9_#@]+|\$\{[^}\n]*\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
+                                                                      : normalizedLanguage ===
+                                                                          "javascript"
+                                                                        ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b0[bB][01]+\b|\b0[oO][0-7]+\b|\b0[xX][0-9A-Fa-f]+\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                                                                        : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   for (const match of line.matchAll(tokenPattern)) {
@@ -1872,6 +1874,7 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
     (normalizedLanguage === "r" && token.startsWith("#")) ||
     (normalizedLanguage === "awk" && token.startsWith("#")) ||
     (normalizedLanguage === "erlang" && token.startsWith("%")) ||
+    (normalizedLanguage === "matlab" && token.startsWith("%")) ||
     (normalizedLanguage === "perl" && token.startsWith("#")) ||
     (normalizedLanguage === "coffeescript" && token.startsWith("#")) ||
     (normalizedLanguage === "dockerfile" && token.startsWith("#")) ||

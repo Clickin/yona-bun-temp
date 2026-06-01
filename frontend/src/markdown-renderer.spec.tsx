@@ -1674,6 +1674,26 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
   });
 
+  it("recognizes legacy Highlight.js MATLAB percent comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```matlab",
+          "% legacy comment",
+          "if value > 0",
+          "  disp(value);",
+          "end",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="matlab">');
+    expect(html).toContain('class="syntax-token syntax-comment">% legacy comment</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">disp</span>');
+  });
+
   it("recognizes legacy Highlight.js AWK language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
