@@ -2417,6 +2417,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
   });
 
+  it("recognizes legacy Highlight.js YAML structural markers in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```yaml",
+          "---",
+          "defaults: &defaults",
+          "kind: !!str api",
+          "- *defaults",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('class="syntax-token syntax-keyword">---</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">&amp;defaults</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">!!str</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">-</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">*defaults</span>');
+  });
+
   it("recognizes legacy Highlight.js XML and HTML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

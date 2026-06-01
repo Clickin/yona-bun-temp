@@ -1832,7 +1832,7 @@ export function highlightCodeLine(line: string, language: string) {
                                     : normalizedLanguage === "lua"
                                       ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|--.*$|-?\b0[xX][0-9A-Fa-f]+\b|-?(?:\b\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                                       : normalizedLanguage === "yaml"
-                                        ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+                                        ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|---|!![A-Za-z_][A-Za-z0-9_]*|[&*][A-Za-z_][A-Za-z0-9_]*|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_-]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
                                         : normalizedLanguage === "sql"
                                           ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|--.*$|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_.]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
                                           : normalizedLanguage === "perl"
@@ -2005,6 +2005,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
     return "syntax-keyword";
   }
   if (normalizedLanguage === "yaml" && yamlKeyIsAttribute(token, line, tokenStart)) {
+    return "syntax-keyword";
+  }
+  if (normalizedLanguage === "yaml" && yamlStructuralTokenIsKeyword(token, line, tokenStart)) {
     return "syntax-keyword";
   }
   if (normalizedLanguage === "python" && pythonPrefixedStringIsString(token)) {
@@ -2268,6 +2271,19 @@ function yamlKeyIsAttribute(token: string, line: string, tokenStart: number) {
   const before = line.slice(0, tokenStart);
   const after = line.slice(tokenStart + token.length);
   return /^(?:\s*|\s*-\s*)$/.test(before) && /^\s*:/.test(after);
+}
+
+function yamlStructuralTokenIsKeyword(token: string, line: string, tokenStart: number) {
+  if (token === "---") {
+    return /^\s*---\s*$/.test(line);
+  }
+  if (/^!![A-Za-z_][A-Za-z0-9_]*$/.test(token)) {
+    return true;
+  }
+  if (/^[&*][A-Za-z_][A-Za-z0-9_]*$/.test(token)) {
+    return /^\s*(?:[A-Za-z_][A-Za-z0-9_-]*\s*:\s*)?-?\s*[&*]/.test(line.slice(0, tokenStart + 1));
+  }
+  return token === "-" && /^\s*-$/.test(line.slice(0, tokenStart + 1));
 }
 
 function pythonFStringIsInterpolated(token: string) {
