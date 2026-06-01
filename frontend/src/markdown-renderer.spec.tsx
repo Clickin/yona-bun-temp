@@ -1082,6 +1082,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-string">&quot;</span>');
   });
 
+  it("recognizes legacy Highlight.js Python built-ins in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```python", "missing = NotImplemented", "marker = Ellipsis", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="python">');
+    expect(html).toContain('class="syntax-token syntax-keyword">NotImplemented</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">Ellipsis</span>');
+  });
+
   it("recognizes legacy Highlight.js shell language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

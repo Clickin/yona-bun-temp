@@ -774,8 +774,10 @@ const basicKeywords = new Set([
 const asciidocKeywords = new Set(["CAUTION", "IMPORTANT", "NOTE", "TIP", "WARNING"]);
 
 const pythonKeywords = new Set([
+  "Ellipsis",
   "False",
   "None",
+  "NotImplemented",
   "True",
   "and",
   "as",
