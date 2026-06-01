@@ -404,6 +404,27 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">doseq</span>');
   });
 
+  it("recognizes legacy Highlight.js Clojure REPL prompts in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```clojure-repl",
+          'user=> (def state "open")',
+          "yona.core=> (println true)",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="clojure-repl">');
+    expect(html).toContain('class="syntax-token syntax-keyword">user=&gt;</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">yona.core=&gt;</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">def</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">println</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&quot;open&quot;</span>');
+  });
+
   it("recognizes legacy Highlight.js CMake aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

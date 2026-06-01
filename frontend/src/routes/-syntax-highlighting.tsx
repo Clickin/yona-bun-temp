@@ -1698,11 +1698,13 @@ export function highlightCodeLine(line: string, language: string) {
           ? /(\b\d{1,3}(?:\.\d{1,3}){3}(?::\d{1,5})?\b|\b\d+\b|\b(?:GET|POST|HEAD|PUT|DELETE|CONNECT|OPTIONS|PATCH|TRACE)\b|\[[^\]\n]*\]|[A-Za-z][A-Za-z0-9._/-]*|[{}()[\].,;:"+\-*/%=<>!&|?]+)/g
           : normalizedLanguage === "clojure"
             ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|;.*$|\b\d+(?:\.\d+)?\b|[A-Za-z_*+\-<>=!?][A-Za-z0-9_*+\-<>=!?]*|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-            : normalizedLanguage === "haml"
-              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|!!!|%[A-Za-z][A-Za-z0-9_-]*|#[A-Za-z0-9_-]+|\.[A-Za-z0-9_-]+|[A-Za-z_][A-Za-z0-9_-]*|\b\d+(?:\.\d+)?\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-              : normalizedLanguage === "excel"
-                ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b[A-Z]{0,2}\d*:[A-Z]{0,2}\d*\b|\b[A-Z]{1,2}\d+\b|\b\d+(?:\.\d+)?%?|\b[A-Za-z][A-Za-z0-9_.]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-                : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
+            : normalizedLanguage === "clojure-repl"
+              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^([\w.-]+|\s*#_)=>|;.*$|\b\d+(?:\.\d+)?\b|[A-Za-z_*+\-<>=!?][A-Za-z0-9_*+\-<>=!?]*|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+              : normalizedLanguage === "haml"
+                ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|!!!|%[A-Za-z][A-Za-z0-9_-]*|#[A-Za-z0-9_-]+|\.[A-Za-z0-9_-]+|[A-Za-z_][A-Za-z0-9_-]*|\b\d+(?:\.\d+)?\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                : normalizedLanguage === "excel"
+                  ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b[A-Z]{0,2}\d*:[A-Z]{0,2}\d*\b|\b[A-Z]{1,2}\d+\b|\b\d+(?:\.\d+)?%?|\b[A-Za-z][A-Za-z0-9_.]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                  : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   for (const match of line.matchAll(tokenPattern)) {
@@ -1751,6 +1753,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
   if (normalizedLanguage === "haml" && isHamlStructuralToken(token, line, tokenStart)) {
     return "syntax-keyword";
   }
+  if (normalizedLanguage === "clojure-repl" && clojureReplPromptIsMeta(token, tokenStart)) {
+    return "syntax-keyword";
+  }
   if (normalizedLanguage === "excel" && excelKeywords.has(token.toUpperCase())) {
     return "syntax-keyword";
   }
@@ -1797,6 +1802,9 @@ function normalizeCodeLanguage(language: string) {
   }
   if (["clj", "clojure"].includes(normalized)) {
     return "clojure";
+  }
+  if (normalized === "clojure-repl") {
+    return "clojure-repl";
   }
   if (["cmake", "cmake.in"].includes(normalized)) {
     return "cmake";
@@ -1953,6 +1961,10 @@ function isHamlStructuralToken(token: string, line: string, tokenStart: number) 
   return /[(\s]$/.test(before) && /^\s*=/.test(after);
 }
 
+function clojureReplPromptIsMeta(token: string, tokenStart: number) {
+  return tokenStart === 0 && /^([\w.-]+|\s*#_)=>$/.test(token);
+}
+
 function isCodeKeyword(token: string, language: string) {
   return (
     commonKeywords.has(token) ||
@@ -1965,7 +1977,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "elixir" && elixirKeywords.has(token)) ||
     (language === "haskell" && haskellKeywords.has(token)) ||
     (language === "lua" && luaKeywords.has(token)) ||
-    (language === "clojure" && clojureKeywords.has(token)) ||
+    ((language === "clojure" || language === "clojure-repl") && clojureKeywords.has(token)) ||
     (language === "cmake" && cmakeKeywords.has(token.toLowerCase())) ||
     (language === "gradle" && gradleKeywords.has(token.toLowerCase())) ||
     (language === "groovy" && groovyKeywords.has(token)) ||
