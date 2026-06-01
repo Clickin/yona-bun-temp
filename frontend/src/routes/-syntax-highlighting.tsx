@@ -803,12 +803,14 @@ const pythonKeywords = new Set([
   "not",
   "or",
   "pass",
+  "print",
   "raise",
   "return",
   "try",
   "while",
   "with",
   "yield",
+  "exec",
 ]);
 
 const shellKeywords = new Set([
@@ -1794,7 +1796,7 @@ export function highlightCodeLine(line: string, language: string) {
           : normalizedLanguage === "django"
             ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\{#[^}\n]*#\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
             : normalizedLanguage === "python"
-              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b0[oO][0-7]+[lLjJ]?\b|\b0[xX][0-9A-Fa-f]+[lLjJ]?\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?[lLjJ]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|^(?:>>>|\.\.\.)|#.*$|\b0[oO][0-7]+[lLjJ]?\b|\b0[xX][0-9A-Fa-f]+[lLjJ]?\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?[lLjJ]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
               : normalizedLanguage === "shell"
                 ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
                 : normalizedLanguage === "accesslog"
@@ -1961,6 +1963,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
     return "syntax-comment";
   }
   if (normalizedLanguage === "clojure-repl" && clojureReplPromptIsMeta(token, tokenStart)) {
+    return "syntax-keyword";
+  }
+  if (normalizedLanguage === "python" && pythonReplPromptIsMeta(token, tokenStart)) {
     return "syntax-keyword";
   }
   if (normalizedLanguage === "excel" && excelKeywords.has(token.toUpperCase())) {
@@ -2197,6 +2202,10 @@ function isHamlStructuralToken(token: string, line: string, tokenStart: number) 
 
 function clojureReplPromptIsMeta(token: string, tokenStart: number) {
   return tokenStart === 0 && /^([\w.-]+|\s*#_)=>$/.test(token);
+}
+
+function pythonReplPromptIsMeta(token: string, tokenStart: number) {
+  return tokenStart === 0 && /^(>>>|\.\.\.)$/.test(token);
 }
 
 function markdownTokenClass(token: string) {

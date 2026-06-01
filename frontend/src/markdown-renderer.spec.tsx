@@ -1021,6 +1021,19 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-number">1.5e-2</span>');
   });
 
+  it("recognizes legacy Highlight.js Python REPL prompts in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```python", ">>> print(1)", "... print(2)", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="python">');
+    expect(html).toContain('class="syntax-token syntax-keyword">&gt;&gt;&gt;</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">...</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">print</span>');
+  });
+
   it("recognizes legacy Highlight.js shell language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
