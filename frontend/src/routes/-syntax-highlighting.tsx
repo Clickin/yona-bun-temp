@@ -2258,7 +2258,11 @@ function pythonDeclarationParamsIsParams(token: string, line: string, tokenStart
 }
 
 function yamlKeyIsAttribute(token: string, line: string, tokenStart: number) {
-  if (!/^[A-Za-z_][A-Za-z0-9_-]*$/.test(token)) {
+  if (
+    !/^[A-Za-z_][A-Za-z0-9_-]*$/.test(token) &&
+    !/^"(?:\\.|[^"\\])*"$/.test(token) &&
+    !/^'(?:\\.|[^'\\])*'$/.test(token)
+  ) {
     return false;
   }
   const before = line.slice(0, tokenStart);

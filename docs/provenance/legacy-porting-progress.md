@@ -509,7 +509,7 @@ Interpretation:
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Dart language keywords, literals, and built-ins
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Elm language keywords and comments
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js Objective-C aliases (`objectivec`/`objc`/`obj-c`/`mm`) for keywords, literals, and NS-family built-ins
-- [x] React-side fenced code highlighting recognizes legacy Highlight.js YAML aliases (`yml`/`YAML`/`yaml`) for YAML attributes, literals, and hash comments
+- [x] React-side fenced code highlighting recognizes legacy Highlight.js YAML aliases (`yml`/`YAML`/`yaml`) for YAML quoted/unquoted attributes, literals, and hash comments
 - [x] React-side fenced code highlighting recognizes legacy Highlight.js XML aliases (`xml`/`html`/`xhtml`/`rss`/`atom`/`xjb`/`xsd`/`xsl`/`plist`) for tag-name, attribute/string, and comment tokens
 - [x] Code-browser Markdown files render in React with legacy `.codebrowser-markdown` while the REST payload rewrites local `./...` image paths to the project file route as Markdown
 - [x] Project-home Git README fallback renders in React with the legacy readme body wrapper and `breaks: false` soft-line behavior while the REST payload rewrites local images/normal links to project file/code routes as Markdown

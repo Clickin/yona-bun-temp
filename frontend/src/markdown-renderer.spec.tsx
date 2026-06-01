@@ -2386,6 +2386,8 @@ describe("MarkdownRenderer", () => {
           "archived: no",
           "deleted: null",
           "- service-name: api",
+          '"quoted-name": web',
+          "'single-name': worker",
           "```",
         ].join("\n")}
       />,
@@ -2399,6 +2401,8 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">deleted</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">null</span>');
     expect(html).toContain('class="syntax-token syntax-keyword">service-name</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">&quot;quoted-name&quot;</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">&#x27;single-name&#x27;</span>');
   });
 
   it("recognizes legacy Highlight.js YAML hash comments in fenced blocks", () => {

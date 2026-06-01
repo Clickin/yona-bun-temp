@@ -1168,7 +1168,7 @@ POST  /markdown/:owner/:project → 프로젝트 컨텍스트 마크다운 원�
 - [x] CoffeeScript fenced-code highlighting recognizes the legacy Highlight.js built-ins `npm`, `require`, `console`, `print`, `module`, `global`, `window`, and `document`
 - [x] Ruby fenced-code highlighting recognizes legacy Highlight.js octal, hex, underscored decimal, and zero numeric literals
 - [x] PHP fenced-code highlighting recognizes legacy Highlight.js binary, hex, and exponent numeric literals
-- [x] YAML fenced-code highlighting recognizes legacy Highlight.js unquoted attribute keys before `:`
+- [x] YAML fenced-code highlighting recognizes legacy Highlight.js quoted and unquoted attribute keys before `:`
 - [x] XSS: `<script>` 등 위험 태그 제거
 
 ---
