@@ -770,6 +770,18 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">permanent</span>');
   });
 
+  it("recognizes legacy Highlight.js ini aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```toml", "[server]", "enabled = on", "backup = no", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="toml">');
+    expect(html).toContain('class="syntax-token syntax-keyword">on</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">no</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

@@ -958,6 +958,8 @@ const nginxKeywords = new Set([
   "yes",
 ]);
 
+const iniKeywords = new Set(["no", "off", "on", "yes"]);
+
 const yamlKeywords = new Set(["false", "no", "null", "true", "yes"]);
 
 const cssKeywords = new Set(["charset", "important", "keyframes", "media", "page", "supports"]);
@@ -1097,6 +1099,9 @@ function normalizeCodeLanguage(language: string) {
   if (["nginx", "nginxconf"].includes(normalized)) {
     return "nginx";
   }
+  if (["ini", "toml"].includes(normalized)) {
+    return "ini";
+  }
   if (["yaml", "yml"].includes(normalized)) {
     return "yaml";
   }
@@ -1138,6 +1143,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "coffeescript" && coffeescriptKeywords.has(token)) ||
     (language === "dockerfile" && dockerfileKeywords.has(token.toUpperCase())) ||
     (language === "nginx" && nginxKeywords.has(token.toLowerCase())) ||
+    (language === "ini" && iniKeywords.has(token.toLowerCase())) ||
     (language === "yaml" && yamlKeywords.has(token.toLowerCase())) ||
     (language === "css" && cssKeywords.has(token))
   );
