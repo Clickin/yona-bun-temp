@@ -1794,7 +1794,7 @@ export function highlightCodeLine(line: string, language: string) {
           : normalizedLanguage === "django"
             ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\{#[^}\n]*#\}|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
             : normalizedLanguage === "python"
-              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
+              ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b0[oO][0-7]+[lLjJ]?\b|\b0[xX][0-9A-Fa-f]+[lLjJ]?\b|\b\d+(?:\.\d+)?(?:[eE][-+]?\d+)?[lLjJ]?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?#]+)/g
               : normalizedLanguage === "shell"
                 ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|#.*$|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*(?:-[A-Za-z_][A-Za-z0-9_]*)*\b|[{}()[\].,;:+\-*/%=<>!&|?#$]+)/g
                 : normalizedLanguage === "accesslog"

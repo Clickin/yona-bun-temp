@@ -1008,6 +1008,19 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">def</span>');
   });
 
+  it("recognizes legacy Highlight.js Python numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```python", "mask = 0o755", "color = 0xFF", "ratio = 1.5e-2", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="python">');
+    expect(html).toContain('class="syntax-token syntax-number">0o755</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
+    expect(html).toContain('class="syntax-token syntax-number">1.5e-2</span>');
+  });
+
   it("recognizes legacy Highlight.js shell language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
