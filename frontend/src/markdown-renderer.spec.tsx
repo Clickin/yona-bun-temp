@@ -563,6 +563,25 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
   });
 
+  it("recognizes legacy Highlight.js Lua comments and numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```lua",
+          "-- render count",
+          "local value = 0xFF",
+          "local ratio = .25e+2",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="lua">');
+    expect(html).toContain('class="syntax-token syntax-comment">-- render count</span>');
+    expect(html).toContain('class="syntax-token syntax-number">0xFF</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+  });
+
   it("recognizes legacy Highlight.js Clojure aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
