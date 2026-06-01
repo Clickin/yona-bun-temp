@@ -1536,6 +1536,68 @@ async fn svn_protocol_get_serves_repository_file_with_svnlook() {
     );
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request_with_body(
+        app.clone(),
+        propfind,
+        &format!("/svn/owner/projectYobi/!svn/bc/{revision}/trunk"),
+        None,
+        Body::from(
+            r#"<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:allprop/>
+</D:propfind>"#,
+        ),
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let text = String::from_utf8(body.to_vec()).unwrap();
+    let trunk_response = dav_response_for_href(
+        &text,
+        &format!("/yona/svn/owner/projectYobi/!svn/bc/{revision}/trunk/"),
+    );
+    assert!(
+        trunk_response.contains("<D:resourcetype><D:collection/></D:resourcetype>")
+            && trunk_response.contains("<D:displayname>trunk</D:displayname>")
+            && trunk_response.contains("<D:supportedlock>")
+            && trunk_response.contains(&format!("<D:version-name>{revision}</D:version-name>"))
+            && trunk_response.contains(&format!(
+                "<D:href>/yona/svn/owner/projectYobi/!svn/ver/{revision}/trunk</D:href>"
+            ))
+            && trunk_response.contains(&format!(
+                "<D:href>/yona/svn/owner/projectYobi/!svn/bc/{revision}/</D:href>"
+            ))
+            && trunk_response
+                .contains("<S:baseline-relative-path>trunk</S:baseline-relative-path>")
+            && trunk_response.contains("<D:creationdate>")
+            && trunk_response.contains("<D:creator-displayname>")
+            && trunk_response.contains("<D:getlastmodified>")
+            && trunk_response.contains("<D:supported-report-set>"),
+        "SVN baseline collection PROPFIND allprop should expose collection live metadata: {text}"
+    );
+    let readme_response = dav_response_for_href(
+        &text,
+        &format!("/yona/svn/owner/projectYobi/!svn/bc/{revision}/trunk/README.md"),
+    );
+    assert!(
+        readme_response.contains("<D:resourcetype/>")
+            && readme_response.contains("<D:displayname>README.md</D:displayname>")
+            && readme_response
+                .contains("<D:getcontenttype>application/octet-stream</D:getcontenttype>")
+            && readme_response.contains(&format!(
+                "<D:getetag>&quot;{revision}:trunk/README.md&quot;</D:getetag>"
+            ))
+            && readme_response.contains(&format!("<D:version-name>{revision}</D:version-name>"))
+            && readme_response.contains(&format!(
+                "<D:href>/yona/svn/owner/projectYobi/!svn/ver/{revision}/trunk/README.md</D:href>"
+            ))
+            && readme_response
+                .contains("<S:baseline-relative-path>trunk/README.md</S:baseline-relative-path>")
+            && readme_response.contains("<D:supported-report-set>"),
+        "SVN baseline collection PROPFIND allprop should expose child file live metadata: {text}"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
     let response = direct_request_with_body_and_header(
         app.clone(),
         propfind,
