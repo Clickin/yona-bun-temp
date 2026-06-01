@@ -1361,6 +1361,19 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">no</span>');
   });
 
+  it("recognizes legacy Highlight.js ini and TOML comments in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={["```toml", "; legacy option", "# parity flag", "enabled = on", "```"].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="toml">');
+    expect(html).toContain('class="syntax-token syntax-comment">; legacy option</span>');
+    expect(html).toContain('class="syntax-token syntax-comment"># parity flag</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">on</span>');
+  });
+
   it("recognizes legacy Highlight.js PowerShell aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
