@@ -338,6 +338,31 @@ const haskellKeywords = new Set([
   "where",
 ]);
 
+const luaKeywords = new Set([
+  "and",
+  "break",
+  "do",
+  "else",
+  "elseif",
+  "end",
+  "false",
+  "for",
+  "function",
+  "goto",
+  "if",
+  "in",
+  "local",
+  "nil",
+  "not",
+  "or",
+  "repeat",
+  "return",
+  "then",
+  "true",
+  "until",
+  "while",
+]);
+
 const pythonKeywords = new Set([
   "False",
   "None",
@@ -710,6 +735,9 @@ function normalizeCodeLanguage(language: string) {
   if (["haskell", "hs"].includes(normalized)) {
     return "haskell";
   }
+  if (normalized === "lua") {
+    return "lua";
+  }
   if (["less", "scss"].includes(normalized)) {
     return "css";
   }
@@ -755,6 +783,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "csharp" && csharpKeywords.has(token)) ||
     (language === "elixir" && elixirKeywords.has(token)) ||
     (language === "haskell" && haskellKeywords.has(token)) ||
+    (language === "lua" && luaKeywords.has(token)) ||
     (language === "python" && pythonKeywords.has(token)) ||
     (language === "shell" && shellKeywords.has(token)) ||
     (language === "sql" && sqlKeywords.has(token.toLowerCase())) ||

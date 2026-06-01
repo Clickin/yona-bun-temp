@@ -353,6 +353,36 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">in</span>');
   });
 
+  it("recognizes legacy Highlight.js Lua language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```lua",
+          "local function render(value)",
+          "  if value == nil then",
+          "    return false",
+          "  else",
+          "    return true",
+          "  end",
+          "end",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="lua">');
+    expect(html).toContain('class="syntax-token syntax-keyword">local</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">function</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">if</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">nil</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">then</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">return</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">false</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">else</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
+  });
+
   it("recognizes legacy Highlight.js python language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
