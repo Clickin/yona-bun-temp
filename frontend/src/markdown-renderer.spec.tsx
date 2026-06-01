@@ -295,6 +295,35 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">null</span>');
   });
 
+  it("recognizes legacy Highlight.js Elixir language in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```elixir",
+          "defmodule Yona.Notification do",
+          "  def render(value) do",
+          "    case value do",
+          "      nil -> false",
+          "      _ -> true",
+          "    end",
+          "  end",
+          "end",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="elixir">');
+    expect(html).toContain('class="syntax-token syntax-keyword">defmodule</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">def</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">do</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">case</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">nil</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">false</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">true</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
+  });
+
   it("recognizes legacy Highlight.js python language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

@@ -252,6 +252,51 @@ const csharpKeywords = new Set([
   "yield",
 ]);
 
+const elixirKeywords = new Set([
+  "alias",
+  "and",
+  "begin",
+  "break",
+  "case",
+  "cond",
+  "def",
+  "defimpl",
+  "defmacro",
+  "defmodule",
+  "defp",
+  "defprotocol",
+  "defrecord",
+  "defined",
+  "do",
+  "else",
+  "end",
+  "ensure",
+  "false",
+  "fn",
+  "for",
+  "if",
+  "in",
+  "include",
+  "module",
+  "next",
+  "nil",
+  "not",
+  "or",
+  "quote",
+  "redo",
+  "rescue",
+  "retry",
+  "return",
+  "self",
+  "then",
+  "true",
+  "unless",
+  "until",
+  "use",
+  "when",
+  "while",
+]);
+
 const pythonKeywords = new Set([
   "False",
   "None",
@@ -618,6 +663,9 @@ function normalizeCodeLanguage(language: string) {
   if (["cs", "csharp"].includes(normalized)) {
     return "csharp";
   }
+  if (normalized === "elixir") {
+    return "elixir";
+  }
   if (["less", "scss"].includes(normalized)) {
     return "css";
   }
@@ -661,6 +709,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "scala" && scalaKeywords.has(token)) ||
     (language === "go" && goKeywords.has(token)) ||
     (language === "csharp" && csharpKeywords.has(token)) ||
+    (language === "elixir" && elixirKeywords.has(token)) ||
     (language === "python" && pythonKeywords.has(token)) ||
     (language === "shell" && shellKeywords.has(token)) ||
     (language === "sql" && sqlKeywords.has(token.toLowerCase())) ||
