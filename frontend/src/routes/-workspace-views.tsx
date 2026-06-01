@@ -252,6 +252,21 @@ export function PublicUserProfilePage(props: {
                     Projects <span className="num-badge">{memberProjects.length}</span>
                   </a>
                 </li>
+                <li>
+                  <div
+                    className="two-column-icon mr10 hide-in-mobile"
+                    data-content="common.two.column.mode.desc"
+                    id="two-column-mode-checkbox"
+                    title="common.two.column.mode"
+                  >
+                    <label className="checkbox" aria-label="common.two.column.view">
+                      <div className="two-column-icon-border">
+                        <input id="two-column-mode" type="checkbox" />
+                        <span className="two-column-mode-text">common.two.column.view</span>
+                      </div>
+                    </label>
+                  </div>
+                </li>
               </ul>
 
               <div className="tab-content">
@@ -284,6 +299,24 @@ export function PublicUserProfilePage(props: {
                       >
                         Closed Issues <span className="num-badge">{closedIssues.length}</span>
                       </a>
+                    </li>
+                    <li className="show-subtasks-li">
+                      <div
+                        className="show-subtasks mr10"
+                        data-content="common.show.subtasks.desc"
+                        data-placement="top"
+                        data-toggle="popover"
+                        data-trigger="hover"
+                        id="two-column-mode-checkbox"
+                        title="common.show.subtasks"
+                      >
+                        <label className="checkbox" aria-label="common.show.subtasks">
+                          <div className="show-subtasks-button-border">
+                            <input id="toggle-show-subtasks" type="checkbox" />
+                            <span className="show-subtasks-text">common.show.subtasks</span>
+                          </div>
+                        </label>
+                      </div>
                     </li>
                   </ul>
                   <div className="tab-content">

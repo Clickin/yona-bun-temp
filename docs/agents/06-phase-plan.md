@@ -74,7 +74,7 @@
 
 ## Phase 1 closeout follow-ups
 
-- Public user profile route complete: `GET /api/v1/users/:loginId/profile` and `/:user` restore the legacy `UserApp.userInfo` single-segment profile shell with user card, Issues / Pull Requests / Projects tabs, visible member-project list, organization-name redirect, not-found handling, and viewer READ ACL filtering while keeping `/me` as the current-user workspace shortcut.
+- Public user profile route complete: `GET /api/v1/users/:loginId/profile` and `/:user` restore the legacy `UserApp.userInfo` single-segment profile shell with user card, Issues / Pull Requests / Projects tabs, `#two-column-mode-checkbox` / `#two-column-mode`, `.show-subtasks-li` / `#toggle-show-subtasks`, visible member-project list, organization-name redirect, not-found handling, and viewer READ ACL filtering while keeping `/me` as the current-user workspace shortcut.
 - User statistics counts complete: `GET /api/v1/users/:loginId/statistics` restores the legacy authenticated `UserApi.statistics` count fields for authored issues/postings, assigned issues, authored comments, and issue/comment votes without adding `/-_-api/v1/**` app-server compatibility.
 - Attachment MIME detection complete: `/files` now stores and serves MIME metadata derived from upload bytes and filename instead of trusting multipart `Content-Type`, matching the legacy `Attachment.save` / `FileUtil.detectMediaType` contract for text charset and spoofed-header uploads.
 - Attachment list JSON route complete: legacy `GET /files?containerType=&containerId=` now returns `{attachments,tempFiles}` with `id/name/url/size/mimeType` for `yobi.Files` / `yobi.Attachments`, including current-user temporary files when no bound container id is supplied.

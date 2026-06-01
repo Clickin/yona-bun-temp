@@ -114,6 +114,7 @@
   `/user/editform` views instead of crashing before parity assertions run.
 - The root runtime error banner is route-bootstrap support for visible in-page
   API errors; it does not change legacy route ownership or close a parity row.
+- Public `/:user` profile parity now preserves the legacy `user/view.scala.html` two-column mode and show-subtasks checkbox anchors (`#two-column-mode-checkbox`, `#two-column-mode`, `.show-subtasks-li`, `#toggle-show-subtasks`) inside the same tab structure as the legacy profile shell.
 - Site admin update parity now includes the direct legacy `POST /sites/unwatchUpdate`
   alias. It is site-admin/CSRF-gated and lowers the in-process update notification
   watch flag; configured update status, metadata URL/file discovery, and download-link

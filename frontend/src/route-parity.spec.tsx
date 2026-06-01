@@ -911,6 +911,10 @@ describe("file-route parity harness", () => {
     expect(html).toContain('class="page-wrap-outer"');
     expect(html).toContain('class="user-box"');
     expect(html).toContain('id="daysAgoBtn"');
+    expect(html).toContain('id="two-column-mode-checkbox"');
+    expect(html).toContain('id="two-column-mode"');
+    expect(html).toContain('class="show-subtasks-li"');
+    expect(html).toContain('id="toggle-show-subtasks"');
     expect(html).toContain('href="/yona/owner/publicYobi"');
     expect(html).toContain("Visible member project");
     expect(html).not.toContain("Default landing");

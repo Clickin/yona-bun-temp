@@ -103,7 +103,7 @@ Interpretation:
 - [x] Token settings, including direct `/user/editform/token_reset` route
 - [x] Avatar upload/crop/display
 - [x] Watched project notification preference basics
-- [x] Public profile route `/:user`
+- [x] Public profile route `/:user`, including legacy two-column and show-subtasks checkbox anchors
 - [x] User activity statistics
 - [x] Legacy global user menu tab fragment (`/user/usermenuTabContentList`)
 - [x] Legacy user attachment list (`/user/files`, `/api/v1/workspace/files`)
