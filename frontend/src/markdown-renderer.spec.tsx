@@ -1385,6 +1385,29 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">.title</span>');
   });
 
+  it("recognizes legacy Highlight.js Excel aliases in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```xlsx",
+          '=SUM(A1:B2, IF(C3>0, "open", "closed"))',
+          '=AVERAGEIF(D1:D4, ">0", E1:E4) + 10%',
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="xlsx">');
+    expect(html).toContain('class="syntax-token syntax-keyword">SUM</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">IF</span>');
+    expect(html).toContain('class="syntax-token syntax-keyword">AVERAGEIF</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">A1:B2</span>');
+    expect(html).toContain('class="syntax-token syntax-identifier">C3</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&quot;open&quot;</span>');
+    expect(html).toContain('class="syntax-token syntax-string">&quot;&gt;0&quot;</span>');
+    expect(html).toContain('class="syntax-token syntax-number">10%</span>');
+  });
+
   it("recognizes legacy Highlight.js YAML language aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

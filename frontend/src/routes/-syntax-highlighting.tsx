@@ -567,6 +567,28 @@ const llvmKeywords = new Set([
   "zeroinitializer",
 ]);
 
+const excelKeywords = new Set([
+  "AND",
+  "AVERAGE",
+  "AVERAGEIF",
+  "AVERAGEIFS",
+  "COUNT",
+  "COUNTIF",
+  "COUNTIFS",
+  "FALSE",
+  "IF",
+  "MAX",
+  "MIN",
+  "NOT",
+  "OR",
+  "SUM",
+  "SUMIF",
+  "SUMIFS",
+  "SUMPRODUCT",
+  "TRUE",
+  "VLOOKUP",
+]);
+
 const makefileKeywords = new Set([
   "-include",
   "define",
@@ -1678,7 +1700,9 @@ export function highlightCodeLine(line: string, language: string) {
             ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|;.*$|\b\d+(?:\.\d+)?\b|[A-Za-z_*+\-<>=!?][A-Za-z0-9_*+\-<>=!?]*|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
             : normalizedLanguage === "haml"
               ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|!!!|%[A-Za-z][A-Za-z0-9_-]*|#[A-Za-z0-9_-]+|\.[A-Za-z0-9_-]+|[A-Za-z_][A-Za-z0-9_-]*|\b\d+(?:\.\d+)?\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
-              : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
+              : normalizedLanguage === "excel"
+                ? /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b[A-Z]{0,2}\d*:[A-Z]{0,2}\d*\b|\b[A-Z]{1,2}\d+\b|\b\d+(?:\.\d+)?%?|\b[A-Za-z][A-Za-z0-9_.]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g
+                : /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*$|\/\*.*?\*\/|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|[{}()[\].,;:+\-*/%=<>!&|?]+)/g;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   for (const match of line.matchAll(tokenPattern)) {
@@ -1725,6 +1749,9 @@ function syntaxTokenClass(token: string, language: string, line: string, tokenSt
     return "syntax-string";
   }
   if (normalizedLanguage === "haml" && isHamlStructuralToken(token, line, tokenStart)) {
+    return "syntax-keyword";
+  }
+  if (normalizedLanguage === "excel" && excelKeywords.has(token.toUpperCase())) {
     return "syntax-keyword";
   }
   if (token.startsWith('"') || token.startsWith("'")) {
@@ -1785,6 +1812,9 @@ function normalizeCodeLanguage(language: string) {
   }
   if (normalized === "haml") {
     return "haml";
+  }
+  if (["excel", "xls", "xlsx"].includes(normalized)) {
+    return "excel";
   }
   if (["makefile", "mk", "mak"].includes(normalized)) {
     return "makefile";
@@ -1940,6 +1970,7 @@ function isCodeKeyword(token: string, language: string) {
     (language === "gradle" && gradleKeywords.has(token.toLowerCase())) ||
     (language === "groovy" && groovyKeywords.has(token)) ||
     (language === "llvm" && llvmKeywords.has(token)) ||
+    (language === "excel" && excelKeywords.has(token.toUpperCase())) ||
     (language === "makefile" && makefileKeywords.has(token.toLowerCase())) ||
     (language === "perl" && perlKeywords.has(token)) ||
     (language === "basic" && basicKeywords.has(token.toLowerCase())) ||
