@@ -1839,6 +1839,25 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">is</span>');
   });
 
+  it("recognizes legacy Highlight.js Kotlin numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```kotlin",
+          "val mask = 0xCAFE",
+          "val ratio = -1.5e-2",
+          "val offset = .25e+2",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="kotlin">');
+    expect(html).toContain('class="syntax-token syntax-number">0xCAFE</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+  });
+
   it("recognizes legacy Highlight.js Swift language in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer
