@@ -1443,6 +1443,25 @@ describe("MarkdownRenderer", () => {
     expect(html).toContain('class="syntax-token syntax-keyword">end</span>');
   });
 
+  it("recognizes legacy Highlight.js Objective-C numeric literals in fenced blocks", () => {
+    const html = renderToStaticMarkup(
+      <MarkdownRenderer
+        markdown={[
+          "```objc",
+          "NSInteger mask = 0xCAFE;",
+          "CGFloat ratio = -1.5e-2;",
+          "CGFloat offset = .25e+2;",
+          "```",
+        ].join("\n")}
+      />,
+    );
+
+    expect(html).toContain('<code class="objc">');
+    expect(html).toContain('class="syntax-token syntax-number">0xCAFE</span>');
+    expect(html).toContain('class="syntax-token syntax-number">-1.5e-2</span>');
+    expect(html).toContain('class="syntax-token syntax-number">.25e+2</span>');
+  });
+
   it("recognizes legacy Highlight.js CoffeeScript aliases in fenced blocks", () => {
     const html = renderToStaticMarkup(
       <MarkdownRenderer

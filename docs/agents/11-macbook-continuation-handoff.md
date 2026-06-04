@@ -61,7 +61,7 @@ At the time this note was created, the canonical progress counters were:
 | `docs/provenance/legacy-porting-progress.md` | 400 | 13 | 18 | 31 |
 | `SPEC.md` | 199 | 4 | 7 | 11 |
 
-The latest committed slices before this handoff were Markdown legacy Highlight.js parity increments, with the current iteration covering Kotlin common-number literal highlighting.
+The latest committed slices before this handoff were Markdown legacy Highlight.js parity increments, with the latest committed iterations covering Kotlin and Objective-C common-number literal highlighting.
 
 ## Next Work Selection
 
