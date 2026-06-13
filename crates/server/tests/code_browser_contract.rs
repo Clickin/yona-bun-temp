@@ -521,6 +521,7 @@ async fn code_browser_reads_root_folder_and_text_file_from_git_repo() {
     std::env::set_var("YONA_DATA", data_dir.path());
     let (app, repo) = build_app_with_repository().await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    let _ = register_user(app.clone(), "author").await;
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
         .read_project_by_owner_and_name("owner", "projectYobi")
@@ -563,6 +564,18 @@ async fn code_browser_reads_root_folder_and_text_file_from_git_repo() {
         .unwrap()
         .iter()
         .any(|entry| entry["name"] == "README.md" && entry["kind"] == "file"));
+    let src_entry = root["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["name"] == "src" && entry["kind"] == "folder")
+        .expect("src entry");
+    assert_eq!(src_entry["authorLabel"], "Author");
+    assert_eq!(src_entry["authorLoginId"], "author");
+    assert!(src_entry["authorAvatarUrl"]
+        .as_str()
+        .unwrap()
+        .contains("gravatar.com/avatar/"));
 
     let file = response_json(
         rpc(
@@ -584,6 +597,12 @@ async fn code_browser_reads_root_folder_and_text_file_from_git_repo() {
     assert_eq!(file["file"]["name"], "main.rs");
     assert_eq!(file["file"]["path"], "src/main.rs");
     assert_eq!(file["file"]["text"], "fn main() {}\n");
+    assert_eq!(file["file"]["commitMessage"], "Initial commit");
+    assert_eq!(file["file"]["commitShortId"].as_str().unwrap().len(), 7);
+    assert!(file["file"]["commitId"].as_str().unwrap().len() >= 7);
+    assert_eq!(file["file"]["commentCount"], 0);
+    assert!(!file["file"]["commitDate"].as_str().unwrap().is_empty());
+    assert_eq!(file["file"]["authorLabel"], "Author");
     assert!(!json_bool(&file["file"], "isBinary"));
 }
 
@@ -596,6 +615,12 @@ async fn rest_code_browser_reads_root_folder_and_text_file_from_git_repo() {
     std::env::set_var("YONA_DATA", data_dir.path());
     let (app, repo) = build_app_with_repository().await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    let _ = register_user(app.clone(), "author").await;
+    assert!(repo
+        .find_user_by_identifier("author@example.com")
+        .await
+        .unwrap()
+        .is_some());
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
         .read_project_by_owner_and_name("owner", "projectYobi")
@@ -640,6 +665,13 @@ async fn rest_code_browser_reads_root_folder_and_text_file_from_git_repo() {
     assert_eq!(file["file"]["name"], "main.rs");
     assert_eq!(file["file"]["path"], "src/main.rs");
     assert_eq!(file["file"]["text"], "fn main() {}\n");
+    assert_eq!(file["file"]["commitMessage"], "Initial commit");
+    assert_eq!(file["file"]["authorLabel"], "Author");
+    assert_eq!(file["file"]["authorLoginId"], "author");
+    assert!(file["file"]["authorAvatarUrl"]
+        .as_str()
+        .unwrap()
+        .contains("gravatar.com/avatar/"));
     assert!(!json_bool(&file["file"], "isBinary"));
 }
 
@@ -717,6 +749,80 @@ async fn rest_code_browser_selector_includes_tags_and_reads_tagged_files() {
 }
 
 #[tokio::test]
+async fn direct_code_ajax_compat_routes_return_legacy_metadata_json() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    let _ = register_user(app.clone(), "author").await;
+    create_project(app.clone(), &cookie, &csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+
+    let root =
+        response_json(direct_get(app.clone(), "/owner/projectYobi/code/!", None).await).await;
+    assert_eq!(root["type"], "folder");
+    assert_eq!(root["path"], "");
+    assert_eq!(root["data"]["src"]["type"], "folder");
+    assert_eq!(root["data"]["src"]["msg"], "Initial commit");
+    assert_eq!(root["data"]["src"]["userLoginId"], "author");
+    assert!(root["data"]["src"]["avatar"]
+        .as_str()
+        .unwrap()
+        .contains("gravatar.com/avatar/"));
+    assert_eq!(
+        root["data"]["src"]["commitUrl"],
+        format!(
+            "/yona/owner/projectYobi/commit/{}",
+            root["data"]["src"]["commitId"].as_str().unwrap()
+        )
+    );
+    let root_with_slash =
+        response_json(direct_get(app.clone(), "/owner/projectYobi/code/!/", None).await).await;
+    assert_eq!(root_with_slash["type"], "folder");
+    assert_eq!(root_with_slash["path"], "");
+
+    let branch_root =
+        response_json(direct_get(app.clone(), "/owner/projectYobi/code/main/!/", None).await).await;
+    assert_eq!(branch_root["type"], "folder");
+    assert_eq!(branch_root["path"], "");
+
+    let src =
+        response_json(direct_get(app.clone(), "/owner/projectYobi/code/main/!/src", None).await)
+            .await;
+    assert_eq!(src["type"], "folder");
+    assert_eq!(src["path"], "src");
+    assert_eq!(src["data"]["main.rs"]["type"], "file");
+    assert_eq!(src["data"]["main.rs"]["msg"], "Initial commit");
+
+    let file = response_json(
+        direct_get(
+            app.clone(),
+            "/owner/projectYobi/code/main/!/src/main.rs",
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(file["type"], "file");
+    assert_eq!(file["data"], "fn main() {}\n");
+    assert_eq!(file["commitMessage"], "Initial commit");
+    assert_eq!(file["userLoginId"], "author");
+    assert!(!json_bool(&file, "isBinary"));
+    assert_eq!(file["mimeType"], "text/x-rust");
+
+    let missing = direct_get(app, "/owner/projectYobi/code/main/!/missing.rs", None).await;
+    assert_eq!(missing.status(), StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
 async fn rest_code_browser_renders_markdown_file_with_legacy_local_image_links() {
     let _guard = yona_data_env_lock()
         .lock()
@@ -736,7 +842,7 @@ async fn rest_code_browser_renders_markdown_file_with_legacy_local_image_links()
         data_dir.path(),
         project.id,
         "README.md",
-        "# Hello Yona\n\n![logo](./assets/logo.png)\n\n[Guide](./docs/guide.md)\n",
+        "# Hello Yona\n\n@owner @owner/projectYobi @ghost @owner/missing\n\n![logo](./assets/logo.png)\n\n[Guide](./docs/guide.md)\n",
         "Render markdown README links",
     );
 
@@ -744,7 +850,7 @@ async fn rest_code_browser_renders_markdown_file_with_legacy_local_image_links()
         rest_get(
             app,
             "/projects/owner/projectYobi/code?branch=main&path=README.md",
-            None,
+            Some(&cookie),
         )
         .await,
     )
@@ -759,12 +865,39 @@ async fn rest_code_browser_renders_markdown_file_with_legacy_local_image_links()
     let markdown = file["file"]["text"].as_str().expect("markdown text");
     assert!(markdown.contains("# Hello Yona"), "{markdown}");
     assert!(
+        markdown.contains("@owner @owner/projectYobi @ghost @owner/missing"),
+        "{markdown}"
+    );
+    assert!(
         markdown.contains(r#"![logo](/yona/owner/projectYobi/files/main/assets/logo.png)"#),
         "{markdown}"
     );
     assert!(
         markdown.contains("[Guide](./docs/guide.md)"),
         "code-browser markdown should only rewrite local images like legacy renderFileInCodeBrowser: {markdown}"
+    );
+    let mention_references = file["file"]["mentionReferences"]
+        .as_array()
+        .expect("code-browser markdown mention references");
+    assert!(
+        mention_references
+            .iter()
+            .any(|reference| reference["loginId"] == "owner"),
+        "{mention_references:?}"
+    );
+    assert!(
+        mention_references
+            .iter()
+            .any(|reference| reference["ownerName"] == "owner"
+                && reference["projectName"] == "projectYobi"),
+        "{mention_references:?}"
+    );
+    assert!(
+        !mention_references
+            .iter()
+            .any(|reference| reference["loginId"] == "ghost"
+                || reference["projectName"] == "missing"),
+        "{mention_references:?}"
     );
 }
 
@@ -777,6 +910,12 @@ async fn rest_commit_history_lists_branch_and_path_commits_from_git_repo() {
     std::env::set_var("YONA_DATA", data_dir.path());
     let (app, repo) = build_app_with_repository().await;
     let (csrf, cookie) = register_user(app.clone(), "owner").await;
+    let _ = register_user(app.clone(), "second").await;
+    assert!(repo
+        .find_user_by_identifier("second@example.com")
+        .await
+        .unwrap()
+        .is_some());
     create_project(app.clone(), &cookie, &csrf, "public").await;
     let project = repo
         .read_project_by_owner_and_name("owner", "projectYobi")
@@ -822,6 +961,11 @@ async fn rest_commit_history_lists_branch_and_path_commits_from_git_repo() {
     assert_eq!(commits[0]["shortMessage"], "Update main function");
     assert_eq!(commits[0]["authorName"], "Second Author");
     assert_eq!(commits[0]["authorEmail"], "second@example.com");
+    assert_eq!(commits[0]["authorLoginId"], "second");
+    assert!(commits[0]["authorAvatarUrl"]
+        .as_str()
+        .unwrap()
+        .contains("gravatar.com/avatar/"));
     assert_eq!(commits[0]["commentCount"], 0);
     assert_eq!(commits[1]["shortMessage"], "Initial commit");
     assert!(commits[0]["commitId"].as_str().unwrap().len() >= 40);
@@ -1170,6 +1314,53 @@ async fn rest_commit_comment_create_requires_authenticated_session() {
 }
 
 #[tokio::test]
+async fn rest_commit_comment_allows_legacy_guest_nonmember_on_public_project() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let data_dir = tempdir().expect("yona data");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    let (guest_csrf, guest_cookie) = register_user(app.clone(), "guest").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+    let commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
+    let guest = repo
+        .toggle_site_user_guest_mode("guest")
+        .await
+        .expect("toggle guest mode")
+        .expect("guest exists");
+    assert!(guest.is_guest);
+
+    let created = response_json(
+        rest_post_json(
+            app,
+            &format!("/projects/owner/projectYobi/commit/{commit_id}/comments"),
+            Some(&guest_cookie),
+            Some(&guest_csrf),
+            json!({
+                "contentsMarkdown": "Guest public commit note"
+            }),
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(created["commit"]["commentCount"], 1);
+    assert_eq!(created["threads"][0]["authorLoginId"], "guest");
+    assert_eq!(
+        created["threads"][0]["comments"][0]["contentsMarkdown"],
+        "Guest public commit note"
+    );
+}
+
+#[tokio::test]
 async fn rest_commit_detail_reports_missing_commit_as_not_found() {
     let _guard = yona_data_env_lock()
         .lock()
@@ -1488,6 +1679,7 @@ async fn direct_code_file_routes_stream_raw_open_and_image_bytes() {
         .unwrap()
         .unwrap();
     seed_bare_repository(data_dir.path(), project.id);
+    let head_commit_id = bare_repository_head_commit_id(data_dir.path(), project.id);
 
     let (raw_status, raw_headers, raw_body) = response_bytes(
         direct_get(
@@ -1504,6 +1696,18 @@ async fn direct_code_file_routes_stream_raw_open_and_image_bytes() {
         .to_str()
         .unwrap()
         .starts_with("text/plain"));
+
+    let (commit_raw_status, _commit_raw_headers, commit_raw_body) = response_bytes(
+        direct_get(
+            app.clone(),
+            &format!("/owner/projectYobi/rawcode/{head_commit_id}/src/main.rs"),
+            None,
+        )
+        .await,
+    )
+    .await;
+    assert_eq!(commit_raw_status, StatusCode::OK);
+    assert_eq!(commit_raw_body, raw_body);
 
     let (open_status, open_headers, open_body) = response_bytes(
         direct_get(
@@ -1596,7 +1800,7 @@ async fn direct_code_archive_download_streams_branch_zip() {
 }
 
 #[tokio::test]
-async fn direct_raw_code_redirects_missing_file_and_rejects_path_traversal() {
+async fn direct_code_file_routes_redirect_missing_raw_and_reject_path_traversal() {
     let _guard = yona_data_env_lock()
         .lock()
         .unwrap_or_else(|error| error.into_inner());
@@ -1629,8 +1833,25 @@ async fn direct_raw_code_redirects_missing_file_and_rejects_path_traversal() {
         "/yona/owner/projectYobi/code/main/missing.rs"
     );
 
-    let traversal = direct_get(app, "/owner/projectYobi/rawcode/main/..%2Fsecret.txt", None).await;
-    assert_eq!(traversal.status(), StatusCode::BAD_REQUEST);
+    let raw_traversal = direct_get(
+        app.clone(),
+        "/owner/projectYobi/rawcode/main/..%2Fsecret.txt",
+        None,
+    )
+    .await;
+    assert_eq!(raw_traversal.status(), StatusCode::BAD_REQUEST);
+
+    let files_traversal = direct_get(
+        app.clone(),
+        "/owner/projectYobi/files/main/..%2Fsecret.txt",
+        None,
+    )
+    .await;
+    assert_eq!(files_traversal.status(), StatusCode::BAD_REQUEST);
+
+    let image_traversal =
+        direct_get(app, "/owner/projectYobi/image/main/..%2Fsecret.txt", None).await;
+    assert_eq!(image_traversal.status(), StatusCode::BAD_REQUEST);
 }
 
 #[tokio::test]

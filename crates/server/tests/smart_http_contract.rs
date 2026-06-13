@@ -19,6 +19,7 @@ use yona_rust_persistence::{
 };
 use yona_rust_pilot_migration::Migrator;
 use yona_rust_pilot_server::{create_router_with_app_repository, RuntimeConfig};
+use yona_rust_vcs::MAX_SMART_HTTP_RPC_BYTES;
 
 mod rest_test_support;
 
@@ -164,6 +165,29 @@ async fn direct_request(
     }
 
     app.oneshot(builder.body(Body::empty()).unwrap())
+        .await
+        .unwrap()
+}
+
+async fn direct_request_with_body(
+    app: axum::Router,
+    method: Method,
+    path: &str,
+    authorization: Option<&str>,
+    headers: &[(&str, String)],
+    body: &'static [u8],
+) -> Response<Body> {
+    let mut builder = Request::builder()
+        .method(method)
+        .uri(format!("/yona{path}"));
+    if let Some(authorization) = authorization {
+        builder = builder.header(http::header::AUTHORIZATION, authorization);
+    }
+    for (name, value) in headers {
+        builder = builder.header(*name, value);
+    }
+
+    app.oneshot(builder.body(Body::from(body)).unwrap())
         .await
         .unwrap()
 }
@@ -441,6 +465,53 @@ async fn smart_http_allows_basic_member_write_advertisement_and_rejects_outsider
         "{}",
         String::from_utf8_lossy(&body)
     );
+}
+
+#[tokio::test]
+async fn smart_http_receive_pack_rejects_oversized_content_length_before_git_execution() {
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repo, _) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie, _) = register_user(app.clone(), "owner").await;
+    let (_, _, member_id) = register_user(app.clone(), "member").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let project = repo
+        .read_project_by_owner_and_name("owner", "projectYobi")
+        .await
+        .unwrap()
+        .expect("project");
+    repo.add_project_membership(project.id, member_id, "member")
+        .await
+        .unwrap();
+    seed_bare_repository(data_dir.path(), project.id);
+
+    let (status, _, body) = response_bytes(
+        direct_request_with_body(
+            app,
+            Method::POST,
+            "/owner/projectYobi.git/git-receive-pack",
+            Some(&basic("member", "doorpass1")),
+            &[
+                (
+                    http::header::CONTENT_TYPE.as_str(),
+                    "application/x-git-receive-pack-request".to_string(),
+                ),
+                (
+                    http::header::CONTENT_LENGTH.as_str(),
+                    (MAX_SMART_HTTP_RPC_BYTES + 1).to_string(),
+                ),
+            ],
+            b"0000",
+        )
+        .await,
+    )
+    .await;
+
+    assert_eq!(status, StatusCode::PAYLOAD_TOO_LARGE);
+    assert_eq!(String::from_utf8_lossy(&body), "Request Entity Too Large");
 }
 
 #[tokio::test]

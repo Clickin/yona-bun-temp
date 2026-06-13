@@ -578,12 +578,12 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
     assert_eq!(response.status(), StatusCode::MULTI_STATUS);
     let body = response.into_body().collect().await.unwrap().to_bytes();
     let text = String::from_utf8(body.to_vec()).unwrap();
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let repository_uuid = yona_rust_vcs::svn_repository_uuid(&repo_path).ok();
     assert!(
         text.contains("<D:resourcetype/>")
             && text.contains("<D:displayname/>")
             && text.contains("<D:supportedlock/>")
-            && text.contains("<D:version-name/>")
-            && text.contains("<S:repository-uuid/>")
             && text.contains("<D:version-controlled-configuration/>")
             && text.contains("<D:activity-collection-set/>")
             && text.contains("<D:supported-report-set/>")
@@ -591,6 +591,18 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             && !text.contains("<D:href>/yona/svn/owner/projectYobi/!svn/vcc/default</D:href>"),
         "SVN root PROPFIND propname should expose live property names without values: {text}"
     );
+    if youngest_revision.is_some() {
+        assert!(
+            text.contains("<D:version-name/>"),
+            "SVN root PROPFIND propname should expose executable-backed version-name when youngest revision is available: {text}"
+        );
+    }
+    if repository_uuid.is_some() {
+        assert!(
+            text.contains("<S:repository-uuid/>"),
+            "SVN root PROPFIND propname should expose executable-backed repository UUID when svnlook metadata is available: {text}"
+        );
+    }
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
     let response = direct_request_with_body(
@@ -837,18 +849,28 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
         text.contains("<D:resourcetype/>")
             && text.contains("<D:displayname/>")
             && text.contains("<D:supportedlock/>")
-            && text.contains("<D:version-name/>")
-            && text.contains("<S:repository-uuid/>")
-            && text.contains("<D:checked-in/>")
-            && text.contains("<D:baseline-collection/>")
             && text.contains("<D:activity-collection-set/>")
-            && text.contains("<D:creationdate/>")
-            && text.contains("<D:creator-displayname/>")
             && text.contains("<D:supported-report-set/>")
             && !text.contains("<D:collection/>")
             && !text.contains("<D:href>/yona/svn/owner/projectYobi/!svn/bln/"),
         "SVN VCC PROPFIND propname should expose live property names without values: {text}"
     );
+    if youngest_revision.is_some() {
+        assert!(
+            text.contains("<D:version-name/>")
+                && text.contains("<D:checked-in/>")
+                && text.contains("<D:baseline-collection/>")
+                && text.contains("<D:creationdate/>")
+                && text.contains("<D:creator-displayname/>"),
+            "SVN VCC PROPFIND propname should expose executable-backed revision metadata names when youngest revision is available: {text}"
+        );
+    }
+    if repository_uuid.is_some() {
+        assert!(
+            text.contains("<S:repository-uuid/>"),
+            "SVN VCC PROPFIND propname should expose executable-backed repository UUID when svnlook metadata is available: {text}"
+        );
+    }
 
     let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
     let response = direct_request_with_body(
@@ -936,7 +958,27 @@ async fn svn_protocol_route_preserves_legacy_path_and_auth_boundary() {
             .get(http::header::ALLOW)
             .and_then(|value| value.to_str().ok())
             .is_some_and(|allow| {
-                allow.contains("OPTIONS") && allow.contains("PROPFIND") && allow.contains("REPORT")
+                [
+                    "OPTIONS",
+                    "GET",
+                    "HEAD",
+                    "POST",
+                    "PUT",
+                    "COPY",
+                    "MOVE",
+                    "DELETE",
+                    "MKCOL",
+                    "MKACTIVITY",
+                    "PROPFIND",
+                    "PROPPATCH",
+                    "REPORT",
+                    "LOCK",
+                    "UNLOCK",
+                    "CHECKOUT",
+                    "MERGE",
+                ]
+                .into_iter()
+                .all(|method| allow.contains(method))
             }),
         "SVN OPTIONS should advertise WebDAV methods"
     );
@@ -5609,6 +5651,106 @@ async fn svn_protocol_external_client_can_move_directory_direct_url() {
     );
 
     let _ = shutdown.send(());
+}
+
+#[tokio::test]
+async fn svn_protocol_root_and_default_vcc_propfind_honor_label_revision() {
+    if !svn_tools_available() || !svn_client_available() {
+        eprintln!(
+            "skipping executable SVN Label PROPFIND test because svnadmin/svnlook/svn is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (project_id, _) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let repo_path = yona_rust_vcs::svn_repository_path(data_dir.path(), project_id);
+    let old_revision =
+        seed_svn_readme(&repo_path, "hello before label propfind\n").expect("seed svn readme");
+    let latest_revision = seed_svn_nested_tree(&repo_path).expect("seed second svn revision");
+    assert!(
+        latest_revision > old_revision,
+        "Label fixture should have a newer revision to prove old revision selection"
+    );
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    for path in [
+        "/svn/owner/projectYobi",
+        "/svn/owner/projectYobi/!svn/vcc/default",
+    ] {
+        let response = direct_request_with_body_and_header(
+            app.clone(),
+            propfind.clone(),
+            path,
+            None,
+            "Label",
+            &old_revision.to_string(),
+            Body::empty(),
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::MULTI_STATUS);
+        let body = response.into_body().collect().await.unwrap().to_bytes();
+        let text = String::from_utf8(body.to_vec()).unwrap();
+        assert!(
+            text.contains(&format!("<D:version-name>{old_revision}</D:version-name>"))
+                && text.contains(&format!(
+                    "<D:checked-in><D:href>/yona/svn/owner/projectYobi/!svn/bln/{old_revision}</D:href></D:checked-in>"
+                ))
+                && !text.contains(&format!("<D:version-name>{latest_revision}</D:version-name>"))
+                && !text.contains(&format!("/!svn/bln/{latest_revision}</D:href>")),
+            "SVN PROPFIND should honor Label: {old_revision} for {path}: {text}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn svn_protocol_baseline_propfind_maps_invalid_and_out_of_range_revisions() {
+    if !svn_tools_available() {
+        eprintln!(
+            "skipping executable SVN baseline revision mapping test because svnadmin/svnlook is unavailable"
+        );
+        return;
+    }
+
+    let _guard = yona_data_env_lock()
+        .lock()
+        .expect("serialize YONA_DATA mutation");
+    let data_dir = tempdir().expect("yona data tempdir");
+    std::env::set_var("YONA_DATA", data_dir.path());
+    let (app, repository, db) = build_app_with_repository().await;
+    let (owner_csrf, owner_cookie) = register_user(app.clone(), "owner").await;
+    create_project(app.clone(), &owner_cookie, &owner_csrf, "public").await;
+    let (_, youngest_revision) = mark_project_as_svn(&repository, &db, data_dir.path()).await;
+    let youngest_revision = youngest_revision.expect("svnadmin-backed repository revision");
+
+    let propfind = Method::from_bytes(b"PROPFIND").expect("PROPFIND method");
+    let response = direct_request(
+        app.clone(),
+        propfind.clone(),
+        "/svn/owner/projectYobi/!svn/bln/not-a-number",
+        None,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+
+    let response = direct_request(
+        app,
+        propfind,
+        &format!(
+            "/svn/owner/projectYobi/!svn/bln/{}",
+            youngest_revision + 1
+        ),
+        None,
+    )
+    .await;
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]

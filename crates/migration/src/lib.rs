@@ -8,6 +8,7 @@ use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub mod entity_schema;
+pub mod legacy_external;
 mod m20260409_000001_create_legacy_start_schema;
 
 pub struct Migrator;
